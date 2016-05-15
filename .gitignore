@@ -3,6 +3,19 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# sass
+.sass-cache
+*.css.map
+
+# webdeveloper - other
+.webassets-cache
+*/static/thirdparty/*
+*.min.js
+*.min.css
+# use only sass files
+*.css
+
+
 # C extensions
 *.so
 

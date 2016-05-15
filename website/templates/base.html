@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="/static/thirdparty/bootstrap/css/bootstrap.min.css">
+  {# <script type="text/javascript" src="/static/thirdparty/bootstrap/js/bootstrap.min.js"></script> #}
+  {% assets "css_common" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+
+  <!--[if lt IE 9]>
+  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <title>Visualisation - {% block title %}Framework for Genome Mutations{% endblock %}</title>
+  {% block head %}
+  {% endblock %}
+</head>
+<body>
+  <div class="container">
+    {% include 'messages.html' %}
+      <div id="content">
+      {% block content %}
+      {% endblock %}
+    </div>
+    <footer class="footer">
+      {% block footer %}
+      {#
+      <ul class="list-unstyled">
+        <li>Footer entry 1</li>
+        <li><a href="{{ url_for('license') }}">Entry 2</a></li>
+      </ul>
+      #}
+      {% endblock %}
+    </footer>
+    </div>
+{% block footer_js %}
+{% endblock %}
+</body>
+</html>

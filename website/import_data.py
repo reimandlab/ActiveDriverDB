@@ -1,0 +1,61 @@
+from app import db
+from models import Protein, Mutation, Site
+
+def import_data():
+
+    proteins = {}
+
+    with open('data/longest_isoform_proteins.fa', 'r') as f:
+
+        name = None
+        for line in f:
+            if line.startswith('>'):
+                name = line[1:].rstrip()
+                assert name not in proteins
+                protein = Protein(name)
+                proteins[name] = protein
+                db.session.add(protein)
+            else:
+                proteins[name].sequence += line.rstrip()
+    print('Sequences loaded')
+    db.session.commit()
+
+    with open('data/longest_isoforms.tsv', 'r') as f:
+        header = f.readline().split('\t')
+        for line in f:
+            line = line.rstrip()
+            name, refseq = line.split('\t')
+            proteins[name].refseq = refseq
+    print('Refseq ids loaded')
+    db.session.commit()
+
+    with open('data/longest_isoform_proteins_disorder.fa', 'r') as f:
+        name = None
+        for line in f:
+            if line.startswith('>'):
+                name = line[1:].rstrip()
+                assert name in proteins
+            else:
+                proteins[name].disorder_map += line.rstrip()
+    print('Disorder data loaded')
+    db.session.commit()
+
+    with open('data/ad_muts.tsv', 'r') as f:
+        header = f.readline().split('\t')
+        for line in f:
+            line = line.rstrip()
+            gene, cancer_type, sample_id, position, wt_residue, mut_residue = line.split('\t')
+            mutation = Mutation(proteins[gene].id, cancer_type, sample_id, position, wt_residue, mut_residue)
+            proteins[gene].mutations.append(mutation)
+    print('Mutations loaded')
+    db.session.commit()
+
+    with open('data/psite_table.tsv', 'r') as f:
+        header = f.readline().split('\t')
+        for line in f:
+            line = line.rstrip()
+            gene, position, residue, kinase, pmid = line.split('\t')
+            site = Site(proteins[gene].id, position, residue, kinase, pmid)
+            proteins[gene].sites.append(site)
+    print('Protein sites loaded')
+    db.session.commit()

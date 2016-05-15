@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block head %}
+  <script type="text/javascript" src="/static/thirdparty/jquery-1.12.0.min.js"></script>
+  <link href="/static/thirdparty/selectize/selectize.css" rel="stylesheet" />
+  <script src="/static/thirdparty/selectize/selectize.min.js"></script>
+  <link href="/static/thirdparty/selectize/selectize.bootstrap3.css" rel="stylesheet" />
+{% endblock %}
+
+
+{% block title %} {{ target }} searching {% endblock %}
+
+
+{% block content %}
+
+  <h3>Looking up for a {{ target }}</h3>
+
+  <div class="input-group" id="search-bar">
+	<input type="text" class="form-control" placeholder="Search for..." id="searchbar">
+	<span class="input-group-btn">
+	  <button type="button" class="btn btn-default" aria-label="Search">
+		<span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+	  </button>
+	</span>
+   </div>
+{% endblock %}
+
+
+{% block footer_js %}
+    {% assets "js_search" %}
+	<script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+    <script type="text/javascript">
+        var searchParams = {
+            target: '{{ target}}',
+            element: $('#searchbar')
+        };
+        SearchBar.init(searchParams);
+    </script>
+{% endblock %}
