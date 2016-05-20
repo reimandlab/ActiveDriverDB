@@ -62,13 +62,32 @@ class ProteinView(FlaskView):
         protein = Protein.query.filter_by(name=name).first_or_404()
 
         mutatated_residues = [TrackElement(mutation.position, 1) for mutation in protein.mutations]
-        phosporylations = [TrackElement(site.position - 7, 7) for site in protein.sites]
+        phosporylations = [TrackElement(site.position - 3, 7) for site in protein.sites]
+        phosporylations_pinpointed = [TrackElement(site.position - 1, 3) for site in protein.sites]
         mutations = [TrackElement(mutation.position, 1, mutation.mut_residue) for mutation in protein.mutations]
+
+        disorder_regions = []
+        inside_region = False
+
+        for i in range(len(protein.disorder_map)):
+            residue = int(protein.disorder_map[i])
+            if inside_region:
+                if not residue:
+                    inside_region = False
+                    disorder_regions[-1][1] = i - disorder_regions[-1][0]
+            else:
+                if residue:
+                    disorder_regions += [[i, 1]]
+                    inside_region = True
+
+        diseases = [TrackElement(*region) for region in disorder_regions]
 
         tracks = [
             Track('phosphorylation', phosporylations, under_sequence=True),
+            Track('phosphorylation_pinpointed', phosporylations_pinpointed, under_sequence=True),
             Track('mutatated_residues', mutatated_residues, under_sequence=True),
-            Track('mutations', mutations)
+            Track('mutations', mutations),
+            Track('diseases', diseases)
         ]
         return template('protein.html', protein=protein, tracks=tracks)
 
