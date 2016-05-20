@@ -25,10 +25,14 @@
 
 RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ protein.refseq }}</a>
 
-<div class="tracks zoom-100">
-    <div class="sequence">
-        {{ protein.sequence }}
+
+<div class="panel panel-default">
+  <div class="panel-body">
+    {% with tracks=tracks, sequence=protein.sequence %}
+      {% include 'tracks.html' %}
+    {% endwith %}
     </div>
+ </div>
 </div>
 
 {% endblock %}

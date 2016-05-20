@@ -1,0 +1,16 @@
+<div class="tracks-desc">
+    {#  #}
+</div>
+<div class="tracks zoom-100">
+    <div class="track sequence">
+        {{ sequence }}
+    </div>
+    {% for track in tracks %}
+        <div class="track {{track.name}} {{ 'under_seq' if track.under_sequence }}">
+            {% for element in track.elements %}
+                <div style="left: {{ element.start }}ch; width: {{ element.end }}ch"></div>
+            {% endfor %}
+        </div>
+    {% endfor %}
+</div>
+

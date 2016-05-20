@@ -8,6 +8,40 @@ $button-height: 34px
     position: absolute
     z-index: 15
 
+$track-height: 1em
+$track-margin: 4px
+
+#plot_area
+  max-width: 600px
+
+.track
+  position: relative
+  height: $track-height
+  margin-bottom: $track-margin
+  font-family: monospace
+  z-index: 0
+
+  div
+    position: absolute
+    background-color: #ffaaaa
+    height: $track-height
+
+  &.under_seq
+    position: absolute
+    top: $track-margin
+
+  &.sequence
+    z-index: 10
+
+  &.mutations
+    div
+      background-color: #aade87
+
+  &.phosphorylation
+    div
+      background-color: #abc837
+
 .tracks
-  width: 100%
-  overflow-x: hidden
+  overflow-x: scroll
+  width: 80ch
+  position: relative

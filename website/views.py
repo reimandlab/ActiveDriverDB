@@ -33,7 +33,24 @@ class SearchView(FlaskView):
 
         return json.dumps(response)
 
+
 SearchView.register(app)
+
+
+class Track(object):
+
+    def __init__(self, name, elements, under_sequence=False):
+        self.name = name
+        self.elements = elements
+        self.under_sequence = under_sequence
+
+
+class TrackElement(object):
+
+    def __init__(self, start, end, name=None):
+        self.start = start
+        self.end = end
+        self.name = name
 
 
 class ProteinView(FlaskView):
@@ -43,24 +60,25 @@ class ProteinView(FlaskView):
 
     def show(self, name):
         protein = Protein.query.filter_by(name=name).first_or_404()
-        return template('protein.html', protein=protein)
+
+        mutatated_residues = [TrackElement(mutation.position, 1) for mutation in protein.mutations]
+        phosporylations = [TrackElement(site.position - 7, 7) for site in protein.sites]
+        mutations = [TrackElement(mutation.position, 1, mutation.mut_residue) for mutation in protein.mutations]
+
+        tracks = [
+            Track('phosphorylation', phosporylations, under_sequence=True),
+            Track('mutatated_residues', mutatated_residues, under_sequence=True),
+            Track('mutations', mutations)
+        ]
+        return template('protein.html', protein=protein, tracks=tracks)
 
     def mutations(self, name):
 
         protein = Protein.query.filter_by(name=name).first_or_404()
 
-        mutations_grouped = {}
-        for mutation in protein.mutations:
-            # for now, I am grouping just by position and cancer
-            key = (mutation.position, mutation.cancer_type)
-            try:
-                mutations_grouped[key] += [mutation]
-            except KeyError:
-                mutations_grouped[key] = [mutation]
-
         response = []
 
-        for key, mutations in mutations_grouped.items():
+        for key, mutations in protein.mutations_grouped.items():
             position, cancer_type = key
             needle = {
                 'coord': str(position),

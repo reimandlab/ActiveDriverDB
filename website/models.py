@@ -19,6 +19,19 @@ class Protein(db.Model):
     def __repr__(self):
         return '<Protein %r>' % self.name
 
+    @property
+    def mutations_grouped(self):
+
+        mutations_grouped = {}
+        for mutation in self.mutations:
+            # for now, I am grouping just by position and cancer
+            key = (mutation.position, mutation.cancer_type)
+            try:
+                mutations_grouped[key] += [mutation]
+            except KeyError:
+                mutations_grouped[key] = [mutation]
+        return mutations_grouped
+
 
 class Site(db.Model):
     __tablename__ = 'site'

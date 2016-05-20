@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# vim swap files
+*.swp
+
 # sass
 .sass-cache
 *.css.map
