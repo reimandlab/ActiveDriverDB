@@ -5,15 +5,7 @@ var SearchBar = (function ()
 
 	function format(item, escape)
 	{
-		// var img = '<img src="/static/icons/"' + (item.img ? item.img : item.type) + '">'
-
-		var html = '<div>' +
-		'<span class="name">' + escape(item.value) + '</span>' +
-		(item.owner && item.type != 'user' ? ('<span class="owner">' + escape(item.owner) + '</span>') : '') +
-		// img +
-		'</div>'
-
-		return html
+		return '<div><span class="name">' + escape(item.value) + '</span></div>'
 	}
 	function onValueChange(value)
 	{
