@@ -27,7 +27,7 @@ class SearchView(FlaskView):
 
         if query:
             qrm = self.categories[target]
-            name_filter = qrm.name.like('%' + query + '%')
+            name_filter = qrm.name.like(query + '%')
             entries = qrm.query.filter(name_filter).all()
             response = [{'value': entry.name} for entry in entries]
 
