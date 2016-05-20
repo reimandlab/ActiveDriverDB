@@ -8,7 +8,9 @@
     {% for track in tracks %}
         <div class="track {{track.name}} {{ 'under_seq' if track.under_sequence }}">
             {% for element in track.elements %}
-                <div style="left: {{ element.start }}ch; width: {{ element.end }}ch"></div>
+                <div style="left: {{ element.start }}ch; width: {{ element.end }}ch">
+                    {{ element.name }}
+                </div>
             {% endfor %}
         </div>
     {% endfor %}
