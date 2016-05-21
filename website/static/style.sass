@@ -14,43 +14,96 @@ $track-margin: 4px
 #plot_area
   max-width: 600px
 
+/*
+  Tracks secions:
+  
+   reserved z-indices:
+        tracks: 0-50
+
+$description-width: 100px
+
+
+
+.tracks-box
+  /*
+    The most outer box living in tracks template
+
+  .controls
+    // Those are javascript controls - they will be shown by the js itself
+    // if it will be able to run (elsewhere we fallback to html-only mode)
+    display: none
+
+  .inner
+    position: relative
+
+  .description
+
+    // an alternative for calc() which allows us to support > 95% of users [1]
+    width: $description-width
+    position: absolute
+    top: 0
+    left: 0
+
+    ul
+      list-style: none
+      padding-left: 5px
+
+.tracks
+  font-size: 115%
+  overflow-x: hidden
+  width: 100%
+
+  .scroll-area
+    overflow-x: scroll
+    position: relative
+
+  // an alternative for calc() which allows us to support > 95% of users [1]
+  padding-left: $description-width
+  -moz-box-sizing: border-box
+  box-sizing: border-box
+
 .track
   position: relative
-  height: $track-height
   margin-bottom: $track-margin
   font-family: monospace
   z-index: 0
 
-  div
+  .elements
+    height: $track-height
+
+  .elements div
     position: absolute
     background-color: #ffaaaa
     height: $track-height
+    line-height: $track-height
 
   &.under_seq
     position: absolute
     top: $track-margin
+    z-index: -50
+
+
+  &.position
+    .elements div
+      background-color: #fff
 
   &.sequence
-    z-index: 10
+    // the sequence will be always on the top of all tracks
+    z-index: 50
 
   &.mutations
-    div
+    .elements div
       background-color: #aade87
 
   &.phosphorylation
-    div
+    .elements div
       background-color: #bcd949
 
   &.phosphorylation_pinpointed
-    div
+    .elements div
       background-color: #9ab615
 
   &.diseases
-    div
+    .elements div
       background-color: brown
       
-
-.tracks
-  overflow-x: scroll
-  width: 80ch
-  position: relative

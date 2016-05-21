@@ -39,10 +39,11 @@ SearchView.register(app)
 
 class Track(object):
 
-    def __init__(self, name, elements, under_sequence=False):
+    def __init__(self, name, elements, subtracks='', inline=False):
         self.name = name
         self.elements = elements
-        self.under_sequence = under_sequence
+        self.subtracks = subtracks
+        self.inline = inline
 
 
 class TrackElement(object):
@@ -61,10 +62,9 @@ class ProteinView(FlaskView):
     def show(self, name):
         protein = Protein.query.filter_by(name=name).first_or_404()
 
-        mutatated_residues = [TrackElement(mutation.position, 1) for mutation in protein.mutations]
+        # mutatated_residues = [TrackElement(mutation.position, 1) for mutation in protein.mutations]
         phosporylations = [TrackElement(site.position - 3, 7) for site in protein.sites]
         phosporylations_pinpointed = [TrackElement(site.position - 1, 3) for site in protein.sites]
-        mutations = [TrackElement(mutation.position, 1, mutation.mut_residue) for mutation in protein.mutations]
 
         disorder_regions = []
         inside_region = False
@@ -82,11 +82,34 @@ class ProteinView(FlaskView):
 
         diseases = [TrackElement(*region) for region in disorder_regions]
 
+        mutations = [{}]
+        for mutation in protein.mutations:
+            depth = 0
+            try:
+                while mutation.position in mutations[depth] and mutations[depth][mutation.position].mut_residue != mutation.mut_residue:
+                    depth += 1
+            except IndexError:
+                mutations.append({})
+            mutations[depth][mutation.position] = mutation
+
+        # TODO: sort by occurence count
+
+        mutation_tracks = [[TrackElement(m.position, 1, m.mut_residue) for m in ms.values()] for ms in mutations]
+
         tracks = [
-            Track('phosphorylation', phosporylations, under_sequence=True),
-            Track('phosphorylation_pinpointed', phosporylations_pinpointed, under_sequence=True),
-            Track('mutatated_residues', mutatated_residues, under_sequence=True),
-            Track('mutations', mutations),
+            Track('position', [TrackElement(i, 5, i) for i in range(0, len(protein.sequence), 25)]),
+            Track(
+                'sequence',
+                protein.sequence,
+                subtracks=[
+                    Track('phosphorylation', phosporylations, inline=True),
+                    Track('phosphorylation_pinpointed', phosporylations_pinpointed, inline=True),
+                ]),
+            Track(
+                'mutations',
+                mutation_tracks[0],
+                subtracks=[Track('+', muts) for muts in mutation_tracks[1:]]
+                ),
             Track('diseases', diseases)
         ]
         return template('protein.html', protein=protein, tracks=tracks)

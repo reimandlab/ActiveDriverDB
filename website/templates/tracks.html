@@ -1,18 +1,60 @@
-<div class="tracks-desc">
-    {#  #}
-</div>
-<div class="tracks zoom-100">
-    <div class="track sequence">
-        {{ sequence }}
-    </div>
-    {% for track in tracks %}
-        <div class="track {{track.name}} {{ 'under_seq' if track.under_sequence }}">
-            {% for element in track.elements %}
-                <div style="left: {{ element.start }}ch; width: {{ element.end }}ch">
-                    {{ element.name }}
-                </div>
-            {% endfor %}
+{% macro make_track(track) -%}
+    <div class="track {{track.name}} {{ 'under_seq' if track.inline }}">
+        <div class="elements">
+        {% if track.elements is string %}
+           {{ track.elements }}
+        {% else %}
+        {% for element in track.elements %}
+            <div style="left:{{ element.start }}ch;width:{{ element.end }}ch">
+                {{ element.name }}
+            </div>
+        {% endfor %}
+        {% endif %}
         </div>
-    {% endfor %}
-</div>
+        <div class="subtracks">
+        {% for subtrack in track.subtracks %}
+        {{ make_track(subtrack) }}
+        {% endfor %}
+        </div>
+    </div>
+{%- endmacro %}
 
+{% macro make_list(tracks) -%}
+    <ul>
+        {% for track in tracks %}
+            {% if not track.inline %}
+            <li>
+                {{ track.name | title }}
+                {% if track.subtracks %}
+                    {{ make_list(track.subtracks) }}
+                {% endif %}
+            </li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+{%- endmacro %}
+
+
+<div class="tracks-box">
+    <div class="controls">
+        {# The controls have to be in the same containers as appropriate tracks #}
+        <button class="btn btn-default btn-sm scroll-left">
+            <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+        </button>
+        <button class="btn btn-default btn-sm scroll-right">
+            <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+        </button>
+    </div>
+    <div class="inner">
+        <div class="description">
+            {{ make_list(tracks) }}
+        </div>
+        <div class="tracks">
+            <div class="scroll-area">
+                {% for track in tracks %}
+                {{ make_track(track) }}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>

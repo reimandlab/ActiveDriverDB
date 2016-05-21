@@ -28,6 +28,12 @@ js_needleplot = Bundle(
     output='needleplot.min.js'
 )
 
+js_tracks = Bundle(
+    'tracks.js',
+    filters='rjsmin',
+    output='tracks.min.js'
+)
+
 css_common = Bundle(
     'style.css',
     filters='cssutils',
@@ -36,6 +42,7 @@ css_common = Bundle(
 
 assets.register('js_search', js_search)
 assets.register('js_needleplot', js_needleplot)
+assets.register('js_tracks', js_tracks)
 assets.register('css_common', css_common)
 
 
