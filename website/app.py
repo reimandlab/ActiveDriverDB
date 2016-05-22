@@ -63,4 +63,13 @@ app.jinja_env.filters['json'] = json.dumps
 Import viwes
 """
 
-import views
+# allow acces to this app from views through module
+import sys
+sys.path.insert(0, '..')
+
+from website.views import general, ProteinView, SearchView
+
+app.register_blueprint(general)
+
+ProteinView.register(app)
+SearchView.register(app)
