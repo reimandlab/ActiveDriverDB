@@ -1,6 +1,15 @@
+"""
+Group of classes useful to generate tracks like sequence, mutations etc.
+"""
+
 class Track(object):
+    """Whole track with its elements and subtracts"""
 
     def __init__(self, name, elements, subtracks='', inline=False):
+        """
+        inline: if the track is a subtact that should be nested under the parent Track
+        elements: list of TrackElements or a string
+        """
         self.name = name
         self.elements = elements
         self.subtracks = subtracks
@@ -8,10 +17,17 @@ class Track(object):
 
 
 class TrackElement(object):
+    """Single element like mutation, phosporylation site etc on a track.
 
-    def __init__(self, start, end, name=''):
+    It is used a lot for every single protein, hence __slots__ implemented.
+    """
+
+    __slots__ = 'start', 'length', 'name'
+
+    def __init__(self, start, length, name=''):
+        assert start >= 0
         self.start = start
-        self.end = end
+        self.length = length
         self.name = name
 
 
@@ -19,24 +35,52 @@ class SequenceTrack(Track):
 
     def __init__(self, protein):
 
+        self.protein = protein
+        self.length = protein.length
         # mutatated_residues = [TrackElement(mutation.position, 1) for mutation in protein.mutations]
-        phosporylations = [TrackElement(site.position - 3, 7) for site in protein.sites]
-        phosporylations_pinpointed = [TrackElement(site.position - 1, 3) for site in protein.sites]
 
-        subtracks = [
-            Track('phosphorylation', phosporylations, inline=True),
-            Track('phosphorylation_pinpointed', phosporylations_pinpointed, inline=True),
-        ]
+        subtracks = self.phosporylation_subtracks()
 
         super().__init__('sequence', protein.sequence, subtracks)
+
+    def phosporylation_subtracks(self):
+
+        # store in descending order or use z-index
+        spans = (7, 3)
+        phos_span = {}
+        for size in spans:
+            phos_span[size] = []
+
+        for size in spans:
+            shift = (size - 1) / 2
+            for site in self.protein.sites:
+                phos_span[size].append(TrackElement(site.position - shift, size))
+
+        for size in phos_span.keys():
+            self.trim_ends(phos_span[size])
+
+        return [
+            Track('phos_span_' + str(size), phos_span[size], inline=True)
+            for size in spans
+        ]
+
+    def trim_ends(self, elements):
+        # do not exceed 0 on the beginning or stop codon at the end
+        elements[0].start = max(elements[0].start, 0)
+        last_start = elements[-1].start
+        elements[-1].length = min(elements[-1].length + last_start, self.length) - last_start
 
 
 class MutationsTrack(Track):
 
-    def __init__(self, mutations):
+    def __init__(self, raw_mutations):
 
-        mutations = self.group_mutations(mutations)
-        tracks = [[TrackElement(m.position, 1, m.mut_residue) for m in ms.values()] for ms in mutations]
+        tracks = []
+        for mutations in self.group_mutations(raw_mutations):
+            tracks.append([])
+            for mutation in mutations.values():
+                element = TrackElement(mutation.position, 1, mutation.mut_residue)
+                tracks[-1].append(element)
 
         subtracks = [Track('&nbsp;', muts) for muts in tracks[1:]]
 

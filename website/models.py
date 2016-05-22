@@ -20,6 +20,10 @@ class Protein(db.Model):
         return '<Protein %r>' % self.name
 
     @property
+    def length(self):
+        return len(self.sequence)
+
+    @property
     def mutations_grouped(self):
 
         mutations_grouped = {}

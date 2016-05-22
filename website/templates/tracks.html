@@ -5,7 +5,7 @@
            {{ track.elements }}
         {% else %}
         {% for element in track.elements %}
-            <div style="left:{{ element.start }}ch;width:{{ element.end }}ch">
+            <div style="left:{{ element.start }}ch;width:{{ element.length }}ch">
                 {{ element.name }}
             </div>
         {% endfor %}
