@@ -38,7 +38,7 @@ class MutationsTrack(Track):
         mutations = self.group_mutations(mutations)
         tracks = [[TrackElement(m.position, 1, m.mut_residue) for m in ms.values()] for ms in mutations]
 
-        subtracks = [Track('+', muts) for muts in tracks[1:]]
+        subtracks = [Track('&nbsp;', muts) for muts in tracks[1:]]
 
         super().__init__('mutations', tracks[0], subtracks)
 

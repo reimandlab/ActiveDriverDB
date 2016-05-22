@@ -24,7 +24,7 @@
         {% for track in tracks %}
             {% if not track.inline %}
             <li>
-                {{ track.name | title }}
+                {{ track.name | title | safe }}
                 {% if track.subtracks %}
                     {{ make_list(track.subtracks) }}
                 {% endif %}
@@ -38,12 +38,33 @@
 <div class="tracks-box">
     <div class="controls">
         {# The controls have to be in the same containers as appropriate tracks #}
-        <button class="btn btn-default btn-sm scroll-left">
-            <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
-        </button>
-        <button class="btn btn-default btn-sm scroll-right">
-            <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
-        </button>
+
+        <div class="input-group">
+            <div class="input-group-btn">
+                <button class="btn btn-default scroll-left">
+                    <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                </button>
+                <button class="btn btn-default scroll-right">
+                    <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                </button>
+                <button class="btn btn-default zoom-in">
+                    <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+                </button>
+                <button class="btn btn-default zoom-out">
+                    <span class="glyphicon glyphicon-zoom-out" aria-hidden="true"></span>
+                </button>
+            </div>
+            {#
+                At the moment of writing I can not use type=number
+                http://caniuse.com/#feat=input-number
+            #}
+            <input type="text" class="form-control scroll-to-input" placeholder="Type a position...">
+            <span class="input-group-addon">amino acids</span>
+            <span class="input-group-btn">
+              <button class="btn btn-default scroll-to" type="button">Go!</button>
+            </span>
+        </div><!-- /input-group -->
+
     </div>
     <div class="inner">
         <div class="description">

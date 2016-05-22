@@ -9,7 +9,7 @@ $button-height: 34px
     z-index: 15
 
 $track-height: 1em
-$track-margin: 4px
+$track-margin: .35em
 
 #plot_area
   max-width: 600px
@@ -32,6 +32,8 @@ $description-width: 100px
     // Those are javascript controls - they will be shown by the js itself
     // if it will be able to run (elsewhere we fallback to html-only mode)
     display: none
+    margin-bottom: 25px
+
 
   .inner
     position: relative
@@ -41,15 +43,19 @@ $description-width: 100px
     // an alternative for calc() which allows us to support > 95% of users [1]
     width: $description-width
     position: absolute
-    top: 0
+    top: 3px
     left: 0
 
     ul
       list-style: none
       padding-left: 5px
+    
+    li
+      line-height: $track-height
+      padding-bottom: $track-margin
 
 .tracks
-  font-size: 115%
+  font-size: 110%
   overflow-x: hidden
   width: 100%
 
@@ -65,6 +71,7 @@ $description-width: 100px
 .track
   position: relative
   margin-bottom: $track-margin
+  line-height: $track-height
   font-family: monospace
   z-index: 0
 
@@ -75,11 +82,10 @@ $description-width: 100px
     position: absolute
     background-color: #ffaaaa
     height: $track-height
-    line-height: $track-height
 
   &.under_seq
     position: absolute
-    top: $track-margin
+    top: 0
     z-index: -50
 
 

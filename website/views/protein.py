@@ -50,7 +50,7 @@ class ProteinView(FlaskView):
         return template('protein.html', protein=protein, tracks=tracks)
 
     def mutations(self, name):
-    """List of mutations suitable for needleplot library"""
+        """List of mutations suitable for needleplot library"""
         protein = Protein.query.filter_by(name=name).first_or_404()
 
         response = []
@@ -67,7 +67,7 @@ class ProteinView(FlaskView):
         return json.dumps(response)
 
     def sites(self, name):
-    """List of sites suitable for needleplot library"""
+        """List of sites suitable for needleplot library"""
 
         protein = Protein.query.filter_by(name=name).first_or_404()
 
