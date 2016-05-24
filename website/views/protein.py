@@ -8,6 +8,7 @@ from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack
 from website.helpers.tracks import SequenceTrack
 from website.helpers.tracks import MutationsTrack
+from website.helpers.filters import FilterSet
 
 
 class ProteinView(FlaskView):
@@ -23,6 +24,9 @@ class ProteinView(FlaskView):
         + needleplot
         + tracks (seuqence + data tracks)
         """
+        filters = request.args.get('filters', '')
+        filters = FilterSet.from_string(filters)
+
         protein = Protein.query.filter_by(name=name).first_or_404()
 
         disorder_regions = []
@@ -41,10 +45,12 @@ class ProteinView(FlaskView):
 
         disorder = [TrackElement(*region) for region in disorder_regions]
 
+        mutations = filter(filters.test, protein.mutations)
+
         tracks = [
-            PositionTrack(len(protein.sequence), 25),
+            PositionTrack(protein.length, 25),
             SequenceTrack(protein),
-            MutationsTrack(protein.mutations),
+            MutationsTrack(mutations),
             Track('disorder', disorder)
         ]
         return template('protein.html', protein=protein, tracks=tracks)

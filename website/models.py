@@ -71,3 +71,22 @@ class Mutation(db.Model):
         self.position = position
         self.wt_residue = wt_residue
         self.mut_residue = mut_residue
+
+    # Note: following properties could be a part of the db tables in the future
+    @property
+    def is_ptm(self):
+        sites = Protein.query.get(self.gene_id).sites
+        site_positions = [int(s.position) for s in sites]
+        return int(self.position) in site_positions
+
+    @property
+    def is_ptm_direct(self):
+        pass
+
+    @property
+    def is_ptm_proximal(self):
+        pass
+
+    @property
+    def is_ptm_distal(self):
+        pass
