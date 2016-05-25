@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %} {{ protein.name }} - protein view {% endblock %}
+{% block title %} {{ protein.name }} - protein view - {{ super() }} {% endblock %}
 
 {% block head %}
+    {{ super() }}
   <script src="https://wzrd.in/bundle/muts-needle-plot@0.9.1"></script>
   <script src="http://workmen.biojs.net/github/bbglab/muts-needle-plot/master/src/js/dependencies/d3.js"></script>
   <script src="http://workmen.biojs.net/github/bbglab/muts-needle-plot/master/src/js/dependencies/underscore.js"></script>
@@ -49,7 +50,7 @@ RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ pr
     <script type="text/javascript">
         var params = {
             element: document.getElementById('plot_area'),
-            mutations: '{{ url_for('ProteinView:mutations', name=protein.name) }}',
+            mutations: '{{ url_for('ProteinView:mutations', name=protein.name, filters=filters) }}',
             sites: '{{ url_for('ProteinView:sites', name=protein.name) }}',
             sequenceLength: {{ protein.sequence | length }},
             name: '{{ protein.name }}',

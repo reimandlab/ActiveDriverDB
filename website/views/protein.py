@@ -24,8 +24,8 @@ class ProteinView(FlaskView):
         + needleplot
         + tracks (seuqence + data tracks)
         """
-        filters = request.args.get('filters', '')
-        filters = FilterSet.from_string(filters)
+        filters_str = request.args.get('filters', '')
+        filters = FilterSet.from_string(filters_str)
 
         protein = Protein.query.filter_by(name=name).first_or_404()
 
@@ -53,22 +53,28 @@ class ProteinView(FlaskView):
             MutationsTrack(mutations),
             Track('disorder', disorder)
         ]
-        return template('protein.html', protein=protein, tracks=tracks)
+        return template('protein.html', protein=protein, tracks=tracks, filters=filters_str)
 
     def mutations(self, name):
         """List of mutations suitable for needleplot library"""
         protein = Protein.query.filter_by(name=name).first_or_404()
+        filters = request.args.get('filters', '')
+        filters = FilterSet.from_string(filters)
 
         response = []
 
         for key, mutations in protein.mutations_grouped.items():
-            position, cancer_type = key
-            needle = {
-                'coord': str(position),
-                'value': len(mutations),
-                'category': cancer_type
-            }
-            response += [needle]
+
+            mutations = list(filter(filters.test, mutations))
+
+            if len(mutations):
+                position, cancer_type = key
+                needle = {
+                    'coord': str(position),
+                    'value': len(mutations),
+                    'category': cancer_type
+                }
+                response += [needle]
 
         return json.dumps(response)
 
@@ -85,4 +91,3 @@ class ProteinView(FlaskView):
         ]
 
         return json.dumps(response)
-
