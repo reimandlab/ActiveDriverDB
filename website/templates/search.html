@@ -8,7 +8,7 @@
 {% endblock %}
 
 
-{% block title %} {{ target }} searching {% endblock %}
+{% block title %} {{ target | title }} searching - {{ super() }} {% endblock %}
 
 
 {% block content %}

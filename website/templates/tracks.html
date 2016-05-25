@@ -1,5 +1,5 @@
 {% macro make_track(track) -%}
-    <div class="track {{track.name}} {{ 'under_seq' if track.inline }}">
+    <div class="track {{ track.class_name }} {{ 'under_seq' if track.inline }}">
         <div class="elements">
         {% if track.elements is string %}
            {{ track.elements }}
@@ -24,7 +24,7 @@
         {% for track in tracks %}
             {% if not track.inline %}
             <li>
-                {{ track.name | title | safe }}
+                {{ track.display_name | title | safe }}
                 {% if track.subtracks %}
                     {{ make_list(track.subtracks) }}
                 {% endif %}

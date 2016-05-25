@@ -2,18 +2,34 @@
 Group of classes useful to generate tracks like sequence, mutations etc.
 """
 
+
 class Track(object):
     """Whole track with its elements and subtracts"""
 
     def __init__(self, name, elements, subtracks='', inline=False):
         """
-        inline: if the track is a subtact that should be nested under the parent Track
+        inline: tells if the track is a subtract which
+        should be nested under the parent Track
+
         elements: list of TrackElements or a string
         """
         self.name = name
         self.elements = elements
         self.subtracks = subtracks
         self.inline = inline
+
+    @property
+    def class_name(self):
+        """Class names to be used in CSS and DOM"""
+        classes = [self.name]
+        if not self.elements:
+            classes.append('empty')
+        return ' '.join(classes)
+
+    @property
+    def display_name(self):
+        """A name or hard space for unnamed tracks"""
+        return self.name if self.name else '&nbsp;'
 
 
 class TrackElement(object):
@@ -65,6 +81,8 @@ class SequenceTrack(Track):
         ]
 
     def trim_ends(self, elements):
+        if not elements:
+            return
         # do not exceed 0 on the beginning or stop codon at the end
         elements[0].start = max(elements[0].start, 0)
         last_start = elements[-1].start
@@ -82,7 +100,7 @@ class MutationsTrack(Track):
                 element = TrackElement(mutation.position, 1, mutation.mut_residue)
                 tracks[-1].append(element)
 
-        subtracks = [Track('&nbsp;', muts) for muts in tracks[1:]]
+        subtracks = [Track('', muts) for muts in tracks[1:]]
 
         super().__init__('mutations', tracks[0], subtracks)
 
@@ -104,6 +122,7 @@ class MutationsTrack(Track):
 
         # TODO: sort by occurence count
         return grouped
+
 
 class PositionTrack(Track):
 
