@@ -53,6 +53,7 @@ Register functions for Jinja
 import csrf
 import json
 
+app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
 app.jinja_env.globals['csrf_token'] = csrf.new_csrf_token
