@@ -1,5 +1,5 @@
-{% macro make_track(track) -%}
-    <div class="track {{ track.class_name }} {{ 'under_seq' if track.inline }}">
+{% macro make_track(track) %}
+    <div class="track {{ track.class_name }}">
         <div class="elements">
         {% if track.elements is string %}
            {{ track.elements }}
@@ -17,9 +17,9 @@
         {% endfor %}
         </div>
     </div>
-{%- endmacro %}
+{% endmacro %}
 
-{% macro make_list(tracks) -%}
+{% macro make_list(tracks) %}
     <ul>
         {% for track in tracks %}
             {% if not track.inline %}
@@ -32,7 +32,7 @@
             {% endif %}
         {% endfor %}
     </ul>
-{%- endmacro %}
+{% endmacro %}
 
 
 <div class="tracks-box">

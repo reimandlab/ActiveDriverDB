@@ -12,7 +12,6 @@
 {% endblock %}
 
 
-
 {% block content %}
 
 <h3>{{ protein.name }}</h3>
@@ -24,16 +23,25 @@
 </ol>
 
 <div id="plot_area"></div>
+<div class="panel panel-default">
+    <div class="panel-body">
+      <div class="panel-heading">
+        <h3 class="panel-title">Filters</h3>
+      </div>
+    {% with filters=filters %}
+      {% include 'widgets/filters.html' %}
+    {% endwith %}
+ </div>
+</div>
 
 RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ protein.refseq }}</a>
 
 
 <div class="panel panel-default">
   <div class="panel-body">
-    {% with tracks=tracks, sequence=protein.sequence %}
-      {% include 'tracks.html' %}
+    {% with tracks=tracks %}
+      {% include 'widgets/tracks.html' %}
     {% endwith %}
-    </div>
  </div>
 </div>
 
@@ -50,7 +58,7 @@ RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ pr
     <script type="text/javascript">
         var params = {
             element: document.getElementById('plot_area'),
-            mutations: '{{ url_for('ProteinView:mutations', name=protein.name, filters=filters) }}',
+            mutations: '{{ url_for('ProteinView:mutations', name=protein.name, filters=filters.active.url_string) }}',
             sites: '{{ url_for('ProteinView:sites', name=protein.name) }}',
             sequenceLength: {{ protein.sequence | length }},
             name: '{{ protein.name }}',

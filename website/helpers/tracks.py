@@ -24,6 +24,8 @@ class Track(object):
         classes = [self.name]
         if not self.elements:
             classes.append('empty')
+        if self.inline:
+            classes.append('inline')
         return ' '.join(classes)
 
     @property
