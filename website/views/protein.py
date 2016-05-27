@@ -63,7 +63,6 @@ class ProteinView(FlaskView):
         from copy import deepcopy
         available_filters = deepcopy(self.allowed_filters)
         active_filters.remove_unused()
-        print('x',[x for x in active_filters.filters])
 
         for passed_filter in active_filters:
             for allowed_filter in available_filters:

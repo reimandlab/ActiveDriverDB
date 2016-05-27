@@ -5,7 +5,6 @@ import operator
 class Filters:
 
     def __init__(self, active_filters, available_filters):
-        print(active_filters)
         self.active = active_filters
         self.available = available_filters
 
