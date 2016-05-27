@@ -1,0 +1,42 @@
+{% macro make_filter_box(filters) %}
+  <form method="get" class="filters">
+    {% if filters.active %}
+        <h4>Active</h4>
+        <ul class="active">
+            {% for filter in filters.active %}
+               {{ make_filter(filter) }}
+            {% endfor %}
+        </ul>
+    {% endif %}
+    {% if filters.available %}
+        <h4>Available</h4>
+        <ul class="available">
+            {% for filter in filters.available %}
+               {{ make_filter(filter) }}
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <button class="btn btn-default primary" type="submit">Save</button>
+  </form>
+{% endmacro %}
+
+{% macro make_filter(filter) %}
+    <li class="filter">
+        <span class="name">
+            {{ filter.name }}
+        </span>
+
+        {% if filter.type == 'binary' %}
+            <select class="form-control" name="filters">
+                {# TODO: for? #}
+                <option value="{{ filter.property }} eq None">disabled</option>
+                <option value="{{ filter.property }} eq True" {{ 'selected' if filter.value == True }}>only</option>
+                <option value="{{ filter.property }} eq False" {{ 'selected' if filter.value == False }}>without</option>
+            </select>
+        {% else %}
+            Unknown filter type: '{{ filter.type }}'
+        {% endif %}
+    </li>
+{% endmacro %}
+
+{{ make_filter_box(filters) }}

@@ -2,7 +2,36 @@
 import operator
 
 
+class Filters:
+
+    def __init__(self, active_filters, available_filters):
+        print(active_filters)
+        self.active = active_filters
+        self.available = available_filters
+
+
 class Filter:
+
+    field_separator = ' '
+
+    def __init__(self, property_name, comparator_name, default_value, type, name):
+        self.name = name
+        self.property = property_name
+        self.value = default_value
+        self.comparator_name = comparator_name
+        self.type = type
+
+    def __str__(self):
+        return self.field_separator.join(map(str, [self.property, self.comparator_name, self.value]))
+
+    """
+    @property
+    def type(self):
+        return type(self.value)
+    """
+
+
+class ObjectFilter(Filter):
     """Single filter that tests if a passed instance has a property
     with value passing the criteria specified during initialization.
 
@@ -17,16 +46,30 @@ class Filter:
         'eq': operator.eq,
     }
 
-    def __init__(self, name, comparator, value):
+    def __init__(self, property_name, comparator, value):
 
-        assert name and comparator and value
+        assert property_name and comparator and value
 
-        self.name = name
+        self.property = property_name
         self.comparator_name = comparator
         self.comparator_func = self.comparators[comparator]
 
-        if value.isnumeric():
+        try:
+            value = int(value)
+        except ValueError:
+            pass
+
+        try:
             value = float(value)
+        except ValueError:
+            pass
+
+        if value == 'True':
+            value = True
+        elif value == 'False':
+            value = False
+        elif value == 'None':
+            value = None
 
         self.value = value
 
@@ -36,8 +79,8 @@ class Filter:
 
         Example: Filter.from_string('is_ptm eq 1')
         """
-        name, comparator, value = entry.split(' ')
-        return cls(name, comparator, value)
+        property_name, comparator, value = entry.split(cls.field_separator)
+        return cls(property_name, comparator, value)
 
     def test(self, obj):
         """Test if a given object (instance) passes criteria of this filter.
@@ -47,11 +90,14 @@ class Filter:
         Example: filter(my_filter.test, list_of_model_objects)
         Note that an object without tested property will remain on the list.
         """
+        if self.value == None:
+            # the filter is turned off
+            return -1
         try:
-            obj_val = getattr(obj, self.name)
+            obj_val = getattr(obj, self.property)
             return self.comparator_func(obj_val, self.value)
         except AttributeError:
-            # the filter is not applicable
+            # the filter is not applicable - the property does not exists in obj
             return -1
 
 
@@ -62,8 +108,13 @@ class FilterSet:
     test (subsequent filters' tests are always joined with 'and')
     """
 
+    filters_separator = ';'
+
     def __init__(self, filters):
         self.filters = filters
+
+    def remove_unused(self):
+        self.filters = list(filter(lambda x: x.value is not None, self.filters))
 
     @classmethod
     def from_string(cls, filters_string):
@@ -75,14 +126,17 @@ class FilterSet:
             will create set of filters that will positively
             evalueate PTM mutations located in flanks
         """
-        raw_filters = filters_string.split(';')
+        raw_filters = filters_string.split(cls.filters_separator)
         # remove empty strings
         raw_filters = filter(bool, raw_filters)
 
-        new_filter = Filter.from_string
+        new_filter = ObjectFilter.from_string
         filters = [new_filter(filter_str) for filter_str in raw_filters]
 
         return cls(filters)
+
+    def __bool__(self):
+        return bool(self.filters)
 
     def test(self, obj):
         """Test if an object (obj) passes tests of all filters from the set."""
@@ -90,3 +144,13 @@ class FilterSet:
             if not condition.test(obj):
                 return False
         return True
+
+    def __iter__(self):
+        """Iteration over FilterSet is an iteration over its filters"""
+        return iter(self.filters)
+
+    @property
+    def url_string(self):
+        """Represntation of filters from the set which can be passed
+        as a query argument (get method) in an URL adress"""
+        return self.filters_separator.join([str(f) for f in self])

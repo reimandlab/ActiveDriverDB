@@ -9,13 +9,19 @@ from website.helpers.tracks import PositionTrack
 from website.helpers.tracks import SequenceTrack
 from website.helpers.tracks import MutationsTrack
 from website.helpers.filters import FilterSet
+from website.helpers.filters import Filters
+from website.helpers.filters import Filter
 
 
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
+    allowed_filters = FilterSet([
+        Filter('is_ptm', 'eq', None, 'binary', 'PTM mutations')
+    ])
+
     def index(self):
-        """Show SearchView as deafault page """
+        """Show SearchView as deafault page"""
         return SearchView().index(target='protein')
 
     def show(self, name):
@@ -25,7 +31,7 @@ class ProteinView(FlaskView):
         + tracks (seuqence + data tracks)
         """
         filters_str = request.args.get('filters', '')
-        filters = FilterSet.from_string(filters_str)
+        active_filters = FilterSet.from_string(filters_str)
 
         protein = Protein.query.filter_by(name=name).first_or_404()
 
@@ -45,7 +51,7 @@ class ProteinView(FlaskView):
 
         disorder = [TrackElement(*region) for region in disorder_regions]
 
-        mutations = filter(filters.test, protein.mutations)
+        mutations = filter(active_filters.test, protein.mutations)
 
         tracks = [
             PositionTrack(protein.length, 25),
@@ -53,7 +59,26 @@ class ProteinView(FlaskView):
             MutationsTrack(mutations),
             Track('disorder', disorder)
         ]
-        return template('protein.html', protein=protein, tracks=tracks, filters=filters_str)
+
+        from copy import deepcopy
+        available_filters = deepcopy(self.allowed_filters)
+        active_filters.remove_unused()
+        print('x',[x for x in active_filters.filters])
+
+        for passed_filter in active_filters:
+            for allowed_filter in available_filters:
+                if allowed_filter.property == passed_filter.property:
+                    passed_filter.name = allowed_filter.name
+                    passed_filter.type = allowed_filter.type
+                    available_filters.filters.remove(allowed_filter)
+                    break
+            else:
+                active_filters.filters.remove(passed_filter)
+                raise Exception('Filter {0} not allowed'.format(passed_filter))
+
+        filters = Filters(active_filters, FilterSet(available_filters))
+
+        return template('protein.html', protein=protein, tracks=tracks, filters=filters)
 
     def mutations(self, name):
         """List of mutations suitable for needleplot library"""
