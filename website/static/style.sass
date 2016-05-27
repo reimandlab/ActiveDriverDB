@@ -11,8 +11,24 @@ $button-height: 34px
 $track-height: 1em
 $track-margin: .35em
 
-#plot_area
-  max-width: 600px
+.filters
+  ul
+    list-style: none
+    padding: 5px
+  h5
+    margin-bottom: 0
+
+.filter
+  line-height: $button-height
+  height: $button-height
+
+  .name
+    display: block
+    float: left
+
+  .value
+    float: right
+
 
 /*
   Tracks secions:
@@ -21,8 +37,6 @@ $track-margin: .35em
         tracks: 0-50
 
 $description-width: 100px
-
-
 
 .tracks-box
   /*

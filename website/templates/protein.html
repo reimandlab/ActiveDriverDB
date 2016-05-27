@@ -49,10 +49,7 @@ RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ pr
 
 
 {% block footer_js %}
-    {% assets "js_needleplot" %}
-	<script type="text/javascript" src="{{ ASSET_URL }}"></script>
-    {% endassets %}
-    {% assets "js_tracks" %}
+    {% assets "js_protein_view" %}
 	<script type="text/javascript" src="{{ ASSET_URL }}"></script>
     {% endassets %}
     <script type="text/javascript">

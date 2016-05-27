@@ -1,7 +1,7 @@
 {% macro make_filter_box(filters) %}
   <form method="get" class="filters">
     {% if filters.active %}
-        <h4>Active</h4>
+        <h5>Active</h5>
         <ul class="active">
             {% for filter in filters.active %}
                {{ make_filter(filter) }}
@@ -9,7 +9,7 @@
         </ul>
     {% endif %}
     {% if filters.available %}
-        <h4>Available</h4>
+        <h5>Available</h5>
         <ul class="available">
             {% for filter in filters.available %}
                {{ make_filter(filter) }}
@@ -17,18 +17,18 @@
         </ul>
     {% endif %}
     <input type="hidden" name="fallback" value="True">
-    <button class="btn btn-default primary" type="submit">Save</button>
+    <button class="btn btn-primary save" type="submit">Save</button>
   </form>
 {% endmacro %}
 
 {% macro make_filter(filter) %}
     <li class="filter">
-        <span class="name">
+        <label class="name" for="filter[{{ filter.property }}]">
             {{ filter.name }}
-        </span>
-
+        </label>
+        <div class="value">
         {% if filter.type == 'binary' %}
-            <select class="form-control" name="filter[{{ filter.property }}]">
+            <select name="filter[{{ filter.property }}]" id="filter[{{ filter.property }}]" class="form-control">
                 <option value="None">disabled</option>
                 <option value="True" {{ 'selected' if filter.value == True }}>only</option>
                 <option value="False" {{ 'selected' if filter.value == False }}>without</option>
@@ -36,6 +36,7 @@
         {% else %}
             Unknown filter type: '{{ filter.type }}'
         {% endif %}
+        </div>
     </li>
 {% endmacro %}
 
