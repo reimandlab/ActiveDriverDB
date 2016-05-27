@@ -137,7 +137,7 @@ var Tracks = (function ()
                 var controls = box.find('.controls')
                 for(var j = 0; j < controls.length; j++)
                 {
-                    $(controls[i]).show()
+                    $(controls[j]).show()
                 }
             }
 		}
