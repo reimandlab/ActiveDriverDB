@@ -30,8 +30,7 @@ class ProteinView(FlaskView):
         + needleplot
         + tracks (seuqence + data tracks)
         """
-        filters_str = request.args.get('filters', '')
-        active_filters = FilterSet.from_string(filters_str)
+        active_filters = FilterSet.from_request(request)
 
         protein = Protein.query.filter_by(name=name).first_or_404()
 

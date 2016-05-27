@@ -1,6 +1,9 @@
 """Implementation of filters to be used with Ajax and URL based queries"""
 import operator
 from copy import deepcopy
+import re
+from collections import defaultdict
+from urllib.parse import unquote
 
 
 class Filters:
@@ -28,7 +31,8 @@ class Filter:
 
     field_separator = ' '
 
-    def __init__(self, property_name, comparator_name, default_value, filter_type, name):
+    def __init__(self, property_name, comparator_name,
+                 default_value, filter_type, name):
         self.name = name
         self.property = property_name
         self.value = default_value
@@ -36,7 +40,9 @@ class Filter:
         self.type = filter_type
 
     def __str__(self):
-        return self.field_separator.join(map(str, [self.property, self.comparator_name, self.value]))
+        return self.field_separator.join(
+            map(str, [self.property, self.comparator_name, self.value])
+        )
 
 
 class ObjectFilter(Filter):
@@ -92,6 +98,7 @@ class ObjectFilter(Filter):
 
     def test(self, obj):
         """Test if a given object (instance) passes criteria of this filter.
+
         If a property does not exists in tested object -1 will be returned,
         to indicate that the filter is not applicable to the passed object.
 
@@ -113,7 +120,7 @@ class FilterSet:
     """Group of filters that can be parsed or testes at once.
 
     An object has to pass tests of all filters to pass the FilterSet
-    test (subsequent filters' tests are always joined with 'and')
+    test (subsequent filters' tests results are always joined with 'and')
     """
 
     filters_separator = ';'
@@ -122,7 +129,65 @@ class FilterSet:
         self.filters = filters
 
     def remove_unused(self):
+        """Removes unused filters from the current FilterSet.
+
+        Unused filters are defined as those with value equal to None.
+        """
         self.filters = list(filter(lambda x: x.value is not None, self.filters))
+
+    @staticmethod
+    def parse_fallback_query(query):
+        """Parse query in fallback format to a dict of dicts."""
+
+        re_value = re.compile(r'filter\[(\w+)\]')
+        re_cmp = re.compile(r'filter\[(\w+)\]\[cmp\]')
+
+        filters = defaultdict(dict)
+
+        for entry in query.split('&'):
+            key, value = entry.split('=')
+
+            match = re_value.fullmatch(key)
+            if match:
+                name = match.group(1)
+                filters[name]['value'] = value
+
+            match = re_cmp.fullmatch(key)
+            if match:
+                name = match.group(1)
+                filters[name]['cmp'] = value
+
+        return filters
+
+    @classmethod
+    def from_request(cls, request):
+        """Create a group of filters basing of Flask's request object.
+
+        For browser that sent request with AJAX it just passes 'filters'
+        argument from request to 'from_string' classmethod. For browsers
+        without JS it parses query in a 'fallback format' that is a long
+        format generated automatically from form, with PHP-like syntax.
+
+        Modern request format:
+            filters=is_ptm eq True;frequency gt 2
+        Fallback format:
+            filter[is_ptm]=True&filter[frequency]=2&filter[frequency][cmp]=gt&fallback=True
+        """
+        if request.args.get('fallback'):
+
+            query = unquote(str(request.query_string, 'utf-8'))
+            filters_dict = cls.parse_fallback_query(query)
+
+            join_fields = Filter.field_separator.join
+            filters_list = [
+                join_fields([name, data.get('cmp', 'eq'), data.get('value')])
+                for name, data in filters_dict.items()
+            ]
+            string = cls.filters_separator.join(filters_list)
+        else:
+            string = request.args.get('filters', '')
+
+        return cls.from_string(string)
 
     @classmethod
     def from_string(cls, filters_string):
@@ -144,6 +209,7 @@ class FilterSet:
         return cls(filters)
 
     def __bool__(self):
+        """If there is nothing to iterate, casting to bool returns False."""
         return bool(self.filters)
 
     def test(self, obj):

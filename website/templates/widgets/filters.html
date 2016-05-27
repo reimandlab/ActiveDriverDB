@@ -16,6 +16,7 @@
             {% endfor %}
         </ul>
     {% endif %}
+    <input type="hidden" name="fallback" value="True">
     <button class="btn btn-default primary" type="submit">Save</button>
   </form>
 {% endmacro %}
@@ -27,11 +28,10 @@
         </span>
 
         {% if filter.type == 'binary' %}
-            <select class="form-control" name="filters">
-                {# TODO: for? #}
-                <option value="{{ filter.property }} eq None">disabled</option>
-                <option value="{{ filter.property }} eq True" {{ 'selected' if filter.value == True }}>only</option>
-                <option value="{{ filter.property }} eq False" {{ 'selected' if filter.value == False }}>without</option>
+            <select class="form-control" name="filter[{{ filter.property }}]">
+                <option value="None">disabled</option>
+                <option value="True" {{ 'selected' if filter.value == True }}>only</option>
+                <option value="False" {{ 'selected' if filter.value == False }}>without</option>
             </select>
         {% else %}
             Unknown filter type: '{{ filter.type }}'
