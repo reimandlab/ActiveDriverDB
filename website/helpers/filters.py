@@ -1,10 +1,25 @@
 """Implementation of filters to be used with Ajax and URL based queries"""
 import operator
+from copy import deepcopy
 
 
 class Filters:
 
-    def __init__(self, active_filters, available_filters):
+    def __init__(self, active_filters, allowed_filters):
+
+        active_filters.remove_unused()
+        available_filters = deepcopy(allowed_filters)
+
+        for passed_filter in active_filters:
+            for allowed_filter in available_filters:
+                if allowed_filter.property == passed_filter.property:
+                    passed_filter.name = allowed_filter.name
+                    passed_filter.type = allowed_filter.type
+                    available_filters.filters.remove(allowed_filter)
+                    break
+            else:
+                raise Exception('Filter {0} not allowed'.format(passed_filter))
+
         self.active = active_filters
         self.available = available_filters
 
@@ -13,21 +28,15 @@ class Filter:
 
     field_separator = ' '
 
-    def __init__(self, property_name, comparator_name, default_value, type, name):
+    def __init__(self, property_name, comparator_name, default_value, filter_type, name):
         self.name = name
         self.property = property_name
         self.value = default_value
         self.comparator_name = comparator_name
-        self.type = type
+        self.type = filter_type
 
     def __str__(self):
         return self.field_separator.join(map(str, [self.property, self.comparator_name, self.value]))
-
-    """
-    @property
-    def type(self):
-        return type(self.value)
-    """
 
 
 class ObjectFilter(Filter):
@@ -45,13 +54,13 @@ class ObjectFilter(Filter):
         'eq': operator.eq,
     }
 
-    def __init__(self, property_name, comparator, value):
+    def __init__(self, property_name, comparator_name, value):
 
-        assert property_name and comparator and value
+        assert property_name and comparator_name and value
 
         self.property = property_name
-        self.comparator_name = comparator
-        self.comparator_func = self.comparators[comparator]
+        self.comparator_name = comparator_name
+        self.comparator_func = self.comparators[comparator_name]
 
         try:
             value = int(value)
@@ -89,7 +98,7 @@ class ObjectFilter(Filter):
         Example: filter(my_filter.test, list_of_model_objects)
         Note that an object without tested property will remain on the list.
         """
-        if self.value == None:
+        if self.value is None:
             # the filter is turned off
             return -1
         try:

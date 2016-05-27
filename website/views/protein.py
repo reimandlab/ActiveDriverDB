@@ -60,22 +60,7 @@ class ProteinView(FlaskView):
             Track('disorder', disorder)
         ]
 
-        from copy import deepcopy
-        available_filters = deepcopy(self.allowed_filters)
-        active_filters.remove_unused()
-
-        for passed_filter in active_filters:
-            for allowed_filter in available_filters:
-                if allowed_filter.property == passed_filter.property:
-                    passed_filter.name = allowed_filter.name
-                    passed_filter.type = allowed_filter.type
-                    available_filters.filters.remove(allowed_filter)
-                    break
-            else:
-                active_filters.filters.remove(passed_filter)
-                raise Exception('Filter {0} not allowed'.format(passed_filter))
-
-        filters = Filters(active_filters, FilterSet(available_filters))
+        filters = Filters(active_filters, self.allowed_filters)
 
         return template('protein.html', protein=protein, tracks=tracks, filters=filters)
 
