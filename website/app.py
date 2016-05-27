@@ -22,16 +22,12 @@ js_search = Bundle(
     output='search.min.js'
 )
 
-js_needleplot = Bundle(
+js_protein_view = Bundle(
     'needleplot.js',
-    filters='rjsmin',
-    output='needleplot.min.js'
-)
-
-js_tracks = Bundle(
+    'filters.js',
     'tracks.js',
     filters='rjsmin',
-    output='tracks.min.js'
+    output='proteinView.min.js'
 )
 
 css_common = Bundle(
@@ -41,8 +37,7 @@ css_common = Bundle(
 )
 
 assets.register('js_search', js_search)
-assets.register('js_needleplot', js_needleplot)
-assets.register('js_tracks', js_tracks)
+assets.register('js_protein_view', js_protein_view)
 assets.register('css_common', css_common)
 
 
