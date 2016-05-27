@@ -54,8 +54,8 @@ var SearchBar = (function ()
 						error: function() {
 							callback()
 						},
-						success: function(rawRsult) {
-							var result = JSON.parse(rawRsult)
+						success: function(rawResult) {
+							var result = JSON.parse(rawResult)
 							callback(result)
 						}
 					})
