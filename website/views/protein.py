@@ -35,22 +35,7 @@ class ProteinView(FlaskView):
 
         protein = Protein.query.filter_by(name=name).first_or_404()
 
-        disorder_regions = []
-        inside_region = False
-
-        for i in range(len(protein.disorder_map)):
-            residue = int(protein.disorder_map[i])
-            if inside_region:
-                if not residue:
-                    inside_region = False
-                    disorder_regions[-1][1] = i - disorder_regions[-1][0]
-            else:
-                if residue:
-                    disorder_regions += [[i, 1]]
-                    inside_region = True
-
-        disorder = [TrackElement(*region) for region in disorder_regions]
-
+        disorder = [TrackElement(*region) for region in protein.disorder_regions]
         mutations = filter(active_filters.test, protein.mutations)
 
         tracks = [

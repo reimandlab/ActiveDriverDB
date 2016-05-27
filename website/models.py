@@ -36,6 +36,28 @@ class Protein(db.Model):
                 mutations_grouped[key] = [mutation]
         return mutations_grouped
 
+    @property
+    def disorder_regions(self):
+        """Transform binary disorder data into list of spans.
+
+        Each span is represented by a tuple: (start, length)"""
+
+        disorder_regions = []
+        inside_region = False
+
+        for i in range(len(self.disorder_map)):
+            residue = int(self.disorder_map[i])
+            if inside_region:
+                if not residue:
+                    inside_region = False
+                    disorder_regions[-1][1] = i - disorder_regions[-1][0]
+            else:
+                if residue:
+                    disorder_regions += [[i, 1]]
+                    inside_region = True
+
+        return disorder_regions
+
 
 class Site(db.Model):
     __tablename__ = 'site'
