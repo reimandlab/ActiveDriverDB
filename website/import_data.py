@@ -1,5 +1,6 @@
 from app import db
-from models import Protein, Mutation, Site
+from models import Protein, Cancer, Mutation, Site
+
 
 def import_data():
 
@@ -14,9 +15,9 @@ def import_data():
                 assert name not in proteins
                 protein = Protein(name)
                 proteins[name] = protein
-                db.session.add(protein)
             else:
                 proteins[name].sequence += line.rstrip()
+    db.session.add_all(proteins.values())
     print('Sequences loaded')
     db.session.commit()
 
@@ -40,13 +41,35 @@ def import_data():
     print('Disorder data loaded')
     db.session.commit()
 
+    cancers = {}
+    with open('data/cancer_types.txt', 'r') as f:
+        for line in f:
+            line = line.rstrip()
+            code, name, color = line.split('\t')
+            assert code not in cancers
+            cancer = Cancer(code, name)
+            cancers[code] = Cancer(code, name)
+    db.session.add_all(cancers.values())
+
+    print('Cancers loaded')
+
     with open('data/ad_muts.tsv', 'r') as f:
         header = f.readline().split('\t')
         for line in f:
-            line = line.rstrip()
-            gene, cancer_type, sample_id, position, wt_residue, mut_residue = line.split('\t')
-            mutation = Mutation(proteins[gene].id, cancer_type, sample_id, position, wt_residue, mut_residue)
+            line = line.rstrip().split('\t')
+            gene, _, sample_data, position, wt_residue, mut_residue = line
+            _, _, cancer_code, sample_id, _, _ = sample_data.split(' ')
+
+            mutation = Mutation(
+                proteins[gene].id,
+                cancers[cancer_code].id,
+                sample_id,
+                position,
+                wt_residue,
+                mut_residue
+            )
             proteins[gene].mutations.append(mutation)
+
     print('Mutations loaded')
     db.session.commit()
 

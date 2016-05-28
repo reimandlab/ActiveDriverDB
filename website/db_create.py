@@ -1,8 +1,14 @@
+""""
+In case of exception:
+    InvalidRequestError: Table '(some name)' is
+    already defined for this MetaData instance
+just comment out part of app.py where import of views (and what comes
+along - models) occurs - it has to be the very end of the file.
+"""
 from app import db
 from import_data import import_data
 
 print('Removing relational database...')
-# http://jrheard.tumblr.com/post/12759432733/dropping-all-tables-on-postgres-using
 db.reflect()
 db.drop_all()
 print('Removing relational database completed.')
@@ -16,4 +22,3 @@ import_data()
 print('Importing completed')
 
 print('Done, databases reset completed.')
-

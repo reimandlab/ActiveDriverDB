@@ -29,7 +29,10 @@ class Protein(db.Model):
         mutations_grouped = {}
         for mutation in self.mutations:
             # for now, I am grouping just by position and cancer
-            key = (mutation.position, mutation.cancer_type)
+
+            key = (mutation.position,
+                   mutation.mut_residue,
+                   Cancer.query.get(mutation.cancer_type).name)
             try:
                 mutations_grouped[key] += [mutation]
             except KeyError:
@@ -76,6 +79,17 @@ class Site(db.Model):
         self.pmid = pmid
 
 
+class Cancer(db.Model):
+    __tablename__ = 'cancer'
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(16))
+    name = db.Column(db.Text)
+
+    def __init__(self, code, name):
+        self.code = code
+        self.name = name
+
+
 class Mutation(db.Model):
     __tablename__ = 'mutation'
     id = db.Column(db.Integer, primary_key=True)
@@ -83,12 +97,12 @@ class Mutation(db.Model):
     position = db.Column(db.Integer)
     wt_residue = db.Column(db.String(1))
     mut_residue = db.Column(db.String(1))
-    cancer_type = db.Column(db.String(32))
+    cancer_type = db.Column(db.Integer, db.ForeignKey('cancer.id'))
     sample_id = db.Column(db.String(64))
 
-    def __init__(self, gene_id, cancer_type, sample_id, position, wt_residue, mut_residue):
+    def __init__(self, gene_id, cancer, sample_id, position, wt_residue, mut_residue):
         self.gene_id = gene_id
-        self.cancer_type = cancer_type
+        self.cancer_type = cancer
         self.sample_id = sample_id
         self.position = position
         self.wt_residue = wt_residue

@@ -61,7 +61,7 @@ class ProteinView(FlaskView):
             mutations = list(filter(filters.test, mutations))
 
             if len(mutations):
-                position, cancer_type = key
+                position, mut_residue, cancer_type = key
                 needle = {
                     'coord': str(position),
                     'value': len(mutations),
