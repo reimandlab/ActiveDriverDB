@@ -55,7 +55,6 @@ class SequenceTrack(Track):
 
         self.protein = protein
         self.length = protein.length
-        # mutatated_residues = [TrackElement(mutation.position, 1) for mutation in protein.mutations]
 
         subtracks = self.phosporylation_subtracks()
 
@@ -66,29 +65,41 @@ class SequenceTrack(Track):
         # store in descending order or use z-index
         spans = (7, 3)
         phos_span = {}
-        for size in spans:
-            phos_span[size] = []
 
-        for size in spans:
-            shift = (size - 1) / 2
-            for site in self.protein.sites:
-                phos_span[size].append(TrackElement(site.position - shift, size))
+        for shift in spans:
+            size = 2 * shift + 1
 
-        for size in phos_span.keys():
-            self.trim_ends(phos_span[size])
+            coords = [
+                [site.position - shift, size]
+                for site in self.protein.sites
+            ]
+            self.trim_ends(coords)
+
+            phos_span[shift] = [
+                TrackElement(start, length)
+                for start, length in coords
+            ]
 
         return [
-            Track('phos_span_' + str(size), phos_span[size], inline=True)
-            for size in spans
+            Track('phos_span_' + str(shift), phos_span[shift], inline=True)
+            for shift in spans
         ]
 
     def trim_ends(self, elements):
-        if not elements:
-            return
-        # do not exceed 0 on the beginning or stop codon at the end
-        elements[0].start = max(elements[0].start, 0)
-        last_start = elements[-1].start
-        elements[-1].length = min(elements[-1].length + last_start, self.length) - last_start
+        """Trim coordinates defining TrackElements to fit into the track"""
+        # Meaning of indices: [0] = start, [1] = length
+
+        # do not exceed 0 on the beginning
+        begin_pos = 0
+        while elements[begin_pos][0] < 0:
+            elements[begin_pos][0] = 0
+            begin_pos += 1
+
+        # and do not exceed sequence length at the end
+        final_pos = -1
+        while elements[final_pos][1] > self.length - elements[final_pos][0]:
+            elements[final_pos][1] = self.length - elements[final_pos][0]
+            final_pos -= 1
 
 
 class MutationsTrack(Track):
