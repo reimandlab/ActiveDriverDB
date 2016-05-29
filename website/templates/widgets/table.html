@@ -18,7 +18,7 @@
             <td>{{ mutation.mut_residue }}</td>
             <td>{{ count }}</td>
             <td>{{ 'PTM' if mutation.is_ptm else 'non-PTM' }}</td>
-            <td>{{ mutation.impact_on_ptm }}</td>
+            <td>{{ mutation.impact_on_ptm or '' }}</td>
             <td>{{ mutation.cnt_ptm_affected }}</td>
         </tr>
 		{% endfor %}
