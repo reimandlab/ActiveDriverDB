@@ -1,6 +1,9 @@
 import json
-from flask import request, flash, url_for, redirect, abort, render_template as template
-from flask_classful import FlaskView, route
+from flask import request
+from flask import render_template as template
+# from flask import flash, url_for, redirect, abort
+from flask_classful import FlaskView
+# from flask_classful import route
 from website.models import Protein
 from website.views import SearchView
 from website.helpers.tracks import Track
@@ -11,6 +14,10 @@ from website.helpers.tracks import MutationsTrack
 from website.helpers.filters import FilterSet
 from website.helpers.filters import Filters
 from website.helpers.filters import Filter
+from website.models import Mutation
+from website.models import db
+from sqlalchemy import func
+from sqlalchemy.sql import label
 
 
 class ProteinView(FlaskView):
@@ -34,7 +41,9 @@ class ProteinView(FlaskView):
 
         protein = Protein.query.filter_by(name=name).first_or_404()
 
-        disorder = [TrackElement(*region) for region in protein.disorder_regions]
+        disorder = [
+            TrackElement(*region) for region in protein.disorder_regions
+        ]
         mutations = filter(active_filters.test, protein.mutations)
 
         tracks = [
@@ -46,7 +55,14 @@ class ProteinView(FlaskView):
 
         filters = Filters(active_filters, self.allowed_filters)
 
-        return template('protein.html', protein=protein, tracks=tracks, filters=filters)
+        mutations = db.session.query(
+            Mutation,
+            label('count', func.count(Mutation.position))).\
+            join(Protein).filter_by(id=protein.id).\
+            group_by(Mutation.position, Mutation.mut_residue)
+
+        return template('protein.html', protein=protein, tracks=tracks,
+                        filters=filters, mutations_with_cnt=mutations)
 
     def mutations(self, name):
         """List of mutations suitable for needleplot library"""

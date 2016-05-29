@@ -1,4 +1,7 @@
 from app import db
+from sqlalchemy import func
+from sqlalchemy.sql import exists
+from sqlalchemy import and_
 
 
 class Protein(db.Model):
@@ -8,7 +11,7 @@ class Protein(db.Model):
     refseq = db.Column(db.String(32), unique=True)
     sequence = db.Column(db.Text)
     disorder_map = db.Column(db.Text)
-    sites = db.relationship('Site')
+    sites = db.relationship('Site', order_by='Site.position')
     mutations = db.relationship('Mutation')
 
     def __init__(self, name):
@@ -100,7 +103,8 @@ class Mutation(db.Model):
     cancer_type = db.Column(db.Integer, db.ForeignKey('cancer.id'))
     sample_id = db.Column(db.String(64))
 
-    def __init__(self, gene_id, cancer, sample_id, position, wt_residue, mut_residue):
+    def __init__(self, gene_id, cancer, sample_id,
+                 position, wt_residue, mut_residue):
         self.gene_id = gene_id
         self.cancer_type = cancer
         self.sample_id = sample_id
@@ -108,21 +112,99 @@ class Mutation(db.Model):
         self.wt_residue = wt_residue
         self.mut_residue = mut_residue
 
-    # Note: following properties could be a part of the db tables in the future
+    # Note: following properties could become a columns of the database tables
+    # (in the future) to avoid repetitive calculation of constant variables.
+    # Nonetheless making decision about each of these should take into account,
+    # how often columns and other models referenced in property will be updated
+    # (so we can avoid unnecessary whole database rebuilding).
+
     @property
     def is_ptm(self):
-        sites = Protein.query.get(self.gene_id).sites
-        site_positions = [int(s.position) for s in sites]
-        return int(self.position) in site_positions
+        """Mutation is PTM related if it may affect PTM site.
+
+        Mutations flanking PTM site in a distance up to 7 residues from
+        a site (called here 'distal') will be included too.
+        """
+        return self.is_ptm_distal
 
     @property
     def is_ptm_direct(self):
-        pass
+        """True if the mutation is on the same position as some PTM site."""
+        return db.session.query(
+            exists().where(and_(Site.gene_id == self.gene_id,
+                                Site.position == self.position))
+            ).scalar()
 
     @property
     def is_ptm_proximal(self):
-        pass
+        """Check if the mutation is in close proximity of some PTM site.
+
+        Proximity is defined here as [pos - 3, pos + 3] span, where
+        pos is the position of a PTM site. Algoritm is based on bisection
+        and an assumption, that sites are sorted by position in the database.
+        """
+        sites = Protein.query.get(self.gene_id).sites
+        pos = self.position
+        a = 0
+        b = len(sites)
+        while a != b:
+            p = (b - a) // 2 + a
+            site_pos = sites[p].position
+            if pos - 3 >= site_pos and site_pos <= pos + 3:
+                return True
+            if pos > site_pos:
+                a = p + 1
+            else:
+                b = p
+        return False
 
     @property
     def is_ptm_distal(self):
-        pass
+        """Check if the mutation is distal flanking mutation of some PTM site.
+
+        Distal flank is defined here as [pos - 7, pos + 7] span, where
+        pos is the position of a PTM site. Algoritm is based on bisection
+        and an assumption, that sites are sorted by position in the database.
+        """
+        sites = Protein.query.get(self.gene_id).sites
+        pos = self.position
+        a = 0
+        b = len(sites)
+        while a != b:
+            p = (b - a) // 2 + a
+            site_pos = sites[p].position
+            if pos - 7 >= site_pos and site_pos <= pos + 7:
+                return True
+            if pos > site_pos:
+                a = p + 1
+            else:
+                b = p
+        return False
+
+    @property
+    def cnt_ptm_affected(self):
+        """How many PTM sites might be affected by this mutation,
+
+        when taking into account -7 to +7 spans of each PTM site.
+        """
+        pos = self.position
+        count = db.session.query(func.count(Site.id)).\
+            filter_by(gene_id=self.gene_id).\
+            filter(Site.position.between(pos - 7, pos + 7)).scalar()
+
+        return count
+
+    @property
+    def impact_on_ptm(self):
+        """How intense might be impact of the mutation on the closest PTM site.
+
+        Possible values are: 'direct', 'proximal', or 'diastal'. Those
+        properties are based on the distance measurement to closest PTM site
+        """
+        if self.is_ptm_direct:
+            return 'direct'
+        if self.is_ptm_proximal:
+            return 'proximal'
+        if self.is_ptm_distal:
+            return 'distal'
+        return None

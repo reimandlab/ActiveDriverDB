@@ -1,0 +1,26 @@
+<table data-toggle="table">
+    <thead>
+        <tr>
+            <th data-sortable=True>Position</th>
+            <th>Reference</th>
+            <th>Mutated</th>
+            <th># observed in data</th>
+            <th>Mutation type</th>
+            <th>Impact on PTM</th>
+            <th># PTMs affected</th>
+        </tr>
+    </thead>
+    <tbody>
+		{% for mutation, count in mutations_with_cnt %}
+        <tr>
+            <td>{{ mutation.position }}</td>
+            <td>{{ mutation.wt_residue }}</td>
+            <td>{{ mutation.mut_residue }}</td>
+            <td>{{ count }}</td>
+            <td>{{ 'PTM' if mutation.is_ptm else 'non-PTM' }}</td>
+            <td>{{ mutation.impact_on_ptm }}</td>
+            <td>{{ mutation.cnt_ptm_affected }}</td>
+        </tr>
+		{% endfor %}
+    </tbody>
+</table>

@@ -9,6 +9,9 @@
   <script src="http://workmen.biojs.net/github/bbglab/muts-needle-plot/master/src/js/dependencies/underscore.js"></script>
   <script src="http://workmen.biojs.net/github/bbglab/muts-needle-plot/master/src/js/d3-svg-legend.js"></script>
   <script src="/static/thirdparty/jquery-1.12.0.min.js"></script>
+
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
 {% endblock %}
 
 
@@ -41,6 +44,14 @@ RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ pr
   <div class="panel-body">
     {% with tracks=tracks %}
       {% include 'widgets/tracks.html' %}
+    {% endwith %}
+ </div>
+</div>
+
+<div class="panel panel-default">
+  <div class="panel-body">
+    {% with mutations=mutations %}
+      {% include 'widgets/table.html' %}
     {% endwith %}
  </div>
 </div>
