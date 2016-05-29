@@ -108,10 +108,11 @@ class MutationsTrack(Track):
 
         tracks = []
         for mutations in self.group_mutations(raw_mutations):
-            tracks.append([])
-            for mutation in mutations.values():
-                element = TrackElement(mutation.position, 1, mutation.mut_residue)
-                tracks[-1].append(element)
+            track = [
+                TrackElement(mutation.position - 1, 1, mutation.mut_residue)
+                for mutation in mutations.values()
+            ]
+            tracks.append(track)
 
         subtracks = [Track('', muts) for muts in tracks[1:]]
 
