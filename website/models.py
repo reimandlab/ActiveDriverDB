@@ -139,47 +139,33 @@ class Mutation(db.Model):
     def is_ptm_proximal(self):
         """Check if the mutation is in close proximity of some PTM site.
 
-        Proximity is defined here as [pos - 3, pos + 3] span, where
-        pos is the position of a PTM site. Algoritm is based on bisection
-        and an assumption, that sites are sorted by position in the database.
+        Proximity is defined here as [pos - 3, pos + 3] span,
+        where pos is the position of a PTM site.
         """
-        sites = Protein.query.get(self.gene_id).sites
-        pos = self.position
-        a = 0
-        b = len(sites)
-        while a != b:
-            p = (b - a) // 2 + a
-            site_pos = sites[p].position
-            if pos - 3 >= site_pos and site_pos <= pos + 3:
-                return True
-            if pos > site_pos:
-                a = p + 1
-            else:
-                b = p
-        return False
+        position = self.position
+        q = exists().where(
+            and_(
+                Site.gene_id == self.gene_id,
+                Site.position.between(position - 4, position + 4)
+                )
+        )
+        return db.session.query(q).scalar()
 
     @property
     def is_ptm_distal(self):
         """Check if the mutation is distal flanking mutation of some PTM site.
 
-        Distal flank is defined here as [pos - 7, pos + 7] span, where
-        pos is the position of a PTM site. Algoritm is based on bisection
-        and an assumption, that sites are sorted by position in the database.
+        Distal flank is defined here as [pos - 7, pos + 7] span,
+        where pos is the position of a PTM site.
         """
-        sites = Protein.query.get(self.gene_id).sites
-        pos = self.position
-        a = 0
-        b = len(sites)
-        while a != b:
-            p = (b - a) // 2 + a
-            site_pos = sites[p].position
-            if pos - 7 >= site_pos and site_pos <= pos + 7:
-                return True
-            if pos > site_pos:
-                a = p + 1
-            else:
-                b = p
-        return False
+        position = self.position
+        q = exists().where(
+            and_(
+                Site.gene_id == self.gene_id,
+                Site.position.between(position - 8, position + 8)
+                )
+        )
+        return db.session.query(q).scalar()
 
     @property
     def cnt_ptm_affected(self):
@@ -190,7 +176,7 @@ class Mutation(db.Model):
         pos = self.position
         count = db.session.query(func.count(Site.id)).\
             filter_by(gene_id=self.gene_id).\
-            filter(Site.position.between(pos - 7, pos + 7)).scalar()
+            filter(Site.position.between(pos - 8, pos + 8)).scalar()
 
         return count
 
