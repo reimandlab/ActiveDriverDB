@@ -1,5 +1,6 @@
 from app import db
 from models import Protein, Cancer, Mutation, Site
+from collections import defaultdict
 
 
 def import_data():
@@ -47,12 +48,13 @@ def import_data():
             line = line.rstrip()
             code, name, color = line.split('\t')
             assert code not in cancers
-            cancer = Cancer(code, name)
             cancers[code] = Cancer(code, name)
     db.session.add_all(cancers.values())
+    db.session.commit()
 
     print('Cancers loaded')
 
+    mutations = defaultdict(list)
     with open('data/ad_muts.tsv', 'r') as f:
         header = f.readline().split('\t')
         for line in f:
@@ -68,7 +70,11 @@ def import_data():
                 wt_residue,
                 mut_residue
             )
-            proteins[gene].mutations.append(mutation)
+            mutations[gene].append(mutation)
+
+        for gene, gene_mutations in mutations.items():
+            proteins[gene].mutations = gene_mutations
+            db.session.add_all(gene_mutations)
 
     print('Mutations loaded')
     db.session.commit()
