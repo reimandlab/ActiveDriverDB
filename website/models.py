@@ -1,7 +1,9 @@
 from app import db
+from sqlalchemy import and_
 from sqlalchemy import func
 from sqlalchemy.sql import exists
-from sqlalchemy import and_
+from sqlalchemy.ext.hybrid import hybrid_property
+from werkzeug.utils import cached_property
 
 
 class Protein(db.Model):
@@ -118,7 +120,7 @@ class Mutation(db.Model):
     # how often columns and other models referenced in property will be updated
     # (so we can avoid unnecessary whole database rebuilding).
 
-    @property
+    @hybrid_property
     def is_ptm(self):
         """Mutation is PTM related if it may affect PTM site.
 
@@ -127,7 +129,7 @@ class Mutation(db.Model):
         """
         return self.is_ptm_distal
 
-    @property
+    @cached_property
     def is_ptm_direct(self):
         """True if the mutation is on the same position as some PTM site."""
         return db.session.query(
@@ -135,7 +137,7 @@ class Mutation(db.Model):
                                 Site.position == self.position))
             ).scalar()
 
-    @property
+    @cached_property
     def is_ptm_proximal(self):
         """Check if the mutation is in close proximity of some PTM site.
 
@@ -151,7 +153,7 @@ class Mutation(db.Model):
         )
         return db.session.query(q).scalar()
 
-    @property
+    @cached_property
     def is_ptm_distal(self):
         """Check if the mutation is distal flanking mutation of some PTM site.
 
@@ -167,7 +169,7 @@ class Mutation(db.Model):
         )
         return db.session.query(q).scalar()
 
-    @property
+    @cached_property
     def cnt_ptm_affected(self):
         """How many PTM sites might be affected by this mutation,
 
@@ -180,7 +182,7 @@ class Mutation(db.Model):
 
         return count
 
-    @property
+    @hybrid_property
     def impact_on_ptm(self):
         """How intense might be impact of the mutation on the closest PTM site.
 
