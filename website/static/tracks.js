@@ -66,7 +66,8 @@ var Tracks = (function ()
         var tracks = $(this).closest('.tracks-box')
         var area = tracks.find('.scroll-area')
         var sequence = tracks.find('.sequence')
-        var pos = $(input).val()
+        // - 1: sequence is 1 based but position is 0 based
+        var pos = $(input).val() - 1
 
         var charSize = getCharSize(sequence)
         area.animate({scrollLeft: pos * charSize }, '300', 'swing')
