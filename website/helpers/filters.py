@@ -219,6 +219,17 @@ class FilterSet:
                 return False
         return True
 
+    def filtered(self, iterable, key=None):
+        """Return an iterator over filtered list or other passed iterable obj.
+
+        Key is an item getter to show which item from an element in
+        iterable should be taken as a value during filtering.
+        """
+        if not key:
+            key = lambda x: x
+
+        return filter(lambda elem: self.test(key(elem)), iterable)
+
     def filter_query(self, query, model):
         """NOT IN USE: Returns modified SQLAlchemy query with filters appended
 

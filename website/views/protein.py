@@ -1,4 +1,5 @@
 import json
+from operator import itemgetter
 from flask import request
 from flask import render_template as template
 # from flask import flash, url_for, redirect, abort
@@ -44,7 +45,7 @@ class ProteinView(FlaskView):
         disorder = [
             TrackElement(*region) for region in protein.disorder_regions
         ]
-        mutations = filter(active_filters.test, protein.mutations)
+        mutations = active_filters.filtered(protein.mutations)
 
         tracks = [
             PositionTrack(protein.length, 25),
@@ -61,10 +62,9 @@ class ProteinView(FlaskView):
             join(Protein).filter_by(id=protein.id).\
             group_by(Mutation.position, Mutation.mut_residue)
 
-        mutations = filter(
-            lambda mut_cnt: active_filters.test(mut_cnt[0]),
-            mutations
-        )
+        # Key is set to first element, because in the query above we are
+        # retriving (mutation, count) tuples for every row.
+        mutations = active_filters.filtered(mutations, key=itemgetter(0))
 
         return template('protein.html', protein=protein, tracks=tracks,
                         filters=filters, mutations_with_cnt=mutations)
