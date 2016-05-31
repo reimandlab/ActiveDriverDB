@@ -1,6 +1,6 @@
-import json
 from operator import itemgetter
 from flask import request
+from flask import jsonify
 from flask import render_template as template
 # from flask import flash, url_for, redirect, abort
 from flask_classful import FlaskView
@@ -90,7 +90,7 @@ class ProteinView(FlaskView):
                 }
                 response += [needle]
 
-        return json.dumps(response)
+        return jsonify(response)
 
     def sites(self, name):
         """List of sites suitable for needleplot library"""
@@ -104,4 +104,4 @@ class ProteinView(FlaskView):
             } for site in protein.sites
         ]
 
-        return json.dumps(response)
+        return jsonify(response)
