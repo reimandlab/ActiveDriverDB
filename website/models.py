@@ -187,8 +187,11 @@ class Mutation(db.Model):
             return 0
 
         def cond():
-            site_pos = sites[p].position
-            return site_pos - 7 <= pos and pos <= site_pos + 7
+            try:
+                site_pos = sites[p].position
+                return site_pos - 7 <= pos and pos <= site_pos + 7
+            except IndexError:
+                return False
 
         # go to right from found site, check if there is more overlappig sites
         p = hit + 1
