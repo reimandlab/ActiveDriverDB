@@ -1,14 +1,15 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_assets import Environment, Bundle
+from flask_assets import Environment
+from flask_assets import Bundle
+from database import db
 
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
 
-
-db = SQLAlchemy(app)
-
+db.init_app(app)
+db.app = app
+db.create_all()
 
 """
 Define assets

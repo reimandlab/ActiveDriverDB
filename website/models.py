@@ -1,4 +1,4 @@
-from app import db
+from database import db
 from sqlalchemy import and_
 from sqlalchemy import func
 from sqlalchemy.sql import exists
