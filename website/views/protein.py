@@ -61,6 +61,11 @@ class ProteinView(FlaskView):
             join(Protein).filter_by(id=protein.id).\
             group_by(Mutation.position, Mutation.mut_residue)
 
+        mutations = filter(
+            lambda mut_cnt: active_filters.test(mut_cnt[0]),
+            mutations
+        )
+
         return template('protein.html', protein=protein, tracks=tracks,
                         filters=filters, mutations_with_cnt=mutations)
 
