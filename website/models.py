@@ -3,18 +3,22 @@ from sqlalchemy import and_
 from sqlalchemy import func
 from sqlalchemy.sql import exists
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.hybrid import hybrid_method
 from werkzeug.utils import cached_property
 
 
 class Protein(db.Model):
     __tablename__ = 'protein'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), unique=True)
+    name = db.Column(db.String(80), unique=True, index=True)
     refseq = db.Column(db.String(32), unique=True)
     sequence = db.Column(db.Text)
     disorder_map = db.Column(db.Text)
     sites = db.relationship('Site', order_by='Site.position')
-    mutations = db.relationship('Mutation')
+    mutations = db.relationship(
+        'Mutation',
+        order_by='Mutation.position',
+        lazy='dynamic')
 
     def __init__(self, name):
         self.name = name
@@ -24,11 +28,11 @@ class Protein(db.Model):
     def __repr__(self):
         return '<Protein %r>' % self.name
 
-    @property
+    @cached_property
     def length(self):
         return len(self.sequence)
 
-    @property
+    @cached_property
     def mutations_grouped(self):
 
         mutations_grouped = {}
@@ -44,7 +48,7 @@ class Protein(db.Model):
                 mutations_grouped[key] = [mutation]
         return mutations_grouped
 
-    @property
+    @cached_property
     def disorder_regions(self):
         """Transform binary disorder data into list of spans.
 
@@ -71,7 +75,7 @@ class Site(db.Model):
     __tablename__ = 'site'
     id = db.Column(db.Integer, primary_key=True)
     gene_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
-    position = db.Column(db.Integer)
+    position = db.Column(db.Integer, index=True)
     residue = db.Column(db.String(1))
     kinase = db.Column(db.Text)
     pmid = db.Column(db.String(32))
@@ -129,52 +133,78 @@ class Mutation(db.Model):
         """
         return self.is_ptm_distal
 
-    @cached_property
+    @hybrid_property
     def is_ptm_direct(self):
         """True if the mutation is on the same position as some PTM site."""
-        return db.session.query(
-            exists().where(and_(Site.gene_id == self.gene_id,
-                                Site.position == self.position))
-            ).scalar()
+        return self.is_close_to_some_site(0, 0)
 
-    @cached_property
+    @hybrid_property
     def is_ptm_proximal(self):
         """Check if the mutation is in close proximity of some PTM site.
 
         Proximity is defined here as [pos - 3, pos + 3] span,
         where pos is the position of a PTM site.
         """
-        position = self.position
-        q = exists().where(
-            and_(
-                Site.gene_id == self.gene_id,
-                Site.position.between(position - 4, position + 4)
-                )
-        )
-        return db.session.query(q).scalar()
+        return self.is_close_to_some_site(3, 3)
 
-    @cached_property
+    @hybrid_property
     def is_ptm_distal(self):
         """Check if the mutation is distal flanking mutation of some PTM site.
 
         Distal flank is defined here as [pos - 7, pos + 7] span,
         where pos is the position of a PTM site.
         """
-        position = self.position
-        q = exists().where(
-            and_(
-                Site.gene_id == self.gene_id,
-                Site.position.between(position - 8, position + 8)
-                )
-        )
-        return db.session.query(q).scalar()
+        return self.is_close_to_some_site(7, 7)
 
-    @cached_property
+    @hybrid_property
     def cnt_ptm_affected(self):
         """How many PTM sites might be affected by this mutation,
 
         when taking into account -7 to +7 spans of each PTM site.
         """
+        sites = Protein.query.get(self.gene_id).sites
+        pos = self.position
+        a = 0
+        b = len(sites)
+
+        cnt_affected = 0
+        hit = None
+
+        while a != b:
+            p = (b - a) // 2 + a
+            site_pos = sites[p].position
+            if site_pos - 7 <= pos and pos <= site_pos + 7:
+                hit = p
+                cnt_affected += 1
+                break
+            if pos > site_pos:
+                a = p + 1
+            else:
+                b = p
+        else:
+            return 0
+
+        def cond():
+            site_pos = sites[p].position
+            return site_pos - 7 <= pos and pos <= site_pos + 7
+
+        # go to right from found site, check if there is more overlappig sites
+        p = hit + 1
+        while cond():
+            cnt_affected += 1
+            p += 1
+
+        # and then go to the left
+        p = hit - 1
+        while cond():
+            cnt_affected += 1
+            p -= 1
+
+        return cnt_affected
+
+    @cnt_ptm_affected.expression
+    def cnt_ptm_affected(self):
+        """SQL expression for cnt_ptm_affected"""
         pos = self.position
         count = db.session.query(func.count(Site.id)).\
             filter_by(gene_id=self.gene_id).\
@@ -196,3 +226,41 @@ class Mutation(db.Model):
         if self.is_ptm_distal:
             return 'distal'
         return None
+
+    @hybrid_method
+    def is_close_to_some_site(self, left, right):
+        """Check if the mutation lies close to any of sites.
+
+        Arguments define span around each site to be checked:
+        (site_pos - left, site_pos + right)
+        site_pos is the position of a site
+
+        Algoritm is based on bisection and an assumption,
+        that sites are sorted by position in the database.
+        """
+        sites = Protein.query.get(self.gene_id).sites
+        pos = self.position
+        a = 0
+        b = len(sites)
+        while a != b:
+            p = (b - a) // 2 + a
+            site_pos = sites[p].position
+            if site_pos - left <= pos and pos <= site_pos + right:
+                return True
+            if pos > site_pos:
+                a = p + 1
+            else:
+                b = p
+        return False
+
+    @is_close_to_some_site.expression
+    def is_close_to_some_site(self, left, right):
+        """SQL expression for is_close_to_some_site"""
+        position = self.position
+        q = exists().where(
+            and_(
+                Site.gene_id == self.gene_id,
+                Site.position.between(position - left, position + right)
+                )
+        )
+        return db.session.query(q).scalar()
