@@ -87,6 +87,8 @@ class SequenceTrack(Track):
 
     def trim_ends(self, elements):
         """Trim coordinates defining TrackElements to fit into the track"""
+        if not elements:
+            return
         # Meaning of indices: [0] = start, [1] = length
 
         # do not exceed 0 on the beginning

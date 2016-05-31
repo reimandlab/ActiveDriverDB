@@ -11,7 +11,7 @@
         </tr>
     </thead>
     <tbody>
-		{% for mutation, count in mutations_with_cnt %}
+		{% for mutation, count in mutations_with_cnt or '' %}
         <tr>
             <td>{{ mutation.position }}</td>
             <td>{{ mutation.wt_residue }}</td>
