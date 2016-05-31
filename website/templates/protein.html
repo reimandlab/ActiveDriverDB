@@ -48,13 +48,9 @@ RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ pr
  </div>
 </div>
 
-<div class="panel panel-default">
-  <div class="panel-body">
-    {% with mutations=mutations %}
-      {% include 'widgets/table.html' %}
-    {% endwith %}
- </div>
-</div>
+{% with mutations=mutations %}
+  {% include 'widgets/table.html' %}
+{% endwith %}
 
 {% endblock %}
 
