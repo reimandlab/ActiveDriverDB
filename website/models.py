@@ -89,6 +89,12 @@ class Site(db.Model):
         self.kinase = kinase
         self.pmid = pmid
 
+    def __repr__(self):
+        return '<Site of protein: {0}, at pos: {1}>'.format(
+            Protein.query.get(self.gene_id).name,
+            self.position
+        )
+
 
 class Cancer(db.Model):
     __tablename__ = 'cancer'
@@ -99,6 +105,12 @@ class Cancer(db.Model):
     def __init__(self, code, name):
         self.code = code
         self.name = name
+
+    def __repr__(self):
+        return '<Cancer with code: {0}, named: {1}>'.format(
+            self.code,
+            self.name
+        )
 
 
 class Mutation(db.Model):
