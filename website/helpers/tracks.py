@@ -109,7 +109,7 @@ class MutationsTrack(Track):
         tracks = []
         for mutations in self.group_mutations(raw_mutations):
             track = [
-                TrackElement(mutation.position - 1, 1, mutation.mut_residue)
+                TrackElement(mutation.position, 1, mutation.mut_residue)
                 for mutation in mutations.values()
             ]
             tracks.append(track)

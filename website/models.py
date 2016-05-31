@@ -52,7 +52,9 @@ class Protein(db.Model):
     def disorder_regions(self):
         """Transform binary disorder data into list of spans.
 
-        Each span is represented by a tuple: (start, length)"""
+        Each span is represented by a tuple: (start, length).
+        The coordinates are 1-based.
+        """
 
         disorder_regions = []
         inside_region = False
@@ -65,7 +67,7 @@ class Protein(db.Model):
                     disorder_regions[-1][1] = i - disorder_regions[-1][0]
             else:
                 if residue:
-                    disorder_regions += [[i, 1]]
+                    disorder_regions += [[i + 1, 1]]
                     inside_region = True
 
         return disorder_regions
