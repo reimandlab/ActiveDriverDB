@@ -219,12 +219,43 @@ class FilterSet:
                 return False
         return True
 
+    def filter_query(self, query, model):
+        """NOT IN USE: Returns modified SQLAlchemy query with filters appended
+
+        The function could be used to apply filters on the database side
+        (by construction of appropriate SQL query). Due to troubles with
+        constructing appropriate expressions for hybrid_properties I just
+        left the code untouched here for reference in future.
+        """
+        for condition in self.filters:
+            column = getattr(model, condition.property)
+            attr_name = None
+            for attr_name_template in ['%s', '%s_', '__%s__']:
+                tested_name = attr_name_template % condition.comparator_name
+                if hasattr(column, tested_name):
+                    attr_name = tested_name
+                    break
+            else:
+                raise Exception(
+                    'The column %s has no comparator %s' % (
+                        condition.property,
+                        condition.comparator_name
+                    )
+                )
+
+            filter_expression = getattr(column, attr_name)(condition.value)
+            query = query.filter(filter_expression)
+
+        return query
+
     def __iter__(self):
         """Iteration over FilterSet is an iteration over its filters"""
         return iter(self.filters)
 
     @property
     def url_string(self):
-        """Represntation of filters from the set which can be passed
-        as a query argument (get method) in an URL adress"""
+        """String represntation of filters from the set for use in URL address.
+
+        Produced string is ready to be included as a query argument in URL path
+        """
         return self.filters_separator.join([str(f) for f in self])
