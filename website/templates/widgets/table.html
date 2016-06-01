@@ -1,13 +1,26 @@
-<table data-toggle="table" class="table">
+<div id="toolbar"></div>
+
+<table class="table"
+       data-toolbar="#toolbar"
+       data-toggle="table"
+       data-search="true"
+       data-show-columns="true"
+       data-minimum-count-columns="2"
+       data-show-export="true"
+       >
     <thead>
         <tr>
-            <th data-sortable=True>Position</th>
-            <th data-sortable=True>Reference</th>
-            <th data-sortable=True>Mutated</th>
-            <th data-sortable=True># observed in data</th>
-            <th data-sortable=True>Mutation type</th>
-            <th data-sortable=True>Impact on PTM</th>
-            <th data-sortable=True># PTMs affected</th>
+            <th data-sortable=true>Position</th>
+            <th data-sortable=true>Reference</th>
+            <th data-sortable=true>Mutated</th>
+            <th data-sortable=true
+                data-switchable=true'># observed in data</th>
+            <th data-sortable=true
+                data-switchable=true'>Mutation type</th>
+            <th data-sortable=true
+                data-visible={{ 'false' if filters.active.is_ptm else 'true' }}>Impact on PTM</th>
+            <th data-sortable=true
+                data-visible={{ 'false' if filters.active.is_ptm else 'true' }}># PTMs affected</th>
         </tr>
     </thead>
     <tbody>
