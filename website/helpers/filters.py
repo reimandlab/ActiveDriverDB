@@ -212,6 +212,14 @@ class FilterSet:
         """If there is nothing to iterate, casting to bool returns False."""
         return bool(self.filters)
 
+    def __getattr__(self, k):
+        if k.startswith('__') and k.endswith('__'):
+            return super().__getattr__(k)
+        for f in self.filters:
+            if f.property == k:
+                return f.value
+        raise AttributeError
+
     def test(self, obj):
         """Test if an object (obj) passes tests of all filters from the set."""
         for condition in self.filters:

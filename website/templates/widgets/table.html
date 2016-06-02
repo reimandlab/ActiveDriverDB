@@ -14,13 +14,13 @@
             <th data-sortable=true>Reference</th>
             <th data-sortable=true>Mutated</th>
             <th data-sortable=true
-                data-switchable=true'># observed in data</th>
+                data-switchable=true># observed in data</th>
             <th data-sortable=true
-                data-switchable=true'>Mutation type</th>
+                data-switchable=true>Mutation type</th>
             <th data-sortable=true
-                data-visible={{ 'false' if filters.active.is_ptm else 'true' }}>Impact on PTM</th>
+                data-visible={{ filters.active.is_ptm|lower }}>Impact on PTM</th>
             <th data-sortable=true
-                data-visible={{ 'false' if filters.active.is_ptm else 'true' }}># PTMs affected</th>
+                data-visible={{ filters.active.is_ptm|lower }}># PTMs affected</th>
         </tr>
     </thead>
     <tbody>
