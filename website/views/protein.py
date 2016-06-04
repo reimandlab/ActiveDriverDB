@@ -16,7 +16,7 @@ from website.helpers.filters import FilterSet
 from website.helpers.filters import Filters
 from website.helpers.filters import Filter
 from website.models import Mutation
-from website.models import db
+from website.database import db
 from sqlalchemy import func
 from sqlalchemy.sql import label
 

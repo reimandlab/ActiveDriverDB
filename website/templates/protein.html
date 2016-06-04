@@ -31,11 +31,10 @@
 
 <ol class="breadcrumb">
   <li><a href="/">Home</a></li>
-  <li><a href="/protein">Proteins</a></li>
+  <li><a href="{{ url_for('ProteinView:index') }}">Proteins</a></li>
   <li class="active">{{ protein.name }}</li>
 </ol>
 
-<div id="plot_area"></div>
 <div class="panel panel-default">
     <div class="panel-body">
       <div class="panel-heading">
@@ -47,8 +46,12 @@
  </div>
 </div>
 
-RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ protein.refseq }}</a>
+<div id="plot_area"></div>
 
+<ul>
+    <li>RefSeq: <a href="http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}">{{ protein.refseq }}</a>
+    <li><a href="{{ url_for('NetworkView:show', name=protein.name) }}">Show network</a>
+</ul>
 
 <div class="panel panel-default">
   <div class="panel-body">

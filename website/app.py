@@ -64,9 +64,10 @@ Import viwes
 import sys
 sys.path.insert(0, '..')
 
-from website.views import general, ProteinView, SearchView
+from website.views import general, ProteinView, SearchView, NetworkView
 
 app.register_blueprint(general)
 
 ProteinView.register(app)
+NetworkView.register(app)
 SearchView.register(app)

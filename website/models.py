@@ -1,7 +1,7 @@
-from database import db
+from website.database import db
 from sqlalchemy import and_
 from sqlalchemy import func
-from sqlalchemy.sql import exists
+from sqlalchemy.sql import exists, select
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.hybrid import hybrid_method
 from werkzeug.utils import cached_property
@@ -30,11 +30,12 @@ class Protein(db.Model):
 
     @cached_property
     def length(self):
+        """Length of protein's sequence"""
         return len(self.sequence)
 
     @cached_property
     def mutations_grouped(self):
-
+        """Mutations grouped by cancer type and position in the sequence"""
         mutations_grouped = {}
         for mutation in self.mutations:
             # for now, I am grouping just by position and cancer
@@ -71,6 +72,22 @@ class Protein(db.Model):
                     inside_region = True
 
         return disorder_regions
+
+    @hybrid_property
+    def kinases(self):
+        """Get all kinases associated with this protein"""
+        kinases = set()
+        # first of all we need kinases to be a foreign key to proteins
+        for site in self.sites:
+            kinases.update((site.kinases))
+        return kinases
+
+    @kinases.expression
+    def kinases(self):
+        """SQL expression for kinases"""
+        q = select(Protein.sites.kinases).\
+            distinct()
+        return db.session.query(q)
 
 
 class Site(db.Model):
@@ -137,6 +154,9 @@ class Mutation(db.Model):
     # Nonetheless making decision about each of these should take into account,
     # how often columns and other models referenced in property will be updated
     # (so we can avoid unnecessary whole database rebuilding).
+
+    # We can also use SQL Materialized View
+    # For MySQL manual implementation is needed but it is quite straightforward
 
     @hybrid_property
     def is_ptm(self):
