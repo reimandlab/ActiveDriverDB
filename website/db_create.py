@@ -5,7 +5,7 @@ In case of exception:
 just comment out part of app.py where import of views (and what comes
 along - models) occurs - it has to be the very end of the file.
 """
-from app import db
+from database import db
 from import_data import import_data
 
 print('Removing relational database...')
