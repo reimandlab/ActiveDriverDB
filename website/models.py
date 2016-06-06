@@ -1,10 +1,17 @@
-from website.database import db
+from database import db
 from sqlalchemy import and_
 from sqlalchemy import func
 from sqlalchemy.sql import exists, select
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.hybrid import hybrid_method
 from werkzeug.utils import cached_property
+
+
+association_table = db.Table(
+    'association', db.metadata,
+    db.Column('protein_id', db.Integer, db.ForeignKey('protein.id')),
+    db.Column('site_id', db.Integer, db.ForeignKey('site.id'))
+)
 
 
 class Protein(db.Model):
@@ -14,11 +21,17 @@ class Protein(db.Model):
     refseq = db.Column(db.String(32), unique=True)
     sequence = db.Column(db.Text)
     disorder_map = db.Column(db.Text)
-    sites = db.relationship('Site', order_by='Site.position')
+    sites = db.relationship(
+        'Site',
+        order_by='Site.position',
+        backref='protein'
+    )
     mutations = db.relationship(
         'Mutation',
         order_by='Mutation.position',
-        lazy='dynamic')
+        lazy='dynamic',
+        backref='protein'
+    )
 
     def __init__(self, name):
         self.name = name
@@ -42,7 +55,7 @@ class Protein(db.Model):
 
             key = (mutation.position,
                    mutation.mut_residue,
-                   Cancer.query.get(mutation.cancer_type).name)
+                   mutation.cancer.name)
             try:
                 mutations_grouped[key] += [mutation]
             except KeyError:
@@ -93,22 +106,22 @@ class Protein(db.Model):
 class Site(db.Model):
     __tablename__ = 'site'
     id = db.Column(db.Integer, primary_key=True)
-    gene_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     position = db.Column(db.Integer, index=True)
     residue = db.Column(db.String(1))
-    kinase = db.Column(db.Text)
-    pmid = db.Column(db.String(32))
+    pmid = db.Column(db.Text)
+    kinases = db.relationship('Protein', secondary=association_table)
+    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
-    def __init__(self, gene_id, position, residue, kinase, pmid):
-        self.gene_id = gene_id
+    def __init__(self, position, residue, pmid, protein, kinases):
         self.position = position
         self.residue = residue
-        self.kinase = kinase
         self.pmid = pmid
+        self.protein = protein
+        self.kinases = kinases
 
     def __repr__(self):
         return '<Site of protein: {0}, at pos: {1}>'.format(
-            Protein.query.get(self.gene_id).name,
+            Protein.query.get(self.protein_id).name,
             self.position
         )
 
@@ -118,6 +131,7 @@ class Cancer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16))
     name = db.Column(db.Text)
+    mutations = db.relationship('Mutation', backref='cancer')
 
     def __init__(self, code, name):
         self.code = code
@@ -133,21 +147,21 @@ class Cancer(db.Model):
 class Mutation(db.Model):
     __tablename__ = 'mutation'
     id = db.Column(db.Integer, primary_key=True)
-    gene_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     position = db.Column(db.Integer)
     wt_residue = db.Column(db.String(1))
     mut_residue = db.Column(db.String(1))
-    cancer_type = db.Column(db.Integer, db.ForeignKey('cancer.id'))
     sample_id = db.Column(db.String(64))
+    cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
+    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
-    def __init__(self, gene_id, cancer, sample_id,
-                 position, wt_residue, mut_residue):
-        self.gene_id = gene_id
-        self.cancer_type = cancer
+    def __init__(self, cancer, sample_id,
+                 position, wt_residue, mut_residue, protein):
+        self.cancer = cancer
         self.sample_id = sample_id
         self.position = position
         self.wt_residue = wt_residue
         self.mut_residue = mut_residue
+        self.protein = protein
 
     # Note: following properties could become a columns of the database tables
     # (in the future) to avoid repetitive calculation of constant variables.
@@ -196,7 +210,7 @@ class Mutation(db.Model):
 
         when taking into account -7 to +7 spans of each PTM site.
         """
-        sites = Protein.query.get(self.gene_id).sites
+        sites = Protein.query.get(self.protein_id).sites
         pos = self.position
         a = 0
         b = len(sites)
@@ -244,7 +258,7 @@ class Mutation(db.Model):
         """SQL expression for cnt_ptm_affected"""
         pos = self.position
         count = db.session.query(func.count(Site.id)).\
-            filter_by(gene_id=self.gene_id).\
+            filter_by(protein_id=self.protein_id).\
             filter(Site.position.between(pos - 8, pos + 8)).scalar()
 
         return count
@@ -275,7 +289,7 @@ class Mutation(db.Model):
         Algoritm is based on bisection and an assumption,
         that sites are sorted by position in the database.
         """
-        sites = Protein.query.get(self.gene_id).sites
+        sites = Protein.query.get(self.protein_id).sites
         pos = self.position
         a = 0
         b = len(sites)
@@ -296,7 +310,7 @@ class Mutation(db.Model):
         position = self.position
         q = exists().where(
             and_(
-                Site.gene_id == self.gene_id,
+                Site.protein_id == self.protein_id,
                 Site.position.between(position - left, position + right)
                 )
         )
