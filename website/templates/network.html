@@ -8,6 +8,8 @@
   {# jQuery #}
   <script src="/static/thirdparty/jquery-1.12.0.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+  {# D3.js #}
+  <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 
 {% endblock %}
 
@@ -23,11 +25,7 @@
   <li class="active">{{ protein.name }}</li>
 </ol>
 
-<div id="plot_area">
-    {% for kinase in neighbours %}
-        {{ kinase }} <br>
-    {% endfor %}
-</div>
+<div id="network_plot"></div>
 
 <div class="panel panel-default">
     <div class="panel-body">
@@ -46,20 +44,18 @@ RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ pr
 
 
 {% block footer_js %}
-    {% assets "js_protein_view" %}
+    {% assets "js_network_view" %}
 	<script type="text/javascript" src="{{ ASSET_URL }}"></script>
     {% endassets %}
     <script type="text/javascript">
-        {#
-        var params = {
-            element: document.getElementById('plot_area'),
-            mutations: '{{ url_for('ProteinView:mutations', name=protein.name, filters=filters.active.url_string) }}',
-            sites: '{{ url_for('ProteinView:sites', name=protein.name) }}',
-            sequenceLength: {{ protein.sequence | length }},
-            name: '{{ protein.name }}',
-            refseq: '{{ protein.refseq }}'
-        }
-        NeedlePlot.init(params)
-        #}
+
+    Network.init({
+        element: document.getElementById('network_plot'),
+        data: {{ data | safe }},
+        dataURL: '{{ url_for('NetworkView:kinases', name=protein.name) }}',
+        minimalRadius: 15,
+        ratio: 0.35
+    })
+
     </script>
 {% endblock %}

@@ -31,8 +31,34 @@ class NetworkView(FlaskView):
         filters = Filters(active_filters, self.allowed_filters)
 
         protein = Protein.query.filter_by(name=name).first_or_404()
+        data = self._prepare_network_repr(protein)
 
-        neighbours = protein.kinases
-
-        return template('network.html', protein=protein, neighbours=neighbours,
+        return template('network.html', protein=protein, data=data,
                         filters=filters)
+
+    def _prepare_network_repr(self, protein):
+        import json
+
+        data = {
+            'kinases': [
+                {
+                    'name': kinase.name,
+                    'protein': {
+                        'mutations_count': kinase.protein.mutations.count()
+                    } if kinase.protein else None,
+                    'is_group': kinase.is_group
+                }
+                for kinase in protein.kinases
+            ],
+            'protein': {
+                'name': protein.name
+            }
+        }
+        return json.dumps(data)
+
+    def kinases(self, name):
+
+        protein = Protein.query.filter_by(name=name).first_or_404()
+        data = self._prepare_network_repr(protein)
+
+        return data
