@@ -1,5 +1,5 @@
 from app import db
-from website.models import Protein, Cancer, Mutation, Site
+from website.models import Protein, Cancer, Mutation, Site, Kinase
 
 
 def import_data():
@@ -35,7 +35,8 @@ def create_proteins_with_seq():
 
 def load_protein_refseq(proteins):
     with open('data/longest_isoforms.tsv', 'r') as f:
-        header = f.readline().split('\t')
+        header = f.readline().rstrip().split('\t')
+        assert header == ['gene', 'rseq']
         for line in f:
             line = line.rstrip()
             name, refseq = line.split('\t')
@@ -69,7 +70,9 @@ def load_cancers():
 
 def load_mutations(proteins, cancers):
     with open('data/ad_muts.tsv', 'r') as f:
-        header = f.readline().split('\t')
+        header = f.readline().rstrip().split('\t')
+        assert header == ['gene', 'cancer_type', 'sample_id', 'position',
+                          'wt_residue', 'mut_residue']
         for line in f:
             line = line.rstrip().split('\t')
             gene, _, sample_data, position, wt_residue, mut_residue = line
@@ -88,16 +91,20 @@ def load_mutations(proteins, cancers):
 
 def load_sites(proteins):
     with open('data/psite_table.tsv', 'r') as f:
-        header = f.readline().split('\t')
+        header = f.readline().rstrip().split('\t')
+        assert header == ['gene', 'position', 'residue', 'kinase', 'pmid']
+        kinases = {}
         for line in f:
             line = line.rstrip()
-            gene, position, residue, kinases, pmid = line.split('\t')
-            kinases_names = filter(bool, kinases.split(','))
-            kinases = []
-            for name in kinases_names:
-                try:
-                    kinases.append(proteins[name])
-                except:
-                    print('No protein for kinase: ', name)
-            Site(position, residue, pmid, proteins[gene], kinases)
+            gene, position, residue, kinases_str, pmid = line.split('\t')
+            site_kinases = []
+            for name in filter(bool, kinases_str.split(',')):
+                if name not in kinases:
+                    kinases[name] = Kinase(
+                        name=name,
+                        protein=proteins.get(name, None),
+                        is_group=name.endswith('_GROUP')
+                    )
+                site_kinases.append(kinases[name])
+            Site(position, residue, pmid, proteins[gene], site_kinases)
     print('Protein sites loaded')

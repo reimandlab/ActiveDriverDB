@@ -2,16 +2,24 @@ from database import db
 from sqlalchemy import and_
 from sqlalchemy import func
 from sqlalchemy.sql import exists, select
-from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.hybrid import hybrid_method
+from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.utils import cached_property
 
 
 association_table = db.Table(
     'association', db.metadata,
-    db.Column('protein_id', db.Integer, db.ForeignKey('protein.id')),
+    db.Column('kinase_id', db.Integer, db.ForeignKey('kinase.id')),
     db.Column('site_id', db.Integer, db.ForeignKey('site.id'))
 )
+
+
+class Kinase(db.Model):
+    __tablename__ = 'kinase'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, index=True)
+    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
+    is_group = db.Column(db.Boolean, default=False)
 
 
 class Protein(db.Model):
@@ -30,6 +38,10 @@ class Protein(db.Model):
         'Mutation',
         order_by='Mutation.position',
         lazy='dynamic',
+        backref='protein'
+    )
+    kinase = db.relationship(
+        'Kinase',
         backref='protein'
     )
 
@@ -109,7 +121,7 @@ class Site(db.Model):
     position = db.Column(db.Integer, index=True)
     residue = db.Column(db.String(1))
     pmid = db.Column(db.Text)
-    kinases = db.relationship('Protein', secondary=association_table)
+    kinases = db.relationship('Kinase', secondary=association_table)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
     def __init__(self, position, residue, pmid, protein, kinases):
