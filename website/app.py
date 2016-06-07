@@ -17,29 +17,34 @@ Define assets
 
 assets = Environment(app)
 
-js_search = Bundle(
-    'search.js',
-    filters='rjsmin',
-    output='search.min.js'
-)
+bundles = {
+    'js_search': Bundle(
+        'search.js',
+        filters='rjsmin',
+        output='search.min.js'
+    ),
+    'js_protein_view': Bundle(
+        'needleplot.js',
+        'filters.js',
+        'tracks.js',
+        filters='rjsmin',
+        output='proteinView.min.js'
+    ),
+    'js_network_view': Bundle(
+        'network.js',
+        'filters.js',
+        filters='rjsmin',
+        output='networkView.min.js'
+    ),
+    'css_common': Bundle(
+        'style.css',
+        filters='cssutils',
+        output='style.min.css'
+    )
+}
 
-js_protein_view = Bundle(
-    'needleplot.js',
-    'filters.js',
-    'tracks.js',
-    filters='rjsmin',
-    output='proteinView.min.js'
-)
-
-css_common = Bundle(
-    'style.css',
-    filters='cssutils',
-    output='style.min.css'
-)
-
-assets.register('js_search', js_search)
-assets.register('js_protein_view', js_protein_view)
-assets.register('css_common', css_common)
+for name, bundle in bundles.items():
+    assets.register(name, bundle)
 
 
 """
