@@ -158,27 +158,27 @@ $description-width: 100px
   overflow: hidden
   margin-bottom: 20px
 
+  .node
+    circle
+      stroke-width: 2px
+      fill: #ccc
+
+    &.dragging
+      circle
+        fill: orange!important
+
+    &:hover
+      circle
+        fill: #efe
+
+  text
+    font: 24px "Helvetica Neue", Helvetica, Arial, sans-serif
+    text-anchor: middle
+    pointer-events: none
+
+
 .svg-content-responsive
   display: inline-block
   position: absolute
   top: 10px
   left: 0
-
-
-.node
-  circle
-    stroke-width: 2px
-    fill: #ccc
-
-  &.dragging
-    circle
-      fill: orange!important
-
-  &:hover
-    circle
-      fill: #efe
-
-text
-  font: 24px "Helvetica Neue", Helvetica, Arial, sans-serif
-  text-anchor: middle
-  pointer-events: none
