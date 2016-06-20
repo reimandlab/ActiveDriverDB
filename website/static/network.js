@@ -31,41 +31,75 @@ var Network = (function ()
         .on('drag', dragged)
         .on('dragend', dragended)
 
+    function calculateRadius(mutations_count, is_group)
+    {
+        is_group = is_group ? 1 : 0
+
+        r = config.minimalRadius
+        // the groups are show as two times bigger
+        r *= (is_group + 1)
+        // more mutations = bigger circle
+        r += 6 * Math.log10(mutations_count + 1)
+
+        return r
+    }
+
+    var config = {
+        minimalRadius: 6,
+        ratio: 1
+    }
+
+    function configure(new_config)
+    {
+        for(var key in new_config)
+        {
+            if(new_config.hasOwnProperty(key))
+            {
+                config[key] = new_config[key]
+            }
+        }
+    }
 
 	var publicSpace = {
-		init: function(config)
+		init: function(user_config)
 		{
-			config.minimalRadius = config.minimalRadius || 10
+            configure(user_config)
 
-			height = width * (config.ratio || 1)
+			height = width * config.ratio
 
 			var vis = d3.select(config.element).append('svg')
 				.attr('preserveAspectRatio', 'xMinYMin meet')
 				.attr('viewBox', '0 0 ' + width + ' ' + height)
 				.classed('svg-content-responsive', true)
 
-			data = config.data
+			var data = config.data
 
-			for(var i = 0; i < data['kinases'].length; i++)
+			for(var i = 0; i < data.kinases.length; i++)
 			{
-				var kinase = data['kinases'][i]
+				var kinase = data.kinases[i]
 				kinase.x = Math.random() * width
 				kinase.y = Math.random() * height
-
-				r = config.minimalRadius
-				if(kinase.protein){
-					r += 6 * Math.log10(kinase.protein.mutations_count)
-				}
-				if(kinase.is_group)
-				{
-					r *= 2
-				}
-				kinase.r = r
-
+                kinase.r = calculateRadius(
+                    kinase.protein ? kinase.protein.mutations_count : 0,
+                    kinase.is_group
+                )
 			}
 
+            var nodes_data = data.kinases
+            var protein = data.protein
+            var protein_node =
+            {
+                name: protein.name,
+                r: calculateRadius(protein.mutations_count),
+				x: Math.random() * width,
+				y: Math.random() * height
+            }
+
+            nodes_data.push(protein_node)
+            console.log(nodes_data)
+
 			var nodes = vis.selectAll('.node')
-				.data(data['kinases'])
+				.data(nodes_data)
 				.enter().append('g')
 				.attr('transform', function(d){return 'translate(' + [d.x, d.y] + ')'})
 				.attr('class', 'node')

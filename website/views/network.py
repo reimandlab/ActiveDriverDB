@@ -51,7 +51,8 @@ class NetworkView(FlaskView):
                 for kinase in protein.kinases
             ],
             'protein': {
-                'name': protein.name
+                'name': protein.name,
+                'mutations_count': protein.mutations.count()
             }
         }
         return json.dumps(data)
