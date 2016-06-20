@@ -38,6 +38,6 @@ For proper compilation of some requirements additional software will be needed o
 build-essential python3 libmysqlclient-dev python3-dev python-dev
 ```
 
-## Acknowledgmentsv
+## Acknowledgments
 
 The project is developed with support from Google Summer Code.
