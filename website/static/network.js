@@ -91,8 +91,9 @@ var Network = (function ()
             {
                 name: protein.name,
                 r: calculateRadius(protein.mutations_count),
-				x: Math.random() * width,
-				y: Math.random() * height
+				x: (width - r) / 2,
+				y: (height - r) / 2,
+                color: 'blue'
             }
 
             nodes_data.push(protein_node)
@@ -107,17 +108,11 @@ var Network = (function ()
 
 			nodes.append('circle')
 				.attr('class', 'nodes')
-				.attr('r', function(kinase){ return kinase.r })
-				.attr('stroke', function(kinase){
-					if(kinase.is_group)
-					{
-						return 'green'
-					}
-					else
-					{
-						return 'red'
-					}
-				}) 
+				.attr('r', function(node){ return node.r })
+				.attr('stroke', function(node) {
+                    var default_color = (node.is_group ? 'red' : '#905590')
+                    return node.color || default_color
+                }) 
 
 			nodes.append('text')
 				.text(function(d){return d.name})
