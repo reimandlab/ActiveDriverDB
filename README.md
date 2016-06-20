@@ -5,7 +5,7 @@ The project aims to create an interactive visualisation framework for genome mut
 
 # Licence
 
-The application is Open Source (as defined by Open Source Initiative) and is licensed under the terms of [GNU Lesser General Public License](/reimandlab/Visualistion-Framework-for-Genome-Mutations/blob/master/GNU Lesser General Public License).
+The application is Open Source and is licensed under the terms of [GNU Lesser General Public License](/reimandlab/Visualistion-Framework-for-Genome-Mutations/blob/master/GNU Lesser General Public License).
 
 # Development
 
