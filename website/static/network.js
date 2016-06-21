@@ -11,10 +11,10 @@ var Network = (function ()
 
     function calculateRadius(mutations_count, is_group)
     {
-        is_group = is_group ? 1 : 0
+        var is_group = is_group ? 1 : 0
 
-        r = config.minimalRadius
-        // the groups are show as two times bigger
+        var r = config.minimalRadius
+        // the groups are shown as two times bigger
         r *= (is_group + 1)
         // more mutations = bigger circle
         r += 6 * Math.log10(mutations_count + 1)
@@ -22,9 +22,25 @@ var Network = (function ()
         return r
     }
 
+    function createProteinNode(protein)
+    {
+        var radius = calculateRadius(protein.mutations_count)
+
+        return {
+            name: protein.name,
+            r: radius,
+            x: (width - radius) / 2,
+            y: (height - radius) / 2,
+            color: 'blue'
+        }
+    }
+
     var config = {
-        minimalRadius: 6,
-        ratio: 1
+        minimalRadius: 6,   // of a single node
+        ratio: 1,   // the aspect ratio of the network
+        nodeURL: (function(node) {
+            return window.location.hash = '#' + node.name
+        })
     }
 
     function configure(new_config)
@@ -80,14 +96,9 @@ var Network = (function ()
             }
 
             var nodes_data = data.kinases
-            var protein = data.protein
-            var protein_node = {
-                name: protein.name,
-                r: calculateRadius(protein.mutations_count),
-                x: (width - r) / 2,
-                y: (height - r) / 2,
-                color: 'blue'
-            }
+
+            var protein_node = createProteinNode(data.protein)
+
             nodes_data.push(protein_node)
 
             force
@@ -107,6 +118,12 @@ var Network = (function ()
                 .attr('transform', function(d){return 'translate(' + [d.x, d.y] + ')'})
                 .attr('class', 'node')
                 .call(force.drag)
+                .on('click', function(node) {
+                    if(d3.event.defaultPrevented === false)
+                    {
+                        window.location.href = config.nodeURL(node)
+                    }
+                })
 
             nodes.append('circle')
                 .attr('class', 'nodes')
@@ -122,13 +139,12 @@ var Network = (function ()
                 .attr('dy', '.35em')
                 
             force.on('tick', function() {
-                    link.attr("x1", function(d) { return d.source.x })
-                        .attr("y1", function(d) { return d.source.y })
-                        .attr("x2", function(d) { return d.target.x })
-                        .attr("y2", function(d) { return d.target.y })
+                link.attr("x1", function(d) { return d.source.x })
+                    .attr("y1", function(d) { return d.source.y })
+                    .attr("x2", function(d) { return d.target.x })
+                    .attr("y2", function(d) { return d.target.y })
                     nodes.attr('transform', function(d){return 'translate(' + [d.x, d.y] + ')'})
-                    }
-                )
+                })
 
         }
     }

@@ -54,7 +54,10 @@ RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ pr
         data: {{ data | safe }},
         dataURL: '{{ url_for('NetworkView:kinases', name=protein.name) }}',
         minimalRadius: 15,
-        ratio: 0.35
+        ratio: 0.35,
+        nodeURL: function(node){
+            return '{{ url_for('ProteinView:show', name='') }}' + node.name
+        }
     })
 
     </script>
