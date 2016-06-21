@@ -95,7 +95,7 @@ var Tracks = (function ()
         {
             $(fields[i]).keyup(function(e)
             {
-                if(e.keyCode == 13)
+                if(e.keyCode === 13)
                 {
                     func.call(this)
                 }
@@ -118,21 +118,21 @@ var Tracks = (function ()
                 var buttons = box.find('.scroll-left')
                 initButtons(buttons, scrollLeft, scrollArea)
 
-                var buttons = box.find('.scroll-right')
+                buttons = box.find('.scroll-right')
                 initButtons(buttons, scrollRight, scrollArea)
                 
                 var innerDiv = box.children('.inner')
 
-                var buttons = box.find('.zoom-out')
+                buttons = box.find('.zoom-out')
                 initButtons(buttons, zoomOut, innerDiv)
                 
-                var buttons = box.find('.zoom-in')
+                buttons = box.find('.zoom-in')
                 initButtons(buttons, zoomIn, innerDiv)
                 
-                var buttons = box.find('.scroll-to')
+                buttons = box.find('.scroll-to')
                 initButtons(buttons, scrollTo)
                 
-                var buttons = box.find('.scroll-to-input')
+                buttons = box.find('.scroll-to-input')
                 initFields(buttons, scrollTo)
 
                 var controls = box.find('.controls')
