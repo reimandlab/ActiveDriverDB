@@ -27,7 +27,6 @@ def test_replace_salt():
 def test_random_base64():
     for size in [20, 50, 100]:
         result = security.random_base64(size)
-        print result
         assert len(result) >= size
 
 
@@ -70,7 +69,6 @@ def test_get_passlib_salt():
     to basecode initial length is expanding
     """
     salt = security.get_passlib_salt(50)
-    print salt
     assert len(salt) >= 50
 
 
