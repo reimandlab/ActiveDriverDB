@@ -8,7 +8,7 @@ var Network = (function ()
 
     function calculateRadius(mutations_count, is_group)
     {
-        var is_group = is_group ? 1 : 0
+        is_group = is_group ? 1 : 0
 
         var r = config.minimalRadius
         // the groups are shown as two times bigger
@@ -38,7 +38,7 @@ var Network = (function ()
         minimalRadius: 6,   // of a single node
         ratio: 1,   // the aspect ratio of the network
         nodeURL: (function(node) {
-            return window.location.hash = '#' + node.name
+            return window.location.href + '#' + node.name
         })
     }
 
