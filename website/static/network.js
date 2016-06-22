@@ -1,8 +1,5 @@
 var Network = (function ()
 {
-    var width = 600
-    var height = 400
-
     function fitTextIntoCircle(d, context)
     {
         var radius = d.r
@@ -29,13 +26,15 @@ var Network = (function ()
         return {
             name: protein.name,
             r: radius,
-            x: (width - radius) / 2,
-            y: (height - radius) / 2,
+            x: (config.width - radius) / 2,
+            y: (config.height - radius) / 2,
             color: 'blue'
         }
     }
 
     var config = {
+        width: 600,
+        height: null,
         minimalRadius: 6,   // of a single node
         ratio: 1,   // the aspect ratio of the network
         nodeURL: (function(node) {
@@ -59,18 +58,18 @@ var Network = (function ()
         {
             configure(user_config)
 
-            height = width * config.ratio
+            config.height = config.height || config.width * config.ratio
 
             var force = d3.layout.force()
                 .gravity(0.05)
                 .distance(100)
                 .charge(-100)
-                .size([width, height])
+                .size([config.width, config.height])
 
 
             var vis = d3.select(config.element).append('svg')
                 .attr('preserveAspectRatio', 'xMinYMin meet')
-                .attr('viewBox', '0 0 ' + width + ' ' + height)
+                .attr('viewBox', '0 0 ' + config.width + ' ' + config.height)
                 .classed('svg-content-responsive', true)
 
             var data = config.data
@@ -80,8 +79,8 @@ var Network = (function ()
             for(var i = 0; i < data.kinases.length; i++)
             {
                 var kinase = data.kinases[i]
-                kinase.x = Math.random() * width
-                kinase.y = Math.random() * height
+                kinase.x = Math.random() * config.width
+                kinase.y = Math.random() * config.height
                 kinase.r = calculateRadius(
                     kinase.protein ? kinase.protein.mutations_count : 0,
                     kinase.is_group
@@ -112,7 +111,7 @@ var Network = (function ()
                 .attr("class", "link")
                 .style("stroke-width", function(d) { return Math.sqrt(d.weight); });
 
-            var nodes = vis.selectAll('.node')
+            var nodes = vis.selectAll('.node') 
                 .data(nodes_data)
                 .enter().append('g')
                 .attr('transform', function(d){return 'translate(' + [d.x, d.y] + ')'})

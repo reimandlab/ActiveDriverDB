@@ -37,9 +37,6 @@
     {% endwith %}
  </div>
 </div>
-
-RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ protein.refseq }}</a>
-
 {% endblock %}
 
 
@@ -54,7 +51,7 @@ RefSeq: <a href='http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}'>{{ pr
         data: {{ data | safe }},
         dataURL: '{{ url_for('NetworkView:kinases', name=protein.name) }}',
         minimalRadius: 15,
-        ratio: 0.35,
+        ratio: 0.5, /* remember to keep update with style of network */
         nodeURL: function(node){
             return '{{ url_for('ProteinView:show', name='') }}' + node.name
         }
