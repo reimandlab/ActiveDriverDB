@@ -27,16 +27,9 @@
 
 <div id="network_plot"></div>
 
-<div class="panel panel-default">
-    <div class="panel-body">
-      <div class="panel-heading">
-        <h3 class="panel-title">Filters</h3>
-      </div>
-    {% with filters=filters %}
-      {% include 'widgets/filters.html' %}
-    {% endwith %}
- </div>
-</div>
+{% with filters=filters %}
+  {% include 'widgets/filters.html' %}
+{% endwith %}
 {% endblock %}
 
 
