@@ -1,0 +1,32 @@
+#network_plot
+  display: inline-block
+  position: relative
+  width: 100%
+  // let's occupy 50% of the screen. Remember to keep up to date with network's ratio!
+  padding-bottom: 50%
+  vertical-align: top
+  overflow: hidden
+  margin-bottom: 20px
+
+  .node
+    circle
+      stroke-width: 2.2px
+      fill: #ccc
+
+    &.dragging
+      circle
+        fill: orange!important
+
+    &:hover
+      circle
+        fill: #efe
+
+  text
+    font: 24px "Helvetica Neue", Helvetica, Arial, sans-serif
+    text-anchor: middle
+    pointer-events: none
+
+  .link
+    stroke: #777
+    stroke-width: 1px
+

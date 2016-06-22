@@ -37,9 +37,22 @@ bundles = {
         output='networkView.min.js'
     ),
     'css_common': Bundle(
-        'style.css',
+        'sass/style.css',
         filters='cssutils',
-        output='style.min.css'
+        output='min/style.css'
+    ),
+    'css_network': Bundle(
+        'sass/network.css',
+        'sass/filters.css',
+        filters='cssutils',
+        output='min/network.css'
+    ),
+    'css_protein': Bundle(
+        'sass/protein.css',
+        'sass/tracks.css',
+        'sass/filters.css',
+        filters='cssutils',
+        output='min/protein.css'
     )
 }
 

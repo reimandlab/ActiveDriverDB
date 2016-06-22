@@ -1,0 +1,52 @@
+@import "common-variables"
+
+$background: rgba(255, 255, 255, 0.8)
+
+.filters-panel
+  position: absolute
+  right: 0
+  top: 100px
+  background: $background
+
+  .panel-body
+    padding: 10px 15px
+
+  .panel-heading
+    padding: 10px 0 0 0
+
+    h3
+      font-weight: bold
+
+  div
+    background: $background
+
+  @media #{$under-tablet}
+    position: static
+
+.docked
+  position: static
+
+.filters
+  ul
+    list-style: none
+    padding: 5px
+  h5
+    margin-bottom: 0
+
+  label
+    font-weight: normal
+
+  .save
+    float: right
+
+.filter
+  line-height: $button-height
+  height: $button-height
+
+  .name
+    display: block
+    float: left
+    margin-right: 20px
+
+  .value
+    float: right

@@ -1,0 +1,101 @@
+/*
+   reserved z-indices:
+      tracks: 0-50
+
+$track-height: 1em
+$track-margin: .35em
+$description-width: 100px
+
+.tracks-box
+  /*
+    The most outer box living in tracks template
+
+  .controls
+    // Those are javascript controls - they will be shown by the js itself
+    // if it will be able to run (elsewhere we fallback to html-only mode)
+    display: none
+    margin-bottom: 25px
+
+
+  .inner
+    position: relative
+
+  .description
+
+    // an alternative for calc() which allows us to support > 95% of users [1]
+    width: $description-width
+    position: absolute
+    top: 3px
+    left: 0
+
+    ul
+      list-style: none
+      padding-left: 5px
+    
+    li
+      line-height: $track-height
+      padding-bottom: $track-margin
+
+.tracks
+  font-size: 110%
+  overflow-x: hidden
+  width: 100%
+
+  .scroll-area
+    overflow-x: scroll
+    position: relative
+
+  // an alternative for calc() which allows us to support > 95% of users [1]
+  padding-left: $description-width
+  -moz-box-sizing: border-box
+  box-sizing: border-box
+
+.subtracks
+  .track
+    margin-bottom: 0
+
+.track
+  position: relative
+  margin-bottom: $track-margin
+  line-height: $track-height
+  font-family: monospace
+  z-index: 0
+
+  .elements
+    height: $track-height
+
+  .elements div
+    position: absolute
+    background-color: #ffaaaa
+    height: $track-height
+
+  &.inline
+    position: absolute
+    top: 0
+    z-index: -50
+
+
+  &.position
+    .elements div
+      background-color: #fff
+
+  &.sequence
+    // the sequence will be always on the top of all tracks
+    z-index: 50
+
+  &.mutations
+    .elements div
+      background-color: #aade87
+
+  &.phos_span_7
+    .elements div
+      background-color: #bcd949
+
+  &.phos_span_3
+    .elements div
+      background-color: #9ab615
+
+  &.diseases
+    .elements div
+      background-color: brown
+

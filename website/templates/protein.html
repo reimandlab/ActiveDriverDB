@@ -3,7 +3,12 @@
 {% block title %} {{ protein.name }} - protein view - {{ super() }} {% endblock %}
 
 {% block head %}
-    {{ super() }}
+  {{ super() }}
+
+  {% assets "css_protein" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+
 
   {# NeedlePlot #}
   <script src="https://wzrd.in/bundle/muts-needle-plot@0.9.1"></script>
@@ -21,7 +26,7 @@
   {# Export extension for jQuery and Bootstrap-Table #}
   <script src="/static/thirdparty/bootstrap-table/tableExport.js"></script>
   <script src="/static/thirdparty/bootstrap-table/bootstrap-table-export.js"></script>
-
+  
 {% endblock %}
 
 
