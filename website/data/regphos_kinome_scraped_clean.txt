@@ -1,0 +1,520 @@
+No.	Kinase	Group	Family	Subfamily	Gene.Symbol	gene.clean	Description	group.clean
+1	AKT1	AGC	Akt		AKT1	AKT1	v-akt murine thymoma viral oncogene homolog 1	Akt
+2	AKT2	AGC	Akt		AKT2	AKT2	v-akt murine thymoma viral oncogene homolog 2	Akt
+3	AKT3	AGC	Akt		AKT3	AKT3	v-akt murine thymoma viral oncogene homolog 3 (protein kinase B, gamma)	Akt
+4	CRIK	AGC	DMPK	CRIK	CIT	CIT	citron (rho-interacting, serine/threonine kinase 21)	DMPK_CRIK
+5	DMPK1	AGC	DMPK	GEK	DMPK	DMPK	dystrophia myotonica-protein kinase	DMPK_GEK
+6	MRCKa	AGC	DMPK	GEK	CDC42BPA	CDC42BPA	CDC42 binding protein kinase alpha (DMPK-like)	DMPK_GEK
+7	MRCKb	AGC	DMPK	GEK	CDC42BPB	CDC42BPB	CDC42 binding protein kinase beta (DMPK-like)	DMPK_GEK
+8	DMPK2	AGC	DMPK	GEK	CDC42BPG	CDC42BPG	CDC42 binding protein kinase gamma (DMPK-like)	DMPK_GEK
+9	ROCK1	AGC	DMPK	ROCK	ROCK1	ROCK1	Rho-associated, coiled-coil containing protein kinase 1	DMPK_ROCK
+10	ROCK2	AGC	DMPK	ROCK	ROCK2	ROCK2	Rho-associated, coiled-coil containing protein kinase 2	DMPK_ROCK
+11	BARK1	AGC	GRK	BARK	ADRBK1	ADRBK1	adrenergic, beta, receptor kinase 1	GRK_BARK
+12	BARK2	AGC	GRK	BARK	ADRBK2	ADRBK2	adrenergic, beta, receptor kinase 2	GRK_BARK
+13	GPRK4	AGC	GRK	GRK	GRK4	GRK4	G protein-coupled receptor kinase 4	GRK_GRK
+14	GPRK5	AGC	GRK	GRK	GRK5	GRK5	G protein-coupled receptor kinase 5	GRK_GRK
+15	GPRK6	AGC	GRK	GRK	GRK6	GRK6	G protein-coupled receptor kinase 6	GRK_GRK
+16	RHOK	AGC	GRK	GRK	GRK1	GRK1	G protein-coupled receptor kinase 1	GRK_GRK
+17	GPRK7	AGC	GRK	GRK	GRK7	GRK7	G protein-coupled receptor kinase 7	GRK_GRK
+18	MAST1	AGC	MAST	MAST	MAST1	MAST1	microtubule associated serine/threonine kinase 1	MAST_MAST
+19	MAST3	AGC	MAST	MAST	MAST3	MAST3	microtubule associated serine/threonine kinase 3	MAST_MAST
+20	MAST2	AGC	MAST	MAST	MAST2	MAST2	microtubule associated serine/threonine kinase 2	MAST_MAST
+21	MAST4	AGC	MAST	MAST	LOC375449	MAST4	similar to microtubule associated testis specific serine/threonine protein kinase	MAST_MAST
+22	MASTL	AGC	MAST	MASTL	MASTL	MASTL	microtubule associated serine/threonine kinase-like	MAST_MASTL
+23	LATS1	AGC	NDR		LATS1	LATS1	LATS, large tumor suppressor, homolog 1 (Drosophila)	NDR
+24	NDR1	AGC	NDR		STK38	STK38	serine/threonine kinase 38	NDR
+25	NDR2	AGC	NDR		STK38L	STK38L	serine/threonine kinase 38 like	NDR
+26	LATS2	AGC	NDR		LATS2	LATS2	LATS, large tumor suppressor, homolog 2 (Drosophila)	NDR
+27	PDK1	AGC	PDK1		PDPK1	PDPK1	3-phosphoinositide dependent protein kinase-1	PDK1
+28	PKACa	AGC	PKA		PRKACA	PRKACA	protein kinase, cAMP-dependent, catalytic, alpha	PKA
+29	PKACb	AGC	PKA		PRKACB	PRKACB	protein kinase, cAMP-dependent, catalytic, beta	PKA
+30	PKACg	AGC	PKA		PRKACG	PRKACG	protein kinase, cAMP-dependent, catalytic, gamma	PKA
+31	PRKX	AGC	PKA		PRKX	PRKX	protein kinase, X-linked	PKA
+32	PRKY	AGC	PKA		PRKY	PRKY	protein kinase, Y-linked	PKA
+33	PKCa	AGC	PKC	Alpha	PRKCA	PRKCA	protein kinase C, alpha	PKC_Alpha
+34	PKCb	AGC	PKC	Alpha	PRKCB1	PRKCB	protein kinase C, beta 1	PKC_Alpha
+35	PKCg	AGC	PKC	Alpha	PRKCG	PRKCG	protein kinase C, gamma	PKC_Alpha
+36	PKCd	AGC	PKC	Delta	PRKCD	PRKCD	protein kinase C, delta	PKC_Delta
+37	PKCt	AGC	PKC	Delta	PRKCQ	PRKCQ	protein kinase C, theta	PKC_Delta
+38	PKCe	AGC	PKC	Eta	PRKCE	PRKCE	protein kinase C, epsilon	PKC_Eta
+39	PKCh	AGC	PKC	Eta	PRKCH	PRKCH	protein kinase C, eta	PKC_Eta
+40	PKCi	AGC	PKC	Iota	PRKCI	PRKCI	protein kinase C, iota	PKC_Iota
+41	PKCz	AGC	PKC	Iota	PRKCZ	PRKCZ	protein kinase C, zeta	PKC_Iota
+42	PKG1	AGC	PKG		PRKG1	PRKG1	protein kinase, cGMP-dependent, type I	PKG
+43	PKG2	AGC	PKG		PRKG2	PRKG2	protein kinase, cGMP-dependent, type II	PKG
+44	PKN1	AGC	PKN		PKN1	PKN1	protein kinase N1	PKN
+45	PKN2	AGC	PKN		PKN2	PKN2	protein kinase N2	PKN
+46	PKN3	AGC	PKN		PKN3	PKN3	protein kinase N3	PKN
+47	MSK2	AGC	RSK	MSK	RPS6KA4	RPS6KA4	ribosomal protein S6 kinase, 90kDa, polypeptide 4	RSK_MSK
+48	MSK1	AGC	RSK	MSK	RPS6KA5	RPS6KA5	ribosomal protein S6 kinase, 90kDa, polypeptide 5	RSK_MSK
+49	p70S6K	AGC	RSK	p70	RPS6KB1	RPS6KB1	ribosomal protein S6 kinase, 70kDa, polypeptide 1	RSK_p70
+50	p70S6Kb	AGC	RSK	p70	RPS6KB2	RPS6KB2	ribosomal protein S6 kinase, 70kDa, polypeptide 2	RSK_p70
+51	RSK3	AGC	RSK	RSK	RPS6KA1	RPS6KA1	ribosomal protein S6 kinase, 90kDa, polypeptide 1	RSK_RSK
+52	RSK1	AGC	RSK	RSK	RPS6KA2	RPS6KA2	ribosomal protein S6 kinase, 90kDa, polypeptide 2	RSK_RSK
+53	RSK2	AGC	RSK	RSK	RPS6KA3	RPS6KA3	ribosomal protein S6 kinase, 90kDa, polypeptide 3	RSK_RSK
+54	RSK4	AGC	RSK	RSK	RPS6KA6	RPS6KA6	ribosomal protein S6 kinase, 90kDa, polypeptide 6	RSK_RSK
+55	RSKL1	AGC	RSKL		RPS6KC1	RPS6KC1	ribosomal protein S6 kinase, 52kDa, polypeptide 1	RSKL
+56	RSKL2	AGC	RSKL		RPS6KL1	RPS6KL1	ribosomal protein S6 kinase-like 1	RSKL
+57	SgK494	AGC	RSKR		FLJ25006	FLJ25006	hypothetical protein FLJ25006	RSKR
+58	SGK1	AGC	SGK		SGK	SGK1	serum/glucocorticoid regulated kinase	SGK
+59	SGK2	AGC	SGK		SGK2	SGK2	serum/glucocorticoid regulated kinase 2	SGK
+60	SGK3	AGC	SGK		SGK3	SGK3	serum/glucocorticoid regulated kinase family, member 3	SGK
+61	YANK2	AGC	YANK		STK32B	STK32B	serine/threonine kinase 32B	YANK
+62	YANK1	AGC	YANK		STK32A	STK32A	serine/threonine kinase 32A	YANK
+63	YANK3	AGC	YANK		STK32C	STK32C	serine/threonine kinase 32C	YANK
+64	ADCK3	Atypical	ABC1	ABC1-A	CABC1	ADCK3	chaperone, ABC1 activity of bc1 complex homolog (S. pombe)	ABC1_ABC1-A
+65	ADCK4	Atypical	ABC1	ABC1-A	ADCK4	ADCK4	aarF domain containing kinase 4	ABC1_ABC1-A
+66	ADCK1	Atypical	ABC1	ABC1-B	ADCK1	ADCK1	aarF domain containing kinase 1	ABC1_ABC1-B
+67	ADCK5	Atypical	ABC1	ABC1-B	ADCK5	ADCK5	aarF domain containing kinase 5	ABC1_ABC1-B
+68	ADCK2	Atypical	ABC1	ABC1-C	ADCK2	ADCK2	aarF domain containing kinase 2	ABC1_ABC1-C
+69	AlphaK1	Atypical	Alpha	Alpha-Unclassified	ALPK3	ALPK3	alpha-kinase 3	Alpha_Alpha-Unclassified
+70	AlphaK3	Atypical	Alpha	Alpha-Unclassified	ALPK1	ALPK1	alpha-kinase 1	Alpha_Alpha-Unclassified
+71	AlphaK2	Atypical	Alpha	Alpha-Unclassified	ALPK2	ALPK2	alpha-kinase 2	Alpha_Alpha-Unclassified
+72	ChaK1	Atypical	Alpha	ChaK	TRPM7	TRPM7	transient receptor potential cation channel, subfamily M, member 7	Alpha_ChaK
+73	ChaK2	Atypical	Alpha	ChaK	TRPM6	TRPM6	transient receptor potential cation channel, subfamily M, member 6	Alpha_ChaK
+74	eEF2K	Atypical	Alpha	eEF2K	EEF2K	EEF2K	eukaryotic elongation factor-2 kinase	Alpha_eEF2K
+75	BCR	Atypical	BCR		BCR	BCR	breakpoint cluster region	BCR
+76	BRDT	Atypical	BRD		BRDT	BRDT	bromodomain, testis-specific	BRD
+77	BRD2	Atypical	BRD		BRD2	BRD2	bromodomain containing 2	BRD
+78	BRD3	Atypical	BRD		BRD3	BRD3	bromodomain containing 3	BRD
+79	BRD4	Atypical	BRD		BRD4	BRD4	bromodomain containing 4	BRD
+80	FASTK	Atypical	FAST		FASTK	FASTK	Fas-activated serine/threonine kinase	FAST
+81	G11	Atypical	G11		STK19	STK19	serine/threonine kinase 19	G11
+82	H11	Atypical	H11		HSPB8	HSPB8	heat shock 22kDa protein 8	H11
+83	BCKDK	Atypical	PDHK	BCKDK	BCKDK	BCKDK	branched chain ketoacid dehydrogenase kinase	PDHK_BCKDK
+84	PDHK1	Atypical	PDHK	PDHK	PDK1	PDK1	pyruvate dehydrogenase kinase, isozyme 1	PDHK_PDHK
+85	PDHK2	Atypical	PDHK	PDHK	PDK2	PDK2	pyruvate dehydrogenase kinase, isozyme 2	PDHK_PDHK
+86	PDHK3	Atypical	PDHK	PDHK	PDK3	PDK3	pyruvate dehydrogenase kinase, isozyme 3	PDHK_PDHK
+87	PDHK4	Atypical	PDHK	PDHK	PDK4	PDK4	pyruvate dehydrogenase kinase, isozyme 4	PDHK_PDHK
+88	ATM	Atypical	PIKK	ATM	ATM	ATM	ataxia telangiectasia mutated (includes complementation groups A, C and D)	PIKK_ATM
+89	ATR	Atypical	PIKK	ATR	ATR	ATR	ataxia telangiectasia and Rad3 related	PIKK_ATR
+90	DNAPK	Atypical	PIKK	DNAPK	PRKDC	PRKDC	protein kinase, DNA-activated, catalytic polypeptide	PIKK_DNAPK
+91	FRAP	Atypical	PIKK	FRAP	FRAP1	MTOR	FK506 binding protein 12-rapamycin associated protein 1	PIKK_FRAP
+92	SMG1	Atypical	PIKK	SMG1	SMG1	SMG1	PI-3-kinase-related kinase SMG-1	PIKK_SMG1
+93	TRRAP	Atypical	PIKK	TRRAP	TRRAP	TRRAP	transformation/transcription domain-associated protein	PIKK_TRRAP
+94	RIOK1	Atypical	RIO	RIO1	RIOK1	RIOK1	RIO kinase 1 (yeast)	RIO_RIO1
+95	RIOK2	Atypical	RIO	RIO2	RIOK2	RIOK2	RIO kinase 2 (yeast)	RIO_RIO2
+96	RIOK3	Atypical	RIO	RIO3	RIOK3	RIOK3	RIO kinase 3 (yeast)	RIO_RIO3
+97	TAF1	Atypical	TAF1		TAF1	TAF1	TAF1 RNA polymerase II, TATA box binding protein (TBP)-associated factor, 250kDa	TAF1
+98	TAF1L	Atypical	TAF1		TAF1L	TAF1L	TAF1-like RNA polymerase II, TATA box binding protein (TBP)-associated factor, 210kDa	TAF1
+99	TIF1a	Atypical	TIF1		TRIM24	TRIM24	tripartite motif-containing 24	TIF1
+100	TIF1b	Atypical	TIF1		TRIM28	TRIM28	tripartite motif-containing 28	TIF1
+101	TIF1g	Atypical	TIF1		TRIM33	TRIM33	tripartite motif-containing 33	TIF1
+102	CaMK4	CAMK	CAMK1		CAMK4	CAMK4	calcium/calmodulin-dependent protein kinase IV	CAMK1
+103	CaMK1a	CAMK	CAMK1		CAMK1	CAMK1	calcium/calmodulin-dependent protein kinase I	CAMK1
+104	CaMK1d	CAMK	CAMK1		CAMK1D	CAMK1D	calcium/calmodulin-dependent protein kinase ID	CAMK1
+105	CaMK1g	CAMK	CAMK1		CAMK1G	CAMK1G	calcium/calmodulin-dependent protein kinase IG	CAMK1
+106	CaMK1b	CAMK	CAMK1		PNCK	PNCK	pregnancy upregulated non-ubiquitously expressed CaM kinase	CAMK1
+107	CaMK2a	CAMK	CAMK2		CAMK2A	CAMK2A	calcium/calmodulin-dependent protein kinase (CaM kinase) II alpha	CAMK2
+108	CaMK2b	CAMK	CAMK2		CAMK2B	CAMK2B	calcium/calmodulin-dependent protein kinase (CaM kinase) II beta	CAMK2
+109	CaMK2d	CAMK	CAMK2		CAMK2D	CAMK2D	calcium/calmodulin-dependent protein kinase (CaM kinase) II delta	CAMK2
+110	CaMK2g	CAMK	CAMK2		CAMK2G	CAMK2G	calcium/calmodulin-dependent protein kinase (CaM kinase) II gamma	CAMK2
+111	AMPKa1	CAMK	CAMKL	AMPK	PRKAA1	PRKAA1	protein kinase, AMP-activated, alpha 1 catalytic subunit	CAMKL_AMPK
+112	AMPKa2	CAMK	CAMKL	AMPK	PRKAA2	PRKAA2	protein kinase, AMP-activated, alpha 2 catalytic subunit	CAMKL_AMPK
+113	BRSK2	CAMK	CAMKL	BRSK	BRSK2	BRSK2	BR serine/threonine kinase 2	CAMKL_BRSK
+114	BRSK1	CAMK	CAMKL	BRSK	BRSK1	BRSK1	BR serine/threonine kinase 1	CAMKL_BRSK
+115	CHK1	CAMK	CAMKL	CHK1	CHEK1	CHEK1	CHK1 checkpoint homolog (S. pombe)	CAMKL_CHK1
+116	HUNK	CAMK	CAMKL	HUNK	HUNK	HUNK	hormonally upregulated Neu-associated kinase	CAMKL_HUNK
+117	LKB1	CAMK	CAMKL	LKB	STK11	STK11	serine/threonine kinase 11	CAMKL_LKB
+118	MARK2	CAMK	CAMKL	MARK	MARK2	MARK2	MAP/microtubule affinity-regulating kinase 2	CAMKL_MARK
+119	MARK1	CAMK	CAMKL	MARK	MARK1	MARK1	MAP/microtubule affinity-regulating kinase 1	CAMKL_MARK
+120	MARK3	CAMK	CAMKL	MARK	MARK3	MARK3	MAP/microtubule affinity-regulating kinase 3	CAMKL_MARK
+121	MARK4	CAMK	CAMKL	MARK	MARK4	MARK4	MAP/microtubule affinity-regulating kinase 4	CAMKL_MARK
+122	MELK	CAMK	CAMKL	MELK	MELK	MELK	maternal embryonic leucine zipper kinase	CAMKL_MELK
+123	NIM1	CAMK	CAMKL	NIM1	MGC42105	NIM1	hypothetical protein MGC42105	CAMKL_NIM1
+124	NuaK1	CAMK	CAMKL	NuaK	NUAK1	NUAK1	NUAK family, SNF1-like kinase, 1	CAMKL_NuaK
+125	NuaK2	CAMK	CAMKL	NuaK	NUAK2	NUAK2	NUAK family, SNF1-like kinase, 2	CAMKL_NuaK
+126	PASK	CAMK	CAMKL	PASK	PASK	PASK	PAS domain containing serine/threonine kinase	CAMKL_PASK
+127	QIK	CAMK	CAMKL	QIK	SNF1LK2	SIK2	SNF1-like kinase 2	CAMKL_QIK
+128	QSK	CAMK	CAMKL	QIK	KIAA0999	SIK3	KIAA0999 protein	CAMKL_QIK
+129	SIK	CAMK	CAMKL	QIK	SNF1LK	SIK1	SNF1-like kinase	CAMKL_QIK
+130	SNRK	CAMK	CAMKL	SNRK	SNRK	SNRK	SNF related kinase	CAMKL_SNRK
+131	STK33	CAMK	CAMK-Unique		STK33	STK33	serine/threonine kinase 33	CAMK-Unique
+132	VACAMKL	CAMK	CAMK-Unique		CAMKV	CAMKV	CaM kinase-like vesicle-associated	CAMK-Unique
+133	CASK	CAMK	CASK		CASK	CASK	calcium/calmodulin-dependent serine protein kinase (MAGUK family)	CASK
+134	DAPK1	CAMK	DAPK	DAPK	DAPK1	DAPK1	death-associated protein kinase 1	DAPK_DAPK
+135	DAPK3	CAMK	DAPK	DAPK	DAPK3	DAPK3	death-associated protein kinase 3	DAPK_DAPK
+136	DAPK2	CAMK	DAPK	DAPK	DAPK2	DAPK2	death-associated protein kinase 2	DAPK_DAPK
+137	DRAK2	CAMK	DAPK	DRAK	STK17B	STK17B	serine/threonine kinase 17b (apoptosis-inducing)	DAPK_DRAK
+138	DRAK1	CAMK	DAPK	DRAK	STK17A	STK17A	serine/threonine kinase 17a (apoptosis-inducing)	DAPK_DRAK
+139	DCLK1	CAMK	DCAMKL		DCAMKL1	DCLK1	doublecortin and CaM kinase-like 1	DCAMKL
+140	DCLK3	CAMK	DCAMKL		DCAMKL3	DCLK3	doublecortin and CaM kinase-like 3	DCAMKL
+141	DCLK2	CAMK	DCAMKL		DCAMKL2	DCLK2	doublecortin and CaM kinase-like 2	DCAMKL
+142	MAPKAPK3	CAMK	MAPKAPK	MAPKAPK	MAPKAPK3	MAPKAPK3	mitogen-activated protein kinase-activated protein kinase 3	MAPKAPK_MAPKAPK
+143	MAPKAPK5	CAMK	MAPKAPK	MAPKAPK	MAPKAPK5	MAPKAPK5	mitogen-activated protein kinase-activated protein kinase 5	MAPKAPK_MAPKAPK
+144	MAPKAPK2	CAMK	MAPKAPK	MAPKAPK	MAPKAPK2	MAPKAPK2	mitogen-activated protein kinase-activated protein kinase 2	MAPKAPK_MAPKAPK
+145	MNK2	CAMK	MAPKAPK	MNK	MKNK2	MKNK2	MAP kinase interacting serine/threonine kinase 2	MAPKAPK_MNK
+146	MNK1	CAMK	MAPKAPK	MNK	MKNK1	MKNK1	MAP kinase interacting serine/threonine kinase 1	MAPKAPK_MNK
+147	smMLCK	CAMK	MLCK		MYLK	MYLK	myosin, light chain kinase	MLCK
+148	TTN	CAMK	MLCK		TTN	TTN	titin	MLCK
+149	skMLCK	CAMK	MLCK		MYLK2	MYLK2	myosin light chain kinase 2, skeletal muscle	MLCK
+150	caMLCK	CAMK	MLCK		MLCK	MYLK3	MLCK protein	MLCK
+151	SgK085	CAMK	MLCK		RP11-145H9.1	MYLK4	hypothetical protein LOC340156	MLCK
+152	PHKg1	CAMK	PHK		PHKG1	PHKG1	phosphorylase kinase, gamma 1 (muscle)	PHK
+153	PHKg2	CAMK	PHK		PHKG2	PHKG2	phosphorylase kinase, gamma 2 (testis)	PHK
+154	PIM1	CAMK	PIM		PIM1	PIM1	pim-1 oncogene	PIM
+155	PIM2	CAMK	PIM		PIM2	PIM2	pim-2 oncogene	PIM
+156	PIM3	CAMK	PIM		PIM3	PIM3	pim-3 oncogene	PIM
+157	PKD1	CAMK	PKD		PRKD1	PRKD1	protein kinase D1	PKD
+158	PKD3	CAMK	PKD		PRKD3	PRKD3	protein kinase D3	PKD
+159	PKD2	CAMK	PKD		PRKD2	PRKD2	protein kinase D2	PKD
+160	PSKH1	CAMK	PSK		PSKH1	PSKH1	protein serine kinase H1	PSK
+161	PSKH2	CAMK	PSK		PSKH2	PSKH2	protein serine kinase H2	PSK
+162	CHK2	CAMK	RAD53		CHEK2	CHEK2	CHK2 checkpoint homolog (S. pombe)	RAD53
+163	SgK495	CAMK	SgK495		STK40	STK40	serine/threonine kinase 40	SgK495
+164	Trb1	CAMK	Trbl		TRIB1	TRIB1	tribbles homolog 1 (Drosophila)	Trbl
+165	Trb2	CAMK	Trbl		TRIB2	TRIB2	tribbles homolog 2 (Drosophila)	Trbl
+166	Trb3	CAMK	Trbl		TRIB3	TRIB3	tribbles homolog 3 (Drosophila)	Trbl
+167	Obscn	CAMK	Trio		OBSCN	OBSCN	obscurin, cytoskeletal calmodulin and titin-interacting RhoGEF	Trio
+168	SPEG	CAMK	Trio		LOC729871	SPEG	similar to aortic preferentially expressed gene 1	Trio
+169	Trio	CAMK	Trio		TRIO	TRIO	triple functional domain (PTPRF interacting)	Trio
+170	Trad	CAMK	Trio		KALRN	KALRN	kalirin, RhoGEF kinase	Trio
+171	TSSK2	CAMK	TSSK		TSSK2	TSSK2	testis-specific serine kinase 2	TSSK
+172	TSSK3	CAMK	TSSK		TSSK3	TSSK3	testis-specific serine kinase 3	TSSK
+173	TSSK1	CAMK	TSSK		TSSK1B	TSSK1B	testis-specific serine kinase 1B	TSSK
+174	SSTK	CAMK	TSSK		TSSK6	TSSK6	testis-specific serine kinase 6	TSSK
+175	TSSK4	CAMK	TSSK		TSSK4	TSSK4	testis-specific serine kinase 4	TSSK
+176	CK1a	CK1	CK1	CK1-A	CSNK1A1	CSNK1A1	casein kinase 1, alpha 1	CK1_CK1-A
+177	CK1a2	CK1	CK1	CK1-A	CSNK1A1L	CSNK1A1L	casein kinase 1, alpha 1-like	CK1_CK1-A
+178	CK1d	CK1	CK1	CK1-D	CSNK1D	CSNK1D	casein kinase 1, delta	CK1_CK1-D
+179	CK1e	CK1	CK1	CK1-D	CSNK1E	CSNK1E	casein kinase 1, epsilon	CK1_CK1-D
+180	CK1g2	CK1	CK1	CK1-G	CSNK1G2	CSNK1G2	casein kinase 1, gamma 2	CK1_CK1-G
+181	CK1g3	CK1	CK1	CK1-G	CSNK1G3	CSNK1G3	casein kinase 1, gamma 3	CK1_CK1-G
+182	CK1g1	CK1	CK1	CK1-G	CSNK1G1	CSNK1G1	casein kinase 1, gamma 1	CK1_CK1-G
+183	TTBK1	CK1	TTBK		TTBK1	TTBK1	tau tubulin kinase 1	TTBK
+184	TTBK2	CK1	TTBK		TTBK2	TTBK2	tau tubulin kinase 2	TTBK
+185	VRK1	CK1	VRK		VRK1	VRK1	vaccinia related kinase 1	VRK
+186	VRK2	CK1	VRK		VRK2	VRK2	vaccinia related kinase 2	VRK
+187	VRK3	CK1	VRK		VRK3	VRK3	vaccinia related kinase 3	VRK
+188	CCRK	CMGC	CDK	CCRK	CCRK	CDK20	cell cycle related kinase	CDK_CCRK
+189	CDC2	CMGC	CDK	CDC2	CDC2	CDK1	cell division cycle 2, G1 to S and G2 to M	CDK_CDC2
+190	CDK2	CMGC	CDK	CDC2	CDK2	CDK2	cyclin-dependent kinase 2	CDK_CDC2
+191	CDK3	CMGC	CDK	CDC2	CDK3	CDK3	cyclin-dependent kinase 3	CDK_CDC2
+192	CDK10	CMGC	CDK	CDK10	CDK10	CDK10	cyclin-dependent kinase (CDC2-like) 10	CDK_CDK10
+193	CDK4	CMGC	CDK	CDK4	CDK4	CDK4	cyclin-dependent kinase 4	CDK_CDK4
+194	CDK6	CMGC	CDK	CDK4	CDK6	CDK6	cyclin-dependent kinase 6	CDK_CDK4
+195	CDK5	CMGC	CDK	CDK5	CDK5	CDK5	cyclin-dependent kinase 5	CDK_CDK5
+196	CDK7	CMGC	CDK	CDK7	CDK7	CDK7	cyclin-dependent kinase 7 (MO15 homolog, Xenopus laevis, cdk-activating kinase)	CDK_CDK7
+197	CDK8	CMGC	CDK	CDK8	CDK8	CDK8	cyclin-dependent kinase 8	CDK_CDK8
+198	CDK11	CMGC	CDK	CDK8	CDC2L6	CDK19	cell division cycle 2-like 6 (CDK8-like)	CDK_CDK8
+199	CDK9	CMGC	CDK	CDK9	CDK9	CDK9	cyclin-dependent kinase 9 (CDC2-related kinase)	CDK_CDK9
+200	CHED	CMGC	CDK	CRK7	CDC2L5	CDK13	cell division cycle 2-like 5 (cholinesterase-related cell division controller)	CDK_CRK7
+201	CRK7	CMGC	CDK	CRK7	CRKRS	CDK12	Cdc2-related kinase, arginine/serine-rich	CDK_CRK7
+202	PCTAIRE1	CMGC	CDK	PCTAIRE	PCTK1	CDK16	PCTAIRE protein kinase 1	CDK_PCTAIRE
+203	PCTAIRE2	CMGC	CDK	PCTAIRE	PCTK2	CDK17	PCTAIRE protein kinase 2	CDK_PCTAIRE
+204	PCTAIRE3	CMGC	CDK	PCTAIRE	PCTK3	CDK18	PCTAIRE protein kinase 3	CDK_PCTAIRE
+205	PFTAIRE1	CMGC	CDK	PFTAIRE	PFTK1	CDK14	PFTAIRE protein kinase 1	CDK_PFTAIRE
+206	PFTAIRE2	CMGC	CDK	PFTAIRE	ALS2CR7	CDK15	amyotrophic lateral sclerosis 2 (juvenile) chromosome region, candidate 7	CDK_PFTAIRE
+207	PITSLRE	CMGC	CDK	PITSLRE	CDC2L2	CDK11A	cell division cycle 2-like 2 (PITSLRE proteins)	CDK_PITSLRE
+207	PITSLRE	CMGC	CDK	PITSLRE	CDC2L2	CDK11B	cell division cycle 2-like 2 (PITSLRE proteins)	CDK_PITSLRE
+208	CDKL5	CMGC	CDKL		CDKL5	CDKL5	cyclin-dependent kinase-like 5	CDKL
+209	CDKL1	CMGC	CDKL		CDKL1	CDKL1	cyclin-dependent kinase-like 1 (CDC2-related kinase)	CDKL
+210	CDKL2	CMGC	CDKL		CDKL2	CDKL2	cyclin-dependent kinase-like 2 (CDC2-related kinase)	CDKL
+211	CDKL3	CMGC	CDKL		CDKL3	CDKL3	cyclin-dependent kinase-like 3	CDKL
+212	CDKL4	CMGC	CDKL		CDKL4	CDKL4	cyclin-dependent kinase-like 4	CDKL
+213	CK2a1	CMGC	CK2		CSNK2A1	CSNK2A1	casein kinase 2, alpha 1 polypeptide	CK2
+214	CK2a2	CMGC	CK2		CSNK2A2	CSNK2A2	casein kinase 2, alpha prime polypeptide	CK2
+215	CLK1	CMGC	CLK		CLK1	CLK1	CDC-like kinase 1	CLK
+216	CLK2	CMGC	CLK		CLK2	CLK2	CDC-like kinase 2	CLK
+217	CLK3	CMGC	CLK		CLK3	CLK3	CDC-like kinase 3	CLK
+218	CLK4	CMGC	CLK		CLK4	CLK4	CDC-like kinase 4	CLK
+219	DYRK1A	CMGC	DYRK	DYRK1	DYRK1A	DYRK1A	dual-specificity tyrosine-(Y)-phosphorylation regulated kinase 1A	DYRK_DYRK1
+220	DYRK1B	CMGC	DYRK	DYRK1	DYRK1B	DYRK1B	dual-specificity tyrosine-(Y)-phosphorylation regulated kinase 1B	DYRK_DYRK1
+221	DYRK3	CMGC	DYRK	DYRK2	DYRK3	DYRK3	dual-specificity tyrosine-(Y)-phosphorylation regulated kinase 3	DYRK_DYRK2
+222	DYRK2	CMGC	DYRK	DYRK2	DYRK2	DYRK2	dual-specificity tyrosine-(Y)-phosphorylation regulated kinase 2	DYRK_DYRK2
+223	DYRK4	CMGC	DYRK	DYRK2	DYRK4	DYRK4	dual-specificity tyrosine-(Y)-phosphorylation regulated kinase 4	DYRK_DYRK2
+224	HIPK3	CMGC	DYRK	HIPK	HIPK3	HIPK3	homeodomain interacting protein kinase 3	DYRK_HIPK
+225	HIPK2	CMGC	DYRK	HIPK	HIPK2	HIPK2	homeodomain interacting protein kinase 2	DYRK_HIPK
+226	HIPK4	CMGC	DYRK	HIPK	HIPK4	HIPK4	homeodomain interacting protein kinase 4	DYRK_HIPK
+227	HIPK1	CMGC	DYRK	HIPK	HIPK1	HIPK1	homeodomain interacting protein kinase 1	DYRK_HIPK
+228	PRP4	CMGC	DYRK	PRP4	PRPF4B	PRPF4B	PRP4 pre-mRNA processing factor 4 homolog B (yeast)	DYRK_PRP4
+229	GSK3A	CMGC	GSK		GSK3A	GSK3A	glycogen synthase kinase 3 alpha	GSK
+230	GSK3B	CMGC	GSK		GSK3B	GSK3B	glycogen synthase kinase 3 beta	GSK
+231	Erk2(MAPK1)	CMGC	MAPK	ERK1	MAPK1	MAPK1	mitogen-activated protein kinase 1	MAPK_ERK1
+232	Erk1(MAPK3)	CMGC	MAPK	ERK1	MAPK3	MAPK3	mitogen-activated protein kinase 3	MAPK_ERK1
+233	Erk4(MAPK4)	CMGC	MAPK	ERK3	MAPK4	MAPK4	mitogen-activated protein kinase 4	MAPK_ERK3
+234	Erk3(MAPK6)	CMGC	MAPK	ERK3	MAPK6	MAPK6	mitogen-activated protein kinase 6	MAPK_ERK3
+235	Erk5(MAPK7)	CMGC	MAPK	ERK5	MAPK7	MAPK7	mitogen-activated protein kinase 7	MAPK_ERK5
+236	Erk7(MAPK15)	CMGC	MAPK	ERK7	MAPK15	MAPK15	mitogen-activated protein kinase 15	MAPK_ERK7
+237	JNK1(MAPK8)	CMGC	MAPK	JNK	MAPK8	MAPK8	mitogen-activated protein kinase 8	MAPK_JNK
+238	JNK2(MAPK9)	CMGC	MAPK	JNK	MAPK9	MAPK9	mitogen-activated protein kinase 9	MAPK_JNK
+239	JNK3(MAPK10)	CMGC	MAPK	JNK	MAPK10	MAPK10	mitogen-activated protein kinase 10	MAPK_JNK
+240	NLK	CMGC	MAPK	nmo	NLK	NLK	nemo-like kinase	MAPK_nmo
+241	p38a(MAPK14)	CMGC	MAPK	p38	MAPK14	MAPK14	mitogen-activated protein kinase 14	MAPK_p38
+242	p38b(MAPK11)	CMGC	MAPK	p38	MAPK11	MAPK11	mitogen-activated protein kinase 11	MAPK_p38
+243	p38d(MAPK13)	CMGC	MAPK	p38	MAPK13	MAPK13	mitogen-activated protein kinase 13	MAPK_p38
+244	p38g(MAPK12)	CMGC	MAPK	p38	MAPK12	MAPK12	mitogen-activated protein kinase 12	MAPK_p38
+245	MAK	CMGC	RCK		MAK	MAK	male germ cell-associated kinase	RCK
+246	MOK	CMGC	RCK		RAGE	AGER	renal tumor antigen	RCK
+247	ICK	CMGC	RCK		ICK	ICK	intestinal cell (MAK-like) kinase	RCK
+248	SRPK1	CMGC	SRPK		SRPK1	SRPK1	SFRS protein kinase 1	SRPK
+249	SRPK2	CMGC	SRPK		SRPK2	SRPK2	SFRS protein kinase 2	SRPK
+250	MSSK1	CMGC	SRPK		SRPK3	SRPK3	SFRS protein kinase 3	SRPK
+251	AurA	Other	Aur		AURKA	AURKA	aurora kinase A	Aur
+252	AurC	Other	Aur		AURKC	AURKC	aurora kinase C	Aur
+253	AurB	Other	Aur		AURKB	AURKB	aurora kinase B	Aur
+254	BUB1	Other	BUB		BUB1	BUB1	BUB1 budding uninhibited by benzimidazoles 1 homolog (yeast)	BUB
+255	BUBR1	Other	BUB		BUB1B	BUB1B	BUB1 budding uninhibited by benzimidazoles 1 homolog beta (yeast)	BUB
+256	PRPK	Other	Bud32		TP53RK	TP53RK	TP53 regulating kinase	Bud32
+257	CaMKK2	Other	CAMKK	Meta	CAMKK2	CAMKK2	calcium/calmodulin-dependent protein kinase kinase 2, beta	CAMKK_Meta
+258	CaMKK1	Other	CAMKK	Meta	CAMKK1	CAMKK1	calcium/calmodulin-dependent protein kinase kinase 1, alpha	CAMKK_Meta
+259	CDC7	Other	CDC7		CDC7	CDC7	cell division cycle 7 homolog (S. cerevisiae)	CDC7
+260	Haspin	Other	Haspin		GSG2	GSG2	germ cell associated 2 (haspin)	Haspin
+261	IKKa	Other	IKK		CHUK	CHUK	conserved helix-loop-helix ubiquitous kinase	IKK
+262	IKKb	Other	IKK		IKBKB	IKBKB	inhibitor of kappa light polypeptide gene enhancer in B-cells, kinase beta	IKK
+263	IKKe	Other	IKK		IKBKE	IKBKE	inhibitor of kappa light polypeptide gene enhancer in B-cells, kinase epsilon	IKK
+264	TBK1	Other	IKK		TBK1	TBK1	TANK-binding kinase 1	IKK
+265	IRE1	Other	IRE		ERN1	ERN1	endoplasmic reticulum to nucleus signalling 1	IRE
+266	IRE2	Other	IRE		ERN2	ERN2	endoplasmic reticulum to nucleus signalling 2	IRE
+267	KIS	Other	KIS		UHMK1	UHMK1	U2AF homology motif (UHM) kinase 1	KIS
+268	MOS	Other	MOS		MOS	MOS	v-mos Moloney murine sarcoma viral oncogene homolog	MOS
+269	AAK1	Other	NAK	BIKE	AAK1	AAK1	AP2 associated kinase 1	NAK_BIKE
+270	BIKE	Other	NAK	BIKE	BMP2K	BMP2K	BMP2 inducible kinase	NAK_BIKE
+271	GAK	Other	NAK	GAK	GAK	GAK	cyclin G associated kinase	NAK_GAK
+272	MPSK1	Other	NAK	MPSK	STK16	STK16	serine/threonine kinase 16	NAK_MPSK
+273	NEK1	Other	NEK	NEK1	NEK1	NEK1	NIMA (never in mitosis gene a)-related kinase 1	NEK_NEK1
+274	NEK3	Other	NEK	NEK1	NEK3	NEK3	NIMA (never in mitosis gene a)-related kinase 3	NEK_NEK1
+275	NEK5	Other	NEK	NEK1	NEK5	NEK5	NIMA (never in mitosis gene a)-related kinase 5	NEK_NEK1
+276	NEK10	Other	NEK	NEK10	NEK10	NEK10	NIMA (never in mitosis gene a)- related kinase 10	NEK_NEK10
+277	NEK11	Other	NEK	NEK11	NEK11	NEK11	NIMA (never in mitosis gene a)- related kinase 11	NEK_NEK11
+278	NEK2	Other	NEK	NEK2	NEK2	NEK2	NIMA (never in mitosis gene a)-related kinase 2	NEK_NEK2
+279	NEK4	Other	NEK	NEK4	NEK4	NEK4	NIMA (never in mitosis gene a)-related kinase 4	NEK_NEK4
+280	NEK6	Other	NEK	NEK6	NEK6	NEK6	NIMA (never in mitosis gene a)-related kinase 6	NEK_NEK6
+281	NEK7	Other	NEK	NEK6	NEK7	NEK7	NIMA (never in mitosis gene a)-related kinase 7	NEK_NEK6
+282	NEK9	Other	NEK	NEK8	NEK9	NEK9	NIMA (never in mitosis gene a)- related kinase 9	NEK_NEK8
+283	NEK8	Other	NEK	NEK8	NEK8	NEK8	NIMA (never in mitosis gene a)- related kinase 8	NEK_NEK8
+284	SBK	Other	NKF1		SBK1	SBK1	SH3-binding domain kinase 1	NKF1
+285	SgK069	Other	NKF1		LOC646643	SBK2	similar to protein kinase Bsk146	NKF1
+286	SgK110	Other	NKF1					NKF1
+287	PINK1	Other	NKF2		PINK1	PINK1	PTEN induced putative kinase 1	NKF2
+288	SgK269	Other	NKF3		KIAA2002	PEAK1	KIAA2002 protein	NKF3
+289	SgK223	Other	NKF3		DKFZP761P0423	SGK223	homolog of rat pragma of Rnd2	NKF3
+290	CLIK1	Other	NKF4		STK35	STK35	serine/threonine kinase 35	NKF4
+291	CLIK1L	Other	NKF4		PDIK1L	PDIK1L	PDLIM1 interacting kinase 1 like	NKF4
+292	SgK307	Other	NKF5		TEX14	TEX14	testis expressed sequence 14	NKF5
+293	SgK424	Other	NKF5					NKF5
+294	NRBP1	Other	NRBP		NRBP1	NRBP1	nuclear receptor binding protein 1	NRBP
+295	NRBP2	Other	NRBP		NRBP2	NRBP2	nuclear receptor binding protein 2	NRBP
+296	RNAseL	Other	Other-Unique		RNASEL	RNASEL	ribonuclease L (2,5-oligoisoadenylate synthetase-dependent)	Other-Unique
+297	SgK396	Other	Other-Unique		STK31	STK31	serine/threonine kinase 31	Other-Unique
+298	SgK196	Other	Other-Unique		FLJ23356	SGK196	hypothetical protein FLJ23356	Other-Unique
+299	GCN2	Other	PEK	GCN2	EIF2AK4	EIF2AK4	eukaryotic translation initiation factor 2 alpha kinase 4	PEK_GCN2
+300	HRI	Other	PEK	HRI	EIF2AK1	EIF2AK1	eukaryotic translation initiation factor 2-alpha kinase 1	PEK_HRI
+301	PEK	Other	PEK	PEK	EIF2AK3	EIF2AK3	eukaryotic translation initiation factor 2-alpha kinase 3	PEK_PEK
+302	PKR	Other	PEK	PKR	EIF2AK2	EIF2AK2	eukaryotic translation initiation factor 2-alpha kinase 2	PEK_PKR
+303	PLK1	Other	PLK	PLK1	PLK1	PLK1	polo-like kinase 1 (Drosophila)	PLK_PLK1
+304	PLK3	Other	PLK	PLK2	PLK3	PLK3	polo-like kinase 3 (Drosophila)	PLK_PLK2
+305	PLK2	Other	PLK	PLK2	PLK2	PLK2	polo-like kinase 2 (Drosophila)	PLK_PLK2
+306	PLK4	Other	PLK	SAK	PLK4	PLK4	polo-like kinase 4 (Drosophila)	PLK_SAK
+307	SCYL2	Other	SCY1		SCYL2	SCYL2	SCY1-like 2 (S. cerevisiae)	SCY1
+308	SCYL3	Other	SCY1		SCYL3	SCYL3	SCY1-like 3 (S. cerevisiae)	SCY1
+309	SCYL1	Other	SCY1		SCYL1	SCYL1	SCY1-like 1 (S. cerevisiae)	SCY1
+310	SgK071	Other	SgK071		C9ORF96	C9ORF96	chromosome 9 open reading frame 96	SgK071
+311	SgK493	Other	SgK493		LOC91461	PKDCC	hypothetical protein BC007901	SgK493
+312	SgK496	Other	SgK496		RIPK5	DSTYK	receptor interacting protein kinase 5	SgK496
+313	Slob	Other	Slob		PXK	PXK	PX domain containing serine/threonine kinase	Slob
+314	TBCK	Other	TBCK		MGC16169	TBCK	hypothetical protein MGC16169	TBCK
+315	TLK1	Other	TLK		TLK1	TLK1	tousled-like kinase 1	TLK
+316	TLK2	Other	TLK		TLK2	TLK2	tousled-like kinase 2	TLK
+317	PBK	Other	TOPK		PBK	PBK	PDZ binding kinase	TOPK
+318	TTK	Other	TTK		TTK	TTK	TTK protein kinase	TTK
+319	Fused	Other	ULK	Fused	STK36	STK36	serine/threonine kinase 36, fused homolog (Drosophila)	ULK_Fused
+320	ULK1	Other	ULK	ULK	ULK1	ULK1	unc-51-like kinase 1 (C. elegans)	ULK_ULK
+321	ULK2	Other	ULK	ULK	ULK2	ULK2	unc-51-like kinase 2 (C. elegans)	ULK_ULK
+322	ULK3	Other	ULK	ULK	ULK3	ULK3	unc-51-like kinase 3 (C. elegans)	ULK_ULK
+323	ULK4	Other	ULK	ULK	ULK4	ULK4	unc-51-like kinase 4 (C. elegans)	ULK_ULK
+324	PIK3R4	Other	VPS15		PIK3R4	PIK3R4	phosphoinositide-3-kinase, regulatory subunit 4, p150	VPS15
+325	Wee1	Other	WEE		WEE1	WEE1	WEE1 homolog (S. pombe)	WEE
+326	MYT1	Other	WEE		PKMYT1	PKMYT1	protein kinase, membrane associated tyrosine/threonine 1	WEE
+327	Wee1B	Other	WEE		FLJ40852	WEE1B	hypothetical protein FLJ40852	WEE
+328	Wnk1	Other	WNK		WNK1	WNK1	WNK lysine deficient protein kinase 1	WNK
+329	Wnk4	Other	WNK		WNK4	WNK4	WNK lysine deficient protein kinase 4	WNK
+330	Wnk3	Other	WNK		WNK3	WNK3	WNK lysine deficient protein kinase 3	WNK
+331	Wnk2	Other	WNK		WNK2	WNK2	WNK lysine deficient protein kinase 2	WNK
+332	HSER	RGC	RGC		GUCY2C	GUCY2C	guanylate cyclase 2C (heat stable enterotoxin receptor)	RGC
+333	CYGF	RGC	RGC		GUCY2F	GUCY2F	guanylate cyclase 2F, retinal	RGC
+334	CYGD	RGC	RGC		GUCY2D	GUCY2D	guanylate cyclase 2D, membrane (retina-specific)	RGC
+335	ANPa	RGC	RGC		NPR1	NPR1	natriuretic peptide receptor A/guanylate cyclase A (atrionatriuretic peptide receptor A)	RGC
+336	ANPb	RGC	RGC		NPR2	NPR2	natriuretic peptide receptor B/guanylate cyclase B (atrionatriuretic peptide receptor B)	RGC
+337	MAP3K5	STE	STE11	ASK	MAP3K5	MAP3K5	mitogen-activated protein kinase kinase kinase 5	STE11_ASK
+338	MAP3K6	STE	STE11	ASK	MAP3K6	MAP3K6	mitogen-activated protein kinase kinase kinase 6	STE11_ASK
+339	MAP3K7	STE	STE11	ASK	MAP3K15	MAP3K15	mitogen-activated protein kinase kinase kinase 15	STE11_ASK
+340	MAP3K1	STE	STE11	MEKK1	MAP3K1	MAP3K1	mitogen-activated protein kinase kinase kinase 1	STE11_MEKK1
+341	MAP3K8	STE	STE11	MEKK15	YSK4	YSK4	yeast Sps1/Ste20-related kinase 4 (S. cerevisiae)	STE11_MEKK15
+342	MAP3K3	STE	STE11	MEKK2	MAP3K3	MAP3K3	mitogen-activated protein kinase kinase kinase 3	STE11_MEKK2
+343	MAP3K2	STE	STE11	MEKK2	MAP3K2	MAP3K2	mitogen-activated protein kinase kinase kinase 2	STE11_MEKK2
+344	MAP3K4	STE	STE11	MEKK4	MAP3K4	MAP3K4	mitogen-activated protein kinase kinase kinase 4	STE11_MEKK4
+345	OSR1	STE	STE20	FRAY	OXSR1	OXSR1	oxidative-stress responsive 1	STE20_FRAY
+346	STLK3	STE	STE20	FRAY	STK39	STK39	serine threonine kinase 39 (STE20/SPS1 homolog, yeast)	STE20_FRAY
+347	GCK	STE	STE20	KHS	MAP4K2	MAP4K2	mitogen-activated protein kinase kinase kinase kinase 2	STE20_KHS
+348	KHS2	STE	STE20	KHS	MAP4K3	MAP4K3	mitogen-activated protein kinase kinase kinase kinase 3	STE20_KHS
+349	KHS1	STE	STE20	KHS	MAP4K5	MAP4K5	mitogen-activated protein kinase kinase kinase kinase 5	STE20_KHS
+350	HPK1	STE	STE20	KHS	MAP4K1	MAP4K1	mitogen-activated protein kinase kinase kinase kinase 1	STE20_KHS
+351	HGK	STE	STE20	MSN	MAP4K4	MAP4K4	mitogen-activated protein kinase kinase kinase kinase 4	STE20_MSN
+352	TNIK	STE	STE20	MSN	TNIK	TNIK	TRAF2 and NCK interacting kinase	STE20_MSN
+353	NRK	STE	STE20	MSN	NRK	NRK	Nik related kinase	STE20_MSN
+354	MINK	STE	STE20	MSN	MINK1	MINK1	misshapen-like kinase 1 (zebrafish)	STE20_MSN
+355	MST2	STE	STE20	MST	STK3	STK3	serine/threonine kinase 3 (STE20 homolog, yeast)	STE20_MST
+356	MST1	STE	STE20	MST	STK4	STK4	serine/threonine kinase 4	STE20_MST
+357	MYO3A	STE	STE20	NinaC	MYO3A	MYO3A	myosin IIIA	STE20_NinaC
+358	MYO3B	STE	STE20	NinaC	MYO3B	MYO3B	myosin IIIB	STE20_NinaC
+359	PAK1	STE	STE20	PAK(PAKA)	PAK1	PAK1	p21/Cdc42/Rac1-activated kinase 1 (STE20 homolog, yeast)	STE20_PAK(PAKA)
+360	PAK2	STE	STE20	PAK(PAKA)	PAK2	PAK2	p21 (CDKN1A)-activated kinase 2	STE20_PAK(PAKA)
+361	PAK3	STE	STE20	PAK(PAKA)	PAK3	PAK3	p21 (CDKN1A)-activated kinase 3	STE20_PAK(PAKA)
+362	PAK4	STE	STE20	PAK(PAKB)	PAK4	PAK4	p21(CDKN1A)-activated kinase 4	STE20_PAK(PAKB)
+363	PAK6	STE	STE20	PAK(PAKB)	PAK6	PAK6	p21(CDKN1A)-activated kinase 6	STE20_PAK(PAKB)
+364	PAK5	STE	STE20	PAK(PAKB)	PAK7	PAK7	p21(CDKN1A)-activated kinase 7	STE20_PAK(PAKB)
+365	LOK	STE	STE20	SLK	STK10	STK10	serine/threonine kinase 10	STE20_SLK
+366	SLK	STE	STE20	SLK	SLK	SLK	STE20-like kinase (yeast)	STE20_SLK
+367	STLK6	STE	STE20	STLK	ALS2CR2	STRADB	amyotrophic lateral sclerosis 2 (juvenile) chromosome region, candidate 2	STE20_STLK
+368	STLK5	STE	STE20	STLK	LYK5	STRADA	protein kinase LYK5	STE20_STLK
+369	TAO2	STE	STE20	TAO	TAOK2	TAOK2	TAO kinase 2	STE20_TAO
+370	TAO3	STE	STE20	TAO	TAOK3	TAOK3	TAO kinase 3	STE20_TAO
+371	TAO1	STE	STE20	TAO	TAOK1	TAOK1	TAO kinase 1	STE20_TAO
+372	MST3	STE	STE20	YSK	STK24	STK24	serine/threonine kinase 24 (STE20 homolog, yeast)	STE20_YSK
+373	YSK1	STE	STE20	YSK	STK25	STK25	serine/threonine kinase 25 (STE20 homolog, yeast)	STE20_YSK
+374	MST4	STE	STE20	YSK	RP6-213H19.1	ANKHD1	serine/threonine protein kinase MST4	STE20_YSK
+375	MAP2K1	STE	STE7	MAP2K(MEK1)	MAP2K1	MAP2K1	mitogen-activated protein kinase kinase 1	STE7_MAP2K(MEK1)
+376	MAP2K2	STE	STE7	MAP2K(MEK1)	MAP2K2	MAP2K2	mitogen-activated protein kinase kinase 2	STE7_MAP2K(MEK1)
+377	MAP2K3	STE	STE7	MAP2K(MEK3)	MAP2K3	MAP2K3	mitogen-activated protein kinase kinase 3	STE7_MAP2K(MEK3)
+378	MAP2K6	STE	STE7	MAP2K(MEK3)	MAP2K6	MAP2K6	mitogen-activated protein kinase kinase 6	STE7_MAP2K(MEK3)
+379	MAP2K4	STE	STE7	MAP2K(MEK4)	MAP2K4	MAP2K4	mitogen-activated protein kinase kinase 4	STE7_MAP2K(MEK4)
+380	MAP2K5	STE	STE7	MAP2K(MEK5)	MAP2K5	MAP2K5	mitogen-activated protein kinase kinase 5	STE7_MAP2K(MEK5)
+381	MAP2K7	STE	STE7	MAP2K(MEK7)	MAP2K7	MAP2K7	mitogen-activated protein kinase kinase 7	STE7_MAP2K(MEK7)
+382	COT	STE	STE-Unique		MAP3K8	MAP3K8	mitogen-activated protein kinase kinase kinase 8	STE-Unique
+383	NIK	STE	STE-Unique		MAP3K14	MAP3K14	mitogen-activated protein kinase kinase kinase 14	STE-Unique
+384	ABL1(Abl)	TK	Abl		ABL1	ABL1	v-abl Abelson murine leukemia viral oncogene homolog 1	Abl
+385	ABL2(ARG)	TK	Abl		ABL2	ABL2	v-abl Abelson murine leukemia viral oncogene homolog 2 (arg, Abelson-related gene)	Abl
+386	ACK	TK	Ack		TNK2	TNK2	tyrosine kinase, non-receptor, 2	Ack
+387	TNK1	TK	Ack		TNK1	TNK1	tyrosine kinase, non-receptor, 1	Ack
+388	ALK	TK	ALK		ALK	ALK	anaplastic lymphoma kinase (Ki-1)	ALK
+389	LTK	TK	ALK		LTK	LTK	leukocyte tyrosine kinase	ALK
+390	AXL	TK	Axl		AXL	AXL	AXL receptor tyrosine kinase	Axl
+391	TYRO3	TK	Axl		TYRO3	TYRO3	TYRO3 protein tyrosine kinase	Axl
+392	MER	TK	Axl		MERTK	MERTK	c-mer proto-oncogene tyrosine kinase	Axl
+393	CCK4	TK	CCK4		PTK7	PTK7	PTK7 protein tyrosine kinase 7	CCK4
+394	CSK	TK	Csk		CSK	CSK	c-src tyrosine kinase	Csk
+395	CTK	TK	Csk		MATK	MATK	megakaryocyte-associated tyrosine kinase	Csk
+396	DDR1	TK	DDR		DDR1	DDR1	discoidin domain receptor family, member 1	DDR
+397	DDR2	TK	DDR		DDR2	DDR2	discoidin domain receptor family, member 2	DDR
+398	EGFR	TK	EGFR		EGFR	EGFR	epidermal growth factor receptor (erythroblastic leukemia viral (v-erb-b) oncogene homolog, avian)	EGFR
+399	ErbB2	TK	EGFR		ERBB2	ERBB2	v-erb-b2 erythroblastic leukemia viral oncogene homolog 2, neuro/glioblastoma derived oncogene homolog (avian)	EGFR
+400	ErbB3	TK	EGFR		ERBB3	ERBB3	v-erb-b2 erythroblastic leukemia viral oncogene homolog 3 (avian)	EGFR
+401	ErbB4	TK	EGFR		ERBB4	ERBB4	v-erb-a erythroblastic leukemia viral oncogene homolog 4 (avian)	EGFR
+402	EphA2	TK	Eph		EPHA2	EPHA2	EPH receptor A2	Eph
+403	EphA1	TK	Eph		EPHA1	EPHA1	EPH receptor A1	Eph
+404	EphA3	TK	Eph		EPHA3	EPHA3	EPH receptor A3	Eph
+405	EphA4	TK	Eph		EPHA4	EPHA4	EPH receptor A4	Eph
+406	EphA5	TK	Eph		EPHA5	EPHA5	EPH receptor A5	Eph
+407	EphA7	TK	Eph		EPHA7	EPHA7	EPH receptor A7	Eph
+408	EphA8	TK	Eph		EPHA8	EPHA8	EPH receptor A8	Eph
+409	EphB1	TK	Eph		EPHB1	EPHB1	EPH receptor B1	Eph
+410	EphB2	TK	Eph		EPHB2	EPHB2	EPH receptor B2	Eph
+411	EphB3	TK	Eph		EPHB3	EPHB3	EPH receptor B3	Eph
+412	EphB4	TK	Eph		EPHB4	EPHB4	EPH receptor B4	Eph
+413	EphB6	TK	Eph		EPHB6	EPHB6	EPH receptor B6	Eph
+414	EphA10	TK	Eph		EPHA10	EPHA10	EPH receptor A10	Eph
+415	EphA6	TK	Eph		EPHA6	EPHA6	EPH receptor A6	Eph
+416	PYK2	TK	FAK		PTK2B	PTK2B	PTK2B protein tyrosine kinase 2 beta	FAK
+417	FAK	TK	FAK		PTK2	PTK2	PTK2 protein tyrosine kinase 2	FAK
+418	FER	TK	Fer		FER	FER	fer (fps/fes related) tyrosine kinase (phosphoprotein NCP94)	Fer
+419	FES	TK	Fer		FES	FES	feline sarcoma oncogene	Fer
+420	FGFR1	TK	FGFR		FGFR1	FGFR1	fibroblast growth factor receptor 1 (fms-related tyrosine kinase 2, Pfeiffer syndrome)	FGFR
+421	FGFR3	TK	FGFR		FGFR3	FGFR3	fibroblast growth factor receptor 3 (achondroplasia, thanatophoric dwarfism)	FGFR
+422	FGFR2	TK	FGFR		FGFR2	FGFR2	fibroblast growth factor receptor 2 (bacteria-expressed kinase, keratinocyte growth factor receptor, craniofacial dysostosis 1, Crouzon syndrome, Pfeiffer syndrome, Jackson-Weiss syndrome)	FGFR
+423	FGFR4	TK	FGFR		FGFR4	FGFR4	fibroblast growth factor receptor 4	FGFR
+424	IGF1R	TK	InsR		IGF1R	IGF1R	insulin-like growth factor 1 receptor	InsR
+425	INSR	TK	InsR		INSR	INSR	insulin receptor	InsR
+426	IRR	TK	InsR		INSRR	INSRR	insulin receptor-related receptor	InsR
+427	JAK1	TK	JAK		JAK1	JAK1	Janus kinase 1 (a protein tyrosine kinase)	JAK
+428	JAK2	TK	JAK		JAK2	JAK2	Janus kinase 2 (a protein tyrosine kinase)	JAK
+429	JAK3	TK	JAK		JAK3	JAK3	Janus kinase 3 (a protein tyrosine kinase, leukocyte)	JAK
+430	TYK2	TK	JAK		TYK2	TYK2	tyrosine kinase 2	JAK
+431	LMR1	TK	Lmr		AATK	AATK	apoptosis-associated tyrosine kinase	Lmr
+432	LMR2	TK	Lmr		LMTK2	LMTK2	lemur tyrosine kinase 2	Lmr
+433	LMR3	TK	Lmr		LMTK3	LMTK3	lemur tyrosine kinase 3	Lmr
+434	MET	TK	Met		MET	MET	met proto-oncogene (hepatocyte growth factor receptor)	Met
+435	RON	TK	Met		MST1R	MST1R	macrophage stimulating 1 receptor (c-met-related tyrosine kinase)	Met
+436	MUSK	TK	Musk		MUSK	MUSK	muscle, skeletal, receptor tyrosine kinase	Musk
+437	FMS	TK	PDGFR		CSF1R	CSF1R	colony stimulating factor 1 receptor, formerly McDonough feline sarcoma viral (v-fms) oncogene homolog	PDGFR
+438	FLT3	TK	PDGFR		FLT3	FLT3	fms-related tyrosine kinase 3	PDGFR
+439	KIT	TK	PDGFR		KIT	KIT	v-kit Hardy-Zuckerman 4 feline sarcoma viral oncogene homolog	PDGFR
+440	PDGFRa	TK	PDGFR		PDGFRA	PDGFRA	platelet-derived growth factor receptor, alpha polypeptide	PDGFR
+441	PDGFRb	TK	PDGFR		PDGFRB	PDGFRB	platelet-derived growth factor receptor, beta polypeptide	PDGFR
+442	RET	TK	Ret		RET	RET	ret proto-oncogene (multiple endocrine neoplasia and medullary thyroid carcinoma 1, Hirschsprung disease)	Ret
+443	ROR1	TK	Ror		ROR1	ROR1	receptor tyrosine kinase-like orphan receptor 1	Ror
+444	ROR2	TK	Ror		ROR2	ROR2	receptor tyrosine kinase-like orphan receptor 2	Ror
+445	RYK	TK	Ryk		RYK	RYK	RYK receptor-like tyrosine kinase	Ryk
+446	ROS	TK	Sev		ROS1	ROS1	v-ros UR2 sarcoma virus oncogene homolog 1 (avian)	Sev
+447	FRK	TK	Src	Frk	FRK	FRK	fyn-related kinase	Src_Frk
+448	FGR	TK	Src	SrcA	FGR	FGR	Gardner-Rasheed feline sarcoma viral (v-fgr) oncogene homolog	Src_SrcA
+449	FYN	TK	Src	SrcA	FYN	FYN	FYN oncogene related to SRC, FGR, YES	Src_SrcA
+450	SRC	TK	Src	SrcA	SRC	SRC	v-src sarcoma (Schmidt-Ruppin A-2) viral oncogene homolog (avian)	Src_SrcA
+451	YES	TK	Src	SrcA	YES1	YES1	v-yes-1 Yamaguchi sarcoma viral oncogene homolog 1	Src_SrcA
+452	BLK	TK	Src	SrcB	BLK	BLK	B lymphoid tyrosine kinase	Src_SrcB
+453	HCK	TK	Src	SrcB	HCK	HCK	hemopoietic cell kinase	Src_SrcB
+454	LCK	TK	Src	SrcB	LCK	LCK	lymphocyte-specific protein tyrosine kinase	Src_SrcB
+455	LYN	TK	Src	SrcB	LYN	LYN	v-yes-1 Yamaguchi sarcoma viral related oncogene homolog	Src_SrcB
+456	BRK	TK	Src	SRM	PTK6	PTK6	PTK6 protein tyrosine kinase 6	Src_SRM
+457	SRM	TK	Src	SRM	SRMS	SRMS	src-related kinase lacking C-terminal regulatory tyrosine and N-terminal myristylation sites	Src_SRM
+458	SYK	TK	Syk		SYK	SYK	spleen tyrosine kinase	Syk
+459	ZAP70	TK	Syk		ZAP70	ZAP70	zeta-chain (TCR) associated protein kinase 70kDa	Syk
+460	BMX	TK	Tec		BMX	BMX	BMX non-receptor tyrosine kinase	Tec
+461	BTK	TK	Tec		BTK	BTK	Bruton agammaglobulinemia tyrosine kinase	Tec
+462	ITK	TK	Tec		ITK	ITK	IL2-inducible T-cell kinase	Tec
+463	TEC	TK	Tec		TEC	TEC	tec protein tyrosine kinase	Tec
+464	TXK	TK	Tec		TXK	TXK	TXK tyrosine kinase	Tec
+465	TIE2	TK	Tie		TEK	TEK	TEK tyrosine kinase, endothelial (venous malformations, multiple cutaneous and mucosal)	Tie
+466	TIE1	TK	Tie		TIE1	TIE1	tyrosine kinase with immunoglobulin-like and EGF-like domains 1	Tie
+467	SuRTK106	TK	TK-Unique		STYK1	STYK1	serine/threonine/tyrosine kinase 1	TK-Unique
+468	TRKA	TK	Trk		NTRK1	NTRK1	neurotrophic tyrosine kinase, receptor, type 1	Trk
+469	TRKB	TK	Trk		NTRK2	NTRK2	neurotrophic tyrosine kinase, receptor, type 2	Trk
+470	TRKC	TK	Trk		NTRK3	NTRK3	neurotrophic tyrosine kinase, receptor, type 3	Trk
+471	FLT1	TK	VEGFR		FLT1	FLT1	fms-related tyrosine kinase 1 (vascular endothelial growth factor/vascular permeability factor receptor)	VEGFR
+472	FLT4	TK	VEGFR		FLT4	FLT4	fms-related tyrosine kinase 4	VEGFR
+473	KDR	TK	VEGFR		KDR	KDR	kinase insert domain receptor (a type III receptor tyrosine kinase)	VEGFR
+474	IRAK1	TKL	IRAK		IRAK1	IRAK1	interleukin-1 receptor-associated kinase 1	IRAK
+475	IRAK2	TKL	IRAK		IRAK2	IRAK2	interleukin-1 receptor-associated kinase 2	IRAK
+476	IRAK3	TKL	IRAK		IRAK3	IRAK3	interleukin-1 receptor-associated kinase 3	IRAK
+477	IRAK4	TKL	IRAK		IRAK4	IRAK4	interleukin-1 receptor-associated kinase 4	IRAK
+478	LIMK1	TKL	LISK	LIMK	LIMK1	LIMK1	LIM domain kinase 1	LISK_LIMK
+479	LIMK2	TKL	LISK	LIMK	LIMK2	LIMK2	LIM domain kinase 2	LISK_LIMK
+480	TESK1	TKL	LISK	TESK	TESK1	TESK1	testis-specific kinase 1	LISK_TESK
+481	TESK2	TKL	LISK	TESK	TESK2	TESK2	testis-specific kinase 2	LISK_TESK
+482	LRRK1	TKL	LRRK		LRRK1	LRRK1	leucine-rich repeat kinase 1	LRRK
+483	LRRK2	TKL	LRRK		LRRK2	LRRK2	leucine-rich repeat kinase 2	LRRK
+484	HH498	TKL	MLK	HH498	TNNI3K	FPGT-TNNI3K	TNNI3 interacting kinase	MLK_HH498
+485	ILK	TKL	MLK	ILK	ILK	ILK	integrin-linked kinase	MLK_ILK
+486	DLK	TKL	MLK	LZK	MAP3K12	MAP3K12	mitogen-activated protein kinase kinase kinase 12	MLK_LZK
+487	LZK	TKL	MLK	LZK	MAP3K13	MAP3K13	mitogen-activated protein kinase kinase kinase 13	MLK_LZK
+488	MLK1	TKL	MLK	MLK	MAP3K9	MAP3K9	mitogen-activated protein kinase kinase kinase 9	MLK_MLK
+489	MLK2	TKL	MLK	MLK	MAP3K10	MAP3K10	mitogen-activated protein kinase kinase kinase 10	MLK_MLK
+490	MLK3	TKL	MLK	MLK	MAP3K11	MAP3K11	mitogen-activated protein kinase kinase kinase 11	MLK_MLK
+491	MLK4	TKL	MLK	MLK	KIAA1804	MLK4	mixed lineage kinase 4	MLK_MLK
+492	TAK1	TKL	MLK	TAK1	MAP3K7	MAP3K7	mitogen-activated protein kinase kinase kinase 7	MLK_TAK1
+493	ZAK	TKL	MLK	ZAK	ZAK	ZAK	sterile alpha motif and leucine zipper containing kinase AZK	MLK_ZAK
+494	KSR1	TKL	RAF	KSR	KSR1	KSR1	kinase suppressor of ras 1	RAF_KSR
+495	KSR2	TKL	RAF	KSR	KSR2	KSR2	kinase suppressor of ras 2	RAF_KSR
+496	ARAF	TKL	RAF	RAF	ARAF	ARAF	v-raf murine sarcoma 3611 viral oncogene homolog	RAF_RAF
+497	BRAF	TKL	RAF	RAF	BRAF	BRAF	v-raf murine sarcoma viral oncogene homolog B1	RAF_RAF
+498	RAF1	TKL	RAF	RAF	RAF1	RAF1	v-raf-1 murine leukemia viral oncogene homolog 1	RAF_RAF
+499	RIPK1	TKL	RIPK		RIPK1	RIPK1	receptor (TNFRSF)-interacting serine-threonine kinase 1	RIPK
+500	RIPK2	TKL	RIPK		RIPK2	RIPK2	receptor-interacting serine-threonine kinase 2	RIPK
+501	RIPK3	TKL	RIPK		RIPK3	RIPK3	receptor-interacting serine-threonine kinase 3	RIPK
+502	ANKRD3	TKL	RIPK		RIPK4	RIPK4	receptor-interacting serine-threonine kinase 4	RIPK
+503	SgK288	TKL	RIPK		ANKK1	ANKK1	ankyrin repeat and kinase domain containing 1	RIPK
+504	ALK2	TKL	STKR	Type1	ACVR1	ACVR1	activin A receptor, type I	STKR_Type1
+505	ALK4	TKL	STKR	Type1	ACVR1B	ACVR1B	activin A receptor, type IB	STKR_Type1
+506	ALK1	TKL	STKR	Type1	ACVRL1	ACVRL1	activin A receptor type II-like 1	STKR_Type1
+507	BMPR1A	TKL	STKR	Type1	BMPR1A	BMPR1A	bone morphogenetic protein receptor, type IA	STKR_Type1
+508	BMPR1B	TKL	STKR	Type1	BMPR1B	BMPR1B	bone morphogenetic protein receptor, type IB	STKR_Type1
+509	TGFbR1	TKL	STKR	Type1	TGFBR1	TGFBR1	transforming growth factor, beta receptor I (activin A receptor type II-like kinase, 53kDa)	STKR_Type1
+510	ALK7	TKL	STKR	Type1	ACVR1C	ACVR1C	activin A receptor, type IC	STKR_Type1
+511	ACTR2	TKL	STKR	Type2	ACVR2A	ACVR2A	activin A receptor, type IIA	STKR_Type2
+512	ACTR2B	TKL	STKR	Type2	ACVR2B	ACVR2B	activin A receptor, type IIB	STKR_Type2
+513	MISR2	TKL	STKR	Type2	AMHR2	AMHR2	anti-Mullerian hormone receptor, type II	STKR_Type2
+514	BMPR2	TKL	STKR	Type2	BMPR2	BMPR2	bone morphogenetic protein receptor, type II (serine/threonine kinase)	STKR_Type2
+515	TGFbR2	TKL	STKR	Type2	TGFBR2	TGFBR2	transforming growth factor, beta receptor II (70/80kDa)	STKR_Type2
+516	MLKL	TKL	TKL-Unique		MLKL	MLKL	mixed lineage kinase domain-like	TKL-Unique
+517	CK2a1-rs	CMGC	CK2					CK2
+518	STLK6-rs	STE	STE20	STLK				STE20_STLK
