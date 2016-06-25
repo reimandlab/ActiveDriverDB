@@ -67,25 +67,29 @@ class ObjectFilter(Filter):
         self.property = property_name
         self.comparator_name = comparator_name
         self.comparator_func = self.comparators[comparator_name]
+        self.value = self._parse_value(value)
 
+    @staticmethod
+    def _parse_value(value):
+        """Safely parse value from string, without eval"""
         try:
-            value = int(value)
+            return int(value)
         except ValueError:
             pass
 
         try:
-            value = float(value)
+            return float(value)
         except ValueError:
             pass
 
         if value == 'True':
-            value = True
+            return True
         elif value == 'False':
-            value = False
+            return False
         elif value == 'None':
-            value = None
+            return None
 
-        self.value = value
+        return value
 
     @classmethod
     def from_string(cls, entry):
