@@ -25,7 +25,7 @@ var Network = (function ()
         return r
     }
 
-    function createProteinNode(protein)
+    function createProteinNode()
     {
         var radius = calculateRadius(protein.mutations_count)
 
@@ -50,6 +50,7 @@ var Network = (function ()
 
     function configure(new_config)
     {
+        // Automatical configuration update:
         for(var key in new_config)
         {
             if(new_config.hasOwnProperty(key))
@@ -57,6 +58,8 @@ var Network = (function ()
                 config[key] = new_config[key]
             }
         }
+        // Manual configuration patching:
+        config.height = config.height || config.width * config.ratio
     }
 
     function getKinasesByName(names)
@@ -67,7 +70,7 @@ var Network = (function ()
         {
             for(var j = 0; j < names.length; j++)
             {
-                if(kinases[i].name == names[j])
+                if(kinases[i].name === names[j])
                 {
                     matching_kinases.push(kinases[i])
                 }
@@ -92,7 +95,7 @@ var Network = (function ()
         return names
     }
 
-    function add_edge(source, target, weight)
+    function addEdge(source, target, weight)
     {
         weight = weight || 1
         edges.push(
@@ -104,12 +107,63 @@ var Network = (function ()
         )
     }
 
+    function prepareKinases()
+    {
+        kinases_in_groups = getKinasesInGroups()
+        for(var i = 0; i < kinases.length; i++)
+        {
+            var kinase = kinases[i]
+            kinase.x = Math.random() * config.width
+            kinase.y = Math.random() * config.height
+            kinase.r = calculateRadius(
+                kinase.protein ? kinase.protein.mutations_count : 0
+            )
+            kinase.node_id = i + 1
+
+            // make links to the central protein's node from those
+            // kinases that do not belong to any of groups
+            if(kinases_in_groups.indexOf(kinase.name) === -1)
+            {
+                addEdge(kinase.node_id, 0)
+            }
+        }
+    }
+
+    function prepareKinaseGroups(index_shift)
+    {
+        for(var i = 0; i < kinase_groups.length; i++)
+        {
+            var group = kinase_groups[i]
+
+            group.x = Math.random() * config.width
+            group.y = Math.random() * config.height
+
+            var group_kinases = getKinasesByName(group.kinases)
+            var group_index = index_shift + i
+
+            var mutations_in_kinases = 0
+            for(var j = 0; j < group_kinases.length; j++)
+            {
+                var kinase = group_kinases[j]
+                mutations_in_kinases += kinase.protein ? kinase.protein.mutations_count : 0
+
+                addEdge(group_index, kinase.node_id)
+            }
+
+            group.r = calculateRadius(
+                mutations_in_kinases / group_kinases.length || 0,
+                true
+            )
+            group.color = 'red'
+            // 0 is (by convention) the index of the central protein
+            addEdge(group_index, 0)
+        }
+    }
+
     var publicSpace = {
         init: function(user_config)
         {
             configure(user_config)
-
-            config.height = config.height || config.width * config.ratio
 
             var force = d3.layout.force()
                 .gravity(0.05)
@@ -127,59 +181,16 @@ var Network = (function ()
 
             kinase_groups = data.kinase_groups
             kinases = data.kinases
+            protein = data.protein
 
-            var protein_node = createProteinNode(data.protein)
+            var protein_node = createProteinNode()
             var nodes_data = [protein_node]
 
-            kinases_in_groups = getKinasesInGroups()
-            for(var i = 0; i < data.kinases.length; i++)
-            {
-                var kinase = data.kinases[i]
-                kinase.x = Math.random() * config.width
-                kinase.y = Math.random() * config.height
-                kinase.r = calculateRadius(
-                    kinase.protein ? kinase.protein.mutations_count : 0
-                )
-                kinase.node_id = i + 1
+            prepareKinases()
+            Array.prototype.push.apply(nodes_data, kinases)
 
-                // make links to the central protein's node from those
-                // kinases that do not belong to any of groups
-                if(kinases_in_groups.indexOf(kinase.name) == -1)
-                {
-                    add_edge(kinase.node_id, 0)
-                }
-            }
-
-            Array.prototype.push.apply(nodes_data, data.kinases)
-
-            for(var i = 0; i < data.kinase_groups.length; i++)
-            {
-                var group = data.kinase_groups[i]
-
-                group.x = Math.random() * config.width
-                group.y = Math.random() * config.height
-
-                var group_kinases = getKinasesByName(group.kinases)
-                var group_index = nodes_data.length + i
-
-                var mutations_in_kinases = 0
-                for(var j = 0; j < group_kinases.length; j++)
-                {
-                    var kinase = group_kinases[j]
-                    mutations_in_kinases += kinase.protein ? kinase.protein.mutations_count : 0
-
-                    add_edge(group_index, kinase.node_id)
-                }
-
-                group.r = calculateRadius(
-                    mutations_in_kinases / group_kinases.length || 0,
-                    true
-                )
-                group.color = 'red'
-                add_edge(group_index, 0)
-            }
-            Array.prototype.push.apply(nodes_data, data.kinase_groups)
-
+            prepareKinaseGroups(nodes_data.length)
+            Array.prototype.push.apply(nodes_data, kinase_groups)
 
             force
                 .nodes(nodes_data)
