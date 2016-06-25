@@ -14,11 +14,9 @@ var Network = (function ()
 
     function calculateRadius(mutations_count, is_group)
     {
-        is_group = is_group ? 1 : 0
-
         var r = config.minimalRadius
-        // the groups are shown as two times bigger
-        r *= (is_group + 1)
+        // the groups are shown as 1.5 times bigger
+        r *= is_group ? 1.5 : 1
         // more mutations = bigger circle
         r += 6 * Math.log10(mutations_count + 1)
 
