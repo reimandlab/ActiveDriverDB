@@ -7,9 +7,15 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.utils import cached_property
 
 
-association_table = db.Table(
-    'association', db.metadata,
+site_kinase_table = db.Table(
+    'site_kinase_association', db.metadata,
     db.Column('kinase_id', db.Integer, db.ForeignKey('kinase.id')),
+    db.Column('site_id', db.Integer, db.ForeignKey('site.id'))
+)
+
+site_kinase_group_table = db.Table(
+    'site_kinase_grop_association', db.metadata,
+    db.Column('kinase_group_id', db.Integer, db.ForeignKey('kinase_group.id')),
     db.Column('site_id', db.Integer, db.ForeignKey('site.id'))
 )
 
@@ -19,7 +25,18 @@ class Kinase(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, index=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
-    is_group = db.Column(db.Boolean, default=False)
+    group_id = db.Column(db.Integer, db.ForeignKey('kinase_group.id'))
+
+
+class KinaseGroup(db.Model):
+    __tablename__ = 'kinase_group'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, index=True)
+    kinases = db.relationship(
+        'Kinase',
+        order_by='Kinase.name',
+        backref='group'
+    )
 
 
 class Protein(db.Model):
@@ -114,6 +131,15 @@ class Protein(db.Model):
             distinct()
         return db.session.query(q)
 
+    @hybrid_property
+    def kinase_groups(self):
+        """Get all kinase_groups associated with this protein"""
+        kinase_groups = set()
+        for site in self.sites:
+            kinase_groups.update((site.kinase_groups))
+        print(kinase_groups)
+        return kinase_groups
+
 
 class Site(db.Model):
     __tablename__ = 'site'
@@ -121,15 +147,12 @@ class Site(db.Model):
     position = db.Column(db.Integer, index=True)
     residue = db.Column(db.String(1))
     pmid = db.Column(db.Text)
-    kinases = db.relationship('Kinase', secondary=association_table)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
-
-    def __init__(self, position, residue, pmid, protein, kinases):
-        self.position = position
-        self.residue = residue
-        self.pmid = pmid
-        self.protein = protein
-        self.kinases = kinases
+    kinases = db.relationship('Kinase', secondary=site_kinase_table)
+    kinase_groups = db.relationship(
+        'KinaseGroup',
+        secondary=site_kinase_group_table
+    )
 
     def __repr__(self):
         return '<Site of protein: {0}, at pos: {1}>'.format(
@@ -144,10 +167,6 @@ class Cancer(db.Model):
     code = db.Column(db.String(16))
     name = db.Column(db.Text)
     mutations = db.relationship('Mutation', backref='cancer')
-
-    def __init__(self, code, name):
-        self.code = code
-        self.name = name
 
     def __repr__(self):
         return '<Cancer with code: {0}, named: {1}>'.format(

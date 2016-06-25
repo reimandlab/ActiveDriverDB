@@ -45,15 +45,24 @@ class NetworkView(FlaskView):
                     'name': kinase.name,
                     'protein': {
                         'mutations_count': kinase.protein.mutations.count()
-                    } if kinase.protein else None,
-                    'is_group': kinase.is_group
+                    } if kinase.protein else None
                 }
                 for kinase in protein.kinases
             ],
             'protein': {
                 'name': protein.name,
                 'mutations_count': protein.mutations.count()
-            }
+            },
+            'kinase_groups': [
+                {
+                    'name': group.name,
+                    'kinases': [
+                        kinase.name
+                        for kinase in group.kinases
+                    ]
+                }
+                for group in protein.kinase_groups
+            ]
         }
         return json.dumps(data)
 

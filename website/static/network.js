@@ -1,5 +1,11 @@
 var Network = (function ()
 {
+    var kinases = null
+    var kinase_groups = null
+    var protein = null
+
+    var edges = []
+
     function fitTextIntoCircle(d, context)
     {
         var radius = d.r
@@ -53,6 +59,51 @@ var Network = (function ()
         }
     }
 
+    function getKinasesByName(names)
+    {
+        matching_kinases = []
+
+        for(var i = 0; i < kinases.length; i++)
+        {
+            for(var j = 0; j < names.length; j++)
+            {
+                if(kinases[i].name == names[j])
+                {
+                    matching_kinases.push(kinases[i])
+                }
+            }
+        }
+        return matching_kinases
+    }
+
+    function getKinaseByName(name)
+    {
+        return getKinasesByName([name])[0]
+    }
+
+    function getKinasesInGroups()
+    {
+        var names = []
+        for(var i = 0; i < kinase_groups.length; i++)
+        {
+            group = kinase_groups[i]
+            Array.prototype.push.apply(names, group.kinases)
+        }
+        return names
+    }
+
+    function add_edge(source, target, weight)
+    {
+        weight = weight || 1
+        edges.push(
+            {
+                source: source,
+                target: target,
+                weight: weight
+            }
+        )
+    }
+
     var publicSpace = {
         init: function(user_config)
         {
@@ -74,39 +125,69 @@ var Network = (function ()
 
             var data = config.data
 
-            var links = []
+            kinase_groups = data.kinase_groups
+            kinases = data.kinases
 
+            var protein_node = createProteinNode(data.protein)
+            var nodes_data = [protein_node]
+
+            kinases_in_groups = getKinasesInGroups()
             for(var i = 0; i < data.kinases.length; i++)
             {
                 var kinase = data.kinases[i]
                 kinase.x = Math.random() * config.width
                 kinase.y = Math.random() * config.height
                 kinase.r = calculateRadius(
-                    kinase.protein ? kinase.protein.mutations_count : 0,
-                    kinase.is_group
+                    kinase.protein ? kinase.protein.mutations_count : 0
                 )
-                links.push(
-                    {
-                        source: i,
-                        target: data.kinases.length,
-                        weight: 1
-                    }
-                )
+                kinase.node_id = i + 1
+
+                // make links to the central protein's node from those
+                // kinases that do not belong to any of groups
+                if(kinases_in_groups.indexOf(kinase.name) == -1)
+                {
+                    add_edge(kinase.node_id, 0)
+                }
             }
 
-            var nodes_data = data.kinases
+            Array.prototype.push.apply(nodes_data, data.kinases)
 
-            var protein_node = createProteinNode(data.protein)
+            for(var i = 0; i < data.kinase_groups.length; i++)
+            {
+                var group = data.kinase_groups[i]
 
-            nodes_data.push(protein_node)
+                group.x = Math.random() * config.width
+                group.y = Math.random() * config.height
+
+                var group_kinases = getKinasesByName(group.kinases)
+                var group_index = nodes_data.length + i
+
+                var mutations_in_kinases = 0
+                for(var j = 0; j < group_kinases.length; j++)
+                {
+                    var kinase = group_kinases[j]
+                    mutations_in_kinases += kinase.protein ? kinase.protein.mutations_count : 0
+
+                    add_edge(group_index, kinase.node_id)
+                }
+
+                group.r = calculateRadius(
+                    mutations_in_kinases / group_kinases.length || 0,
+                    true
+                )
+                group.color = 'red'
+                add_edge(group_index, 0)
+            }
+            Array.prototype.push.apply(nodes_data, data.kinase_groups)
+
 
             force
                 .nodes(nodes_data)
-                .links(links)
+                .links(edges)
                 .start()
 
             var link = vis.selectAll(".link")
-                .data(links)
+                .data(edges)
                 .enter().append("line")
                 .attr("class", "link")
                 .style("stroke-width", function(d) { return Math.sqrt(d.weight); });
@@ -128,7 +209,7 @@ var Network = (function ()
                 .attr('class', 'nodes')
                 .attr('r', function(node){ return node.r })
                 .attr('stroke', function(node) {
-                    var default_color = (node.is_group ? 'red' : '#905590')
+                    var default_color = '#905590'
                     return node.color || default_color
                 }) 
 
