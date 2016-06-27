@@ -149,7 +149,7 @@ var Network = (function ()
             for(var j = 0; j < group_kinases.length; j++)
             {
                 var kinase = group_kinases[j]
-                kinase.group = i
+                kinase.group = group_index
 
                 mutations_in_kinases += kinase.protein ? kinase.protein.mutations_count : 0
 
@@ -187,27 +187,23 @@ var Network = (function ()
     {
         node.expanded = (state === undefined) ? !node.expanded : state
 
+        function inGroup(d)
+        {
+             return node.index === d.group
+        }
+
         d3.selectAll('circle')
-            .filter(function(d)
-            {
-                return node.kinases.indexOf(d.name) != -1
-            })
+            .filter(inGroup)
             .transition().ease('linear').duration(600)
             .attr('r', function(d){return node.expanded ? d.r : 0})
 
         d3.selectAll('.label')
-            .filter(function(d)
-            {
-                return node.kinases.indexOf(d.name) != -1
-            })
+            .filter(inGroup)
             .transition().ease('linear').duration(600)
             .attr('opacity', node.expanded ? 1 : 0)
 
          d3.selectAll('.link')
-            .filter(function(e)
-            {
-                return node.kinases.indexOf(e.source.name) != -1
-            })
+            .filter(function(e) { return inGroup(e.source) } )
             .transition().ease('linear').duration(600)
             .attr('opacity', node.expanded ? 1 : 0)
     }
@@ -295,7 +291,7 @@ var Network = (function ()
                 .attr('dy', '.35em')
                 .attr('opacity', startsVisible)
                 
-            force.on('tick', function(e) {
+            force.on('tick', function() {
 
                 links
                     .attr("x1", function(d) { return d.source.x })
