@@ -309,4 +309,4 @@ var Network = (function ()
     }
 
     return publicSpace
-})()
+}())

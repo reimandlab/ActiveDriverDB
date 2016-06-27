@@ -40,6 +40,6 @@ var NeedlePlot = (function ()
 	}
 
 	return publicSpace
-})()
+}())
 
 

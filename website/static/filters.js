@@ -29,7 +29,7 @@ var Filters = (function ()
 	}
 
 	return publicSpace
-})()
+}())
 
 
 Filters.init()

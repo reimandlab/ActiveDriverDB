@@ -145,7 +145,7 @@ var Tracks = (function ()
 	}
 
 	return publicSpace
-})()
+}())
 
 
 Tracks.init()
