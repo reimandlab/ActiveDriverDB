@@ -39,6 +39,11 @@ class NetworkView(FlaskView):
     def _prepare_network_repr(self, protein):
         import json
 
+        kinases_from_groups = sum(
+            [group.kinases for group in protein.kinase_groups],
+            []
+        )
+
         data = {
             'kinases': [
                 {
@@ -47,7 +52,7 @@ class NetworkView(FlaskView):
                         'mutations_count': kinase.protein.mutations.count()
                     } if kinase.protein else None
                 }
-                for kinase in protein.kinases
+                for kinase in set(protein.kinases).union(kinases_from_groups)
             ],
             'protein': {
                 'name': protein.name,
