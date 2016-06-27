@@ -189,7 +189,14 @@ var Network = (function ()
 
         function inGroup(d)
         {
-             return node.index === d.group
+            return node.index === d.group
+        }
+
+        function fadeInOut(selection)
+        {
+            selection
+                .transition().ease('linear').duration(600)
+                .attr('opacity', node.expanded ? 1 : 0)
         }
 
         d3.selectAll('circle')
@@ -199,13 +206,11 @@ var Network = (function ()
 
         d3.selectAll('.label')
             .filter(inGroup)
-            .transition().ease('linear').duration(600)
-            .attr('opacity', node.expanded ? 1 : 0)
+            .call(fadeInOut)
 
          d3.selectAll('.link')
             .filter(function(e) { return inGroup(e.source) } )
-            .transition().ease('linear').duration(600)
-            .attr('opacity', node.expanded ? 1 : 0)
+            .call(fadeInOut)
     }
 
     function startsVisible(node)
