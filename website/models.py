@@ -7,17 +7,18 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.utils import cached_property
 
 
-site_kinase_table = db.Table(
-    'site_kinase_association', db.metadata,
-    db.Column('kinase_id', db.Integer, db.ForeignKey('kinase.id')),
-    db.Column('site_id', db.Integer, db.ForeignKey('site.id'))
-)
+def make_association_table(fk1, fk2):
+    """Create an association table basing on names of two given foreign keys.
 
-site_kinase_group_table = db.Table(
-    'site_kinase_grop_association', db.metadata,
-    db.Column('kinase_group_id', db.Integer, db.ForeignKey('kinase_group.id')),
-    db.Column('site_id', db.Integer, db.ForeignKey('site.id'))
-)
+    From keys: `site.id` and `kinase.id` a table named: site_kinase_association
+    will be created and it will contain two columns: `site_id` and `kinase_id`.
+    """
+    table_name = '%s_%s_association' % (fk1.split('.')[0], fk2.split('.')[0])
+    return db.Table(
+        table_name, db.metadata,
+        db.Column(fk1.replace('.', '_'), db.Integer, db.ForeignKey(fk1)),
+        db.Column(fk2.replace('.', '_'), db.Integer, db.ForeignKey(fk2)),
+    )
 
 
 class Kinase(db.Model):
@@ -137,7 +138,6 @@ class Protein(db.Model):
         kinase_groups = set()
         for site in self.sites:
             kinase_groups.update((site.kinase_groups))
-        print(kinase_groups)
         return kinase_groups
 
 
@@ -148,10 +148,13 @@ class Site(db.Model):
     residue = db.Column(db.String(1))
     pmid = db.Column(db.Text)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
-    kinases = db.relationship('Kinase', secondary=site_kinase_table)
+    kinases = db.relationship(
+        'Kinase',
+        secondary=make_association_table('site.id', 'kinase.id')
+    )
     kinase_groups = db.relationship(
         'KinaseGroup',
-        secondary=site_kinase_group_table
+        secondary=make_association_table('site.id', 'kinase_group.id')
     )
 
     def __repr__(self):
