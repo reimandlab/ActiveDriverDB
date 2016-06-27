@@ -9,7 +9,7 @@ var Network = (function ()
     function fitTextIntoCircle(d, context)
     {
         var radius = d.r
-        return Math.min(2 * radius, (2 * radius - 8) / context.getComputedTextLength() * 24) + 'px';
+        return Math.min(2 * radius, (2 * radius - 8) / context.getComputedTextLength() * 24)
     }
 
     function calculateRadius(mutations_count, is_group)
@@ -291,11 +291,19 @@ var Network = (function ()
 
             var labels = nodes.append('text')
                 .attr('class', 'label')
-                .text(function(d){return d.name})
-                .style('font-size', function(d) { return fitTextIntoCircle(d, this) })
-                .attr('dy', '.35em')
+                .text(function(d){ return d.name })
+                .style('font-size', function(d) { return fitTextIntoCircle(d, this) + 'px' })
                 .attr('opacity', startsVisible)
-                
+
+            nodes
+                .filter(function(d){ return d.is_group })
+                .append('text')
+                .attr('class', 'type')
+                .text(function(d){ return 'family' + '(' + d.kinases.length  + ')' })
+                .style('font-size', function(d) { return fitTextIntoCircle(d, this) * 0.5 + 'px' })
+                .attr('dy', function(d) { return fitTextIntoCircle(d, this) * 0.35 + 'px' })
+
+
             force.on('tick', function() {
 
                 links
