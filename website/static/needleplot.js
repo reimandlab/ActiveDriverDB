@@ -1,5 +1,4 @@
-
-var NeedlePlot = (function ()
+var NeedlePlot = (function (mutneedles)
 {
 
     var colorMap = {
@@ -14,8 +13,6 @@ var NeedlePlot = (function ()
 	var publicSpace = {
 		init: function(data)
 		{
-
-            var mutneedles = require("muts-needle-plot")
 
             var legends = {
               x: data.name + " Amino Acid sequence (" + data.refseq + ")",
@@ -40,6 +37,4 @@ var NeedlePlot = (function ()
 	}
 
 	return publicSpace
-}())
-
-
+}(require("muts-needle-plot")))
