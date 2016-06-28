@@ -1,6 +1,26 @@
+function assert(condition)
+{
+    if(!condition)
+    {
+        if (typeof Error !== 'undefined')
+        {
+            throw new Error('Assertion failed')
+        }
+        throw 'Assertion failed'
+    }
+}
+
+function clone(object)
+{
+    // this implementation won't handle functions and
+    // more advanced objects - only simple key-values
+    return JSON.parse(JSON.stringify(object))
+}
+
 var Network = (function ()
 {
     var kinases = null
+    var kinases_grouped = null
     var kinase_groups = null
     var protein = null
 
@@ -60,17 +80,19 @@ var Network = (function ()
         config.height = config.height || config.width * config.ratio
     }
 
-    function getKinasesByName(names)
+    function getKinasesByName(names, kinases_set)
     {
+        kinases_set ? kinases_set : kinases
+
         matching_kinases = []
 
-        for(var i = 0; i < kinases.length; i++)
+        for(var i = 0; i < kinases_set.length; i++)
         {
             for(var j = 0; j < names.length; j++)
             {
-                if(kinases[i].name === names[j])
+                if(kinases_set[i].name === names[j])
                 {
-                    matching_kinases.push(kinases[i])
+                    matching_kinases.push(kinases_set[i])
                 }
             }
         }
@@ -105,12 +127,24 @@ var Network = (function ()
         )
     }
 
-    function prepareKinases()
+    function prepareKinases(all_kinases)
     {
-        kinases_in_groups = getKinasesInGroups()
-        for(var i = 0; i < kinases.length; i++)
+        // If kinase occurs both in a group and bounds to
+        // the central protein, duplicate it's node. How?
+        // 1. duplicate the data
+        // 2. make the notion in the data and just add two cicrcles
+        // And currently it is implemented by data duplication
+
+        kinases = []
+        kinases_grouped = []
+
+        var kinases_in_groups = getKinasesInGroups()
+
+        alt = window.location.hash.substr(1) // just temporary
+
+        for(var i = 0; i < all_kinases.length; i++)
         {
-            var kinase = kinases[i]
+            var kinase = all_kinases[i]
             kinase.x = Math.random() * config.width
             kinase.y = Math.random() * config.height
             kinase.r = calculateRadius(
@@ -118,21 +152,41 @@ var Network = (function ()
             )
             kinase.node_id = i + 1
 
-
-            // make links to the central protein's node from those
-            // kinases that do not belong to any of groups
-            if(kinases_in_groups.indexOf(kinase.name) === -1)
-            {
-                addEdge(kinase.node_id, 0)
-            }
-
             // this property will be populated for kinases belonging to group in prepareKinaseGroups
             kinase.group = undefined
+
+            if(protein.kinases.indexOf(kinase.name) !== -1)
+            {
+                // add a kinase that binds to the central protein to `kinases` list
+                if(!alt)
+                {
+                    kinase = clone(kinase)
+                }
+                kinase.node_id = kinases.length + 1
+                kinases.push(kinase)
+
+                // make links to the central protein's node from those
+                // kinases that bound to the central protein (i.e.
+                // exclude those which are shown only in groups)
+                addEdge(kinase.node_id, 0)
+            }
+            // 
+            if(kinases_in_groups.indexOf(kinase.name) !== -1)
+            {
+                // add a kinase that binds to group to `kinases_grouped` list
+                if(!alt)
+                {
+                    kinase = clone(kinase)
+                }
+                kinase.node_id = kinases_grouped.length + 1
+                kinases_grouped.push(kinase)
+            }
         }
     }
 
     function prepareKinaseGroups(index_shift)
     {
+        var kinases_in_groups = getKinasesInGroups()
         for(var i = 0; i < kinase_groups.length; i++)
         {
             var group = kinase_groups[i]
@@ -142,7 +196,8 @@ var Network = (function ()
             group.x = Math.random() * config.width
             group.y = Math.random() * config.height
 
-            var group_kinases = getKinasesByName(group.kinases)
+            var group_kinases = getKinasesByName(group.kinases, kinases_grouped)
+            assert(group_kinases.length <= group.kinases.length)
             var group_index = index_shift + i
 
             var mutations_in_kinases = 0
@@ -152,8 +207,8 @@ var Network = (function ()
                 kinase.group = group_index
 
                 mutations_in_kinases += kinase.protein ? kinase.protein.mutations_count : 0
-
-                addEdge(kinase.node_id, group_index)
+                assert(kinase.node_id + kinases.length < group_index)
+                addEdge(kinase.node_id + kinases.length, group_index)
             }
 
             group.r = calculateRadius(
@@ -233,14 +288,14 @@ var Network = (function ()
             var data = config.data
 
             kinase_groups = data.kinase_groups
-            kinases = data.kinases
             protein = data.protein
 
             var protein_node = createProteinNode()
             var nodes_data = [protein_node]
 
-            prepareKinases()
+            prepareKinases(data.kinases)
             Array.prototype.push.apply(nodes_data, kinases)
+            Array.prototype.push.apply(nodes_data, kinases_grouped)
 
             prepareKinaseGroups(nodes_data.length)
             Array.prototype.push.apply(nodes_data, kinase_groups)

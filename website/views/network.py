@@ -56,7 +56,8 @@ class NetworkView(FlaskView):
             ],
             'protein': {
                 'name': protein.name,
-                'mutations_count': protein.mutations.count()
+                'mutations_count': protein.mutations.count(),
+                'kinases': [kinase.name for kinase in protein.kinases]
             },
             'kinase_groups': [
                 {
