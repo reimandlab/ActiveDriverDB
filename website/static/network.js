@@ -24,6 +24,8 @@ var Network = (function ()
     var kinase_groups = null
     var protein = null
 
+    var vis = null
+
     var edges = []
 
     function fitTextIntoCircle(d, context)
@@ -63,7 +65,9 @@ var Network = (function ()
         ratio: 1,   // the aspect ratio of the network
         nodeURL: (function(node) {
             return window.location.href + '#' + node.name
-        })
+        }),
+        minZoom: 0.5,   // allow to zoom-out up to two times
+        maxZoom: 2  // allow to zoom-in up to two times
     }
 
     function configure(new_config)
@@ -275,15 +279,27 @@ var Network = (function ()
         return (node.group === undefined) ? 1 : 0
     }
 
+    function zoomAndMove()
+    {
+        vis.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')')
+    }
+
     var publicSpace = {
         init: function(user_config)
         {
             configure(user_config)
 
-            var vis = d3.select(config.element).append('svg')
+            var zoom = d3.behavior.zoom()
+                .scaleExtent([config.minZoom, config.maxZoom])
+                .on('zoom', zoomAndMove)
+
+            var svg = d3.select(config.element).append('svg')
                 .attr('preserveAspectRatio', 'xMinYMin meet')
                 .attr('viewBox', '0 0 ' + config.width + ' ' + config.height)
-                .classed('svg-content-responsive', true)
+                .attr('class', 'svg-content-responsive')
+                .call(zoom)
+
+            vis = svg.append('g')
 
             var data = config.data
 
@@ -310,12 +326,12 @@ var Network = (function ()
                 .linkDistance(linkDistance)
                 .start()
 
-            var links = vis.selectAll(".link")
+            var links = vis.selectAll('.link')
                 .data(edges)
-                .enter().append("line")
-                .attr("class", "link")
+                .enter().append('line')
+                .attr('class', 'link')
                 .attr('opacity', function(e){ return startsVisible(e.source) } )
-                .style("stroke-width", function(d) { return Math.sqrt(d.weight) })
+                .style('stroke-width', function(d) { return Math.sqrt(d.weight) })
 
             var nodes = vis.selectAll('.node') 
                 .data(nodes_data)
@@ -336,6 +352,10 @@ var Network = (function ()
                         }
                     }
                 })
+                // cancel other events (like pining the background)
+                // to allow nodes movement (by force.drag)
+                .on("mousedown", function(d) { d3.event.stopPropagation() })
+
 
             var circles = nodes.append('circle')
                 .attr('r', function(d){ return startsVisible(d) ? d.r : 0})
@@ -362,10 +382,10 @@ var Network = (function ()
             force.on('tick', function() {
 
                 links
-                    .attr("x1", function(d) { return d.source.x })
-                    .attr("y1", function(d) { return d.source.y })
-                    .attr("x2", function(d) { return d.target.x })
-                    .attr("y2", function(d) { return d.target.y })
+                    .attr('x1', function(d) { return d.source.x })
+                    .attr('y1', function(d) { return d.source.y })
+                    .attr('x2', function(d) { return d.target.x })
+                    .attr('y2', function(d) { return d.target.y })
 
                 nodes.attr('transform', function(d){ return 'translate(' + [d.x, d.y] + ')'} )
 
