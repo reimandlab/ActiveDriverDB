@@ -86,7 +86,7 @@ var Network = (function ()
 
     function getKinasesByName(names, kinases_set)
     {
-        kinases_set ? kinases_set : kinases
+        kinases_set = kinases_set ? kinases_set : kinases
 
         matching_kinases = []
 
@@ -374,7 +374,7 @@ var Network = (function ()
                 .filter(function(d){ return d.is_group })
                 .append('text')
                 .attr('class', 'type')
-                .text(function(d){ return 'family' + '(' + d.kinases.length  + ')' })
+                .text(function(d){ return 'family (' + d.kinases.length  + ')' })
                 .style('font-size', function(d) { return fitTextIntoCircle(d, this) * 0.5 + 'px' })
                 .attr('dy', function(d) { return fitTextIntoCircle(d, this) * 0.35 + 'px' })
 
