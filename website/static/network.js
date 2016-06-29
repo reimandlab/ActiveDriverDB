@@ -182,6 +182,7 @@ var Network = (function ()
                 {
                     kinase = clone(kinase)
                 }
+                kinase.collapsed = true
                 kinase.node_id = kinases_grouped.length + 1
                 kinases_grouped.push(kinase)
             }
@@ -228,13 +229,13 @@ var Network = (function ()
     function linkDistance(edge)
     {
         // make links between the core protein and groups longer,
-        // so the groups stand out and do not colide with kinases
+        // so the groups stand out and do not collide with kinases
         if(edge.source.is_group)   // source node is a group
         {
             return 175
         }
-        // adjust the length of a link between a kinase located in
-        // a group and its group's node
+        // dynamically adjust the length of a link between 
+        // a kinase located in a group and its group's node
         if(edge.target.is_group)    // target node is a group
         {
             return edge.target.expanded ? edge.target.r + edge.source.r : 0
@@ -257,6 +258,10 @@ var Network = (function ()
                 .transition().ease('linear').duration(600)
                 .attr('opacity', node.expanded ? 1 : 0)
         }
+
+        d3.selectAll('.node')
+            .filter(inGroup)
+            .each(function(d){ d.collapsed = !node.expanded } )
 
         d3.selectAll('circle')
             .filter(inGroup)
@@ -381,6 +386,12 @@ var Network = (function ()
 
             force.on('tick', function() {
 
+                force
+                    .linkDistance(linkDistance)
+                    .gravity(0.05)
+                    .charge(function(d) { return d.collapsed ? -100/nodes_data[d.group].kinases.length : -100})
+                    .start()
+
                 links
                     .attr('x1', function(d) { return d.source.x })
                     .attr('y1', function(d) { return d.source.y })
@@ -389,10 +400,7 @@ var Network = (function ()
 
                 nodes.attr('transform', function(d){ return 'translate(' + [d.x, d.y] + ')'} )
 
-                force
-                    .linkDistance(linkDistance)
-                    .start()
-                })
+            })
         }
     }
 
