@@ -25,6 +25,8 @@ var Network = (function ()
     var protein = null
 
     var vis = null
+    var orbit_by_link = {}
+    var orbits = []
 
     var edges = []
 
@@ -228,11 +230,19 @@ var Network = (function ()
 
     function linkDistance(edge)
     {
+        /*
         // make links between the core protein and groups longer,
         // so the groups stand out and do not collide with kinases
         if(edge.source.is_group)   // source node is a group
         {
             return 175
+        }
+        else
+        */
+        // let's place them in layers around the central protein
+        if(edge.target.index == 0)
+        {
+            return orbits[orbit_by_link[edge.source.name]]
         }
         // dynamically adjust the length of a link between 
         // a kinase located in a group and its group's node
@@ -289,6 +299,118 @@ var Network = (function ()
         vis.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')')
     }
 
+    function calculateLinkDistances(nodes_data)
+    {
+        function perimeter()
+        {
+            return 2 * Math.PI * R
+        }
+
+        function popByRadius(nodes, min)
+        {
+            var r = min ? Infinity : 0
+            var index = 0
+
+            min = min ? -1 : 1
+
+            for(var i = 0; i < nodes.length; i++)
+            {
+                if(min * (nodes[i].r - r) > 0)
+                {
+                    r = nodes[i].r
+                    index = i
+                }
+            }
+
+            return nodes.splice(index, 1)[0]
+        }
+
+        function prepareNodes()
+        {
+            // select the nodes that will be used
+            var nodes = []
+
+            // from second (skip central protein)
+            for(var i = 1; i < nodes_data.length; i++)
+            {
+                var node = nodes_data[i]
+
+                // the nodes that belong to groups have dynamic length of links, skip them
+                if(node.group !== undefined) continue
+
+                nodes.push(node)
+            }
+
+            return nodes
+        }
+
+        var central_protein = nodes_data[0]
+        var spacing = 5 // the distance between orbits
+        var base_length = central_protein.r * 1.5   // radius of the first orbit, depends of the size of central protein
+        var orbit = 0
+        var length_extend = 0  // how much the radius will extend on the current orbit
+
+        var nodes = prepareNodes()
+
+        var R = base_length + length_extend * 2
+        var outer_belt_perimeter = perimeter(R)
+        var available_space_on_outer_belt = outer_belt_perimeter
+
+        var len = nodes.length
+        // ticker = 0
+        for(var i = 0; i < len; i++)
+        {
+            // sort nodes by radius by picking an appropriate node
+            // possible solutions: descending / ascending / biggest-smallest (greedy)
+
+            // biggest-smallest pairs (it looks ugly, although is optimal with regard to space usage)
+            // var node = ticker % 2 === 0 ? popByRadius(nodes, false) : popByRadius(nodes, true)
+
+            // from the smallest
+            var node = popByRadius(nodes, true)
+
+            if(node.r > length_extend)
+            {
+                // the outer belt will be larger - let's rescale the outer belt
+                length_extend = node.r
+                R = base_length + length_extend * 2
+
+                var new_outer_belt_perimeter = perimeter(R)
+                percent_available = available_space_on_outer_belt / outer_belt_perimeter
+                available_space_on_outer_belt = new_outer_belt_perimeter * percent_available
+                outer_belt_perimeter = new_outer_belt_perimeter
+
+            }
+            var angle = 2 * Math.asin(length_extend / R)
+            var l = R * angle
+            // if it does not fit, lets move the next orbit, reset values
+            if(available_space_on_outer_belt < l)
+            {
+                // save the orbit that is full
+                orbits.push(R)
+                // create new orbit
+                base_length = R + length_extend + spacing
+                R = base_length + length_extend * 2
+                outer_belt_perimeter = perimeter(R)
+                available_space_on_outer_belt = outer_belt_perimeter
+                length_extend = node.r
+                angle = 2 * Math.asin(length_extend / R)
+                l = R * angle
+                // move to the new orbit
+                orbit += 1
+                // ticker = 0
+            }
+
+            // finaly since it has to fit to the orbit right now, place it on the current orbit
+            orbit_by_link[node.name] = orbit
+            available_space_on_outer_belt -= l
+            if(available_space_on_outer_belt < 0) available_space_on_outer_belt = 0
+
+            // ticker += 1
+        }
+        orbits.push(R)
+    }
+
     var publicSpace = {
         init: function(user_config)
         {
@@ -320,6 +442,8 @@ var Network = (function ()
 
             prepareKinaseGroups(nodes_data.length)
             Array.prototype.push.apply(nodes_data, kinase_groups)
+
+            calculateLinkDistances(nodes_data)
 
             var force = d3.layout.force()
                 .gravity(0.05)
