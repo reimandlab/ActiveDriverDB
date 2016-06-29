@@ -56,7 +56,8 @@ var Network = (function ()
             r: radius,
             x: (config.width - radius) / 2,
             y: (config.height - radius) / 2,
-            color: 'blue'
+            color: 'blue',
+            fixed: true
         }
     }
 
