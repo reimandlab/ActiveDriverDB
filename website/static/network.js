@@ -245,7 +245,7 @@ var Network = (function ()
         // let's place them in layers around the central protein
         if(edge.target.index === 0)
         {
-            return orbits[orbit_by_link[edge.source.name]]
+            return getOrbitR(edge.source)
         }
         // dynamically adjust the length of a link between 
         // a kinase located in a group and its group's node
@@ -302,7 +302,13 @@ var Network = (function ()
         vis.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')')
     }
 
-    function calculateLinkDistances(nodes_data)
+
+    function getOrbitR(node)
+    {
+        return orbits[orbit_by_link[node.name]]
+    }
+
+    function calculateLinkDistances(nodes, protein_node)
     {
         function perimeter()
         {
@@ -328,32 +334,11 @@ var Network = (function ()
             return nodes.splice(index, 1)[0]
         }
 
-        function prepareNodes()
-        {
-            // select the nodes that will be used
-            var nodes = []
 
-            // from second (skip central protein)
-            for(var i = 1; i < nodes_data.length; i++)
-            {
-                var node = nodes_data[i]
-
-                // the nodes that belong to groups have dynamic length of links, skip them
-                if(node.group !== undefined) continue
-
-                nodes.push(node)
-            }
-
-            return nodes
-        }
-
-        var central_protein = nodes_data[0]
         var spacing = 5 // the distance between orbits
-        var base_length = central_protein.r * 1.5   // radius of the first orbit, depends of the size of central protein
+        var base_length = protein_node.r * 1.5   // radius of the first orbit, depends of the size of central protein
         var orbit = 0
         var length_extend = 0  // how much the radius will extend on the current orbit
-
-        var nodes = prepareNodes()
 
         var R = base_length + length_extend * 2
         var outer_belt_perimeter = perimeter(R)
@@ -414,6 +399,18 @@ var Network = (function ()
         orbits.push(R)
     }
 
+    function placeNodesInOrbits(nodes, central_protein)
+    {
+        for(var i = 0; i < nodes.length; i++)
+        {
+            var node = nodes[i]
+            angle = Math.random() * Math.PI * 2
+            R = getOrbitR(node)
+            node.x = R * Math.cos(angle) + central_protein.x
+            node.y = R * Math.sin(angle) + central_protein.y
+        }
+    }
+
     var publicSpace = {
         init: function(user_config)
         {
@@ -446,7 +443,9 @@ var Network = (function ()
             prepareKinaseGroups(nodes_data.length)
             Array.prototype.push.apply(nodes_data, kinase_groups)
 
-            calculateLinkDistances(nodes_data)
+            calculateLinkDistances(kinases.concat(kinase_groups), protein_node)
+
+            placeNodesInOrbits(kinases.concat(kinase_groups), protein_node)
 
             var force = d3.layout.force()
                 .gravity(0.05)
