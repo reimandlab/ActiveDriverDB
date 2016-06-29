@@ -241,7 +241,7 @@ var Network = (function ()
         else
         */
         // let's place them in layers around the central protein
-        if(edge.target.index == 0)
+        if(edge.target.index === 0)
         {
             return orbits[orbit_by_link[edge.source.name]]
         }
@@ -504,7 +504,7 @@ var Network = (function ()
                 .filter(function(d){ return d.is_group })
                 .append('text')
                 .attr('class', 'type')
-                .text(function(d){ return 'family (' + d.kinases.length  + ')' })
+                .text(function(d){ return 'family ' + d.kinases.length  + '/' + d.total_cnt })
                 .style('font-size', function(d) { return fitTextIntoCircle(d, this) * 0.5 + 'px' })
                 .attr('dy', function(d) { return fitTextIntoCircle(d, this) * 0.35 + 'px' })
 
