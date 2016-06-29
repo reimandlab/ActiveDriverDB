@@ -48,6 +48,8 @@ class NetworkView(FlaskView):
             )
             kinases.union(kinases_from_groups)
 
+        protein_kinases_names = [kinase.name for kinase in protein.kinases]
+
         data = {
             'kinases': [
                 {
@@ -61,15 +63,16 @@ class NetworkView(FlaskView):
             'protein': {
                 'name': protein.name,
                 'mutations_count': protein.mutations.count(),
-                'kinases': [kinase.name for kinase in protein.kinases]
+                'kinases': protein_kinases_names
             },
             'kinase_groups': [
                 {
                     'name': group.name,
-                    'kinases': [
+                    'kinases': list({
                         kinase.name
                         for kinase in group.kinases
-                    ]
+                    }.intersection(protein_kinases_names)),
+                    'total_cnt': len(group.kinases)
                 }
                 for group in protein.kinase_groups
             ]
