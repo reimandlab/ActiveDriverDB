@@ -213,6 +213,8 @@ var Network = (function ()
             {
                 var kinase = group_kinases[j]
                 kinase.group = group_index
+                kinase.x = group.x
+                kinase.y = group.y
 
                 mutations_in_kinases += kinase.protein ? kinase.protein.mutations_count : 0
                 assert(kinase.node_id + kinases.length < group_index)
