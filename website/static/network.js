@@ -24,9 +24,26 @@ var Network = (function ()
     var kinase_groups = null
     var protein = null
 
+    var svg = null
     var vis = null
-    var orbit_by_link = {}
-    var orbits = []
+
+    var zooom = null
+
+    var orbits = {
+        by_node: {},
+        sizes: [],
+        belt_sizes: [],
+        getRadiusByNode: function(node)
+        {
+            return orbits.sizes[orbits.by_node[node.name]]
+        },
+        add: function (R, length_extend)
+        {
+            orbits.sizes.push(R - length_extend)
+            orbits.belt_sizes.push(length_extend)
+        }
+
+    }
 
     var edges = []
 
@@ -245,7 +262,7 @@ var Network = (function ()
         // let's place them in layers around the central protein
         if(edge.target.index === 0)
         {
-            return getOrbitR(edge.source)
+            return orbits.getRadiusByNode(edge.source)
         }
         // dynamically adjust the length of a link between 
         // a kinase located in a group and its group's node
@@ -302,12 +319,6 @@ var Network = (function ()
         vis.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')')
     }
 
-
-    function getOrbitR(node)
-    {
-        return orbits[orbit_by_link[node.name]]
-    }
-
     function calculateLinkDistances(nodes, protein_node)
     {
         function perimeter()
@@ -334,7 +345,7 @@ var Network = (function ()
             return nodes.splice(index, 1)[0]
         }
 
-
+        var stroke = 2.2
         var spacing = 5 // the distance between orbits
         var base_length = protein_node.r * 1.5   // radius of the first orbit, depends of the size of central protein
         var orbit = 0
@@ -360,7 +371,7 @@ var Network = (function ()
             if(node.r > length_extend)
             {
                 // the outer belt will be larger - let's rescale the outer belt
-                length_extend = node.r
+                length_extend = node.r + stroke
                 R = base_length + length_extend * 2
 
                 var new_outer_belt_perimeter = perimeter(R)
@@ -375,13 +386,13 @@ var Network = (function ()
             if(available_space_on_outer_belt < l)
             {
                 // save the orbit that is full
-                orbits.push(R)
+                orbits.add(R, length_extend)
                 // create new orbit
                 base_length = R + length_extend + spacing
                 R = base_length + length_extend * 2
                 outer_belt_perimeter = perimeter(R)
                 available_space_on_outer_belt = outer_belt_perimeter
-                length_extend = node.r
+                length_extend = node.r + stroke
                 angle = 2 * Math.asin(length_extend / R)
                 l = R * angle
                 // move to the new orbit
@@ -390,13 +401,13 @@ var Network = (function ()
             }
 
             // finaly since it has to fit to the orbit right now, place it on the current orbit
-            orbit_by_link[node.name] = orbit
+            orbits.by_node[node.name] = orbit
             available_space_on_outer_belt -= l
             if(available_space_on_outer_belt < 0) available_space_on_outer_belt = 0
 
             // ticker += 1
         }
-        orbits.push(R)
+        orbits.add(R, length_extend)
     }
 
     function placeNodesInOrbits(nodes, central_protein)
@@ -405,10 +416,22 @@ var Network = (function ()
         {
             var node = nodes[i]
             angle = Math.random() * Math.PI * 2
-            R = getOrbitR(node)
+            R = orbits.getRadiusByNode(node)
             node.x = R * Math.cos(angle) + central_protein.x
             node.y = R * Math.sin(angle) + central_protein.y
         }
+    }
+
+    function focusOn(node, radius)
+    {
+        area = radius * 2 * 1.2
+        
+        var scale = Math.min(config.width / area, config.height / area)
+        var translate = [config.width / 2 - node.x * scale, config.height / 2 - node.y * scale]
+
+        svg.transition()
+            .duration(750)
+            .call(zoom.translate(translate).scale(scale).event)
     }
 
     var publicSpace = {
@@ -416,11 +439,11 @@ var Network = (function ()
         {
             configure(user_config)
 
-            var zoom = d3.behavior.zoom()
+            zoom = d3.behavior.zoom()
                 .scaleExtent([config.minZoom, config.maxZoom])
                 .on('zoom', zoomAndMove)
 
-            var svg = d3.select(config.element).append('svg')
+            svg = d3.select(config.element).append('svg')
                 .attr('preserveAspectRatio', 'xMinYMin meet')
                 .attr('viewBox', '0 0 ' + config.width + ' ' + config.height)
                 .attr('class', 'svg-content-responsive')
@@ -510,7 +533,7 @@ var Network = (function ()
                 .attr('dy', function(d) { return fitTextIntoCircle(d, this) * 0.35 + 'px' })
 
 
-            force.on('tick', function() {
+            force.on('tick', function(e) {
 
                 force
                     .linkDistance(linkDistance)
@@ -527,6 +550,8 @@ var Network = (function ()
                 nodes.attr('transform', function(d){ return 'translate(' + [d.x, d.y] + ')'} )
 
             })
+
+            focusOn(protein_node, orbits.sizes[orbits.sizes.length - 1] + orbits.belt_sizes[orbits.belt_sizes.length - 1])
         }
     }
 
