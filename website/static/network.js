@@ -23,7 +23,6 @@ var Network = (function ()
     var kinases_grouped = null
     var kinase_groups = null
     var protein = null
-
     var svg = null
     var vis = null
 
@@ -273,8 +272,9 @@ var Network = (function ()
         return 100
     }
 
-    function switchGroupState(node, state)
+    function switchGroupState(node, state, time)
     {
+        time = (time === undefined) ? 600 : time
         node.expanded = (state === undefined) ? !node.expanded : state
 
         function inGroup(d)
@@ -285,7 +285,7 @@ var Network = (function ()
         function fadeInOut(selection)
         {
             selection
-                .transition().ease('linear').duration(600)
+                .transition().ease('linear').duration(time)
                 .attr('opacity', node.expanded ? 1 : 0)
         }
 
@@ -295,23 +295,17 @@ var Network = (function ()
 
         d3.selectAll('circle')
             .filter(inGroup)
-            .transition().ease('linear').duration(600)
+            .transition().ease('linear').duration(time)
             .attr('r', function(d){return node.expanded ? d.r : 0})
 
         d3.selectAll('.label')
             .filter(inGroup)
             .call(fadeInOut)
 
-         d3.selectAll('.link')
+        d3.selectAll('.link')
             .filter(function(e) { return inGroup(e.source) } )
             .call(fadeInOut)
-    }
 
-    function startsVisible(node)
-    {
-        // whether a node should start visible or not
-        // nodes belonging to groups should be hidden on start
-        return (node.group === undefined) ? 1 : 0
     }
 
     function zoomAndMove()
@@ -434,6 +428,13 @@ var Network = (function ()
             .call(zoom.translate(translate).scale(scale).event)
     }
 
+    function charge(node)
+    {
+        // we could disable charge for collapsed nodes completly and instead
+        // stick these nodes to theirs groups, but this might inefficient
+        return node.collapsed ? -1 : -100
+    }
+
     var publicSpace = {
         init: function(user_config)
         {
@@ -473,18 +474,19 @@ var Network = (function ()
             var force = d3.layout.force()
                 .gravity(0.05)
                 .distance(100)
-                .charge(-100)
+                .charge(charge)
                 .size([config.width, config.height])
                 .nodes(nodes_data)
                 .links(edges)
                 .linkDistance(linkDistance)
-                .start()
+                // notes for future: it is possible to speed up force with:
+                //.on('start', start) and then using `requestAnimationFrame`
+                // but this creates a terrible effect of laggy animation
 
             var links = vis.selectAll('.link')
                 .data(edges)
                 .enter().append('line')
                 .attr('class', 'link')
-                .attr('opacity', function(e){ return startsVisible(e.source) } )
                 .style('stroke-width', function(d) { return Math.sqrt(d.weight) })
 
             var nodes = vis.selectAll('.node') 
@@ -499,6 +501,7 @@ var Network = (function ()
                         if(node.is_group)
                         {
                             switchGroupState(node)
+                            force.start()
                         }
                         else
                         {
@@ -512,7 +515,7 @@ var Network = (function ()
 
 
             var circles = nodes.append('circle')
-                .attr('r', function(d){ return startsVisible(d) ? d.r : 0})
+                .attr('r', function(d){ return d.r })
                 .attr('stroke', function(node) {
                     var default_color = '#905590'
                     return node.color || default_color
@@ -522,7 +525,6 @@ var Network = (function ()
                 .attr('class', 'label')
                 .text(function(d){ return d.name })
                 .style('font-size', function(d) { return fitTextIntoCircle(d, this) + 'px' })
-                .attr('opacity', startsVisible)
 
             nodes
                 .filter(function(d){ return d.is_group })
@@ -532,13 +534,10 @@ var Network = (function ()
                 .style('font-size', function(d) { return fitTextIntoCircle(d, this) * 0.5 + 'px' })
                 .attr('dy', function(d) { return fitTextIntoCircle(d, this) * 0.35 + 'px' })
 
-
             force.on('tick', function(e) {
-
                 force
                     .linkDistance(linkDistance)
-                    .gravity(0.05)
-                    .charge(function(d) { return d.collapsed ? -100/nodes_data[d.group].kinases.length : -100})
+                    .charge(charge)
 
                 links
                     .attr('x1', function(d) { return d.source.x })
@@ -551,6 +550,13 @@ var Network = (function ()
             })
 
             focusOn(protein_node, orbits.sizes[orbits.sizes.length - 1] + orbits.belt_sizes[orbits.belt_sizes.length - 1])
+
+            force.start()
+            for(node in kinase_groups)
+            {
+                switchGroupState(kinase_groups[node], false, 0)
+            }
+
         }
     }
 
