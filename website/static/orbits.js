@@ -4,8 +4,7 @@ var Orbits = (function ()
     var central_node = null
 
     var by_node = {}
-    var sizes = []
-    var belt_sizes = []
+    var orbits = []
     
     var config = {
         stroke: 2.2,
@@ -41,18 +40,34 @@ var Orbits = (function ()
           return 0
     }
 
-    function addOrbit(R, length_extend)
+    // warning: using constructor pattern, not module
+    function Orbit(number)
     {
-        sizes.push(R - length_extend)
-        belt_sizes.push(length_extend)
+        this.number = number
+        this.nodes_count = 0
+
+        this.radius = null
+        this.width = null   // how much space takes the biggest node on this orbit
+
+        this.addNode = function(node)
+        {
+            by_node[node.name] = this.number
+            this.nodes_count += 1
+        }
+
+        this.setDimensions = function(R, length_extend)
+        {
+            this.radius = R - length_extend
+            this.width = length_extend
+        }
     }
 
     function calculateOrbits()
     {
+        // radius of the first orbit, depends of the size of central protein
+        var base_length = central_node.r * config.first_ring_scale
 
-        var base_length = central_node.r * config.first_ring_scale   // radius of the first orbit, depends of the size of central protein
-
-        var orbit = 0
+        orbits.push(new Orbit(0))
         var length_extend = 0  // how much the radius will extend on the current orbit
 
         var R = base_length + length_extend * 2
@@ -81,7 +96,7 @@ var Orbits = (function ()
             if(available_space_on_outer_belt < l)
             {
                 // save the orbit which is full
-                addOrbit(R, length_extend)
+                orbits[orbits.length - 1].setDimensions(R, length_extend)
                 // create new orbit
                 base_length = R + length_extend + config.spacing
                 R = base_length + length_extend * 2
@@ -91,21 +106,25 @@ var Orbits = (function ()
                 angle = 2 * Math.asin(length_extend / R)
                 l = R * angle
                 // move to the new orbit
-                orbit += 1
+                orbits.push(new Orbit(orbits.length))
             }
 
             // finaly since it has to fit to the orbit right now, place it on the current orbit
-            by_node[node.name] = orbit
+            orbits[orbits.length - 1].addNode(node)
             available_space_on_outer_belt -= l
             if(available_space_on_outer_belt < 0) available_space_on_outer_belt = 0
 
         }
-        addOrbit(R, length_extend)
+        orbits[orbits.length - 1].setDimensions(R, length_extend)
     }
 
-    function _getRadiusByNode(node)
+    function getSlots()
     {
-        return sizes[by_node[node.name]]
+        // how many nodes should be placed on each of the available orbits
+        var slots = new Array(orbits.length)
+        for(var i = 0; i < orbits.length; i++)
+            slots[i] = orbits[i].nodes_count
+        return slots
     }
 
     var publicSpace = {
@@ -120,21 +139,33 @@ var Orbits = (function ()
         },
         getRadiusByNode: function(node)
         {
-            return _getRadiusByNode(node)
+            return orbits[by_node[node.name]].radius
         },
         getMaximalRadius: function()
         {
-            return sizes[sizes.length - 1] + belt_sizes[belt_sizes.length - 1]
+            var orbit = orbits[orbits.length - 1]
+            return orbit.radius + orbit.width
         },
         placeNodes: function()
         {
+            var slots = getSlots()
+
             for(var i = 0; i < nodes.length; i++)
             {
                 var node = nodes[i]
-                angle = Math.random() * Math.PI * 2
-                R = _getRadiusByNode(node)
-                node.x = R * Math.cos(angle) + central_node.x
-                node.y = R * Math.sin(angle) + central_node.y
+
+                var orbit_id = by_node[node.name]
+                var orbit = orbits[orbit_id]
+
+                var full_circle = Math.PI * 2
+
+                var fraction_occupied = slots[orbit_id] / orbit.nodes_count
+                var angle = full_circle * fraction_occupied
+
+                node.x = orbit.radius * Math.cos(angle) + central_node.x
+                node.y = orbit.radius * Math.sin(angle) + central_node.y
+
+                slots[orbit_id] -= 1
             }
         }
     }
