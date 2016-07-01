@@ -91,15 +91,17 @@ var Tracks = (function ()
 
     function initFields(fields, func)
     {
+        function call(e)
+        {
+            if(e.keyCode === 13)
+            {
+                func.call(this)
+            }
+        }
+
         for(var i = 0; i < fields.length; i++)
         {
-            $(fields[i]).keyup(function(e)
-            {
-                if(e.keyCode === 13)
-                {
-                    func.call(this)
-                }
-            })
+            $(fields[i]).keyup(call)
         }
     }
 

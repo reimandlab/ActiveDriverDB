@@ -163,8 +163,6 @@ var Network = (function ()
 
         var kinases_in_groups = getKinasesInGroups()
 
-        alt = window.location.hash.substr(1) // just temporary
-
         for(var i = 0; i < all_kinases.length; i++)
         {
             var kinase = all_kinases[i]
@@ -181,10 +179,7 @@ var Network = (function ()
             if(protein.kinases.indexOf(kinase.name) !== -1)
             {
                 // add a kinase that binds to the central protein to `kinases` list
-                if(!alt)
-                {
-                    kinase = clone(kinase)
-                }
+                kinase = clone(kinase)
                 kinase.node_id = kinases.length + 1
                 kinases.push(kinase)
 
@@ -197,10 +192,7 @@ var Network = (function ()
             if(kinases_in_groups.indexOf(kinase.name) !== -1)
             {
                 // add a kinase that binds to group to `kinases_grouped` list
-                if(!alt)
-                {
-                    kinase = clone(kinase)
-                }
+                kinase = clone(kinase)
                 kinase.collapsed = true
                 kinase.node_id = kinases_grouped.length + 1
                 kinases_grouped.push(kinase)
@@ -431,7 +423,7 @@ var Network = (function ()
     function charge(node)
     {
         // we could disable charge for collapsed nodes completly and instead
-        // stick these nodes to theirs groups, but this might inefficient
+        // stick these nodes to theirs groups, but this might be inefficient
         return node.collapsed ? -1 : -100
     }
 
@@ -479,8 +471,8 @@ var Network = (function ()
                 .nodes(nodes_data)
                 .links(edges)
                 .linkDistance(linkDistance)
-                // notes for future: it is possible to speed up force with:
-                //.on('start', start) and then using `requestAnimationFrame`
+                // notes for future: it is possible to speed up the force with:
+                // .on('start', start) and using `requestAnimationFrame` in start()
                 // but this creates a terrible effect of laggy animation
 
             var links = vis.selectAll('.link')
@@ -552,9 +544,9 @@ var Network = (function ()
             focusOn(protein_node, orbits.sizes[orbits.sizes.length - 1] + orbits.belt_sizes[orbits.belt_sizes.length - 1])
 
             force.start()
-            for(node in kinase_groups)
+            for(var i = 0; i < kinase_groups.length; i++)
             {
-                switchGroupState(kinase_groups[node], false, 0)
+                switchGroupState(kinase_groups[i], false, 0)
             }
 
         }
