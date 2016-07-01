@@ -1,4 +1,4 @@
-var Orbits = (function ()
+var Orbits = function ()
 {
     var nodes = null
     var central_node = null
@@ -8,7 +8,7 @@ var Orbits = (function ()
     
     var config = {
         stroke: 2.2,
-        spacing: 5, // the distance between orbits
+        spacing: 15, // the distance between orbits
         first_ring_scale: 1.5 // `first_ring_scale * central_node.radius` define radius of the first ring
     }
 
@@ -84,6 +84,7 @@ var Orbits = (function ()
                 length_extend = node.r + config.stroke
                 R = base_length + length_extend * 2
 
+                // recalculate perimeter, width & available space
                 var new_outer_belt_perimeter = perimeter(R)
                 percent_available = available_space_on_outer_belt / outer_belt_perimeter
                 available_space_on_outer_belt = new_outer_belt_perimeter * percent_available
@@ -98,7 +99,7 @@ var Orbits = (function ()
                 // save the orbit which is full
                 orbits[orbits.length - 1].setDimensions(R, length_extend)
                 // create new orbit
-                base_length = R + length_extend + config.spacing
+                base_length = R + config.spacing
                 R = base_length + length_extend * 2
                 outer_belt_perimeter = perimeter(R)
                 available_space_on_outer_belt = outer_belt_perimeter
@@ -172,4 +173,4 @@ var Orbits = (function ()
 
     return publicSpace
 
-} ())
+}

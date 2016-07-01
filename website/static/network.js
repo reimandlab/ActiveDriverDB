@@ -241,7 +241,7 @@ var Network = (function ()
         // a kinase located in a group and its group's node
         if(edge.target.is_group)    // target node is a group
         {
-            return edge.target.expanded ? edge.target.r + edge.source.r : 0
+            return edge.target.expanded ? edge.target.orbits.getRadiusByNode(edge.source) : 0
         }
         return 100
     }
@@ -251,6 +251,12 @@ var Network = (function ()
         time = (time === undefined) ? 600 : time
         node.expanded = (state === undefined) ? !node.expanded : state
 
+        if(node.expanded)
+        {
+            node.orbits = Orbits()
+            node.orbits.init(getKinasesByName(node.kinases, kinases_grouped), node, {spacing:1, first_ring_scale:1})
+            node.orbits.placeNodes()
+        }
         function inGroup(d)
         {
             return node.index === d.group
@@ -279,6 +285,7 @@ var Network = (function ()
         d3.selectAll('.link')
             .filter(function(e) { return inGroup(e.source) } )
             .call(fadeInOut)
+
 
     }
 
@@ -338,7 +345,7 @@ var Network = (function ()
             prepareKinaseGroups(nodes_data.length)
             Array.prototype.push.apply(nodes_data, kinase_groups)
 
-            orbits = Orbits
+            orbits = Orbits()
             orbits.init(kinases.concat(kinase_groups), protein_node)
             orbits.placeNodes()
 
