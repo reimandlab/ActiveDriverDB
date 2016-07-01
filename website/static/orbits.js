@@ -32,23 +32,13 @@ var Orbits = (function ()
         return 2 * Math.PI * R
     }
 
-    function popByRadius(nodes, min)
+    function compareRadius(a, b)
     {
-        var r = min ? Infinity : 0
-        var index = 0
-
-        min = min ? -1 : 1
-
-        for(var i = 0; i < nodes.length; i++)
-        {
-            if(min * (nodes[i].r - r) > 0)
-            {
-                r = nodes[i].r
-                index = i
-            }
-        }
-
-        return nodes.splice(index, 1)[0]
+        if (a.r < b.r)
+          return -1
+        if (a.r > b.r)
+            return 1
+          return 0
     }
 
     function addOrbit(R, length_extend)
@@ -69,18 +59,9 @@ var Orbits = (function ()
         var outer_belt_perimeter = perimeter(R)
         var available_space_on_outer_belt = outer_belt_perimeter
 
-        var len = nodes.length
-        // ticker = 0
-        for(var i = 0; i < len; i++)
+        for(var i = 0; i < nodes.length; i++)
         {
-            // sort nodes by radius by picking an appropriate node
-            // possible solutions: descending / ascending / biggest-smallest (greedy)
-
-            // biggest-smallest pairs (it looks ugly, although is optimal with regard to space usage)
-            // var node = ticker % 2 === 0 ? popByRadius(nodes, false) : popByRadius(nodes, true)
-
-            // from the smallest
-            var node = popByRadius(nodes, true)
+            var node = nodes[i]
 
             if(node.r > length_extend)
             {
@@ -111,7 +92,6 @@ var Orbits = (function ()
                 l = R * angle
                 // move to the new orbit
                 orbit += 1
-                // ticker = 0
             }
 
             // finaly since it has to fit to the orbit right now, place it on the current orbit
@@ -119,7 +99,6 @@ var Orbits = (function ()
             available_space_on_outer_belt -= l
             if(available_space_on_outer_belt < 0) available_space_on_outer_belt = 0
 
-            // ticker += 1
         }
         addOrbit(R, length_extend)
     }
@@ -135,6 +114,8 @@ var Orbits = (function ()
             nodes = orbiting_nodes
             central_node = the_central_node
             configure(config)
+            // sort nodes by radius from the smallest
+            nodes.sort(compareRadius)
             calculateOrbits()
         },
         getRadiusByNode: function(node)
