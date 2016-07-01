@@ -539,7 +539,6 @@ var Network = (function ()
                     .linkDistance(linkDistance)
                     .gravity(0.05)
                     .charge(function(d) { return d.collapsed ? -100/nodes_data[d.group].kinases.length : -100})
-                    .start()
 
                 links
                     .attr('x1', function(d) { return d.source.x })
