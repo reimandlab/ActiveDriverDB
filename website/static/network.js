@@ -151,8 +151,7 @@ var Network = (function ()
         for(var i = 0; i < all_kinases.length; i++)
         {
             var kinase = all_kinases[i]
-            kinase.x = Math.random() * config.width
-            kinase.y = Math.random() * config.height
+
             kinase.r = calculateRadius(
                 kinase.protein ? kinase.protein.mutations_count : 0
             )
@@ -206,8 +205,6 @@ var Network = (function ()
             {
                 var kinase = group_kinases[j]
                 kinase.group = group_index
-                kinase.x = group.x
-                kinase.y = group.y
 
                 mutations_in_kinases += kinase.protein ? kinase.protein.mutations_count : 0
                 assert(kinase.node_id + kinases.length < group_index)
@@ -343,7 +340,18 @@ var Network = (function ()
 
             orbits = Orbits
             orbits.init(kinases.concat(kinase_groups), protein_node)
-            orbits.placeNodes(protein_node)
+            orbits.placeNodes()
+
+            for(var j = 0; j < kinases_grouped.length; j++)
+            {
+                // force positions of group members to be equal
+                // to initial positions of central node in the group
+                var kinase = kinases_grouped[j]
+                var group = nodes_data[kinase.group]
+
+                kinase.x = group.x
+                kinase.y = group.y
+            }
 
             var force = d3.layout.force()
                 .gravity(0.05)
@@ -426,11 +434,12 @@ var Network = (function ()
             focusOn(protein_node, orbits.getMaximalRadius())
 
             force.start()
+
             for(var i = 0; i < kinase_groups.length; i++)
             {
+                // collapse the group immediately (time=0)
                 switchGroupState(kinase_groups[i], false, 0)
             }
-
         }
     }
 
