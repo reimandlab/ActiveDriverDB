@@ -28,23 +28,8 @@ var Network = (function ()
 
     var zooom = null
 
-    var orbits = {
-        by_node: {},
-        sizes: [],
-        belt_sizes: [],
-        getRadiusByNode: function(node)
-        {
-            return orbits.sizes[orbits.by_node[node.name]]
-        },
-        add: function (R, length_extend)
-        {
-            orbits.sizes.push(R - length_extend)
-            orbits.belt_sizes.push(length_extend)
-        }
-
-    }
-
     var edges = []
+    var orbits = null
 
     function fitTextIntoCircle(d, context)
     {
@@ -305,109 +290,6 @@ var Network = (function ()
         vis.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')')
     }
 
-    function calculateLinkDistances(nodes, protein_node)
-    {
-        function perimeter()
-        {
-            return 2 * Math.PI * R
-        }
-
-        function popByRadius(nodes, min)
-        {
-            var r = min ? Infinity : 0
-            var index = 0
-
-            min = min ? -1 : 1
-
-            for(var i = 0; i < nodes.length; i++)
-            {
-                if(min * (nodes[i].r - r) > 0)
-                {
-                    r = nodes[i].r
-                    index = i
-                }
-            }
-
-            return nodes.splice(index, 1)[0]
-        }
-
-        var stroke = 2.2
-        var spacing = 5 // the distance between orbits
-        var base_length = protein_node.r * 1.5   // radius of the first orbit, depends of the size of central protein
-        var orbit = 0
-        var length_extend = 0  // how much the radius will extend on the current orbit
-
-        var R = base_length + length_extend * 2
-        var outer_belt_perimeter = perimeter(R)
-        var available_space_on_outer_belt = outer_belt_perimeter
-
-        var len = nodes.length
-        // ticker = 0
-        for(var i = 0; i < len; i++)
-        {
-            // sort nodes by radius by picking an appropriate node
-            // possible solutions: descending / ascending / biggest-smallest (greedy)
-
-            // biggest-smallest pairs (it looks ugly, although is optimal with regard to space usage)
-            // var node = ticker % 2 === 0 ? popByRadius(nodes, false) : popByRadius(nodes, true)
-
-            // from the smallest
-            var node = popByRadius(nodes, true)
-
-            if(node.r > length_extend)
-            {
-                // the outer belt will be larger - let's rescale the outer belt
-                length_extend = node.r + stroke
-                R = base_length + length_extend * 2
-
-                var new_outer_belt_perimeter = perimeter(R)
-                percent_available = available_space_on_outer_belt / outer_belt_perimeter
-                available_space_on_outer_belt = new_outer_belt_perimeter * percent_available
-                outer_belt_perimeter = new_outer_belt_perimeter
-
-            }
-            var angle = 2 * Math.asin(length_extend / R)
-            var l = R * angle
-            // if it does not fit, lets move the next orbit, reset values
-            if(available_space_on_outer_belt < l)
-            {
-                // save the orbit that is full
-                orbits.add(R, length_extend)
-                // create new orbit
-                base_length = R + length_extend + spacing
-                R = base_length + length_extend * 2
-                outer_belt_perimeter = perimeter(R)
-                available_space_on_outer_belt = outer_belt_perimeter
-                length_extend = node.r + stroke
-                angle = 2 * Math.asin(length_extend / R)
-                l = R * angle
-                // move to the new orbit
-                orbit += 1
-                // ticker = 0
-            }
-
-            // finaly since it has to fit to the orbit right now, place it on the current orbit
-            orbits.by_node[node.name] = orbit
-            available_space_on_outer_belt -= l
-            if(available_space_on_outer_belt < 0) available_space_on_outer_belt = 0
-
-            // ticker += 1
-        }
-        orbits.add(R, length_extend)
-    }
-
-    function placeNodesInOrbits(nodes, central_protein)
-    {
-        for(var i = 0; i < nodes.length; i++)
-        {
-            var node = nodes[i]
-            angle = Math.random() * Math.PI * 2
-            R = orbits.getRadiusByNode(node)
-            node.x = R * Math.cos(angle) + central_protein.x
-            node.y = R * Math.sin(angle) + central_protein.y
-        }
-    }
-
     function focusOn(node, radius)
     {
         area = radius * 2 * 1.2
@@ -459,9 +341,9 @@ var Network = (function ()
             prepareKinaseGroups(nodes_data.length)
             Array.prototype.push.apply(nodes_data, kinase_groups)
 
-            calculateLinkDistances(kinases.concat(kinase_groups), protein_node)
-
-            placeNodesInOrbits(kinases.concat(kinase_groups), protein_node)
+            orbits = Orbits
+            orbits.init(kinases.concat(kinase_groups), protein_node)
+            orbits.placeNodes(protein_node)
 
             var force = d3.layout.force()
                 .gravity(0.05)
@@ -541,7 +423,7 @@ var Network = (function ()
 
             })
 
-            focusOn(protein_node, orbits.sizes[orbits.sizes.length - 1] + orbits.belt_sizes[orbits.belt_sizes.length - 1])
+            focusOn(protein_node, orbits.getMaximalRadius())
 
             force.start()
             for(var i = 0; i < kinase_groups.length; i++)

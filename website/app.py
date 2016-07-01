@@ -31,6 +31,7 @@ bundles = {
         output='proteinView.min.js'
     ),
     'js_network_view': Bundle(
+        'orbits.js',
         'network.js',
         'filters.js',
         filters='rjsmin',
