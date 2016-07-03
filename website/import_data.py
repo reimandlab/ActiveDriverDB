@@ -181,3 +181,109 @@ def load_kinase_classification(proteins, kinases, groups):
             groups[family].kinases.append(kinases[kinase_name])
 
     return kinases, groups
+
+
+def get_files(path, pattern):
+    import glob
+    return glob.glob(path + '/' + pattern)
+
+
+class GenomicMutation:
+
+    __slots__ = 'chr', 'pos', 'ref', 'alt'
+
+    def __init__(self, chr, pos, ref, alt):
+        self.chr = chr
+        self.pos = pos
+        self.ref = ref
+        self.alt = alt
+
+
+class ProteinMutation:
+
+    __slots__ = 'pos', 'ref', 'alt', 'cdna_pos', 'exon', 'refseq', 'g', 'strand'
+
+    def __init__(self, pos, ref, alt, cdna_pos, exon, refseq, g, strand):
+        self.pos = pos
+        self.ref = ref
+        self.alt = alt
+        self.cdna_pos = cdna_pos
+        self.exon = exon
+        # will be implemented with the foreginkey, and thetr will be a foreign
+        # key to genomic mutation (with backref) or vice versa
+        self.refseq = refseq
+        self.g = g
+        self.strand = strand
+
+
+def import_mappings():
+
+    files = get_files('data/200616/all_variants/playground', 'annot_*.txt.gz')
+
+    genomic = []
+    protein = []
+
+    import gzip
+
+    from helpers.bioinf import complement
+    from helpers.bioinf import get_human_chromosomes
+
+    chromosomes = get_human_chromosomes()
+
+    for file in files:
+
+        with gzip.open(file, 'rb') as f:
+            next(f)  # skip the header
+            for line in f:
+                line = line.decode("latin1")
+                chrom, pos, ref, alt, prot = line.rstrip().split('\t')
+                assert chrom.startswith('chr')
+                # with simple maping to ints we can
+                chrom = chrom[3:]
+                assert chrom in chromosomes
+                ref, alt = map(ord, (ref, alt))
+                pos = int(pos)
+
+                g = GenomicMutation(chrom, pos, ref, alt)
+                genomic.append(g)
+
+                for dest in filter(bool, prot.split(',')):
+                    name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
+                    assert refseq.startswith('NM_')
+                    refseq = int(refseq[3:])
+                    # name and refseq are redundant with respect one to another
+
+                    assert exon.startswith('exon')
+                    exon = int(exon[4:])
+                    assert cdna_mut.startswith('c.')
+
+                    if (ord(cdna_mut[2].lower()) == ref and
+                            ord(cdna_mut[-1].lower()) == alt):
+
+                        strand = 1
+                    elif (ord(complement(cdna_mut[2]).lower()) == ref and
+                          ord(complement(cdna_mut[-1]).lower()) == alt):
+                        strand = -1
+                    else:
+                        raise Exception(line)
+
+                    cdna_pos = int(cdna_mut[3:-1])
+                    assert prot_mut.startswith('p.')
+                    # we can check here if a given reference nuc is consistent
+                    # with the reference amino acid. For example cytosine in
+                    # reference implies that there should't be a methionine,
+                    # glutamic acid, lysine nor arginine. The same applies to
+                    # alternative nuc/aa and their combinations (having
+                    # references (nuc, aa): (G, K) and alt nuc C defines that
+                    # the alt aa has to be Asparagine (N) - no other is valid).
+                    # Note: it could be used to compress the data in memory too
+                    aa_ref = prot_mut[2]
+                    aa_pos = int(prot_mut[3:-1])
+                    aa_alt = prot_mut[-1]
+
+                    p = ProteinMutation(aa_pos, aa_ref, aa_alt, cdna_pos, exon,
+                                        refseq, g, strand)
+                    protein.append(p)
+
+    print('Read', len(files), 'files with genome -> protein mappings')
+    return genomic, protein
