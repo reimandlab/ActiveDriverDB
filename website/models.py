@@ -1,10 +1,12 @@
-from database import db
 from sqlalchemy import and_
 from sqlalchemy import func
 from sqlalchemy.sql import exists, select
+from sqlalchemy.dialects.mysql import MEDIUMINT
+from sqlalchemy.dialects.mysql import SMALLINT
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.utils import cached_property
+from website.database import db
 
 
 def make_association_table(fk1, fk2):
@@ -18,6 +20,71 @@ def make_association_table(fk1, fk2):
         table_name, db.metadata,
         db.Column(fk1.replace('.', '_'), db.Integer, db.ForeignKey(fk1)),
         db.Column(fk2.replace('.', '_'), db.Integer, db.ForeignKey(fk2)),
+    )
+
+
+class SingleNucleotideVariation(db.Model):
+    """Represents a single nucleotide variation in the human genome."""
+
+    __tablename__ = 'single_nucleotide_variation'
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Expecting up to two digits (1-22 inclusive), X and Y and eventually MT
+    chrom = db.Column(db.CHAR(2))
+
+    # The longest human chromosome is about 249 million bp long; in MySQL
+    # MEDIUMINT has range of 16,777,215 and INTEGER has range 4294,967,295
+    # so this is sufficient and optimal choice.
+
+    # Note that for use of the full range one would need to import th INTEGER
+    # from sqlachemy.dialects.mysql import to be able to use unsigned=True
+    pos = db.Column(db.Integer())
+
+    # Single mutations only - len=1
+    ref = db.Column(db.CHAR(1))
+    alt = db.Column(db.CHAR(1))
+
+    protein_variants = db.relationship(
+        'CodingSequenceVariant'
+    )
+
+    # The tuple: chromosome, position, ref and alt has to be unique
+    __table_args__ = (db.UniqueConstraint('chrom', 'pos', 'ref',
+                                          'alt', name='_uc'), )
+
+
+class CodingSequenceVariant(db.Model):
+    """Represents a substitution in a protein sequence caused by SNV."""
+
+    __tablename__ = 'coding_sequence_variant'
+    id = db.Column(db.Integer, primary_key=True)
+
+    # Position in the amino acid sequence
+
+    # The longest human protein TTN is about 35,991 aa long; in MySQL
+    # SMALLINT has range of 65,535 as unsigned. It seems to be both sufficient,
+    # as well as optimal type of data to store the position in protein sequence
+    pos = db.Column(SMALLINT(unsigned=True))
+
+    # Position in the cdna sequence - it will be three times longer than the
+    # amino acid sequence so will not fit into SMALLINT - so MEDIUMINT is
+    # required, sufficient and optimal (range of 16,777,215).
+    cdna_pos = db.Column(MEDIUMINT())
+
+    # Single mutations only - len=1
+    ref = db.Column(db.CHAR(1))
+    alt = db.Column(db.CHAR(1))
+
+    # The highest count of exons found in the dataset is 363 - TINYINT with
+    # range 255 is not sufficient but SMALLINT (65,535) looks good
+    exon = db.Column(SMALLINT(unsigned=True))
+
+    protein = db.Column(db.Integer, db.ForeignKey('protein.id'))
+    strand = db.Column(db.Boolean())
+
+    csv_id = db.Column(
+        db.Integer,
+        db.ForeignKey('single_nucleotide_variation.id')
     )
 
 
@@ -45,8 +112,9 @@ class Protein(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, index=True)
     refseq = db.Column(db.String(32), unique=True)
-    sequence = db.Column(db.Text)
-    disorder_map = db.Column(db.Text)
+    sequence = db.Column(db.Text, default='')
+    disorder_map = db.Column(db.Text, default='')
+
     sites = db.relationship(
         'Site',
         order_by='Site.position',
@@ -63,10 +131,12 @@ class Protein(db.Model):
         backref='protein'
     )
 
-    def __init__(self, name):
-        self.name = name
-        self.sequence = ''
-        self.disorder_map = ''
+    def __init__(self, **kwargs):
+        for key in ('sequence', 'disorder_map'):
+            if key not in kwargs:
+                kwargs[key] = ''
+
+        super().__init__(**kwargs)
 
     def __repr__(self):
         return '<Protein %r>' % self.name

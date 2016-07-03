@@ -1,5 +1,7 @@
 from app import db
 from website.models import Protein, Cancer, Mutation, Site, Kinase, KinaseGroup
+from website.models import CodingSequenceVariant
+from website.models import SingleNucleotideVariation
 
 
 def import_data():
@@ -188,40 +190,12 @@ def get_files(path, pattern):
     return glob.glob(path + '/' + pattern)
 
 
-class GenomicMutation:
-
-    __slots__ = 'chr', 'pos', 'ref', 'alt'
-
-    def __init__(self, chr, pos, ref, alt):
-        self.chr = chr
-        self.pos = pos
-        self.ref = ref
-        self.alt = alt
-
-
-class ProteinMutation:
-
-    __slots__ = 'pos', 'ref', 'alt', 'cdna_pos', 'exon', 'refseq', 'g', 'strand'
-
-    def __init__(self, pos, ref, alt, cdna_pos, exon, refseq, g, strand):
-        self.pos = pos
-        self.ref = ref
-        self.alt = alt
-        self.cdna_pos = cdna_pos
-        self.exon = exon
-        # will be implemented with the foreginkey, and thetr will be a foreign
-        # key to genomic mutation (with backref) or vice versa
-        self.refseq = refseq
-        self.g = g
-        self.strand = strand
-
-
-def import_mappings():
+def import_mappings(proteins):
 
     files = get_files('data/200616/all_variants/playground', 'annot_*.txt.gz')
 
-    genomic = []
-    protein = []
+    genomic_muts = []
+    protein_muts = []
 
     import gzip
 
@@ -230,9 +204,11 @@ def import_mappings():
 
     chromosomes = get_human_chromosomes()
 
-    for file in files:
+    cnt_old_prots, cnt_new_prots = 0, 0
 
-        with gzip.open(file, 'rb') as f:
+    for filename in files:
+
+        with gzip.open(filename, 'rb') as f:
             next(f)  # skip the header
             for line in f:
                 line = line.decode("latin1")
@@ -244,13 +220,17 @@ def import_mappings():
                 ref, alt = map(ord, (ref, alt))
                 pos = int(pos)
 
-                g = GenomicMutation(chrom, pos, ref, alt)
-                genomic.append(g)
+                snv = SingleNucleotideVariation(
+                    chrom=chrom,
+                    pos=pos,
+                    ref=ref,
+                    alt=alt)
+                genomic_muts.append(snv)
 
                 for dest in filter(bool, prot.split(',')):
                     name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
                     assert refseq.startswith('NM_')
-                    refseq = int(refseq[3:])
+                    # refseq = int(refseq[3:])
                     # name and refseq are redundant with respect one to another
 
                     assert exon.startswith('exon')
@@ -260,10 +240,10 @@ def import_mappings():
                     if (ord(cdna_mut[2].lower()) == ref and
                             ord(cdna_mut[-1].lower()) == alt):
 
-                        strand = 1
+                        strand = True
                     elif (ord(complement(cdna_mut[2]).lower()) == ref and
                           ord(complement(cdna_mut[-1]).lower()) == alt):
-                        strand = -1
+                        strand = False
                     else:
                         raise Exception(line)
 
@@ -281,9 +261,27 @@ def import_mappings():
                     aa_pos = int(prot_mut[3:-1])
                     aa_alt = prot_mut[-1]
 
-                    p = ProteinMutation(aa_pos, aa_ref, aa_alt, cdna_pos, exon,
-                                        refseq, g, strand)
-                    protein.append(p)
+                    try:
+                        protein = proteins[name]
+                        cnt_old_prots += 1
+                    except KeyError:
+                        protein = Protein(name=name, refseq=refseq)
+                        proteins['name'] = protein
+                        cnt_new_prots += 1
 
-    print('Read', len(files), 'files with genome -> protein mappings')
-    return genomic, protein
+                    csv = CodingSequenceVariant(
+                        pos=aa_pos,
+                        ref=aa_ref,
+                        alt=aa_alt,
+                        cdna_pos=cdna_pos,
+                        exon=exon,
+                        strand=strand,
+                        protein=protein
+                    )
+
+                    protein_muts.append(csv)
+
+    print('Read', len(files), 'files with genome -> protein mappings, ')
+    print(cnt_new_prots, 'new proteins created & ', cnt_old_prots, 'used')
+
+    return genomic_muts, protein_muts
