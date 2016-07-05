@@ -1,95 +1,125 @@
 from app import db, app
-from website.models import Protein, Cancer, Mutation, Site, Kinase, KinaseGroup
+from website.models import Protein
+from website.models import Cancer
+from website.models import Mutation
+from website.models import Site
+from website.models import Kinase
+from website.models import KinaseGroup
 from website.models import CodingSequenceVariant
 from website.models import SingleNucleotideVariation
+from website.models import Gene
 
 
 def import_data():
-    proteins = create_proteins_with_seq_old()
-    load_protein_refseq_old(proteins)
-    # refseq_mappings = load_protein_refseq()
-    # proteins = create_proteins_with_seq(refseq_mappings)
-    load_disorder(proteins)
-    cancers = load_cancers()
-    load_mutations(proteins, cancers)
-    kinases, groups = load_sites(proteins)
-    kinases, groups = load_kinase_classification(proteins, kinases, groups)
-    db.session.add_all(kinases.values())
-    db.session.add_all(groups.values())
-    print('Added kinases')
-    db.session.add_all(cancers.values())
-    print('Added cancers')
+    # proteins = create_proteins_with_seq_old()
+    # load_protein_refseq_old(proteins)
+    proteins = create_proteins_and_genes()
+    load_sequences(proteins)
+    # load_disorder(proteins)
+    # cancers = load_cancers()
+    # load_mutations(proteins, cancers)
+    # kinases, groups = load_sites(proteins)
+    # kinases, groups = load_kinase_classification(proteins, kinases, groups)
+    # db.session.add_all(kinases.values())
+    # db.session.add_all(groups.values())
+    # print('Added kinases')
+    # db.session.add_all(cancers.values())
+    # print('Added cancers')
     db.session.add_all(proteins.values())
     print('Added proteins')
     print('Memory usage before commit: ', memory_usage())
     db.session.commit()
     print('Memory usage before cleaning: ', memory_usage())
-    del cancers
-    del kinases
-    del groups
+    # del cancers
+    # del kinases
+    # del groups
     print('Memory usage after cleaning: ', memory_usage())
     with app.app_context():
-        #proteins = Protein.query.all()
+        # proteins = Protein.query.all()
         import_mappings(proteins)
     print('Memory usage after mappings: ', memory_usage())
 
 
-def create_proteins_with_seq_old():
-    proteins = {}
-    with open('data/longest_isoform_proteins.fa', 'r') as f:
-
-        name = None
-        for line in f:
-            if line.startswith('>'):
-                name = line[1:].rstrip()
-                assert name not in proteins
-                protein = Protein(name=name)
-                proteins[name] = protein
-            else:
-                proteins[name].sequence += line.rstrip()
-    print('Sequences loaded')
-    return proteins
-
-
-def load_protein_refseq_old(proteins):
-    with open('data/longest_isoforms.tsv', 'r') as f:
-        header = f.readline().rstrip().split('\t')
-        assert header == ['gene', 'rseq']
-        for line in f:
-            line = line.rstrip()
-            name, refseq = line.split('\t')
-            proteins[name].refseq = refseq
-
-
-def create_proteins_with_seq(refseq_map):
-    proteins = {}
+def load_sequences():
     with open('data/all_RefGene_proteins.fa', 'r') as f:
         refseq = None
         for line in f:
             if line.startswith('>'):
                 refseq = line[1:].rstrip()
-                name = refseq_map[refseq]
-                assert name not in proteins
-                protein = Protein(name=name, refseq=refseq)
-                proteins[name] = protein
+                assert refseq in proteins
+                assert proteins[refseq].sequences == ''
             else:
-                proteins[name].sequence += line.rstrip()
+                proteins[refseq].sequence += line.rstrip()
     print('Sequences loaded')
     return proteins
 
 
-def load_protein_refseq():
-    with open('data/refseq_mappings.tsv', 'r') as f:
+def create_proteins_and_genes():
+
+    proteins = {}
+    genes = {}
+
+    coordinates_to_save = {
+        'txStart': 'tx_start',
+        'txEnd': 'tx_end',
+        'cdsStart': 'cds_start',
+        'cdsEnd': 'cds_end'
+    }
+
+    with open('data/protein_data.tsv') as f:
         header = f.readline().rstrip().split('\t')
-        print(header)
-        assert header == ['refseq', 'name']
-        mappings = {
-            refseq: name
-            for refseq, name in
-            (line.rstrip().split('\t') for line in f)
-        }
-    print('Refseq ids loaded')
-    return mappings
+
+        assert header == ['bin', 'name', 'chrom', 'strand', 'txStart', 'txEnd',
+                'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds',
+                'score', 'name2', 'cdsStartStat', 'cdsEndStat', 'exonFrames']
+
+        columns = (header.index(key) for key in coordinates_to_save)
+
+        for line in f:
+            line = line.rstrip().split('\t')
+
+            # load gene
+            name = line[-4]
+            if name not in genes:
+                gene_data = {'name': name}
+                gene_data['chrom'] = line[2][3:]    # remove chr prefix
+                gene_data['strand'] = 1 if '+' else 0
+                gene = Gene(**gene_data)
+                genes[name] = gene
+            else:
+                gene = genes[name]
+
+            # load protein
+            refseq = line[1]
+            if refseq in proteins:
+                print(refseq)
+                print(gene.chrom)
+            # do not allow duplicates, but close an eye for pseudoautosomal regions
+            if refseq in proteins and gene.chrom in ('X', 'Y'):
+                print(
+                    'Skipping duplicated entry which probably belongs',
+                    'to pseudoautosomal region. Refseq:', refseq
+                )
+                continue
+            assert refseq not in proteins
+
+            protein_data = {'refseq': refseq, 'gene': gene}
+
+            coordinates = zip(
+                coordinates_to_save.values(),
+                [
+                    int(value)
+                    for i, value in enumerate(line)
+                    if i in columns
+                ]
+            )
+            protein_data.update(coordinates)
+
+            protein = Protein(**protein_data)
+            proteins[refseq] = protein
+
+    print('Proteins and genes created')
+    return proteins
 
 
 def load_disorder(proteins):

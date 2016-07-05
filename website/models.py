@@ -29,7 +29,7 @@ class SingleNucleotideVariation(db.Model):
     __tablename__ = 'single_nucleotide_variation'
     id = db.Column(db.Integer, primary_key=True)
 
-    # Expecting up to two digits (1-22 inclusive), X and Y and eventually MT
+    # Chromosome - up to two digits (1-22 inclusive), X and Y and eventually MT
     chrom = db.Column(db.CHAR(2))
 
     # The longest human chromosome is about 249 million bp long; in MySQL
@@ -97,6 +97,11 @@ class Kinase(db.Model):
 
 
 class KinaseGroup(db.Model):
+    """ Kinase group is the only grouping of kinases currently in use.
+
+    The nomenclature may differ across sources and a `group` here
+    may be equivalent to a `family` in some publications / datasets.
+    """
     __tablename__ = 'kinase_group'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, index=True)
@@ -107,13 +112,63 @@ class KinaseGroup(db.Model):
     )
 
 
-class Protein(db.Model):
-    __tablename__ = 'protein'
+class Gene(db.Model):
+    """Gene is uniquely identified although has multiple protein isoforms.
+
+    The isoforms are always located on the same chromsome, strand and are
+    a product of the same gene. The major function of this model is to group
+    isoforms classified as belonging to the same gene and to verify
+    consistency of chromsomes and strands information across the database.
+    """
+    __tablename__ = 'gene'
+
     id = db.Column(db.Integer, primary_key=True)
+
+    # HGNC symbols are allowed to be varchar(255) but 40 is still safe
+    # as for storing symbols that are currently in use. Let's use 2 x 40.
     name = db.Column(db.String(80), unique=True, index=True)
-    refseq = db.Column(db.String(32), unique=True)
+
+    # TRUE represent positive (+) strand, FALSE represents negative (-) strand
+    # As equivalent to (?) from Generic Feature Format NULL could be used.
+    strand = db.Column(db.Boolean())
+
+    # Chromosome - up to two digits (1-22 inclusive), X and Y and eventually MT
+    chrom = db.Column(db.CHAR(2))
+
+    isoforms = db.relationship(
+        'Protein',
+        backref='gene'
+    )
+
+
+class Protein(db.Model):
+    """Protein represents a single isoform of a product of given gene."""
+    __tablename__ = 'protein'
+
+    id = db.Column(db.Integer, primary_key=True)
+
+    gene_id = db.Column(db.Integer, db.ForeignKey('gene.id'))
+
+    # refseq id of mRNA sequence (always starts with 'NM_')
+    # HGNC reserves up to 50 characters; 32 seems good enough but
+    # I did not found any technical documentation; useful resource:
+    # ncbi.nlm.nih.gov/books/NBK21091/
+    refseq = db.Column(db.String(32), unique=True, index=True)
+
+    # sequence of amino acids represented by one-letter IUPAC symbols
     sequence = db.Column(db.Text, default='')
+
+    # sequence of ones and zeros where ones indicate disorder region
+    # should be no longer than the sequence (defined above)
     disorder_map = db.Column(db.Text, default='')
+
+    # transcription start/end coordinates
+    tx_start = db.Column(db.Integer)
+    tx_end = db.Column(db.Integer)
+
+    # coding sequence domain start/end coordinates
+    cds_start = db.Column(db.Integer)
+    cds_end = db.Column(db.Integer)
 
     variants = db.relationship(
         'CodingSequenceVariant',
