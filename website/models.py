@@ -1,3 +1,4 @@
+from database import db
 from sqlalchemy import and_
 from sqlalchemy import func
 from sqlalchemy.sql import exists, select
@@ -6,7 +7,6 @@ from sqlalchemy.dialects.mysql import SMALLINT
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.utils import cached_property
-from website.database import db
 
 
 def make_association_table(fk1, fk2):
