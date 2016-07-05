@@ -289,7 +289,7 @@ def import_mappings(proteins):
                     for key in proteins:
                         proteins[key] = None
                     # flush SNVs and CSVs:
-                    db.session.add_all(map(itemgetter(1), genomic_muts.values()))
+                    db.session.add_all(map(itemgetter(0), genomic_muts.values()))
                     db.session.add_all(protein_muts)
                     db.session.commit()
                     genomic_muts = {}
@@ -383,7 +383,7 @@ def import_mappings(proteins):
 
                     protein_muts.append(csv)
 
-    db.session.add_all(map(itemgetter(1), genomic_muts.values()))
+    db.session.add_all(map(itemgetter(0), genomic_muts.values()))
     db.session.add_all(protein_muts)
     db.session.commit()
     print('Read', len(files), 'files with genome -> protein mappings, ')
