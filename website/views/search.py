@@ -8,7 +8,8 @@ class SearchView(FlaskView):
     """Enables searching in any of registered database models"""
 
     models = {
-        'protein': Protein
+        'protein': Protein,
+        'network': Protein
     }
 
     def index(self, target):
