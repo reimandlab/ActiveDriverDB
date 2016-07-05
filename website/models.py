@@ -79,10 +79,10 @@ class CodingSequenceVariant(db.Model):
     # range 255 is not sufficient but SMALLINT (65,535) looks good
     exon = db.Column(SMALLINT(unsigned=True))
 
-    protein = db.Column(db.Integer, db.ForeignKey('protein.id'))
+    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     strand = db.Column(db.Boolean())
 
-    csv_id = db.Column(
+    snv_id = db.Column(
         db.Integer,
         db.ForeignKey('single_nucleotide_variation.id')
     )
@@ -115,6 +115,10 @@ class Protein(db.Model):
     sequence = db.Column(db.Text, default='')
     disorder_map = db.Column(db.Text, default='')
 
+    variants = db.relationship(
+        'CodingSequenceVariant',
+        backref='protein'
+    )
     sites = db.relationship(
         'Site',
         order_by='Site.position',
