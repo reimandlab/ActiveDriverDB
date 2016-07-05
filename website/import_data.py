@@ -245,7 +245,7 @@ MEMORY_LIMIT = 2e9
 def get_or_create(model, **kwargs):
     from sqlalchemy.orm.exc import NoResultFound
     try:
-        return model.query.get(**kwargs).one(), False
+        return model.query.filter_by(**kwargs).one(), False
     except NoResultFound:
         return model(**kwargs), True
 
@@ -254,7 +254,7 @@ def import_mappings(proteins):
 
     files = get_files('data/200616/all_variants/playground', 'annot_*.txt.gz')
 
-    genomic_muts = []
+    genomic_muts = {}
     protein_muts = []
 
     import gzip
@@ -314,15 +314,14 @@ def import_mappings(proteins):
                 try:
                     # get snv from cache
                     snv, is_new = genomic_muts[tuple(snv_data.values())]
-                    db.session.add_all(genomic_muts)
                 except KeyError:
                     # get from database or create new
                     snv, is_new = get_or_create(
                         SingleNucleotideVariation,
-                        snv_data
+                        **snv_data
                     )
                     # add to cache
-                    genomic_muts[tuple(snv.values())] = (snv, is_new)
+                    genomic_muts[tuple(snv_data.values())] = (snv, is_new)
 
                 for dest in filter(bool, prot.split(',')):
                     name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
@@ -334,11 +333,11 @@ def import_mappings(proteins):
                     exon = int(exon[4:])
                     assert cdna_mut.startswith('c.')
 
-                    if (ord(cdna_mut[2].lower()) == ref and
-                            ord(cdna_mut[-1].lower()) == alt):
+                    if (cdna_mut[2].lower() == ref and
+                            cdna_mut[-1].lower() == alt):
                         strand = True
-                    elif (ord(complement(cdna_mut[2]).lower()) == ref and
-                          ord(complement(cdna_mut[-1]).lower()) == alt):
+                    elif (complement(cdna_mut[2]).lower() == ref and
+                          complement(cdna_mut[-1]).lower() == alt):
                         strand = False
                     else:
                         raise Exception(line)
