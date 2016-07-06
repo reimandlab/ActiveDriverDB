@@ -319,38 +319,37 @@ def import_mappings(proteins):
 
         with gzip.open(filename, 'rb') as f:
             next(f)  # skip the header
-            for line in f:
+            for i, line in enumerate(f):
 
-                usage = memory_usage()
-                if usage > MEMORY_LIMIT:
-                    print(
-                        'Memory usage (', usage, ') greater than limit (',
-                        MEMORY_LIMIT, '), flushing cache to the database'
-                    )
-                    # new proteins will be flushed along with SNVs and CSVs
-                    # clear proteins cache (note: by looping, not by
-                    # dict.fromkeys - so we do not create a copy of keys)
-                    for key in proteins:
-                        proteins[key] = None
-                    # flush SNVs and CSVs:
-                    db.session.add_all(map(itemgetter(0), genomic_muts.values()))
-                    db.session.add_all(protein_muts)
-                    db.session.commit()
-                    genomic_muts = {}
-                    protein_muts = []
+                # flush after reaching memory limit but check
+                # memory usage only once per 25 analysed rows
+                if i % 25 == 0:
+                    usage = memory_usage()
+                    if usage > MEMORY_LIMIT:
+                        print(
+                            'Memory usage (', usage, ') greater than limit (',
+                            MEMORY_LIMIT, '), flushing cache to the database'
+                        )
+                        # new proteins will be flushed along with SNVs and CSVs
+                        # clear proteins cache (note: by looping, not by
+                        # dict.fromkeys - so we do not create a copy of keys)
+                        for key in proteins:
+                            proteins[key] = None
+                        # flush SNVs and CSVs:
+                        db.session.add_all(protein_muts)
+                        db.session.commit()
+                        genomic_muts = {}
+                        protein_muts = []
 
                 line = line.decode("latin1")
                 chrom, pos, ref, alt, prot = line.rstrip().split('\t')
                 assert chrom.startswith('chr')
-                # with simple maping to ints we can
                 chrom = chrom[3:]
                 assert chrom in chromosomes
-                # ref, alt = map(ord, (ref, alt))
-                pos = int(pos)
 
                 snv_data = {
                     'chrom': chrom,
-                    'pos': pos,
+                    'pos': int(pos),
                     'ref': ref,
                     'alt': alt
                 }
@@ -429,12 +428,12 @@ def import_mappings(proteins):
                         cdna_pos=cdna_pos,
                         exon=exon,
                         strand=strand,
-                        protein=protein
+                        protein=protein,
+                        snv=snv
                     )
 
                     protein_muts.append(csv)
 
-    db.session.add_all(map(itemgetter(0), genomic_muts.values()))
     db.session.add_all(protein_muts)
     db.session.commit()
     print('Read', len(files), 'files with genome -> protein mappings, ')
