@@ -1,3 +1,4 @@
+import psutil
 from app import db, app
 from website.models import Protein
 from website.models import Cancer
@@ -8,6 +9,10 @@ from website.models import KinaseGroup
 from website.models import CodingSequenceVariant
 from website.models import SingleNucleotideVariation
 from website.models import Gene
+
+
+def system_memory_percent():
+    return psutil.virtual_memory().percent
 
 
 def import_data():
@@ -52,6 +57,21 @@ def load_sequences(proteins):
                 proteins[refseq].sequence += line.rstrip()
     print('Sequences loaded')
     return proteins
+
+
+def buffered_readlines(file_handle, line_count=250):
+    while True:
+        buffer = []
+        # read as much as line_count says
+        for _ in range(line_count):
+            line = file_handle.readline()
+            # stop if needed
+            if not line:
+                break
+            buffer.append(line)
+        # release one row in a once from buffer
+        for line in buffer:
+            yield line
 
 
 def create_proteins_and_genes():
@@ -283,9 +303,6 @@ def memory_usage():
     return process.memory_info().rss
 
 
-MEMORY_LIMIT = 2e9
-
-
 def get_or_create(model, **kwargs):
     from sqlalchemy.orm.exc import NoResultFound
     try:
@@ -305,7 +322,6 @@ def import_mappings(proteins):
 
     from helpers.bioinf import complement
     from helpers.bioinf import get_human_chromosomes
-    from operator import itemgetter
 
     chromosomes = get_human_chromosomes()
 
@@ -313,22 +329,22 @@ def import_mappings(proteins):
     a = 1
 
     for filename in files:
-        if a > 2:
+        if a > 1:
             break
         a += 1
 
         with gzip.open(filename, 'rb') as f:
             next(f)  # skip the header
-            for i, line in enumerate(f):
+            for i, line in enumerate(buffered_readlines(f)):
 
                 # flush after reaching memory limit but check
                 # memory usage only once per 25 analysed rows
                 if i % 25 == 0:
-                    usage = memory_usage()
-                    if usage > MEMORY_LIMIT:
+                    percent = system_memory_percent()
+                    if percent > 80:
                         print(
-                            'Memory usage (', usage, ') greater than limit (',
-                            MEMORY_LIMIT, '), flushing cache to the database'
+                            'Memory usage (', percent, ') greater than limit',
+                            '(80 percent) flushing cache to the database'
                         )
                         # new proteins will be flushed along with SNVs and CSVs
                         # clear proteins cache (note: by looping, not by

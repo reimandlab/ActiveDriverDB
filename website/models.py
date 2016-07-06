@@ -45,7 +45,8 @@ class SingleNucleotideVariation(db.Model):
     alt = db.Column(db.CHAR(1))
 
     protein_variants = db.relationship(
-        'CodingSequenceVariant'
+        'CodingSequenceVariant',
+        backref='snv'
     )
 
     # The tuple: chromosome, position, ref and alt has to be unique
