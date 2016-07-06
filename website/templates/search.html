@@ -5,6 +5,9 @@
   <link href="/static/thirdparty/selectize/selectize.css" rel="stylesheet" />
   <script src="/static/thirdparty/selectize/selectize.min.js"></script>
   <link href="/static/thirdparty/selectize/selectize.bootstrap3.css" rel="stylesheet" />
+  {% assets "css_search" %}
+  <link href="{{ ASSET_URL }}" rel="stylesheet" />
+  {% endassets %}
 {% endblock %}
 
 

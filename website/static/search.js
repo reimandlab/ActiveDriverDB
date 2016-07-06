@@ -5,7 +5,7 @@ var SearchBar = (function ()
 
 	function format(item, escape)
 	{
-		return '<div><span class="name">' + escape(item.value) + '</span></div>'
+		return '<div><span class="name">' + escape(item.value) + '</span><span class="refseq">' + item.refseq + '</span></div>'
 	}
 	function onValueChange(value)
 	{

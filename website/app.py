@@ -1,6 +1,6 @@
 from flask import Flask
-from flask_assets import Environment
 from flask_assets import Bundle
+from flask_assets import Environment
 from database import db
 
 
@@ -21,21 +21,21 @@ bundles = {
     'js_search': Bundle(
         'search.js',
         filters='rjsmin',
-        output='search.min.js'
+        output='min/search.js'
     ),
     'js_protein_view': Bundle(
         'needleplot.js',
         'filters.js',
         'tracks.js',
         filters='rjsmin',
-        output='proteinView.min.js'
+        output='min/proteinView.js'
     ),
     'js_network_view': Bundle(
         'orbits.js',
         'network.js',
         'filters.js',
         filters='rjsmin',
-        output='networkView.min.js'
+        output='min/networkView.js'
     ),
     'css_common': Bundle(
         'sass/style.css',
@@ -54,6 +54,11 @@ bundles = {
         'sass/filters.css',
         filters='cssutils',
         output='min/protein.css'
+    ),
+    'css_search': Bundle(
+        'sass/search.css',
+        filters='cssutils',
+        output='min/search.css'
     )
 }
 
