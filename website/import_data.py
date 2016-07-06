@@ -40,14 +40,14 @@ def import_data():
     print('Memory usage after mappings: ', memory_usage())
 
 
-def load_sequences():
+def load_sequences(proteins):
     with open('data/all_RefGene_proteins.fa', 'r') as f:
         refseq = None
         for line in f:
             if line.startswith('>'):
                 refseq = line[1:].rstrip()
                 assert refseq in proteins
-                assert proteins[refseq].sequences == ''
+                assert proteins[refseq].sequence == ''
             else:
                 proteins[refseq].sequence += line.rstrip()
     print('Sequences loaded')
@@ -65,6 +65,9 @@ def create_proteins_and_genes():
         'cdsStart': 'cds_start',
         'cdsEnd': 'cds_end'
     }
+
+    # a list storing refseq ids which occur at least twice in the file
+    with_duplicates = []
 
     with open('data/protein_data.tsv') as f:
         header = f.readline().rstrip().split('\t')
@@ -91,16 +94,26 @@ def create_proteins_and_genes():
 
             # load protein
             refseq = line[1]
+
+            # do not allow duplicates
             if refseq in proteins:
-                print(refseq)
-                print(gene.chrom)
-            # do not allow duplicates, but close an eye for pseudoautosomal regions
-            if refseq in proteins and gene.chrom in ('X', 'Y'):
-                print(
-                    'Skipping duplicated entry which probably belongs',
-                    'to pseudoautosomal region. Refseq:', refseq
-                )
+
+                with_duplicates.append(refseq)
+
+                if gene.chrom in ('X', 'Y'):
+                    # close an eye for pseudoautosomal regions
+                    print(
+                        'Skipping duplicated entry (probably belonging',
+                        'to pseudoautosomal region) with refseq:', refseq
+                    )
+                else:
+                    # warn about other duplicated records
+                    print(
+                        'Skipping duplicated entry with refseq:', refseq
+                    )
                 continue
+
+            # from this line there is no processing of duplicates allowed
             assert refseq not in proteins
 
             protein_data = {'refseq': refseq, 'gene': gene}
@@ -118,6 +131,7 @@ def create_proteins_and_genes():
             protein = Protein(**protein_data)
             proteins[refseq] = protein
 
+    print('Duplicated rows detected:', len(with_duplicates))
     print('Proteins and genes created')
     return proteins
 
@@ -388,17 +402,24 @@ def import_mappings(proteins):
 
                     try:
                         # try to get it from cache (`proteins` dictionary)
-                        protein = proteins[name]
+                        protein = proteins[refseq]
                         cnt_old_prots += 1
                         # if cache has been flushed, retrive from database
                         if not protein:
-                            protein = Protein.query.filter_by(name=name).first()
-                            proteins[name] = protein
+                            protein = Protein.query.filter_by(refseq=refseq).first()
+                            proteins[refseq] = protein
                     except KeyError:
                         # if the protein was not in the cache,
                         # create it and add to the cache
-                        protein = Protein(name=name, refseq=refseq)
-                        proteins[name] = protein
+                        print(
+                            'Create protein from mappings:', refseq,
+                            'it will not have any other data!'
+                        )
+                        # the gene and protein (if created) will be added
+                        # to database by cascade run by adding CSVs
+                        gene, _ = get_or_create(Gene, name=name)
+                        protein = Protein(refseq=refseq, gene=gene)
+                        proteins[refseq] = protein
                         cnt_new_prots += 1
 
                     csv = CodingSequenceVariant(
