@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+
+{% macro target_button(target_name) %}
+  <a
+    href="{{ url_for('SearchView:index', target=target_name) }}"
+    class="btn btn-default {{ 'active' if target==target_name }}">
+      {{ target_name | title }}
+  </a>
+{% endmacro %}
+
+
+{% block head %}
+  <script src="/static/thirdparty/jquery-1.12.0.min.js"></script>
+  {% assets "css_search" %}
+  <link href="{{ ASSET_URL }}" rel="stylesheet" />
+  {% endassets %}
+{% endblock %}
+
+
+{% block title %} {{ target | title }} searching - {{ super() }} {% endblock %}
+
+
+{% block content %}
+
+  <h3>Search for a protein or set of mutations</h3>
+
+  {# one url, target only tells what option is active #}
+
+  {# buttons to switch between mutations and protein #}
+  <div class="btn-group btn-group-justified target-switch" role="group">
+    {% for name in ('proteins', 'mutations') %}
+      {{ target_button(name) }}
+    {% endfor %}
+  </div>
+
+  <div id="form-area">
+    {% with target=target %}
+      {% include 'search/form.html' %}
+    {% endwith %}
+  </div>
+
+{% endblock %}
+
+
+{% block footer_js %}
+    {% assets "js_search" %}
+	<script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
+    <script type="text/javascript">
+        var manager_params = {
+            active_target: '{{ target}}',
+            form_area: $('#form-area'),
+        }
+        SearchManager.init(manager_params)
+    </script>
+{% endblock %}

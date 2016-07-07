@@ -1,0 +1,52 @@
+{# TODO: use canonical isoform to as default link for gene name #}
+{#
+{% macro gene_results(gene) %}
+  <div class="result">
+    <h4><a href="{{ url_for('ProteinView:show', refseq=gene.isoforms[0].refseq) }}">{{gene.name }}</a></h4>
+    {{ gene.chrom }} {{ gene.strand }}
+    {% for isoform in gene.isoforms %}
+        <div class="isoform">
+          <h5>{{ isoform.refseq }}</h5>
+          <div class="isoform-data">
+          CDS:
+              {{ isoform.cds_start }}
+              {{ isoform.cds_end }}
+          Length: {{ isoform.cds_end - isoform.cds_start }}
+          + tx offset
+          </div>
+          <div class="shortcuts">
+            <a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">
+                Protein
+            </a>
+            <a href="{{ url_for('NetworkView:show', refseq=isoform.refseq) }}">
+                Network
+            </a>
+          </div>
+        </div>
+    {% endfor %}
+  </div>
+{% endmacro %}
+#}
+
+{# Until merge from mappings, use simplified macro for protein, not gene: #}
+{% macro gene_results(protein) %}
+  <div class="result">
+    {# TODO: use canonical isoform to as default link for gene name #}
+    <h4><a href="{{ url_for('ProteinView:show', name=protein.name) }}">{{protein.name }}</a></h4>
+    <div class="isoform">
+      <h5>{{ protein.refseq }}</h5>
+      <div class="shortcuts">
+        <a href="{{ url_for('ProteinView:show', name=protein.name) }}">
+            Protein
+        </a>
+        <a href="{{ url_for('NetworkView:show', name=protein.name) }}">
+            Network
+        </a>
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+{% if gene %}
+  {{ gene_results(gene) }}
+{% endif %}

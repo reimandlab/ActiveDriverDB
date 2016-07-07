@@ -1,0 +1,81 @@
+{% from "search/gene_results.html" import gene_results with context %}
+
+<form
+    action="{{ url_for('SearchView:index', target=target) }}"
+  class="search-form"
+    method="GET"
+    id="{{ target }}-form"
+>
+  {% if target == 'proteins' %}
+    <div class="options">
+    </div>
+    <div class="inputs" class="{{ 'hidden' if results }}">
+      <input
+        type="text"
+        name="protein"
+        class="form-control"
+        placeholder="TP53 or NM_000345"
+        id="protein_search"
+      >
+    </div>
+    <div class="results {{ 'hidden' if not results }}">
+      {% for result in results %}
+        {{ gene_results(result) }}
+      {% endfor %}
+    </div>
+  {% elif target == 'mutations' %}
+    <div class="options">
+      <span class="btn btn-default btn-file">
+        Select VCF file  <input type="file">
+      </span>
+    </div>
+    <div class="inputs" class="{{ 'hidden' if results }}">
+      {# The length of the textarea should change dynamically up to 30 rows - JS #}
+      {# It is possible substitute the single-line placeholder with more complex one, but JS is required #}
+      <textarea
+        name="mutations_search"
+        class="form-control"
+        placeholder="chr1 12345678 A C"
+        rows="3"
+      ></textarea>
+    </div>
+    <div class="results {{ 'hidden' if not results }}">
+      {#
+        Results should be in a form of a table where mappings are shown
+        together with links to appropiate sites. Below the table information
+        about positions that where not found in the database should be displayed
+      #}
+      <div id="toolbar"></div>
+
+      <table
+        class="table table-hover"
+        data-toolbar="#toolbar"
+        data-toggle="table"
+        data-search="true"
+        data-show-columns="true"
+      >
+        <thead>
+        <tr>
+          <th data-sortable=true>Chromosome</th>
+          <th data-sortable=true>Position</th>
+          <th data-sortable=true>Reference nuc</th>
+          <th data-sortable=true>Alternative nuc</th>
+          <th data-sortable=true>Results</th>
+        </tr>
+        </thead>
+        {% for result in results %}
+          {# TBD #}
+          <tr>
+            {{ result }}
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  {% endif %}
+  <div class="buttons">
+    <button type="submit" class="btn btn-primary">
+      Search <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+    </button>
+  </div>
+</form>
+

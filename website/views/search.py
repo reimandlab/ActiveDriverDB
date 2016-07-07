@@ -16,7 +16,14 @@ class SearchView(FlaskView):
 
     def index(self, target):
         """Simple input box with selectize-based autocomplete box"""
-        return template('search.html', target=target)
+        # TODO: figure out why default args does not work with flask-classful
+        if not target:
+            target = 'proteins'
+        return template('search/index.html', target=target)
+
+    def form(self, target):
+        """Return an empty HTML form appropriate for given target"""
+        return template('search/form.html', target=target)
 
     def autocomplete(self, target, limit=20):
         """Autocompletion API for search for target model (by name)"""
@@ -24,17 +31,30 @@ class SearchView(FlaskView):
         # and return the information about available results (.count()?)
         query = request.args.get('q') or ''
 
-        response = []
+        entries = self._search(query, target, limit)
 
-        if query:
-            model = self.models[target]
-            name_filter = model.name.like(query + '%')
-            refseq_filter = model.refseq.like(query + '%')
-            model_filter = or_(name_filter, refseq_filter)
-            entries = model.query.filter(model_filter).limit(limit).all()
-            response = [
-                {'value': entry.name, 'refseq': entry.refseq}
-                for entry in entries
-            ]
+        response = [
+            {
+                'value': entry.name,
+                'refseq': entry.refseq,
+                'html': template('search/gene_results.html', gene=entry)
+            }
+            for entry in entries
+        ]
 
         return json.dumps(response)
+
+    def _search(self, phase, target, limit=False):
+        """Search for a given target with phase"""
+        if not phase:
+            return []
+
+        model = self.models[target]
+        name_filter = model.name.like(phase + '%')
+        refseq_filter = model.refseq.like(phase + '%')
+        model_filter = or_(name_filter, refseq_filter)
+        orm_query = model.query.filter(model_filter)
+        if limit:
+            orm_query = orm_query.limit(limit)
+        entries = orm_query.all()
+        return entries
