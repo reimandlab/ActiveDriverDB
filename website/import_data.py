@@ -21,6 +21,7 @@ def import_data():
     # proteins = create_proteins_with_seq_old()
     # load_protein_refseq_old(proteins)
     proteins = create_proteins_and_genes()
+    proteins = {p.refseq: p for p in Protein.query.all()}
     load_sequences(proteins)
     # load_disorder(proteins)
     # cancers = load_cancers()
@@ -42,7 +43,6 @@ def import_data():
     # del groups
     print('Memory usage after cleaning: ', memory_usage())
     with app.app_context():
-        # proteins = Protein.query.all()
         import_mappings(proteins)
     print('Memory usage after mappings: ', memory_usage())
 
@@ -61,7 +61,7 @@ def load_sequences(proteins):
     return proteins
 
 
-def buffered_readlines(file_handle, line_count=250):
+def buffered_readlines(file_handle, line_count=500):
     while True:
         buffer = []
         # read as much as line_count says
@@ -152,8 +152,9 @@ def create_proteins_and_genes():
             )
             protein_data.update(coordinates)
 
-            protein = Protein(**protein_data)
-            proteins[refseq] = protein
+            proteins[refseq] = protein_data
+
+        db.session.bulk_insert_mappings(Protein, proteins.values())
 
     print('Duplicated rows detected:', len(with_duplicates))
     print('Proteins and genes created')
@@ -329,6 +330,9 @@ def import_mappings(proteins):
 
     chromosomes = get_human_chromosomes()
 
+    # used to provide pk on creation of CSV, increases performence:
+    # http://docs.sqlalchemy.org/en/latest/faq/performance.html
+
     cnt_old_prots, cnt_new_prots = 0, 0
     a = 1
 
@@ -342,8 +346,8 @@ def import_mappings(proteins):
             for i, line in enumerate(buffered_readlines(f)):
 
                 # flush after reaching memory limit but check
-                # memory usage only once per 25 analysed rows
-                if i % 25 == 0:
+                # memory usage only once per 500 analysed rows
+                if i % 500 == 0:
                     percent = system_memory_percent()
                     if percent > 85:
                         print(
@@ -356,7 +360,7 @@ def import_mappings(proteins):
                         for key in proteins:
                             proteins[key] = None
                         # flush SNVs and CSVs:
-                        db.session.add_all(protein_muts)
+                        db.session.bulk_insert_mappings(CodingSequenceVariant, protein_muts)
                         db.session.commit()
                         del genomic_muts
                         del protein_muts
@@ -444,20 +448,20 @@ def import_mappings(proteins):
                         proteins[refseq] = protein
                         cnt_new_prots += 1
 
-                    csv = CodingSequenceVariant(
-                        pos=aa_pos,
-                        ref=aa_ref,
-                        alt=aa_alt,
-                        cdna_pos=cdna_pos,
-                        exon=exon,
-                        strand=strand,
-                        protein=protein,
-                        snv=snv
-                    )
+                    csv_data = {
+                        'pos': aa_pos,
+                        'ref': aa_ref,
+                        'alt': aa_alt,
+                        'cdna_pos': cdna_pos,
+                        'exon': exon,
+                        'strand': strand,
+                        'protein': protein,
+                        'snv': snv
+                    }
 
-                    protein_muts.append(csv)
+                    protein_muts.append(csv_data)
 
-    db.session.add_all(protein_muts)
+    db.session.bulk_insert_mappings(CodingSequenceVariant, protein_muts)
     db.session.commit()
     print('Read', len(files), 'files with genome -> protein mappings, ')
     print(cnt_new_prots, 'new proteins created & ', cnt_old_prots, 'used')
