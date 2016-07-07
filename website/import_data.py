@@ -1,5 +1,7 @@
+import gc
 import psutil
-from app import db, app
+from app import app
+from app import db
 from website.models import Protein
 from website.models import Cancer
 from website.models import Mutation
@@ -92,9 +94,11 @@ def create_proteins_and_genes():
     with open('data/protein_data.tsv') as f:
         header = f.readline().rstrip().split('\t')
 
-        assert header == ['bin', 'name', 'chrom', 'strand', 'txStart', 'txEnd',
-                'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds',
-                'score', 'name2', 'cdsStartStat', 'cdsEndStat', 'exonFrames']
+        assert header == [
+            'bin', 'name', 'chrom', 'strand', 'txStart', 'txEnd',
+            'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds',
+            'score', 'name2', 'cdsStartStat', 'cdsEndStat', 'exonFrames'
+        ]
 
         columns = (header.index(key) for key in coordinates_to_save)
 
@@ -341,10 +345,10 @@ def import_mappings(proteins):
                 # memory usage only once per 25 analysed rows
                 if i % 25 == 0:
                     percent = system_memory_percent()
-                    if percent > 80:
+                    if percent > 85:
                         print(
                             'Memory usage (', percent, ') greater than limit',
-                            '(80 percent) flushing cache to the database'
+                            '(85 percent) flushing cache to the database'
                         )
                         # new proteins will be flushed along with SNVs and CSVs
                         # clear proteins cache (note: by looping, not by
@@ -354,6 +358,9 @@ def import_mappings(proteins):
                         # flush SNVs and CSVs:
                         db.session.add_all(protein_muts)
                         db.session.commit()
+                        del genomic_muts
+                        del protein_muts
+                        gc.collect()
                         genomic_muts = {}
                         protein_muts = []
 
