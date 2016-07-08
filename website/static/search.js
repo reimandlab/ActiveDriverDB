@@ -11,6 +11,9 @@ var ProteinForm = (function ()
 	// TODO and use search instead? Moot point.
 	function autocomplete(query)
 	{
+		var href = location.href.substr(0, location.href.lastIndexOf('?'))
+		history.replaceState(history.state, null, href + '?proteins=' + query)
+
 		$.ajax({
 			url: '/search/autocomplete/proteins',
 			type: 'GET',
