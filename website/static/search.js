@@ -4,13 +4,14 @@
 var ProteinForm = (function ()
 {
 	var element
-	var result_box
+	var empty_indicator
+	var result_ul
 	var recent_value
 
 	function get_url()
 	{
 		var href = 'proteins'
-		if(recent_value !== undefined)
+		if(recent_value !== undefined && recent_value !== '')
 		{
 			href += '?proteins=' + recent_value
 		}
@@ -21,8 +22,6 @@ var ProteinForm = (function ()
 	// TODO and use search instead? Moot point.
 	function autocomplete(query)
 	{
-		history.replaceState(history.state, null, get_url())
-
 		$.ajax({
 			url: '/search/autocomplete/proteins',
 			type: 'GET',
@@ -33,10 +32,10 @@ var ProteinForm = (function ()
 			success: function(rawResult) {
 				var results = JSON.parse(rawResult)
 				// TODO add animation
-				result_box.innerHTML = ''
+				result_ul.innerHTML = ''
 				for(var i = 0; i < results.length; i++)
 				{
-					result_box.innerHTML += results[i].html
+					result_ul.innerHTML += results[i].html
 				}
 			}
 		})
@@ -45,15 +44,28 @@ var ProteinForm = (function ()
 	function onChangeHandler(event)
 	{
 		var query = $(event.target).val()
-		if(query && query != recent_value)
+
+		if(query == recent_value)
+			return
+
+		if(query)
 		{
-			recent_value = query
+			if(!recent_value)
+			{
+				empty_indicator.addClass('hidden')
+			}
 			autocomplete(query)
 		}
 		else if(!query && recent_value)
 		{
-			result_box.innerHTML = ''
+			result_ul.innerHTML = ''
+			empty_indicator.removeClass('hidden')
 		}
+
+		recent_value = query
+
+		history.replaceState(history.state, null, get_url())
+
 	}
 
 	var publicSpace = {
@@ -63,8 +75,10 @@ var ProteinForm = (function ()
 			$(element).find('button[type="submit"]').hide()
 			// handle all edge cases like dragging the text into the input
 			$(element).find('#protein_search').on('change mouseup drop input', onChangeHandler)
-			result_box = $(element).find('.results')[0]
+			var result_box = $(element).find('.results')[0]
+			result_ul = $(result_box).find('ul')[0]
 			$(result_box).removeClass('hidden')
+			empty_indicator = $(result_box).find('.empty')
 		}, 
 		show: function()
 		{

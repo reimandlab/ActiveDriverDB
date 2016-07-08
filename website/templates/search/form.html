@@ -20,15 +20,15 @@
       >
     </div>
     <div class="results panel panel-default {{ 'hidden' if not results }}">
+      <ul>
       {% for result in results %}
         {{ gene_results(result) }}
-      {% else %}
-        <div class="empty">
-          <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
-          <p>Start typing the name of a protein or refseq identifier to get results</p>
-        </div>
-
       {% endfor %}
+      </ul>
+      <div class="empty {{ 'hidden' if results }}">
+        <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+        <p>Start typing the name of a protein or refseq identifier to get results</p>
+      </div>
     </div>
   {% elif target == 'mutations' %}
     <div class="options">

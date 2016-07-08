@@ -30,7 +30,7 @@
 
 {# Until merge from mappings, use simplified macro for protein, not gene: #}
 {% macro gene_results(protein) %}
-  <div class="result">
+  <li class="result">
     <h4><a href="{{ url_for('ProteinView:show', name=protein.name) }}">{{protein.name }}</a></h4>
     <div class="isoform">
       <h5>{{ protein.refseq }}</h5>
@@ -43,7 +43,7 @@
         </a>
       </div>
     </div>
-  </div>
+  </li>
 {% endmacro %}
 
 {% if gene %}

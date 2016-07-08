@@ -2,6 +2,7 @@ import json
 from flask import render_template as template
 from flask import request
 from flask_classful import FlaskView
+from flask_classful import route
 from sqlalchemy import or_
 from website.models import Protein
 
@@ -13,13 +14,16 @@ class SearchView(FlaskView):
         'proteins': Protein
     }
 
+    @route('/')
+    def default(self):
+        """Render default search form prompting to search for a protein"""
+        return self.index(target='proteins')
+
     def index(self, target):
-        """Simple input box with selectize-based autocomplete box"""
-        # TODO: figure out why default args does not work with flask-classful
-        if not target:
-            target = 'proteins'
+        """Render search form and results (if any) for proteins or mutations"""
 
         query = request.args.get(target) or ''
+
         results = self._search(query, target, 20)
         return template(
             'search/index.html',
