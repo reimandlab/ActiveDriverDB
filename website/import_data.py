@@ -1,4 +1,5 @@
 import gc
+import time
 import psutil
 from app import app
 from app import db
@@ -18,6 +19,8 @@ from website.models import Gene
 MEMORY_LIMIT = 2e9  # it can be greater than sql ma packet, since we will be
 # counting a lot of overhead into the current memory usage. Adjust manually.
 
+MEMORY_PERCENT_LIMIT = 80
+
 
 def system_memory_percent():
     return psutil.virtual_memory().percent
@@ -29,7 +32,7 @@ def import_data():
     proteins = create_proteins_and_genes()
     proteins = {p.refseq: p for p in Protein.query.all()}
     load_sequences(proteins)
-    select_preferred_isoforms(proteins)
+    select_preferred_isoforms()
     # load_disorder(proteins)
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
@@ -45,11 +48,15 @@ def import_data():
     db.session.commit()
     print('Memory usage before cleaning: ', memory_usage())
     # del cancers
-    # del kinases
-    # del groups
+    del kinases
+    del groups
     print('Memory usage after cleaning: ', memory_usage())
+    print('Importing mappings...')
+    start = time.clock()
     with app.app_context():
         import_mappings(proteins)
+    end = time.clock()
+    print('Imported mappings in:', end - start)
     print('Memory usage after mappings: ', memory_usage())
 
 
@@ -396,10 +403,11 @@ def import_mappings(proteins):
                     i = 0
                     percent = system_memory_percent()
                     usage = memory_usage()
-                    if percent > 85 or usage > MEMORY_LIMIT:
+                    if percent > MEMORY_PERCENT_LIMIT or usage > MEMORY_LIMIT:
                         print(
                             'Memory usage (', usage, ') greater than limit',
-                            '(85 percent) flushing cache to the database'
+                            '(', MEMORY_PERCENT_LIMIT , 'percent)',
+                            'flushing cache to the database'
                         )
                         # new proteins will be flushed along with SNVs and CSVs
                         # clear proteins cache (note: by looping, not by

@@ -138,11 +138,20 @@ class Gene(db.Model):
 
     isoforms = db.relationship(
         'Protein',
-        backref='gene'
+        backref='gene',
+        foreign_keys='Protein.gene_id'
     )
 
-    preferred_isoform_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
-    preferred_isoform = db.relationship('Protein', uselist=False)
+    preferred_isoform_id = db.Column(
+        db.Integer,
+        db.ForeignKey('protein.id', name='fk_preferred_isoform')
+    )
+    preferred_isoform = db.relationship(
+        'Protein',
+        uselist=False,
+        foreign_keys=preferred_isoform_id,
+        post_update=True
+    )
 
 
 class Protein(db.Model):
