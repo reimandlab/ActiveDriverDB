@@ -33,13 +33,12 @@ def import_data():
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
     kinases, groups = load_sites(proteins)
-    # kinases, groups = load_kinase_classification(proteins, kinases, groups)
-    # db.session.add_all(kinases.values())
-    # db.session.add_all(groups.values())
-    # print('Added kinases')
+    kinases, groups = load_kinase_classification(proteins, kinases, groups)
+    db.session.add_all(kinases.values())
+    db.session.add_all(groups.values())
+    print('Added kinases')
     # db.session.add_all(cancers.values())
     # print('Added cancers')
-    db.session.add_all(proteins.values())
     print('Added proteins')
     print('Memory usage before commit: ', memory_usage())
     db.session.commit()
@@ -216,6 +215,12 @@ def load_mutations(proteins, cancers):
     print('Mutations loaded')
 
 
+def get_protein(gene_name):
+    gene = Gene.query.filter_by(name=gene_name).one_or_none()
+    if gene:
+        return gene.isoforms.one_or_none()
+
+
 def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
     site_kinases, site_groups = [], []
 
@@ -230,7 +235,7 @@ def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
             if name not in kinases:
                 kinases[name] = Kinase(
                     name=name,
-                    protein=proteins.get(name, None)
+                    protein=get_protein(name)
                 )
             site_kinases.append(kinases[name])
 
@@ -298,7 +303,7 @@ def load_kinase_classification(proteins, kinases, groups):
             if kinase_name not in kinases:
                 kinases[kinase_name] = Kinase(
                     name=kinase_name,
-                    protein=proteins.get(kinase_name, None),
+                    protein=get_protein(kinase_name)
                 )
 
             # the 'family' corresponds to 'group' in the all other files
