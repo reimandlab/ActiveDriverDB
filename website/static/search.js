@@ -7,12 +7,21 @@ var ProteinForm = (function ()
 	var result_box
 	var recent_value
 
+	function get_url()
+	{
+		var href = 'proteins'
+		if(recent_value !== undefined)
+		{
+			href += '?proteins=' + recent_value
+		}
+		return href
+	}
+
 	// TODO autocomplete should only show quick sugesstion?
 	// TODO and use search instead? Moot point.
 	function autocomplete(query)
 	{
-		var href = location.href.substr(0, location.href.lastIndexOf('?'))
-		history.replaceState(history.state, null, href + '?proteins=' + query)
+		history.replaceState(history.state, null, get_url())
 
 		$.ajax({
 			url: '/search/autocomplete/proteins',
@@ -65,7 +74,8 @@ var ProteinForm = (function ()
 		hide: function()
 		{
 			$(element).hide()
-		}
+		},
+		get_url: get_url
 	}
 	return publicSpace
 }())
@@ -97,6 +107,10 @@ var MutationForm = (function ()
 		hide: function()
 		{
 			$(element).hide()
+		},
+		get_url: function()
+		{
+			return 'mutations'
 		}
 	}
 
@@ -188,7 +202,7 @@ var SearchManager = (function ()
 		// save the new address
 		if(!silient)
 		{
-			history.pushState({target: old_target}, null, target)
+			history.pushState({target: old_target}, null, forms[target].get_url())
 		}
 	}
 
