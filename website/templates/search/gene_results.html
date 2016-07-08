@@ -31,7 +31,6 @@
 {# Until merge from mappings, use simplified macro for protein, not gene: #}
 {% macro gene_results(protein) %}
   <div class="result">
-    {# TODO: use canonical isoform to as default link for gene name #}
     <h4><a href="{{ url_for('ProteinView:show', name=protein.name) }}">{{protein.name }}</a></h4>
     <div class="isoform">
       <h5>{{ protein.refseq }}</h5>

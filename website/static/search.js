@@ -49,7 +49,6 @@ var ProteinForm = (function ()
 			$(element).find('#protein_search').on('change mouseup drop input', onChangeHandler)
 			result_box = $(element).find('.results')[0]
 			$(result_box).removeClass('hidden')
-			// TODO: empty results (type to show results) - sass?
 		}, 
 		show: function()
 		{
@@ -68,12 +67,21 @@ var ProteinForm = (function ()
 var MutationForm = (function ()
 {
 	var element
+	var textarea
+
+	function replacePlaceholder()
+	{
+		// there will be browser not supporting multiline placeholders despite the trick.
+		// further tests are required - for those browsers we can display a bar with the text of full placeholder above
+		textarea.attr('placeholder', textarea.attr('data-full-placeholder').replace(/\\n/g, '\n'))
+	}
 
 	var publicSpace = {
 		init: function(dom_element)
 		{
 			element = dom_element
-			// TODO add better placeholders
+			textarea = element.find('textarea')
+			replacePlaceholder()
 		},
 		show: function()
 		{
