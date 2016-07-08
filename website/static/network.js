@@ -79,13 +79,8 @@ var Network = (function ()
     function configure(new_config)
     {
         // Automatical configuration update:
-        for(var key in new_config)
-        {
-            if(new_config.hasOwnProperty(key))
-            {
-                config[key] = new_config[key]
-            }
-        }
+        update_object(config, new_config)
+
         // Manual configuration patching:
         config.height = config.height || config.width * config.ratio
     }

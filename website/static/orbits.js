@@ -17,13 +17,7 @@ var Orbits = function ()
         if(!new_config) return
 
         // Automatical configuration update:
-        for(var key in new_config)
-        {
-            if(new_config.hasOwnProperty(key))
-            {
-                config[key] = new_config[key]
-            }
-        }
+        update_object(config, new_config)
     }
 
     function perimeter(R)
