@@ -2,8 +2,8 @@
 
 <form
     action="{{ url_for('SearchView:index', target=target) }}"
-  class="search-form"
-    method="GET"
+    class="search-form"
+    method="{{ 'GET' if target == 'proteins' else 'POST' }}"
     id="{{ target }}-form"
 >
   {% if target == 'proteins' %}
@@ -35,6 +35,7 @@
       <span class="btn btn-default btn-file">
         Select VCF file  <input type="file">
       </span>
+      <a href="?mutations='chr 1234 A C'" class="btn btn-default">Load an example</a>
     </div>
     <div class="inputs" class="{{ 'hidden' if results }}">
       {# The length of the textarea should change dynamically up to 30 rows - JS #}
@@ -43,9 +44,13 @@
         name="mutations_search"
         class="form-control"
         placeholder="chr1 12345678 A C"
-        data-full-placeholder="Type in mutations in following format, separated by new lines:\nchr1 12345678 A C\nchr5 54219 T G\n..."
-        rows="5"
-      ></textarea>
+        data-full-placeholder="Type in genomic or protein mutations separated by new lines, in following format:\nchr1 12345678 A C\nchr5 54219 T G\nTP53 R282W\n(you can mix genomic and protein mutations as long as each is plaed in a separate line)"
+        rows="6"
+        >
+        {%- if query -%}
+          {{ query }}
+          {%- endif -%}
+      </textarea>
     </div>
     <div class="results {{ 'hidden' if not results }}">
       {#

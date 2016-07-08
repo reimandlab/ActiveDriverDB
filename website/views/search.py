@@ -24,12 +24,22 @@ class SearchView(FlaskView):
 
         query = request.args.get(target) or ''
 
-        results = self._search(query, target, 20)
+        if target == 'proteins':
+            # handle GET here
+            results = self._search(query, target, 20)
+        else:
+            # TODO
+            # expect POST here
+            results = {}
+            # TODO: redirect with an url conatining session id, so user can save
+            # line as a bookmark and return there later
+
         return template(
             'search/index.html',
             target=target,
             results=results,
-            query=query)
+            query=query,
+        )
 
     def form(self, target):
         """Return an empty HTML form appropriate for given target"""
