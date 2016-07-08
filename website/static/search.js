@@ -38,6 +38,10 @@ var ProteinForm = (function ()
 			recent_value = query
 			autocomplete(query)
 		}
+		else if(!query && recent_value)
+		{
+			result_box.innerHTML = ''
+		}
 	}
 
 	var publicSpace = {
