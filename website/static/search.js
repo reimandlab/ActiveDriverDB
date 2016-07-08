@@ -139,16 +139,28 @@ var SearchManager = (function ()
 		forms[name].init(dom_form)
 	}
 
-	function switch_target(event)
+	function switchFromAnchor()
 	{
-		// update switches
-		var activator =	$(event.target)	// because switch is reserved word
-		switches.not(activator).removeClass('active')
-		activator.addClass('active')
-
 		// get new target
 		var href = this.href
 		target = href.substr(href.lastIndexOf('/') + 1)
+
+		switchTarget(target)
+
+		// prevent default
+		return false
+	}
+
+	function switchTarget(new_target, silient)
+	{
+
+		var old_target = target
+		target = new_target
+
+		// update switches
+		var activator =	switches.filter('.' + target)	// because switch is reserved word
+		switches.not(activator).removeClass('active')
+		$(activator).addClass('active')
 
 		// fetch form if not loaded
 		if(!(target in forms))
@@ -166,8 +178,11 @@ var SearchManager = (function ()
 		}
 		forms[target].show()
 
-		// prevent default
-		return false
+		// save the new address
+		if(!silient)
+		{
+			history.pushState({target: old_target}, null, target)
+		}
 	}
 
 	var publicSpace = {
@@ -177,9 +192,17 @@ var SearchManager = (function ()
             target = data.active_target
 			switches = $('.target-switch a')
 
-			switches.on('click', switch_target)
+			switches.on('click', switchFromAnchor)
 			initialize_form('proteins')
 			initialize_form('mutations')
+
+			var location = window.history.location || window.location
+
+			$(window).on('popstate', function(event) {
+				state = event.originalEvent.state
+				switchTarget(state.target, true)
+			})
+
 		}
 	}
 
