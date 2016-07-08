@@ -13,6 +13,12 @@ from website.models import SingleNucleotideVariation
 from website.models import Gene
 
 
+# remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
+# (otherwise MySQL server will be gone)
+MEMORY_LIMIT = 2e9  # it can be greater than sql ma packet, since we will be
+# counting a lot of overhead into the current memory usage. Adjust manually.
+
+
 def system_memory_percent():
     return psutil.virtual_memory().percent
 
@@ -61,15 +67,19 @@ def load_sequences(proteins):
     return proteins
 
 
-def buffered_readlines(file_handle, line_count=500):
-    while True:
+def buffered_readlines(file_handle, line_count=5000):
+    is_eof = False
+    while not is_eof:
         buffer = []
         # read as much as line_count says
         for _ in range(line_count):
             line = file_handle.readline()
+
             # stop if needed
             if not line:
+                is_eof = True
                 break
+
             buffer.append(line)
         # release one row in a once from buffer
         for line in buffer:
@@ -330,12 +340,10 @@ def import_mappings(proteins):
 
     chromosomes = get_human_chromosomes()
 
-    # used to provide pk on creation of CSV, increases performence:
-    # http://docs.sqlalchemy.org/en/latest/faq/performance.html
-
     cnt_old_prots, cnt_new_prots = 0, 0
     a = 1
 
+    i = 0
     for filename in files:
         if a > 1:
             break
@@ -343,15 +351,18 @@ def import_mappings(proteins):
 
         with gzip.open(filename, 'rb') as f:
             next(f)  # skip the header
-            for i, line in enumerate(buffered_readlines(f)):
+            for line in buffered_readlines(f):
+                i += 1
 
                 # flush after reaching memory limit but check
                 # memory usage only once per 500 analysed rows
-                if i % 500 == 0:
+                if i == 1000:
+                    i = 0
                     percent = system_memory_percent()
-                    if percent > 85:
+                    usage = memory_usage()
+                    if percent > 85 or usage > MEMORY_LIMIT:
                         print(
-                            'Memory usage (', percent, ') greater than limit',
+                            'Memory usage (', usage, ') greater than limit',
                             '(85 percent) flushing cache to the database'
                         )
                         # new proteins will be flushed along with SNVs and CSVs
@@ -360,7 +371,10 @@ def import_mappings(proteins):
                         for key in proteins:
                             proteins[key] = None
                         # flush SNVs and CSVs:
-                        db.session.bulk_insert_mappings(CodingSequenceVariant, protein_muts)
+                        db.session.bulk_insert_mappings(
+                            CodingSequenceVariant,
+                            protein_muts
+                        )
                         db.session.commit()
                         del genomic_muts
                         del protein_muts
@@ -432,7 +446,8 @@ def import_mappings(proteins):
                         cnt_old_prots += 1
                         # if cache has been flushed, retrive from database
                         if not protein:
-                            protein = Protein.query.filter_by(refseq=refseq).first()
+                            protein = Protein.query.filter_by(refseq=refseq).\
+                                first()
                             proteins[refseq] = protein
                     except KeyError:
                         # if the protein was not in the cache,
@@ -461,6 +476,7 @@ def import_mappings(proteins):
 
                     protein_muts.append(csv_data)
 
+    print('Beginning final commit')
     db.session.bulk_insert_mappings(CodingSequenceVariant, protein_muts)
     db.session.commit()
     print('Read', len(files), 'files with genome -> protein mappings, ')
