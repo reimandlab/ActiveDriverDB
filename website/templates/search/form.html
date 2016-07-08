@@ -12,15 +12,22 @@
     <div class="inputs" class="{{ 'hidden' if results }}">
       <input
         type="text"
-        name="protein"
+        name="proteins"
         class="form-control"
         placeholder="TP53 or NM_000345"
         id="protein_search"
+        {% if query %} value="{{ query }}" {% endif %}
       >
     </div>
-    <div class="results {{ 'hidden' if not results }}">
+    <div class="results panel panel-default {{ 'hidden' if not results }}">
       {% for result in results %}
         {{ gene_results(result) }}
+      {% else %}
+        <div class="empty">
+          <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+          <p>Start typing the name of a protein or refseq identifier to get results</p>
+        </div>
+
       {% endfor %}
     </div>
   {% elif target == 'mutations' %}

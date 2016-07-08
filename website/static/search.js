@@ -5,13 +5,14 @@ var ProteinForm = (function ()
 {
 	var element
 	var result_box
+	var recent_value
 
 	// TODO autocomplete should only show quick sugesstion?
 	// TODO and use search instead? Moot point.
-	function autocomplete(event)
+	function autocomplete(query)
 	{
 		$.ajax({
-			url: '/search/autocomplete/protein',
+			url: '/search/autocomplete/proteins',
 			type: 'GET',
 			data:
 				{
@@ -29,21 +30,23 @@ var ProteinForm = (function ()
 		})
 	}
 
+	function onChangeHandler()
+	{
+		var query = $(event.target).val()
+		if(query && query != recent_value)
+		{
+			recent_value = query
+			autocomplete(query)
+		}
+	}
+
 	var publicSpace = {
 		init: function(dom_element)
 		{
 			element = dom_element
 			$(element).find('button[type="submit"]').hide()
-			$(element).find('#protein_search').on(
-				'keyup',
-				function(event)
-				{
-					query = $(event.target).val()
-					if(query)
-					{
-						autocomplete(query)
-					}
-				})
+			// handle all edge cases like dragging the text into the input
+			$(element).find('#protein_search').on('change mouseup drop input', onChangeHandler)
 			result_box = $(element).find('.results')[0]
 			$(result_box).removeClass('hidden')
 			// TODO: empty results (type to show results) - sass?

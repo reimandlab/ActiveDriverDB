@@ -10,8 +10,7 @@ class SearchView(FlaskView):
     """Enables searching in any of registered database models"""
 
     models = {
-        'protein': Protein,
-        'network': Protein
+        'proteins': Protein
     }
 
     def index(self, target):
@@ -19,7 +18,14 @@ class SearchView(FlaskView):
         # TODO: figure out why default args does not work with flask-classful
         if not target:
             target = 'proteins'
-        return template('search/index.html', target=target)
+
+        query = request.args.get(target) or ''
+        results = self._search(query, target, 20)
+        return template(
+            'search/index.html',
+            target=target,
+            results=results,
+            query=query)
 
     def form(self, target):
         """Return an empty HTML form appropriate for given target"""
@@ -51,8 +57,16 @@ class SearchView(FlaskView):
 
         model = self.models[target]
         name_filter = model.name.like(phase + '%')
-        refseq_filter = model.refseq.like(phase + '%')
-        model_filter = or_(name_filter, refseq_filter)
+
+        # looking up both by name and refseq is costly - perform it wisely
+        if phase.isnumeric():
+            phase = 'NM_' + phase
+        if phase.startswith('NM_'):
+            refseq_filter = model.refseq.like(phase + '%')
+            model_filter = or_(name_filter, refseq_filter)
+        else:
+            model_filter = name_filter
+
         orm_query = model.query.filter(model_filter)
         if limit:
             orm_query = orm_query.limit(limit)
