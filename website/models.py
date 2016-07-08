@@ -141,6 +141,9 @@ class Gene(db.Model):
         backref='gene'
     )
 
+    preferred_isoform_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
+    preferred_isoform = db.relationship('Protein', uselist=False)
+
 
 class Protein(db.Model):
     """Protein represents a single isoform of a product of given gene."""

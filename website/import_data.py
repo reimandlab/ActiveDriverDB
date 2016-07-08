@@ -29,6 +29,7 @@ def import_data():
     proteins = create_proteins_and_genes()
     proteins = {p.refseq: p for p in Protein.query.all()}
     load_sequences(proteins)
+    select_preferred_isoforms(proteins)
     # load_disorder(proteins)
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
@@ -50,6 +51,29 @@ def import_data():
     with app.app_context():
         import_mappings(proteins)
     print('Memory usage after mappings: ', memory_usage())
+
+
+def select_preferred_isoforms():
+    """Performs selection of preferred isoform,
+
+    choosing the longest isoform which has the lowest refseq id
+    """
+    for gene in Gene.query.all():
+        max_length = 0
+        longest_isoforms = []
+        for isoform in gene.isoforms:
+            length = isoform.length
+            if length == max_length:
+                longest_isoforms.append(isoform)
+            elif length > max_length:
+                longest_isoforms = [isoform]
+                max_length = length
+
+        # sort by refseq id (lower id will be earlier in the list)
+        longest_isoforms.sort(key=lambda isoform: int(isoform.refseq[3:]))
+
+        gene.preferred_isoform = longest_isoforms[0]
+    print('Preferred isoforms chosen')
 
 
 def load_sequences(proteins):
@@ -215,10 +239,11 @@ def load_mutations(proteins, cancers):
     print('Mutations loaded')
 
 
-def get_protein(gene_name):
+def get_preferred_gene_isoform(gene_name):
     gene = Gene.query.filter_by(name=gene_name).one_or_none()
     if gene:
-        return gene.isoforms.one_or_none()
+        # if there is a gene, it has a preferred isoform
+        return gene.preferred_isoform.one()
 
 
 def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
@@ -235,7 +260,7 @@ def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
             if name not in kinases:
                 kinases[name] = Kinase(
                     name=name,
-                    protein=get_protein(name)
+                    protein=get_preferred_gene_isoform(name)
                 )
             site_kinases.append(kinases[name])
 
@@ -303,7 +328,7 @@ def load_kinase_classification(proteins, kinases, groups):
             if kinase_name not in kinases:
                 kinases[kinase_name] = Kinase(
                     name=kinase_name,
-                    protein=get_protein(kinase_name)
+                    protein=get_preferred_gene_isoform(kinase_name)
                 )
 
             # the 'family' corresponds to 'group' in the all other files
