@@ -42,7 +42,7 @@ var ProteinForm = (function ()
 		})
 	}
 
-	function onChangeHandler()
+	function onChangeHandler(event)
 	{
 		var query = $(event.target).val()
 		if(query && query != recent_value)

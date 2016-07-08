@@ -1,17 +1,13 @@
-from operator import itemgetter
+import json
 from flask import request
-from flask import jsonify
+from flask import redirect
+from flask import url_for
 from flask import render_template as template
 from flask_classful import FlaskView
 from website.models import Protein
-from website.views import SearchView
 from website.helpers.filters import FilterSet
 from website.helpers.filters import Filters
 from website.helpers.filters import Filter
-from website.models import Mutation
-from website.database import db
-from sqlalchemy import func
-from sqlalchemy.sql import label
 
 
 class NetworkView(FlaskView):
@@ -23,7 +19,7 @@ class NetworkView(FlaskView):
 
     def index(self):
         """Show SearchView as deafault page"""
-        return SearchView().index(target='proteins')
+        return redirect(url_for('SearchView:index', target='proteins'))
 
     def show(self, name):
         """Show a protein by"""
@@ -37,7 +33,6 @@ class NetworkView(FlaskView):
                         filters=filters)
 
     def _prepare_network_repr(self, protein, include_kinases_from_groups=False):
-        import json
 
         kinases = set(protein.kinases)
 

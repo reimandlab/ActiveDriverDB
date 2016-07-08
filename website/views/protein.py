@@ -1,12 +1,11 @@
 from operator import itemgetter
 from flask import request
 from flask import jsonify
+from flask import redirect
+from flask import url_for
 from flask import render_template as template
-# from flask import flash, url_for, redirect, abort
 from flask_classful import FlaskView
-# from flask_classful import route
 from website.models import Protein
-from website.views import SearchView
 from website.helpers.tracks import Track
 from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack
@@ -30,7 +29,7 @@ class ProteinView(FlaskView):
 
     def index(self):
         """Show SearchView as deafault page"""
-        return SearchView().index(target='proteins')
+        return redirect(url_for('SearchView:index', target='proteins'))
 
     def show(self, name):
         """Show a protein by:
