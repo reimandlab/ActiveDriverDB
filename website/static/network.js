@@ -19,17 +19,19 @@ function clone(object)
 
 var Network = (function ()
 {
-    var kinases = null
-    var kinases_grouped = null
-    var kinase_groups = null
-    var protein = null
-    var svg = null
-    var vis = null
+    var kinases
+    var kinases_grouped
+    var kinase_groups
+    var protein
 
-    var zooom = null
+    var svg
+    var vis
+    var force
+
+    var zooom
 
     var edges = []
-    var orbits = null
+    var orbits
 
     function fitTextIntoCircle(d, context)
     {
@@ -77,13 +79,8 @@ var Network = (function ()
     function configure(new_config)
     {
         // Automatical configuration update:
-        for(var key in new_config)
-        {
-            if(new_config.hasOwnProperty(key))
-            {
-                config[key] = new_config[key]
-            }
-        }
+        update_object(config, new_config)
+
         // Manual configuration patching:
         config.height = config.height || config.width * config.ratio
     }
@@ -307,6 +304,22 @@ var Network = (function ()
         return node.collapsed ? -1 : -100
     }
 
+    function nodeClick(node)
+    {
+        if(d3.event.defaultPrevented === false)
+        {
+            if(node.is_group)
+            {
+                switchGroupState(node)
+                force.start()
+            }
+            else
+            {
+                window.location.href = config.nodeURL(node)
+            }
+        }
+    }
+
     var publicSpace = {
         init: function(user_config)
         {
@@ -354,7 +367,7 @@ var Network = (function ()
                 kinase.y = group.y
             }
 
-            var force = d3.layout.force()
+            force = d3.layout.force()
                 .gravity(0.05)
                 .distance(100)
                 .charge(charge)
@@ -378,20 +391,7 @@ var Network = (function ()
                 .attr('transform', function(d){ return 'translate(' + [d.x, d.y] + ')' })
                 .attr('class', 'node')
                 .call(force.drag)
-                .on('click', function(node) {
-                    if(d3.event.defaultPrevented === false)
-                    {
-                        if(node.is_group)
-                        {
-                            switchGroupState(node)
-                            force.start()
-                        }
-                        else
-                        {
-                            window.location.href = config.nodeURL(node)
-                        }
-                    }
-                })
+                .on('click', nodeClick)
                 // cancel other events (like pining the background)
                 // to allow nodes movement (by force.drag)
                 .on("mousedown", function(d) { d3.event.stopPropagation() })
