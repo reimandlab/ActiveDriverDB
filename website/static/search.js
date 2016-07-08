@@ -45,7 +45,7 @@ var ProteinForm = (function ()
 	{
 		var query = $(event.target).val()
 
-		if(query == recent_value)
+		if(query === recent_value)
 			return
 
 		if(query)
@@ -206,7 +206,7 @@ var SearchManager = (function ()
 		// switch forms
 		for(var key in forms)
 		{
-			if(forms.hasOwnProperty(key) && key != target)
+			if(forms.hasOwnProperty(key) && key !== target)
 			{
 				forms[key].hide()
 			}
