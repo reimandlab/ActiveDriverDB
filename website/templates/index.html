@@ -1,9 +1,13 @@
 {% extends "base.html" %}
 
+
 {% block content %}
 
 <h3>Visualistion Framework for Genome Mutations</h3>
 
-<a href='/protein'>I want to search for a protein</a>
+<ul>
+  <li><a href="{{ url_for('SearchView:index', target='proteins') }}">search for a protein</a>
+  <li><a href="{{ url_for('SearchView:index', target='mutations') }}">search for mutations</a>
+</ul>
 
 {% endblock %}

@@ -30,7 +30,7 @@ class ProteinView(FlaskView):
 
     def index(self):
         """Show SearchView as deafault page"""
-        return SearchView().index(target='protein')
+        return SearchView().index(target='proteins')
 
     def show(self, name):
         """Show a protein by:

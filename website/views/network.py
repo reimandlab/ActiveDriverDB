@@ -23,7 +23,7 @@ class NetworkView(FlaskView):
 
     def index(self):
         """Show SearchView as deafault page"""
-        return SearchView().index(target='network')
+        return SearchView().index(target='proteins')
 
     def show(self, name):
         """Show a protein by"""
