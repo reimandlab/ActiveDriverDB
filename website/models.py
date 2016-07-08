@@ -277,6 +277,7 @@ class Site(db.Model):
     position = db.Column(db.Integer, index=True)
     residue = db.Column(db.String(1))
     pmid = db.Column(db.Text)
+    type = db.Column(db.Text)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     kinases = db.relationship(
         'Kinase',

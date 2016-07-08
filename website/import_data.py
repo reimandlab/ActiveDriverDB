@@ -32,7 +32,7 @@ def import_data():
     # load_disorder(proteins)
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
-    # kinases, groups = load_sites(proteins)
+    kinases, groups = load_sites(proteins)
     # kinases, groups = load_kinase_classification(proteins, kinases, groups)
     # db.session.add_all(kinases.values())
     # db.session.add_all(groups.values())
@@ -238,14 +238,19 @@ def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
 
 
 def load_sites(proteins):
-    with open('data/psite_table.tsv', 'r') as f:
+    # Use following R code toreproduce `site_table.tsv` file:
+    # load("PTM_site_table.rsav")
+    # write.table(site_table, file="site_table.tsv",
+    #   row.names=F, quote=F, sep='\t')
+    with open('data/site_table.tsv', 'r') as f:
         header = f.readline().rstrip().split('\t')
-        assert header == ['gene', 'position', 'residue', 'kinase', 'pmid']
+        assert header == ['gene', 'position', 'residue',
+                          'enzymes', 'pmid', 'type']
         kinases = {}
         kinase_groups = {}
         for line in f:
-            line = line.rstrip()
-            gene, position, residue, kinases_str, pmid = line.split('\t')
+            line = line.rstrip().split('\t')
+            refseq, position, residue, kinases_str, pmid, mod_type = line
             site_kinases, site_groups = make_site_kinases(
                 proteins,
                 kinases,
@@ -256,9 +261,10 @@ def load_sites(proteins):
                 position=position,
                 residue=residue,
                 pmid=pmid,
-                protein=proteins[gene],
+                protein=proteins[refseq],
                 kinases=site_kinases,
-                kinase_groups=site_groups
+                kinase_groups=site_groups,
+                type=mod_type
             )
     print('Protein sites loaded')
     return kinases, kinase_groups
