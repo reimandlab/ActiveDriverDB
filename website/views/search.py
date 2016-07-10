@@ -19,20 +19,29 @@ class SearchView(FlaskView):
         """Render default search form prompting to search for a protein"""
         return self.index(target='proteins')
 
+    @route('/<target>', methods=['POST', 'GET'])
     def index(self, target):
         """Render search form and results (if any) for proteins or mutations"""
 
-        query = request.args.get(target) or ''
-
         if target == 'proteins':
             # handle GET here
+            assert request.method == 'GET'
+
+            query = request.args.get(target) or ''
+
             results = self._search(query, target, 20)
         else:
-            # TODO
             # expect POST here
+            assert request.method == 'POST'
+
+            query = request.form.get(target) or ''
+
+            # TODO: prevent placeholder from beeing sent here
+
             results = {}
-            # TODO: redirect with an url conatining session id, so user can save
-            # line as a bookmark and return there later
+            # TODO: redirect with an url conatining session id, so user can
+            # save line as a bookmark and return there later. We can create a
+            # hash on the input - md5 should be enough.
 
         return template(
             'search/index.html',

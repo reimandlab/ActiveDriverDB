@@ -31,11 +31,12 @@
       </div>
     </div>
   {% elif target == 'mutations' %}
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     {# TODO the example should be tested and return representative results - currently placeholder #}
     {% set example='chr 1234 A C\nTP53 R282W' %}
     <div class="options">
       <span class="btn btn-default btn-file">
-        Select VCF file  <input type="file">
+        Select VCF file  <input type="file" name="mutations-file">
       </span>
       <a href="?mutations={{ example | urlencode }}" class="btn btn-default set-example">Load an example</a>
     </div>
@@ -43,7 +44,7 @@
       {# The length of the textarea should change dynamically up to 30 rows - JS #}
       {# The single-line placeholder will be substituted by multiline placeholder with JS in all browsers #}
       <textarea
-        name="mutations_search"
+        name="mutations"
         class="form-control"
         placeholder="chr1 12345678 A C"
         data-full-placeholder="Type in genomic or protein mutations separated by new lines, in following format:\nchr1 12345678 A C\nchr5 54219 T G\nTP53 R282W\n(you can mix genomic and protein mutations as long as each is placed in a separate line)"
