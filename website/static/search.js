@@ -1,6 +1,71 @@
 // TODO: Inheritance from form to implement Form interface (show/hide/etc)
 // That's very hard to do cross-browser in pure JS
 
+var multlinePlaceholderPolyfill = (function()
+{
+    // allows to use multiline placeholders if textarea is given as field,
+    // or imitates normal placeholders if an input is given as field
+    var field
+
+    // is placeholder content displayed inside the field?
+    // (double state control allows user to type in a text identical to placeholder)
+    var active
+
+    var placeholder = ''
+
+    function startPlaceholder()
+    {
+        if(!active && !field.val())
+        {
+            field.val(placeholder)
+            field.addClass('placeholder')
+            active = true
+        }
+    }
+
+    function stopPlaceholder()
+    {
+        if(active && field.val() == placeholder)
+        {
+            field.val('')
+            field.removeClass('placeholder')
+            active = false
+        }
+    }
+
+    var publicSpace = {
+        init: function(element, initial_placeholder)
+        {
+            field = $(element)
+
+            placeholder = initial_placeholder.replace(/\\n/g, '\n')
+            var multiline = placeholder.indexOf('\n') > -1
+
+            // only Chrome supports multiline placeholders.
+            if('placeholder' in element[0] && (window.chrome || !multiline))
+            {
+                field.attr('placeholder', placeholder)
+            }
+            else
+            {
+                field.attr('placeholder', '')
+
+                startPlaceholder()
+
+                field.on('blur', startPlaceholder)
+                field.on('focus', stopPlaceholder)
+            }
+        },
+        setValue: function(value)
+        {
+            stopPlaceholder()
+            field.val(value)
+        }
+    }
+
+    return publicSpace
+})
+
 var ProteinForm = (function ()
 {
     var element
@@ -74,11 +139,18 @@ var ProteinForm = (function ()
             element = dom_element
             $(element).find('button[type="submit"]').hide()
             // handle all edge cases like dragging the text into the input
-            $(element).find('#protein_search').on('change mouseup drop input', onChangeHandler)
+            var protein_search = $(element).find('#protein_search')
+            protein_search.on('change mouseup drop input', onChangeHandler)
             var result_box = $(element).find('.results')[0]
             result_ul = $(result_box).find('ul')[0]
             $(result_box).removeClass('hidden')
             empty_indicator = $(result_box).find('.empty')
+
+            var placeholder_manager = multlinePlaceholderPolyfill()
+            placeholder_manager.init(
+                protein_search,
+                protein_search.attr('placeholder')
+            )
         },
         show: function()
         {
@@ -93,73 +165,6 @@ var ProteinForm = (function ()
     }
     return publicSpace
 }())
-
-var multlinePlaceholderPolyfill = (function()
-{
-    // allows to use multiline placeholders if textarea is given as field,
-    // or imitates normal placeholders if an input is given as field
-    var field
-
-    // is placeholder content displayed inside the field?
-    // (double state control allows user to type in a text identical to placeholder)
-    var active
-
-    var placeholder = ''
-
-    function startPlaceholder()
-    {
-        if(!active && !field.val())
-        {
-            field.val(placeholder)
-            field.addClass('placeholder')
-            active = true
-        }
-    }
-
-    function stopPlaceholder()
-    {
-        if(active && field.val() == placeholder)
-        {
-            field.val('')
-            field.removeClass('placeholder')
-            active = false
-        }
-    }
-
-    var publicSpace = {
-        init: function(dom_element, initial_placeholder)
-        {
-            field = $(dom_element)
-
-            placeholder = initial_placeholder.replace(/\\n/g, '\n')
-
-            // for all browsers other than those verions of Chrome which support
-            // placholder use workaround (custom placeholder implementation)
-            // why not other browsers with placeholders? Only Chrome supports
-            // cross-system multiline placeholders.
-            if(window.chrome && 'placeholder' in dom_element)
-            {
-                field.attr('placeholder', placeholder)
-            }
-            else
-            {
-                field.attr('placeholder', '')
-
-                startPlaceholder()
-
-                field.on('blur', startPlaceholder)
-                field.on('focus', stopPlaceholder)
-            }
-        },
-        setValue: function(value)
-        {
-            stopPlaceholder()
-            field.val(value)
-        }
-    }
-
-    return publicSpace
-})
 
 var MutationForm = (function ()
 {
