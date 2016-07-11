@@ -39,9 +39,11 @@ class SearchView(FlaskView):
             # TODO: prevent placeholder from beeing sent here
 
             results = {}
-            # TODO: redirect with an url conatining session id, so user can
+
+            # TODO: redirect with an url containing session id, so user can
             # save line as a bookmark and return there later. We can create a
             # hash on the input - md5 should be enough.
+            # redirect()
 
         return template(
             'search/index.html',
