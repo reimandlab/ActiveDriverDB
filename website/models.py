@@ -90,15 +90,28 @@ class CodingSequenceVariant(db.Model):
 
 
 class Kinase(db.Model):
+    """Kinase represents an entity interacting with some site.
+
+    The protein linked to a kinase is chosen as the `preferred_isoform` of a
+    gene having the same name as given kinase (since we do not have specific
+    refseq identificator for a single kinase).
+    Not every kinase has an associated protein.
+    """
     __tablename__ = 'kinase'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, index=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     group_id = db.Column(db.Integer, db.ForeignKey('kinase_group.id'))
 
+    def __repr__(self):
+        return '<Kinase {0} belonging to {1} group>'.format(
+            self.name,
+            self.group
+        )
+
 
 class KinaseGroup(db.Model):
-    """ Kinase group is the only grouping of kinases currently in use.
+    """Kinase group is the only grouping of kinases currently in use.
 
     The nomenclature may differ across sources and a `group` here
     may be equivalent to a `family` in some publications / datasets.
@@ -111,6 +124,12 @@ class KinaseGroup(db.Model):
         order_by='Kinase.name',
         backref='group'
     )
+
+    def __repr__(self):
+        return '<KinaseGroup {0}, with {1} kinases>'.format(
+            self.name,
+            len(self.kinases)
+        )
 
 
 class Gene(db.Model):
@@ -152,6 +171,12 @@ class Gene(db.Model):
         foreign_keys=preferred_isoform_id,
         post_update=True
     )
+
+    def __repr__(self):
+        return '<Gene {0}, with {1} isoforms>'.format(
+            self.name,
+            len(self.isoforms)
+        )
 
 
 class Protein(db.Model):
@@ -211,7 +236,11 @@ class Protein(db.Model):
         super().__init__(**kwargs)
 
     def __repr__(self):
-        return '<Protein %r>' % self.name
+        return '<Protein {0} with seq of {1} aa from {2} gene>'.format(
+            self.refseq,
+            self.length,
+            self.gene.name
+        )
 
     @cached_property
     def length(self):
