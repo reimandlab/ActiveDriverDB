@@ -79,7 +79,11 @@ def select_preferred_isoforms():
         # sort by refseq id (lower id will be earlier in the list)
         longest_isoforms.sort(key=lambda isoform: int(isoform.refseq[3:]))
 
-        gene.preferred_isoform = longest_isoforms[0]
+        try:
+            gene.preferred_isoform = longest_isoforms[0]
+        except IndexError:
+            print('No isoform for:', gene)
+
     print('Preferred isoforms chosen')
 
 
@@ -130,6 +134,7 @@ def create_proteins_and_genes():
 
     # a list storing refseq ids which occur at least twice in the file
     with_duplicates = []
+    potentially_empty_genes = set()
 
     with open('data/protein_data.tsv') as f:
         header = f.readline().rstrip().split('\t')
@@ -163,6 +168,7 @@ def create_proteins_and_genes():
             if refseq in proteins:
 
                 with_duplicates.append(refseq)
+                potentially_empty_genes.add(gene)
 
                 if gene.chrom in ('X', 'Y'):
                     # close an eye for pseudoautosomal regions
@@ -194,7 +200,12 @@ def create_proteins_and_genes():
 
             proteins[refseq] = protein_data
 
-        db.session.bulk_insert_mappings(Protein, proteins.values())
+        db.session.add_all([Protein(**data) for data in proteins.values()])
+
+    cnt = sum(map(lambda g: len(g.isoforms) == 1, potentially_empty_genes))
+    print('Duplicated that are only isoforms for gene:', cnt)
+
+    del genes
 
     print('Duplicated rows detected:', len(with_duplicates))
     print('Proteins and genes created')
@@ -250,7 +261,7 @@ def get_preferred_gene_isoform(gene_name):
     gene = Gene.query.filter_by(name=gene_name).one_or_none()
     if gene:
         # if there is a gene, it has a preferred isoform
-        return gene.preferred_isoform.one()
+        return gene.preferred_isoform
 
 
 def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
@@ -405,9 +416,15 @@ def import_mappings(proteins):
                     usage = memory_usage()
                     if percent > MEMORY_PERCENT_LIMIT or usage > MEMORY_LIMIT:
                         print(
-                            'Memory usage (', usage, ') greater than limit',
-                            '(', MEMORY_PERCENT_LIMIT , 'percent)',
+                            'Memory usage greater than limit:\n',
+                            '(percent: %s limit: %s)\n',
+                            '(usage: %s limit: %s)\n',
                             'flushing cache to the database'
+                            %
+                            (
+                                percent, MEMORY_PERCENT_LIMIT,
+                                usage, MEMORY_LIMIT
+                            )
                         )
                         # new proteins will be flushed along with SNVs and CSVs
                         # clear proteins cache (note: by looping, not by
