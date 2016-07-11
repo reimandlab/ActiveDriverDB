@@ -1,53 +1,204 @@
+import gc
+import time
+import psutil
+from app import app
 from app import db
-from website.models import Protein, Cancer, Mutation, Site, Kinase, KinaseGroup
+from website.models import Protein
+from website.models import Cancer
+from website.models import Mutation
+from website.models import Site
+from website.models import Kinase
+from website.models import KinaseGroup
 from website.models import CodingSequenceVariant
 from website.models import SingleNucleotideVariation
+from website.models import Gene
+
+
+# remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
+# (otherwise MySQL server will be gone)
+MEMORY_LIMIT = 2e9  # it can be greater than sql ma packet, since we will be
+# counting a lot of overhead into the current memory usage. Adjust manually.
+
+MEMORY_PERCENT_LIMIT = 80
+
+
+def system_memory_percent():
+    return psutil.virtual_memory().percent
 
 
 def import_data():
-    proteins = create_proteins_with_seq()
-    load_protein_refseq(proteins)
-    load_disorder(proteins)
-    cancers = load_cancers()
-    load_mutations(proteins, cancers)
+    # proteins = create_proteins_with_seq_old()
+    # load_protein_refseq_old(proteins)
+    proteins = create_proteins_and_genes()
+    proteins = {p.refseq: p for p in Protein.query.all()}
+    load_sequences(proteins)
+    select_preferred_isoforms()
+    # load_disorder(proteins)
+    # cancers = load_cancers()
+    # load_mutations(proteins, cancers)
     kinases, groups = load_sites(proteins)
     kinases, groups = load_kinase_classification(proteins, kinases, groups)
     db.session.add_all(kinases.values())
     db.session.add_all(groups.values())
     print('Added kinases')
-    db.session.add_all(cancers.values())
-    print('Added cancers')
-    db.session.add_all(proteins.values())
+    # db.session.add_all(cancers.values())
+    # print('Added cancers')
     print('Added proteins')
+    print('Memory usage before commit: ', memory_usage())
     db.session.commit()
+    print('Memory usage before cleaning: ', memory_usage())
+    # del cancers
+    del kinases
+    del groups
+    print('Memory usage after cleaning: ', memory_usage())
+    print('Importing mappings...')
+    start = time.clock()
+    with app.app_context():
+        import_mappings(proteins)
+    end = time.clock()
+    print('Imported mappings in:', end - start)
+    print('Memory usage after mappings: ', memory_usage())
 
 
-def create_proteins_with_seq():
-    proteins = {}
-    with open('data/longest_isoform_proteins.fa', 'r') as f:
+def select_preferred_isoforms():
+    """Performs selection of preferred isoform,
 
-        name = None
+    choosing the longest isoform which has the lowest refseq id
+    """
+    for gene in Gene.query.all():
+        max_length = 0
+        longest_isoforms = []
+        for isoform in gene.isoforms:
+            length = isoform.length
+            if length == max_length:
+                longest_isoforms.append(isoform)
+            elif length > max_length:
+                longest_isoforms = [isoform]
+                max_length = length
+
+        # sort by refseq id (lower id will be earlier in the list)
+        longest_isoforms.sort(key=lambda isoform: int(isoform.refseq[3:]))
+
+        gene.preferred_isoform = longest_isoforms[0]
+    print('Preferred isoforms chosen')
+
+
+def load_sequences(proteins):
+    with open('data/all_RefGene_proteins.fa', 'r') as f:
+        refseq = None
         for line in f:
             if line.startswith('>'):
-                name = line[1:].rstrip()
-                assert name not in proteins
-                protein = Protein(name=name)
-                proteins[name] = protein
+                refseq = line[1:].rstrip()
+                assert refseq in proteins
+                assert proteins[refseq].sequence == ''
             else:
-                proteins[name].sequence += line.rstrip()
+                proteins[refseq].sequence += line.rstrip()
     print('Sequences loaded')
     return proteins
 
 
-def load_protein_refseq(proteins):
-    with open('data/longest_isoforms.tsv', 'r') as f:
+def buffered_readlines(file_handle, line_count=5000):
+    is_eof = False
+    while not is_eof:
+        buffer = []
+        # read as much as line_count says
+        for _ in range(line_count):
+            line = file_handle.readline()
+
+            # stop if needed
+            if not line:
+                is_eof = True
+                break
+
+            buffer.append(line)
+        # release one row in a once from buffer
+        for line in buffer:
+            yield line
+
+
+def create_proteins_and_genes():
+
+    proteins = {}
+    genes = {}
+
+    coordinates_to_save = {
+        'txStart': 'tx_start',
+        'txEnd': 'tx_end',
+        'cdsStart': 'cds_start',
+        'cdsEnd': 'cds_end'
+    }
+
+    # a list storing refseq ids which occur at least twice in the file
+    with_duplicates = []
+
+    with open('data/protein_data.tsv') as f:
         header = f.readline().rstrip().split('\t')
-        assert header == ['gene', 'rseq']
+
+        assert header == [
+            'bin', 'name', 'chrom', 'strand', 'txStart', 'txEnd',
+            'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds',
+            'score', 'name2', 'cdsStartStat', 'cdsEndStat', 'exonFrames'
+        ]
+
+        columns = (header.index(key) for key in coordinates_to_save)
+
         for line in f:
-            line = line.rstrip()
-            name, refseq = line.split('\t')
-            proteins[name].refseq = refseq
-    print('Refseq ids loaded')
+            line = line.rstrip().split('\t')
+
+            # load gene
+            name = line[-4]
+            if name not in genes:
+                gene_data = {'name': name}
+                gene_data['chrom'] = line[2][3:]    # remove chr prefix
+                gene_data['strand'] = 1 if '+' else 0
+                gene = Gene(**gene_data)
+                genes[name] = gene
+            else:
+                gene = genes[name]
+
+            # load protein
+            refseq = line[1]
+
+            # do not allow duplicates
+            if refseq in proteins:
+
+                with_duplicates.append(refseq)
+
+                if gene.chrom in ('X', 'Y'):
+                    # close an eye for pseudoautosomal regions
+                    print(
+                        'Skipping duplicated entry (probably belonging',
+                        'to pseudoautosomal region) with refseq:', refseq
+                    )
+                else:
+                    # warn about other duplicated records
+                    print(
+                        'Skipping duplicated entry with refseq:', refseq
+                    )
+                continue
+
+            # from this line there is no processing of duplicates allowed
+            assert refseq not in proteins
+
+            protein_data = {'refseq': refseq, 'gene': gene}
+
+            coordinates = zip(
+                coordinates_to_save.values(),
+                [
+                    int(value)
+                    for i, value in enumerate(line)
+                    if i in columns
+                ]
+            )
+            protein_data.update(coordinates)
+
+            proteins[refseq] = protein_data
+
+        db.session.bulk_insert_mappings(Protein, proteins.values())
+
+    print('Duplicated rows detected:', len(with_duplicates))
+    print('Proteins and genes created')
+    return proteins
 
 
 def load_disorder(proteins):
@@ -95,6 +246,13 @@ def load_mutations(proteins, cancers):
     print('Mutations loaded')
 
 
+def get_preferred_gene_isoform(gene_name):
+    gene = Gene.query.filter_by(name=gene_name).one_or_none()
+    if gene:
+        # if there is a gene, it has a preferred isoform
+        return gene.preferred_isoform.one()
+
+
 def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
     site_kinases, site_groups = [], []
 
@@ -109,7 +267,7 @@ def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
             if name not in kinases:
                 kinases[name] = Kinase(
                     name=name,
-                    protein=proteins.get(name, None)
+                    protein=get_preferred_gene_isoform(name)
                 )
             site_kinases.append(kinases[name])
 
@@ -117,14 +275,19 @@ def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
 
 
 def load_sites(proteins):
-    with open('data/psite_table.tsv', 'r') as f:
+    # Use following R code toreproduce `site_table.tsv` file:
+    # load("PTM_site_table.rsav")
+    # write.table(site_table, file="site_table.tsv",
+    #   row.names=F, quote=F, sep='\t')
+    with open('data/site_table.tsv', 'r') as f:
         header = f.readline().rstrip().split('\t')
-        assert header == ['gene', 'position', 'residue', 'kinase', 'pmid']
+        assert header == ['gene', 'position', 'residue',
+                          'enzymes', 'pmid', 'type']
         kinases = {}
         kinase_groups = {}
         for line in f:
-            line = line.rstrip()
-            gene, position, residue, kinases_str, pmid = line.split('\t')
+            line = line.rstrip().split('\t')
+            refseq, position, residue, kinases_str, pmid, mod_type = line
             site_kinases, site_groups = make_site_kinases(
                 proteins,
                 kinases,
@@ -135,9 +298,10 @@ def load_sites(proteins):
                 position=position,
                 residue=residue,
                 pmid=pmid,
-                protein=proteins[gene],
+                protein=proteins[refseq],
                 kinases=site_kinases,
-                kinase_groups=site_groups
+                kinase_groups=site_groups,
+                type=mod_type
             )
     print('Protein sites loaded')
     return kinases, kinase_groups
@@ -171,7 +335,7 @@ def load_kinase_classification(proteins, kinases, groups):
             if kinase_name not in kinases:
                 kinases[kinase_name] = Kinase(
                     name=kinase_name,
-                    protein=proteins.get(kinase_name, None),
+                    protein=get_preferred_gene_isoform(kinase_name)
                 )
 
             # the 'family' corresponds to 'group' in the all other files
@@ -190,11 +354,26 @@ def get_files(path, pattern):
     return glob.glob(path + '/' + pattern)
 
 
+def memory_usage():
+    import os
+    import psutil
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss
+
+
+def get_or_create(model, **kwargs):
+    from sqlalchemy.orm.exc import NoResultFound
+    try:
+        return model.query.filter_by(**kwargs).one(), False
+    except NoResultFound:
+        return model(**kwargs), True
+
+
 def import_mappings(proteins):
 
     files = get_files('data/200616/all_variants/playground', 'annot_*.txt.gz')
 
-    genomic_muts = []
+    genomic_muts = {}
     protein_muts = []
 
     import gzip
@@ -205,27 +384,72 @@ def import_mappings(proteins):
     chromosomes = get_human_chromosomes()
 
     cnt_old_prots, cnt_new_prots = 0, 0
+    a = 1
 
+    i = 0
     for filename in files:
+        if a > 1:
+            break
+        a += 1
 
         with gzip.open(filename, 'rb') as f:
             next(f)  # skip the header
-            for line in f:
+            for line in buffered_readlines(f):
+                i += 1
+
+                # flush after reaching memory limit but check
+                # memory usage only once per 500 analysed rows
+                if i == 1000:
+                    i = 0
+                    percent = system_memory_percent()
+                    usage = memory_usage()
+                    if percent > MEMORY_PERCENT_LIMIT or usage > MEMORY_LIMIT:
+                        print(
+                            'Memory usage (', usage, ') greater than limit',
+                            '(', MEMORY_PERCENT_LIMIT , 'percent)',
+                            'flushing cache to the database'
+                        )
+                        # new proteins will be flushed along with SNVs and CSVs
+                        # clear proteins cache (note: by looping, not by
+                        # dict.fromkeys - so we do not create a copy of keys)
+                        for key in proteins:
+                            proteins[key] = None
+                        # flush SNVs and CSVs:
+                        db.session.bulk_insert_mappings(
+                            CodingSequenceVariant,
+                            protein_muts
+                        )
+                        db.session.commit()
+                        del genomic_muts
+                        del protein_muts
+                        gc.collect()
+                        genomic_muts = {}
+                        protein_muts = []
+
                 line = line.decode("latin1")
                 chrom, pos, ref, alt, prot = line.rstrip().split('\t')
                 assert chrom.startswith('chr')
-                # with simple maping to ints we can
                 chrom = chrom[3:]
                 assert chrom in chromosomes
-                ref, alt = map(ord, (ref, alt))
-                pos = int(pos)
 
-                snv = SingleNucleotideVariation(
-                    chrom=chrom,
-                    pos=pos,
-                    ref=ref,
-                    alt=alt)
-                genomic_muts.append(snv)
+                snv_data = {
+                    'chrom': chrom,
+                    'pos': int(pos),
+                    'ref': ref,
+                    'alt': alt
+                }
+
+                try:
+                    # get snv from cache
+                    snv, is_new = genomic_muts[tuple(snv_data.values())]
+                except KeyError:
+                    # get from database or create new
+                    snv, is_new = get_or_create(
+                        SingleNucleotideVariation,
+                        **snv_data
+                    )
+                    # add to cache
+                    genomic_muts[tuple(snv_data.values())] = (snv, is_new)
 
                 for dest in filter(bool, prot.split(',')):
                     name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
@@ -237,12 +461,11 @@ def import_mappings(proteins):
                     exon = int(exon[4:])
                     assert cdna_mut.startswith('c.')
 
-                    if (ord(cdna_mut[2].lower()) == ref and
-                            ord(cdna_mut[-1].lower()) == alt):
-
+                    if (cdna_mut[2].lower() == ref and
+                            cdna_mut[-1].lower() == alt):
                         strand = True
-                    elif (ord(complement(cdna_mut[2]).lower()) == ref and
-                          ord(complement(cdna_mut[-1]).lower()) == alt):
+                    elif (complement(cdna_mut[2]).lower() == ref and
+                          complement(cdna_mut[-1]).lower() == alt):
                         strand = False
                     else:
                         raise Exception(line)
@@ -262,26 +485,43 @@ def import_mappings(proteins):
                     aa_alt = prot_mut[-1]
 
                     try:
-                        protein = proteins[name]
+                        # try to get it from cache (`proteins` dictionary)
+                        protein = proteins[refseq]
                         cnt_old_prots += 1
+                        # if cache has been flushed, retrive from database
+                        if not protein:
+                            protein = Protein.query.filter_by(refseq=refseq).\
+                                first()
+                            proteins[refseq] = protein
                     except KeyError:
-                        protein = Protein(name=name, refseq=refseq)
-                        proteins['name'] = protein
+                        # if the protein was not in the cache,
+                        # create it and add to the cache
+                        print(
+                            'Create protein from mappings:', refseq,
+                            'it will not have any other data!'
+                        )
+                        # the gene and protein (if created) will be added
+                        # to database by cascade run by adding CSVs
+                        gene, _ = get_or_create(Gene, name=name)
+                        protein = Protein(refseq=refseq, gene=gene)
+                        proteins[refseq] = protein
                         cnt_new_prots += 1
 
-                    csv = CodingSequenceVariant(
-                        pos=aa_pos,
-                        ref=aa_ref,
-                        alt=aa_alt,
-                        cdna_pos=cdna_pos,
-                        exon=exon,
-                        strand=strand,
-                        protein=protein
-                    )
+                    csv_data = {
+                        'pos': aa_pos,
+                        'ref': aa_ref,
+                        'alt': aa_alt,
+                        'cdna_pos': cdna_pos,
+                        'exon': exon,
+                        'strand': strand,
+                        'protein': protein,
+                        'snv': snv
+                    }
 
-                    protein_muts.append(csv)
+                    protein_muts.append(csv_data)
 
+    print('Beginning final commit')
+    db.session.bulk_insert_mappings(CodingSequenceVariant, protein_muts)
+    db.session.commit()
     print('Read', len(files), 'files with genome -> protein mappings, ')
     print(cnt_new_prots, 'new proteins created & ', cnt_old_prots, 'used')
-
-    return genomic_muts, protein_muts
