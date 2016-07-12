@@ -1,4 +1,3 @@
-import gc
 import time
 import psutil
 from app import app
@@ -449,7 +448,7 @@ def import_mappings(proteins):
                 }
                 """
 
-                snv = ':'.join((chrom, pos.lstrip(), ref, alt))
+                snv = ':'.join((chrom, '%x' % int(pos.lstrip()))) + ref + alt
 
                 for dest in filter(bool, prot.split(',')):
                     name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
@@ -506,9 +505,12 @@ def import_mappings(proteins):
                         cnt_new_prots += 1
                         db.session.add(protein)
 
-                    r.sadd(snv, ':'.join((
-                        aa_pos, aa_ref, aa_alt, cdna_pos,
-                        exon, strand, str(protein.id))))
+                    assert int(aa_pos) == (int(cdna_pos) - 1) // 3 + 1
+
+                    r.sadd(snv, strand + aa_ref + aa_alt + ':'.join((
+                        '%x' % int(cdna_pos), exon, '%x' % protein.id)))
+
+        print(filename, 'loaded succesfully')
 
     # db.session.bulk_insert_mappings(CodingSequenceVariant, protein_muts)
     # db.session.commit()
