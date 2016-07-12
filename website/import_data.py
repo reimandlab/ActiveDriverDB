@@ -9,8 +9,8 @@ from website.models import Mutation
 from website.models import Site
 from website.models import Kinase
 from website.models import KinaseGroup
-from website.models import CodingSequenceVariant
-from website.models import SingleNucleotideVariation
+# from website.models import CodingSequenceVariant
+# from website.models import SingleNucleotideVariation
 from website.models import Gene
 
 
@@ -36,10 +36,10 @@ def import_data():
     # load_disorder(proteins)
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
-    kinases, groups = load_sites(proteins)
-    kinases, groups = load_kinase_classification(proteins, kinases, groups)
-    db.session.add_all(kinases.values())
-    db.session.add_all(groups.values())
+    # kinases, groups = load_sites(proteins)
+    # kinases, groups = load_kinase_classification(proteins, kinases, groups)
+    # db.session.add_all(kinases.values())
+    # db.session.add_all(groups.values())
     print('Added kinases')
     # db.session.add_all(cancers.values())
     # print('Added cancers')
@@ -48,8 +48,8 @@ def import_data():
     db.session.commit()
     print('Memory usage before cleaning: ', memory_usage())
     # del cancers
-    del kinases
-    del groups
+    # del kinases
+    # del groups
     print('Memory usage after cleaning: ', memory_usage())
     print('Importing mappings...')
     start = time.clock()
@@ -384,9 +384,6 @@ def import_mappings(proteins):
 
     files = get_files('data/200616/all_variants/playground', 'annot_*.txt.gz')
 
-    genomic_muts = {}
-    protein_muts = []
-
     import gzip
 
     from helpers.bioinf import complement
@@ -394,54 +391,48 @@ def import_mappings(proteins):
 
     chromosomes = get_human_chromosomes()
 
+    import redis
+    r = redis.StrictRedis(host='localhost', port=6379, db=0)
+    # clear redis db
+    r.flushdb()
+
     cnt_old_prots, cnt_new_prots = 0, 0
     a = 1
 
     i = 0
     for filename in files:
-        if a > 1:
+        if a > 20:
             break
         a += 1
 
         with gzip.open(filename, 'rb') as f:
             next(f)  # skip the header
-            for line in buffered_readlines(f):
+            for line in buffered_readlines(f, 10000):
                 i += 1
 
+                """
                 # flush after reaching memory limit but check
-                # memory usage only once per 500 analysed rows
-                if i == 1000:
+                # memory usage only once per 5000 analysed rows
+                if i == 5000:
                     i = 0
                     percent = system_memory_percent()
                     usage = memory_usage()
                     if percent > MEMORY_PERCENT_LIMIT or usage > MEMORY_LIMIT:
+                        print('Memory usage greater than limit:')
                         print(
-                            'Memory usage greater than limit:\n',
-                            '(percent: %s limit: %s)\n',
-                            '(usage: %s limit: %s)\n',
-                            'flushing cache to the database'
-                            %
-                            (
-                                percent, MEMORY_PERCENT_LIMIT,
-                                usage, MEMORY_LIMIT
-                            )
+                            '(percent: %s limit: %s)' %
+                            (percent, MEMORY_PERCENT_LIMIT)
                         )
-                        # new proteins will be flushed along with SNVs and CSVs
-                        # clear proteins cache (note: by looping, not by
-                        # dict.fromkeys - so we do not create a copy of keys)
+                        print(
+                            '(usage: %s limit: %s)' %
+                            (usage, MEMORY_LIMIT)
+                        )
+                        print('flushing cache to the database')
+                        # TODO flush proteins
                         for key in proteins:
                             proteins[key] = None
-                        # flush SNVs and CSVs:
-                        db.session.bulk_insert_mappings(
-                            CodingSequenceVariant,
-                            protein_muts
-                        )
-                        db.session.commit()
-                        del genomic_muts
-                        del protein_muts
                         gc.collect()
-                        genomic_muts = {}
-                        protein_muts = []
+                """
 
                 line = line.decode("latin1")
                 chrom, pos, ref, alt, prot = line.rstrip().split('\t')
@@ -449,24 +440,16 @@ def import_mappings(proteins):
                 chrom = chrom[3:]
                 assert chrom in chromosomes
 
+                """
                 snv_data = {
                     'chrom': chrom,
                     'pos': int(pos),
                     'ref': ref,
                     'alt': alt
                 }
+                """
 
-                try:
-                    # get snv from cache
-                    snv, is_new = genomic_muts[tuple(snv_data.values())]
-                except KeyError:
-                    # get from database or create new
-                    snv, is_new = get_or_create(
-                        SingleNucleotideVariation,
-                        **snv_data
-                    )
-                    # add to cache
-                    genomic_muts[tuple(snv_data.values())] = (snv, is_new)
+                snv = ':'.join((chrom, pos.lstrip(), ref, alt))
 
                 for dest in filter(bool, prot.split(',')):
                     name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
@@ -475,19 +458,19 @@ def import_mappings(proteins):
                     # name and refseq are redundant with respect one to another
 
                     assert exon.startswith('exon')
-                    exon = int(exon[4:])
+                    exon = exon[4:]
                     assert cdna_mut.startswith('c.')
 
                     if (cdna_mut[2].lower() == ref and
                             cdna_mut[-1].lower() == alt):
-                        strand = True
+                        strand = '+'
                     elif (complement(cdna_mut[2]).lower() == ref and
                           complement(cdna_mut[-1]).lower() == alt):
-                        strand = False
+                        strand = '-'
                     else:
                         raise Exception(line)
 
-                    cdna_pos = int(cdna_mut[3:-1])
+                    cdna_pos = cdna_mut[3:-1]
                     assert prot_mut.startswith('p.')
                     # we can check here if a given reference nuc is consistent
                     # with the reference amino acid. For example cytosine in
@@ -498,7 +481,7 @@ def import_mappings(proteins):
                     # the alt aa has to be Asparagine (N) - no other is valid).
                     # Note: it could be used to compress the data in memory too
                     aa_ref = prot_mut[2]
-                    aa_pos = int(prot_mut[3:-1])
+                    aa_pos = prot_mut[3:-1]
                     aa_alt = prot_mut[-1]
 
                     try:
@@ -517,28 +500,17 @@ def import_mappings(proteins):
                             'Create protein from mappings:', refseq,
                             'it will not have any other data!'
                         )
-                        # the gene and protein (if created) will be added
-                        # to database by cascade run by adding CSVs
                         gene, _ = get_or_create(Gene, name=name)
                         protein = Protein(refseq=refseq, gene=gene)
                         proteins[refseq] = protein
                         cnt_new_prots += 1
+                        db.session.add(protein)
 
-                    csv_data = {
-                        'pos': aa_pos,
-                        'ref': aa_ref,
-                        'alt': aa_alt,
-                        'cdna_pos': cdna_pos,
-                        'exon': exon,
-                        'strand': strand,
-                        'protein': protein,
-                        'snv': snv
-                    }
+                    r.sadd(snv, ':'.join((
+                        aa_pos, aa_ref, aa_alt, cdna_pos,
+                        exon, strand, str(protein.id))))
 
-                    protein_muts.append(csv_data)
-
-    print('Beginning final commit')
-    db.session.bulk_insert_mappings(CodingSequenceVariant, protein_muts)
-    db.session.commit()
+    # db.session.bulk_insert_mappings(CodingSequenceVariant, protein_muts)
+    # db.session.commit()
     print('Read', len(files), 'files with genome -> protein mappings, ')
     print(cnt_new_prots, 'new proteins created & ', cnt_old_prots, 'used')
