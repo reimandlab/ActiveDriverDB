@@ -390,17 +390,15 @@ def import_mappings(proteins):
 
     chromosomes = get_human_chromosomes()
 
-    import redis
-    r = redis.StrictRedis(host='localhost', port=6379, db=0)
-    # clear redis db
-    r.flushdb()
+    import bsddb3 as bsddb
+    bdb = bsddb.hashopen('berkley_map_db.db', 'c')
 
     cnt_old_prots, cnt_new_prots = 0, 0
     a = 1
 
     i = 0
     for filename in files:
-        if a > 20:
+        if a > 2:
             break
         a += 1
 
@@ -449,6 +447,8 @@ def import_mappings(proteins):
                 """
 
                 snv = ':'.join((chrom, '%x' % int(pos.lstrip()))) + ref + alt
+                snv = bytes(snv, 'utf-8')
+                items = bdb.get(snv, b'').split(b'|')
 
                 for dest in filter(bool, prot.split(',')):
                     name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
@@ -507,8 +507,13 @@ def import_mappings(proteins):
 
                     assert int(aa_pos) == (int(cdna_pos) - 1) // 3 + 1
 
-                    r.sadd(snv, strand + aa_ref + aa_alt + ':'.join((
-                        '%x' % int(cdna_pos), exon, '%x' % protein.id)))
+                    item = strand + aa_ref + aa_alt + ':'.join((
+                        '%x' % int(cdna_pos), exon, '%x' % protein.id))
+                    item = bytes(item, 'utf-8')
+                    if item not in items:
+                        items.append(item)
+
+                bdb[snv] = b'|'.join(items)
 
         print(filename, 'loaded succesfully')
 
