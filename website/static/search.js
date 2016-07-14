@@ -54,6 +54,7 @@ var multlinePlaceholderPolyfill = (function()
 
                 field.on('blur', startPlaceholder)
                 field.on('focus', stopPlaceholder)
+                field.closest('form').on('submit', stopPlaceholder)
             }
         },
         setValue: function(value)

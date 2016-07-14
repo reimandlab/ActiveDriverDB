@@ -83,8 +83,6 @@ class SearchView(FlaskView):
 
             query = request.form.get(target) or ''
 
-            # TODO: prevent placeholder from beeing sent here
-
             results = {}
 
             # TODO: redirect with an url containing session id, so user can
