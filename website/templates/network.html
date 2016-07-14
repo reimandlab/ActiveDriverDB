@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %} {{ protein.name }} - network view - {{ super() }} {% endblock %}
+{% block title %} {{ protein.gene.name }} - {{ protein.refseq }} - network view - {{ super() }} {% endblock %}
 
 {% block head %}
   {{ super() }}
@@ -22,13 +22,13 @@
 
 {% block content %}
 
-<h3>{{ protein.name }}</h3>
+<h3>{{ protein.gene.name }} - {{ protein.refseq }}</h3>
 
 <ol class="breadcrumb">
   <li><a href="/">Home</a></li>
-  <li><a href="/protein">Proteins</a></li>
   <li><a href="/network">Network</a></li>
-  <li class="active">{{ protein.name }}</li>
+  <li class="active">{{ protein.gene.name }}</li>
+  <li class="active">{{ protein.refseq }}</li>
 </ol>
 
 <div id="network_plot"></div>
@@ -48,11 +48,11 @@
     Network.init({
         element: document.getElementById('network_plot'),
         data: {{ data | safe }},
-        dataURL: '{{ url_for('NetworkView:kinases', name=protein.name) }}',
+        dataURL: '{{ url_for('NetworkView:kinases', refseq=protein.refseq) }}',
         minimalRadius: 15,
         ratio: 0.5, /* remember to keep update with style of network */
         nodeURL: function(node){
-            return '{{ url_for('ProteinView:show', name='') }}' + node.name
+            return '{{ url_for('ProteinView:show', refseq='') }}' + node.name
         }
     })
 

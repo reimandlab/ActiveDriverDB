@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %} {{ protein.name }} - protein view - {{ super() }} {% endblock %}
+{% block title %} {{ protein.gene.name }} - {{ protein.refseq }} - protein view - {{ super() }} {% endblock %}
 
 {% block head %}
   {{ super() }}
@@ -34,12 +34,13 @@
 
 {% block content %}
 
-<h3>{{ protein.name }}</h3>
+<h3>{{ protein.gene.name }} - {{ protein.refseq }}</h3>
 
 <ol class="breadcrumb">
   <li><a href="/">Home</a></li>
   <li><a href="{{ url_for('ProteinView:index') }}">Proteins</a></li>
-  <li class="active">{{ protein.name }}</li>
+  <li class="active">{{ protein.gene.name }}</li>
+  <li class="active">{{ protein.refseq }}</li>
 </ol>
 
 {% with filters=filters %}
@@ -50,7 +51,7 @@
 
 <ul>
     <li>RefSeq: <a href="http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}">{{ protein.refseq }}</a>
-    <li><a href="{{ url_for('NetworkView:show', name=protein.name) }}">Show network</a>
+    <li><a href="{{ url_for('NetworkView:show', refseq=protein.refseq) }}">Show network</a>
 </ul>
 
 <div class="panel panel-default">
@@ -75,8 +76,8 @@
     <script type="text/javascript">
         var params = {
             element: document.getElementById('plot_area'),
-            mutations: '{{ url_for('ProteinView:mutations', name=protein.name, filters=filters.active.url_string) }}',
-            sites: '{{ url_for('ProteinView:sites', name=protein.name) }}',
+            mutations: '{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.active.url_string) }}',
+            sites: '{{ url_for('ProteinView:sites', refseq=protein.refseq) }}',
             sequenceLength: {{ protein.sequence | length }},
             name: '{{ protein.name }}',
             refseq: '{{ protein.refseq }}'
