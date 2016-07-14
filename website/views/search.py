@@ -5,6 +5,9 @@ from flask_classful import FlaskView
 from flask_classful import route
 from website.models import Protein
 from website.models import Gene
+from database import bdb
+from database import make_snv_key
+from database import decode_csv
 
 
 class GeneResult:
@@ -77,13 +80,34 @@ class SearchView(FlaskView):
             query = request.args.get(target) or ''
 
             results = search_proteins(query, 20)
-        else:
-            # expect POST or GET here
-            # if request.method == 'POST':
 
-            query = request.form.get(target) or ''
+        # if the target is 'mutations' but we did not received 'POST'
+        elif target == 'mutations' and request.method == 'POST':
 
-            results = {}
+            query = ''
+
+            textarea_query = request.form.get(target, False)
+            vcf_file = request.files.get('vcf_file', False)
+
+            # TODO: add a notcie for user that if there is a file, the entries
+            # from both file and textarea will be merged
+
+            results = []
+
+            if vcf_file:
+                for line in vcf_file:
+                    results.append(line)
+            if textarea_query:
+                for line in textarea_query.split('\n'):
+                    chrom, pos, ref, alt = line.split()
+                    chrom = chrom[3:]
+                    snv = make_snv_key(chrom, pos, ref, alt)
+                    items = [decode_csv(item) for item in bdb[snv]]
+
+                    results.append(
+                        {'chrom': chrom, 'pos': pos, 'ref': ref,
+                         'alt': alt, 'results': items}
+                    )
 
             # TODO: redirect with an url containing session id, so user can
             # save line as a bookmark and return there later. We can create a

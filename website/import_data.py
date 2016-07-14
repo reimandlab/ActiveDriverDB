@@ -387,6 +387,7 @@ def import_mappings(proteins):
     from helpers.bioinf import complement
     from helpers.bioinf import get_human_chromosomes
     from database import bdb
+    from database import make_snv_key
 
     chromosomes = get_human_chromosomes()
 
@@ -410,7 +411,7 @@ def import_mappings(proteins):
                 chrom = chrom[3:]
                 assert chrom in chromosomes
 
-                snv = ':'.join((chrom, '%x' % int(pos.lstrip()))) + ref + alt
+                snv = make_snv_key(chrom, pos, ref, alt)
                 items = bdb[snv]
 
                 for dest in filter(bool, prot.split(',')):
