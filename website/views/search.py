@@ -78,8 +78,8 @@ class SearchView(FlaskView):
 
             results = search_proteins(query, 20)
         else:
-            # expect POST here
-            assert request.method == 'POST'
+            # expect POST or GET here
+            # if request.method == 'POST':
 
             query = request.form.get(target) or ''
 
