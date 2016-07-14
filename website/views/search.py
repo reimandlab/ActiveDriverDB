@@ -100,7 +100,7 @@ class SearchView(FlaskView):
                     results.append(line)
             if textarea_query:
                 query += textarea_query
-                for line in textarea_query.split('\n'):
+                for line in textarea_query.lower().split('\n'):
                     data = line.split()
                     if len(data) == 4:
                         chrom, pos, ref, alt = data
