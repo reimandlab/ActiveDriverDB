@@ -29,7 +29,6 @@ def import_data():
     # proteins = create_proteins_with_seq_old()
     # load_protein_refseq_old(proteins)
     proteins = create_proteins_and_genes()
-    proteins = {p.refseq: p for p in Protein.query.all()}
     load_sequences(proteins)
     select_preferred_isoforms()
     # load_disorder(proteins)
@@ -120,16 +119,15 @@ def buffered_readlines(file_handle, line_count=5000):
 
 
 def create_proteins_and_genes():
-
     proteins = {}
     genes = {}
 
-    coordinates_to_save = {
-        'txStart': 'tx_start',
-        'txEnd': 'tx_end',
-        'cdsStart': 'cds_start',
-        'cdsEnd': 'cds_end'
-    }
+    coordinates_to_save = [
+        ('txStart', 'tx_start'),
+        ('txEnd', 'tx_end'),
+        ('cdsStart', 'cds_start'),
+        ('cdsEnd', 'cds_end')
+    ]
 
     # a list storing refseq ids which occur at least twice in the file
     with_duplicates = []
@@ -144,7 +142,8 @@ def create_proteins_and_genes():
             'score', 'name2', 'cdsStartStat', 'cdsEndStat', 'exonFrames'
         ]
 
-        columns = (header.index(key) for key in coordinates_to_save)
+        columns = tuple(header.index(x[0]) for x in coordinates_to_save)
+        coordinates_names = [x[1] for x in coordinates_to_save]
 
         for line in f:
             line = line.rstrip().split('\t')
@@ -188,7 +187,7 @@ def create_proteins_and_genes():
             protein_data = {'refseq': refseq, 'gene': gene}
 
             coordinates = zip(
-                coordinates_to_save.values(),
+                coordinates_names,
                 [
                     int(value)
                     for i, value in enumerate(line)
@@ -197,9 +196,9 @@ def create_proteins_and_genes():
             )
             protein_data.update(coordinates)
 
-            proteins[refseq] = protein_data
+            proteins[refseq] = Protein(**protein_data)
 
-        db.session.add_all([Protein(**data) for data in proteins.values()])
+        db.session.add_all(proteins.values())
 
     cnt = sum(map(lambda g: len(g.isoforms) == 1, potentially_empty_genes))
     print('Duplicated that are only isoforms for gene:', cnt)
@@ -396,7 +395,7 @@ def import_mappings(proteins):
 
     i = 0
     for filename in files:
-        if a > 20:
+        if a > 2:
             break
         a += 1
 
@@ -405,44 +404,11 @@ def import_mappings(proteins):
             for line in buffered_readlines(f, 10000):
                 i += 1
 
-                """
-                # flush after reaching memory limit but check
-                # memory usage only once per 5000 analysed rows
-                if i == 5000:
-                    i = 0
-                    percent = system_memory_percent()
-                    usage = memory_usage()
-                    if percent > MEMORY_PERCENT_LIMIT or usage > MEMORY_LIMIT:
-                        print('Memory usage greater than limit:')
-                        print(
-                            '(percent: %s limit: %s)' %
-                            (percent, MEMORY_PERCENT_LIMIT)
-                        )
-                        print(
-                            '(usage: %s limit: %s)' %
-                            (usage, MEMORY_LIMIT)
-                        )
-                        print('flushing cache to the database')
-                        # TODO flush proteins
-                        for key in proteins:
-                            proteins[key] = None
-                        gc.collect()
-                """
-
                 line = line.decode("latin1")
                 chrom, pos, ref, alt, prot = line.rstrip().split('\t')
                 assert chrom.startswith('chr')
                 chrom = chrom[3:]
                 assert chrom in chromosomes
-
-                """
-                snv_data = {
-                    'chrom': chrom,
-                    'pos': int(pos),
-                    'ref': ref,
-                    'alt': alt
-                }
-                """
 
                 snv = ':'.join((chrom, '%x' % int(pos.lstrip()))) + ref + alt
                 items = bdb[snv]
