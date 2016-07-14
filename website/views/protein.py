@@ -31,7 +31,7 @@ class ProteinView(FlaskView):
         """Show SearchView as deafault page"""
         return redirect(url_for('SearchView:index', target='proteins'))
 
-    def show(self, name):
+    def show(self, refseq):
         """Show a protein by:
 
         + needleplot
@@ -39,7 +39,7 @@ class ProteinView(FlaskView):
         """
         active_filters = FilterSet.from_request(request)
 
-        protein = Protein.query.filter_by(name=name).first_or_404()
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
         disorder = [
             TrackElement(*region) for region in protein.disorder_regions
@@ -68,9 +68,9 @@ class ProteinView(FlaskView):
         return template('protein.html', protein=protein, tracks=tracks,
                         filters=filters, mutations_with_cnt=mutations)
 
-    def mutations(self, name):
+    def mutations(self, refseq):
         """List of mutations suitable for needleplot library"""
-        protein = Protein.query.filter_by(name=name).first_or_404()
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
         filters = request.args.get('filters', '')
         filters = FilterSet.from_string(filters)
 
@@ -91,10 +91,10 @@ class ProteinView(FlaskView):
 
         return jsonify(response)
 
-    def sites(self, name):
+    def sites(self, refseq):
         """List of sites suitable for needleplot library"""
 
-        protein = Protein.query.filter_by(name=name).first_or_404()
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
         response = [
             {

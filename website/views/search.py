@@ -3,16 +3,63 @@ from flask import render_template as template
 from flask import request
 from flask_classful import FlaskView
 from flask_classful import route
-from sqlalchemy import or_
 from website.models import Protein
+from website.models import Gene
+
+
+class GeneResult:
+
+    def __init__(self, gene, restrict_to=None):
+        self.gene = gene
+        if restrict_to:
+            self.isoforms = restrict_to
+
+    def __getattr__(self, key):
+        return getattr(self.gene, key)
+
+
+def search_proteins(phase, limit=False):
+    """Search for a protein isoform or gene.
+
+    Limit means maximum results to be
+    returned and will be applied to genes (so in the results there may be 10
+    genes and 100 isoforms if the limit is equal to 10.
+    """
+    if not phase:
+        return []
+
+    # find by gene name
+    name_filter = Gene.name.like(phase + '%')
+    orm_query = Gene.query.filter(name_filter)
+    if limit:
+        orm_query = orm_query.limit(limit)
+    genes = {gene.name: GeneResult(gene) for gene in orm_query.all()}
+
+    # looking up both by name and refseq is costly - perform it wisely
+    if phase.isnumeric():
+        phase = 'NM_' + phase
+    if phase.startswith('NM_'):
+        refseq_filter = Protein.refseq.like(phase + '%')
+        isoforms = Protein.query.filter(refseq_filter).all()
+
+        for isoform in isoforms:
+            if limit and len(genes) > limit:
+                break
+
+            gene = isoform.gene
+
+            if gene.name in genes:
+                # add isoform to gene if
+                if isoform not in genes[gene.name].isoforms:
+                    genes[gene.name].isoforms.append(isoform)
+            else:
+                genes[gene.name] = GeneResult(gene, restrict_to=[isoform])
+
+    return genes.values()
 
 
 class SearchView(FlaskView):
     """Enables searching in any of registered database models"""
-
-    models = {
-        'proteins': Protein
-    }
 
     @route('/')
     def default(self):
@@ -29,7 +76,7 @@ class SearchView(FlaskView):
 
             query = request.args.get(target) or ''
 
-            results = self._search(query, target, 20)
+            results = search_proteins(query, 20)
         else:
             # expect POST here
             assert request.method == 'POST'
@@ -56,44 +103,20 @@ class SearchView(FlaskView):
         """Return an empty HTML form appropriate for given target"""
         return template('search/form.html', target=target)
 
-    def autocomplete(self, target, limit=20):
+    def autocomplete_proteins(self, limit=20):
         """Autocompletion API for search for target model (by name)"""
         # TODO: implement on client side requests with limit higher limits
         # and return the information about available results (.count()?)
         query = request.args.get('q') or ''
 
-        entries = self._search(query, target, limit)
+        entries = search_proteins(query, limit)
 
         response = [
             {
                 'value': entry.name,
-                'refseq': entry.refseq,
                 'html': template('search/gene_results.html', gene=entry)
             }
             for entry in entries
         ]
 
         return json.dumps(response)
-
-    def _search(self, phase, target, limit=False):
-        """Search for a given target with phase"""
-        if not phase:
-            return []
-
-        model = self.models[target]
-        name_filter = model.name.like(phase + '%')
-
-        # looking up both by name and refseq is costly - perform it wisely
-        if phase.isnumeric():
-            phase = 'NM_' + phase
-        if phase.startswith('NM_'):
-            refseq_filter = model.refseq.like(phase + '%')
-            model_filter = or_(name_filter, refseq_filter)
-        else:
-            model_filter = name_filter
-
-        orm_query = model.query.filter(model_filter)
-        if limit:
-            orm_query = orm_query.limit(limit)
-        entries = orm_query.all()
-        return entries

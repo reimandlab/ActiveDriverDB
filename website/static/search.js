@@ -88,7 +88,7 @@ var ProteinForm = (function ()
     function autocomplete(query)
     {
         $.ajax({
-            url: '/search/autocomplete/proteins',
+            url: '/search/autocomplete_proteins',
             type: 'GET',
             data:
                 {

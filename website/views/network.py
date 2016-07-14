@@ -21,12 +21,12 @@ class NetworkView(FlaskView):
         """Show SearchView as deafault page"""
         return redirect(url_for('SearchView:index', target='proteins'))
 
-    def show(self, name):
+    def show(self, refseq):
         """Show a protein by"""
         active_filters = FilterSet.from_request(request)
         filters = Filters(active_filters, self.allowed_filters)
 
-        protein = Protein.query.filter_by(name=name).first_or_404()
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
         data = self._prepare_network_repr(protein)
 
         return template('network.html', protein=protein, data=data,
@@ -56,7 +56,7 @@ class NetworkView(FlaskView):
                 for kinase in kinases
             ],
             'protein': {
-                'name': protein.name,
+                'name': protein.refseq,
                 'mutations_count': protein.mutations.count(),
                 'kinases': protein_kinases_names
             },
@@ -74,9 +74,9 @@ class NetworkView(FlaskView):
         }
         return json.dumps(data)
 
-    def kinases(self, name):
+    def kinases(self, refseq):
 
-        protein = Protein.query.filter_by(name=name).first_or_404()
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
         data = self._prepare_network_repr(protein)
 
         return data
