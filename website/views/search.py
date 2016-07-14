@@ -89,30 +89,42 @@ class SearchView(FlaskView):
             textarea_query = request.form.get(target, False)
             vcf_file = request.files.get('vcf_file', False)
 
-            # TODO: add a notcie for user that if there is a file, the entries
+            # TODO: add a notice for user that if there is a file, the entries
             # from both file and textarea will be merged
 
             results = []
 
             if vcf_file:
                 for line in vcf_file:
+                    # TODO
                     results.append(line)
             if textarea_query:
+                query += textarea_query
                 for line in textarea_query.split('\n'):
-                    chrom, pos, ref, alt = line.split()
-                    chrom = chrom[3:]
-                    snv = make_snv_key(chrom, pos, ref, alt)
-                    items = [decode_csv(item) for item in bdb[snv]]
+                    data = line.split()
+                    if len(data) == 4:
+                        chrom, pos, ref, alt = data
+                        chrom = chrom[3:]
+                        snv = make_snv_key(chrom, pos, ref, alt)
+                        items = [decode_csv(item) for item in bdb[snv]]
 
-                    results.append(
-                        {'chrom': chrom, 'pos': pos, 'ref': ref,
-                         'alt': alt, 'results': items}
-                    )
+                        results.append(
+                            {
+                                'chrom': chrom, 'pos': pos, 'ref': ref,
+                                'alt': alt, 'results': items
+                            }
+                        )
+                    elif len(data) == 2:
+                        # TODO - protein handling
+                        pass
 
             # TODO: redirect with an url containing session id, so user can
             # save line as a bookmark and return there later. We can create a
             # hash on the input - md5 should be enough.
             # redirect()
+        else:
+            query = ''
+            results = []
 
         return template(
             'search/index.html',

@@ -16,7 +16,7 @@ class BerkleyHashSet:
         try:
             # remove zeroth element (empty string). TODO: improve the code
             return filter(bool, self.db.get(key).split(b'|'))
-        except KeyError:
+        except (KeyError, AttributeError):
             return []
 
     def __setitem__(self, key, items):
@@ -31,12 +31,9 @@ def make_snv_key(chrom, pos, ref, alt):
 
 def decode_csv(value):
     value = value.decode('utf-8')
-    print(value)
-    print([c for c in value[:3]])
-
     strand, ref, alt = value[:3]
     pos, exon, protein_id = value[3:].split(':')
-    return (strand, ref, alt, pos, exon, protein_id)
+    return (strand, ref, alt, int(pos, base=16), exon, int(protein_id, base=16))
 
 
 def encode_csv(strand, ref, alt, pos, exon, protein_id):

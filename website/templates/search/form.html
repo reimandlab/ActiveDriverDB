@@ -9,7 +9,7 @@
   {% if target == 'proteins' %}
     <div class="options">
     </div>
-    <div class="inputs" class="{{ 'hidden' if results }}">
+    <div class="inputs {{ 'hidden' if results }}">
       <input
         type="text"
         name="proteins"
@@ -33,7 +33,7 @@
   {% elif target == 'mutations' %}
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     {# TODO the example should be tested and return representative results - currently placeholder #}
-    {% set example='chr 1234 A C\nTP53 R282W' %}
+    {% set example='chr12 57490358 C A\nTP53 R282W' %}
     <div class="options">
       <span class="btn btn-default btn-file">
         Select VCF file  <input type="file" name="mutations-file">
@@ -72,37 +72,32 @@
       >
         <thead>
         <tr>
-          <th data-sortable=true>Chromosome</th>
+          <th data-sortable=true>Chrom</th>
           <th data-sortable=true>Position</th>
-          <th data-sortable=true>Reference nuc</th>
-          <th data-sortable=true>Alternative nuc</th>
+          <th data-sortable=true>Ref nuc</th>
+          <th data-sortable=true>Alt nuc</th>
           <th data-sortable=true>Strand</th>
-          <th data-sortable=true>Reference aa</th>
-          <th data-sortable=true>Alternative aa</th>
+          <th data-sortable=true>Ref aa</th>
+          <th data-sortable=true>Alt aa</th>
           <th data-sortable=true>Position</th>
           <th data-sortable=true>Exon</th>
           <th data-sortable=true>Protein id</th>
         </tr>
         </thead>
         {% for line in results %}
-          {# TBD #}
-            {% set i = 0 %}
-            {% for result in line.results %}
-              <tr>
-                {% if i == 0 %}
-                  {% set i = 1 %}
-                    <td rowspan={{ line.results | length }}>{{ line.chrom }}</td>
-                    <td rowspan={{ line.results | length }}>{{ line.pos }}</td>
-                    <td rowspan={{ line.results | length }}>{{ line.ref }}</td>
-                    <td rowspan={{ line.results | length }}>{{ line.alt }}</td>
-                {% else %}
-                  <td></td>
-                {% endif %}
+          {% for result in line.results %}
+            <tr>
+              {% if loop.first %}
+                  <td rowspan={{ loop.length }}>{{ line.chrom }}</td>
+                  <td rowspan={{ loop.length }}>{{ line.pos }}</td>
+                  <td rowspan={{ loop.length }}>{{ line.ref }}</td>
+                  <td rowspan={{ loop.length }}>{{ line.alt }}</td>
+              {% endif %}
               {% for cell in result %}
-                <td>{{ cell }}<td>
+                <td>{{ cell }}</td>
               {% endfor %}
             </tr>
-            {% endfor %}
+          {% endfor %}
         {% endfor %}
       </table>
     </div>
