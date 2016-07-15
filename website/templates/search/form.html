@@ -5,6 +5,7 @@
     class="search-form"
     method="{{ 'GET' if target == 'proteins' else 'POST' }}"
     id="{{ target }}-form"
+    {% if target == 'mutations' %} enctype="multipart/form-data" {% endif %}
 >
   {% if target == 'proteins' %}
     <div class="options">
@@ -47,7 +48,7 @@
         name="mutations"
         class="form-control"
         placeholder="chr1 12345678 A C"
-        data-full-placeholder="Type in genomic or protein mutations separated by new lines, in following format:\nchr1 12345678 A C\nchr5 54219 T G\nTP53 R282W\n(you can mix genomic and protein mutations as long as each is placed in a separate line)"
+        data-full-placeholder="Type in genomic or protein mutations separated by new lines, in following format:\n{{ example }}\n(you can mix genomic and protein mutations as long as each is placed in a separate line)"
         rows="6"
         >
         {%- if query -%}
@@ -81,7 +82,7 @@
           <th data-sortable=true>Alt aa</th>
           <th data-sortable=true>Position</th>
           <th data-sortable=true>Exon</th>
-          <th data-sortable=true>Protein id</th>
+          <th data-sortable=true>Protein</th>
         </tr>
         </thead>
         {% for line in results %}

@@ -106,7 +106,12 @@ class SearchView(FlaskView):
                         chrom, pos, ref, alt = data
                         chrom = chrom[3:]
                         snv = make_snv_key(chrom, pos, ref, alt)
-                        items = [decode_csv(item) for item in bdb[snv]]
+                        items = [
+                            decode_csv(item)
+                            for item in bdb[snv]
+                        ]
+                        for item in items:
+                            item[-1] = Protein.query.get(item[-1])
 
                         results.append(
                             {
