@@ -15,7 +15,7 @@ class BerkleyHashSet:
         key = bytes(key, 'utf-8')
         try:
             # remove zeroth element (empty string). TODO: improve the code
-            return filter(bool, self.db.get(key).split(b'|'))
+            return self.db.get(key).split(b'|')
         except (KeyError, AttributeError):
             return []
 
@@ -33,7 +33,7 @@ def decode_csv(value):
     value = value.decode('utf-8')
     strand, ref, alt = value[:3]
     pos, exon, protein_id = value[3:].split(':')
-    return (strand, ref, alt, int(pos, base=16), exon, int(protein_id, base=16))
+    return [strand, ref, alt, int(pos, base=16), exon, int(protein_id, base=16)]
 
 
 def encode_csv(strand, ref, alt, pos, exon, protein_id):

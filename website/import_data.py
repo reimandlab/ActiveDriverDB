@@ -468,6 +468,8 @@ def import_mappings(proteins):
                         proteins[refseq] = protein
                         cnt_new_prots += 1
                         db.session.add(protein)
+                        db.session.flush()
+                        db.session.refresh(protein)
 
                     assert int(aa_pos) == (int(cdna_pos) - 1) // 3 + 1
 
