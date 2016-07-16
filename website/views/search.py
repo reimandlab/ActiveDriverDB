@@ -73,6 +73,7 @@ class SearchView(FlaskView):
     def index(self, target):
         """Render search form and results (if any) for proteins or mutations"""
 
+        without_mutations = []
         if target == 'proteins':
             # handle GET here
             assert request.method == 'GET'
@@ -93,7 +94,6 @@ class SearchView(FlaskView):
             # from both file and textarea will be merged
 
             results = []
-            without_mutations = []
 
             if vcf_file:
                 for line in vcf_file:
