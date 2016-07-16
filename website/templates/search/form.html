@@ -31,15 +31,23 @@
         <p>Start typing the name of a protein or refseq identifier to get results</p>
       </div>
     </div>
+    <div class="buttons">
+      <button type="submit" class="btn btn-primary">
+        Search <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+      </button>
+    </div>
   {% elif target == 'mutations' %}
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-    {# TODO the example should be tested and return representative results - currently placeholder #}
-    {% set example='chr12 57490358 C A\nTP53 R282W' %}
+    {# TODO: the example should return more representative results #}
+    {% set example='chr12 57490358 C A\nSTAT6 W2541C' %}
     <div class="options">
       <span class="btn btn-default btn-file">
         Select VCF file  <input type="file" name="mutations-file">
       </span>
       <a href="?mutations={{ example | urlencode }}" class="btn btn-default set-example">Load an example</a>
+      <button type="submit" class="btn btn-primary mut-search">
+        Search {{ 'again' if results }} <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+      </button>
     </div>
     <div class="inputs" class="{{ 'hidden' if results }}">
       {# The length of the textarea should change dynamically up to 30 rows - JS #}
@@ -107,10 +115,5 @@
       </table>
     </div>
   {% endif %}
-  <div class="buttons">
-    <button type="submit" class="btn btn-primary">
-      Search <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
-    </button>
-  </div>
 </form>
 
