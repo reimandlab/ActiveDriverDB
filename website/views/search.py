@@ -93,11 +93,13 @@ class SearchView(FlaskView):
             # from both file and textarea will be merged
 
             results = []
+            without_mutations = []
 
             if vcf_file:
                 for line in vcf_file:
                     # TODO
                     results.append(line)
+                    without_mutations.append(line)
             if textarea_query:
                 query += textarea_query
                 for line in textarea_query.lower().split('\n'):
@@ -110,13 +112,16 @@ class SearchView(FlaskView):
                             decode_csv(item)
                             for item in bdb[snv]
                         ]
+                        if not items:
+                            without_mutations.append(line)
                         for item in items:
-                            item[-1] = Protein.query.get(item[-1])
+                            item['protein'] = Protein.query.get(
+                                item['protein_id']
+                            )
 
                         results.append(
                             {
-                                'chrom': chrom, 'pos': pos, 'ref': ref,
-                                'alt': alt, 'results': items
+                                'user_input': line, 'results': items
                             }
                         )
                     elif len(data) == 2:
@@ -135,6 +140,7 @@ class SearchView(FlaskView):
             'search/index.html',
             target=target,
             results=results,
+            without_mutations=without_mutations,
             query=query,
         )
 
