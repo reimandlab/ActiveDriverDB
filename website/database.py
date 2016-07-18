@@ -5,6 +5,25 @@ import bsddb3 as bsddb
 db = SQLAlchemy()
 
 
+class SetWithCallback(set):
+
+    _modifying_methods = {'update', 'add'}
+
+    def __init__(self, items, callback):
+        super().__init__(*items)
+        self.callback = callback
+        for method_name in self._modifying_methods:
+            method = getattr(self, method_name)
+            setattr(self, method_name, self._wrap_method(method))
+
+    def _wrap_method(self, method):
+        def new_method_with_callback(*args, **kwargs):
+            result = method(*args, **kwargs)
+            self.callback(self)
+            return result
+        return new_method_with_callback
+
+
 class BerkleyHashSet:
 
     def __init__(self, name):
@@ -14,14 +33,19 @@ class BerkleyHashSet:
     def __getitem__(self, key):
         key = bytes(key, 'utf-8')
         try:
-            # remove zeroth element (empty string). TODO: improve the code
-            return list(filter(bool, self.db.get(key).split(b'|')))
+            items = list(filter(bool, self.db.get(key).split(b'|'))),
         except (KeyError, AttributeError):
-            return []
+            items = []
+
+        return SetWithCallback(
+            items,
+            lambda new_set: self.__setitem__(key, new_set)
+        )
 
     def __setitem__(self, key, items):
         assert '|' not in items
-        key = bytes(key, 'utf-8')
+        if not isinstance(key, bytes):
+            key = bytes(key, 'utf-8')
         self.db[key] = b'|'.join(items)
 
 

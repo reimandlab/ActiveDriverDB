@@ -394,7 +394,6 @@ def import_mappings(proteins):
     cnt_old_prots, cnt_new_prots = 0, 0
     a = 1
 
-    i = 0
     for filename in files:
         if a > 2:
             break
@@ -403,7 +402,6 @@ def import_mappings(proteins):
         with gzip.open(filename, 'rb') as f:
             next(f)  # skip the header
             for line in buffered_readlines(f, 10000):
-                i += 1
 
                 line = line.decode("latin1")
                 chrom, pos, ref, alt, prot = line.rstrip().split('\t')
@@ -412,7 +410,10 @@ def import_mappings(proteins):
                 assert chrom in chromosomes
 
                 snv = make_snv_key(chrom, pos, ref, alt)
-                items = bdb[snv]
+
+                # new Coding Sequence Variants to be added to those already
+                # mapped from given `snv` (Single Nucleotide Variation)
+                new_variants = set()
 
                 for dest in filter(bool, prot.split(',')):
                     name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
@@ -476,11 +477,9 @@ def import_mappings(proteins):
                     # add new item, emulating set update
                     item = strand + aa_ref + aa_alt + ':'.join((
                         '%x' % int(cdna_pos), exon, '%x' % protein.id))
-                    item = bytes(item, 'utf-8')
-                    if item not in items:
-                        items.append(item)
+                    new_variants.add(bytes(item, 'utf-8'))
 
-                bdb[snv] = items
+                bdb[snv].update(new_variants)
 
         print(filename, 'loaded succesfully')
 
