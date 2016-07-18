@@ -98,7 +98,11 @@
                   <td rowspan={{ loop.length }}>{{ line.user_input }}</td>
               {% endif %}
               <td>{{ result.protein.gene.name }}</td>
-              <td>{{ result.protein.refseq }}</td>
+              <td>
+                <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq) }}">
+                  {{ result.protein.refseq }}
+                </a>
+              </td>
               <td>{{ result.ref }}</td>
               <td>{{ result.alt }}</td>
               <td>{{ result.pos }}</td>
