@@ -5,7 +5,7 @@ from flask_classful import FlaskView
 from flask_classful import route
 from website.models import Protein
 from website.models import Gene
-from database import bdb
+from database import bdb, bdb_refseq
 from database import make_snv_key
 from database import decode_csv
 
@@ -102,10 +102,10 @@ class SearchView(FlaskView):
                     without_mutations.append(line)
             if textarea_query:
                 query += textarea_query
-                for line in textarea_query.lower().split('\n'):
+                for line in textarea_query.split('\n'):
                     data = line.split()
                     if len(data) == 4:
-                        chrom, pos, ref, alt = data
+                        chrom, pos, ref, alt = [x.lower() for x in data]
                         chrom = chrom[3:]
                         snv = make_snv_key(chrom, pos, ref, alt)
                         items = [
@@ -119,14 +119,35 @@ class SearchView(FlaskView):
                                 item['protein_id']
                             )
 
-                        results.append(
-                            {
-                                'user_input': line, 'results': items
-                            }
-                        )
                     elif len(data) == 2:
-                        # TODO - protein handling
-                        pass
+                        # protein handling
+                        gene, mut = [x.upper() for x in data]
+                        ref = mut[0]
+                        alt = mut[-1]
+                        pos = mut[1:-1]
+
+                        # get all refseq ids associated with given (pos, ref,
+                        # alt, gene) tuple by looking in berkleydb hashmap
+
+                        refseqs = bdb_refseq[gene + ' ' + ref + pos + alt]
+
+                        print(refseqs, line)
+
+                        items = [
+                            {
+                                'protein': Protein.query.filter_by(refseq=refseq).one(),
+                                'ref': ref,
+                                'alt': alt,
+                                'pos': pos
+                            }
+                            for refseq in refseqs
+                        ]
+
+                    results.append(
+                        {
+                            'user_input': line, 'results': items
+                        }
+                    )
 
             # TODO: redirect with an url containing session id, so user can
             # save line as a bookmark and return there later. We can create a

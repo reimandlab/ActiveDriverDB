@@ -387,6 +387,7 @@ def import_mappings(proteins):
     from helpers.bioinf import complement
     from helpers.bioinf import get_human_chromosomes
     from database import bdb
+    from database import bdb_refseq
     from database import make_snv_key
 
     chromosomes = get_human_chromosomes()
@@ -395,7 +396,7 @@ def import_mappings(proteins):
     a = 1
 
     for filename in files:
-        if a > 2:
+        if a > 1:
             break
         a += 1
 
@@ -408,6 +409,7 @@ def import_mappings(proteins):
                 assert chrom.startswith('chr')
                 chrom = chrom[3:]
                 assert chrom in chromosomes
+                ref = ref.rstrip()
 
                 snv = make_snv_key(chrom, pos, ref, alt)
 
@@ -477,13 +479,14 @@ def import_mappings(proteins):
                     # add new item, emulating set update
                     item = strand + aa_ref + aa_alt + ':'.join((
                         '%x' % int(cdna_pos), exon, '%x' % protein.id))
-                    new_variants.add(bytes(item, 'utf-8'))
+                    new_variants.add(item)
+                    key = protein.gene.name + ' ' + aa_ref + str(pos) + aa_alt
+                    # print(key, refseq)
+                    bdb_refseq[key].update({refseq})
 
                 bdb[snv].update(new_variants)
 
         print(filename, 'loaded succesfully')
 
-    # db.session.bulk_insert_mappings(CodingSequenceVariant, protein_muts)
-    # db.session.commit()
     print('Read', len(files), 'files with genome -> protein mappings, ')
     print(cnt_new_prots, 'new proteins created & ', cnt_old_prots, 'used')

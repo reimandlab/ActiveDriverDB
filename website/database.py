@@ -10,7 +10,7 @@ class SetWithCallback(set):
     _modifying_methods = {'update', 'add'}
 
     def __init__(self, items, callback):
-        super().__init__(*items)
+        super().__init__(items)
         self.callback = callback
         for method_name in self._modifying_methods:
             method = getattr(self, method_name)
@@ -31,9 +31,12 @@ class BerkleyHashSet:
         self.db = bsddb.hashopen(name, 'c')
 
     def __getitem__(self, key):
+        """
+        key: has to be str
+        """
         key = bytes(key, 'utf-8')
         try:
-            items = list(filter(bool, self.db.get(key).split(b'|'))),
+            items = list(filter(bool, self.db.get(key).decode('utf-8').split('|')))
         except (KeyError, AttributeError):
             items = []
 
@@ -43,18 +46,20 @@ class BerkleyHashSet:
         )
 
     def __setitem__(self, key, items):
+        """key: might be a str or bytes
+        """
         assert '|' not in items
         if not isinstance(key, bytes):
             key = bytes(key, 'utf-8')
-        self.db[key] = b'|'.join(items)
+        self.db[key] = bytes('|'.join(items), 'utf-8')
 
 
 def make_snv_key(chrom, pos, ref, alt):
-    return ':'.join((chrom, '%x' % int(pos.lstrip()))) + ref + alt
+    return ':'.join((chrom, '%x' % int(pos.strip()))) + ref + alt
 
 
 def decode_csv(value):
-    value = value.decode('utf-8')
+    value = value
     strand, ref, alt = value[:3]
     pos, exon, protein_id = value[3:].split(':')
     return dict(zip(
@@ -70,3 +75,4 @@ def encode_csv(strand, ref, alt, pos, exon, protein_id):
 
 
 bdb = BerkleyHashSet('databases/berkley_hash.db')
+bdb_refseq = BerkleyHashSet('databases/berkley_hash_refseq.db')
