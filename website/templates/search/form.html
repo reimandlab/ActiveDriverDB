@@ -114,12 +114,12 @@
         <tfoot>
         {% if without_mutations %}
           <tr>
-            <td colspan=7>{{ without_mutations | length }} {{ 'queries' if badly_formatted | length > 1 else 'query' }} without mutations found in the database: {{ without_mutations | join(', ') }}.</td>
+            <td colspan=7>{{ without_mutations | length }} {{ 'queries' if badly_formatted | length > 1 else 'query' }} without mutations found in the database: {{ without_mutations | map('trim') | join(', ') }}.</td>
           </tr>
         {% endif %}
         {% if badly_formatted %}
           <tr>
-            <td colspan=7>{{ badly_formatted | length }} {{ 'queries were' if badly_formatted | length > 1 else 'query was' }} not recognised by the system: {{ badly_formatted | join(', ') }}.</td>
+            <td colspan=7>{{ badly_formatted | length }} {{ 'queries were' if badly_formatted | length > 1 else 'query was' }} not recognised by the system: {{ badly_formatted | map('trim') | join(', ') }}.</td>
           </tr>
         {% endif %}
         </tfoot>
