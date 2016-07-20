@@ -1,3 +1,4 @@
+import os
 from flask_sqlalchemy import SQLAlchemy
 import bsddb3 as bsddb
 
@@ -27,8 +28,16 @@ class SetWithCallback(set):
 class BerkleyHashSet:
 
     def __init__(self, name):
-        # open hash database in read-write mode (create it if does not exists)
-        self.db = bsddb.hashopen(name, 'c')
+        self.name = name
+        self.open()
+
+    def open(self, mode='c'):
+        """Open hash database in a given mode.
+
+        By default it opens a database in read-write mode and in case
+        if a database of given name does not exists it creates one.
+        """
+        self.db = bsddb.hashopen(self.name, mode)
 
     def __getitem__(self, key):
         """
@@ -52,6 +61,11 @@ class BerkleyHashSet:
         if not isinstance(key, bytes):
             key = bytes(key, 'utf-8')
         self.db[key] = bytes('|'.join(items), 'utf-8')
+
+    def reset(self):
+        """Reset database completely by removal. Assuming file == name."""
+        os.remove(self.name)
+        self.open()
 
 
 def make_snv_key(chrom, pos, ref, alt):

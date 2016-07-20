@@ -392,6 +392,9 @@ def import_mappings(proteins):
 
     chromosomes = get_human_chromosomes()
 
+    bdb.reset()
+    bdb_refseq.reset()
+
     cnt_old_prots, cnt_new_prots = 0, 0
     a = 1
 
