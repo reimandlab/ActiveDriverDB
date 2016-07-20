@@ -108,12 +108,12 @@ class SearchView(FlaskView):
                         chrom, pos, ref, alt = [x.lower() for x in data]
                         chrom = chrom[3:]
                         snv = make_snv_key(chrom, pos, ref, alt)
+
                         items = [
                             decode_csv(item)
                             for item in bdb[snv]
                         ]
-                        if not items:
-                            without_mutations.append(line)
+
                         for item in items:
                             item['protein'] = Protein.query.get(
                                 item['protein_id']
@@ -131,11 +131,11 @@ class SearchView(FlaskView):
 
                         refseqs = bdb_refseq[gene + ' ' + ref + pos + alt]
 
-                        print(refseqs, line)
-
                         items = [
                             {
-                                'protein': Protein.query.filter_by(refseq=refseq).one(),
+                                'protein': Protein.query.filter_by(
+                                    refseq=refseq
+                                ).one(),
                                 'ref': ref,
                                 'alt': alt,
                                 'pos': pos
@@ -143,11 +143,14 @@ class SearchView(FlaskView):
                             for refseq in refseqs
                         ]
 
-                    results.append(
-                        {
-                            'user_input': line, 'results': items
-                        }
-                    )
+                    if items:
+                        results.append(
+                            {
+                                'user_input': line, 'results': items
+                            }
+                        )
+                    else:
+                        without_mutations.append(line)
 
             # TODO: redirect with an url containing session id, so user can
             # save line as a bookmark and return there later. We can create a
