@@ -480,8 +480,7 @@ def import_mappings(proteins):
                     item = strand + aa_ref + aa_alt + ':'.join((
                         '%x' % int(cdna_pos), exon, '%x' % protein.id))
                     new_variants.add(item)
-                    key = protein.gene.name + ' ' + aa_ref + str(pos) + aa_alt
-                    # print(key, refseq)
+                    key = protein.gene.name + ' ' + aa_ref + str(aa_pos) + aa_alt
                     bdb_refseq[key].update({refseq})
 
                 bdb[snv].update(new_variants)
