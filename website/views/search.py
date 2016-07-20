@@ -74,6 +74,8 @@ class SearchView(FlaskView):
         """Render search form and results (if any) for proteins or mutations"""
 
         without_mutations = []
+        badly_formatted = []
+
         if target == 'proteins':
             # handle GET here
             assert request.method == 'GET'
@@ -142,6 +144,9 @@ class SearchView(FlaskView):
                             }
                             for refseq in refseqs
                         ]
+                    else:
+                        badly_formatted.append(line)
+                        continue
 
                     if items:
                         results.append(
@@ -166,6 +171,7 @@ class SearchView(FlaskView):
             results=results,
             without_mutations=without_mutations,
             query=query,
+            badly_formatted=badly_formatted
         )
 
     def form(self, target):
