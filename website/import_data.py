@@ -255,6 +255,31 @@ def load_mutations(proteins, cancers):
     print('Mutations loaded')
 
 
+def mimps(proteins):
+    # load("all_mimp_annotations.rsav")
+    # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
+    # row.names=F, quote=F, sep='\t')
+    with open('data/all_mimp_annotations.tsv') as f:
+        header = f.readline().rstrip().split('\t')
+        assert header == ['gene', 'mut', 'psite_pos', 'mut_dist', 'wt',
+                          'mt', 'score_wt', 'score_mt', 'log_ratio', 'pwm',
+                          'pwm_fam', 'nseqs', 'prob', 'effect']
+        for line in f:
+            line = line.rstrip().split('\t')
+            # Mutation and Site models has to be rebuilt to fit the new data
+            """
+            Mutation(
+                cancers[cancer_code],
+                sample_id,
+                position,
+                wt_residue,
+                mut_residue,
+                proteins[gene]
+            )
+            """
+
+
+
 def get_preferred_gene_isoform(gene_name):
     gene = Gene.query.filter_by(name=gene_name).one_or_none()
     if gene:
