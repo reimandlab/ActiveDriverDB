@@ -61,10 +61,10 @@
         >
         {%- if query -%}
           {{ query }}
-          {%- endif -%}
+        {%- endif -%}
       </textarea>
     </div>
-    <div class="results {{ 'hidden' if not results }}">
+    <div class="results {{ 'hidden' if not results and not badly_formatted and not without_mutations }}">
       {#
         Results should be in a form of a table where mappings are shown
         together with links to appropiate sites. Below the table information
