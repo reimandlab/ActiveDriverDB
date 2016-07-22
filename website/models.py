@@ -360,14 +360,12 @@ class Mutation(db.Model):
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
-    def __init__(self, cancer, sample_id,
-                 position, wt_residue, mut_residue, protein):
-        self.cancer = cancer
-        self.sample_id = sample_id
-        self.position = position
-        self.wt_residue = wt_residue
-        self.mut_residue = mut_residue
-        self.protein = protein
+    # one mutation can affect multiple sites and
+    # one site can be affected by multiple mutations
+    sites = db.relationship(
+        'Site',
+        secondary=make_association_table('site.id', 'mutation.id')
+    )
 
     # Note: following properties could become a columns of the database tables
     # (in the future) to avoid repetitive calculation of constant variables.

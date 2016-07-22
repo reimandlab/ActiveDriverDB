@@ -34,8 +34,9 @@ def import_data():
     # load_disorder(proteins)
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
-    # kinases, groups = load_sites(proteins)
-    # kinases, groups = load_kinase_classification(proteins, kinases, groups)
+    kinases, groups = load_sites(proteins)
+    kinases, groups = load_kinase_classification(proteins, kinases, groups)
+    load_mimp_mutations(proteins)
     # db.session.add_all(kinases.values())
     # db.session.add_all(groups.values())
     print('Added kinases')
@@ -46,8 +47,8 @@ def import_data():
     db.session.commit()
     print('Memory usage before cleaning: ', memory_usage())
     # del cancers
-    # del kinases
-    # del groups
+    del kinases
+    del groups
     print('Memory usage after cleaning: ', memory_usage())
     print('Importing mappings...')
     start = time.clock()
@@ -255,7 +256,7 @@ def load_mutations(proteins, cancers):
     print('Mutations loaded')
 
 
-def mimps(proteins):
+def load_mimp_mutations(proteins):
     # load("all_mimp_annotations.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
@@ -266,18 +267,22 @@ def mimps(proteins):
                           'pwm_fam', 'nseqs', 'prob', 'effect']
         for line in f:
             line = line.rstrip().split('\t')
-            # Mutation and Site models has to be rebuilt to fit the new data
-            """
-            Mutation(
-                cancers[cancer_code],
-                sample_id,
-                position,
-                wt_residue,
-                mut_residue,
-                proteins[gene]
-            )
-            """
+            refseq = line[0]
+            mut = line[1]
+            psite_pos = line[2]
 
+            protein = proteins[refseq]
+            sites = Site.query.filter_by(position=psite_pos,
+                                         protein=protein).all()
+
+            Mutation(
+                position=int(mut[1:-1]),
+                wt_residue=mut[0],
+                mut_residue=mut[-1],
+                protein=protein,
+                sites=sites
+            )
+    print('Mutations loaded')
 
 
 def get_preferred_gene_isoform(gene_name):
@@ -309,7 +314,7 @@ def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
 
 
 def load_sites(proteins):
-    # Use following R code toreproduce `site_table.tsv` file:
+    # Use following R code to reproduce `site_table.tsv` file:
     # load("PTM_site_table.rsav")
     # write.table(site_table, file="site_table.tsv",
     #   row.names=F, quote=F, sep='\t')
@@ -508,7 +513,7 @@ def import_mappings(proteins):
                     item = strand + aa_ref + aa_alt + ':'.join((
                         '%x' % int(cdna_pos), exon, '%x' % protein.id))
                     new_variants.add(item)
-                    key = protein.gene.name + ' ' + aa_ref + str(aa_pos) + aa_alt
+                    key = protein.gene.name + ' ' + aa_ref + aa_pos + aa_alt
                     bdb_refseq[key].update({refseq})
 
                 bdb[snv].update(new_variants)
