@@ -1,30 +1,35 @@
 {# TODO: use canonical isoform to as default link for gene name #}
+{% macro isoform_result(isoform) %}
+<div class="isoform">
+  <h5>{{ isoform.refseq }}</h5>
+  <div class="isoform-data">
+      {% if isoform.cds_start and isoform.cds_end %}
+      Coding region:
+          start {{ isoform.cds_start }}
+          end {{ isoform.cds_end }}
+          Length: {{ isoform.cds_end - isoform.cds_start }}
+      {% endif %}
+      {% if isoform.tx_start and isoform.tx_end %}
+      Transcription positions:
+          start {{ isoform.tx_start }}
+          end {{ isoform.tx_end }}
+      {% endif %}
+  </div>
+  <div class="shortcuts">
+    <a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">protein</a>
+    <a href="{{ url_for('NetworkView:show', refseq=isoform.refseq) }}">network</a>
+  </div>
+</div>
+{% endmacro %}
+
 {% macro gene_results(gene) %}
   <div class="result">
-    <h4><a href="{{ url_for('ProteinView:show', refseq=gene.isoforms[0].refseq) }}">{{ gene.name }}</a></h4>
+    <h4><a href="{{ url_for('ProteinView:show', refseq=gene.preferred_isoform.refseq) }}">{{ gene.name }}</a></h4>
     <div class="chrom">{{ gene.chrom }}</div>
     <div class="strand">{{ '+' if gene.strand else '-' }}</div>
-    {% for isoform in gene.isoforms %}
-        <div class="isoform">
-          <h5>{{ isoform.refseq }}</h5>
-          <div class="isoform-data">
-              {% if isoform.cds_start and isoform.cds_end %}
-              Coding region:
-                  start {{ isoform.cds_start }}
-                  end {{ isoform.cds_end }}
-                  Length: {{ isoform.cds_end - isoform.cds_start }}
-              {% endif %}
-              {% if isoform.tx_start and isoform.tx_end %}
-              Transcription positions:
-                  start {{ isoform.tx_start }}
-                  end {{ isoform.tx_end }}
-              {% endif %}
-          </div>
-          <div class="shortcuts">
-            <a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">protein</a>
-            <a href="{{ url_for('NetworkView:show', refseq=isoform.refseq) }}">network</a>
-          </div>
-        </div>
+    {{ isoform_result(gene.preferred_isoform) }}
+    {% for isoform in gene.alternative_isoforms %}
+        {{ isoform_result(isoform) }}
     {% endfor %}
   </div>
 {% endmacro %}

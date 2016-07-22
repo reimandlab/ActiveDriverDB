@@ -172,6 +172,14 @@ class Gene(db.Model):
         post_update=True
     )
 
+    @cached_property
+    def alternative_isoforms(self):
+        return [
+            isoform
+            for isoform in self.isoforms
+            if isoform.id != self.preferred_isoform_id
+        ]
+
     def __repr__(self):
         return '<Gene {0}, with {1} isoforms>'.format(
             self.name,
