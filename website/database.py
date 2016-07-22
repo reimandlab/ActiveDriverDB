@@ -31,13 +31,22 @@ class BerkleyHashSet:
         self.name = name
         self.open()
 
+    def get_path(self):
+        """Returns path to a file containing the database.
+
+        The file is not guranted to exist.
+        """
+        base_dir = os.path.abspath(os.path.dirname(__file__))
+        databases_dir = os.path.join(base_dir, 'databases')
+        return os.path.join(databases_dir, self.name)
+
     def open(self, mode='c'):
         """Open hash database in a given mode.
 
         By default it opens a database in read-write mode and in case
         if a database of given name does not exists it creates one.
         """
-        self.db = bsddb.hashopen(self.name, mode)
+        self.db = bsddb.hashopen(self.get_path(), mode)
 
     def __getitem__(self, key):
         """
@@ -64,7 +73,7 @@ class BerkleyHashSet:
 
     def reset(self):
         """Reset database completely by removal. Assuming file == name."""
-        os.remove(self.name)
+        os.remove(self.get_path())
         self.open()
 
 
@@ -98,5 +107,5 @@ def encode_csv(strand, ref, alt, pos, exon, protein_id):
     return item
 
 
-bdb = BerkleyHashSet('databases/berkley_hash.db')
-bdb_refseq = BerkleyHashSet('databases/berkley_hash_refseq.db')
+bdb = BerkleyHashSet('berkley_hash.db')
+bdb_refseq = BerkleyHashSet('berkley_hash_refseq.db')
