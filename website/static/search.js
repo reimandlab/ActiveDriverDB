@@ -134,6 +134,17 @@ var ProteinForm = (function ()
 
     }
 
+    function setEventsForResults(result_box)
+    {
+        $(result_box).on('click', '.show-alt', function(event)
+        {
+            $(this).siblings('.alt-isoforms').toggleClass('hidden')
+            $(this).hide()
+        })
+        $('.alt-isoforms').toggleClass('hidden', true)
+        $('.show-alt').toggleClass('hidden', false)
+    }
+
     var publicSpace = {
         init: function(dom_element)
         {
@@ -152,6 +163,10 @@ var ProteinForm = (function ()
                 protein_search,
                 protein_search.attr('placeholder')
             )
+
+            setEventsForResults(result_box)
+
+
         },
         show: function()
         {

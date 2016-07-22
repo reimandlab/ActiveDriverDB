@@ -1,4 +1,3 @@
-{# TODO: use canonical isoform to as default link for gene name #}
 {% macro isoform_result(isoform) %}
 <div class="isoform">
   <h5>{{ isoform.refseq }}</h5>
@@ -28,9 +27,16 @@
     <div class="chrom">{{ gene.chrom }}</div>
     <div class="strand">{{ '+' if gene.strand else '-' }}</div>
     {{ isoform_result(gene.preferred_isoform) }}
-    {% for isoform in gene.alternative_isoforms %}
-        {{ isoform_result(isoform) }}
-    {% endfor %}
+    {% if gene.alternative_isoforms %}
+        {% set alt_iso_cnt = gene.alternative_isoforms | length %}
+        <input type="button" class="hidden btn btn-default show-alt"
+         value="Show {{ alt_iso_cnt }} isoform{{ 's' if alt_iso_cnt > 1 }} more">
+        <div class="alt-isoforms">
+        {% for isoform in gene.alternative_isoforms %}
+            {{ isoform_result(isoform) }}
+        {% endfor %}
+        </div>
+    {% endif %}
   </div>
 {% endmacro %}
 
