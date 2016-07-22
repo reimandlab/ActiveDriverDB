@@ -11,6 +11,7 @@ from website.models import KinaseGroup
 # from website.models import CodingSequenceVariant
 # from website.models import SingleNucleotideVariation
 from website.models import Gene
+from website.models import Domain
 
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
@@ -57,6 +58,19 @@ def import_data():
     end = time.clock()
     print('Imported mappings in:', end - start)
     print('Memory usage after mappings: ', memory_usage())
+
+
+def load_domains(proteins):
+    # TODO
+    with open('biomart_protein_domains_20072016.txt') as f:
+        for line in f:
+            line = line.rstrip().split('\t')
+            Domain(
+                protein=proteins[line[6]],  # by refseq
+                desc=line[9],   # Interpro Description
+                start=int(line[10]),
+                end=int(line[11])
+            )
 
 
 def select_preferred_isoforms():

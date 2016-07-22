@@ -223,6 +223,10 @@ class Protein(db.Model):
         lazy='dynamic',
         backref='protein'
     )
+    domains = db.relationship(
+        'Domain',
+        backref='protein'
+    )
     kinase = db.relationship(
         'Kinase',
         backref='protein'
@@ -348,6 +352,19 @@ class Cancer(db.Model):
             self.code,
             self.name
         )
+
+
+class Domain(db.Model):
+    __tablename__ = 'domain'
+    id = db.Column(db.Integer, primary_key=True)
+    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
+
+    # Interpro Description
+    description = db.Column(db.Text)
+
+    # Start does not have to be < end? TODO
+    start = db.Column(db.Integer)
+    end = db.Column(db.Integer)
 
 
 class Mutation(db.Model):
