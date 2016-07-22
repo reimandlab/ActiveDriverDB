@@ -286,15 +286,17 @@ def load_mimp_mutations(proteins):
             psite_pos = line[2]
 
             protein = proteins[refseq]
-            sites = Site.query.filter_by(position=psite_pos,
-                                         protein=protein).all()
 
             Mutation(
                 position=int(mut[1:-1]),
                 wt_residue=mut[0],
                 mut_residue=mut[-1],
                 protein=protein,
-                sites=sites
+                sites=[
+                    site
+                    for site in protein.sites
+                    if site.position == psite_pos
+                ]
             )
     print('Mutations loaded')
 
@@ -399,6 +401,7 @@ def load_kinase_classification(proteins, kinases, groups):
 
             groups[family].kinases.append(kinases[kinase_name])
 
+    print('Protein kinase groups loaded')
     return kinases, groups
 
 
