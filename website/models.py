@@ -223,6 +223,10 @@ class Protein(db.Model):
         lazy='dynamic',
         backref='protein'
     )
+    domains = db.relationship(
+        'Domain',
+        backref='protein'
+    )
     kinase = db.relationship(
         'Kinase',
         backref='protein'
@@ -350,6 +354,19 @@ class Cancer(db.Model):
         )
 
 
+class Domain(db.Model):
+    __tablename__ = 'domain'
+    id = db.Column(db.Integer, primary_key=True)
+    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
+
+    # Interpro Description
+    description = db.Column(db.Text)
+
+    # Start does not have to be < end? TODO
+    start = db.Column(db.Integer)
+    end = db.Column(db.Integer)
+
+
 class Mutation(db.Model):
     __tablename__ = 'mutation'
     id = db.Column(db.Integer, primary_key=True)
@@ -360,14 +377,12 @@ class Mutation(db.Model):
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
-    def __init__(self, cancer, sample_id,
-                 position, wt_residue, mut_residue, protein):
-        self.cancer = cancer
-        self.sample_id = sample_id
-        self.position = position
-        self.wt_residue = wt_residue
-        self.mut_residue = mut_residue
-        self.protein = protein
+    # one mutation can affect multiple sites and
+    # one site can be affected by multiple mutations
+    sites = db.relationship(
+        'Site',
+        secondary=make_association_table('site.id', 'mutation.id')
+    )
 
     # Note: following properties could become a columns of the database tables
     # (in the future) to avoid repetitive calculation of constant variables.
