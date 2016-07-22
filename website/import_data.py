@@ -67,7 +67,7 @@ def load_domains(proteins):
             line = line.rstrip().split('\t')
             Domain(
                 protein=proteins[line[6]],  # by refseq
-                desc=line[9],   # Interpro Description
+                description=line[9],   # Interpro Description
                 start=int(line[10]),
                 end=int(line[11])
             )
