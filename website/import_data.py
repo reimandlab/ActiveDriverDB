@@ -85,11 +85,14 @@ def load_domains(proteins):
                 protein = proteins[line[6]]  # by refseq
             except KeyError:
                 skipped += 1
+                # commented out (too much to write to screen)
+                """
                 print(
                     'Skipping domains for protein',
                     line[6],
                     '(no such a record in dataset)'
                 )
+                """
                 continue
 
             Domain(
