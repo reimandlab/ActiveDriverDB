@@ -32,15 +32,16 @@ def import_data():
     proteins = create_proteins_and_genes()
     load_sequences(proteins)
     select_preferred_isoforms()
-    # load_disorder(proteins)
+    load_domains(proteins)
+    load_disorder(proteins)
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
     kinases, groups = load_sites(proteins)
     kinases, groups = load_kinase_classification(proteins, kinases, groups)
-    load_mimp_mutations(proteins)
-    # db.session.add_all(kinases.values())
-    # db.session.add_all(groups.values())
+    db.session.add_all(kinases.values())
+    db.session.add_all(groups.values())
     print('Added kinases')
+    load_mimp_mutations(proteins)   # this requires having sites already loaded
     # db.session.add_all(cancers.values())
     # print('Added cancers')
     print('Added proteins')
@@ -48,8 +49,8 @@ def import_data():
     db.session.commit()
     print('Memory usage before cleaning: ', memory_usage())
     # del cancers
-    del kinases
-    del groups
+    # del kinases
+    # del groups
     print('Memory usage after cleaning: ', memory_usage())
     print('Importing mappings...')
     start = time.clock()
@@ -61,10 +62,13 @@ def import_data():
 
 
 def load_domains(proteins):
-    # TODO
-    with open('biomart_protein_domains_20072016.txt') as f:
+    with open('data/biomart_protein_domains_20072016.txt') as f:
         for line in f:
             line = line.rstrip().split('\t')
+
+            # does start is lower than end?
+            assert int(line[10]) < int(line[11])
+
             Domain(
                 protein=proteins[line[6]],  # by refseq
                 description=line[9],   # Interpro Description
@@ -226,7 +230,11 @@ def create_proteins_and_genes():
 
 
 def load_disorder(proteins):
-    with open('data/longest_isoform_proteins_disorder.fa', 'r') as f:
+    # library(seqinr)
+    # load("all_RefGene_disorder.fa.rsav")
+    # write.fasta(sequences=as.list(fa1_disorder), names=names(fa1_disorder),
+    # file.out='all_RefGene_disorder.fa', as.string=T)
+    with open('data/all_RefGene_disorder.fa', 'r') as f:
         name = None
         for line in f:
             if line.startswith('>'):
@@ -234,6 +242,8 @@ def load_disorder(proteins):
                 assert name in proteins
             else:
                 proteins[name].disorder_map += line.rstrip()
+    for protein in proteins.values():
+        assert len(protein.sequence) == len(protein.length)
     print('Disorder data loaded')
 
 
@@ -287,9 +297,11 @@ def load_mimp_mutations(proteins):
 
             protein = proteins[refseq]
 
+            pos = int(mut[1:-1])
+            assert protein.sequence[pos] == mut[0]
+
             Mutation(
-                position=int(mut[1:-1]),
-                wt_residue=mut[0],
+                position=pos,
                 mut_residue=mut[-1],
                 protein=protein,
                 sites=[

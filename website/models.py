@@ -370,7 +370,6 @@ class Domain(db.Model):
     # Interpro Description
     description = db.Column(db.Text)
 
-    # Start does not have to be < end? TODO
     start = db.Column(db.Integer)
     end = db.Column(db.Integer)
 
