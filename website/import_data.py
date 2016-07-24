@@ -36,12 +36,14 @@ def import_data():
     load_disorder(proteins)
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
+    """
     kinases, groups = load_sites(proteins)
     kinases, groups = load_kinase_classification(proteins, kinases, groups)
     db.session.add_all(kinases.values())
     db.session.add_all(groups.values())
     print('Added kinases')
     load_mimp_mutations(proteins)   # this requires having sites already loaded
+    """
     # db.session.add_all(cancers.values())
     # print('Added cancers')
     print('Added proteins')
@@ -63,18 +65,40 @@ def import_data():
 
 def load_domains(proteins):
     with open('data/biomart_protein_domains_20072016.txt') as f:
-        for line in f:
+        header = f.readline().rstrip().split('\t')
+        skipped = 0
+        for i, line in enumerate(f):
             line = line.rstrip().split('\t')
 
+            # Temporary? - if no data about the domains, skip it.
+            if len(line) == 7:
+                continue
+
+            try:
+                assert len(line) == 12
+            except:
+                print(line, len(line))
             # does start is lower than end?
-            assert int(line[10]) < int(line[11])
+            assert int(line[11]) < int(line[10])
+
+            try:
+                protein = proteins[line[6]]  # by refseq
+            except KeyError:
+                skipped += 1
+                print(
+                    'Skipping domains for protein',
+                    line[6],
+                    '(no such a record in dataset)'
+                )
+                continue
 
             Domain(
-                protein=proteins[line[6]],  # by refseq
+                protein=protein,
                 description=line[9],   # Interpro Description
-                start=int(line[10]),
-                end=int(line[11])
+                start=int(line[11]),
+                end=int(line[10])
             )
+    print('Domains loaded,', skipped, 'proteins skipped')
 
 
 def select_preferred_isoforms():
