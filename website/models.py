@@ -373,6 +373,23 @@ class Domain(db.Model):
     start = db.Column(db.Integer)
     end = db.Column(db.Integer)
 
+    @cached_property
+    def shown_name(self):
+        """Generates a name for the domain which will fit into a track."""
+        names_to_try = [
+            self.description,
+            self.description[0] + '.',
+            self.description[0]
+        ]
+        length = self.end - self.start
+        for name in names_to_try:
+            if len(name) <= length:
+                return name
+
+        # the last name to try is one character long, and domains cannot be
+        # shorter than one aminoacid (or: certainly they have to be longer)
+        assert False
+
 
 class Mutation(db.Model):
     __tablename__ = 'mutation'

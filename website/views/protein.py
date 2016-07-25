@@ -50,7 +50,18 @@ class ProteinView(FlaskView):
             PositionTrack(protein.length, 25),
             SequenceTrack(protein),
             MutationsTrack(mutations),
-            Track('disorder', disorder)
+            Track('disorder', disorder),
+            Track(
+                'domains',
+                [
+                    TrackElement(
+                        domain.start,
+                        domain.end - domain.start,
+                        domain.shown_name
+                    )
+                    for domain in protein.domains
+                ]
+            )
         ]
 
         filters = Filters(active_filters, self.allowed_filters)
