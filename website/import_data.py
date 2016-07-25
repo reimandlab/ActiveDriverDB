@@ -95,8 +95,14 @@ def load_domains(proteins):
                 """
                 continue
 
+            assert int(line[10]) <= protein.length
+
+            assert line[7].startswith('IPR')
+
             Domain(
                 protein=protein,
+                accession=line[7],   # Interpro Accession
+                short_description=line[8],   # Interpro Short Description
                 description=line[9],   # Interpro Description
                 start=int(line[11]),
                 end=int(line[10])

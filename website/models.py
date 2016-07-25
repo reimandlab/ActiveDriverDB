@@ -367,6 +367,12 @@ class Domain(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
+    # Interpro ID
+    accession = db.Column(db.Text)
+
+    # Interpro Short Description
+    short_description = db.Column(db.Text)
+
     # Interpro Description
     description = db.Column(db.Text)
 
@@ -378,6 +384,8 @@ class Domain(db.Model):
         """Generates a name for the domain which will fit into a track."""
         names_to_try = [
             self.description,
+            self.short_description,
+            self.accession,
             self.description[0] + '.',
             self.description[0]
         ]
