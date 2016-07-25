@@ -134,6 +134,12 @@ var ProteinForm = (function ()
 
     }
 
+    function hideAltIsoforms()
+    {
+        $('.alt-isoforms').toggleClass('hidden', true)
+        $('.show-alt').toggleClass('hidden', false)
+    }
+
     function setEventsForResults(result_box)
     {
         $(result_box).on('click', '.show-alt', function(event)
@@ -141,8 +147,10 @@ var ProteinForm = (function ()
             $(this).siblings('.alt-isoforms').toggleClass('hidden')
             $(this).hide()
         })
-        $('.alt-isoforms').toggleClass('hidden', true)
-        $('.show-alt').toggleClass('hidden', false)
+        var observer = new MutationObserver(hideAltIsoforms)
+        var config = {childList: true}
+        observer.observe($(result_box).find('ul')[0], config)
+        hideAltIsoforms()
     }
 
     var publicSpace = {
