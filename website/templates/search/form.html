@@ -63,6 +63,9 @@
           {{ query }}
         {%- endif -%}
       </textarea>
+      <span class="help-block">
+        You can provide a VCF file and plain-text mutation lines above at once, so result for both will be shown on one page.
+      </span>
     </div>
     <div class="results {{ 'hidden' if not results and not badly_formatted and not without_mutations }}">
       {#

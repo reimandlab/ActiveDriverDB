@@ -61,6 +61,21 @@ def search_proteins(phase, limit=False):
     return genes.values()
 
 
+def get_genomic_muts(chrom, pos, ref, alt):
+    snv = make_snv_key(chrom, pos, ref, alt)
+
+    items = [
+        decode_csv(item)
+        for item in bdb[snv]
+    ]
+
+    for item in items:
+        item['protein'] = Protein.query.get(
+            item['protein_id']
+        )
+    return items
+
+
 class SearchView(FlaskView):
     """Enables searching in any of registered database models"""
 
@@ -92,16 +107,31 @@ class SearchView(FlaskView):
             textarea_query = request.form.get(target, False)
             vcf_file = request.files.get('vcf_file', False)
 
-            # TODO: add a notice for user that if there is a file, the entries
-            # from both file and textarea will be merged
+            # note: entries from both file and textarea will be merged
 
             results = []
 
             if vcf_file:
                 for line in vcf_file:
-                    # TODO
-                    results.append(line)
-                    without_mutations.append(line)
+                    if line.startswith('#'):
+                        continue
+                    data = line.split()
+                    chrom, pos, var_id, ref, alts = data[:4]
+                    alts = alts.split(',')
+                    for alt in alts:
+                        items = get_genomic_muts(chrom, pos, ref, alt)
+                        if items:
+                            if len(alts) > 1:
+                                line += ' (' + alt + ')'
+                            results.append(
+                                {
+                                    'user_input': line,
+                                    'results': items
+                                }
+                            )
+                        else:
+                            without_mutations.append(line)
+
             if textarea_query:
                 query += textarea_query
                 for line in textarea_query.split('\n'):
@@ -109,17 +139,8 @@ class SearchView(FlaskView):
                     if len(data) == 4:
                         chrom, pos, ref, alt = [x.lower() for x in data]
                         chrom = chrom[3:]
-                        snv = make_snv_key(chrom, pos, ref, alt)
 
-                        items = [
-                            decode_csv(item)
-                            for item in bdb[snv]
-                        ]
-
-                        for item in items:
-                            item['protein'] = Protein.query.get(
-                                item['protein_id']
-                            )
+                        items = get_genomic_muts(chrom, pos, ref, alt)
 
                     elif len(data) == 2:
                         # protein handling
