@@ -23,6 +23,16 @@ cd website
 python3 -m pip install -r requirements.py
 ```
 
+Before start, database have to be created. Safiest way to do this is to run:
+```bash
+python3 db_create.py
+```
+
+albeit one might want to use Python's optimized mode (so import will be a lot faster, but it shouldn't be used with new, untested data since the assertions won't be checked in this mode):
+```bash
+python3 -OO db_create.py
+```
+
 
 To start the webserver simply type:
 ```bash
