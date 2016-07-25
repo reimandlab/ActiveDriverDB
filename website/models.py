@@ -362,10 +362,9 @@ class Cancer(db.Model):
         )
 
 
-class Domain(db.Model):
-    __tablename__ = 'domain'
+class InterproDomain(db.Model):
+    __tablename__ = 'interpro_domain'
     id = db.Column(db.Integer, primary_key=True)
-    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
     # Interpro ID
     accession = db.Column(db.Text)
@@ -376,19 +375,36 @@ class Domain(db.Model):
     # Interpro Description
     description = db.Column(db.Text)
 
-    start = db.Column(db.Integer)
-    end = db.Column(db.Integer)
+    occurrences = db.relationship('Domain', backref='interpro')
 
     @cached_property
-    def shown_name(self):
-        """Generates a name for the domain which will fit into a track."""
-        names_to_try = [
+    def possible_names(self):
+        """Return strings which might be used to describe the domain,
+
+        form the longest to the shortest. Last one has to be a single character
+        """
+        return [
             self.description,
             self.short_description,
             self.accession,
             self.description[0] + '.',
             self.description[0]
         ]
+
+
+class Domain(db.Model):
+    __tablename__ = 'domain'
+    id = db.Column(db.Integer, primary_key=True)
+    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
+    interpro_id = db.Column(db.Integer, db.ForeignKey('interpro_domain.id'))
+
+    start = db.Column(db.Integer)
+    end = db.Column(db.Integer)
+
+    @cached_property
+    def shown_name(self):
+        """Generates a name for the domain which will fit into a track."""
+        names_to_try = self.interpro.possible_names
         length = self.end - self.start
         for name in names_to_try:
             if len(name) <= length:

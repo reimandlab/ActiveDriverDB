@@ -12,6 +12,7 @@ from website.models import KinaseGroup
 # from website.models import SingleNucleotideVariation
 from website.models import Gene
 from website.models import Domain
+from website.models import InterproDomain
 
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
@@ -64,6 +65,7 @@ def import_data():
 
 
 def load_domains(proteins):
+    interpro_domains = dict()
     with open('data/biomart_protein_domains_20072016.txt') as f:
         header = f.readline().rstrip().split('\t')
         skipped = 0
@@ -76,7 +78,7 @@ def load_domains(proteins):
 
             try:
                 assert len(line) == 12
-            except:
+            except AssertionError:
                 print(line, len(line))
             # does start is lower than end?
             assert int(line[11]) < int(line[10])
@@ -94,19 +96,31 @@ def load_domains(proteins):
                 )
                 """
                 continue
+            accession = line[7]
 
-            assert int(line[10]) <= protein.length
+            # according to:
+            # http://www.ncbi.nlm.nih.gov/pmc/articles/PMC29841/#__sec2title
+            assert accession.startswith('IPR')
 
-            assert line[7].startswith('IPR')
+            if accession not in interpro_domains:
+
+                assert int(line[10]) <= protein.length
+
+                interpro = InterproDomain(
+                    accession=line[7],   # Interpro Accession
+                    short_description=line[8],   # Interpro Short Description
+                    description=line[9],   # Interpro Description
+                )
+
+                interpro_domains[accession] = interpro
 
             Domain(
+                interpro=interpro_domains[accession],
                 protein=protein,
-                accession=line[7],   # Interpro Accession
-                short_description=line[8],   # Interpro Short Description
-                description=line[9],   # Interpro Description
                 start=int(line[11]),
                 end=int(line[10])
             )
+
     print('Domains loaded,', skipped, 'proteins skipped')
 
 
