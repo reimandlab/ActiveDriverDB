@@ -37,27 +37,30 @@ def import_data():
     load_disorder(proteins)
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
-    """
     kinases, groups = load_sites(proteins)
     kinases, groups = load_kinase_classification(proteins, kinases, groups)
     db.session.add_all(kinases.values())
     db.session.add_all(groups.values())
     print('Added kinases')
-    load_mimp_mutations(proteins)   # this requires having sites already loaded
-    """
+    db.session.add_all(proteins.values())
+    print('Added proteins')
+    del kinases
+    del groups
+    del proteins
+    print('Loading mimp mutations')
+    load_mimp_mutations()   # this requires having sites already loaded
+    print('Loaded mimp mutations')
     # db.session.add_all(cancers.values())
     # print('Added cancers')
-    print('Added proteins')
     print('Memory usage before commit: ', memory_usage())
     db.session.commit()
     print('Memory usage before cleaning: ', memory_usage())
     # del cancers
-    # del kinases
-    # del groups
     print('Memory usage after cleaning: ', memory_usage())
     print('Importing mappings...')
     start = time.clock()
     with app.app_context():
+        proteins = {protein.refseq: protein for protein in Protein.query.all()}
         import_mappings(proteins)
     end = time.clock()
     print('Imported mappings in:', end - start)
@@ -327,7 +330,7 @@ def load_mutations(proteins, cancers):
     print('Mutations loaded')
 
 
-def load_mimp_mutations(proteins):
+def load_mimp_mutations():
     # load("all_mimp_annotations.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
@@ -337,12 +340,13 @@ def load_mimp_mutations(proteins):
                           'mt', 'score_wt', 'score_mt', 'log_ratio', 'pwm',
                           'pwm_fam', 'nseqs', 'prob', 'effect']
         for line in f:
+
             line = line.rstrip().split('\t')
             refseq = line[0]
             mut = line[1]
             psite_pos = line[2]
 
-            protein = proteins[refseq]
+            protein = Protein.query.filter_by(refseq=refseq).first()
 
             pos = int(mut[1:-1])
             assert protein.sequence[pos] == mut[0]
