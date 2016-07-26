@@ -47,7 +47,8 @@ def import_data():
     #del kinases
     #del groups
     #del proteins
-    load_mimp_mutations()   # this requires having sites already loaded
+    with app.app_context():
+        load_mimp_mutations()   # this requires having sites already loaded
     print('Loaded mimp mutations')
     # db.session.add_all(cancers.values())
     # print('Added cancers')
@@ -391,15 +392,12 @@ def load_mimp_mutations():
         mut = line[1]
         psite_pos = line[2]
 
-        # TODO
-        print('It works till here')
         protein = Protein.query.filter_by(refseq=refseq).first()
-        print('This line wont be displayed')
-
         pos = int(mut[1:-1])
         assert protein.sequence[pos] == mut[0]
 
-        print(line[9], line[10], protein.gene.name)
+        # TBD
+        # print(line[9], line[10], protein.gene.name)
 
         Mutation(
             position=pos,
@@ -414,7 +412,7 @@ def load_mimp_mutations():
         )
         print(4)
 
-    parse_tsv_file('data/all_mimp_annotations.tsv_head', parser, header)
+    parse_tsv_file('data/all_mimp_annotations.tsv', parser, header)
 
     print('Mutations loaded')
 
