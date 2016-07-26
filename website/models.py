@@ -384,10 +384,10 @@ class InterproDomain(db.Model):
         form the longest to the shortest. Last one has to be a single character
         """
         return [
-            self.description,
-            self.short_description,
+            self.description + '(' + self.accession + ')',
+            self.short_description + '(' + self.accession + ')',
             self.accession,
-            self.description[0] + '.',
+            self.description[0] + '.',  # TODO: this is not informative... :(
             self.description[0]
         ]
 
