@@ -43,12 +43,10 @@ def import_data():
     #db.session.add_all(kinases.values())
     #db.session.add_all(groups.values())
     print('Added kinases')
-    db.session.add_all(proteins.values())
     print('Added proteins')
     #del kinases
     #del groups
-    del proteins
-    print('Loading mimp mutations')
+    #del proteins
     load_mimp_mutations()   # this requires having sites already loaded
     print('Loaded mimp mutations')
     # db.session.add_all(cancers.values())
@@ -66,107 +64,6 @@ def import_data():
     end = time.clock()
     print('Imported mappings in:', end - start)
     print('Memory usage after mappings: ', memory_usage())
-
-
-def load_domains(proteins):
-    interpro_domains = dict()
-    with open('data/biomart_protein_domains_20072016.txt') as f:
-        header = f.readline().rstrip().split('\t')
-        skipped = 0
-        for i, line in enumerate(f):
-            line = line.rstrip().split('\t')
-
-            # Temporary? - if no data about the domains, skip it.
-            if len(line) == 7:
-                continue
-
-            try:
-                assert len(line) == 12
-            except AssertionError:
-                print(line, len(line))
-            # does start is lower than end?
-            assert int(line[11]) < int(line[10])
-
-            try:
-                protein = proteins[line[6]]  # by refseq
-            except KeyError:
-                skipped += 1
-                # commented out (too much to write to screen)
-                """
-                print(
-                    'Skipping domains for protein',
-                    line[6],
-                    '(no such a record in dataset)'
-                )
-                """
-                continue
-            accession = line[7]
-
-            # according to:
-            # http://www.ncbi.nlm.nih.gov/pmc/articles/PMC29841/#__sec2title
-            assert accession.startswith('IPR')
-
-            if accession not in interpro_domains:
-
-                assert int(line[10]) <= protein.length
-
-                interpro = InterproDomain(
-                    accession=line[7],   # Interpro Accession
-                    short_description=line[8],   # Interpro Short Description
-                    description=line[9],   # Interpro Description
-                )
-
-                interpro_domains[accession] = interpro
-
-            Domain(
-                interpro=interpro_domains[accession],
-                protein=protein,
-                start=int(line[11]),
-                end=int(line[10])
-            )
-
-    print('Domains loaded,', skipped, 'proteins skipped')
-
-
-def select_preferred_isoforms():
-    """Performs selection of preferred isoform,
-
-    choosing the longest isoform which has the lowest refseq id
-    """
-    for gene in tqdm(Gene.query.all()):
-        max_length = 0
-        longest_isoforms = []
-        for isoform in gene.isoforms:
-            length = isoform.length
-            if length == max_length:
-                longest_isoforms.append(isoform)
-            elif length > max_length:
-                longest_isoforms = [isoform]
-                max_length = length
-
-        # sort by refseq id (lower id will be earlier in the list)
-        longest_isoforms.sort(key=lambda isoform: int(isoform.refseq[3:]))
-
-        try:
-            gene.preferred_isoform = longest_isoforms[0]
-        except IndexError:
-            print('No isoform for:', gene)
-
-    print('Preferred isoforms chosen')
-
-
-def load_sequences(proteins):
-    with open('data/all_RefGene_proteins.fa', 'r') as f:
-        refseq = None
-        for line in f:
-            if line.startswith('>'):
-                refseq = line[1:].rstrip()
-                assert refseq in proteins
-                assert proteins[refseq].sequence == ''
-            else:
-                proteins[refseq].sequence += line.rstrip()
-    print('Sequences loaded')
-    return proteins
 
 
 def buffered_readlines(file_handle, line_count=5000):
@@ -188,9 +85,150 @@ def buffered_readlines(file_handle, line_count=5000):
             yield line
 
 
+def count_lines(filename):
+    with open(filename) as f:
+        return sum(1 for line in f)
+
+
+def parse_tsv_file(filename, parser, file_header=False):
+    """Utility function wraping file parser
+
+    It opens file, provides progress bar, and checks if the file header is the
+    same as given (if provided). For each line parser will be called.
+    """
+    with open(filename) as f:
+        if file_header:
+            header = f.readline().rstrip().split('\t')
+            assert header == file_header
+        for line in tqdm(f, total=count_lines(filename)):
+            line = line.rstrip().split('\t')
+            parser(line)
+
+
+def parse_fasta_file(filename, parser):
+    with open(filename) as f:
+        for line in tqdm(f, total=count_lines(filename)):
+            parser(line)
+
+
+def load_domains(proteins):
+
+    print('Loading domains:')
+
+    interpro_domains = dict()
+    skipped = 0
+
+    def parse(line):
+
+        nonlocal skipped
+
+        # Temporary? - if no data about the domains, skip it.
+        if len(line) == 7:
+            return
+
+        try:
+            assert len(line) == 12
+        except AssertionError:
+            print(line, len(line))
+        # does start is lower than end?
+        assert int(line[11]) < int(line[10])
+
+        try:
+            protein = proteins[line[6]]  # by refseq
+        except KeyError:
+            skipped += 1
+            # commented out (too much to write to screen)
+            """
+            print(
+                'Skipping domains for protein',
+                line[6],
+                '(no such a record in dataset)'
+            )
+            """
+            return
+        accession = line[7]
+
+        # according to:
+        # http://www.ncbi.nlm.nih.gov/pmc/articles/PMC29841/#__sec2title
+        assert accession.startswith('IPR')
+
+        if accession not in interpro_domains:
+
+            assert int(line[10]) <= protein.length
+
+            interpro = InterproDomain(
+                accession=line[7],   # Interpro Accession
+                short_description=line[8],   # Interpro Short Description
+                description=line[9],   # Interpro Description
+            )
+
+            interpro_domains[accession] = interpro
+
+        Domain(
+            interpro=interpro_domains[accession],
+            protein=protein,
+            start=int(line[11]),
+            end=int(line[10])
+        )
+
+    parse_tsv_file('data/biomart_protein_domains_20072016.txt', parse)
+
+    print('Domains loaded,', skipped, 'proteins skipped')
+
+
+def select_preferred_isoforms():
+    """Performs selection of preferred isoform,
+
+    choosing the longest isoform which has the lowest refseq id
+    """
+    print('Choosning preferred isoforms:')
+
+    for gene in tqdm(Gene.query.all()):
+        max_length = 0
+        longest_isoforms = []
+        for isoform in gene.isoforms:
+            length = isoform.length
+            if length == max_length:
+                longest_isoforms.append(isoform)
+            elif length > max_length:
+                longest_isoforms = [isoform]
+                max_length = length
+
+        # sort by refseq id (lower id will be earlier in the list)
+        longest_isoforms.sort(key=lambda isoform: int(isoform.refseq[3:]))
+
+        try:
+            gene.preferred_isoform = longest_isoforms[0]
+        except IndexError:
+            print('No isoform for:', gene)
+
+
+def load_sequences(proteins):
+
+    print('Loading sequences:')
+
+    refseq = None
+
+    def parser(line):
+        nonlocal refseq
+        if line.startswith('>'):
+            refseq = line[1:].rstrip()
+            assert refseq in proteins
+            assert proteins[refseq].sequence == ''
+        else:
+            proteins[refseq].sequence += line.rstrip()
+
+    parse_fasta_file('data/all_RefGene_proteins.fa', parser)
+
+    return proteins
+
+
 def create_proteins_and_genes():
-    proteins = {}
+
+    print('Creating proteins and genes:')
+
     genes = {}
+    proteins = {}
 
     coordinates_to_save = [
         ('txStart', 'tx_start'),
@@ -203,72 +241,72 @@ def create_proteins_and_genes():
     with_duplicates = []
     potentially_empty_genes = set()
 
-    with open('data/protein_data.tsv') as f:
-        header = f.readline().rstrip().split('\t')
+    header = [
+        'bin', 'name', 'chrom', 'strand', 'txStart', 'txEnd',
+        'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds',
+        'score', 'name2', 'cdsStartStat', 'cdsEndStat', 'exonFrames'
+    ]
 
-        assert header == [
-            'bin', 'name', 'chrom', 'strand', 'txStart', 'txEnd',
-            'cdsStart', 'cdsEnd', 'exonCount', 'exonStarts', 'exonEnds',
-            'score', 'name2', 'cdsStartStat', 'cdsEndStat', 'exonFrames'
-        ]
+    columns = tuple(header.index(x[0]) for x in coordinates_to_save)
+    coordinates_names = [x[1] for x in coordinates_to_save]
 
-        columns = tuple(header.index(x[0]) for x in coordinates_to_save)
-        coordinates_names = [x[1] for x in coordinates_to_save]
+    def parser(line):
 
-        for line in f:
-            line = line.rstrip().split('\t')
+        # load gene
+        name = line[-4]
+        if name not in genes:
+            gene_data = {'name': name}
+            gene_data['chrom'] = line[2][3:]    # remove chr prefix
+            gene_data['strand'] = 1 if '+' else 0
+            gene = Gene(**gene_data)
+            genes[name] = gene
+        else:
+            gene = genes[name]
 
-            # load gene
-            name = line[-4]
-            if name not in genes:
-                gene_data = {'name': name}
-                gene_data['chrom'] = line[2][3:]    # remove chr prefix
-                gene_data['strand'] = 1 if '+' else 0
-                gene = Gene(**gene_data)
-                genes[name] = gene
+        # load protein
+        refseq = line[1]
+
+        # do not allow duplicates
+        if refseq in proteins:
+
+            with_duplicates.append(refseq)
+            potentially_empty_genes.add(gene)
+
+            """
+            if gene.chrom in ('X', 'Y'):
+                # close an eye for pseudoautosomal regions
+                print(
+                    'Skipping duplicated entry (probably belonging',
+                    'to pseudoautosomal region) with refseq:', refseq
+                )
             else:
-                gene = genes[name]
+                # warn about other duplicated records
+                print(
+                    'Skipping duplicated entry with refseq:', refseq
+                )
+            """
+            return
 
-            # load protein
-            refseq = line[1]
+        # from this line there is no processing of duplicates allowed
+        assert refseq not in proteins
 
-            # do not allow duplicates
-            if refseq in proteins:
+        protein_data = {'refseq': refseq, 'gene': gene}
 
-                with_duplicates.append(refseq)
-                potentially_empty_genes.add(gene)
+        coordinates = zip(
+            coordinates_names,
+            [
+                int(value)
+                for i, value in enumerate(line)
+                if i in columns
+            ]
+        )
+        protein_data.update(coordinates)
 
-                if gene.chrom in ('X', 'Y'):
-                    # close an eye for pseudoautosomal regions
-                    print(
-                        'Skipping duplicated entry (probably belonging',
-                        'to pseudoautosomal region) with refseq:', refseq
-                    )
-                else:
-                    # warn about other duplicated records
-                    print(
-                        'Skipping duplicated entry with refseq:', refseq
-                    )
-                continue
+        proteins[refseq] = Protein(**protein_data)
 
-            # from this line there is no processing of duplicates allowed
-            assert refseq not in proteins
+    parse_tsv_file('data/protein_data.tsv', parser, header)
 
-            protein_data = {'refseq': refseq, 'gene': gene}
-
-            coordinates = zip(
-                coordinates_names,
-                [
-                    int(value)
-                    for i, value in enumerate(line)
-                    if i in columns
-                ]
-            )
-            protein_data.update(coordinates)
-
-            proteins[refseq] = Protein(**protein_data)
-
-        db.session.add_all(proteins.values())
+    db.session.add_all(proteins.values())
 
     cnt = sum(map(lambda g: len(g.isoforms) == 1, potentially_empty_genes))
     print('Duplicated that are only isoforms for gene:', cnt)
@@ -276,7 +314,6 @@ def create_proteins_and_genes():
     del genes
 
     print('Duplicated rows detected:', len(with_duplicates))
-    print('Proteins and genes created')
     return proteins
 
 
@@ -285,17 +322,21 @@ def load_disorder(proteins):
     # load("all_RefGene_disorder.fa.rsav")
     # write.fasta(sequences=as.list(fa1_disorder), names=names(fa1_disorder),
     # file.out='all_RefGene_disorder.fa', as.string=T)
-    with open('data/all_RefGene_disorder.fa', 'r') as f:
-        name = None
-        for line in f:
-            if line.startswith('>'):
-                name = line[1:].rstrip()
-                assert name in proteins
-            else:
-                proteins[name].disorder_map += line.rstrip()
+    print('Loading disorder data:')
+    name = None
+
+    def parser(line):
+        nonlocal name
+        if line.startswith('>'):
+            name = line[1:].rstrip()
+            assert name in proteins
+        else:
+            proteins[name].disorder_map += line.rstrip()
+
+    parse_fasta_file('data/all_RefGene_disorder.fa', parser)
+
     for protein in proteins.values():
         assert len(protein.sequence) == len(protein.length)
-    print('Disorder data loaded')
 
 
 def load_cancers():
@@ -331,46 +372,50 @@ def load_mutations(proteins, cancers):
     print('Mutations loaded')
 
 
-def count_lines(filename):
-    with open(filename) as f:
-        return sum(1 for line in f)
-
-
 def load_mimp_mutations():
     from os.path import commonprefix
+
     # load("all_mimp_annotations.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
-    with open('data/all_mimp_annotations.tsv_head') as f:
-        header = f.readline().rstrip().split('\t')
-        assert header == ['gene', 'mut', 'psite_pos', 'mut_dist', 'wt',
-                          'mt', 'score_wt', 'score_mt', 'log_ratio', 'pwm',
-                          'pwm_fam', 'nseqs', 'prob', 'effect']
-        for line in tqdm(f):
 
-            line = line.rstrip().split('\t')
-            refseq = line[0]
-            mut = line[1]
-            psite_pos = line[2]
+    print('Loading mimp mutations:')
 
-            protein = Protein.query.filter_by(refseq=refseq).first()
+    header = [
+        'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
+        'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
+    ]
 
-            pos = int(mut[1:-1])
-            assert protein.sequence[pos] == mut[0]
+    def parser(line):
+        refseq = line[0]
+        mut = line[1]
+        psite_pos = line[2]
 
-            print(line[9], line[10], protein.gene.name)
+        # TODO
+        print('It works till here')
+        protein = Protein.query.filter_by(refseq=refseq).first()
+        print('This line wont be displayed')
 
-            Mutation(
-                position=pos,
-                mut_residue=mut[-1],
-                protein=protein,
-                sites=[
-                    site
-                    for site in protein.sites
-                    if site.position == psite_pos
-                ],
-                position_in_motif=len(commonprefix((line[4], line[5])))
-            )
+        pos = int(mut[1:-1])
+        assert protein.sequence[pos] == mut[0]
+
+        print(line[9], line[10], protein.gene.name)
+
+        Mutation(
+            position=pos,
+            mut_residue=mut[-1],
+            protein=protein,
+            sites=[
+                site
+                for site in protein.sites
+                if site.position == psite_pos
+            ],
+            position_in_motif=len(commonprefix((line[4], line[5])))
+        )
+        print(4)
+
+    parse_tsv_file('data/all_mimp_annotations.tsv_head', parser, header)
+
     print('Mutations loaded')
 
 
@@ -407,74 +452,78 @@ def load_sites(proteins):
     # load("PTM_site_table.rsav")
     # write.table(site_table, file="site_table.tsv",
     #   row.names=F, quote=F, sep='\t')
-    with open('data/site_table.tsv', 'r') as f:
-        header = f.readline().rstrip().split('\t')
-        assert header == ['gene', 'position', 'residue',
-                          'enzymes', 'pmid', 'type']
-        kinases = {}
-        kinase_groups = {}
-        for line in f:
-            line = line.rstrip().split('\t')
-            refseq, position, residue, kinases_str, pmid, mod_type = line
-            site_kinases, site_groups = make_site_kinases(
-                proteins,
-                kinases,
-                kinase_groups,
-                filter(bool, kinases_str.split(','))
-            )
-            Site(
-                position=position,
-                residue=residue,
-                pmid=pmid,
-                protein=proteins[refseq],
-                kinases=site_kinases,
-                kinase_groups=site_groups,
-                type=mod_type
-            )
-    print('Protein sites loaded')
+
+    print('Loading protein sites:')
+
+    header = ['gene', 'position', 'residue', 'enzymes', 'pmid', 'type']
+
+    kinases = {}
+    kinase_groups = {}
+
+    def parser(line):
+
+        refseq, position, residue, kinases_str, pmid, mod_type = line
+        site_kinases, site_groups = make_site_kinases(
+            proteins,
+            kinases,
+            kinase_groups,
+            filter(bool, kinases_str.split(','))
+        )
+        Site(
+            position=position,
+            residue=residue,
+            pmid=pmid,
+            protein=proteins[refseq],
+            kinases=site_kinases,
+            kinase_groups=site_groups,
+            type=mod_type
+        )
+
+    load_tsv_file('data/site_table.tsv', parser, header)
+
     return kinases, kinase_groups
 
 
 def load_kinase_classification(proteins, kinases, groups):
 
-    with open('data/regphos_kinome_scraped_clean.txt', 'r') as f:
-        header = f.readline().rstrip().split('\t')
+    print('Loading protein kinase groups:')
 
-        assert header == [
-            'No.', 'Kinase', 'Group', 'Family', 'Subfamily', 'Gene.Symbol',
-            'gene.clean', 'Description', 'group.clean']
+    header = [
+        'No.', 'Kinase', 'Group', 'Family', 'Subfamily', 'Gene.Symbol',
+        'gene.clean', 'Description', 'group.clean'
+    ]
 
-        for line in f:
-            line = line.rstrip().split('\t')
+    def parser(line):
 
-            # not that the subfamily is often abesnt
-            group, family, subfamily = line[2:5]
+        # not that the subfamily is often abesnt
+        group, family, subfamily = line[2:5]
 
-            # the 'gene.clean' [6] fits better to the names
-            # of kinases used in all other data files
-            kinase_name = line[6]
+        # the 'gene.clean' [6] fits better to the names
+        # of kinases used in all other data files
+        kinase_name = line[6]
 
-            # 'group.clean' is not atomic and is redundant with respect to
-            # family and subfamily. This check assures that in case of a change
-            # the maintainer would be able to spot the inconsistency easily
-            clean = family + '_' + subfamily if subfamily else family
-            assert line[8] == clean
+        # 'group.clean' is not atomic and is redundant with respect to
+        # family and subfamily. This check assures that in case of a change
+        # the maintainer would be able to spot the inconsistency easily
+        clean = family + '_' + subfamily if subfamily else family
+        assert line[8] == clean
 
-            if kinase_name not in kinases:
-                kinases[kinase_name] = Kinase(
-                    name=kinase_name,
-                    protein=get_preferred_gene_isoform(kinase_name)
-                )
+        if kinase_name not in kinases:
+            kinases[kinase_name] = Kinase(
+                name=kinase_name,
+                protein=get_preferred_gene_isoform(kinase_name)
+            )
 
-            # the 'family' corresponds to 'group' in the all other files
-            if family not in groups:
-                groups[family] = KinaseGroup(
-                    name=kinase_name
-                )
+        # the 'family' corresponds to 'group' in the all other files
+        if family not in groups:
+            groups[family] = KinaseGroup(
+                name=kinase_name
+            )
 
-            groups[family].kinases.append(kinases[kinase_name])
+        groups[family].kinases.append(kinases[kinase_name])
 
-    print('Protein kinase groups loaded')
+    parse_tsv_file('data/regphos_kinome_scraped_clean.txt', parser, header)
+
     return kinases, groups
 
 
