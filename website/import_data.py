@@ -1,5 +1,6 @@
 import time
 import psutil
+from tqdm import tqdm
 from app import app
 from app import db
 from website.models import Protein
@@ -37,15 +38,15 @@ def import_data():
     load_disorder(proteins)
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
-    kinases, groups = load_sites(proteins)
-    kinases, groups = load_kinase_classification(proteins, kinases, groups)
-    db.session.add_all(kinases.values())
-    db.session.add_all(groups.values())
+    #kinases, groups = load_sites(proteins)
+    #kinases, groups = load_kinase_classification(proteins, kinases, groups)
+    #db.session.add_all(kinases.values())
+    #db.session.add_all(groups.values())
     print('Added kinases')
     db.session.add_all(proteins.values())
     print('Added proteins')
-    del kinases
-    del groups
+    #del kinases
+    #del groups
     del proteins
     print('Loading mimp mutations')
     load_mimp_mutations()   # this requires having sites already loaded
@@ -132,7 +133,7 @@ def select_preferred_isoforms():
 
     choosing the longest isoform which has the lowest refseq id
     """
-    for gene in Gene.query.all():
+    for gene in tqdm(Gene.query.all()):
         max_length = 0
         longest_isoforms = []
         for isoform in gene.isoforms:
@@ -330,16 +331,22 @@ def load_mutations(proteins, cancers):
     print('Mutations loaded')
 
 
+def count_lines(filename):
+    with open(filename) as f:
+        return sum(1 for line in f)
+
+
 def load_mimp_mutations():
+    from os.path import commonprefix
     # load("all_mimp_annotations.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
-    with open('data/all_mimp_annotations.tsv') as f:
+    with open('data/all_mimp_annotations.tsv_head') as f:
         header = f.readline().rstrip().split('\t')
         assert header == ['gene', 'mut', 'psite_pos', 'mut_dist', 'wt',
                           'mt', 'score_wt', 'score_mt', 'log_ratio', 'pwm',
                           'pwm_fam', 'nseqs', 'prob', 'effect']
-        for line in f:
+        for line in tqdm(f):
 
             line = line.rstrip().split('\t')
             refseq = line[0]
@@ -351,6 +358,8 @@ def load_mimp_mutations():
             pos = int(mut[1:-1])
             assert protein.sequence[pos] == mut[0]
 
+            print(line[9], line[10], protein.gene.name)
+
             Mutation(
                 position=pos,
                 mut_residue=mut[-1],
@@ -359,7 +368,8 @@ def load_mimp_mutations():
                     site
                     for site in protein.sites
                     if site.position == psite_pos
-                ]
+                ],
+                position_in_motif=len(commonprefix((line[4], line[5])))
             )
     print('Mutations loaded')
 

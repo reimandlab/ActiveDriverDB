@@ -432,6 +432,10 @@ class Mutation(db.Model):
         secondary=make_association_table('site.id', 'mutation.id')
     )
 
+    # not null only for mimp mutations:
+    # position of a mutation in an associated motif
+    position_in_motif = db.Column(db.Integer)
+
     # Note: following properties could become a columns of the database tables
     # (in the future) to avoid repetitive calculation of constant variables.
     # Nonetheless making decision about each of these should take into account,
