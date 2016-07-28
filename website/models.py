@@ -425,6 +425,12 @@ class Mutation(db.Model):
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
+    pwm = db.Column(db.Text)
+    pwm_family = db.Column(db.Text)
+
+    # gain = +1, loss = -1
+    effect = db.Column(db.Boolean)
+
     # one mutation can affect multiple sites and
     # one site can be affected by multiple mutations
     sites = db.relationship(

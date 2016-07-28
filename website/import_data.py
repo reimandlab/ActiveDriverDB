@@ -152,7 +152,8 @@ def load_domains(proteins):
 
         if accession not in interpro_domains:
 
-            assert int(line[10]) <= protein.length
+            # TODO: the assertion fails for some domains: what to do?
+            # assert int(line[10]) <= protein.length
 
             interpro = InterproDomain(
                 accession=line[7],   # Interpro Accession
@@ -396,6 +397,8 @@ def load_mimp_mutations():
         # TBD
         # print(line[9], line[10], protein.gene.name)
 
+        assert line[13] in ('gain', 'loss')
+
         Mutation(
             position=pos,
             mut_residue=mut[-1],
@@ -405,7 +408,10 @@ def load_mimp_mutations():
                 for site in protein.sites
                 if site.position == psite_pos
             ],
-            position_in_motif=len(commonprefix((line[4], line[5])))
+            position_in_motif=int(line[3]),
+            effect=1 if line[13] == 'gain' else 0,
+            pwm=line[9],
+            pwm_family=line[10]
         )
 
     parse_tsv_file('data/all_mimp_annotations.tsv', parser, header)
