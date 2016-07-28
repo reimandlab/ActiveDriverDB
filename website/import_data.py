@@ -335,7 +335,7 @@ def load_disorder(proteins):
     parse_fasta_file('data/all_RefGene_disorder.fa', parser)
 
     for protein in proteins.values():
-        assert len(protein.sequence) == len(protein.length)
+        assert len(protein.sequence) == protein.length
 
 
 def load_cancers():
