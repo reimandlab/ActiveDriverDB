@@ -94,8 +94,8 @@ def parse_tsv_file(filename, parser, file_header=False):
     same as given (if provided). For each line parser will be called.
     """
     with open(filename) as f:
+        header = f.readline().rstrip().split('\t')
         if file_header:
-            header = f.readline().rstrip().split('\t')
             assert header == file_header
         for line in tqdm(f, total=count_lines(filename)):
             line = line.rstrip().split('\t')
@@ -115,7 +115,7 @@ def load_domains(proteins):
     interpro_domains = dict()
     skipped = 0
 
-    def parse(line):
+    def parser(line):
 
         nonlocal skipped
 
@@ -127,6 +127,7 @@ def load_domains(proteins):
             assert len(line) == 12
         except AssertionError:
             print(line, len(line))
+
         # does start is lower than end?
         assert int(line[11]) < int(line[10])
 
@@ -168,7 +169,7 @@ def load_domains(proteins):
             end=int(line[10])
         )
 
-    parse_tsv_file('data/biomart_protein_domains_20072016.txt', parse)
+    parse_tsv_file('data/biomart_protein_domains_20072016.txt', parser)
 
     print('Domains loaded,', skipped, 'proteins skipped')
 
