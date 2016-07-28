@@ -187,7 +187,7 @@ def select_preferred_isoforms():
 
     choosing the longest isoform which has the lowest refseq id
     """
-    print('Choosning preferred isoforms:')
+    print('Choosing preferred isoforms:')
 
     for gene in tqdm(Gene.query.all()):
         max_length = 0
