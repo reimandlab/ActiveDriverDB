@@ -29,8 +29,6 @@ def system_memory_percent():
 
 
 def import_data():
-    # proteins = create_proteins_with_seq_old()
-    # load_protein_refseq_old(proteins)
     proteins = create_proteins_and_genes()
     load_sequences(proteins)
     select_preferred_isoforms()
@@ -47,9 +45,6 @@ def import_data():
     #del kinases
     #del groups
     #del proteins
-    with app.app_context():
-        load_mimp_mutations()   # this requires having sites already loaded
-    print('Loaded mimp mutations')
     # db.session.add_all(cancers.values())
     # print('Added cancers')
     print('Memory usage before commit: ', memory_usage())
@@ -57,7 +52,8 @@ def import_data():
     print('Memory usage before cleaning: ', memory_usage())
     # del cancers
     print('Memory usage after cleaning: ', memory_usage())
-    print('Importing mappings...')
+    with app.app_context():
+        load_mimp_mutations()   # this requires having sites already loaded
     start = time.clock()
     with app.app_context():
         proteins = {protein.refseq: protein for protein in Protein.query.all()}
@@ -546,6 +542,7 @@ def get_or_create(model, **kwargs):
 
 
 def import_mappings(proteins):
+    print('Importing mappings:')
 
     files = get_files('data/200616/all_variants/playground', 'annot_*.txt.gz')
 
@@ -563,12 +560,8 @@ def import_mappings(proteins):
     bdb_refseq.reset()
 
     cnt_old_prots, cnt_new_prots = 0, 0
-    a = 1
 
-    for filename in files:
-        if a > 1:
-            break
-        a += 1
+    for filename in tqdm(files):
 
         with gzip.open(filename, 'rb') as f:
             next(f)  # skip the header
@@ -656,6 +649,7 @@ def import_mappings(proteins):
                 bdb[snv].update(new_variants)
 
         print(filename, 'loaded succesfully')
+        break   # TODO: remove this temporary constraint
 
     print('Read', len(files), 'files with genome -> protein mappings, ')
     print(cnt_new_prots, 'new proteins created & ', cnt_old_prots, 'used')
