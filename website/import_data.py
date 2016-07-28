@@ -38,10 +38,10 @@ def import_data():
     # load_mutations(proteins, cancers)
     #kinases, groups = load_sites(proteins)
     #kinases, groups = load_kinase_classification(proteins, kinases, groups)
+    #print('Adding kinases to the session...')
     #db.session.add_all(kinases.values())
+    #print('Adding groups to the session...')
     #db.session.add_all(groups.values())
-    print('Added kinases')
-    print('Added proteins')
     #del kinases
     #del groups
     #del proteins
