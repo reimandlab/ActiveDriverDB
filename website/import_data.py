@@ -406,7 +406,6 @@ def load_mimp_mutations():
             ],
             position_in_motif=len(commonprefix((line[4], line[5])))
         )
-        print(4)
 
     parse_tsv_file('data/all_mimp_annotations.tsv', parser, header)
 
