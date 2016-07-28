@@ -114,10 +114,12 @@ def load_domains(proteins):
 
     interpro_domains = dict()
     skipped = 0
+    wrong_length = 0
 
     def parser(line):
 
         nonlocal skipped
+        nonlocal wrong_length
 
         # Temporary? - if no data about the domains, skip it.
         if len(line) == 7:
@@ -154,6 +156,8 @@ def load_domains(proteins):
 
             # TODO: the assertion fails for some domains: what to do?
             # assert int(line[10]) <= protein.length
+            if int(line[10]) <= protein.length:
+                wrong_length += 1
 
             interpro = InterproDomain(
                 accession=line[7],   # Interpro Accession
@@ -172,7 +176,10 @@ def load_domains(proteins):
 
     parse_tsv_file('data/biomart_protein_domains_20072016.txt', parser)
 
-    print('Domains loaded,', skipped, 'proteins skipped')
+    print(
+        'Domains loaded,', skipped, 'proteins skipped.',
+        'Domains exceeding proteins length:', wrong_length
+    )
 
 
 def select_preferred_isoforms():
@@ -218,6 +225,23 @@ def load_sequences(proteins):
             proteins[refseq].sequence += line.rstrip()
 
     parse_fasta_file('data/all_RefGene_proteins.fa', parser)
+
+    stop_inside = 0
+    lack_of_stop = 0
+    no_stop_at_the_end = 0
+
+    for protein in proteins.values():
+        if '*' in protein.sequence[:-1]:
+            stop_inside += 1
+        if protein.sequence[-1] != '*':
+            no_stop_at_the_end += 1
+        if '*' not in protein.sequence:
+            lack_of_stop += 1
+
+    print('Sequences:')
+    print('\twith stop codon inside (excluding the last pos.):', stop_inside)
+    print('\twithout stop codon at the end:', no_stop_at_the_end)
+    print('\twithout stop codon at all:', lack_of_stop)
 
     return proteins
 
@@ -305,6 +329,7 @@ def create_proteins_and_genes():
 
     parse_tsv_file('data/protein_data.tsv', parser, header)
 
+    print('Adding proteins to the session...')
     db.session.add_all(proteins.values())
 
     cnt = sum(map(lambda g: len(g.isoforms) == 1, potentially_empty_genes))
