@@ -417,7 +417,7 @@ def load_mimp_mutations():
 
         protein = Protein.query.filter_by(refseq=refseq).first()
         pos = int(mut[1:-1])
-        assert protein.sequence[pos] == mut[0]
+        assert protein.sequence[pos - 1] == mut[0]
 
         # TBD
         # print(line[9], line[10], protein.gene.name)
