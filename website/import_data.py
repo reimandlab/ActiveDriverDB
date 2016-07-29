@@ -154,7 +154,7 @@ def load_domains(proteins):
 
             # TODO: the assertion fails for some domains: what to do?
             # assert int(line[10]) <= protein.length
-            if int(line[10]) <= protein.length:
+            if int(line[10]) > protein.length:
                 wrong_length += 1
 
             interpro = InterproDomain(
