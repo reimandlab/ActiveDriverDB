@@ -50,7 +50,7 @@ def import_data():
     print('Memory usage before commit: ', memory_usage())
     db.session.commit()
     with app.app_context():
-        load_mimp_mutations()   # this requires having sites already loaded
+        load_mimp_mutations(proteins)   # this requires having sites already loaded
     start = time.clock()
     with app.app_context():
         import_mappings(proteins)
