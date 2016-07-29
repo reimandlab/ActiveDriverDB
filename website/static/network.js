@@ -54,7 +54,7 @@ var Network = (function ()
     {
         var radius = calculateRadius(protein.mutations_count)
         var name = protein.name
-        if(!protein.is_preferred_isoform)
+        if(!protein.is_preferred)
         {
             name += '\n(' + protein.refseq + ')'
         }
@@ -281,7 +281,6 @@ var Network = (function ()
         d3.selectAll('.link')
             .filter(function(e) { return inGroup(e.source) } )
             .call(fadeInOut)
-
 
     }
 
