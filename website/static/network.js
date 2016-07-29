@@ -53,9 +53,14 @@ var Network = (function ()
     function createProteinNode()
     {
         var radius = calculateRadius(protein.mutations_count)
+        var name = protein.name
+        if(!protein.is_preferred_isoform)
+        {
+            name += '\n(' + protein.refseq + ')'
+        }
 
         return {
-            name: protein.name,
+            name: name,
             r: radius,
             x: (config.width - radius) / 2,
             y: (config.height - radius) / 2,
@@ -70,7 +75,7 @@ var Network = (function ()
         minimalRadius: 6,   // of a single node
         ratio: 1,   // the aspect ratio of the network
         nodeURL: (function(node) {
-            return window.location.href + '#' + node.name
+            return window.location.href + '#' + node.protein.refseq
         }),
         minZoom: 0.5,   // allow to zoom-out up to two times
         maxZoom: 2  // allow to zoom-in up to two times

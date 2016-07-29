@@ -255,6 +255,10 @@ class Protein(db.Model):
         )
 
     @cached_property
+    def is_preferred_isoform(self):
+        return self.gene.preferred_isoform == self
+
+    @cached_property
     def length(self):
         """Length of protein's sequence"""
         return len(self.sequence)

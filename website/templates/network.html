@@ -52,7 +52,7 @@
         minimalRadius: 15,
         ratio: 0.5, /* remember to keep update with style of network */
         nodeURL: function(node){
-            return '{{ url_for('ProteinView:show', refseq='') }}' + node.name
+            return '{{ url_for('ProteinView:show', refseq='') }}' + node.protein.refseq
         }
     })
 
