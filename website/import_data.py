@@ -29,29 +29,28 @@ def system_memory_percent():
 
 
 def import_data():
-    proteins = create_proteins_and_genes()
+    genes, proteins = create_proteins_and_genes()
     load_sequences(proteins)
-    select_preferred_isoforms()
+    select_preferred_isoforms(genes)
+    # free a little bit of memory
+    del genes
     load_domains(proteins)
     load_disorder(proteins)
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
-    #kinases, groups = load_sites(proteins)
-    #kinases, groups = load_kinase_classification(proteins, kinases, groups)
-    #print('Adding kinases to the session...')
-    #db.session.add_all(kinases.values())
-    #print('Adding groups to the session...')
-    #db.session.add_all(groups.values())
-    #del kinases
-    #del groups
-    #del proteins
+    kinases, groups = load_sites(proteins)
+    kinases, groups = load_kinase_classification(proteins, kinases, groups)
+    print('Adding kinases to the session...')
+    db.session.add_all(kinases.values())
+    print('Adding groups to the session...')
+    db.session.add_all(groups.values())
+    del kinases
+    del groups
+    # del proteins
+    # print('Addeding cancers to the session...')
     # db.session.add_all(cancers.values())
-    # print('Added cancers')
     print('Memory usage before commit: ', memory_usage())
     db.session.commit()
-    print('Memory usage before cleaning: ', memory_usage())
-    # del cancers
-    print('Memory usage after cleaning: ', memory_usage())
     with app.app_context():
         load_mimp_mutations()   # this requires having sites already loaded
     start = time.clock()
@@ -182,14 +181,14 @@ def load_domains(proteins):
     )
 
 
-def select_preferred_isoforms():
+def select_preferred_isoforms(genes):
     """Performs selection of preferred isoform,
 
     choosing the longest isoform which has the lowest refseq id
     """
     print('Choosing preferred isoforms:')
 
-    for gene in tqdm(Gene.query.all()):
+    for gene in tqdm(genes.values()):
         max_length = 0
         longest_isoforms = []
         for isoform in gene.isoforms:
@@ -242,8 +241,6 @@ def load_sequences(proteins):
     print('\twith stop codon inside (excluding the last pos.):', stop_inside)
     print('\twithout stop codon at the end:', no_stop_at_the_end)
     print('\twithout stop codon at all:', lack_of_stop)
-
-    return proteins
 
 
 def create_proteins_and_genes():
@@ -334,11 +331,8 @@ def create_proteins_and_genes():
 
     cnt = sum(map(lambda g: len(g.isoforms) == 1, potentially_empty_genes))
     print('Duplicated that are only isoforms for gene:', cnt)
-
-    del genes
-
     print('Duplicated rows detected:', len(with_duplicates))
-    return proteins
+    return genes, proteins
 
 
 def load_disorder(proteins):
@@ -439,7 +433,7 @@ def load_mimp_mutations():
             pwm_family=line[10]
         )
 
-    parse_tsv_file('data/all_mimp_annotations.tsv', parser, header)
+    parse_tsv_file('data/all_mimp_annotations.tsv_head', parser, header)
 
     print('Mutations loaded')
 
@@ -504,7 +498,7 @@ def load_sites(proteins):
             type=mod_type
         )
 
-    load_tsv_file('data/site_table.tsv', parser, header)
+    parse_tsv_file('data/site_table.tsv', parser, header)
 
     return kinases, kinase_groups
 
