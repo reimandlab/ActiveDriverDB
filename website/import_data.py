@@ -45,7 +45,6 @@ def import_data():
     db.session.add_all(groups.values())
     del kinases
     del groups
-    # del proteins
     # print('Addeding cancers to the session...')
     # db.session.add_all(cancers.values())
     print('Memory usage before commit: ', memory_usage())
@@ -54,10 +53,10 @@ def import_data():
         load_mimp_mutations()   # this requires having sites already loaded
     start = time.clock()
     with app.app_context():
-        proteins = {protein.refseq: protein for protein in Protein.query.all()}
         import_mappings(proteins)
     end = time.clock()
     print('Imported mappings in:', end - start)
+    remove_wrong_proteins(proteins)
     print('Memory usage after mappings: ', memory_usage())
 
 
@@ -231,6 +230,8 @@ def load_sequences(proteins):
 
     parse_fasta_file('data/all_RefGene_proteins.fa', parser)
 
+
+def remove_wrong_proteins(proteins):
     stop_inside = 0
     lack_of_stop = 0
     no_stop_at_the_end = 0
@@ -408,8 +409,7 @@ def load_mutations(proteins, cancers):
     print('Mutations loaded')
 
 
-def load_mimp_mutations():
-    from os.path import commonprefix
+def load_mimp_mutations(proteins):
 
     # load("all_mimp_annotations.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
@@ -427,7 +427,7 @@ def load_mimp_mutations():
         mut = line[1]
         psite_pos = line[2]
 
-        protein = Protein.query.filter_by(refseq=refseq).first()
+        protein = proteins[refseq]
         pos = int(mut[1:-1])
         assert protein.sequence[pos - 1] == mut[0]
 
