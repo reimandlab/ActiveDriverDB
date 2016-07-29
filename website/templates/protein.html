@@ -85,9 +85,12 @@
             name: '{{ protein.name }}',
             refseq: '{{ protein.refseq }}'
         }
-        NeedlePlot.init(params)
-        Tracks.init({
+        var needle_plot = NeedlePlot()
+        needle_plot.init(params)
+        var tracks = Tracks()
+        tracks.init({
             box: document.getElementById('tracks-box')
         })
+        tracks.setNeedlePlotInstance(needle_plot)
     </script>
 {% endblock %}

@@ -1,4 +1,4 @@
-var Tracks = (function ()
+var Tracks = function ()
 {
 
     var minFontSize = 0.1
@@ -6,6 +6,7 @@ var Tracks = (function ()
     var scale = 1.0
     var scrollArea
     var scalableArea
+    var needle_plot
 
     function zoom(direction)
     {
@@ -17,6 +18,10 @@ var Tracks = (function ()
     {
         scale = new_scale
         scalableArea.css('transform', 'scaleX(' + scale + ')')
+        if(needle_plot)
+        {
+            needle_plot.setZoom(scale, false)
+        }
     }
 
     function zoomIn()
@@ -40,7 +45,6 @@ var Tracks = (function ()
 	{
         scroll(-1)
 	}
-
 
 	function scrollRight()
 	{
@@ -137,8 +141,12 @@ var Tracks = (function ()
             {
                 $(controls[j]).show()
             }
-		}
+		},
+        setNeedlePlotInstance: function(instance)
+        {
+            needle_plot = instance
+        }
 	}
 
 	return publicSpace
-}())
+}

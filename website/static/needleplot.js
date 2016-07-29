@@ -1,5 +1,9 @@
-var NeedlePlot = (function (mutneedles)
+mutneedles = require("muts-needle-plot")
+
+var NeedlePlot = function ()
 {
+    var instance
+    var element
 
     var colorMap = {
       "missense": "yellow",
@@ -19,6 +23,8 @@ var NeedlePlot = (function (mutneedles)
               y: "# of mutations in " + data.name
             }
 
+            element = data.element
+
             var plotConfig = {
               minCoord:      0,
               maxCoord:      data.sequenceLength,
@@ -32,9 +38,13 @@ var NeedlePlot = (function (mutneedles)
               responsive: 'resize'
             }
 
-            var instance = new mutneedles(plotConfig)
-		}
+            instance = new mutneedles(plotConfig)
+		},
+        setZoom: function(scale, trigger_callback)
+        {
+            $(element).css('transform', 'scaleX(' + scale + ')')
+        }
 	}
 
 	return publicSpace
-}(require("muts-needle-plot")))
+}
