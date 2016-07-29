@@ -53,6 +53,7 @@ def import_data():
         load_mimp_mutations(proteins)   # this requires having sites already loaded
     start = time.clock()
     with app.app_context():
+        proteins = {protein.refseq: protein for protein in Protein.query.all()}
         import_mappings(proteins)
     end = time.clock()
     print('Imported mappings in:', end - start)
