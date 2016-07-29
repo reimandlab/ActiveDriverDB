@@ -254,7 +254,7 @@ def remove_wrong_proteins(proteins):
 
     for protein in to_remove:
         del proteins[protein.refseq]
-        db.session.expunge(protein)
+        db.session.delete(protein)
 
     print('Removed proteins of sequences:')
     print('\twith stop codon inside (excluding the last pos.):', stop_inside)
