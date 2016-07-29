@@ -14,7 +14,7 @@
   <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
 
   {# NeedlePlot #}
-  <script src="https://wzrd.in/bundle/muts-needle-plot@0.9.1"></script>
+  <script src="/static/thirdparty/muts-needle-plot/muts-needle-plot@0.9.1"></script>
   <script src="/static/thirdparty/muts-needle-plot/dependencies/underscore.js"></script>
   <script src="/static/thirdparty/muts-needle-plot/dependencies/d3-svg-legend.js"></script>
 
@@ -57,10 +57,12 @@
 
 <div class="panel panel-default">
   <div class="panel-body">
-    {% with tracks=tracks %}
-      {% include 'widgets/tracks.html' %}
-    {% endwith %}
- </div>
+    <div id="tracks-box">
+      {% with tracks=tracks %}
+        {% include 'widgets/tracks.html' %}
+      {% endwith %}
+    </div>
+  </div>
 </div>
 
 {% with mutations=mutations %}
@@ -84,5 +86,8 @@
             refseq: '{{ protein.refseq }}'
         }
         NeedlePlot.init(params)
+        Tracks.init({
+            box: document.getElementById('tracks-box')
+        })
     </script>
 {% endblock %}

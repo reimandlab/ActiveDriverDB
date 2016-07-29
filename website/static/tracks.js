@@ -3,50 +3,48 @@ var Tracks = (function ()
 
     var minFontSize = 0.1
     var maxFontSize = 20
+    var scale = 1.0
+    var scrollArea
+    var scalableArea
 
-    function zoom(area, direction)
+    function zoom(direction)
     {
-        // possible refinements: max + css animations
-        var size = parseFloat(area.css('font-size'))
         // scale down slower toward 0
-        size += direction * size / 15
+        setZoom(scale + direction * scale / 15)
+    }
 
-        size = Math.max(size, minFontSize)
-        size = Math.min(size, maxFontSize)
-
-        area.css('font-size', size + 'px')
+    function setZoom(new_scale)
+    {
+        scale = new_scale
+        scalableArea.css('transform', 'scaleX(' + scale + ')')
     }
 
     function zoomIn()
     {
-        var area = $(this)
-        zoom(area, +1)
+        zoom(+1)
     }
 
     function zoomOut()
     {
-        var area = $(this)
-        zoom(area, -1)
+        zoom(-1)
     }
 
-    function scroll(area, direction)
+    function scroll(direction)
     {
-        var pos = area.scrollLeft()
-        var len = area.width()
-        area.stop().animate({scrollLeft: pos + len * direction }, '300', 'swing')
+        var pos = scrollArea.scrollLeft()
+        var len = scrollArea.width()
+        scrollArea.stop().animate({scrollLeft: pos + len * direction }, '300', 'swing')
     }
 
 	function scrollLeft()
 	{
-        var area = $(this)
-        scroll(area, -1)
+        scroll(-1)
 	}
 
 
 	function scrollRight()
 	{
-        var area = $(this)
-        scroll(area, +1)
+        scroll(+1)
 	}
 
     function getCharSize(sequence)
@@ -64,7 +62,6 @@ var Tracks = (function ()
 	{
         var input = $(this).closest('.input-group').find('.scroll-to-input')
         var tracks = $(this).closest('.tracks-box')
-        var area = tracks.find('.scroll-area')
         var sequence = tracks.find('.sequence')
         // - 1: sequence is 1 based but position is 0 based
         var pos = $(input).val() - 1
@@ -108,46 +105,40 @@ var Tracks = (function ()
 	var publicSpace = {
 		init: function(data)
 		{
-            var boxes = $('.tracks-box')
-            for(var i = 0; i < boxes.length; i++)
+            var box = $(data.box)
+
+            var tracks = box.find('.tracks')
+
+            scrollArea = tracks.find('.scroll-area')
+            scalableArea = tracks.find('.scalable')
+
+            var buttons = box.find('.scroll-left')
+            initButtons(buttons, scrollLeft, scrollArea)
+
+            buttons = box.find('.scroll-right')
+            initButtons(buttons, scrollRight, scrollArea)
+
+            var innerDiv = box.children('.inner')
+
+            buttons = box.find('.zoom-out')
+            initButtons(buttons, zoomOut, innerDiv)
+
+            buttons = box.find('.zoom-in')
+            initButtons(buttons, zoomIn, innerDiv)
+
+            buttons = box.find('.scroll-to')
+            initButtons(buttons, scrollTo)
+
+            buttons = box.find('.scroll-to-input')
+            initFields(buttons, scrollTo)
+
+            var controls = box.find('.controls')
+            for(var j = 0; j < controls.length; j++)
             {
-                var box = $(boxes[i])
-        
-                var tracks = box.find('.tracks')
-
-                var scrollArea = tracks.find('.scroll-area')
-
-                var buttons = box.find('.scroll-left')
-                initButtons(buttons, scrollLeft, scrollArea)
-
-                buttons = box.find('.scroll-right')
-                initButtons(buttons, scrollRight, scrollArea)
-                
-                var innerDiv = box.children('.inner')
-
-                buttons = box.find('.zoom-out')
-                initButtons(buttons, zoomOut, innerDiv)
-                
-                buttons = box.find('.zoom-in')
-                initButtons(buttons, zoomIn, innerDiv)
-                
-                buttons = box.find('.scroll-to')
-                initButtons(buttons, scrollTo)
-                
-                buttons = box.find('.scroll-to-input')
-                initFields(buttons, scrollTo)
-
-                var controls = box.find('.controls')
-                for(var j = 0; j < controls.length; j++)
-                {
-                    $(controls[j]).show()
-                }
+                $(controls[j]).show()
             }
 		}
 	}
 
 	return publicSpace
 }())
-
-
-Tracks.init()

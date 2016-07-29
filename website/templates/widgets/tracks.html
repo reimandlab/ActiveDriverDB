@@ -71,11 +71,13 @@
             {{ make_list(tracks) }}
         </div>
         <div class="tracks">
-            <div class="scroll-area">
-                {% for track in tracks %}
+          <div class="scroll-area">
+            <div class="scalable">
+              {% for track in tracks %}
                 {{ make_track(track) }}
-                {% endfor %}
+              {% endfor %}
             </div>
+          </div>
         </div>
     </div>
 </div>
