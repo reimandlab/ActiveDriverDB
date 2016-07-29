@@ -9,8 +9,6 @@ from website.models import Mutation
 from website.models import Site
 from website.models import Kinase
 from website.models import KinaseGroup
-# from website.models import CodingSequenceVariant
-# from website.models import SingleNucleotideVariation
 from website.models import Gene
 from website.models import Domain
 from website.models import InterproDomain
