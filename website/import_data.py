@@ -113,11 +113,11 @@ def load_domains(proteins):
     interpro_domains = dict()
     skipped = 0
     wrong_length = 0
+    not_matching_chrom = []
 
     def parser(line):
 
-        nonlocal skipped
-        nonlocal wrong_length
+        nonlocal skipped, wrong_length, not_matching_chrom
 
         # Temporary? - if no data about the domains, skip it.
         if len(line) == 7:
@@ -152,6 +152,11 @@ def load_domains(proteins):
 
         if accession not in interpro_domains:
 
+            if line[3] != protein.gene.chrom:
+                skipped += 1
+                not_matching_chrom.append(line)
+                return
+
             # TODO: the assertion fails for some domains: what to do?
             # assert int(line[10]) <= protein.length
             if int(line[10]) > protein.length:
@@ -176,7 +181,9 @@ def load_domains(proteins):
 
     print(
         'Domains loaded,', skipped, 'proteins skipped.',
-        'Domains exceeding proteins length:', wrong_length
+        'Domains exceeding proteins length:', wrong_length,
+        'Domains skipped due to not matching chromosomes:',
+        len(not_matching_chrom)
     )
 
 
@@ -228,15 +235,27 @@ def load_sequences(proteins):
     lack_of_stop = 0
     no_stop_at_the_end = 0
 
+    to_remove = set()
+
     for protein in proteins.values():
+        hit = False
         if '*' in protein.sequence[:-1]:
             stop_inside += 1
+            hit = True
         if protein.sequence[-1] != '*':
             no_stop_at_the_end += 1
+            hit = True
         if '*' not in protein.sequence:
             lack_of_stop += 1
+            hit = True
+        if hit:
+            to_remove.add(protein)
 
-    print('Sequences:')
+    for protein in to_remove:
+        del proteins[protein.refseq]
+        db.session.expunge(protein)
+
+    print('Removed proteins of sequences:')
     print('\twith stop codon inside (excluding the last pos.):', stop_inside)
     print('\twithout stop codon at the end:', no_stop_at_the_end)
     print('\twithout stop codon at all:', lack_of_stop)
