@@ -29,11 +29,10 @@ def system_memory_percent():
 
 
 def import_data():
+    global genes
     genes, proteins = create_proteins_and_genes()
     load_sequences(proteins)
     select_preferred_isoforms(genes)
-    # free a little bit of memory
-    del genes
     load_domains(proteins)
     load_disorder(proteins)
     # cancers = load_cancers()
@@ -439,10 +438,9 @@ def load_mimp_mutations():
 
 
 def get_preferred_gene_isoform(gene_name):
-    gene = Gene.query.filter_by(name=gene_name).one_or_none()
-    if gene:
+    if gene_name in genes:
         # if there is a gene, it has a preferred isoform
-        return gene.preferred_isoform
+        return genes[gene_name].preferred_isoform
 
 
 def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
