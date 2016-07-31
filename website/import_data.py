@@ -148,17 +148,19 @@ def load_domains(proteins):
         # http://www.ncbi.nlm.nih.gov/pmc/articles/PMC29841/#__sec2title
         assert accession.startswith('IPR')
 
+        start, end = int(line[11]), int(line[10])
+
+        # TODO: the assertion fails for some domains: what to do?
+        # assert end <= protein.length
+        if end > protein.length:
+            wrong_length += 1
+
+        if line[3] != protein.gene.chrom:
+            skipped += 1
+            not_matching_chrom.append(line)
+            return
+
         if accession not in interpro_domains:
-
-            if line[3] != protein.gene.chrom:
-                skipped += 1
-                not_matching_chrom.append(line)
-                return
-
-            # TODO: the assertion fails for some domains: what to do?
-            # assert int(line[10]) <= protein.length
-            if int(line[10]) > protein.length:
-                wrong_length += 1
 
             interpro = InterproDomain(
                 accession=line[7],   # Interpro Accession
@@ -168,12 +170,38 @@ def load_domains(proteins):
 
             interpro_domains[accession] = interpro
 
-        Domain(
-            interpro=interpro_domains[accession],
-            protein=protein,
-            start=int(line[11]),
-            end=int(line[10])
-        )
+        interpro = interpro_domains[accession]
+
+        similar_domains = [
+            # select similar domain occurances with criteria being:
+            domain for domain in protein.domains
+            # - the same interpro id
+            if domain.interpro == interpro and
+            # - overlapping ends
+            (domain.start <= start and domain.end >= end) and
+            # - at least 50% of common coverage for shorter occurance of domain
+            (
+                (min(domain.end, end) - max(domain.start, start))
+                / min(len(domain), end - start)
+                > 0.50
+            )
+        ]
+
+        if similar_domains:
+
+            assert len(similar_domains) == 1
+            domain = similar_domains[0]
+
+            domain.start = min(domain.start, start)
+            domain.end = max(domain.end, end)
+        else:
+
+            Domain(
+                interpro=interpro,
+                protein=protein,
+                start=start,
+                end=end
+            )
 
     parse_tsv_file('data/biomart_protein_domains_20072016.txt', parser)
 

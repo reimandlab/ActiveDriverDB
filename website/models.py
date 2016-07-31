@@ -346,6 +346,9 @@ class Domain(db.Model):
         # shorter than one aminoacid (or: certainly they have to be longer)
         assert False
 
+    def __len__(self):
+        return self.end - self.start
+
 
 class Mutation(db.Model):
     __tablename__ = 'mutation'
