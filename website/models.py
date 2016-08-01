@@ -208,6 +208,11 @@ class Protein(db.Model):
         return mutations_grouped
 
     @cached_property
+    def disorder_length(self):
+        """How many reidues are disordered."""
+        return sum([int(residue) for residue in self.disorder_map])
+
+    @cached_property
     def disorder_regions(self):
         """Transform binary disorder data into list of spans.
 

@@ -52,6 +52,7 @@
 
 <ul>
     <li>RefSeq: <a href="http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}">{{ protein.refseq }}</a>
+    <li>Disorder percentage: {{ protein.disorder_length / protein.length * 100 }}</a>
     <li><a href="{{ url_for('NetworkView:show', refseq=protein.refseq) }}">Show network</a>
 </ul>
 

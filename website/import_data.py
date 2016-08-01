@@ -31,8 +31,8 @@ def import_data():
     genes, proteins = create_proteins_and_genes()
     load_sequences(proteins)
     select_preferred_isoforms(genes)
-    load_domains(proteins)
     load_disorder(proteins)
+    load_domains(proteins)
     # cancers = load_cancers()
     # load_mutations(proteins, cancers)
     kinases, groups = load_sites(proteins)
@@ -117,18 +117,6 @@ def load_domains(proteins):
 
         nonlocal skipped, wrong_length, not_matching_chrom
 
-        # Temporary? - if no data about the domains, skip it.
-        if len(line) == 7:
-            return
-
-        try:
-            assert len(line) == 12
-        except AssertionError:
-            print(line, len(line))
-
-        # does start is lower than end?
-        assert int(line[11]) < int(line[10])
-
         try:
             protein = proteins[line[6]]  # by refseq
         except KeyError:
@@ -142,6 +130,19 @@ def load_domains(proteins):
             )
             """
             return
+
+        # If there is no data about the domains, skip this record
+        if len(line) == 7:
+            return
+
+        try:
+            assert len(line) == 12
+        except AssertionError:
+            print(line, len(line))
+
+        # does start is lower than end?
+        assert int(line[11]) < int(line[10])
+
         accession = line[7]
 
         # according to:
