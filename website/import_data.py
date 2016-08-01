@@ -51,12 +51,16 @@ def import_data():
         load_mimp_mutations(proteins)   # this requires having sites already loaded
     start = time.clock()
     with app.app_context():
-        proteins = {protein.refseq: protein for protein in Protein.query.all()}
+        proteins = get_proteins()
         import_mappings(proteins)
     end = time.clock()
     print('Imported mappings in:', end - start)
     remove_wrong_proteins(proteins)
     print('Memory usage after mappings: ', memory_usage())
+
+
+def get_proteins():
+    return {protein.refseq: protein for protein in Protein.query.all()}
 
 
 def buffered_readlines(file_handle, line_count=5000):
@@ -627,6 +631,62 @@ def read_mappings(directory, pattern):
                 yield line.decode("latin1")
 
         break   # TODO: remove this temporary constraint
+
+
+def chunked_list(full_list, chunk_size=50):
+    buffer = []
+    for element in tqdm(full_list):
+        buffer.append(element)
+        if len(buffer) >= chunk_size:
+            yield buffer
+            buffer = []
+    if buffer:
+        yield buffer
+
+
+def download_mutations_vcf(proteins):
+
+    from subprocess import Popen
+
+    result_filename = 'mutations.vcf'
+
+    sources = [
+        'https://dcc.icgc.org/api/v1/download?fn=/release_21/Summary/simple_somatic_mutation.aggregated.vcf.gz',
+        'ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar_20160705.vcf.gz',
+        'http://evs.gs.washington.edu/evs_bulk_data/ESP6500SI-V2-SSA137.GRCh38-liftover.snps_indels.vcf.tar.gz'
+    ]
+    name = sources[1]
+
+    ranges = [
+        '%s:%s-%s' % (
+            protein.gene.chrom,
+            protein.cds_start,
+            protein.cds_end
+        )
+        for protein in proteins.values()
+    ]
+
+    result_file = open(result_filename, 'a')
+
+    # load headers
+    Popen(
+        'tabix --only-header ' + name,
+        shell=True,
+        stdout=result_file
+    )
+
+    # load mutations
+    for sub_ranges in chunked_list(ranges):
+        command = 'tabix ' + name + ' ' + ' '.join(sub_ranges)
+        Popen(
+            command,
+            shell=True,
+            stdout=result_file
+        )
+
+    print('Last command executed: ' + command)
+
+    result_file.close()
 
 
 def import_mappings(proteins):
