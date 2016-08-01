@@ -611,12 +611,26 @@ def get_or_create(model, **kwargs):
         return model(**kwargs), True
 
 
-def import_mappings(proteins):
-    print('Importing mappings:')
-
-    files = get_files('data/200616/all_variants/playground', 'annot_*.txt.gz')
+def read_mappings(directory, pattern):
 
     import gzip
+
+    files = get_files(directory, pattern)
+
+    for filename in tqdm(files):
+
+        with gzip.open(filename, 'rb') as f:
+
+            next(f)  # skip the header
+
+            for line in buffered_readlines(f, 10000):
+                yield line.decode("latin1")
+
+        break   # TODO: remove this temporary constraint
+
+
+def import_mappings(proteins):
+    print('Importing mappings:')
 
     from helpers.bioinf import complement
     from helpers.bioinf import get_human_chromosomes
@@ -631,95 +645,86 @@ def import_mappings(proteins):
 
     cnt_old_prots, cnt_new_prots = 0, 0
 
-    for filename in tqdm(files):
+    for line in read_mappings(
+        'data/200616/all_variants/playground',
+        'annot_*.txt.gz'
+    ):
+        chrom, pos, ref, alt, prot = line.rstrip().split('\t')
 
-        with gzip.open(filename, 'rb') as f:
-            next(f)  # skip the header
-            for line in buffered_readlines(f, 10000):
+        assert chrom.startswith('chr')
+        chrom = chrom[3:]
 
-                line = line.decode("latin1")
-                chrom, pos, ref, alt, prot = line.rstrip().split('\t')
-                assert chrom.startswith('chr')
-                chrom = chrom[3:]
-                assert chrom in chromosomes
-                ref = ref.rstrip()
+        assert chrom in chromosomes
+        ref = ref.rstrip()
 
-                snv = make_snv_key(chrom, pos, ref, alt)
+        snv = make_snv_key(chrom, pos, ref, alt)
 
-                # new Coding Sequence Variants to be added to those already
-                # mapped from given `snv` (Single Nucleotide Variation)
-                new_variants = set()
+        # new Coding Sequence Variants to be added to those already
+        # mapped from given `snv` (Single Nucleotide Variation)
+        new_variants = set()
 
-                for dest in filter(bool, prot.split(',')):
-                    name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
-                    assert refseq.startswith('NM_')
-                    # refseq = int(refseq[3:])
-                    # name and refseq are redundant with respect one to another
+        for dest in filter(bool, prot.split(',')):
+            name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
+            assert refseq.startswith('NM_')
+            # refseq = int(refseq[3:])
+            # name and refseq are redundant with respect one to another
 
-                    assert exon.startswith('exon')
-                    exon = exon[4:]
-                    assert cdna_mut.startswith('c.')
+            assert exon.startswith('exon')
+            exon = exon[4:]
+            assert cdna_mut.startswith('c.')
 
-                    if (cdna_mut[2].lower() == ref and
-                            cdna_mut[-1].lower() == alt):
-                        strand = '+'
-                    elif (complement(cdna_mut[2]).lower() == ref and
-                          complement(cdna_mut[-1]).lower() == alt):
-                        strand = '-'
-                    else:
-                        raise Exception(line)
+            if (cdna_mut[2].lower() == ref and
+                    cdna_mut[-1].lower() == alt):
+                strand = '+'
+            elif (complement(cdna_mut[2]).lower() == ref and
+                    complement(cdna_mut[-1]).lower() == alt):
+                strand = '-'
+            else:
+                raise Exception(line)
 
-                    cdna_pos = cdna_mut[3:-1]
-                    assert prot_mut.startswith('p.')
-                    # we can check here if a given reference nuc is consistent
-                    # with the reference amino acid. For example cytosine in
-                    # reference implies that there should't be a methionine,
-                    # glutamic acid, lysine nor arginine. The same applies to
-                    # alternative nuc/aa and their combinations (having
-                    # references (nuc, aa): (G, K) and alt nuc C defines that
-                    # the alt aa has to be Asparagine (N) - no other is valid).
-                    # Note: it could be used to compress the data in memory too
-                    aa_ref = prot_mut[2]
-                    aa_pos = prot_mut[3:-1]
-                    aa_alt = prot_mut[-1]
+            cdna_pos = cdna_mut[3:-1]
+            assert prot_mut.startswith('p.')
+            # we can check here if a given reference nuc is consistent
+            # with the reference amino acid. For example cytosine in
+            # reference implies that there should't be a methionine,
+            # glutamic acid, lysine nor arginine. The same applies to
+            # alternative nuc/aa and their combinations (having
+            # references (nuc, aa): (G, K) and alt nuc C defines that
+            # the alt aa has to be Asparagine (N) - no other is valid).
+            # Note: it could be used to compress the data in memory too
+            aa_ref = prot_mut[2]
+            aa_pos = prot_mut[3:-1]
+            aa_alt = prot_mut[-1]
 
-                    try:
-                        # try to get it from cache (`proteins` dictionary)
-                        protein = proteins[refseq]
-                        cnt_old_prots += 1
-                        # if cache has been flushed, retrive from database
-                        if not protein:
-                            protein = Protein.query.filter_by(refseq=refseq).\
-                                first()
-                            proteins[refseq] = protein
-                    except KeyError:
-                        # if the protein was not in the cache,
-                        # create it and add to the cache
-                        print(
-                            'Create protein from mappings:', refseq,
-                            'it will not have any other data!'
-                        )
-                        gene, _ = get_or_create(Gene, name=name)
-                        protein = Protein(refseq=refseq, gene=gene)
-                        proteins[refseq] = protein
-                        cnt_new_prots += 1
-                        db.session.add(protein)
-                        db.session.flush()
-                        db.session.refresh(protein)
+            try:
+                # try to get it from cache (`proteins` dictionary)
+                protein = proteins[refseq]
+                cnt_old_prots += 1
+                # if cache has been flushed, retrive from database
+                if not protein:
+                    protein = Protein.query.filter_by(refseq=refseq).\
+                        first()
+                    proteins[refseq] = protein
+            except KeyError:
+                # if the protein was not in the cache,
+                # create it and add to the cache
+                gene, _ = get_or_create(Gene, name=name)
+                protein = Protein(refseq=refseq, gene=gene)
+                proteins[refseq] = protein
+                cnt_new_prots += 1
+                db.session.add(protein)
+                db.session.flush()
+                db.session.refresh(protein)
 
-                    assert int(aa_pos) == (int(cdna_pos) - 1) // 3 + 1
+            assert int(aa_pos) == (int(cdna_pos) - 1) // 3 + 1
 
-                    # add new item, emulating set update
-                    item = strand + aa_ref + aa_alt + ':'.join((
-                        '%x' % int(cdna_pos), exon, '%x' % protein.id))
-                    new_variants.add(item)
-                    key = protein.gene.name + ' ' + aa_ref + aa_pos + aa_alt
-                    bdb_refseq[key].update({refseq})
+            # add new item, emulating set update
+            item = strand + aa_ref + aa_alt + ':'.join((
+                '%x' % int(cdna_pos), exon, '%x' % protein.id))
+            new_variants.add(item)
+            key = protein.gene.name + ' ' + aa_ref + aa_pos + aa_alt
+            bdb_refseq[key].update({refseq})
 
-                bdb[snv].update(new_variants)
+        bdb[snv].update(new_variants)
 
-        print(filename, 'loaded succesfully')
-        break   # TODO: remove this temporary constraint
-
-    print('Read', len(files), 'files with genome -> protein mappings, ')
     print(cnt_new_prots, 'new proteins created & ', cnt_old_prots, 'used')
