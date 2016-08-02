@@ -8,17 +8,59 @@ var Tracks = function ()
     var scalableArea
     var needle_plot
 
+    var config = {
+        animations_speed: 300,
+        box: null,
+		min_zoom: 1,
+        max_zoom: 10
+
+    }
+
+    function configure(new_config)
+    {
+        // Automatical configuration update:
+        update_object(config, new_config)
+    }
+
     function zoom(direction)
     {
         // scale down slower toward 0
-        setZoom(scale + direction * scale / 15)
+        new_zoom = scale + direction * scale / 15
+
+        if(new_zoom > config.max_zoom)
+        {
+            _setZoom(config.max_zoom)
+        }
+        else if(new_zoom < config.min_zoom)
+        {
+            _setZoom(config.min_zoom)
+        }
+        else
+        {
+            _setZoom(new_zoom)
+        }
     }
 
-    function setZoom(new_scale)
+    function _setZoom(new_zoom, stop_callback)
     {
-        scale = new_scale
-        scalableArea.css('transform', 'scaleX(' + scale + ')')
-        if(needle_plot)
+        content_width  = scalableArea.get(0).scrollWidth
+        width = scalableArea.width()
+
+		$({scale: scale})
+			.animate(
+				{scale: new_zoom},
+				{
+					duration: config.animations_speed,
+					step: function(now)
+					{
+						scalableArea.css('transform', 'scaleX(' + width / content_width * now + ')')
+					}
+				}
+			)
+
+        scale = new_zoom
+
+        if(needle_plot && !stop_callback)
         {
             needle_plot.setZoom(scale, false)
         }
@@ -38,7 +80,14 @@ var Tracks = function ()
     {
         var pos = scrollArea.scrollLeft()
         var len = scrollArea.width()
-        scrollArea.stop().animate({scrollLeft: pos + len * direction }, '300', 'swing')
+
+        scrollArea
+			.stop()
+			.animate(
+				{scrollLeft: pos + len * direction },
+				config.animations_speed,
+				'quad'
+			)
     }
 
 	function scrollLeft()
@@ -71,7 +120,7 @@ var Tracks = function ()
         var pos = $(input).val() - 1
 
         var charSize = getCharSize(sequence)
-        area.animate({scrollLeft: pos * charSize }, '300', 'swing')
+        area.animate({scrollLeft: pos * charSize }, config.animations_speed, 'quad')
 	}
 
     function initButtons(buttons, func, context)
@@ -107,9 +156,10 @@ var Tracks = function ()
     }
 
 	var publicSpace = {
-		init: function(data)
+		init: function(new_config)
 		{
-            var box = $(data.box)
+			configure(new_config)
+            var box = $(config.box)
 
             var tracks = box.find('.tracks')
 
@@ -141,11 +191,13 @@ var Tracks = function ()
             {
                 $(controls[j]).show()
             }
+            _setZoom(1)
 		},
         setNeedlePlotInstance: function(instance)
         {
             needle_plot = instance
-        }
+        },
+        setZoom: _setZoom
 	}
 
 	return publicSpace
