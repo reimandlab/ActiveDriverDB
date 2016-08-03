@@ -104,6 +104,15 @@ var NeedlePlot = function ()
 			.attr('class', 'paddings')
 			.attr('transform', 'translate(' + config.paddings.left + ' , 0)')
 
+		vertical_scalable = paddings.append('g')
+			.attr('class', 'vertical scalable')
+
+        var leftPadding = paddings.append('rect')
+            .attr('fill', 'white')
+            .attr('width', config.paddings.left)
+            .attr('height', config.height)
+			.attr('transform', 'translate(-' + config.paddings.left + ' , 0)')
+
         var yScale = d3.scale.linear()
             .domain([0, config.y_scale])
             .range([config.height - config.paddings.bottom, padding])
@@ -127,9 +136,6 @@ var NeedlePlot = function ()
             .orient('bottom')
             .scale(xScale)
 
-		vertical_scalable = paddings.append('g')
-			.attr('class', 'vertical scalable')
-
 		var bottom_axis_pos = config.height - config.paddings.bottom
 
         var xAxisGroup = paddings.append('g')
@@ -152,7 +158,6 @@ var NeedlePlot = function ()
 			.append('rect')
 			.attr('width', function(d){ return d.end - d.start})
 			.attr('height', site_height)
-
 
     }
 
