@@ -81,14 +81,21 @@
         tracks.init({
             box: document.getElementById('tracks-box')
         })
+        max_zoom = tracks.adjustMaxZoom()
         var params = {
+            max_zoom: max_zoom,
             element: document.getElementById('plot_area'),
             mutations: '{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.active.url_string) }}',
             sites: '{{ url_for('ProteinView:sites', refseq=protein.refseq) }}',
             sequenceLength: {{ protein.sequence | length }},
-            name: '{{ protein.name }}',
-            refseq: '{{ protein.refseq }}',
+            name: '{{ protein.gene.name }}',
+            legends:
+            {
+                x: null,
+                y: '# of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
+            },
             zoom_callback: tracks.setZoom,
+            position_callback: tracks.setAAPosition,
             width: $('#tracks-box').width()
         }
         var needle_plot = NeedlePlot()
