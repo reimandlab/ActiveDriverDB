@@ -40,7 +40,7 @@
 <ol class="breadcrumb">
   <li><a href="/">Home</a></li>
   <li><a href="{{ url_for('ProteinView:index') }}">Proteins</a></li>
-  <li class="active">{{ protein.gene.name }}</li>
+  <li><a href="{{ url_for('general.gene_view', gene_name=protein.gene.name) }}">{{ protein.gene.name }}</a></li>
   <li class="active">{{ protein.refseq }}</li>
 </ol>
 
@@ -58,6 +58,12 @@
     </div>
   </div>
 </div>
+
+Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
+{% set other_isoforms_count = protein.gene.isoforms | length - 1 %}
+{% if other_isoforms_count > 0 %}
+    There {{ 'is' if other_isoforms_count == 1 else 'are' }} <a href="{{ url_for('general.gene_view', gene_name=protein.gene.name) }}">{{ other_isoforms_count }} isoform{{ 's' if other_isoforms_count > 1}} more</a> for this protein in the database.
+{% endif %}
 
 <ul>
     <li>RefSeq: <a href="http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}">{{ protein.refseq }}</a>
