@@ -12,7 +12,33 @@ var NeedlePlot = function ()
       'other': 'grey'
     }
 
+    var legend = {
+        x:
+        {
+            obj: null
+        },
+        y:
+        {
+            obj: null
+        }
+    }
+
+    var Axis = function()
+    {
+        return {
+            scale: null,
+            group: null,
+            obj: null
+        }
+    }
+
+    var axes = {
+        x: new Axis(),
+        y: new Axis()
+    }
+
     var config = {
+        site_height: 10,
         animations_speed: 200,
         // 90 is width of description
         paddings: {bottom: 30, top: 0, left: 89, right: 1},
@@ -48,6 +74,27 @@ var NeedlePlot = function ()
         }
 	}
 
+    function _adjustPlotDimensions()
+    {
+        if(!config.width && !config.height)
+        {
+            config.width = config.sequenceLength
+        }
+
+        if(config.height && config.width)
+        {
+            config.ratio = config.height / config.width
+        }
+        else if(!config.height)
+        {
+            config.height = config.width * config.ratio
+        }
+        else if(!config.width)
+        {
+            config.height = config.width * config.ratio
+        }
+    }
+
     function configure(new_config)
     {
 		allowed_remote_data = ['mutations', 'sites']
@@ -62,7 +109,7 @@ var NeedlePlot = function ()
         update_object(config, new_config)
 
         // Manual configuration patching:
-        config.height = config.height || config.width * config.ratio
+        _adjustPlotDimensions()
 
     }
 
@@ -83,12 +130,46 @@ var NeedlePlot = function ()
         return needles
     }
 
-    function createPlot()
+    function _rescalePlot()
     {
+        svg
+            .attr('viewBox', '0 0 ' + config.width + ' ' + config.height)
+
 		unit = (config.width - config.paddings.left - config.paddings.right) / config.sequenceLength
 
-		var padding = 35
+        axes.x.scale
+            .range([0, config.width - config.paddings.left - config.paddings.right])
 
+        axes.y.scale
+            .range([config.height - config.paddings.bottom, config.paddings.bottom])
+
+        axes.y.obj.scale(axes.y.scale)
+        axes.y.group.call(axes.y.obj)
+
+		var bottom_axis_pos = config.height - config.paddings.bottom
+
+        axes.x.obj.scale(axes.x.scale)
+        axes.x.group
+	        .attr('transform', 'translate(0, ' + bottom_axis_pos + ')')
+            .call(axes.x.obj)
+
+        sites
+            .attr('transform', function(d)
+                {
+                    return 'translate(' + [posToX(d.start), bottom_axis_pos - config.site_height] + ')'
+                }
+            )
+
+        leftPadding.attr('height', config.height)
+
+        if(legend.x.obj)
+            legend.x.obj.attr('x', config.width / 2)
+        if(legend.y.obj)
+            legend.y.obj.attr('transform','translate(' + -40 + ' ' + config.height / 2 + ') rotate(-90)')
+    }
+
+    function createPlot()
+    {
         zoom = d3.behavior.zoom()
             .scaleExtent([config.min_zoom, config.max_zoom])
             .on('zoom', zoomAndMove)
@@ -96,7 +177,6 @@ var NeedlePlot = function ()
 
         svg = d3.select(config.element).append('svg')
             .attr('preserveAspectRatio', 'xMinYMin meet')
-            .attr('viewBox', '0 0 ' + config.width + ' ' + config.height)
             .attr('class', 'svg-content-responsive')
             .call(zoom)
 
@@ -107,57 +187,68 @@ var NeedlePlot = function ()
 		vertical_scalable = paddings.append('g')
 			.attr('class', 'vertical scalable')
 
-        var leftPadding = paddings.append('rect')
+        leftPadding = paddings.append('rect')
             .attr('fill', 'white')
             .attr('width', config.paddings.left)
-            .attr('height', config.height)
 			.attr('transform', 'translate(-' + config.paddings.left + ' , 0)')
 
-        var yScale = d3.scale.linear()
+        axes.y.scale = d3.scale.linear()
             .domain([0, config.y_scale])
-            .range([config.height - config.paddings.bottom, padding])
 
-        var yAxis = d3.svg.axis()
+        axes.y.obj = d3.svg.axis()
 			.tickFormat(d3.format('d'))
             .orient('left')
-            .scale(yScale)
+            .scale(axes.y.scale)
 
-        var yAxisGroup = paddings.append('g')
+        axes.y.group = paddings.append('g')
 			.attr('class', 'y axis')
-            .call(yAxis)
+            .call(axes.y.obj)
 
-		domain = [0, config.sequenceLength]
+        axes.x.scale = d3.scale.linear()
+            .domain([0, config.sequenceLength])
 
-        xScale = d3.scale.linear()
-            .domain(domain)
-            .range([0, config.width - config.paddings.left - config.paddings.right])
-
-        xAxis = d3.svg.axis()
+        axes.x.obj = d3.svg.axis()
             .orient('bottom')
-            .scale(xScale)
+            .scale(axes.x.scale)
 
-		var bottom_axis_pos = config.height - config.paddings.bottom
-
-        var xAxisGroup = paddings.append('g')
+        axes.x.group = paddings.append('g')
 			.attr('class', 'x axis')
-			.attr('transform', 'translate(0, ' + bottom_axis_pos + ')')
-            .call(xAxis)
+            .call(axes.x.obj)
 
         vis = vertical_scalable.append('g')
 
-		var site_height = 10
+        if(config.legends.x)
+        {
+            legend.x.obj = paddings.append('text')
+                .attr('class', 'label')
+                .text(config.legends.x)
+                .attr('x', config.width / 2)
+                .attr('y', config.height - config.paddings.bottom)
+                .attr('dy','2.4em')
+                .style('text-anchor','middle')
+        }
 
-        var sites = vis.selectAll('.site')
+        if(config.legends.y)
+        {
+            legend.y.obj = paddings.append('text')
+                .attr('class', 'label')
+                .text(config.legends.y)
+                .style('text-anchor','middle')
+        }
+
+
+        sites = vis.selectAll('.site')
             .data(config.sites)
             .enter()
             .append('g')
-            .attr('transform', function(d){ return 'translate(' + [posToX(d.start), bottom_axis_pos - site_height] + ')' })
             .attr('class', 'site')
+
+        _rescalePlot()
 
         var site_boxes = sites
 			.append('rect')
 			.attr('width', function(d){ return d.end - d.start})
-			.attr('height', site_height)
+			.attr('height', config.site_height)
 
     }
 
@@ -224,9 +315,8 @@ var NeedlePlot = function ()
         var canvas = canvasAnimated(animate)
         var axis_coverage = xAxisCoverage()
         var start = xToPos(position)
-        domain = [start, start + axis_coverage]
-		xScale.domain(domain)
-		canvas.select('.x.axis').call(xAxis)
+		axes.x.scale.domain([start, start + axis_coverage])
+		canvas.select('.x.axis').call(axes.x.obj)
     }
 
     function refresh(animate)
@@ -237,12 +327,16 @@ var NeedlePlot = function ()
 
     function zoomAndMove()
     {
-		_setZoom(d3.event.scale)
-		_setPosition(d3.event.translate[0])
-
-        refresh()
+		_setZoomAndMove(d3.event.scale, d3.event.translate[0])
     }
 
+    function _setZoomAndMove(new_scale, new_position, animate)
+    {
+		_setZoom(new_scale)
+		_setPosition(new_position)
+
+        refresh(animate)
+    }
 
 	function _setZoom(new_scale, stop_callback)
 	{
@@ -279,26 +373,6 @@ var NeedlePlot = function ()
 			needles = makeNeedles()
             createPlot()
 
-			if(config.legends.x)
-			{
-				paddings.append('text')
-					.attr('class', 'label')
-					.text(config.legends.x)
-					.attr('x', config.width / 2)
-					.attr('y', config.height - config.paddings.bottom)
-					.attr('dy','2.4em')
-					.style('text-anchor','middle')
-			}
-
-			if(config.legends.y)
-			{
-				paddings.append('text')
-					.attr('class', 'label')
-					.text(config.legends.y)
-					.style('text-anchor','middle')
-					.attr('transform','translate(' + -40 + ' ' + config.height / 2 + ') rotate(-90)')
-			}
-
         },
         setZoom: _setZoom,
 		setPosition: _setPosition,
@@ -307,6 +381,18 @@ var NeedlePlot = function ()
             var converted_position = posToX(-aa_position) * scale
             _setPosition(converted_position, stop_callback)
             refresh(animate)
+        },
+        setSize: function(width, height)
+        {
+            config.width = width
+            config.height = height
+
+            _adjustPlotDimensions()
+
+            _rescalePlot()
+
+            // refresh zoom and position with current values
+            _setZoomAndMove(scale, position, true)
         }
     }
 

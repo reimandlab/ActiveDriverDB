@@ -101,5 +101,11 @@
         var needle_plot = NeedlePlot()
         needle_plot.init(params)
         tracks.setNeedlePlotInstance(needle_plot)
+        $(window).on('resize', function()
+            {
+                needle_plot.setSize($('#tracks-box').width(), null)
+            }
+        )
+
     </script>
 {% endblock %}
