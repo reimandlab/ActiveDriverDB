@@ -52,17 +52,11 @@ var Tracks = function ()
     function _setAAPosition(new_position, stop_callback)
     {
         if(new_position < 0)
-        {
             position = 0
-        }
         else if(new_position > config.sequenceLength)
-        {
             position = config.sequenceLength
-        }
         else
-        {
             position = new_position
-        }
 
         scrollTo(position)
 
