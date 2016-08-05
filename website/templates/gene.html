@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %} {{ gene.name }} - {{ super() }} {% endblock %}
+
+
+{% block content %}
+
+<h3>{{ gene.name }}</h3>
+
+<ol class="breadcrumb">
+  <li><a href="/">Home</a></li>
+  <li><a href="{{ url_for('ProteinView:index') }}">Proteins</a></li>
+  <li class="active">{{ gene.name }}</li>
+</ol>
+
+{% with gene=gene %}
+  {% include 'search/gene_results.html' %}
+{% endwith %}
+
+{% endblock %}
