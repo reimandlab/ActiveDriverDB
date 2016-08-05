@@ -34,7 +34,6 @@ def import_data():
     load_disorder(proteins)
     load_domains(proteins)
     # cancers = load_cancers()
-    # load_mutations(proteins, cancers)
     kinases, groups = load_sites(proteins)
     kinases, groups = load_kinase_classification(proteins, kinases, groups)
     print('Adding kinases to the session...')
@@ -46,17 +45,22 @@ def import_data():
     # print('Addeding cancers to the session...')
     # db.session.add_all(cancers.values())
     print('Memory usage before commit: ', memory_usage())
-    db.session.commit()
+    # db.session.commit()
     with app.app_context():
-        load_mimp_mutations(proteins)   # this requires having sites already loaded
+        # loading mimp data requires having sites already loaded
+        mimps = load_mimp_mutations(proteins)
+    db.session.add_all(mimps)
     start = time.clock()
     with app.app_context():
         proteins = get_proteins()
         import_mappings(proteins)
     end = time.clock()
     print('Imported mappings in:', end - start)
-    remove_wrong_proteins(proteins)
     print('Memory usage after mappings: ', memory_usage())
+    print('Second commit: ', memory_usage())
+    db.session.commit()
+    load_mutations(proteins)
+    remove_wrong_proteins(proteins)
 
 
 def get_proteins():
@@ -421,24 +425,53 @@ def load_cancers():
 
 
 def load_mutations(proteins, cancers):
-    with open('data/ad_muts.tsv', 'r') as f:
-        header = f.readline().rstrip().split('\t')
-        assert header == ['gene', 'cancer_type', 'sample_id', 'position',
-                          'wt_residue', 'mut_residue']
-        for line in f:
-            line = line.rstrip().split('\t')
-            gene, _, sample_data, position, wt_residue, mut_residue = line
-            _, _, cancer_code, sample_id, _, _ = sample_data.split(' ')
 
-            Mutation(
-                cancers[cancer_code],
-                sample_id,
-                position,
-                wt_residue,
-                mut_residue,
-                proteins[gene]
+    print('Loading mutations:')
+
+    files = {
+        'cancer': 'data/mutations/TCGA_muts_annotated.txt'
+    }
+
+    mutations_list = []
+
+    def cancer_parser(line):
+
+        nonlocal mutations_list
+
+        mutations = line[9].split(',')
+
+        for mutation in mutations:
+
+            refseq = mutation[1]
+            mut = mutation[4]
+            pos = int(mut[1:-1])
+
+            assert protein.sequence[pos - 1] == mut[0]
+
+            mutations_list.append(
+                pos,
+                mut[-1],
+                proteins[refseq],
             )
+
+    parse_tsv_file(files['cancer'], cancer_parser)
+
+    db.session.bulk_insert_mappings(
+        Mutation,
+        [
+            dict(
+                zip(
+                    ('position', 'mut_residue', 'protein'),
+                    mutation
+                )
+                for mutation in mutations_list
+            )
+        ]
+    )
+
     print('Mutations loaded')
+
+    return mutations_list
 
 
 def load_mimp_mutations(proteins):
@@ -449,12 +482,16 @@ def load_mimp_mutations(proteins):
 
     print('Loading mimp mutations:')
 
+    mimps = []
+
     header = [
         'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
         'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
     ]
 
     def parser(line):
+        nonlocal mimps
+
         refseq = line[0]
         mut = line[1]
         psite_pos = line[2]
@@ -468,7 +505,7 @@ def load_mimp_mutations(proteins):
 
         assert line[13] in ('gain', 'loss')
 
-        Mutation(
+        mimps.append(Mutation(
             position=pos,
             mut_residue=mut[-1],
             protein=protein,
@@ -481,11 +518,13 @@ def load_mimp_mutations(proteins):
             effect=1 if line[13] == 'gain' else 0,
             pwm=line[9],
             pwm_family=line[10]
-        )
+        ))
 
     parse_tsv_file('data/all_mimp_annotations.tsv_head', parser, header)
 
-    print('Mutations loaded')
+    print('MIMP mutations loaded')
+
+    return mimps
 
 
 def get_preferred_gene_isoform(gene_name):
@@ -766,6 +805,8 @@ def import_mappings(proteins):
                         first()
                     proteins[refseq] = protein
             except KeyError:
+                continue
+                """
                 # if the protein was not in the cache,
                 # create it and add to the cache
                 gene, _ = get_or_create(Gene, name=name)
@@ -775,6 +816,7 @@ def import_mappings(proteins):
                 db.session.add(protein)
                 db.session.flush()
                 db.session.refresh(protein)
+                """
 
             assert int(aa_pos) == (int(cdna_pos) - 1) // 3 + 1
 

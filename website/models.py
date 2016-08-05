@@ -199,8 +199,7 @@ class Protein(db.Model):
             # for now, I am grouping just by position and cancer
 
             key = (mutation.position,
-                   mutation.mut_residue,
-                   mutation.cancer.name)
+                   mutation.mut_residue)
             try:
                 mutations_grouped[key] += [mutation]
             except KeyError:
@@ -290,7 +289,7 @@ class Cancer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16))
     name = db.Column(db.Text)
-    mutations = db.relationship('Mutation', backref='cancer')
+    # mutations = db.relationship('Mutation', backref='cancer')
 
     def __repr__(self):
         return '<Cancer with code: {0}, named: {1}>'.format(
@@ -362,7 +361,7 @@ class Mutation(db.Model):
     wt_residue = db.Column(db.String(1))
     mut_residue = db.Column(db.String(1))
     sample_id = db.Column(db.String(64))
-    cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
+    # cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
     pwm = db.Column(db.Text)
