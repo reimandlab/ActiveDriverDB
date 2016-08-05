@@ -45,7 +45,7 @@ def import_data():
     # print('Addeding cancers to the session...')
     # db.session.add_all(cancers.values())
     print('Memory usage before commit: ', memory_usage())
-    # db.session.commit()
+    db.session.commit()
     with app.app_context():
         # loading mimp data requires having sites already loaded
         mimps = load_mimp_mutations(proteins)
@@ -272,9 +272,11 @@ def remove_wrong_proteins(proteins):
     lack_of_stop = 0
     no_stop_at_the_end = 0
 
+    print('Removing proteins with misplaced stop codons:')
+
     to_remove = set()
 
-    for protein in proteins.values():
+    for protein in tqdm(proteins.values()):
         hit = False
         if '*' in protein.sequence[:-1]:
             stop_inside += 1
@@ -424,7 +426,7 @@ def load_cancers():
     return cancers
 
 
-def load_mutations(proteins, cancers):
+def load_mutations(proteins):
 
     print('Loading mutations:')
 
@@ -432,11 +434,12 @@ def load_mutations(proteins, cancers):
         'cancer': 'data/mutations/TCGA_muts_annotated.txt'
     }
 
-    mutations_list = []
+    from collections import Counter
+    mutations_counter = Counter()
 
     def cancer_parser(line):
 
-        nonlocal mutations_list
+        nonlocal mutations_counter
 
         mutations = line[9].split(',')
 
@@ -448,24 +451,26 @@ def load_mutations(proteins, cancers):
 
             assert protein.sequence[pos - 1] == mut[0]
 
-            mutations_list.append(
-                pos,
-                mut[-1],
-                proteins[refseq],
-            )
+            mutations_counter[
+                (
+                    pos,
+                    mut[-1],
+                    proteins[refseq].id
+                )
+            ] += 1
 
     parse_tsv_file(files['cancer'], cancer_parser)
 
     db.session.bulk_insert_mappings(
         Mutation,
         [
-            dict(
-                zip(
-                    ('position', 'mut_residue', 'protein'),
-                    mutation
-                )
-                for mutation in mutations_list
-            )
+            {
+                'position': mutation[0],
+                'mut_residue': mutation[1],
+                'protein_id': mutation[2],
+                'count': count
+            }
+            for mutation, count in mutations_counter.items()
         ]
     )
 

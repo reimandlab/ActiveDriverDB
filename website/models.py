@@ -148,6 +148,8 @@ class Protein(db.Model):
     cds_start = db.Column(db.Integer)
     cds_end = db.Column(db.Integer)
 
+    count = db.Column(db.Integer)
+
     sites = db.relationship(
         'Site',
         order_by='Site.position',
