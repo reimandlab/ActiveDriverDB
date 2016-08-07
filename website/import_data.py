@@ -26,41 +26,40 @@ def system_memory_percent():
     return psutil.virtual_memory().percent
 
 
-def import_data():
-    global genes
-    genes, proteins = create_proteins_and_genes()
-    load_sequences(proteins)
-    select_preferred_isoforms(genes)
-    load_disorder(proteins)
-    load_domains(proteins)
-    # cancers = load_cancers()
-    kinases, groups = load_sites(proteins)
-    kinases, groups = load_kinase_classification(proteins, kinases, groups)
-    print('Adding kinases to the session...')
-    db.session.add_all(kinases.values())
-    print('Adding groups to the session...')
-    db.session.add_all(groups.values())
-    del kinases
-    del groups
-    # print('Addeding cancers to the session...')
-    # db.session.add_all(cancers.values())
-    print('Memory usage before commit: ', memory_usage())
-    db.session.commit()
-    with app.app_context():
-        # loading mimp data requires having sites already loaded
-        mimps = load_mimp_mutations(proteins)
-    db.session.add_all(mimps)
-    start = time.clock()
-    with app.app_context():
-        proteins = get_proteins()
-        import_mappings(proteins)
-    end = time.clock()
-    print('Imported mappings in:', end - start)
-    print('Memory usage after mappings: ', memory_usage())
-    print('Second commit: ', memory_usage())
-    db.session.commit()
-    load_mutations(proteins)
-    remove_wrong_proteins(proteins)
+def import_data(reload_relational=False, import_mappings=False):
+    if reload_relational:
+        global genes
+        genes, proteins = create_proteins_and_genes()
+        load_sequences(proteins)
+        select_preferred_isoforms(genes)
+        load_disorder(proteins)
+        load_domains(proteins)
+        # cancers = load_cancers()
+        kinases, groups = load_sites(proteins)
+        kinases, groups = load_kinase_classification(proteins, kinases, groups)
+        print('Adding kinases to the session...')
+        db.session.add_all(kinases.values())
+        print('Adding groups to the session...')
+        db.session.add_all(groups.values())
+        del kinases
+        del groups
+        # print('Addeding cancers to the session...')
+        # db.session.add_all(cancers.values())
+        print('Memory usage before commit: ', memory_usage())
+        db.session.commit()
+        with app.app_context():
+            # loading mimp data requires having sites already loaded
+            mimps = load_mimp_mutations(proteins)
+        db.session.add_all(mimps)
+        print('Memory usage after mappings: ', memory_usage())
+        print('Second commit: ', memory_usage())
+        db.session.commit()
+        load_mutations(proteins)
+        remove_wrong_proteins(proteins)
+    if import_mappings:
+        with app.app_context():
+            proteins = get_proteins()
+            import_mappings(proteins)
 
 
 def get_proteins():
@@ -673,8 +672,6 @@ def read_mappings(directory, pattern):
 
             for line in buffered_readlines(f, 10000):
                 yield line.decode("latin1")
-
-        break   # TODO: remove this temporary constraint
 
 
 def chunked_list(full_list, chunk_size=50):
