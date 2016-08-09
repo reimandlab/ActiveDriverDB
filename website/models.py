@@ -379,6 +379,14 @@ class Domain(db.Model):
     def __len__(self):
         return self.end - self.start
 
+    def __repr__(self):
+        return '<Domain "{0}" in {1}, at [{2}, {3}] >'.format(
+            self.interpro.accession,
+            self.protein.refseq,
+            self.start,
+            self.end
+        )
+
 
 def mutation_details_relationship(class_name):
     return db.relationship(
@@ -421,6 +429,13 @@ class Mutation(db.Model):
         'Site',
         secondary=make_association_table('site.id', 'mutation.id')
     )
+
+    def __repr__(self):
+        return '<Mutation in {1}, at {2} aa, substitution to: {3}>'.format(
+            self.protein.refseq,
+            self.position,
+            self.alt
+        )
 
     @cached_property
     def is_confirmed(self):
