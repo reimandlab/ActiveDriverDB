@@ -435,11 +435,27 @@ def load_mutations(proteins):
     print('Loading mutations:')
 
     # a counter to give mutations.id as pk
-    mutation_id = 0
     mutations = {}
 
     skipped = set()
     wrong_seq = set()
+
+    def flush_basic_mutations(mutations):
+        db.session.bulk_insert_mappings(
+            Mutation,
+            [
+                {
+                    'position': mutation[0],
+                    'alt': mutation[1],
+                    'protein_id': mutation[2],
+                    'id': data[0],
+                    'is_ptm': data[1]
+                }
+                for mutation, data in mutations.items()
+            ]
+        )
+
+    mutations_cnt = 0
 
     for line in read_mappings(
         'data/200616/all_variants/playground',
@@ -465,15 +481,10 @@ def load_mutations(proteins):
                 try:
                     assert ref == protein.sequence[pos - 1]
                 except AssertionError:
-                    wrong_seq.add((data[0], refseq, protein.sequence, (ref, pos, alt)))
+                    wrong_seq.add(
+                        (data[0], refseq, protein.sequence, (ref, pos, alt))
+                    )
                     # TODO: what to do?
-                    """
-                    print(ref)
-                    print(protein)
-                    print(protein.sequence)
-                    print(data)
-                    print(key)
-                    """
 
                 key = (pos, protein.id, alt)
 
@@ -481,25 +492,95 @@ def load_mutations(proteins):
                     # TODO: what to do?
                     pass
                 else:
-                    mutations[key] = (mutation_id)
-                    mutation_id += 1
+                    mutations[key] = (mutations_cnt, True)
+                    mutations_cnt += 1
 
-    db.session.bulk_insert_mappings(
-        Mutation,
-        [
-            {
-                'position': mutation[0],
-                'mut_residue': mutation[1],
-                'protein_id': mutation[2],
-                'id': generated_id
-            }
-            for mutation, generated_id in mutations.items()
-        ]
-    )
+        if mutations_cnt % 100000 == 0 and system_memory_percent() > 40:
+            flush_basic_mutations(mutations)
+            mutations = {}
+
     print('Skipped mutations belonging to proteins (not in database):')
     print(skipped)
-    print('Skipped mutations where reference aa do not correspond to protein sequence:')
+    print('Skipped mutations where ref aa do not correspond to sequence:')
     print(wrong_seq)
+
+    # load("all_mimp_annotations.rsav")
+    # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
+    # row.names=F, quote=F, sep='\t')
+
+    print('Loading mimp mutations:')
+
+    mimps = []
+
+    header = [
+        'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
+        'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
+    ]
+
+    def parser(line):
+        nonlocal mimps
+
+        refseq = line[0]
+        mut = line[1]
+        psite_pos = line[2]
+
+        protein = proteins[refseq]
+        ref, pos, alt = decode_mutation(mut)
+        assert protein.sequence[pos - 1] == ref
+
+        # TBD
+        # print(line[9], line[10], protein.gene.name)
+
+        assert line[13] in ('gain', 'loss')
+
+        key = (pos, protein.id, alt)
+
+        if key in mutations:
+            mutation_id = mutations[key][0]
+        else:
+            try:
+                mutation = Mutation.query.filter_by(position=pos, protein_id=protein.id, alt=alt).one()
+                mutation_id = mutation.id
+            except Exception:
+                mutation_id = mutations_cnt
+                mutations[key] = (mutations_cnt, True)
+                mutations_cnt += 1
+
+        # TODO: sites
+        """
+        sites=[
+            site
+            for site in protein.sites
+            if site.position == psite_pos
+        ],
+        """
+        mimps.append(
+            mutation_id,
+            int(line[3]),
+            1 if line[13] == 'gain' else 0,
+            line[9],
+            line[10],
+            len(mimps)
+        )
+
+    parse_tsv_file('data/all_mimp_annotations.tsv_head', parser, header)
+
+    flush_basic_mutations(mutations)
+
+    db.session.bulk_insert_mappings(
+        MIMPMutation,
+        [
+            dict(
+                zip(
+                    ('mutation_id', 'position_in_motif', 'effect',
+                     'pwm', 'pwm_family', 'id'),
+                    mutation_metadata
+                )
+            )
+            for mutation_metadata in mimps
+        ]
+    )
+    print('MIMP mutations loaded')
 
     """
     files = {
@@ -551,59 +632,6 @@ def load_mutations(proteins):
 
     print('Mutations loaded')
     """
-
-
-def load_mimp_mutations(proteins):
-
-    # load("all_mimp_annotations.rsav")
-    # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
-    # row.names=F, quote=F, sep='\t')
-
-    print('Loading mimp mutations:')
-
-    mimps = []
-
-    header = [
-        'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
-        'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
-    ]
-
-    def parser(line):
-        nonlocal mimps
-
-        refseq = line[0]
-        mut = line[1]
-        psite_pos = line[2]
-
-        protein = proteins[refseq]
-        pos = int(mut[1:-1])
-        assert protein.sequence[pos - 1] == mut[0]
-
-        # TBD
-        # print(line[9], line[10], protein.gene.name)
-
-        assert line[13] in ('gain', 'loss')
-
-        mimps.append(Mutation(
-            position=pos,
-            mut_residue=mut[-1],
-            protein=protein,
-            sites=[
-                site
-                for site in protein.sites
-                if site.position == psite_pos
-            ],
-            position_in_motif=int(line[3]),
-            effect=1 if line[13] == 'gain' else 0,
-            pwm=line[9],
-            pwm_family=line[10]
-        ))
-
-    parse_tsv_file('data/all_mimp_annotations.tsv_head', parser, header)
-
-    print('MIMP mutations loaded')
-
-    return mimps
 
 
 def get_preferred_gene_isoform(gene_name):
