@@ -30,13 +30,13 @@ if __name__ == '__main__':
     parser.add_argument(
         '-i',
         '--import_mappings',
-        default=False,
+        action='store_true',
         help='Should mappings be (re)imported'
     )
     parser.add_argument(
         '-r',
         '--reload_relational',
-        default=False,
+        action='store_true',
         help='Should relational database be (re)imported'
     )
 
