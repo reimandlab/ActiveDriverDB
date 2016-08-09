@@ -56,7 +56,7 @@ def import_data(reload_relational=False, import_mappings=False):
         print('Memory usage after mappings: ', memory_usage())
         print('Second commit: ', memory_usage())
         db.session.commit()
-        remove_wrong_proteins(proteins)
+        removed = remove_wrong_proteins(proteins)
     if import_mappings:
         with app.app_context():
             proteins = get_proteins()
@@ -186,8 +186,8 @@ def load_domains(proteins):
             domain for domain in protein.domains
             # - the same interpro id
             if domain.interpro == interpro and
-            # - overlapping ends
-            (domain.start <= start and domain.end >= end) and
+            # - at least one overlapping end
+            (domain.start <= start or domain.end >= end) and
             # - at least 50% of common coverage for shorter occurance of domain
             (
                 (min(domain.end, end) - max(domain.start, start))
@@ -197,8 +197,10 @@ def load_domains(proteins):
         ]
 
         if similar_domains:
-
-            assert len(similar_domains) == 1
+            try:
+                assert len(similar_domains) == 1
+            except AssertionError:
+                print(similar_domains)
             domain = similar_domains[0]
 
             domain.start = min(domain.start, start)
@@ -298,6 +300,8 @@ def remove_wrong_proteins(proteins):
     print('\twith stop codon inside (excluding the last pos.):', stop_inside)
     print('\twithout stop codon at the end:', no_stop_at_the_end)
     print('\twithout stop codon at all:', lack_of_stop)
+
+    return to_remove
 
 
 def create_proteins_and_genes():
@@ -438,6 +442,9 @@ def load_mutations(proteins):
     mutation_id = 0
     mutations = {}
 
+    skipped = set()
+    wrong_seq = set()
+
     for line in read_mappings(
         'data/200616/all_variants/playground',
         'annot_*.txt.gz'
@@ -449,7 +456,11 @@ def load_mutations(proteins):
             refseq = data[1]
             ref, pos, alt = decode_mutation(data[-1])
 
-            protein = proteins[refseq]
+            try:
+                protein = proteins[refseq]
+            except KeyError:
+                skipped.add(refseq)
+                continue
 
             sites = protein.get_sites_from_range(pos - 7, pos + 7)
 
@@ -458,12 +469,15 @@ def load_mutations(proteins):
                 try:
                     assert ref == protein.sequence[pos - 1]
                 except AssertionError:
+                    wrong_seq.add((data[0], refseq, protein.sequence, (ref, pos, alt)))
                     # TODO: what to do?
+                    """
                     print(ref)
                     print(protein)
                     print(protein.sequence)
                     print(data)
                     print(key)
+                    """
 
                 key = (pos, protein.id, alt)
 
@@ -486,7 +500,10 @@ def load_mutations(proteins):
             for mutation, generated_id in mutations.items()
         ]
     )
-
+    print('Skipped mutations belonging to proteins (not in database):')
+    print(skipped)
+    print('Skipped mutations where reference aa do not correspond to protein sequence:')
+    print(wrong_seq)
 
     """
     files = {
