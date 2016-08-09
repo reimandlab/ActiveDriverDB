@@ -6,12 +6,15 @@ from app import db
 from website.models import Protein
 from website.models import Cancer
 from website.models import Mutation
+from website.models import CancerMutation
+from website.models import MIMPMutation
 from website.models import Site
 from website.models import Kinase
 from website.models import KinaseGroup
 from website.models import Gene
 from website.models import Domain
 from website.models import InterproDomain
+from helpers.bioinf import decode_mutation
 
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
@@ -48,13 +51,11 @@ def import_data(reload_relational=False, import_mappings=False):
         print('Memory usage before commit: ', memory_usage())
         db.session.commit()
         with app.app_context():
-            # loading mimp data requires having sites already loaded
-            mimps = load_mimp_mutations(proteins)
-        db.session.add_all(mimps)
+            mutations = load_mutations(proteins)
+        db.session.add_all(mutations)
         print('Memory usage after mappings: ', memory_usage())
         print('Second commit: ', memory_usage())
         db.session.commit()
-        load_mutations(proteins)
         remove_wrong_proteins(proteins)
     if import_mappings:
         with app.app_context():
@@ -424,14 +425,76 @@ def load_cancers():
     print('Cancers loaded')
     return cancers
 
+def make_mutation_key(refseq, pos, alt):
+    """Leadnig zeros of refseq are dropped"""
+    return '%x%x%s' % (int(pos.strip()), int(refseq[2:]), alt)
+
 
 def load_mutations(proteins):
 
     print('Loading mutations:')
 
+    # a counter to give mutations.id as pk
+    mutation_id = 0
+    mutations = {}
+
+    for line in read_mappings(
+        'data/200616/all_variants/playground',
+        'annot_*.txt.gz'
+    ):
+        prot = line.rstrip().split('\t')[-1]
+
+        for dest in filter(bool, prot.split(',')):
+            data = dest.split(':')
+            refseq = data[1]
+            ref, pos, alt = decode_mutation(data[-1])
+
+            protein = proteins[refseq]
+
+            sites = protein.get_sites_from_range(pos - 7, pos + 7)
+
+            if sites:
+
+                try:
+                    assert ref == protein.sequence[pos - 1]
+                except AssertionError:
+                    # TODO: what to do?
+                    print(ref)
+                    print(protein)
+                    print(protein.sequence)
+                    print(data)
+                    print(key)
+
+                key = (pos, protein.id, alt)
+
+                if key in mutations:
+                    # TODO: what to do?
+                    pass
+                else:
+                    mutations[key] = (mutation_id)
+                    mutation_id += 1
+
+    db.session.bulk_insert_mappings(
+        Mutation,
+        [
+            {
+                'position': mutation[0],
+                'mut_residue': mutation[1],
+                'protein_id': mutation[2],
+                'id': generated_id
+            }
+            for mutation, generated_id in mutations.items()
+        ]
+    )
+
+
+    """
     files = {
         'cancer': 'data/mutations/TCGA_muts_annotated.txt'
     }
+
+    # TODO mimps are to be rewritten to
+    mimps = load_mimp_mutations(proteins)
 
     from collections import Counter
     mutations_counter = Counter()
@@ -474,8 +537,7 @@ def load_mutations(proteins):
     )
 
     print('Mutations loaded')
-
-    return mutations_list
+    """
 
 
 def load_mimp_mutations(proteins):
@@ -793,9 +855,7 @@ def import_mappings(proteins):
             # references (nuc, aa): (G, K) and alt nuc C defines that
             # the alt aa has to be Asparagine (N) - no other is valid).
             # Note: it could be used to compress the data in memory too
-            aa_ref = prot_mut[2]
-            aa_pos = prot_mut[3:-1]
-            aa_alt = prot_mut[-1]
+            aa_ref, aa_pos, aa_alt = decode_mutation(prot_mut)
 
             try:
                 # try to get it from cache (`proteins` dictionary)
@@ -820,13 +880,13 @@ def import_mappings(proteins):
                 db.session.refresh(protein)
                 """
 
-            assert int(aa_pos) == (int(cdna_pos) - 1) // 3 + 1
+            assert aa_pos == (int(cdna_pos) - 1) // 3 + 1
 
             # add new item, emulating set update
             item = strand + aa_ref + aa_alt + ':'.join((
                 '%x' % int(cdna_pos), exon, '%x' % protein.id))
             new_variants.add(item)
-            key = protein.gene.name + ' ' + aa_ref + aa_pos + aa_alt
+            key = protein.gene.name + ' ' + aa_ref + str(aa_pos) + aa_alt
             bdb_refseq[key].update({refseq})
 
         bdb[snv].update(new_variants)

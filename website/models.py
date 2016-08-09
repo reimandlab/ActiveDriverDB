@@ -148,8 +148,6 @@ class Protein(db.Model):
     cds_start = db.Column(db.Integer)
     cds_end = db.Column(db.Integer)
 
-    count = db.Column(db.Integer)
-
     sites = db.relationship(
         'Site',
         order_by='Site.position',
@@ -261,6 +259,32 @@ class Protein(db.Model):
             kinase_groups.update((site.kinase_groups))
         return kinase_groups
 
+    def get_sites_from_range(self, left, right):
+        """Retrives sites from given range defined as <left, right>, inclusive.
+
+        Algoritm is based on bisection and an assumption,
+        that sites are sorted by position in the database.
+        """
+        assert left < right
+
+        sites = self.sites
+
+        for i, site in enumerate(sites):
+            if site.position >= left:
+                start = i
+                break
+        else:
+            return []
+
+        for i, site in enumerate(reversed(sites)):
+            if site.position <= right:
+                end = i
+                break
+        else:
+            return []
+
+        return sites[start:end]
+
 
 class Site(db.Model):
     __tablename__ = 'site'
@@ -356,21 +380,40 @@ class Domain(db.Model):
         return self.end - self.start
 
 
+def mutation_details_relationship(class_name):
+    return db.relationship(
+        class_name,
+        backref='mutation',
+        uselist=False
+    )
+
+
 class Mutation(db.Model):
     __tablename__ = 'mutation'
+    __table_args__ = (
+        db.Index('mutation_index', 'alt', 'protein_id', 'position'),
+        # TODO: is constraint neccessary?
+        # db.UniqueConstraint('alt', 'protein_id', 'position')
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     position = db.Column(db.Integer)
-    wt_residue = db.Column(db.String(1))
-    mut_residue = db.Column(db.String(1))
-    sample_id = db.Column(db.String(64))
-    # cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
+    alt = db.Column(db.String(1))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
-    pwm = db.Column(db.Text)
-    pwm_family = db.Column(db.Text)
+    is_ptm = db.Column(db.Boolean)
+    """Mutation is PTM related if it may affect PTM site.
 
-    # gain = +1, loss = -1
-    effect = db.Column(db.Boolean)
+    Mutations flanking PTM site in a distance up to 7 residues from
+    a site (called here 'distal') will be included too.
+    """
+
+    meta_cancer = mutation_details_relationship('CancerMutation')
+    meta_inherited = mutation_details_relationship('InheritedMutation')
+    meta_ESP6500 = mutation_details_relationship('ExomeSequencingMutation')
+    meta_1KG = mutation_details_relationship('The1000GenomesMutation')
+
+    meta_MIMP = mutation_details_relationship('MIMPMutation')
 
     # one mutation can affect multiple sites and
     # one site can be affected by multiple mutations
@@ -379,27 +422,19 @@ class Mutation(db.Model):
         secondary=make_association_table('site.id', 'mutation.id')
     )
 
-    # not null only for mimp mutations:
-    # position of a mutation in an associated motif
-    position_in_motif = db.Column(db.Integer)
+    @cached_property
+    def is_confirmed(self):
+        """Mutation is confirmed if there are metadata from one of four studies
 
-    # Note: following properties could become a columns of the database tables
-    # (in the future) to avoid repetitive calculation of constant variables.
-    # Nonetheless making decision about each of these should take into account,
-    # how often columns and other models referenced in property will be updated
-    # (so we can avoid unnecessary whole database rebuilding).
-
-    # We can also use SQL Materialized View
-    # For MySQL manual implementation is needed but it is quite straightforward
-
-    @hybrid_property
-    def is_ptm(self):
-        """Mutation is PTM related if it may affect PTM site.
-
-        Mutations flanking PTM site in a distance up to 7 residues from
-        a site (called here 'distal') will be included too.
+        (or experiments). Presence of MIMP metadata does not imply
+        if mutation has been ever studied experimentally before.
         """
-        return self.is_ptm_distal
+        return (
+            self.meta_cancer or
+            self.meta_inherited or
+            self.meta_ESP6500 or
+            self.meta_1KG
+        )
 
     @hybrid_property
     def is_ptm_direct(self):
@@ -422,7 +457,7 @@ class Mutation(db.Model):
         Distal flank is defined here as [pos - 7, pos + 7] span,
         where pos is the position of a PTM site.
         """
-        return self.is_close_to_some_site(7, 7)
+        return self.is_ptm
 
     @hybrid_property
     def cnt_ptm_affected(self):
@@ -439,37 +474,37 @@ class Mutation(db.Model):
         hit = None
 
         while a != b:
-            p = (b - a) // 2 + a
-            site_pos = sites[p].position
+            pivot = (b - a) // 2 + a
+            site_pos = sites[pivot].position
             if site_pos - 7 <= pos and pos <= site_pos + 7:
-                hit = p
+                hit = pivot
                 cnt_affected += 1
                 break
             if pos > site_pos:
-                a = p + 1
+                a = pivot + 1
             else:
-                b = p
+                b = pivot
         else:
             return 0
 
         def cond():
             try:
-                site_pos = sites[p].position
+                site_pos = sites[pivot].position
                 return site_pos - 7 <= pos and pos <= site_pos + 7
             except IndexError:
                 return False
 
         # go to right from found site, check if there is more overlappig sites
-        p = hit + 1
+        pivot = hit + 1
         while cond():
             cnt_affected += 1
-            p += 1
+            pivot += 1
 
         # and then go to the left
-        p = hit - 1
+        pivot = hit - 1
         while cond():
             cnt_affected += 1
-            p -= 1
+            pivot -= 1
 
         return cnt_affected
 
@@ -535,3 +570,61 @@ class Mutation(db.Model):
                 )
         )
         return db.session.query(q).scalar()
+
+
+class MutationDetails:
+    """Base for tables defining detailed metadata for specific mutations"""
+    from sqlalchemy.ext.declarative import declared_attr
+
+    @declared_attr
+    def __tablename__(cls):
+        return cls.__name__.lower()
+
+    @declared_attr
+    def id(cls):
+        return db.Column('id', db.Integer, primary_key=True)
+
+    @declared_attr
+    def mutation_id(cls):
+        return db.Column(db.Integer, db.ForeignKey('mutation.id'))
+
+
+class CancerMutation(MutationDetails, db.Model):
+    """Metadata for cancer mutations from ICGC data portal"""
+    sample_id = db.Column(db.String(64))
+    cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
+
+    count = db.Column(db.Integer)
+
+
+class InheritedMutation(MutationDetails, db.Model):
+    """Metadata for inherited diseased mutations from ClinVar from NCBI"""
+    pass
+
+
+class PopulationMutation(MutationDetails):
+    """Metadata common for mutations from all population-wide studies"""
+    frequency = db.Column(db.Integer)
+
+
+class ExomeSequencingMutation(PopulationMutation, db.Model):
+    """Metadata for ESP 6500 mutation"""
+    pass
+
+
+class The1000GenomesMutation(PopulationMutation, db.Model):
+    """Metadata for 1 KG mutation"""
+    pass
+
+
+class MIMPMutation(MutationDetails, db.Model):
+    """Metadata for MIMP mutation"""
+
+    pwm = db.Column(db.Text)
+    pwm_family = db.Column(db.Text)
+
+    # gain = +1, loss = -1
+    effect = db.Column(db.Boolean)
+
+    # position of a mutation in an associated motif
+    position_in_motif = db.Column(db.Integer)

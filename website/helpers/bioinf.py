@@ -23,3 +23,13 @@ def get_human_chromosomes():
     1-22 (inclusive), X, Y and mitochondrial
     """
     return set([str(x) for x in range(1, 23)] + ['X', 'Y', 'MT'])
+
+
+def decode_mutation(mut):
+    """Return tuple with: reference residue, position and alternative residue.
+
+    Also, if assertions are enabled checks correctnes of the mutation.
+    """
+    assert mut[1] == '.'
+    result = (mut[2], int(mut[3:-1]), mut[-1])
+    return result
