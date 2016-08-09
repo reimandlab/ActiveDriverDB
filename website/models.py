@@ -199,7 +199,7 @@ class Protein(db.Model):
             # for now, I am grouping just by position and cancer
 
             key = (mutation.position,
-                   mutation.mut_residue)
+                   mutation.alt)
             try:
                 mutations_grouped[key] += [mutation]
             except KeyError:
@@ -339,20 +339,6 @@ class InterproDomain(db.Model):
 
     occurrences = db.relationship('Domain', backref='interpro')
 
-    @cached_property
-    def possible_names(self):
-        """Return strings which might be used to describe the domain,
-
-        form the longest to the shortest. Last one has to be a single character
-        """
-        return [
-            self.accession + ': ' + self.description,
-            self.accession + ': ' + self.short_description,
-            self.accession,
-            self.description[0] + '.',  # TODO this is not informative... :(
-            self.description[0]
-        ]
-
 
 class Domain(db.Model):
     __tablename__ = 'domain'
@@ -363,18 +349,6 @@ class Domain(db.Model):
     start = db.Column(db.Integer)
     end = db.Column(db.Integer)
 
-    @cached_property
-    def shown_name(self):
-        """Generates a name for the domain which will fit into a track."""
-        names_to_try = self.interpro.possible_names
-        length = self.end - self.start
-        for name in names_to_try:
-            if len(name) <= length:
-                return name
-
-        # the last name to try is one character long, and domains cannot be
-        # shorter than one aminoacid (or: certainly they have to be longer)
-        assert False
 
     def __len__(self):
         return self.end - self.start
@@ -450,6 +424,11 @@ class Mutation(db.Model):
             self.meta_ESP6500 or
             self.meta_1KG
         )
+
+    @hybrid_property
+    def ref(self):
+        sequence = Protein.query.get(self.protein_id).sequence
+        return sequence[self.position - 1]
 
     @hybrid_property
     def is_ptm_direct(self):

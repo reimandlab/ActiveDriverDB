@@ -243,6 +243,17 @@ var Tracks = function ()
                 $(controls[j]).show()
             }
             _setZoom(1)
+
+            // initialize all popovers on tracks
+            $(function () {
+                $('[data-toggle="popover"]').popover(
+                    {
+                        container: 'body',
+                        placement: 'top',
+                        trigger: 'hover'
+                    }
+                )
+            })
 		},
         setNeedlePlotInstance: function(instance)
         {

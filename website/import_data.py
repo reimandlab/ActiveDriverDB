@@ -429,10 +429,6 @@ def load_cancers():
     print('Cancers loaded')
     return cancers
 
-def make_mutation_key(refseq, pos, alt):
-    """Leadnig zeros of refseq are dropped"""
-    return '%x%x%s' % (int(pos.strip()), int(refseq[2:]), alt)
-
 
 def load_mutations(proteins):
 
