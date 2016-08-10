@@ -46,9 +46,9 @@ def import_data(reload_relational=False, import_mappings=False):
         db.session.add_all(groups.values())
         del kinases
         del groups
+        removed = remove_wrong_proteins(proteins)
         print('Memory usage before first commit: ', memory_usage())
         db.session.commit()
-        removed = remove_wrong_proteins(proteins)
         with app.app_context():
             mutations = load_mutations(proteins, removed)
         print('Memory usage before second commit: ', memory_usage())
@@ -182,11 +182,11 @@ def load_domains(proteins):
             domain for domain in protein.domains
             # - the same interpro id
             if domain.interpro == interpro and
-            # - at least 50% of common coverage for shorter occurance of domain
+            # - at least 75% of common coverage for shorter occurance of domain
             (
                 (min(domain.end, end) - max(domain.start, start))
                 / min(len(domain), end - start)
-                > 0.50
+                > 0.75
             )
         ]
 
@@ -290,7 +290,7 @@ def remove_wrong_proteins(proteins):
     for protein in to_remove:
         removed.add(protein.refseq)
         del proteins[protein.refseq]
-        db.session.delete(protein)
+        db.session.expunge(protein)
 
     print('Removed proteins of sequences:')
     print('\twith stop codon inside (excluding the last pos.):', stop_inside)
@@ -441,17 +441,17 @@ def load_mutations(proteins, removed):
             [
                 {
                     'id': data[0],
+                    'is_ptm': data[1],
                     'position': mutation[0],
-                    'alt': mutation[1],
-                    'protein_id': mutation[2],
-                    'is_ptm': data[1]
+                    'protein_id': mutation[1],
+                    'alt': mutation[2]
                 }
                 for mutation, data in mutations.items()
             ]
         )
         db.session.flush()
 
-    mutations_cnt = 0
+    mutations_cnt = 1
 
     for line in read_mappings(
         'data/200616/all_variants/playground',
@@ -474,7 +474,10 @@ def load_mutations(proteins, removed):
 
             if sites:
 
-                assert ref == protein.sequence[pos - 1]
+                try:
+                    assert ref == protein.sequence[pos - 1]
+                except AssertionError:
+                    print(refseq, ref, pos)
 
                 key = (pos, protein.id, alt)
 
@@ -485,7 +488,8 @@ def load_mutations(proteins, removed):
                     mutations[key] = (mutations_cnt, True)
                     mutations_cnt += 1
 
-        if mutations_cnt % 5000 == 0:
+        if mutations_cnt % 100000 == 0:
+            print('Flush after ', mutations_cnt)
             flush_basic_mutations(mutations)
             mutations = {}
 
