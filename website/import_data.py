@@ -46,17 +46,13 @@ def import_data(reload_relational=False, import_mappings=False):
         db.session.add_all(groups.values())
         del kinases
         del groups
-        # print('Addeding cancers to the session...')
-        # db.session.add_all(cancers.values())
-        print('Memory usage before commit: ', memory_usage())
-        db.session.commit()
-        with app.app_context():
-            mutations = load_mutations(proteins)
-        db.session.add_all(mutations)
-        print('Memory usage after mappings: ', memory_usage())
-        print('Second commit: ', memory_usage())
+        print('Memory usage before first commit: ', memory_usage())
         db.session.commit()
         removed = remove_wrong_proteins(proteins)
+        with app.app_context():
+            mutations = load_mutations(proteins, removed)
+        print('Memory usage before second commit: ', memory_usage())
+        db.session.commit()
     if import_mappings:
         with app.app_context():
             proteins = get_proteins()
@@ -186,8 +182,6 @@ def load_domains(proteins):
             domain for domain in protein.domains
             # - the same interpro id
             if domain.interpro == interpro and
-            # - at least one overlapping end
-            (domain.start <= start or domain.end >= end) and
             # - at least 50% of common coverage for shorter occurance of domain
             (
                 (min(domain.end, end) - max(domain.start, start))
@@ -292,7 +286,9 @@ def remove_wrong_proteins(proteins):
         if hit:
             to_remove.add(protein)
 
+    removed = set()
     for protein in to_remove:
+        removed.add(protein.refseq)
         del proteins[protein.refseq]
         db.session.delete(protein)
 
@@ -301,7 +297,7 @@ def remove_wrong_proteins(proteins):
     print('\twithout stop codon at the end:', no_stop_at_the_end)
     print('\twithout stop codon at all:', lack_of_stop)
 
-    return to_remove
+    return removed
 
 
 def create_proteins_and_genes():
@@ -430,7 +426,7 @@ def load_cancers():
     return cancers
 
 
-def load_mutations(proteins):
+def load_mutations(proteins, removed):
 
     print('Loading mutations:')
 
@@ -438,22 +434,22 @@ def load_mutations(proteins):
     mutations = {}
 
     skipped = set()
-    wrong_seq = set()
 
     def flush_basic_mutations(mutations):
         db.session.bulk_insert_mappings(
             Mutation,
             [
                 {
+                    'id': data[0],
                     'position': mutation[0],
                     'alt': mutation[1],
                     'protein_id': mutation[2],
-                    'id': data[0],
                     'is_ptm': data[1]
                 }
                 for mutation, data in mutations.items()
             ]
         )
+        db.session.flush()
 
     mutations_cnt = 0
 
@@ -478,13 +474,7 @@ def load_mutations(proteins):
 
             if sites:
 
-                try:
-                    assert ref == protein.sequence[pos - 1]
-                except AssertionError:
-                    wrong_seq.add(
-                        (data[0], refseq, protein.sequence, (ref, pos, alt))
-                    )
-                    # TODO: what to do?
+                assert ref == protein.sequence[pos - 1]
 
                 key = (pos, protein.id, alt)
 
@@ -495,14 +485,15 @@ def load_mutations(proteins):
                     mutations[key] = (mutations_cnt, True)
                     mutations_cnt += 1
 
-        if mutations_cnt % 100000 == 0 and system_memory_percent() > 40:
+        if mutations_cnt % 5000 == 0:
             flush_basic_mutations(mutations)
             mutations = {}
 
+    db.session.commit()
+    print('All skipped mutations (including removed proteins):')
+    print(len(skipped))
     print('Skipped mutations belonging to proteins (not in database):')
-    print(skipped)
-    print('Skipped mutations where ref aa do not correspond to sequence:')
-    print(wrong_seq)
+    print(len(skipped - removed))
 
     # load("all_mimp_annotations.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
