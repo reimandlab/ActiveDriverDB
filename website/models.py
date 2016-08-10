@@ -285,6 +285,11 @@ class Protein(db.Model):
 
         return sites[start:end]
 
+    @cached_property
+    def interactors_count(self):
+        """Return interactors count which will be displayed in NetworkView."""
+        return len(self.kinases) + len(self.kinase_groups)
+
 
 class Site(db.Model):
     __tablename__ = 'site'

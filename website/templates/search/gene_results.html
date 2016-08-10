@@ -16,7 +16,14 @@
   </div>
   <div class="shortcuts">
     <a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">protein</a>
-    <a href="{{ url_for('NetworkView:show', refseq=isoform.refseq) }}">network</a>
+    {# Note: fetching interactors may be slow sometimes, although very useful #}
+    {% set interactors = isoform.interactors_count %}
+      <a href="{{ url_for('NetworkView:show', refseq=isoform.refseq) }}" class="{{ 'inactive' if not interactors }}">
+      network
+      {% if interactors %}
+        ({{ interactors }})
+      {% endif %}
+    </a>
   </div>
 </div>
 {% endmacro %}
