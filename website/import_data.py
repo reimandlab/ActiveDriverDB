@@ -3,21 +3,21 @@ import psutil
 from tqdm import tqdm
 from app import app
 from app import db
+from helpers.bioinf import decode_mutation
+from helpers.bioinf import decode_raw_mutation
 from website.models import Protein
 from website.models import Cancer
-from website.models import Mutation
 from website.models import CancerMutation
+from website.models import Domain
+from website.models import Mutation
 from website.models import MIMPMutation
 from website.models import Site
 from website.models import Kinase
 from website.models import KinaseGroup
 from website.models import Gene
-from website.models import Domain
 from website.models import InterproDomain
-from helpers.bioinf import decode_mutation
-from helpers.bioinf import decode_raw_mutation
 from website.models import mutation_site_association
-
+from website.models import ExomeSequencingMutation
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
 # (otherwise MySQL server will be gone)
@@ -607,14 +607,11 @@ def load_mutations(proteins, removed):
 
     print('MIMP mutations loaded')
 
-    files = {
-        'cancer': 'data/mutations/TCGA_muts_annotated.txt'
-    }
+    # CANCER MUTATIONS
 
     from collections import Counter
     mutations_counter = Counter()
 
-    flush_basic_mutations(mutations)
     mutations = {}
 
     def cancer_parser(line):
@@ -628,7 +625,7 @@ def load_mutations(proteins, removed):
             refseq = mutation[1]
             mut = mutation[4]
 
-            ref, pos, alt = decode_raw_mutations(mut)
+            ref, pos, alt = decode_mutations(mut)
 
             protein = proteins[refseq]
             assert protein.sequence[pos - 1] == ref
@@ -637,7 +634,7 @@ def load_mutations(proteins, removed):
             key = (pos, protein.id, alt)
             mutation_id = get_or_make_mutation(key, bool(sites))
 
-            assert line[10] == 'comments: '
+            assert line[10].startswith('comments: ')
 
             cancer_name, sample, _ = line[10][10:].split(';')
             cancer, created = get_or_create(Cancer, name=cancer_name)
@@ -652,7 +649,7 @@ def load_mutations(proteins, removed):
                 )
             ] += 1
 
-    parse_tsv_file(files['cancer'], cancer_parser)
+    parse_tsv_file('data/mutations/TCGA_muts_annotated.txt', cancer_parser)
 
     flush_basic_mutations(mutations)
 
@@ -668,6 +665,52 @@ def load_mutations(proteins, removed):
             for mutation, count in mutations_counter.items()
         ]
     )
+
+    mutations = {}
+    esp_mutations = []
+
+    def esp_parser(line):
+
+        line_mutations = line[9].split(',')
+
+        for mutation in line_mutations:
+
+            refseq = mutation[1]
+            mut = mutation[4]
+
+            ref, pos, alt = decode_mutations(mut)
+
+            protein = proteins[refseq]
+            assert protein.sequence[pos - 1] == ref
+            sites = protein.get_sites_from_range(pos - 7, pos + 7)
+
+            key = (pos, protein.id, alt)
+            mutation_id = get_or_make_mutation(key, bool(sites))
+
+            # TODO get MAF from line[20] (but how to interpret?!)
+
+            esp_mutations.append(
+                (
+                    # frequency,
+                    mutation_id
+                )
+            )
+
+    parse_tsv_file('data/mutations/ESP6500_muts_annotated.txt', esp_parser)
+
+    flush_basic_mutations(mutations)
+
+    db.session.bulk_insert_mappings(
+        ExomeSequencingMutation,
+        [
+            {
+                # 'frequency': mutation[1],
+                'mutation_id': mutation[0]
+            }
+            for mutation in esp_mutations
+        ]
+    )
+
 
     print('Mutations loaded')
 
