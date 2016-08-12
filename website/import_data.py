@@ -551,12 +551,14 @@ def load_mutations(proteins, removed):
         ],
         """
         mimps.append(
-            mutation_id,
-            int(line[3]),
-            1 if line[13] == 'gain' else 0,
-            line[9],
-            line[10],
-            len(mimps)
+            (
+                mutation_id,
+                int(line[3]),
+                1 if line[13] == 'gain' else 0,
+                line[9],
+                line[10],
+                len(mimps)
+            )
         )
 
     parse_tsv_file('data/all_mimp_annotations.tsv_head', parser, header)
