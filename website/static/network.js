@@ -166,7 +166,8 @@ var Network = (function ()
             var site = raw_sites[i]
 
             site.name = site.position + ' ' + site.residue
-            site.size = Math.max(site.name.length, 5) * config.site_size_unit
+            site.size = Math.max(site.name.length, 6) * config.site_size_unit
+            // the site visualised as a square has bounding radius of outscribed circle on that square
             site.r = Math.sqrt(site.size * site.size / 4)
             site.node_type = 'site'
             site.node_id = i + index_shift
@@ -505,7 +506,7 @@ var Network = (function ()
                 })
 
             site_nodes.selectAll('.label')
-                .attr('dy', '1.3em')
+                .attr('dy', '1.5em')
                 .attr('dx', function(d) {
                     return d.size/ 2 + 'px'
                 })
@@ -516,7 +517,7 @@ var Network = (function ()
                 .style('font-size', function(d) {
                     return '5.5px'
                 })
-                .attr('dy', '3.2em')
+                .attr('dy', '3.8em')
                 .attr('dx', function(d) {
                     return d.size/ 2 + 'px'
                 })
