@@ -15,6 +15,7 @@ from website.models import Gene
 from website.models import Domain
 from website.models import InterproDomain
 from helpers.bioinf import decode_mutation
+from helpers.bioinf import decode_raw_mutation
 
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
@@ -513,14 +514,14 @@ def load_mutations(proteins, removed):
     ]
 
     def parser(line):
-        nonlocal mimps
+        nonlocal mimps, mutations_cnt
 
         refseq = line[0]
         mut = line[1]
         psite_pos = line[2]
 
         protein = proteins[refseq]
-        ref, pos, alt = decode_mutation(mut)
+        ref, pos, alt = decode_raw_mutation(mut)
         assert protein.sequence[pos - 1] == ref
 
         # TBD

@@ -354,7 +354,6 @@ class Domain(db.Model):
     start = db.Column(db.Integer)
     end = db.Column(db.Integer)
 
-
     def __len__(self):
         return self.end - self.start
 
