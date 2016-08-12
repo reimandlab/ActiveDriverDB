@@ -37,5 +37,5 @@ def decode_mutation(mut):
 
 def decode_raw_mutation(mut):
     """Return tuple with: reference residue, position and alternative residue."""
-    result = (mut[1], int(mut[2:-1]), mut[-1])
+    result = (mut[0], int(mut[1:-1]), mut[-1])
     return result

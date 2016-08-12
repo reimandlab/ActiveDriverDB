@@ -379,6 +379,9 @@ def mutation_details_relationship(class_name):
     )
 
 
+mutation_site_association = make_association_table('site.id', 'mutation.id')
+
+
 class Mutation(db.Model):
     __tablename__ = 'mutation'
     __table_args__ = (
@@ -410,7 +413,7 @@ class Mutation(db.Model):
     # one site can be affected by multiple mutations
     sites = db.relationship(
         'Site',
-        secondary=make_association_table('site.id', 'mutation.id')
+        secondary=mutation_site_association
     )
 
     def __repr__(self):

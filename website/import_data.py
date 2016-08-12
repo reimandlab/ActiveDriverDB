@@ -16,6 +16,8 @@ from website.models import Domain
 from website.models import InterproDomain
 from helpers.bioinf import decode_mutation
 from helpers.bioinf import decode_raw_mutation
+from website.models import mutation_site_association
+
 
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
@@ -464,6 +466,7 @@ def load_mutations(proteins, removed):
             data = dest.split(':')
             refseq = data[1]
             ref, pos, alt = decode_mutation(data[-1])
+            print(data[-1], pos)
 
             try:
                 protein = proteins[refseq]
@@ -490,9 +493,11 @@ def load_mutations(proteins, removed):
                     mutations_cnt += 1
 
         if mutations_cnt % 100000 == 0:
-            print('Flush after ', mutations_cnt)
+            print('Flush after ', mutations_cnt, refseq)
             flush_basic_mutations(mutations)
             mutations = {}
+        if mutations_cnt > 400000:
+            break
 
     db.session.commit()
     print('All skipped mutations (including removed proteins):')
@@ -507,6 +512,7 @@ def load_mutations(proteins, removed):
     print('Loading mimp mutations:')
 
     mimps = []
+    sites = []
 
     header = [
         'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
@@ -514,7 +520,7 @@ def load_mutations(proteins, removed):
     ]
 
     def parser(line):
-        nonlocal mimps, mutations_cnt
+        nonlocal mimps, mutations_cnt, sites
 
         refseq = line[0]
         mut = line[1]
@@ -542,14 +548,12 @@ def load_mutations(proteins, removed):
                 mutations[key] = (mutations_cnt, True)
                 mutations_cnt += 1
 
-        # TODO: sites
-        """
-        sites=[
-            site
+        sites.extend([
+            (site.id, mutation_id)
             for site in protein.sites
             if site.position == psite_pos
-        ],
-        """
+        ])
+
         mimps.append(
             (
                 mutation_id,
@@ -578,6 +582,22 @@ def load_mutations(proteins, removed):
             for mutation_metadata in mimps
         ]
     )
+
+    db.session.commit()
+
+    db.engine.execute(
+        mutation_site_association.insert(),
+        [
+            {
+                'site_id': s[0],
+                'mutation_id': s[1]
+            }
+            for s in sites
+        ]
+    )
+
+    db.session.commit()
+
     print('MIMP mutations loaded')
 
     """
