@@ -19,7 +19,6 @@ from helpers.bioinf import decode_raw_mutation
 from website.models import mutation_site_association
 
 
-
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
 # (otherwise MySQL server will be gone)
 MEMORY_LIMIT = 2e9  # it can be greater than sql ma packet, since we will be
@@ -496,8 +495,9 @@ def load_mutations(proteins, removed):
             print('Flush after ', mutations_cnt, refseq)
             flush_basic_mutations(mutations)
             mutations = {}
-        if mutations_cnt > 400000:
-            break
+
+    flush_basic_mutations(mutations)
+    mutations = {}
 
     db.session.commit()
     print('All skipped mutations (including removed proteins):')
@@ -519,6 +519,23 @@ def load_mutations(proteins, removed):
         'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
     ]
 
+    def get_or_make_mutation(key, *args):
+        nonlocal mutations_cnt, mutations
+
+        if key in mutations:
+            mutation_id = mutations[key][0]
+        else:
+            try:
+                mutation = Mutation.query.filter_by(
+                    position=pos, protein_id=protein.id, alt=alt
+                ).one()
+                mutation_id = mutation.id
+            except Exception:
+                mutation_id = mutations_cnt
+                mutations[key] = (mutations_cnt, *args)
+                mutations_cnt += 1
+        return mutation_id
+
     def parser(line):
         nonlocal mimps, mutations_cnt, sites
 
@@ -537,16 +554,7 @@ def load_mutations(proteins, removed):
 
         key = (pos, protein.id, alt)
 
-        if key in mutations:
-            mutation_id = mutations[key][0]
-        else:
-            try:
-                mutation = Mutation.query.filter_by(position=pos, protein_id=protein.id, alt=alt).one()
-                mutation_id = mutation.id
-            except Exception:
-                mutation_id = mutations_cnt
-                mutations[key] = (mutations_cnt, True)
-                mutations_cnt += 1
+        mutation_id = get_or_make_mutation(key, True)
 
         sites.extend([
             (site.id, mutation_id)
@@ -600,56 +608,69 @@ def load_mutations(proteins, removed):
 
     print('MIMP mutations loaded')
 
-    """
     files = {
         'cancer': 'data/mutations/TCGA_muts_annotated.txt'
     }
 
-    # TODO mimps are to be rewritten to
-    mimps = load_mimp_mutations(proteins)
-
     from collections import Counter
     mutations_counter = Counter()
+
+    flush_basic_mutations(mutations)
+    mutations = {}
 
     def cancer_parser(line):
 
         nonlocal mutations_counter
 
-        mutations = line[9].split(',')
+        cancer_mutations = line[9].split(',')
 
-        for mutation in mutations:
+        for mutation in cancer_mutations:
 
             refseq = mutation[1]
             mut = mutation[4]
-            pos = int(mut[1:-1])
 
-            assert protein.sequence[pos - 1] == mut[0]
+            ref, pos, alt = decode_raw_mutations(mut)
+
+            protein = proteins[refseq]
+            assert protein.sequence[pos - 1] == ref
+            sites = protein.get_sites_from_range(pos - 7, pos + 7)
+
+            key = (pos, protein.id, alt)
+            mutation_id = get_or_make_mutation(key, bool(sites))
+
+            assert line[10] == 'comments: '
+
+            cancer_name, sample, _ = line[10][10:].split(';')
+            cancer, created = get_or_create(Cancer, name=cancer_name)
+            if created:
+                db.session.add(cancer)
 
             mutations_counter[
                 (
-                    pos,
-                    mut[-1],
-                    proteins[refseq].id
+                    mutation_id,
+                    cancer.id,
+                    sample
                 )
             ] += 1
 
     parse_tsv_file(files['cancer'], cancer_parser)
 
+    flush_basic_mutations(mutations)
+
     db.session.bulk_insert_mappings(
-        Mutation,
+        CancerMutation,
         [
             {
-                'position': mutation[0],
-                'mut_residue': mutation[1],
-                'protein_id': mutation[2],
-                'count': count
+                'mutation_id': mutation[0],
+                'cancer_id': mutation[1],
+                'sample_name': mutation[2],
+                'count': mutations_counter
             }
             for mutation, count in mutations_counter.items()
         ]
     )
 
     print('Mutations loaded')
-    """
 
 
 def get_preferred_gene_isoform(gene_name):

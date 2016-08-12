@@ -600,7 +600,7 @@ class MutationDetails:
 
 class CancerMutation(MutationDetails, db.Model):
     """Metadata for cancer mutations from ICGC data portal"""
-    sample_id = db.Column(db.String(64))
+    sample_name = db.Column(db.String(64))
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
 
     count = db.Column(db.Integer)

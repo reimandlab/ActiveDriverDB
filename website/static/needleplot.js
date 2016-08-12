@@ -116,7 +116,6 @@ var NeedlePlot = function ()
 
     function scaleToNeedles()
     {
-        console.log(config.mutations)
 		if (config.y_scale == 'auto')
 		{
             max = 0
