@@ -27,8 +27,8 @@
 		{% for mutation, count in mutations_with_cnt or '' %}
         <tr>
             <td>{{ mutation.position }}</td>
-            <td>{{ mutation.wt_residue }}</td>
-            <td>{{ mutation.mut_residue }}</td>
+            <td>{{ mutation.ref }}</td>
+            <td>{{ mutation.alt }}</td>
             <td>{{ count }}</td>
             <td>{{ 'PTM' if mutation.is_ptm else 'non-PTM' }}</td>
             <td>{{ mutation.impact_on_ptm or '' }}</td>
