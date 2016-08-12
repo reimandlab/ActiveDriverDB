@@ -34,11 +34,6 @@ var Network = (function ()
     var edges = []
     var orbits
 
-    var site_dimensions = {
-        height: '1.4em',
-        width_unit: 5
-    }
-
     function fitTextIntoCircle(d, context)
     {
         var radius = d.r
@@ -76,6 +71,7 @@ var Network = (function ()
     }
 
     var config = {
+        site_size_unit: 5,
         show_sites: true,
         width: 600,
         height: null,
@@ -170,8 +166,8 @@ var Network = (function ()
             var site = raw_sites[i]
 
             site.name = site.position + ' ' + site.residue
-            site.width = Math.max(site.name.length, 5) * site_dimensions.width_unit
-            site.r = Math.sqrt(site.width*site.width/4)
+            site.size = Math.max(site.name.length, 5) * config.site_size_unit
+            site.r = Math.sqrt(site.size * site.size / 4)
             site.node_type = 'site'
             site.node_id = i + index_shift
 
@@ -470,25 +466,36 @@ var Network = (function ()
                 .on("mousedown", function(d) { d3.event.stopPropagation() })
 
 
-            var circles = nodes
+            var kinase_nodes = nodes
                 .filter(function(d){ return d.node_type != 'site' })
+
+            kinase_nodes
                 .append('circle')
                 .attr('r', function(d){ return d.r })
                 .attr('stroke', function(node) {
                     var default_color = '#905590'
                     return node.color || default_color
-                }) 
+                })
 
             var site_nodes = nodes
                 .filter(function(d){ return d.node_type == 'site' })
+                .append('g')
+                .attr('transform', function(d){ return 'translate(' + [-d.size / 2, -d.size / 2] + ')'} )
 
             site_nodes
                 .append('rect')
-                .attr('width', function(d){ return d.width + 'px' })
-                .attr('height', site_dimensions.height)
+                .attr('width', function(d){ return d.size + 'px' })
+                .attr('height', function(d){ return d.size + 'px' })
 
-            var labels = nodes.append('text')
+            kinase_nodes
+                .append('text')
                 .attr('class', 'label')
+
+            site_nodes
+                .append('text')
+                .attr('class', 'label')
+
+            var labels = nodes.selectAll('.label')
                 .text(function(d){ return d.name })
                 .style('font-size', function(d) {
                     if(d.node_type == 'site')
@@ -498,9 +505,9 @@ var Network = (function ()
                 })
 
             site_nodes.selectAll('.label')
-                .attr('dy', '1em')
+                .attr('dy', '1.3em')
                 .attr('dx', function(d) {
-                    return d.width / 2 + 'px'
+                    return d.size/ 2 + 'px'
                 })
 
             site_nodes
@@ -509,9 +516,9 @@ var Network = (function ()
                 .style('font-size', function(d) {
                     return '5.5px'
                 })
-                .attr('dy', '2.8em')
+                .attr('dy', '3.2em')
                 .attr('dx', function(d) {
-                    return d.width / 2 + 'px'
+                    return d.size/ 2 + 'px'
                 })
 
             var group_nodes = nodes
