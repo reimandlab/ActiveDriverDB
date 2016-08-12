@@ -192,6 +192,11 @@ class Protein(db.Model):
         return len(self.sequence)
 
     @cached_property
+    def confirmed_mutations(self):
+        """Return all mutations which are confirmed inexperiments"""
+        return [m for m in self.mutations if m.is_confirmed]
+
+    @cached_property
     def mutations_grouped(self):
         """Mutations grouped by cancer type and position in the sequence"""
         mutations_grouped = {}
