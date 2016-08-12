@@ -465,7 +465,6 @@ def load_mutations(proteins, removed):
             data = dest.split(':')
             refseq = data[1]
             ref, pos, alt = decode_mutation(data[-1])
-            print(data[-1], pos)
 
             try:
                 protein = proteins[refseq]
