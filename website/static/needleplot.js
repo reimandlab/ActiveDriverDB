@@ -47,6 +47,7 @@ var NeedlePlot = function ()
         element: null,
         mutations: null,
         sites: null,
+        needles: null,
         colorMap: colorMap,
         legends: {x: 'Sequence', y: '# of mutations'},
         width: 600,
@@ -113,21 +114,19 @@ var NeedlePlot = function ()
 
     }
 
-    function makeNeedles()
+    function scaleToNeedles()
     {
-		console.log(config.mutations)
-        var mutations = config.mutations
-        var needles = []
-        for(var i = 0; i < mutations.length; i++)
-        {
-			// TODO
-        }
+        console.log(config.mutations)
 		if (config.y_scale == 'auto')
 		{
-			// TODO
-			config.y_scale = 5
+            max = 0
+            muts = config.mutations
+            for(var i = 0; i < muts.length; i++)
+            {
+                max = Math.max(max, muts[i].value)
+            }
+			config.y_scale = max
 		}
-        return needles
     }
 
     function _rescalePlot()
@@ -157,6 +156,13 @@ var NeedlePlot = function ()
             .attr('transform', function(d)
                 {
                     return 'translate(' + [posToX(d.start), bottom_axis_pos - config.site_height] + ')'
+                }
+            )
+
+        needles
+            .attr('transform', function(d)
+                {
+                    return 'translate(' + [posToX(d.coord), bottom_axis_pos] + ')'
                 }
             )
 
@@ -235,6 +241,21 @@ var NeedlePlot = function ()
                 .text(config.legends.y)
                 .style('text-anchor','middle')
         }
+
+        needles = vis.selectAll('.needle')
+            .data(config.mutations)
+            .enter()
+            .append('g')
+            .attr('class', 'needle')
+
+        needles
+            .append('line')
+            .attr('x1', 0)
+            .attr('y1', 0)
+            .attr('x2', 0)
+            .attr('y2', function(d){ return -d.value * 100 + 'px' })
+            .attr('stroke-width', 2)
+            .attr('stroke', 'black')
 
 
         sites = vis.selectAll('.site')
@@ -370,7 +391,7 @@ var NeedlePlot = function ()
         init: function(new_config)
         {
             configure(new_config)
-			needles = makeNeedles()
+			scaleToNeedles()
             createPlot()
 
         },

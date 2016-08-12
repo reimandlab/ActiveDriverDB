@@ -203,8 +203,11 @@ class Protein(db.Model):
         for mutation in self.mutations:
             # for now, I am grouping just by position and cancer
 
-            key = (mutation.position,
-                   mutation.alt)
+            key = (
+                mutation.position,
+                mutation.alt,
+                mutation.impact_on_ptm
+            )
             try:
                 mutations_grouped[key] += [mutation]
             except KeyError:
