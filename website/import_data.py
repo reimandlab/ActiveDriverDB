@@ -532,7 +532,7 @@ def load_mutations(proteins, removed):
                 mutation_id = mutation.id
             except Exception:
                 mutation_id = mutations_cnt
-                mutations[key] = (mutations_cnt, *args)
+                mutations[key] = tuple(mutations_cnt, *args)
                 mutations_cnt += 1
         return mutation_id
 
