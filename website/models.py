@@ -278,7 +278,7 @@ class Protein(db.Model):
 
         for i, site in enumerate(reversed(sites)):
             if site.position <= right:
-                end = i
+                end = -i
                 break
         else:
             return []
@@ -310,7 +310,7 @@ class Site(db.Model):
 
     def __repr__(self):
         return '<Site of protein: {0}, at pos: {1}>'.format(
-            Protein.query.get(self.protein_id).name,
+            Protein.query.get(self.protein_id).refseq,
             self.position
         )
 
