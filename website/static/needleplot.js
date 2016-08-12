@@ -5,10 +5,10 @@ var NeedlePlot = function ()
 	var position = 0
 
     var colorMap = {
-      'missense': 'yellow',
-      'synonymous': 'lightblue',
-      'truncating': 'red',
-      'splice-site': 'orange',
+      'distant': 'yellow',
+      'network-rewiring': 'lightblue',
+      'direct': 'red',
+      'proximal': 'orange',
       'other': 'grey'
     }
 
@@ -125,7 +125,7 @@ var NeedlePlot = function ()
             {
                 max = Math.max(max, muts[i].value)
             }
-			config.y_scale = max
+			config.y_scale = max * 5 / 4
 		}
     }
 
@@ -159,12 +159,18 @@ var NeedlePlot = function ()
                 }
             )
 
+        site_boxes
+			.attr('width', function(d){ return posToX(d.end - d.start) })
+
         needles
             .attr('transform', function(d)
                 {
                     return 'translate(' + [posToX(d.coord), bottom_axis_pos] + ')'
                 }
             )
+
+        needles.selectAll('line')
+            .attr('stroke-width', posToX(1) / 10 + 'px')
 
         leftPadding.attr('height', config.height)
 
@@ -202,9 +208,11 @@ var NeedlePlot = function ()
             .domain([0, config.y_scale])
 
         axes.y.obj = d3.svg.axis()
-			.tickFormat(d3.format('d'))
             .orient('left')
             .scale(axes.y.scale)
+            // TODO
+			.tickFormat(d3.format('d'))
+            .tickSubdivide(0)
 
         axes.y.group = paddings.append('g')
 			.attr('class', 'y axis')
@@ -251,12 +259,9 @@ var NeedlePlot = function ()
         needles
             .append('line')
             .attr('x1', 0)
-            .attr('y1', 0)
+            .attr('y1', function(d){ return -d.value * 100 + 'px' })
             .attr('x2', 0)
-            .attr('y2', function(d){ return -d.value * 100 + 'px' })
-            .attr('stroke-width', 2)
-            .attr('stroke', 'black')
-
+            .attr('y2', 0)
 
         sites = vis.selectAll('.site')
             .data(config.sites)
@@ -264,12 +269,11 @@ var NeedlePlot = function ()
             .append('g')
             .attr('class', 'site')
 
-        _rescalePlot()
-
-        var site_boxes = sites
+        site_boxes = sites
 			.append('rect')
-			.attr('width', function(d){ return d.end - d.start})
 			.attr('height', config.site_height)
+
+        _rescalePlot()
 
     }
 
