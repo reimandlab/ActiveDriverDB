@@ -20,6 +20,7 @@ function clone(object)
 var Network = (function ()
 {
     var kinases
+    var sites
     var kinases_grouped
     var kinase_groups
     var protein
@@ -32,6 +33,11 @@ var Network = (function ()
 
     var edges = []
     var orbits
+
+    var site_dimensions = {
+        height: '1.4em',
+        width_unit: 5
+    }
 
     function fitTextIntoCircle(d, context)
     {
@@ -70,6 +76,7 @@ var Network = (function ()
     }
 
     var config = {
+        show_sites: true,
         width: 600,
         height: null,
         minimalRadius: 6,   // of a single node
@@ -137,7 +144,54 @@ var Network = (function ()
         )
     }
 
-    function prepareKinases(all_kinases)
+    function removeEdge(source, target, weight)
+    {
+        return edges.pop(
+            {
+                source: source,
+                target: target,
+                weight: weight
+            }
+        )
+    }
+
+    function prepareSites(raw_sites, index_shift)
+    {
+        // If kinase occurs both in a group and bounds to
+        // the central protein, duplicate it's node. How?
+        // 1. duplicate the data
+        // 2. make the notion in the data and just add two cicrcles
+        // And currently it is implemented by data duplication
+
+        sites = []
+
+        for(var i = 0; i < raw_sites.length; i++)
+        {
+            var site = raw_sites[i]
+
+            site.name = site.position + ' ' + site.residue
+            site.width = Math.max(site.name.length, 5) * site_dimensions.width_unit
+            site.r = Math.sqrt(site.width*site.width/4)
+            site.node_type = 'site'
+            site.node_id = i + index_shift
+
+            // this property will be populated for kinases belonging to group in prepareKinaseGroups
+            site.group = undefined
+
+            // make links to the central protein's node from this site
+            addEdge(site.node_id, 0)
+
+            sites.push(site)
+
+            var site_kinases = getKinasesByName(site.kinases, kinases) // TODO: also add groups here
+            for(var j = 0; j < site_kinases.length; j++)
+            {
+                addEdge(site.node_id, site_kinases[j])
+            }
+        }
+    }
+
+    function prepareKinases(all_kinases, index_shift)
     {
         // If kinase occurs both in a group and bounds to
         // the central protein, duplicate it's node. How?
@@ -157,7 +211,7 @@ var Network = (function ()
             kinase.r = calculateRadius(
                 kinase.protein ? kinase.protein.mutations_count : 0
             )
-            kinase.node_id = i + 1
+            kinase.node_id = i + index_shift
 
             // this property will be populated for kinases belonging to group in prepareKinaseGroups
             kinase.group = undefined
@@ -166,13 +220,16 @@ var Network = (function ()
             {
                 // add a kinase that binds to the central protein to `kinases` list
                 kinase = clone(kinase)
-                kinase.node_id = kinases.length + 1
+                kinase.node_id = kinases.length + index_shift
                 kinases.push(kinase)
 
-                // make links to the central protein's node from those
-                // kinases that bound to the central protein (i.e.
-                // exclude those which are shown only in groups)
-                addEdge(kinase.node_id, 0)
+                if(!config.show_sites)
+                {
+                    // make links to the central protein's node from those
+                    // kinases that bound to the central protein (i.e.
+                    // exclude those which are shown only in groups)
+                    addEdge(kinase.node_id, 0)
+                }
             }
             // 
             if(kinases_in_groups.indexOf(kinase.name) !== -1)
@@ -180,7 +237,7 @@ var Network = (function ()
                 // add a kinase that binds to group to `kinases_grouped` list
                 kinase = clone(kinase)
                 kinase.collapsed = true
-                kinase.node_id = kinases_grouped.length + 1
+                kinase.node_id = kinases_grouped.length + index_shift
                 kinases_grouped.push(kinase)
             }
         }
@@ -218,8 +275,11 @@ var Network = (function ()
                 true
             )
             group.color = 'red'
-            // 0 is (by convention) the index of the central protein
-            addEdge(group_index, 0)
+            if(!config.show_sites)
+            {
+                // 0 is (by convention) the index of the central protein
+                addEdge(group_index, 0)
+            }
         }
     }
 
@@ -349,15 +409,24 @@ var Network = (function ()
             var protein_node = createProteinNode()
             var nodes_data = [protein_node]
 
-            prepareKinases(data.kinases)
+            prepareKinases(data.kinases, nodes_data.length)
             Array.prototype.push.apply(nodes_data, kinases)
             Array.prototype.push.apply(nodes_data, kinases_grouped)
 
             prepareKinaseGroups(nodes_data.length)
             Array.prototype.push.apply(nodes_data, kinase_groups)
 
+            var elements = kinases.concat(kinase_groups)
+
+            if(config.show_sites)
+            {
+                prepareSites(data.sites, nodes_data.length)
+                Array.prototype.push.apply(nodes_data, sites)
+                elements = sites
+            }
+
             orbits = Orbits()
-            orbits.init(kinases.concat(kinase_groups), protein_node)
+            orbits.init(elements, protein_node)
             orbits.placeNodes()
 
             for(var j = 0; j < kinases_grouped.length; j++)
@@ -401,25 +470,64 @@ var Network = (function ()
                 .on("mousedown", function(d) { d3.event.stopPropagation() })
 
 
-            var circles = nodes.append('circle')
+            var circles = nodes
+                .filter(function(d){ return d.node_type != 'site' })
+                .append('circle')
                 .attr('r', function(d){ return d.r })
                 .attr('stroke', function(node) {
                     var default_color = '#905590'
                     return node.color || default_color
                 }) 
 
+            var site_nodes = nodes
+                .filter(function(d){ return d.node_type == 'site' })
+
+            site_nodes
+                .append('rect')
+                .attr('width', function(d){ return d.width + 'px' })
+                .attr('height', site_dimensions.height)
+
             var labels = nodes.append('text')
                 .attr('class', 'label')
                 .text(function(d){ return d.name })
-                .style('font-size', function(d) { return fitTextIntoCircle(d, this) + 'px' })
+                .style('font-size', function(d) {
+                    if(d.node_type == 'site')
+                        return '7px'
+                    else
+                        return fitTextIntoCircle(d, this) + 'px'
+                })
 
-            nodes
+            site_nodes.selectAll('.label')
+                .attr('dy', '1em')
+                .attr('dx', function(d) {
+                    return d.width / 2 + 'px'
+                })
+
+            site_nodes
+                .append('text')
+                .text(function(d) { return d.nearby_sequence })
+                .style('font-size', function(d) {
+                    return '5.5px'
+                })
+                .attr('dy', '2.8em')
+                .attr('dx', function(d) {
+                    return d.width / 2 + 'px'
+                })
+
+            var group_nodes = nodes
                 .filter(function(d){ return d.is_group })
+
+            group_nodes
                 .append('text')
                 .attr('class', 'type')
                 .text(function(d){ return 'family ' + d.kinases.length  + '/' + d.total_cnt })
-                .style('font-size', function(d) { return fitTextIntoCircle(d, this) * 0.5 + 'px' })
-                .attr('dy', function(d) { return fitTextIntoCircle(d, this) * 0.35 + 'px' })
+                .style('font-size', function(d) {
+                    return fitTextIntoCircle(d, this) * 0.5 + 'px'
+                })
+                .attr('dy', function(d) { 
+                    return fitTextIntoCircle(d, this) * 0.35 + 'px'
+                })
+
 
             force.on('tick', function(e) {
                 force
