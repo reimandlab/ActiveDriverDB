@@ -11,10 +11,12 @@ from website.helpers.filters import Filter
 
 
 def get_nearby_sequence(site, protein, dst=3):
+    left = site.position - dst - 1
+    right = site.position + dst
     return (
-        '-' * -min(0, (site.position - dst)) +
-        protein.sequence[max(site.position - dst, 0):min(site.position + dst, protein.length)] +
-        '-' * (max(protein.length, site.position - dst) - protein.length)
+        '-' * -min(0, left) +
+        protein.sequence[max(0, left):min(right, protein.length)] +
+        '-' * (max(protein.length, left) - protein.length)
     )
 
 
