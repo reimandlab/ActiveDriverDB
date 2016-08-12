@@ -40,7 +40,7 @@
 <ol class="breadcrumb">
   <li><a href="/">Home</a></li>
   <li><a href="{{ url_for('ProteinView:index') }}">Proteins</a></li>
-  <li class="active">{{ protein.gene.name }}</li>
+  <li><a href="{{ url_for('general.gene_view', gene_name=protein.gene.name) }}">{{ protein.gene.name }}</a></li>
   <li class="active">{{ protein.refseq }}</li>
 </ol>
 
@@ -48,16 +48,9 @@
   {% include 'widgets/filters.html' %}
 {% endwith %}
 
-<div id="plot_area"></div>
-
-<ul>
-    <li>RefSeq: <a href="http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}">{{ protein.refseq }}</a>
-    <li>Disorder percentage: {{ protein.disorder_length / protein.length * 100 }}</a>
-    <li><a href="{{ url_for('NetworkView:show', refseq=protein.refseq) }}">Show network</a>
-</ul>
-
 <div class="panel panel-default">
   <div class="panel-body">
+    <div id="plot_area"></div>
     <div id="tracks-box">
       {% with tracks=tracks %}
         {% include 'widgets/tracks.html' %}
@@ -65,6 +58,18 @@
     </div>
   </div>
 </div>
+
+Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
+{% set other_isoforms_count = protein.gene.isoforms | length - 1 %}
+{% if other_isoforms_count > 0 %}
+    There {{ 'is' if other_isoforms_count == 1 else 'are' }} <a href="{{ url_for('general.gene_view', gene_name=protein.gene.name) }}">{{ other_isoforms_count }} isoform{{ 's' if other_isoforms_count > 1}} more</a> for this protein in the database.
+{% endif %}
+
+<ul>
+    <li>RefSeq: <a href="http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}">{{ protein.refseq }}</a>
+    <li>Disorder percentage: {{ protein.disorder_length / protein.length * 100 }}</a>
+    <li><a href="{{ url_for('NetworkView:show', refseq=protein.refseq) }}">Show network</a>
+</ul>
 
 {% with mutations=mutations %}
   {% include 'widgets/table.html' %}
@@ -78,20 +83,35 @@
 	<script type="text/javascript" src="{{ ASSET_URL }}"></script>
     {% endassets %}
     <script type="text/javascript">
-        var params = {
-            element: document.getElementById('plot_area'),
-            mutations: '{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.active.url_string) }}',
-            sites: '{{ url_for('ProteinView:sites', refseq=protein.refseq) }}',
-            sequenceLength: {{ protein.sequence | length }},
-            name: '{{ protein.name }}',
-            refseq: '{{ protein.refseq }}'
-        }
-        var needle_plot = NeedlePlot()
-        needle_plot.init(params)
         var tracks = Tracks()
         tracks.init({
             box: document.getElementById('tracks-box')
         })
+        max_zoom = tracks.adjustMaxZoom()
+        var params = {
+            max_zoom: max_zoom,
+            element: document.getElementById('plot_area'),
+            mutations: '{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.active.url_string) }}',
+            sites: '{{ url_for('ProteinView:sites', refseq=protein.refseq) }}',
+            sequenceLength: {{ protein.sequence | length }},
+            name: '{{ protein.gene.name }}',
+            legends:
+            {
+                x: null,
+                y: '# of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
+            },
+            zoom_callback: tracks.setZoom,
+            position_callback: tracks.setAAPosition,
+            width: $('#tracks-box').width()
+        }
+        var needle_plot = NeedlePlot()
+        needle_plot.init(params)
         tracks.setNeedlePlotInstance(needle_plot)
+        $(window).on('resize', function()
+            {
+                needle_plot.setSize($('#tracks-box').width(), null)
+            }
+        )
+
     </script>
 {% endblock %}

@@ -40,13 +40,33 @@ class TrackElement(object):
     It is used a lot for every single protein, hence __slots__ implemented.
     """
 
-    __slots__ = 'start', 'length', 'name'
+    __slots__ = 'start', 'length', 'name', 'description'
 
-    def __init__(self, start, length, name=''):
+    def __init__(self, start, length, name='', description=''):
         assert start >= 0
         self.start = start
         self.length = length
         self.name = name
+        self.description = description
+
+    @property
+    def shown_name(self):
+        """Generates a name which will fit into a track."""
+        if not self.description:
+            return self.name
+
+        # names_to_try should be kept in descending length order
+        names_to_try = (
+            '%s: %s (%d long)' % (self.name, self.description, self.length),
+            '%s: %s' % (self.name, self.description),
+            '%s' % self.name
+        )
+        for name in names_to_try:
+            if len(name) <= self.length:
+                return name
+
+        # if no proposed name fits, use the last one (shortes)
+        return names_to_try[-1]
 
 
 class SequenceTrack(Track):
@@ -111,7 +131,7 @@ class MutationsTrack(Track):
         tracks = []
         for mutations in self.group_mutations(raw_mutations):
             track = [
-                TrackElement(mutation.position, 1, mutation.mut_residue)
+                TrackElement(mutation.position, 1, mutation.alt)
                 for mutation in mutations.values()
             ]
             tracks.append(track)
@@ -128,7 +148,7 @@ class MutationsTrack(Track):
             pos = mutation.position
             try:
                 while pos in grouped[depth]:
-                    if grouped[depth][pos].mut_residue == mutation.mut_residue:
+                    if grouped[depth][pos].alt == mutation.alt:
                         # TODO: increace frequency count
                         break
                     depth += 1

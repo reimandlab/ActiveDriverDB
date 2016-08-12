@@ -57,7 +57,8 @@ class ProteinView(FlaskView):
                     TrackElement(
                         domain.start,
                         domain.end - domain.start,
-                        domain.shown_name
+                        domain.interpro.accession,
+                        domain.interpro.description
                     )
                     for domain in protein.domains
                 ]
@@ -70,7 +71,7 @@ class ProteinView(FlaskView):
             Mutation,
             label('count', func.count(Mutation.position))).\
             join(Protein).filter_by(id=protein.id).\
-            group_by(Mutation.position, Mutation.mut_residue)
+            group_by(Mutation.position, Mutation.alt)
 
         # Key is set to first element, because in the query above we are
         # retriving (mutation, count) tuples for every row.
@@ -109,7 +110,8 @@ class ProteinView(FlaskView):
 
         response = [
             {
-                'coord': str(site.position - 7) + '-' + str(site.position + 7),
+                'start': str(site.position - 7),
+                'end': str(site.position + 7),
                 'name': str(site.position) + 'Ph'
             } for site in protein.sites
         ]

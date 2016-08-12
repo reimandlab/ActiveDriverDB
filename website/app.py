@@ -24,6 +24,7 @@ bundles = {
         output='min/search.js'
     ),
     'js_protein_view': Bundle(
+        'common.js',
         'needleplot.js',
         'filters.js',
         'tracks.js',

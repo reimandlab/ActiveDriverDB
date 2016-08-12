@@ -4,23 +4,97 @@ var Tracks = function ()
     var minFontSize = 0.1
     var maxFontSize = 20
     var scale = 1.0
-    var scrollArea
-    var scalableArea
+    var scrollArea, scalableArea, tracks
     var needle_plot
+    var position = 0
+
+    var config = {
+        animation: 'swing',
+        animations_speed: 200,
+        box: null,
+		min_zoom: 1,
+        max_zoom: 10
+    }
+
+    function configure(new_config)
+    {
+        // Automatical configuration update:
+        update_object(config, new_config)
+    }
 
     function zoom(direction)
     {
         // scale down slower toward 0
-        setZoom(scale + direction * scale / 15)
+        new_zoom = scale + direction * scale / 15
+
+        if(new_zoom > config.max_zoom)
+        {
+            _setZoom(config.max_zoom)
+        }
+        else if(new_zoom < config.min_zoom)
+        {
+            _setZoom(config.min_zoom)
+        }
+        else
+        {
+            _setZoom(new_zoom)
+        }
     }
 
-    function setZoom(new_scale)
+    function get_scale_factor()
     {
-        scale = new_scale
-        scalableArea.css('transform', 'scaleX(' + scale + ')')
-        if(needle_plot)
+        content_width = scalableArea.get(0).scrollWidth
+        width = scalableArea.width()
+
+        return width / content_width
+    }
+
+    function _setAAPosition(new_position, stop_callback)
+    {
+        if(new_position < 0)
+            position = 0
+        else if(new_position > config.sequenceLength)
+            position = config.sequenceLength
+        else
+            position = new_position
+
+        scrollTo(position)
+
+        if(needle_plot && !stop_callback)
         {
-            needle_plot.setZoom(scale, false)
+            needle_plot.setAAPosition(position, true)
+        }
+
+    }
+
+    function _getZoom()
+    {
+        first_scale_factor = get_scale_factor()
+        return first_scale_factor * scale
+    }
+
+    function _setZoom(new_zoom, stop_callback)
+    {
+        first_scale_factor = get_scale_factor()
+
+		$({area_scale: scale})
+			.animate(
+				{area_scale: new_zoom},
+				{
+					duration: config.animations_speed,
+					step: function(now)
+					{
+						scalableArea.css('transform', 'scaleX(' +  first_scale_factor * now + ')')
+					}
+				}
+			)
+
+        scale = new_zoom
+        config.char_size = getCharSize(sequence)
+
+        if(needle_plot && !stop_callback)
+        {
+            needle_plot.setZoom(scale, true)
         }
     }
 
@@ -36,9 +110,11 @@ var Tracks = function ()
 
     function scroll(direction)
     {
-        var pos = scrollArea.scrollLeft()
-        var len = scrollArea.width()
-        scrollArea.stop().animate({scrollLeft: pos + len * direction }, '300', 'swing')
+        var old_screen_pos = scrollArea.scrollLeft()
+        var one_screen = scrollArea.width() * _getZoom()
+        var new_pos_screen = old_screen_pos + one_screen * direction
+
+        _setAAPosition(new_pos_screen / config.char_size, false)
     }
 
 	function scrollLeft()
@@ -54,24 +130,34 @@ var Tracks = function ()
     function getCharSize(sequence)
     {
         var elements = sequence.children('.elements')
-        var seq = $.trim(elements.text())
         elements.wrapInner('<span></span>')
         var span = elements.children('span')
-        var charSize = span.innerWidth() / seq.length
+        var charSize = span.innerWidth() / config.sequenceLength
         span.contents().unwrap()
-        return charSize
+        return charSize * _getZoom()
     }
 
-	function scrollTo()
+    function getSequenceLength()
+    {
+        var sequence = tracks.find('.sequence')
+        var elements = sequence.children('.elements')
+        var seq = $.trim(elements.text())
+        return seq.length
+    }
+
+    function scrollTo(new_position)
+    {
+        scrollArea.scrollLeft(Math.round(new_position * config.char_size))
+    }
+
+	function scrollToCallback()
 	{
         var input = $(this).closest('.input-group').find('.scroll-to-input')
-        var tracks = $(this).closest('.tracks-box')
-        var sequence = tracks.find('.sequence')
+
         // - 1: sequence is 1 based but position is 0 based
         var pos = $(input).val() - 1
 
-        var charSize = getCharSize(sequence)
-        area.animate({scrollLeft: pos * charSize }, '300', 'swing')
+        _setAAPosition(pos, false, true)
 	}
 
     function initButtons(buttons, func, context)
@@ -107,14 +193,29 @@ var Tracks = function ()
     }
 
 	var publicSpace = {
-		init: function(data)
+		init: function(new_config)
 		{
-            var box = $(data.box)
+			configure(new_config)
 
-            var tracks = box.find('.tracks')
+            var box = $(config.box)
+            tracks = box.find('.tracks')
 
             scrollArea = tracks.find('.scroll-area')
+            scrollArea.on('scroll', function(event)
+            {
+                var scroll = $(event.target).scrollLeft()
+                // is that a meaningful, nonprogramatic scroll?
+                if(scroll != Math.round(position * config.char_size))
+                {
+                    _setAAPosition(scroll / config.char_size)
+                }
+            })
             scalableArea = tracks.find('.scalable')
+
+            sequence = tracks.find('.sequence')
+
+            config.sequenceLength = getSequenceLength()
+            config.char_size = getCharSize(sequence)
 
             var buttons = box.find('.scroll-left')
             initButtons(buttons, scrollLeft, scrollArea)
@@ -131,21 +232,42 @@ var Tracks = function ()
             initButtons(buttons, zoomIn, innerDiv)
 
             buttons = box.find('.scroll-to')
-            initButtons(buttons, scrollTo)
+            initButtons(buttons, scrollToCallback)
 
             buttons = box.find('.scroll-to-input')
-            initFields(buttons, scrollTo)
+            initFields(buttons, scrollToCallback)
 
             var controls = box.find('.controls')
             for(var j = 0; j < controls.length; j++)
             {
                 $(controls[j]).show()
             }
+            _setZoom(1)
+
+            // initialize all popovers on tracks
+            $(function () {
+                $('[data-toggle="popover"]').popover(
+                    {
+                        container: 'body',
+                        placement: 'top',
+                        trigger: 'hover'
+                    }
+                )
+            })
 		},
         setNeedlePlotInstance: function(instance)
         {
             needle_plot = instance
+        },
+        setZoom: _setZoom,
+        setAAPosition: _setAAPosition,
+        adjustMaxZoom: function()
+        {
+            // optimal max zoom is a zoom which allows to zoom in to a normal size of a character
+            config.max_zoom = 1 / get_scale_factor()
+            return config.max_zoom
         }
+
 	}
 
 	return publicSpace

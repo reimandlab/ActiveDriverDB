@@ -6,12 +6,16 @@ from app import db
 from website.models import Protein
 from website.models import Cancer
 from website.models import Mutation
+from website.models import CancerMutation
+from website.models import MIMPMutation
 from website.models import Site
 from website.models import Kinase
 from website.models import KinaseGroup
 from website.models import Gene
 from website.models import Domain
 from website.models import InterproDomain
+from helpers.bioinf import decode_mutation
+from helpers.bioinf import decode_raw_mutation
 
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
@@ -26,37 +30,34 @@ def system_memory_percent():
     return psutil.virtual_memory().percent
 
 
-def import_data():
-    global genes
-    genes, proteins = create_proteins_and_genes()
-    load_sequences(proteins)
-    select_preferred_isoforms(genes)
-    load_disorder(proteins)
-    load_domains(proteins)
-    # cancers = load_cancers()
-    # load_mutations(proteins, cancers)
-    kinases, groups = load_sites(proteins)
-    kinases, groups = load_kinase_classification(proteins, kinases, groups)
-    print('Adding kinases to the session...')
-    db.session.add_all(kinases.values())
-    print('Adding groups to the session...')
-    db.session.add_all(groups.values())
-    del kinases
-    del groups
-    # print('Addeding cancers to the session...')
-    # db.session.add_all(cancers.values())
-    print('Memory usage before commit: ', memory_usage())
-    db.session.commit()
-    with app.app_context():
-        load_mimp_mutations(proteins)   # this requires having sites already loaded
-    start = time.clock()
-    with app.app_context():
-        proteins = get_proteins()
-        import_mappings(proteins)
-    end = time.clock()
-    print('Imported mappings in:', end - start)
-    remove_wrong_proteins(proteins)
-    print('Memory usage after mappings: ', memory_usage())
+def import_data(reload_relational=False, import_mappings=False):
+    if reload_relational:
+        global genes
+        genes, proteins = create_proteins_and_genes()
+        load_sequences(proteins)
+        select_preferred_isoforms(genes)
+        load_disorder(proteins)
+        load_domains(proteins)
+        # cancers = load_cancers()
+        kinases, groups = load_sites(proteins)
+        kinases, groups = load_kinase_classification(proteins, kinases, groups)
+        print('Adding kinases to the session...')
+        db.session.add_all(kinases.values())
+        print('Adding groups to the session...')
+        db.session.add_all(groups.values())
+        del kinases
+        del groups
+        removed = remove_wrong_proteins(proteins)
+        print('Memory usage before first commit: ', memory_usage())
+        db.session.commit()
+        with app.app_context():
+            mutations = load_mutations(proteins, removed)
+        print('Memory usage before second commit: ', memory_usage())
+        db.session.commit()
+    if import_mappings:
+        with app.app_context():
+            proteins = get_proteins()
+            import_mappings(proteins)
 
 
 def get_proteins():
@@ -182,19 +183,19 @@ def load_domains(proteins):
             domain for domain in protein.domains
             # - the same interpro id
             if domain.interpro == interpro and
-            # - overlapping ends
-            (domain.start <= start and domain.end >= end) and
-            # - at least 50% of common coverage for shorter occurance of domain
+            # - at least 75% of common coverage for shorter occurance of domain
             (
                 (min(domain.end, end) - max(domain.start, start))
                 / min(len(domain), end - start)
-                > 0.50
+                > 0.75
             )
         ]
 
         if similar_domains:
-
-            assert len(similar_domains) == 1
+            try:
+                assert len(similar_domains) == 1
+            except AssertionError:
+                print(similar_domains)
             domain = similar_domains[0]
 
             domain.start = min(domain.start, start)
@@ -268,9 +269,11 @@ def remove_wrong_proteins(proteins):
     lack_of_stop = 0
     no_stop_at_the_end = 0
 
+    print('Removing proteins with misplaced stop codons:')
+
     to_remove = set()
 
-    for protein in proteins.values():
+    for protein in tqdm(proteins.values()):
         hit = False
         if '*' in protein.sequence[:-1]:
             stop_inside += 1
@@ -284,14 +287,18 @@ def remove_wrong_proteins(proteins):
         if hit:
             to_remove.add(protein)
 
+    removed = set()
     for protein in to_remove:
+        removed.add(protein.refseq)
         del proteins[protein.refseq]
-        db.session.delete(protein)
+        db.session.expunge(protein)
 
     print('Removed proteins of sequences:')
     print('\twith stop codon inside (excluding the last pos.):', stop_inside)
     print('\twithout stop codon at the end:', no_stop_at_the_end)
     print('\twithout stop codon at all:', lack_of_stop)
+
+    return removed
 
 
 def create_proteins_and_genes():
@@ -420,28 +427,78 @@ def load_cancers():
     return cancers
 
 
-def load_mutations(proteins, cancers):
-    with open('data/ad_muts.tsv', 'r') as f:
-        header = f.readline().rstrip().split('\t')
-        assert header == ['gene', 'cancer_type', 'sample_id', 'position',
-                          'wt_residue', 'mut_residue']
-        for line in f:
-            line = line.rstrip().split('\t')
-            gene, _, sample_data, position, wt_residue, mut_residue = line
-            _, _, cancer_code, sample_id, _, _ = sample_data.split(' ')
+def load_mutations(proteins, removed):
 
-            Mutation(
-                cancers[cancer_code],
-                sample_id,
-                position,
-                wt_residue,
-                mut_residue,
-                proteins[gene]
-            )
-    print('Mutations loaded')
+    print('Loading mutations:')
 
+    # a counter to give mutations.id as pk
+    mutations = {}
 
-def load_mimp_mutations(proteins):
+    skipped = set()
+
+    def flush_basic_mutations(mutations):
+        db.session.bulk_insert_mappings(
+            Mutation,
+            [
+                {
+                    'id': data[0],
+                    'is_ptm': data[1],
+                    'position': mutation[0],
+                    'protein_id': mutation[1],
+                    'alt': mutation[2]
+                }
+                for mutation, data in mutations.items()
+            ]
+        )
+        db.session.flush()
+
+    mutations_cnt = 1
+
+    for line in read_mappings(
+        'data/200616/all_variants/playground',
+        'annot_*.txt.gz'
+    ):
+        prot = line.rstrip().split('\t')[-1]
+
+        for dest in filter(bool, prot.split(',')):
+            data = dest.split(':')
+            refseq = data[1]
+            ref, pos, alt = decode_mutation(data[-1])
+
+            try:
+                protein = proteins[refseq]
+            except KeyError:
+                skipped.add(refseq)
+                continue
+
+            sites = protein.get_sites_from_range(pos - 7, pos + 7)
+
+            if sites:
+
+                try:
+                    assert ref == protein.sequence[pos - 1]
+                except AssertionError:
+                    print(refseq, ref, pos)
+
+                key = (pos, protein.id, alt)
+
+                if key in mutations:
+                    # TODO: what to do?
+                    pass
+                else:
+                    mutations[key] = (mutations_cnt, True)
+                    mutations_cnt += 1
+
+        if mutations_cnt % 100000 == 0:
+            print('Flush after ', mutations_cnt)
+            flush_basic_mutations(mutations)
+            mutations = {}
+
+    db.session.commit()
+    print('All skipped mutations (including removed proteins):')
+    print(len(skipped))
+    print('Skipped mutations belonging to proteins (not in database):')
+    print(len(skipped - removed))
 
     # load("all_mimp_annotations.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
@@ -449,43 +506,128 @@ def load_mimp_mutations(proteins):
 
     print('Loading mimp mutations:')
 
+    mimps = []
+
     header = [
         'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
         'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
     ]
 
     def parser(line):
+        nonlocal mimps, mutations_cnt
+
         refseq = line[0]
         mut = line[1]
         psite_pos = line[2]
 
         protein = proteins[refseq]
-        pos = int(mut[1:-1])
-        assert protein.sequence[pos - 1] == mut[0]
+        ref, pos, alt = decode_raw_mutation(mut)
+        assert protein.sequence[pos - 1] == ref
 
         # TBD
         # print(line[9], line[10], protein.gene.name)
 
         assert line[13] in ('gain', 'loss')
 
-        Mutation(
-            position=pos,
-            mut_residue=mut[-1],
-            protein=protein,
-            sites=[
-                site
-                for site in protein.sites
-                if site.position == psite_pos
-            ],
-            position_in_motif=int(line[3]),
-            effect=1 if line[13] == 'gain' else 0,
-            pwm=line[9],
-            pwm_family=line[10]
+        key = (pos, protein.id, alt)
+
+        if key in mutations:
+            mutation_id = mutations[key][0]
+        else:
+            try:
+                mutation = Mutation.query.filter_by(position=pos, protein_id=protein.id, alt=alt).one()
+                mutation_id = mutation.id
+            except Exception:
+                mutation_id = mutations_cnt
+                mutations[key] = (mutations_cnt, True)
+                mutations_cnt += 1
+
+        # TODO: sites
+        """
+        sites=[
+            site
+            for site in protein.sites
+            if site.position == psite_pos
+        ],
+        """
+        mimps.append(
+            mutation_id,
+            int(line[3]),
+            1 if line[13] == 'gain' else 0,
+            line[9],
+            line[10],
+            len(mimps)
         )
 
     parse_tsv_file('data/all_mimp_annotations.tsv_head', parser, header)
 
+    flush_basic_mutations(mutations)
+
+    db.session.bulk_insert_mappings(
+        MIMPMutation,
+        [
+            dict(
+                zip(
+                    ('mutation_id', 'position_in_motif', 'effect',
+                     'pwm', 'pwm_family', 'id'),
+                    mutation_metadata
+                )
+            )
+            for mutation_metadata in mimps
+        ]
+    )
+    print('MIMP mutations loaded')
+
+    """
+    files = {
+        'cancer': 'data/mutations/TCGA_muts_annotated.txt'
+    }
+
+    # TODO mimps are to be rewritten to
+    mimps = load_mimp_mutations(proteins)
+
+    from collections import Counter
+    mutations_counter = Counter()
+
+    def cancer_parser(line):
+
+        nonlocal mutations_counter
+
+        mutations = line[9].split(',')
+
+        for mutation in mutations:
+
+            refseq = mutation[1]
+            mut = mutation[4]
+            pos = int(mut[1:-1])
+
+            assert protein.sequence[pos - 1] == mut[0]
+
+            mutations_counter[
+                (
+                    pos,
+                    mut[-1],
+                    proteins[refseq].id
+                )
+            ] += 1
+
+    parse_tsv_file(files['cancer'], cancer_parser)
+
+    db.session.bulk_insert_mappings(
+        Mutation,
+        [
+            {
+                'position': mutation[0],
+                'mut_residue': mutation[1],
+                'protein_id': mutation[2],
+                'count': count
+            }
+            for mutation, count in mutations_counter.items()
+        ]
+    )
+
     print('Mutations loaded')
+    """
 
 
 def get_preferred_gene_isoform(gene_name):
@@ -630,8 +772,6 @@ def read_mappings(directory, pattern):
             for line in buffered_readlines(f, 10000):
                 yield line.decode("latin1")
 
-        break   # TODO: remove this temporary constraint
-
 
 def chunked_list(full_list, chunk_size=50):
     buffer = []
@@ -752,9 +892,7 @@ def import_mappings(proteins):
             # references (nuc, aa): (G, K) and alt nuc C defines that
             # the alt aa has to be Asparagine (N) - no other is valid).
             # Note: it could be used to compress the data in memory too
-            aa_ref = prot_mut[2]
-            aa_pos = prot_mut[3:-1]
-            aa_alt = prot_mut[-1]
+            aa_ref, aa_pos, aa_alt = decode_mutation(prot_mut)
 
             try:
                 # try to get it from cache (`proteins` dictionary)
@@ -766,6 +904,8 @@ def import_mappings(proteins):
                         first()
                     proteins[refseq] = protein
             except KeyError:
+                continue
+                """
                 # if the protein was not in the cache,
                 # create it and add to the cache
                 gene, _ = get_or_create(Gene, name=name)
@@ -775,14 +915,15 @@ def import_mappings(proteins):
                 db.session.add(protein)
                 db.session.flush()
                 db.session.refresh(protein)
+                """
 
-            assert int(aa_pos) == (int(cdna_pos) - 1) // 3 + 1
+            assert aa_pos == (int(cdna_pos) - 1) // 3 + 1
 
             # add new item, emulating set update
             item = strand + aa_ref + aa_alt + ':'.join((
                 '%x' % int(cdna_pos), exon, '%x' % protein.id))
             new_variants.add(item)
-            key = protein.gene.name + ' ' + aa_ref + aa_pos + aa_alt
+            key = protein.gene.name + ' ' + aa_ref + str(aa_pos) + aa_alt
             bdb_refseq[key].update({refseq})
 
         bdb[snv].update(new_variants)

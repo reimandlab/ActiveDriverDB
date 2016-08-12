@@ -199,8 +199,7 @@ class Protein(db.Model):
             # for now, I am grouping just by position and cancer
 
             key = (mutation.position,
-                   mutation.mut_residue,
-                   mutation.cancer.name)
+                   mutation.alt)
             try:
                 mutations_grouped[key] += [mutation]
             except KeyError:
@@ -260,6 +259,37 @@ class Protein(db.Model):
             kinase_groups.update((site.kinase_groups))
         return kinase_groups
 
+    def get_sites_from_range(self, left, right):
+        """Retrives sites from given range defined as <left, right>, inclusive.
+
+        Algoritm is based on bisection and an assumption,
+        that sites are sorted by position in the database.
+        """
+        assert left < right
+
+        sites = self.sites
+
+        for i, site in enumerate(sites):
+            if site.position >= left:
+                start = i
+                break
+        else:
+            return []
+
+        for i, site in enumerate(reversed(sites)):
+            if site.position <= right:
+                end = i
+                break
+        else:
+            return []
+
+        return sites[start:end]
+
+    @cached_property
+    def interactors_count(self):
+        """Return interactors count which will be displayed in NetworkView."""
+        return len(self.kinases) + len(self.kinase_groups)
+
 
 class Site(db.Model):
     __tablename__ = 'site'
@@ -290,7 +320,7 @@ class Cancer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16))
     name = db.Column(db.Text)
-    mutations = db.relationship('Mutation', backref='cancer')
+    # mutations = db.relationship('Mutation', backref='cancer')
 
     def __repr__(self):
         return '<Cancer with code: {0}, named: {1}>'.format(
@@ -314,20 +344,6 @@ class InterproDomain(db.Model):
 
     occurrences = db.relationship('Domain', backref='interpro')
 
-    @cached_property
-    def possible_names(self):
-        """Return strings which might be used to describe the domain,
-
-        form the longest to the shortest. Last one has to be a single character
-        """
-        return [
-            self.accession + ': ' + self.description,
-            self.accession + ': ' + self.short_description,
-            self.accession,
-            self.description[0] + '.',  # TODO this is not informative... :(
-            self.description[0]
-        ]
-
 
 class Domain(db.Model):
     __tablename__ = 'domain'
@@ -338,38 +354,52 @@ class Domain(db.Model):
     start = db.Column(db.Integer)
     end = db.Column(db.Integer)
 
-    @cached_property
-    def shown_name(self):
-        """Generates a name for the domain which will fit into a track."""
-        names_to_try = self.interpro.possible_names
-        length = self.end - self.start
-        for name in names_to_try:
-            if len(name) <= length:
-                return name
-
-        # the last name to try is one character long, and domains cannot be
-        # shorter than one aminoacid (or: certainly they have to be longer)
-        assert False
-
     def __len__(self):
         return self.end - self.start
+
+    def __repr__(self):
+        return '<Domain "{0}" in {1}, at [{2}, {3}] >'.format(
+            self.interpro.accession,
+            self.protein.refseq,
+            self.start,
+            self.end
+        )
+
+
+def mutation_details_relationship(class_name):
+    return db.relationship(
+        class_name,
+        backref='mutation',
+        uselist=False
+    )
 
 
 class Mutation(db.Model):
     __tablename__ = 'mutation'
+    __table_args__ = (
+        db.Index('mutation_index', 'alt', 'protein_id', 'position'),
+        # TODO: is constraint neccessary?
+        # db.UniqueConstraint('alt', 'protein_id', 'position')
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     position = db.Column(db.Integer)
-    wt_residue = db.Column(db.String(1))
-    mut_residue = db.Column(db.String(1))
-    sample_id = db.Column(db.String(64))
-    cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
+    alt = db.Column(db.String(1))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
-    pwm = db.Column(db.Text)
-    pwm_family = db.Column(db.Text)
+    is_ptm = db.Column(db.Boolean)
+    """Mutation is PTM related if it may affect PTM site.
 
-    # gain = +1, loss = -1
-    effect = db.Column(db.Boolean)
+    Mutations flanking PTM site in a distance up to 7 residues from
+    a site (called here 'distal') will be included too.
+    """
+
+    meta_cancer = mutation_details_relationship('CancerMutation')
+    meta_inherited = mutation_details_relationship('InheritedMutation')
+    meta_ESP6500 = mutation_details_relationship('ExomeSequencingMutation')
+    meta_1KG = mutation_details_relationship('The1000GenomesMutation')
+
+    meta_MIMP = mutation_details_relationship('MIMPMutation')
 
     # one mutation can affect multiple sites and
     # one site can be affected by multiple mutations
@@ -378,27 +408,31 @@ class Mutation(db.Model):
         secondary=make_association_table('site.id', 'mutation.id')
     )
 
-    # not null only for mimp mutations:
-    # position of a mutation in an associated motif
-    position_in_motif = db.Column(db.Integer)
+    def __repr__(self):
+        return '<Mutation in {1}, at {2} aa, substitution to: {3}>'.format(
+            self.protein.refseq,
+            self.position,
+            self.alt
+        )
 
-    # Note: following properties could become a columns of the database tables
-    # (in the future) to avoid repetitive calculation of constant variables.
-    # Nonetheless making decision about each of these should take into account,
-    # how often columns and other models referenced in property will be updated
-    # (so we can avoid unnecessary whole database rebuilding).
+    @cached_property
+    def is_confirmed(self):
+        """Mutation is confirmed if there are metadata from one of four studies
 
-    # We can also use SQL Materialized View
-    # For MySQL manual implementation is needed but it is quite straightforward
+        (or experiments). Presence of MIMP metadata does not imply
+        if mutation has been ever studied experimentally before.
+        """
+        return (
+            self.meta_cancer or
+            self.meta_inherited or
+            self.meta_ESP6500 or
+            self.meta_1KG
+        )
 
     @hybrid_property
-    def is_ptm(self):
-        """Mutation is PTM related if it may affect PTM site.
-
-        Mutations flanking PTM site in a distance up to 7 residues from
-        a site (called here 'distal') will be included too.
-        """
-        return self.is_ptm_distal
+    def ref(self):
+        sequence = Protein.query.get(self.protein_id).sequence
+        return sequence[self.position - 1]
 
     @hybrid_property
     def is_ptm_direct(self):
@@ -421,7 +455,7 @@ class Mutation(db.Model):
         Distal flank is defined here as [pos - 7, pos + 7] span,
         where pos is the position of a PTM site.
         """
-        return self.is_close_to_some_site(7, 7)
+        return self.is_ptm
 
     @hybrid_property
     def cnt_ptm_affected(self):
@@ -438,37 +472,37 @@ class Mutation(db.Model):
         hit = None
 
         while a != b:
-            p = (b - a) // 2 + a
-            site_pos = sites[p].position
+            pivot = (b - a) // 2 + a
+            site_pos = sites[pivot].position
             if site_pos - 7 <= pos and pos <= site_pos + 7:
-                hit = p
+                hit = pivot
                 cnt_affected += 1
                 break
             if pos > site_pos:
-                a = p + 1
+                a = pivot + 1
             else:
-                b = p
+                b = pivot
         else:
             return 0
 
         def cond():
             try:
-                site_pos = sites[p].position
+                site_pos = sites[pivot].position
                 return site_pos - 7 <= pos and pos <= site_pos + 7
             except IndexError:
                 return False
 
         # go to right from found site, check if there is more overlappig sites
-        p = hit + 1
+        pivot = hit + 1
         while cond():
             cnt_affected += 1
-            p += 1
+            pivot += 1
 
         # and then go to the left
-        p = hit - 1
+        pivot = hit - 1
         while cond():
             cnt_affected += 1
-            p -= 1
+            pivot -= 1
 
         return cnt_affected
 
@@ -534,3 +568,61 @@ class Mutation(db.Model):
                 )
         )
         return db.session.query(q).scalar()
+
+
+class MutationDetails:
+    """Base for tables defining detailed metadata for specific mutations"""
+    from sqlalchemy.ext.declarative import declared_attr
+
+    @declared_attr
+    def __tablename__(cls):
+        return cls.__name__.lower()
+
+    @declared_attr
+    def id(cls):
+        return db.Column('id', db.Integer, primary_key=True)
+
+    @declared_attr
+    def mutation_id(cls):
+        return db.Column(db.Integer, db.ForeignKey('mutation.id'))
+
+
+class CancerMutation(MutationDetails, db.Model):
+    """Metadata for cancer mutations from ICGC data portal"""
+    sample_id = db.Column(db.String(64))
+    cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
+
+    count = db.Column(db.Integer)
+
+
+class InheritedMutation(MutationDetails, db.Model):
+    """Metadata for inherited diseased mutations from ClinVar from NCBI"""
+    pass
+
+
+class PopulationMutation(MutationDetails):
+    """Metadata common for mutations from all population-wide studies"""
+    frequency = db.Column(db.Integer)
+
+
+class ExomeSequencingMutation(PopulationMutation, db.Model):
+    """Metadata for ESP 6500 mutation"""
+    pass
+
+
+class The1000GenomesMutation(PopulationMutation, db.Model):
+    """Metadata for 1 KG mutation"""
+    pass
+
+
+class MIMPMutation(MutationDetails, db.Model):
+    """Metadata for MIMP mutation"""
+
+    pwm = db.Column(db.Text)
+    pwm_family = db.Column(db.Text)
+
+    # gain = +1, loss = -1
+    effect = db.Column(db.Boolean)
+
+    # position of a mutation in an associated motif
+    position_in_motif = db.Column(db.Integer)
