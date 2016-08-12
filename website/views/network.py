@@ -10,6 +10,14 @@ from website.helpers.filters import Filters
 from website.helpers.filters import Filter
 
 
+def get_nearby_sequence(site, protein, dst=3):
+    return (
+        '-' * -min(0, (site.position - dst)) +
+        protein.sequence[max(site.position - dst, 0):min(site.position + dst, protein.length)] +
+        '-' * (max(protein.length, site.position - dst) - protein.length)
+    )
+
+
 class NetworkView(FlaskView):
     """View for local network of proteins"""
 
@@ -63,6 +71,15 @@ class NetworkView(FlaskView):
                 'mutations_count': protein.mutations.count(),
                 'kinases': protein_kinases_names
             },
+            'sites': [
+                {
+                    'position': site.position,
+                    'residue': site.residue,
+                    'kinases': [kinase.name for kinase in site.kinases],
+                    'nearby_sequence': get_nearby_sequence(site, protein)
+                }
+                for site in protein.sites if site.kinases
+            ],
             'kinase_groups': [
                 {
                     'name': group.name,
