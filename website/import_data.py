@@ -390,12 +390,15 @@ def load_cancers():
 
 def load_mutations(proteins, removed):
 
+    from collections import defaultdict
+
     print('Loading mutations:')
 
     # a counter to give mutations.id as pk
     mutations = {}
 
     skipped = set()
+    broken_seq = defaultdict(list)
 
     def flush_basic_mutations(mutations):
         db.session.bulk_insert_mappings(
@@ -439,7 +442,8 @@ def load_mutations(proteins, removed):
                 try:
                     assert ref == protein.sequence[pos - 1]
                 except AssertionError:
-                    print(refseq, ref, pos)
+                    broken_seq[refseq].append((protein.id, alt))
+                    continue
 
                 key = (pos, protein.id, alt)
 
@@ -451,7 +455,6 @@ def load_mutations(proteins, removed):
                     mutations_cnt += 1
 
         if mutations_cnt % 100000 == 0:
-            print('Flush after ', mutations_cnt, refseq)
             flush_basic_mutations(mutations)
             mutations = {}
 
@@ -459,10 +462,16 @@ def load_mutations(proteins, removed):
     mutations = {}
 
     db.session.commit()
-    print('All skipped mutations (including removed proteins):')
-    print(len(skipped))
-    print('Skipped mutations belonging to proteins (not in database):')
-    print(len(skipped - removed))
+    print(
+        'Skipped mutations from %s proteins (including removed):'
+        %
+        len(skipped)
+    )
+    print(
+        'Skipped mutations from %s proteins (not in database only):'
+        %
+        len(skipped - removed)
+    )
 
     # load("all_mimp_annotations.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
@@ -502,9 +511,18 @@ def load_mutations(proteins, removed):
         mut = line[1]
         psite_pos = line[2]
 
-        protein = proteins[refseq]
+        try:
+            protein = proteins[refseq]
+        except KeyError:
+            return
+
         ref, pos, alt = decode_raw_mutation(mut)
-        assert protein.sequence[pos - 1] == ref
+
+        try:
+            assert ref == protein.sequence[pos - 1]
+        except AssertionError:
+            broken_seq[refseq].append((protein.id, alt))
+            return
 
         # TBD
         # print(line[9], line[10], protein.gene.name)
@@ -578,17 +596,27 @@ def load_mutations(proteins, removed):
 
         nonlocal mutations_counter
 
-        cancer_mutations = line[9].split(',')
+        cancer_mutations = line[9].replace(';', ',').split(',')
 
         for mutation in cancer_mutations:
+            mutation = mutation.split(':')
 
             refseq = mutation[1]
             mut = mutation[4]
 
-            ref, pos, alt = decode_mutations(mut)
+            ref, pos, alt = decode_mutation(mut)
 
-            protein = proteins[refseq]
-            assert protein.sequence[pos - 1] == ref
+            try:
+                protein = proteins[refseq]
+            except KeyError:
+                return
+
+            try:
+                assert ref == protein.sequence[pos - 1]
+            except AssertionError:
+                broken_seq[refseq].append((protein.id, alt))
+                return
+
             sites = protein.get_sites_from_range(pos - 7, pos + 7)
 
             key = (pos, protein.id, alt)
@@ -631,17 +659,27 @@ def load_mutations(proteins, removed):
 
     def esp_parser(line):
 
-        line_mutations = line[9].split(',')
+        line_mutations = line[9].replace(';', ',').split(',')
 
         for mutation in line_mutations:
+            mutation = mutation.split(':')
 
             refseq = mutation[1]
             mut = mutation[4]
 
-            ref, pos, alt = decode_mutations(mut)
+            ref, pos, alt = decode_mutation(mut)
 
-            protein = proteins[refseq]
-            assert protein.sequence[pos - 1] == ref
+            try:
+                protein = proteins[refseq]
+            except KeyError:
+                return
+
+            try:
+                assert ref == protein.sequence[pos - 1]
+            except AssertionError:
+                broken_seq[refseq].append((protein.id, alt))
+                return
+
             sites = protein.get_sites_from_range(pos - 7, pos + 7)
 
             key = (pos, protein.id, alt)
