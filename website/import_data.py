@@ -518,7 +518,7 @@ def load_mutations(proteins, removed):
         'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
     ]
 
-    def get_or_make_mutation(key, *args):
+    def get_or_make_mutation(key, is_ptm):
         nonlocal mutations_cnt, mutations
 
         if key in mutations:
@@ -531,7 +531,7 @@ def load_mutations(proteins, removed):
                 mutation_id = mutation.id
             except Exception:
                 mutation_id = mutations_cnt
-                mutations[key] = tuple(mutations_cnt, *args)
+                mutations[key] = tuple(mutations_cnt, is_ptm)
                 mutations_cnt += 1
         return mutation_id
 
