@@ -3,21 +3,26 @@ import psutil
 from tqdm import tqdm
 from app import app
 from app import db
+from database import get_or_create
 from helpers.bioinf import decode_mutation
 from helpers.bioinf import decode_raw_mutation
-from website.models import Protein
 from website.models import Cancer
 from website.models import CancerMutation
 from website.models import Domain
-from website.models import Mutation
-from website.models import MIMPMutation
-from website.models import Site
-from website.models import Kinase
-from website.models import KinaseGroup
+from website.models import ExomeSequencingMutation
 from website.models import Gene
 from website.models import InterproDomain
+from website.models import Kinase
+from website.models import KinaseGroup
+from website.models import MIMPMutation
 from website.models import mutation_site_association
-from website.models import ExomeSequencingMutation
+from website.models import Mutation
+from website.models import Protein
+from website.models import Site
+from helpers.parsers import buffered_readlines
+from helpers.parsers import parse_fasta_file
+from helpers.parsers import parse_tsv_file
+
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
 # (otherwise MySQL server will be gone)
@@ -63,51 +68,6 @@ def import_data(reload_relational=False, import_mappings=False):
 
 def get_proteins():
     return {protein.refseq: protein for protein in Protein.query.all()}
-
-
-def buffered_readlines(file_handle, line_count=5000):
-    is_eof = False
-    while not is_eof:
-        buffer = []
-        # read as much as line_count says
-        for _ in range(line_count):
-            line = file_handle.readline()
-
-            # stop if needed
-            if not line:
-                is_eof = True
-                break
-
-            buffer.append(line)
-        # release one row in a once from buffer
-        for line in buffer:
-            yield line
-
-
-def count_lines(filename):
-    with open(filename) as f:
-        return sum(1 for line in f)
-
-
-def parse_tsv_file(filename, parser, file_header=False):
-    """Utility function wraping file parser
-
-    It opens file, provides progress bar, and checks if the file header is the
-    same as given (if provided). For each line parser will be called.
-    """
-    with open(filename) as f:
-        header = f.readline().rstrip().split('\t')
-        if file_header:
-            assert header == file_header
-        for line in tqdm(f, total=count_lines(filename)):
-            line = line.rstrip().split('\t')
-            parser(line)
-
-
-def parse_fasta_file(filename, parser):
-    with open(filename) as f:
-        for line in tqdm(f, total=count_lines(filename)):
-            parser(line)
 
 
 def load_domains(proteins):
@@ -834,14 +794,6 @@ def memory_usage():
     return process.memory_info().rss
 
 
-def get_or_create(model, **kwargs):
-    from sqlalchemy.orm.exc import NoResultFound
-    try:
-        return model.query.filter_by(**kwargs).one(), False
-    except NoResultFound:
-        return model(**kwargs), True
-
-
 def read_mappings(directory, pattern):
 
     import gzip
@@ -856,17 +808,6 @@ def read_mappings(directory, pattern):
 
             for line in buffered_readlines(f, 10000):
                 yield line.decode("latin1")
-
-
-def chunked_list(full_list, chunk_size=50):
-    buffer = []
-    for element in tqdm(full_list):
-        buffer.append(element)
-        if len(buffer) >= chunk_size:
-            yield buffer
-            buffer = []
-    if buffer:
-        yield buffer
 
 
 def import_mappings(proteins):

@@ -1,9 +1,27 @@
 import os
+from sqlalchemy.orm.exc import NoResultFound
 from flask_sqlalchemy import SQLAlchemy
 import bsddb3 as bsddb
 
 
 db = SQLAlchemy()
+
+
+def get_or_create(model, **kwargs):
+    """Return a tuple: (object, was_created) for given parameters.
+
+    Object will be taken from relational database (from a table corresponding
+    to given `model`) or created if needed. Keyword arguments specify values of
+    particular fields to be used in filtering or creation of the particular
+    object. If there are more than one objects matching, a native SQLAlchemy
+    exception will be raised.
+
+    It's analagous with Django ORM function of the same name.
+    """
+    try:
+        return model.query.filter_by(**kwargs).one(), False
+    except NoResultFound:
+        return model(**kwargs), True
 
 
 class SetWithCallback(set):
@@ -49,12 +67,15 @@ class BerkleyHashSet:
         self.db = bsddb.hashopen(self.get_path(), mode)
 
     def __getitem__(self, key):
-        """
-        key: has to be str
-        """
+        """key: has to be str"""
         key = bytes(key, 'utf-8')
         try:
-            items = list(filter(bool, self.db.get(key).decode('utf-8').split('|')))
+            items = list(
+                filter(
+                    bool,
+                    self.db.get(key).decode('utf-8').split('|')
+                )
+            )
         except (KeyError, AttributeError):
             items = []
 
@@ -64,8 +85,7 @@ class BerkleyHashSet:
         )
 
     def __setitem__(self, key, items):
-        """key: might be a str or bytes
-        """
+        """key: might be a str or bytes"""
         assert '|' not in items
         if not isinstance(key, bytes):
             key = bytes(key, 'utf-8')
@@ -89,10 +109,12 @@ def decode_csv(value):
     value = value
     strand, ref, alt = value[:3]
     cdna_pos, exon, protein_id = value[3:].split(':')
-    cdna_pos = int(cdna_pos, base=16)
     return dict(zip(
         ('strand', 'ref', 'alt', 'pos', 'cdna_pos', 'exon', 'protein_id'),
-        (strand, ref, alt, (cdna_pos - 1) // 3 + 1, cdna_pos, exon, int(protein_id, base=16))
+        (
+            strand, ref, alt, (cdna_pos - 1) // 3 + 1,
+            int(cdna_pos, base=16), exon, int(protein_id, base=16)
+        )
     ))
 
 
