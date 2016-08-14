@@ -22,6 +22,8 @@ from website.models import Site
 from helpers.parsers import buffered_readlines
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
+from helpers.parsers import chunked_list
+from helpers.parsers import chunked_items
 
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
@@ -552,21 +554,24 @@ def load_mutations(proteins, removed):
 
     parse_tsv_file('data/all_mimp_annotations.tsv_head', parser, header)
 
-    flush_basic_mutations(mutations)
+    for chunk in chunked_list(mutations):
+        flush_basic_mutations(chunk)
 
-    db.session.bulk_insert_mappings(
-        MIMPMutation,
-        [
-            dict(
-                zip(
-                    ('mutation_id', 'position_in_motif', 'effect',
-                     'pwm', 'pwm_family', 'id'),
-                    mutation_metadata
+    for chunk in chunked_list(mutations):
+        db.session.bulk_insert_mappings(
+            MIMPMutation,
+            [
+                dict(
+                    zip(
+                        ('mutation_id', 'position_in_motif', 'effect',
+                         'pwm', 'pwm_family', 'id'),
+                        mutation_metadata
+                    )
                 )
-            )
-            for mutation_metadata in mimps
-        ]
-    )
+                for mutation_metadata in chunk
+            ]
+        )
+        db.session.flush()
 
     db.session.commit()
 
@@ -582,6 +587,8 @@ def load_mutations(proteins, removed):
     )
 
     db.session.commit()
+
+    del mimps
 
     # CANCER MUTATIONS
     print('Loading cancer mutations:')
@@ -638,20 +645,27 @@ def load_mutations(proteins, removed):
 
     parse_tsv_file('data/mutations/TCGA_muts_annotated.txt', cancer_parser)
 
-    flush_basic_mutations(mutations)
+    for chunk in chunked_list(mutations):
+        flush_basic_mutations(chunk)
 
-    db.session.bulk_insert_mappings(
-        CancerMutation,
-        [
-            {
-                'mutation_id': mutation[0],
-                'cancer_id': mutation[1],
-                'sample_name': mutation[2],
-                'count': mutations_counter
-            }
-            for mutation, count in mutations_counter.items()
-        ]
-    )
+    for chunk in chunked_list(mutations_counter.items()):
+        db.session.bulk_insert_mappings(
+            CancerMutation,
+            [
+                {
+                    'mutation_id': mutation[0],
+                    'cancer_id': mutation[1],
+                    'sample_name': mutation[2],
+                    'count': mutations_counter
+                }
+                for mutation, count in chunk
+            ]
+        )
+        db.session.flush()
+
+    db.session.commit()
+
+    del mutations_counter
 
     # ESP6500 MUTATIONS
     print('Loading ExomeSequencingProject 6500 mutations:')
@@ -697,20 +711,23 @@ def load_mutations(proteins, removed):
 
     parse_tsv_file('data/mutations/ESP6500_muts_annotated.txt', esp_parser)
 
-    flush_basic_mutations(mutations)
+    for chunk in chunked_list(mutations):
+        flush_basic_mutations(chunk)
 
-    db.session.bulk_insert_mappings(
-        ExomeSequencingMutation,
-        [
-            {
-                # 'frequency': mutation[1],
-                'mutation_id': mutation[0]
-            }
-            for mutation in esp_mutations
-        ]
-    )
+    for chunk in chunked_list(esp_mutations):
+        db.session.bulk_insert_mappings(
+            ExomeSequencingMutation,
+            [
+                {
+                    # 'frequency': mutation[1],
+                    'mutation_id': mutation[0]
+                }
+                for mutation in esp_mutations
+            ]
+        )
+        db.session.flush()
 
-
+    db.session.commit()
     print('Mutations loaded')
 
 
