@@ -51,7 +51,7 @@ def parse_fasta_file(filename, parser):
             parser(line)
 
 
-def chunked_list(full_list, chunk_size=50000):
+def chunked_list(full_list, chunk_size=10000):
     buffer = []
     for element in tqdm(full_list):
         buffer.append(element)

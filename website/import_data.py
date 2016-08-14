@@ -402,20 +402,21 @@ def load_mutations(proteins, removed):
     broken_seq = defaultdict(list)
 
     def flush_basic_mutations(mutations):
-        db.session.bulk_insert_mappings(
-            Mutation,
-            [
-                {
-                    'id': data[0],
-                    'is_ptm': data[1],
-                    'position': mutation[0],
-                    'protein_id': mutation[1],
-                    'alt': mutation[2]
-                }
-                for mutation, data in mutations.items()
-            ]
-        )
-        db.session.flush()
+        for chunk in chunked_list(mutations.items()):
+            db.session.bulk_insert_mappings(
+                Mutation,
+                [
+                    {
+                        'id': data[0],
+                        'is_ptm': data[1],
+                        'position': mutation[0],
+                        'protein_id': mutation[1],
+                        'alt': mutation[2]
+                    }
+                    for mutation, data in chunk
+                ]
+            )
+            db.session.flush()
 
     mutations_cnt = 1
 
@@ -553,8 +554,7 @@ def load_mutations(proteins, removed):
 
     parse_tsv_file('data/all_mimp_annotations.tsv_head', parser, header)
 
-    for chunk in chunked_list(mutations):
-        flush_basic_mutations(chunk)
+    flush_basic_mutations(mutations)
 
     for chunk in chunked_list(mutations):
         db.session.bulk_insert_mappings(
@@ -647,8 +647,7 @@ def load_mutations(proteins, removed):
 
     parse_tsv_file('data/mutations/TCGA_muts_annotated.txt', cancer_parser)
 
-    for chunk in chunked_list(mutations):
-        flush_basic_mutations(chunk)
+    flush_basic_mutations(mutations)
 
     for chunk in chunked_list(mutations_counter.items()):
         db.session.bulk_insert_mappings(
@@ -713,8 +712,7 @@ def load_mutations(proteins, removed):
 
     parse_tsv_file('data/mutations/ESP6500_muts_annotated.txt', esp_parser)
 
-    for chunk in chunked_list(mutations):
-        flush_basic_mutations(chunk)
+    flush_basic_mutations(mutations)
 
     for chunk in chunked_list(esp_mutations):
         db.session.bulk_insert_mappings(
