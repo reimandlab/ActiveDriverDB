@@ -23,7 +23,6 @@ from helpers.parsers import buffered_readlines
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import chunked_list
-from helpers.parsers import chunked_items
 
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
