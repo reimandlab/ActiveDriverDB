@@ -657,7 +657,7 @@ def load_mutations(proteins, removed):
                     'mutation_id': mutation[0],
                     'cancer_id': mutation[1],
                     'sample_name': mutation[2],
-                    'count': mutations_counter
+                    'count': count
                 }
                 for mutation, count in chunk
             ]
