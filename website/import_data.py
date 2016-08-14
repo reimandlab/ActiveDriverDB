@@ -574,20 +574,23 @@ def load_mutations(proteins, removed):
 
     db.session.commit()
 
-    db.engine.execute(
-        mutation_site_association.insert(),
-        [
-            {
-                'site_id': s[0],
-                'mutation_id': s[1]
-            }
-            for s in sites
-        ]
-    )
+    for chunk in chunked_list(sites):
+        db.engine.execute(
+            mutation_site_association.insert(),
+            [
+                {
+                    'site_id': s[0],
+                    'mutation_id': s[1]
+                }
+                for s in chunk
+            ]
+        )
+        db.session.flush()
 
     db.session.commit()
 
     del mimps
+    del sites
 
     # CANCER MUTATIONS
     print('Loading cancer mutations:')
@@ -721,7 +724,7 @@ def load_mutations(proteins, removed):
                     # 'frequency': mutation[1],
                     'mutation_id': mutation[0]
                 }
-                for mutation in esp_mutations
+                for mutation in chunk
             ]
         )
         db.session.flush()
