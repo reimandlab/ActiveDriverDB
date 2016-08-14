@@ -441,7 +441,7 @@ def load_mutations(proteins, removed):
 
                 try:
                     assert ref == protein.sequence[pos - 1]
-                except AssertionError:
+                except (AssertionError, IndexError):
                     broken_seq[refseq].append((protein.id, alt))
                     continue
 
@@ -477,7 +477,7 @@ def load_mutations(proteins, removed):
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
 
-    print('Loading mimp mutations:')
+    print('Loading MIMP mutations:')
 
     mimps = []
     sites = []
@@ -520,7 +520,7 @@ def load_mutations(proteins, removed):
 
         try:
             assert ref == protein.sequence[pos - 1]
-        except AssertionError:
+        except (AssertionError, IndexError):
             broken_seq[refseq].append((protein.id, alt))
             return
 
@@ -583,9 +583,8 @@ def load_mutations(proteins, removed):
 
     db.session.commit()
 
-    print('MIMP mutations loaded')
-
     # CANCER MUTATIONS
+    print('Loading cancer mutations:')
 
     from collections import Counter
     mutations_counter = Counter()
@@ -613,7 +612,7 @@ def load_mutations(proteins, removed):
 
             try:
                 assert ref == protein.sequence[pos - 1]
-            except AssertionError:
+            except (AssertionError, IndexError):
                 broken_seq[refseq].append((protein.id, alt))
                 return
 
@@ -654,6 +653,8 @@ def load_mutations(proteins, removed):
         ]
     )
 
+    # ESP6500 MUTATIONS
+    print('Loading ExomeSequencingProject 6500 mutations:')
     mutations = {}
     esp_mutations = []
 
@@ -676,7 +677,7 @@ def load_mutations(proteins, removed):
 
             try:
                 assert ref == protein.sequence[pos - 1]
-            except AssertionError:
+            except (AssertionError, IndexError):
                 broken_seq[refseq].append((protein.id, alt))
                 return
 
