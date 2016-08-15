@@ -38,38 +38,27 @@ def system_memory_percent():
     return psutil.virtual_memory().percent
 
 
-def import_data(reload_relational, import_mappings, only_mutations):
-    if reload_relational and not only_mutations:
-        global genes
-        genes, proteins = create_proteins_and_genes()
-        load_sequences(proteins)
-        select_preferred_isoforms(genes)
-        load_disorder(proteins)
-        load_domains(proteins)
-        # cancers = load_cancers()
-        kinases, groups = load_sites(proteins)
-        kinases, groups = load_kinase_classification(proteins, kinases, groups)
-        print('Adding kinases to the session...')
-        db.session.add_all(kinases.values())
-        print('Adding groups to the session...')
-        db.session.add_all(groups.values())
-        del kinases
-        del groups
-        removed = remove_wrong_proteins(proteins)
-        print('Memory usage before first commit: ', memory_usage())
-        db.session.commit()
-    if only_mutations:
-        proteins = get_proteins()
-        removed = set()
-    if reload_relational or only_mutations:
-        with app.app_context():
-            mutations = load_mutations(proteins, removed)
-        print('Memory usage before second commit: ', memory_usage())
-        db.session.commit()
-    if import_mappings and not only_mutations:
-        with app.app_context():
-            proteins = get_proteins()
-            import_mappings(proteins)
+def import_data():
+    global genes
+    genes, proteins = create_proteins_and_genes()
+    load_sequences(proteins)
+    select_preferred_isoforms(genes)
+    load_disorder(proteins)
+    load_domains(proteins)
+    # cancers = load_cancers()
+    kinases, groups = load_sites(proteins)
+    kinases, groups = load_kinase_classification(proteins, kinases, groups)
+    print('Adding kinases to the session...')
+    db.session.add_all(kinases.values())
+    print('Adding groups to the session...')
+    db.session.add_all(groups.values())
+    del kinases
+    del groups
+    removed = remove_wrong_proteins(proteins)
+    print('Memory usage before first commit: ', memory_usage())
+    db.session.commit()
+    with app.app_context():
+        mutations = load_mutations(proteins, removed)
 
 
 def get_proteins():

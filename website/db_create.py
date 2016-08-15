@@ -2,7 +2,7 @@
 from database import db
 from database import bdb
 from database import bdb_refseq
-from import_data import import_data
+import import_data
 import argparse
 
 
@@ -48,20 +48,22 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.import_mappings:
-        reset_mappings_db()
+    if args.only_mutations:
+        print('Importing mutations')
+        with app.app_context():
+            proteins = import_data.get_proteins()
+            mutations = import_data.load_mutations(proteins, set())
+    else:
+        if args.reload_relational:
+            restet_relational_db()
+            print('Importing data')
+            import_data.import_data()
 
-    if args.reload_relational:
-        restet_relational_db()
-
-    if args.reload_relational or args.import_mappings or args.only_mutations:
-        print('Importing data')
-        import_data(
-            import_mappings=args.import_mappings,
-            reload_relational=args.reload_relational,
-            only_mutations=args.only_mutations
-        )
-        print('Importing completed')
+        if args.import_mappings:
+            reset_mappings_db()
+            with app.app_context():
+                proteins = get_proteins()
+                import_mappings(proteins)
 
     print('Done, all tasks completed.')
 
