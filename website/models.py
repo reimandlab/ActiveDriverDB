@@ -607,18 +607,21 @@ class PopulationMutation(MutationDetails):
     """Metadata common for mutations from all population-wide studies
 
     MAF:
-        EA - european american
-        AA - african american
         All - total value
     """
-    maf_ea = db.Column(db.Integer)
-    maf_aa = db.Column(db.Integer)
-    maf_all = db.Column(db.Integer)
+    maf_all = db.Column(db.Float)
 
 
 class ExomeSequencingMutation(PopulationMutation, db.Model):
-    """Metadata for ESP 6500 mutation"""
-    pass
+    """Metadata for ESP 6500 mutation
+
+    MAF:
+        EA - european american
+        AA - african american
+    """
+    maf_ea = db.Column(db.Float)
+    maf_aa = db.Column(db.Float)
+
 
 
 class The1000GenomesMutation(PopulationMutation, db.Model):

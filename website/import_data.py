@@ -650,7 +650,7 @@ def load_mutations(proteins, removed):
             # not flexible way to select MAF from metadata, but quite quick
             assert metadata[4].startswith('MAF=')
 
-            maf_ea, maf_aa, maf_all = map(int, metadata[4][4:].split(','))
+            maf_ea, maf_aa, maf_all = map(float, metadata[4][4:].split(','))
 
             esp_mutations.append(
                 (
