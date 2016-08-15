@@ -23,6 +23,7 @@ from helpers.parsers import buffered_readlines
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import chunked_list
+from helpers.parsers import read_from_files
 
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
@@ -420,7 +421,7 @@ def load_mutations(proteins, removed):
 
     mutations_cnt = 1
 
-    for line in read_mappings(
+    for line in read_from_files(
         'data/200616/all_variants/playground',
         'annot_*.txt.gz'
     ):
@@ -736,6 +737,18 @@ def load_mutations(proteins, removed):
         db.session.flush()
 
     db.session.commit()
+
+    # 1000 Genomes MUTATIONS (STUB)
+
+    for line in read_from_files(
+        'data/mutations/G1000',
+        'G1000_chr*.txt.gz',
+        skip_header=False
+    ):
+        data = line.rstrip().split('\t')
+        line_mutations = data[9]
+        metadata = data[20]
+        # TODO
     print('Mutations loaded')
 
 
@@ -858,22 +871,6 @@ def memory_usage():
     return process.memory_info().rss
 
 
-def read_mappings(directory, pattern):
-
-    import gzip
-
-    files = get_files(directory, pattern)
-
-    for filename in tqdm(files):
-
-        with gzip.open(filename, 'rb') as f:
-
-            next(f)  # skip the header
-
-            for line in buffered_readlines(f, 10000):
-                yield line.decode("latin1")
-
-
 def import_mappings(proteins):
     print('Importing mappings:')
 
@@ -890,7 +887,7 @@ def import_mappings(proteins):
 
     cnt_old_prots, cnt_new_prots = 0, 0
 
-    for line in read_mappings(
+    for line in read_from_files(
         'data/200616/all_variants/playground',
         'annot_*.txt.gz'
     ):

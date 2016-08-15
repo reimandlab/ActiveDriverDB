@@ -1,6 +1,23 @@
 from tqdm import tqdm
 
 
+def read_from_files(directory, pattern, skip_header=True):
+
+    import gzip
+
+    files = get_files(directory, pattern)
+
+    for filename in tqdm(files):
+
+        with gzip.open(filename, 'rb') as f:
+
+            if skip_header:
+                next(f)
+
+            for line in buffered_readlines(f, 10000):
+                yield line.decode("latin1")
+
+
 def buffered_readlines(file_handle, line_count=5000):
     """Works like a normal readline function but buffers reading operations.
 
