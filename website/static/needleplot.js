@@ -41,7 +41,7 @@ var NeedlePlot = function ()
         site_height: 10,
         animations_speed: 200,
         // 90 is width of description
-        paddings: {bottom: 30, top: 0, left: 89, right: 1},
+        paddings: {bottom: 30, top: 30, left: 89, right: 1},
         y_scale: 'auto',
         sequenceLength: null,
         element: null,
@@ -139,9 +139,9 @@ var NeedlePlot = function ()
             .range([0, config.width - config.paddings.left - config.paddings.right])
 
         axes.y.scale
-            .range([config.height - config.paddings.bottom, config.paddings.bottom])
+            .range([config.height - config.paddings.top, config.paddings.bottom])
 
-        var height_unit = config.height / config.y_scale
+        var height_unit = (config.height - config.paddings.bottom - config.paddings.top) / config.y_scale
 
         axes.y.obj.scale(axes.y.scale)
         axes.y.group.call(axes.y.obj)
@@ -171,7 +171,7 @@ var NeedlePlot = function ()
             )
 
         needles.selectAll('line')
-            .attr('stroke-width', posToX(1) / 5 + 'px')
+            .attr('stroke-width', posToX(1) / 2 + 'px')
             .attr('y1', function(d){ return -d.value * height_unit + 'px' })
 
         leftPadding.attr('height', config.height)
