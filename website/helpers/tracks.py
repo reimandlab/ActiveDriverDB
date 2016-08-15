@@ -156,7 +156,6 @@ class MutationsTrack(Track):
                 grouped.append({})
             grouped[depth][pos] = mutation
 
-        # TODO: sort by occurence count
         return grouped
 
 

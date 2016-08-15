@@ -623,7 +623,6 @@ class ExomeSequencingMutation(PopulationMutation, db.Model):
     maf_aa = db.Column(db.Float)
 
 
-
 class The1000GenomesMutation(PopulationMutation, db.Model):
     """Metadata for 1 KG mutation"""
     pass

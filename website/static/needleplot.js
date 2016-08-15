@@ -4,14 +4,6 @@ var NeedlePlot = function ()
     var scale = 1
 	var position = 0
 
-    var colorMap = {
-      'distant': 'yellow',
-      'network-rewiring': 'lightblue',
-      'direct': 'red',
-      'proximal': 'orange',
-      'other': 'grey'
-    }
-
     var legend = {
         x:
         {
@@ -48,7 +40,6 @@ var NeedlePlot = function ()
         mutations: null,
         sites: null,
         needles: null,
-        colorMap: colorMap,
         legends: {x: 'Sequence', y: '# of mutations'},
         width: 600,
         height: null,
@@ -56,7 +47,14 @@ var NeedlePlot = function ()
         position_callback: null,
         ratio: 0.5,
         min_zoom: 1,
-        max_zoom: 10
+        max_zoom: 10,
+        color_map: {
+          'distant': 'yellow',
+          'network-rewiring': 'lightblue',
+          'direct': 'red',
+          'proximal': 'orange',
+          'other': 'grey'
+        }
     }
 
 	function get_remote_if_needed(new_config, name)
@@ -174,6 +172,10 @@ var NeedlePlot = function ()
             .attr('stroke-width', posToX(1) / 2 + 'px')
             .attr('y1', function(d){ return -d.value * height_unit + 'px' })
 
+        needles.selectAll('circle')
+            .attr('r', posToX(1) / 2 + 'px')
+            .attr('y', function(d){ return -d.value * height_unit + 'px' })
+
         leftPadding.attr('height', config.height)
 
         if(legend.x.obj)
@@ -260,9 +262,18 @@ var NeedlePlot = function ()
 
         needles
             .append('line')
-            .attr('x1', 0)
-            .attr('x2', 0)
-            .attr('y2', 0)
+                .attr('x1', 0)
+                .attr('x2', 0)
+                .attr('y2', 0)
+
+        needles
+            .append('circle')
+                .attr('fill', function(d)
+                    {
+                        return config.color_map[d.category]
+                    }
+                )
+                .attr('x', '0')
 
         sites = vis.selectAll('.site')
             .data(config.sites)
