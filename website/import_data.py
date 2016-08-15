@@ -538,7 +538,7 @@ def load_mutations(proteins, removed):
         sites.extend([
             (site.id, mutation_id)
             for site in protein.sites
-            if site.position == psite_pos
+            if site.position == int(psite_pos)
         ])
 
         mimps.append(
@@ -547,23 +547,22 @@ def load_mutations(proteins, removed):
                 int(line[3]),
                 1 if line[13] == 'gain' else 0,
                 line[9],
-                line[10],
-                len(mimps)
+                line[10]
             )
         )
 
-    parse_tsv_file('data/all_mimp_annotations.tsv_head', parser, header)
+    parse_tsv_file('data/all_mimp_annotations.tsv', parser, header)
 
     flush_basic_mutations(mutations)
 
-    for chunk in chunked_list(mutations):
+    for chunk in chunked_list(mimps):
         db.session.bulk_insert_mappings(
             MIMPMutation,
             [
                 dict(
                     zip(
                         ('mutation_id', 'position_in_motif', 'effect',
-                         'pwm', 'pwm_family', 'id'),
+                         'pwm', 'pwm_family'),
                         mutation_metadata
                     )
                 )
