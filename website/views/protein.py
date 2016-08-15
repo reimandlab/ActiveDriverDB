@@ -44,7 +44,7 @@ class ProteinView(FlaskView):
         disorder = [
             TrackElement(*region) for region in protein.disorder_regions
         ]
-        mutations = active_filters.filtered(protein.mutations)
+        mutations = active_filters.filtered(protein.confirmed_mutations)
 
         tracks = [
             PositionTrack(protein.length, 25),

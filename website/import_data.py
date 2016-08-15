@@ -701,11 +701,18 @@ def load_mutations(proteins, removed):
             key = (pos, protein.id, alt)
             mutation_id = get_or_make_mutation(key, bool(sites))
 
-            # TODO get MAF from line[20] (but how to interpret?!)
+            metadata = line[20].split(';')
+
+            # not flexible way to select MAF from metadata, but quite quick
+            assert metadata[4].startswith('MAF=')
+
+            maf_ea, maf_aa, maf_all = map(int, metadata[4][4:].split(','))
 
             esp_mutations.append(
                 (
-                    # frequency,
+                    maf_ea,
+                    maf_aa,
+                    maf_all,
                     mutation_id
                 )
             )
@@ -719,8 +726,10 @@ def load_mutations(proteins, removed):
             ExomeSequencingMutation,
             [
                 {
-                    # 'frequency': mutation[1],
-                    'mutation_id': mutation[0]
+                    'maf_ea': mutation[0],
+                    'maf_aa': mutation[1],
+                    'maf_all': mutation[2],
+                    'mutation_id': mutation[3]
                 }
                 for mutation in chunk
             ]

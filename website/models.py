@@ -200,7 +200,7 @@ class Protein(db.Model):
     def mutations_grouped(self):
         """Mutations grouped by cancer type and position in the sequence"""
         mutations_grouped = {}
-        for mutation in self.mutations:
+        for mutation in self.confirmed_mutations:
             # for now, I am grouping just by position and cancer
 
             key = (
@@ -328,7 +328,6 @@ class Cancer(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16))
     name = db.Column(db.Text)
-    # mutations = db.relationship('Mutation', backref='cancer')
 
     def __repr__(self):
         return '<Cancer with code: {0}, named: {1}>'.format(
@@ -612,8 +611,16 @@ class InheritedMutation(MutationDetails, db.Model):
 
 
 class PopulationMutation(MutationDetails):
-    """Metadata common for mutations from all population-wide studies"""
-    frequency = db.Column(db.Integer)
+    """Metadata common for mutations from all population-wide studies
+
+    MAF:
+        EA - european american
+        AA - african american
+        All - total value
+    """
+    maf_ea = db.Column(db.Integer)
+    maf_aa = db.Column(db.Integer)
+    maf_all = db.Column(db.Integer)
 
 
 class ExomeSequencingMutation(PopulationMutation, db.Model):
