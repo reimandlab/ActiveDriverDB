@@ -141,6 +141,8 @@ var NeedlePlot = function ()
         axes.y.scale
             .range([config.height - config.paddings.bottom, config.paddings.bottom])
 
+        var height_unit = config.height / config.y_scale
+
         axes.y.obj.scale(axes.y.scale)
         axes.y.group.call(axes.y.obj)
 
@@ -167,9 +169,10 @@ var NeedlePlot = function ()
                     return 'translate(' + [posToX(d.coord), bottom_axis_pos] + ')'
                 }
             )
+            .attr('y1', function(d){ return -d.value * height_unit + 'px' })
 
         needles.selectAll('line')
-            .attr('stroke-width', posToX(1) / 10 + 'px')
+            .attr('stroke-width', posToX(1) / 5 + 'px')
 
         leftPadding.attr('height', config.height)
 
@@ -258,7 +261,6 @@ var NeedlePlot = function ()
         needles
             .append('line')
             .attr('x1', 0)
-            .attr('y1', function(d){ return -d.value * 100 + 'px' })
             .attr('x2', 0)
             .attr('y2', 0)
 
