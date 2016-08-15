@@ -61,7 +61,7 @@ var NeedlePlot = function ()
 
 	function get_remote_if_needed(new_config, name)
 	{
-        if(typeof new_config[name] == 'string')
+        if(typeof new_config[name] === 'string')
         {
 			$.ajax({
 				url: new_config[name],
@@ -98,11 +98,11 @@ var NeedlePlot = function ()
 
     function configure(new_config)
     {
-		allowed_remote_data = ['mutations', 'sites']
+		var allowed_remote_data = ['mutations', 'sites']
 
 		for(var i = 0; i < allowed_remote_data.length; i++)
 		{
-			name = allowed_remote_data[i]
+			var name = allowed_remote_data[i]
 			get_remote_if_needed(new_config, name)
 		}
 
@@ -116,7 +116,7 @@ var NeedlePlot = function ()
 
     function scaleToNeedles()
     {
-		if (config.y_scale == 'auto')
+		if (config.y_scale === 'auto')
 		{
             max = 0
             muts = config.mutations
@@ -366,7 +366,7 @@ var NeedlePlot = function ()
 
 	function _setZoom(new_scale, stop_callback)
 	{
-        if(scale == new_scale)
+        if(scale === new_scale)
             return
 
 		scale = new_scale
