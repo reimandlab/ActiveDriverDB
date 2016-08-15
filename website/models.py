@@ -145,6 +145,9 @@ class Protein(db.Model):
     tx_start = db.Column(db.Integer)
     tx_end = db.Column(db.Integer)
 
+    # interactors count will be displayed in NetworkView
+    interactors_count = db.Column(db.Integer)
+
     # coding sequence domain start/end coordinates
     cds_start = db.Column(db.Integer)
     cds_end = db.Column(db.Integer)
@@ -193,21 +196,11 @@ class Protein(db.Model):
         return len(self.sequence)
 
     @cached_property
-    def confirmed_mutations(self):
-        """Return all mutations which are confirmed in experiments"""
-        return [m for m in self.mutations if m.is_confirmed]
-
-    @cached_property
-    def shown_mutations(self):
-        """Return all mutations which should be shown in different views"""
-        return [m for m in self.mutations if m.is_confirmed or m.meta_MIMP]
-
-    @cached_property
     def mutations_grouped(self):
         """mutations grouped by impact_on_ptm and position in the sequence"""
         mutations_grouped = defaultdict(list)
 
-        for mutation in self.shown_mutations:
+        for mutation in self.mutations:
             key = (
                 mutation.position,
                 mutation.impact_on_ptm
@@ -295,9 +288,7 @@ class Protein(db.Model):
 
         return sites[start:end]
 
-    @cached_property
-    def interactors_count(self):
-        """Return interactors count which will be displayed in NetworkView."""
+    def _calc_interactors_count(self):
         return len(self.kinases) + len(self.kinase_groups)
 
 

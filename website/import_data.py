@@ -3,6 +3,7 @@ import psutil
 from tqdm import tqdm
 from app import app
 from app import db
+from collections import defaultdict
 from database import get_or_create
 from helpers.bioinf import decode_mutation
 from helpers.bioinf import decode_raw_mutation
@@ -56,9 +57,15 @@ def import_data():
     del groups
     removed = remove_wrong_proteins(proteins)
     print('Memory usage before first commit: ', memory_usage())
+    calculate_interactors(proteins)
     db.session.commit()
     with app.app_context():
         mutations = load_mutations(proteins, removed)
+
+
+def calculate_interactors(proteins):
+    for protein in proteins.values():
+        protein.interactors_count = protein._calc_interactors_count()
 
 
 def get_proteins():
@@ -385,15 +392,13 @@ def load_cancers():
 
 def load_mutations(proteins, removed):
 
-    from collections import defaultdict
+    broken_seq = defaultdict(list)
 
     print('Loading mutations:')
 
     # a counter to give mutations.id as pk
+    mutations_cnt = 1
     mutations = {}
-
-    skipped = set()
-    broken_seq = defaultdict(list)
 
     def flush_basic_mutations(mutations):
         for chunk in chunked_list(mutations.items()):
@@ -412,77 +417,6 @@ def load_mutations(proteins, removed):
             )
             db.session.flush()
 
-    mutations_cnt = 1
-
-    for line in read_from_files(
-        'data/200616/all_variants/playground',
-        'annot_*.txt.gz'
-    ):
-        prot = line.rstrip().split('\t')[-1]
-
-        for dest in filter(bool, prot.split(',')):
-            data = dest.split(':')
-            refseq = data[1]
-            ref, pos, alt = decode_mutation(data[-1])
-
-            try:
-                protein = proteins[refseq]
-            except KeyError:
-                skipped.add(refseq)
-                continue
-
-            sites = protein.get_sites_from_range(pos - 7, pos + 7)
-
-            if sites:
-
-                try:
-                    assert ref == protein.sequence[pos - 1]
-                except (AssertionError, IndexError):
-                    broken_seq[refseq].append((protein.id, alt))
-                    continue
-
-                key = (pos, protein.id, alt)
-
-                if key in mutations:
-                    # TODO: what to do?
-                    pass
-                else:
-                    mutations[key] = (mutations_cnt, True)
-                    mutations_cnt += 1
-
-        if mutations_cnt % 100000 == 0:
-            flush_basic_mutations(mutations)
-            mutations = {}
-
-    flush_basic_mutations(mutations)
-    mutations = {}
-
-    db.session.commit()
-    print(
-        'Skipped mutations from %s proteins (including removed):'
-        %
-        len(skipped)
-    )
-    print(
-        'Skipped mutations from %s proteins (not in database only):'
-        %
-        len(skipped - removed)
-    )
-
-    # load("all_mimp_annotations.rsav")
-    # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
-    # row.names=F, quote=F, sep='\t')
-
-    print('Loading MIMP mutations:')
-
-    mimps = []
-    sites = []
-
-    header = [
-        'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
-        'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
-    ]
-
     def get_or_make_mutation(key, is_ptm):
         nonlocal mutations_cnt, mutations
 
@@ -499,6 +433,23 @@ def load_mutations(proteins, removed):
                 mutations[key] = (mutations_cnt, is_ptm)
                 mutations_cnt += 1
         return mutation_id
+
+    db.session.commit()
+
+    # MIMP MUTATIONS
+
+    # load("all_mimp_annotations.rsav")
+    # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
+    # row.names=F, quote=F, sep='\t')
+    print('Loading MIMP mutations:')
+
+    mimps = []
+    sites = []
+
+    header = [
+        'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
+        'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
+    ]
 
     def parser(line):
         nonlocal mimps, mutations_cnt, sites
@@ -731,7 +682,7 @@ def load_mutations(proteins, removed):
 
     db.session.commit()
 
-    # 1000 Genomes MUTATIONS (STUB)
+    # 1000 GENOMES MUTATIONS (STUB)
 
     for line in read_from_files(
         'data/mutations/G1000',
@@ -867,8 +818,10 @@ def import_mappings(proteins):
     from database import bdb
     from database import bdb_refseq
     from database import make_snv_key
+    from database import encode_csv
 
     chromosomes = get_human_chromosomes()
+    broken_seq = defaultdict(list)
 
     bdb.reset()
     bdb_refseq.reset()
@@ -927,35 +880,34 @@ def import_mappings(proteins):
             try:
                 # try to get it from cache (`proteins` dictionary)
                 protein = proteins[refseq]
-                cnt_old_prots += 1
-                # if cache has been flushed, retrive from database
-                if not protein:
-                    protein = Protein.query.filter_by(refseq=refseq).\
-                        first()
-                    proteins[refseq] = protein
             except KeyError:
                 continue
-                """
-                # if the protein was not in the cache,
-                # create it and add to the cache
-                gene, _ = get_or_create(Gene, name=name)
-                protein = Protein(refseq=refseq, gene=gene)
-                proteins[refseq] = protein
-                cnt_new_prots += 1
-                db.session.add(protein)
-                db.session.flush()
-                db.session.refresh(protein)
-                """
 
             assert aa_pos == (int(cdna_pos) - 1) // 3 + 1
 
+            try:
+                assert aa_ref == protein.sequence[aa_pos - 1]
+            except (AssertionError, IndexError):
+                broken_seq[refseq].append((protein.id, aa_alt))
+                continue
+
+            sites = protein.get_sites_from_range(pos - 7, pos + 7)
+
             # add new item, emulating set update
-            item = strand + aa_ref + aa_alt + ':'.join((
-                '%x' % int(cdna_pos), exon, '%x' % protein.id))
+            item = encode_csv(
+                strand,
+                aa_ref,
+                aa_alt,
+                cdna_pos,
+                exon,
+                protein.id,
+                bool(sites)
+            )
+
             new_variants.add(item)
             key = protein.gene.name + ' ' + aa_ref + str(aa_pos) + aa_alt
             bdb_refseq[key].update({refseq})
 
         bdb[snv].update(new_variants)
 
-    print(cnt_new_prots, 'new proteins created & ', cnt_old_prots, 'used')
+    return broken_seq
