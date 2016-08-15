@@ -39,6 +39,12 @@ if __name__ == '__main__':
         action='store_true',
         help='Should relational database be (re)imported'
     )
+    parser.add_argument(
+        '-m',
+        '--only_mutations',
+        action='store_true',
+        help='Should mutations be loaded without db restart?'
+    )
 
     args = parser.parse_args()
 
@@ -52,7 +58,8 @@ if __name__ == '__main__':
         print('Importing data')
         import_data(
             import_mappings=args.import_mappings,
-            reload_relational=args.reload_relational
+            reload_relational=args.reload_relational,
+            only_mutations=args.only_mutations
         )
         print('Importing completed')
 

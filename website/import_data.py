@@ -38,8 +38,8 @@ def system_memory_percent():
     return psutil.virtual_memory().percent
 
 
-def import_data(reload_relational=False, import_mappings=False):
-    if reload_relational:
+def import_data(reload_relational, import_mappings, only_mutations):
+    if reload_relational and not only_mutations:
         global genes
         genes, proteins = create_proteins_and_genes()
         load_sequences(proteins)
@@ -58,11 +58,12 @@ def import_data(reload_relational=False, import_mappings=False):
         removed = remove_wrong_proteins(proteins)
         print('Memory usage before first commit: ', memory_usage())
         db.session.commit()
+    if reload_relational or only_mutations:
         with app.app_context():
             mutations = load_mutations(proteins, removed)
         print('Memory usage before second commit: ', memory_usage())
         db.session.commit()
-    if import_mappings:
+    if import_mappings and not only_mutations:
         with app.app_context():
             proteins = get_proteins()
             import_mappings(proteins)
