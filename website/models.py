@@ -1,3 +1,4 @@
+from collections import defaultdict
 from database import db
 from sqlalchemy import and_
 from sqlalchemy import func
@@ -198,20 +199,16 @@ class Protein(db.Model):
 
     @cached_property
     def mutations_grouped(self):
-        """Mutations grouped by cancer type and position in the sequence"""
-        mutations_grouped = {}
-        for mutation in self.confirmed_mutations:
-            # for now, I am grouping just by position and cancer
+        """mutations grouped by impact_on_ptm and position in the sequence"""
+        mutations_grouped = defaultdict(list)
 
+        for mutation in self.confirmed_mutations:
             key = (
                 mutation.position,
-                mutation.alt,
                 mutation.impact_on_ptm
             )
-            try:
-                mutations_grouped[key] += [mutation]
-            except KeyError:
-                mutations_grouped[key] = [mutation]
+            mutations_grouped[key].append(mutation)
+
         return mutations_grouped
 
     @cached_property
