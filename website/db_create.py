@@ -63,7 +63,7 @@ if __name__ == '__main__':
             reset_mappings_db()
             with app.app_context():
                 proteins = get_proteins()
-                import_mappings(proteins)
+                import_data.import_mappings(proteins)
 
     print('Done, all tasks completed.')
 
