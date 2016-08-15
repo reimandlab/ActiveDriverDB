@@ -29,7 +29,7 @@
             <td>{{ mutation.position }}</td>
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
-            <td>{{ mutation.meta_cancer }}</td>
+            <td>{{ mutation.meta_cancer.count if mutation.meta_cancer }}</td>
             <td>{{ 'PTM' if mutation.is_ptm else 'non-PTM' }}</td>
             <td>{{ mutation.impact_on_ptm or '' }}</td>
             <td>{{ mutation.cnt_ptm_affected }}</td>

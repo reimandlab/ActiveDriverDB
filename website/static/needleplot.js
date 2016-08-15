@@ -169,10 +169,10 @@ var NeedlePlot = function ()
                     return 'translate(' + [posToX(d.coord), bottom_axis_pos] + ')'
                 }
             )
-            .attr('y1', function(d){ return -d.value * height_unit + 'px' })
 
         needles.selectAll('line')
             .attr('stroke-width', posToX(1) / 5 + 'px')
+            .attr('y1', function(d){ return -d.value * height_unit + 'px' })
 
         leftPadding.attr('height', config.height)
 

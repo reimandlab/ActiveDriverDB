@@ -67,7 +67,7 @@ class ProteinView(FlaskView):
 
         filters = Filters(active_filters, self.allowed_filters)
 
-        mutations = active_filters.filtered(protein.mutations)
+        mutations = active_filters.filtered(protein.confirmed_mutations)
 
         return template('protein.html', protein=protein, tracks=tracks,
                         filters=filters, mutations=mutations)
