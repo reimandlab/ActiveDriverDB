@@ -575,7 +575,7 @@ class Mutation(db.Model):
             and_(
                 Site.protein_id == self.protein_id,
                 Site.position.between(position - left, position + right)
-                )
+            )
         )
         return db.session.query(q).scalar()
 
