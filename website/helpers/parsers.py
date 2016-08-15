@@ -1,4 +1,9 @@
+from glob import glob
 from tqdm import tqdm
+
+
+def get_files(path, pattern):
+    return glob(path + '/' + pattern)
 
 
 def read_from_files(directory, pattern, skip_header=True):

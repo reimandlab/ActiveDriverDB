@@ -859,11 +859,6 @@ def load_kinase_classification(proteins, kinases, groups):
     return kinases, groups
 
 
-def get_files(path, pattern):
-    import glob
-    return glob.glob(path + '/' + pattern)
-
-
 def memory_usage():
     import os
     import psutil
