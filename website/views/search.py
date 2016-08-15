@@ -3,6 +3,7 @@ from flask import render_template as template
 from flask import request
 from flask_classful import FlaskView
 from flask_classful import route
+from Levenshtein import distance
 from website.models import Protein
 from website.models import Gene
 from database import bdb, bdb_refseq
@@ -58,7 +59,21 @@ def search_proteins(phase, limit=False):
             else:
                 genes[gene.name] = GeneResult(gene, restrict_to=[isoform])
 
-    return genes.values()
+        sort_key = lambda gene: min(
+            [
+                distance(isoform.refseq, phase)
+                for isoform in gene.isoforms
+            ]
+        )
+
+    else:
+        # if the phrase is not numeric
+        sort_key = lambda gene: distance(gene.name, phase)
+
+    return sorted(
+        genes.values(),
+        key=sort_key
+    )
 
 
 def get_genomic_muts(chrom, pos, ref, alt):

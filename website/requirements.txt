@@ -8,3 +8,4 @@ webassets==0.11.1
 mysqlclient
 psutil
 tqdm
+python-Levenshtein
