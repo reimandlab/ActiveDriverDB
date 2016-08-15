@@ -67,18 +67,10 @@ class ProteinView(FlaskView):
 
         filters = Filters(active_filters, self.allowed_filters)
 
-        mutations = db.session.query(
-            Mutation,
-            label('count', func.count(Mutation.position))).\
-            join(Protein).filter_by(id=protein.id).\
-            group_by(Mutation.position, Mutation.alt)
-
-        # Key is set to first element, because in the query above we are
-        # retriving (mutation, count) tuples for every row.
-        mutations = active_filters.filtered(mutations, key=itemgetter(0))
+        mutations = active_filters.filtered(protein.mutations)
 
         return template('protein.html', protein=protein, tracks=tracks,
-                        filters=filters, mutations_with_cnt=mutations)
+                        filters=filters, mutations=mutations)
 
     def mutations(self, refseq):
         """List of mutations suitable for needleplot library"""
