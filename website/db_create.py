@@ -54,7 +54,7 @@ if __name__ == '__main__':
     if args.reload_relational:
         restet_relational_db()
 
-    if args.reload_relational or args.import_mappings:
+    if args.reload_relational or args.import_mappings or args.only_mutations:
         print('Importing data')
         import_data(
             import_mappings=args.import_mappings,

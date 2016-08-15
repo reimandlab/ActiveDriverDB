@@ -58,6 +58,9 @@ def import_data(reload_relational, import_mappings, only_mutations):
         removed = remove_wrong_proteins(proteins)
         print('Memory usage before first commit: ', memory_usage())
         db.session.commit()
+    if only_mutations:
+        proteins = get_proteins()
+        removed = set()
     if reload_relational or only_mutations:
         with app.app_context():
             mutations = load_mutations(proteins, removed)
