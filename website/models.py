@@ -194,15 +194,20 @@ class Protein(db.Model):
 
     @cached_property
     def confirmed_mutations(self):
-        """Return all mutations which are confirmed inexperiments"""
+        """Return all mutations which are confirmed in experiments"""
         return [m for m in self.mutations if m.is_confirmed]
+
+    @cached_property
+    def shown_mutations(self):
+        """Return all mutations which should be shown in different views"""
+        return [m for m in self.mutations if m.is_confirmed or m.meta_MIMP]
 
     @cached_property
     def mutations_grouped(self):
         """mutations grouped by impact_on_ptm and position in the sequence"""
         mutations_grouped = defaultdict(list)
 
-        for mutation in self.confirmed_mutations:
+        for mutation in self.shown_mutations:
             key = (
                 mutation.position,
                 mutation.impact_on_ptm
