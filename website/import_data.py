@@ -569,7 +569,7 @@ def load_mutations(proteins, removed):
                 broken_seq[refseq].append((protein.id, alt))
                 return
 
-            sites = protein.get_sites_from_range(pos - 7, pos + 7)
+            sites = protein.get_sites_from_range(int(pos) - 7, int(pos) + 7)
 
             key = (pos, protein.id, alt)
             mutation_id = get_or_make_mutation(key, bool(sites))
