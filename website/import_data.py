@@ -569,7 +569,7 @@ def load_mutations(proteins, removed):
                 broken_seq[refseq].append((protein.id, alt))
                 return
 
-            sites = protein.get_sites_from_range(int(pos) - 7, int(pos) + 7)
+            sites = protein.get_sites_from_range(pos - 7, pos + 7)
 
             key = (pos, protein.id, alt)
             mutation_id = get_or_make_mutation(key, bool(sites))
@@ -891,7 +891,7 @@ def import_mappings(proteins):
                 broken_seq[refseq].append((protein.id, aa_alt))
                 continue
 
-            sites = protein.get_sites_from_range(pos - 7, pos + 7)
+            sites = protein.get_sites_from_range(aa_pos - 7, aa_pos + 7)
 
             # add new item, emulating set update
             item = encode_csv(
