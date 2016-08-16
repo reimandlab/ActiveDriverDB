@@ -521,18 +521,16 @@ class Mutation(db.Model):
 
     @hybrid_property
     def impact_on_ptm(self):
-        """How intense might be impact of the mutation on the closest PTM site.
-
-        Possible values are: 'direct', 'proximal', or 'diastal'. Those
-        properties are based on the distance measurement to closest PTM site
-        """
+        """How intense might be impact of the mutation on the closest PTM site."""
+        if self.meta_MIMP:
+            return 'network-rewiring'
         if self.is_ptm_direct:
             return 'direct'
         if self.is_ptm_proximal:
             return 'proximal'
         if self.is_ptm_distal:
             return 'distal'
-        return None
+        return 'none'
 
     @hybrid_method
     def is_close_to_some_site(self, left, right):

@@ -3,6 +3,7 @@ var NeedlePlot = function ()
     var svg, zoom, vis, vertical_scalable, unit
     var scale = 1
 	var position = 0
+    var height_unit
 
     var legend = {
         x:
@@ -53,7 +54,7 @@ var NeedlePlot = function ()
           'network-rewiring': 'lightblue',
           'direct': 'red',
           'proximal': 'orange',
-          'other': 'grey'
+          'none': 'grey'
         }
     }
 
@@ -139,7 +140,7 @@ var NeedlePlot = function ()
         axes.y.scale
             .range([config.height - config.paddings.top, config.paddings.bottom])
 
-        var height_unit = (config.height - config.paddings.bottom - config.paddings.top) / config.y_scale
+        height_unit = (config.height - config.paddings.bottom - config.paddings.top) / config.y_scale
 
         axes.y.obj.scale(axes.y.scale)
         axes.y.group.call(axes.y.obj)
@@ -173,8 +174,8 @@ var NeedlePlot = function ()
             .attr('y1', function(d){ return -d.value * height_unit + 'px' })
 
         needles.selectAll('circle')
+            .attr('transform', function(d){ return 'translate('  + [0, -d.value * height_unit] + ')scale(1, '+ scale +') ' })
             .attr('r', posToX(1) / 2 + 'px')
-            .attr('y', function(d){ return -d.value * height_unit + 'px' })
 
         leftPadding.attr('height', config.height)
 
@@ -273,7 +274,6 @@ var NeedlePlot = function ()
                         return config.color_map[d.category]
                     }
                 )
-                .attr('x', '0')
 
         sites = vis.selectAll('.site')
             .data(config.sites)
@@ -330,6 +330,9 @@ var NeedlePlot = function ()
     {
         var canvas = canvasAnimated(animate)
 		canvas.select('.vertical.scalable').attr('transform', 'translate(' + position + ', 0)scale(' + scale + ', 1)')
+
+        needles.selectAll('circle')
+            .attr('transform', function(d){ return 'translate('  + [0, -d.value * height_unit] + ')scale(1, '+ scale +') ' })
     }
 
     function xAxisCoverage()
