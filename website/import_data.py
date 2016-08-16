@@ -20,6 +20,7 @@ from website.models import mutation_site_association
 from website.models import Mutation
 from website.models import Protein
 from website.models import Site
+from website.models import The1000GenomesMutation
 from helpers.parsers import buffered_readlines
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
@@ -434,7 +435,33 @@ def load_mutations(proteins, removed):
                 mutations_cnt += 1
         return mutation_id
 
-    db.session.commit()
+    def preparse_mutations(line):
+        for mutation in [
+            m.split(':')
+            for m in line[9].replace(';', ',').split(',')
+        ]:
+            refseq = mutation[1]
+
+            try:
+                protein = proteins[refseq]
+                continue
+            except KeyError:
+                continue
+
+            ref, pos, alt = decode_mutation(mutation[4])
+
+            try:
+                assert ref == protein.sequence[pos - 1]
+            except (AssertionError, IndexError):
+                broken_seq[refseq].append((protein.id, alt))
+                continue
+
+            affected_sites = protein.get_sites_from_range(pos - 7, pos + 7)
+
+            key = (pos, protein.id, alt)
+            mutation_id = get_or_make_mutation(key, bool(affected_sites))
+
+            yield mutation_id
 
     # MIMP MUTATIONS
 
@@ -548,38 +575,15 @@ def load_mutations(proteins, removed):
 
         nonlocal mutations_counter
 
-        cancer_mutations = line[9].replace(';', ',').split(',')
+        assert line[10].startswith('comments: ')
+        cancer_name, sample, _ = line[10][10:].split(';')
 
-        for mutation in cancer_mutations:
-            mutation = mutation.split(':')
+        cancer, created = get_or_create(Cancer, name=cancer_name)
 
-            refseq = mutation[1]
-            mut = mutation[4]
+        if created:
+            db.session.add(cancer)
 
-            ref, pos, alt = decode_mutation(mut)
-
-            try:
-                protein = proteins[refseq]
-            except KeyError:
-                return
-
-            try:
-                assert ref == protein.sequence[pos - 1]
-            except (AssertionError, IndexError):
-                broken_seq[refseq].append((protein.id, alt))
-                return
-
-            sites = protein.get_sites_from_range(pos - 7, pos + 7)
-
-            key = (pos, protein.id, alt)
-            mutation_id = get_or_make_mutation(key, bool(sites))
-
-            assert line[10].startswith('comments: ')
-
-            cancer_name, sample, _ = line[10][10:].split(';')
-            cancer, created = get_or_create(Cancer, name=cancer_name)
-            if created:
-                db.session.add(cancer)
+        for mutation_id in preparse_mutations(line):
 
             mutations_counter[
                 (
@@ -619,38 +623,14 @@ def load_mutations(proteins, removed):
 
     def esp_parser(line):
 
-        line_mutations = line[9].replace(';', ',').split(',')
+        metadata = line[20].split(';')
 
-        for mutation in line_mutations:
-            mutation = mutation.split(':')
+        # not flexible way to select MAF from metadata, but quite quick
+        assert metadata[4].startswith('MAF=')
 
-            refseq = mutation[1]
-            mut = mutation[4]
+        maf_ea, maf_aa, maf_all = map(float, metadata[4][4:].split(','))
 
-            ref, pos, alt = decode_mutation(mut)
-
-            try:
-                protein = proteins[refseq]
-            except KeyError:
-                return
-
-            try:
-                assert ref == protein.sequence[pos - 1]
-            except (AssertionError, IndexError):
-                broken_seq[refseq].append((protein.id, alt))
-                return
-
-            sites = protein.get_sites_from_range(pos - 7, pos + 7)
-
-            key = (pos, protein.id, alt)
-            mutation_id = get_or_make_mutation(key, bool(sites))
-
-            metadata = line[20].split(';')
-
-            # not flexible way to select MAF from metadata, but quite quick
-            assert metadata[4].startswith('MAF=')
-
-            maf_ea, maf_aa, maf_all = map(float, metadata[4][4:].split(','))
+        for mutation_id in preparse_mutations(line):
 
             esp_mutations.append(
                 (
@@ -682,7 +662,9 @@ def load_mutations(proteins, removed):
 
     db.session.commit()
 
-    # 1000 GENOMES MUTATIONS (STUB)
+    # 1000 GENOMES MUTATIONS
+
+    thousand_genoms_mutations = []
 
     for line in read_from_files(
         'data/mutations/G1000',
@@ -690,9 +672,53 @@ def load_mutations(proteins, removed):
         skip_header=False
     ):
         data = line.rstrip().split('\t')
-        line_mutations = data[9]
-        metadata = data[20]
-        # TODO
+
+        metadata = line[20].split(';')
+
+        assert metadata[1].startswith('AF=')
+
+        maf_all = float(metadata[1][3:])
+        maf_by_population = map(float, [m[7:] for m in metadata[5:10]])
+
+        maf_data = maf_by_population.append(maf_all)
+
+        for mutation_id in preparse_mutations(data):
+
+            thousand_genoms_mutations.append(
+                (
+                    mutation_id,
+                    maf_all,
+                    *maf_by_population,
+                )
+            )
+
+    flush_basic_mutations(mutations)
+
+    for chunk in chunked_list(thousand_genoms_mutations):
+        db.session.bulk_insert_mappings(
+            The1000GenomesMutation,
+            [
+                dict(
+                    zip(
+                        (
+                            'mutation_id',
+                            'maf_all',
+                            'maf_eas',
+                            'maf_amr',
+                            'maf_efr',
+                            'maf_eur',
+                            'maf_sas',
+                        ),
+                        mutation_metadata
+                    )
+                )
+                for mutation_metadata in chunk
+            ]
+        )
+        db.session.flush()
+
+    db.session.commit()
+
     print('Mutations loaded')
 
 

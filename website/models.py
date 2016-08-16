@@ -623,7 +623,11 @@ class ExomeSequencingMutation(PopulationMutation, db.Model):
 
 class The1000GenomesMutation(PopulationMutation, db.Model):
     """Metadata for 1 KG mutation"""
-    pass
+    maf_eas = db.Column(db.Float)
+    maf_amr = db.Column(db.Float)
+    maf_efr = db.Column(db.Float)
+    maf_eur = db.Column(db.Float)
+    maf_sas = db.Column(db.Float)
 
 
 class MIMPMutation(MutationDetails, db.Model):
