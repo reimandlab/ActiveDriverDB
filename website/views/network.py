@@ -61,7 +61,7 @@ class NetworkView(FlaskView):
                     'name': kinase.name,
                     'protein': {
                         'refseq': kinase.protein.refseq,
-                        'mutations_count': len(kinase.protein.shown_mutations)
+                        'mutations_count': kinase.protein.mutations.count()
                     } if kinase.protein else None
                 }
                 for kinase in kinases
@@ -70,7 +70,7 @@ class NetworkView(FlaskView):
                 'name': protein.gene.name,
                 'is_preferred': protein.is_preferred_isoform,
                 'refseq': protein.refseq,
-                'mutations_count': len(protein.shown_mutations),
+                'mutations_count': protein.mutations.count(),
                 'kinases': protein_kinases_names
             },
             'sites': [
