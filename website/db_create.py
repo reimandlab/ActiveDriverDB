@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     if args.only_mutations:
         print('Importing mutations')
-        with app.app_context():
+        with import_data.app.app_context():
             proteins = import_data.get_proteins()
             mutations = import_data.load_mutations(proteins, set())
     else:
@@ -61,8 +61,9 @@ if __name__ == '__main__':
 
         if args.import_mappings:
             reset_mappings_db()
-            with app.app_context():
-                proteins = get_proteins()
+            print('Importing mappings')
+            with import_data.app.app_context():
+                proteins = import_data.get_proteins()
                 import_data.import_mappings(proteins)
 
     print('Done, all tasks completed.')
