@@ -444,7 +444,6 @@ def load_mutations(proteins, removed):
 
             try:
                 protein = proteins[refseq]
-                continue
             except KeyError:
                 continue
 
