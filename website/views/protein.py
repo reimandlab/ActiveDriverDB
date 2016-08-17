@@ -101,7 +101,7 @@ class ProteinView(FlaskView):
             {
                 'start': str(site.position - 7),
                 'end': str(site.position + 7),
-                'name': str(site.position) + 'Ph'
+                'type': str(site.type)
             } for site in protein.sites
         ]
 

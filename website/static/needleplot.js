@@ -284,6 +284,7 @@ var NeedlePlot = function ()
         site_boxes = sites
 			.append('rect')
 			.attr('height', config.site_height)
+            .attr('class', function(d) { return d.type })
 
         _rescalePlot()
 
