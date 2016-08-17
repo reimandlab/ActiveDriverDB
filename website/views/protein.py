@@ -1,4 +1,3 @@
-from operator import itemgetter
 from flask import request
 from flask import jsonify
 from flask import redirect
@@ -14,17 +13,14 @@ from website.helpers.tracks import MutationsTrack
 from website.helpers.filters import FilterSet
 from website.helpers.filters import Filters
 from website.helpers.filters import Filter
-from website.models import Mutation
-from website.database import db
-from sqlalchemy import func
-from sqlalchemy.sql import label
 
 
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
     allowed_filters = FilterSet([
-        Filter('is_ptm', 'eq', None, 'binary', 'PTM mutations')
+        Filter('is_ptm', 'eq', None, 'with_without', 'PTM mutations'),
+        Filter('is_cancer', 'eq', None, 'with_without', 'Cancer mutations')
     ])
 
     def index(self):

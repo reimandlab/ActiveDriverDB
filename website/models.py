@@ -433,6 +433,10 @@ class Mutation(db.Model):
         )
 
     @hybrid_property
+    def is_cancer(self):
+        return bool(self.meta_cancer)
+
+    @hybrid_property
     def ref(self):
         sequence = Protein.query.get(self.protein_id).sequence
         return sequence[self.position - 1]
