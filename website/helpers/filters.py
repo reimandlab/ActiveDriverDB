@@ -28,7 +28,9 @@ class Filters:
         for allowed_filter in available_filters:
             if allowed_filter.value is not None:
                 active_by_default.append(allowed_filter)
-                available_filters.filters.remove(allowed_filter)
+
+        for active_filter in active_by_default:
+            available_filters.filters.remove(active_filter)
 
         active_filters.filters.extend(active_by_default)
 
