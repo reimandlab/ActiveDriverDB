@@ -341,6 +341,9 @@ var NeedlePlot = function ()
 
         needles.selectAll('circle')
             .attr('transform', function(d){ return 'translate('  + [0, -d.value * height_unit] + ')scale(1, '+ scale +') ' })
+
+        site_boxes.
+            attr('stroke-width', 1/scale + 'px')
     }
 
     function xAxisCoverage()
