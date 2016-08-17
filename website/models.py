@@ -145,6 +145,9 @@ class Protein(db.Model):
     tx_start = db.Column(db.Integer)
     tx_end = db.Column(db.Integer)
 
+    # interactors count will be displayed in NetworkView
+    interactors_count = db.Column(db.Integer)
+
     # coding sequence domain start/end coordinates
     cds_start = db.Column(db.Integer)
     cds_end = db.Column(db.Integer)
@@ -193,21 +196,11 @@ class Protein(db.Model):
         return len(self.sequence)
 
     @cached_property
-    def confirmed_mutations(self):
-        """Return all mutations which are confirmed in experiments"""
-        return [m for m in self.mutations if m.is_confirmed]
-
-    @cached_property
-    def shown_mutations(self):
-        """Return all mutations which should be shown in different views"""
-        return [m for m in self.mutations if m.is_confirmed or m.meta_MIMP]
-
-    @cached_property
     def mutations_grouped(self):
         """mutations grouped by impact_on_ptm and position in the sequence"""
         mutations_grouped = defaultdict(list)
 
-        for mutation in self.shown_mutations:
+        for mutation in self.mutations:
             key = (
                 mutation.position,
                 mutation.impact_on_ptm
@@ -295,9 +288,7 @@ class Protein(db.Model):
 
         return sites[start:end]
 
-    @cached_property
-    def interactors_count(self):
-        """Return interactors count which will be displayed in NetworkView."""
+    def _calc_interactors_count(self):
         return len(self.kinases) + len(self.kinase_groups)
 
 
@@ -530,18 +521,16 @@ class Mutation(db.Model):
 
     @hybrid_property
     def impact_on_ptm(self):
-        """How intense might be impact of the mutation on the closest PTM site.
-
-        Possible values are: 'direct', 'proximal', or 'diastal'. Those
-        properties are based on the distance measurement to closest PTM site
-        """
+        """How intense might be impact of the mutation on the closest PTM site."""
+        if self.meta_MIMP:
+            return 'network-rewiring'
         if self.is_ptm_direct:
             return 'direct'
         if self.is_ptm_proximal:
             return 'proximal'
         if self.is_ptm_distal:
             return 'distal'
-        return None
+        return 'none'
 
     @hybrid_method
     def is_close_to_some_site(self, left, right):
@@ -616,23 +605,29 @@ class PopulationMutation(MutationDetails):
     """Metadata common for mutations from all population-wide studies
 
     MAF:
-        EA - european american
-        AA - african american
         All - total value
     """
-    maf_ea = db.Column(db.Integer)
-    maf_aa = db.Column(db.Integer)
-    maf_all = db.Column(db.Integer)
+    maf_all = db.Column(db.Float)
 
 
 class ExomeSequencingMutation(PopulationMutation, db.Model):
-    """Metadata for ESP 6500 mutation"""
-    pass
+    """Metadata for ESP 6500 mutation
+
+    MAF:
+        EA - european american
+        AA - african american
+    """
+    maf_ea = db.Column(db.Float)
+    maf_aa = db.Column(db.Float)
 
 
 class The1000GenomesMutation(PopulationMutation, db.Model):
     """Metadata for 1 KG mutation"""
-    pass
+    maf_eas = db.Column(db.Float)
+    maf_amr = db.Column(db.Float)
+    maf_efr = db.Column(db.Float)
+    maf_eur = db.Column(db.Float)
+    maf_sas = db.Column(db.Float)
 
 
 class MIMPMutation(MutationDetails, db.Model):

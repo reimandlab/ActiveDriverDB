@@ -3,14 +3,7 @@ var NeedlePlot = function ()
     var svg, zoom, vis, vertical_scalable, unit
     var scale = 1
 	var position = 0
-
-    var colorMap = {
-      'distant': 'yellow',
-      'network-rewiring': 'lightblue',
-      'direct': 'red',
-      'proximal': 'orange',
-      'other': 'grey'
-    }
+    var height_unit
 
     var legend = {
         x:
@@ -48,7 +41,6 @@ var NeedlePlot = function ()
         mutations: null,
         sites: null,
         needles: null,
-        colorMap: colorMap,
         legends: {x: 'Sequence', y: '# of mutations'},
         width: 600,
         height: null,
@@ -56,7 +48,14 @@ var NeedlePlot = function ()
         position_callback: null,
         ratio: 0.5,
         min_zoom: 1,
-        max_zoom: 10
+        max_zoom: 10,
+        color_map: {
+          'distant': 'yellow',
+          'network-rewiring': 'lightblue',
+          'direct': 'red',
+          'proximal': 'orange',
+          'none': 'grey'
+        }
     }
 
 	function get_remote_if_needed(new_config, name)
@@ -141,7 +140,7 @@ var NeedlePlot = function ()
         axes.y.scale
             .range([config.height - config.paddings.top, config.paddings.bottom])
 
-        var height_unit = (config.height - config.paddings.bottom - config.paddings.top) / config.y_scale
+        height_unit = (config.height - config.paddings.bottom - config.paddings.top) / config.y_scale
 
         axes.y.obj.scale(axes.y.scale)
         axes.y.group.call(axes.y.obj)
@@ -173,6 +172,10 @@ var NeedlePlot = function ()
         needles.selectAll('line')
             .attr('stroke-width', posToX(1) / 2 + 'px')
             .attr('y1', function(d){ return -d.value * height_unit + 'px' })
+
+        needles.selectAll('circle')
+            .attr('transform', function(d){ return 'translate('  + [0, -d.value * height_unit] + ')scale(1, '+ scale +') ' })
+            .attr('r', posToX(1) / 2 + 'px')
 
         leftPadding.attr('height', config.height)
 
@@ -260,9 +263,17 @@ var NeedlePlot = function ()
 
         needles
             .append('line')
-            .attr('x1', 0)
-            .attr('x2', 0)
-            .attr('y2', 0)
+                .attr('x1', 0)
+                .attr('x2', 0)
+                .attr('y2', 0)
+
+        needles
+            .append('circle')
+                .attr('fill', function(d)
+                    {
+                        return config.color_map[d.category]
+                    }
+                )
 
         sites = vis.selectAll('.site')
             .data(config.sites)
@@ -319,6 +330,9 @@ var NeedlePlot = function ()
     {
         var canvas = canvasAnimated(animate)
 		canvas.select('.vertical.scalable').attr('transform', 'translate(' + position + ', 0)scale(' + scale + ', 1)')
+
+        needles.selectAll('circle')
+            .attr('transform', function(d){ return 'translate('  + [0, -d.value * height_unit] + ')scale(1, '+ scale +') ' })
     }
 
     function xAxisCoverage()

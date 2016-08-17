@@ -19,12 +19,15 @@ function clone(object)
 
 var Network = (function ()
 {
+    // data variables
     var kinases
     var sites
     var kinases_grouped
     var kinase_groups
     var protein
 
+    // visualisation variables
+    var nodes
     var svg
     var vis
     var force
@@ -73,6 +76,7 @@ var Network = (function ()
     var config = {
         site_size_unit: 5,
         show_sites: true,
+        clone_to_sites: true,
         width: 600,
         height: null,
         minimalRadius: 6,   // of a single node
@@ -160,6 +164,7 @@ var Network = (function ()
         // And currently it is implemented by data duplication
 
         sites = []
+        var cloned_kinases = []
 
         for(var i = 0; i < raw_sites.length; i++)
         {
@@ -183,9 +188,22 @@ var Network = (function ()
             var site_kinases = getKinasesByName(site.kinases, kinases) // TODO: also add groups here
             for(var j = 0; j < site_kinases.length; j++)
             {
-                addEdge(site.node_id, site_kinases[j])
+                var kinase = site_kinases[j]
+                if(config.clone_to_sites)
+                {
+                    if(kinase.used)
+                    {
+                        kinase = clone(kinase)
+                        kinase.node_id = raw_sites.length + cloned_kinases.length + index_shift
+                        cloned_kinases.push(kinase)
+                    }
+                    else
+                        kinase.used = true
+                }
+                addEdge(site.node_id, kinase.node_id)
             }
         }
+        return cloned_kinases
     }
 
     function prepareKinases(all_kinases, index_shift)
@@ -381,6 +399,20 @@ var Network = (function ()
         }
     }
 
+    function nodeHoverIn(node)
+    {
+        nodes
+            .filter(function(d){ return d.name == node.name })
+            .classed('hover', true)
+    }
+
+    function nodeHoverOut(node)
+    {
+        nodes
+            .filter(function(d){ return d.name == node.name })
+            .classed('hover', false)
+    }
+
     var publicSpace = {
         init: function(user_config)
         {
@@ -417,8 +449,9 @@ var Network = (function ()
 
             if(config.show_sites)
             {
-                prepareSites(data.sites, nodes_data.length)
+                cloned_kinases = prepareSites(data.sites, nodes_data.length)
                 Array.prototype.push.apply(nodes_data, sites)
+                Array.prototype.push.apply(nodes_data, cloned_kinases)
                 elements = sites
             }
 
@@ -455,13 +488,15 @@ var Network = (function ()
                 .attr('class', 'link')
                 .style('stroke-width', function(d) { return Math.sqrt(d.weight) })
 
-            var nodes = vis.selectAll('.node') 
+            nodes = vis.selectAll('.node')
                 .data(nodes_data)
                 .enter().append('g')
                 .attr('transform', function(d){ return 'translate(' + [d.x, d.y] + ')' })
                 .attr('class', 'node')
                 .call(force.drag)
                 .on('click', nodeClick)
+                .on('mouseover', nodeHoverIn)
+                .on('mouseout', nodeHoverOut)
                 // cancel other events (like pining the background)
                 // to allow nodes movement (by force.drag)
                 .on("mousedown", function(d) { d3.event.stopPropagation() })

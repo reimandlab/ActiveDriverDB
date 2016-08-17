@@ -107,26 +107,25 @@ def make_snv_key(chrom, pos, ref, alt):
 
 def decode_csv(value):
     value = value
-    strand, ref, alt = value[:3]
-    cdna_pos, exon, protein_id = value[3:].split(':')
+    strand, ref, alt, is_ptm = value[:4]
+    cdna_pos, exon, protein_id = value[4:].split(':')
     return dict(zip(
         ('strand', 'ref', 'alt', 'pos', 'cdna_pos', 'exon', 'protein_id'),
         (
-            strand, ref, alt, (cdna_pos - 1) // 3 + 1,
+            strand, ref, alt, bool(int(is_ptm)), (cdna_pos - 1) // 3 + 1,
             int(cdna_pos, base=16), exon, int(protein_id, base=16)
         )
     ))
 
 
-def encode_csv(strand, ref, alt, pos, exon, protein_id):
+def encode_csv(strand, ref, alt, pos, exon, protein_id, is_ptm):
     """Encode a Coding Sequence Variants into a single, short string.
 
     ref and alt are aminoacids, but pos is a position of mutation in cDNA, so
     aminoacid positions can be derived simply appling: (int(pos) - 1) // 3 + 1
     """
-    item = strand + ref + alt + ':'.join((
+    return strand + ref + alt + ('1' if is_ptm else '0') + ':'.join((
         '%x' % int(pos), exon, '%x' % protein_id))
-    return item
 
 
 bdb = BerkleyHashSet('berkley_hash.db')
