@@ -49,7 +49,6 @@ class ProteinView(FlaskView):
         tracks = [
             PositionTrack(protein.length, 25),
             SequenceTrack(protein),
-            MutationsTrack(mutations),
             Track('disorder', disorder),
             Track(
                 'domains',
@@ -62,10 +61,14 @@ class ProteinView(FlaskView):
                     )
                     for domain in protein.domains
                 ]
-            )
+            ),
+            MutationsTrack(mutations)
         ]
 
         filters = Filters(active_filters, self.allowed_filters)
+
+        # repeated on purpose
+        mutations = active_filters.filtered(protein.mutations)
 
         return template('protein.html', protein=protein, tracks=tracks,
                         filters=filters, mutations=mutations)
