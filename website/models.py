@@ -526,10 +526,10 @@ class Mutation(db.Model):
     @hybrid_property
     def impact_on_ptm(self):
         """How intense might be impact of the mutation on the closest PTM site."""
-        if self.meta_MIMP:
-            return 'network-rewiring'
         if self.is_ptm_direct:
             return 'direct'
+        if self.meta_MIMP:
+            return 'network-rewiring'
         if self.is_ptm_proximal:
             return 'proximal'
         if self.is_ptm_distal:

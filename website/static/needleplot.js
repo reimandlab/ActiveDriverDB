@@ -51,10 +51,10 @@ var NeedlePlot = function ()
         max_zoom: 10,
         color_map: {
           'distant': 'yellow',
-          'network-rewiring': 'lightblue',
-          'direct': 'red',
+          'network-rewiring': 'red',
+          'direct': 'darkred',
           'proximal': 'orange',
-          'none': 'grey'
+          'none': 'darkgray'
         }
     }
 
