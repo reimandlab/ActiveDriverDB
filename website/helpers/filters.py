@@ -23,6 +23,15 @@ class Filters:
             else:
                 raise Exception('Filter {0} not allowed'.format(passed_filter))
 
+        active_by_default = []
+
+        for allowed_filter in available_filters:
+            if allowed_filter.value is not None:
+                active_by_default.append(allowed_filter)
+                available_filters.filters.remove(allowed_filter)
+
+        active_filters.filters.extend(active_by_default)
+
         self.active = active_filters
         self.available = available_filters
 

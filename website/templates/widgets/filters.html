@@ -29,6 +29,11 @@
         <div class="value">
         {% if filter.type == 'binary' %}
             <select name="filter[{{ filter.property }}]" id="filter[{{ filter.property }}]" class="form-control">
+                <option value="True" {{ 'selected' if filter.value == True }}>Yes</option>
+                <option value="False" {{ 'selected' if not filter.value }}>No</option>
+            </select>
+        {% elif filter.type == 'with_without' %}
+            <select name="filter[{{ filter.property }}]" id="filter[{{ filter.property }}]" class="form-control">
                 <option value="None">disabled</option>
                 <option value="True" {{ 'selected' if filter.value == True }}>only</option>
                 <option value="False" {{ 'selected' if filter.value == False }}>without</option>

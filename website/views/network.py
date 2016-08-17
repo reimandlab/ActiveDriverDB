@@ -24,7 +24,8 @@ class NetworkView(FlaskView):
     """View for local network of proteins"""
 
     allowed_filters = FilterSet([
-        Filter('is_ptm', 'eq', None, 'binary', 'PTM mutations')
+        Filter('show_sites', 'eq', True, 'binary', 'Show sites'),
+        Filter('clone_by_site', 'eq', True, 'binary', 'Clone kinases by site')
     ])
 
     def index(self):

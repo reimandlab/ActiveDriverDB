@@ -76,7 +76,7 @@ var Network = (function ()
     var config = {
         site_size_unit: 5,
         show_sites: true,
-        clone_to_sites: true,
+        clone_by_site: true,
         width: 600,
         height: null,
         minimalRadius: 6,   // of a single node
@@ -189,7 +189,7 @@ var Network = (function ()
             for(var j = 0; j < site_kinases.length; j++)
             {
                 var kinase = site_kinases[j]
-                if(config.clone_to_sites)
+                if(config.clone_by_site)
                 {
                     if(kinase.used)
                     {
