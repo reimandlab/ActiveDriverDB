@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_assets import Bundle
 from flask_assets import Environment
+from flask_login import LoginManager
 from database import db
 
 
@@ -12,9 +13,15 @@ db.app = app
 db.create_all()
 
 """
+Configure Login Manager
+"""
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+"""
 Define assets
 """
-
 assets = Environment(app)
 
 bundles = {

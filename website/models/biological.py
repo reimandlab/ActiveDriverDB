@@ -8,6 +8,16 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.utils import cached_property
 
 
+class BioData(db.Model):
+    """Default model configuration to be used across whole file.
+
+    Models descending from BioData are supposed to hold biology-related
+    data and will be stored in a 'bio' database, separated from visualisation
+    settings and other data handled by 'content managment system'.
+    """
+    __bind_key__ = 'bio'  # use 'bio' database (specified in `config.py` file)
+
+
 def make_association_table(fk1, fk2):
     """Create an association table basing on names of two given foreign keys.
 
@@ -19,10 +29,11 @@ def make_association_table(fk1, fk2):
         table_name, db.metadata,
         db.Column(fk1.replace('.', '_'), db.Integer, db.ForeignKey(fk1)),
         db.Column(fk2.replace('.', '_'), db.Integer, db.ForeignKey(fk2)),
+        info={'bind_key': 'bio'}    # use 'bio' database
     )
 
 
-class Kinase(db.Model):
+class Kinase(BioData):
     """Kinase represents an entity interacting with some site.
 
     The protein linked to a kinase is chosen as the `preferred_isoform` of a
@@ -43,7 +54,7 @@ class Kinase(db.Model):
         )
 
 
-class KinaseGroup(db.Model):
+class KinaseGroup(BioData):
     """Kinase group is the only grouping of kinases currently in use.
 
     The nomenclature may differ across sources and a `group` here
@@ -65,7 +76,7 @@ class KinaseGroup(db.Model):
         )
 
 
-class Gene(db.Model):
+class Gene(BioData):
     """Gene is uniquely identified although has multiple protein isoforms.
 
     The isoforms are always located on the same chromsome, strand and are
@@ -120,7 +131,7 @@ class Gene(db.Model):
         )
 
 
-class Protein(db.Model):
+class Protein(BioData):
     """Protein represents a single isoform of a product of given gene."""
     __tablename__ = 'protein'
 
@@ -292,7 +303,7 @@ class Protein(db.Model):
         return len(self.kinases) + len(self.kinase_groups)
 
 
-class Site(db.Model):
+class Site(BioData):
     __tablename__ = 'site'
     id = db.Column(db.Integer, primary_key=True)
     position = db.Column(db.Integer, index=True)
@@ -316,7 +327,7 @@ class Site(db.Model):
         )
 
 
-class Cancer(db.Model):
+class Cancer(BioData):
     __tablename__ = 'cancer'
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16))
@@ -329,7 +340,7 @@ class Cancer(db.Model):
         )
 
 
-class InterproDomain(db.Model):
+class InterproDomain(BioData):
     __tablename__ = 'interpro_domain'
     id = db.Column(db.Integer, primary_key=True)
 
@@ -345,7 +356,7 @@ class InterproDomain(db.Model):
     occurrences = db.relationship('Domain', backref='interpro')
 
 
-class Domain(db.Model):
+class Domain(BioData):
     __tablename__ = 'domain'
     id = db.Column(db.Integer, primary_key=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
@@ -377,7 +388,7 @@ def mutation_details_relationship(class_name):
 mutation_site_association = make_association_table('site.id', 'mutation.id')
 
 
-class Mutation(db.Model):
+class Mutation(BioData):
     __tablename__ = 'mutation'
     __table_args__ = (
         db.Index('mutation_index', 'alt', 'protein_id', 'position'),
@@ -525,7 +536,11 @@ class Mutation(db.Model):
 
     @hybrid_property
     def impact_on_ptm(self):
-        """How intense might be impact of the mutation on the closest PTM site."""
+        """How intense might be an impact of the mutation on a PTM site.
+
+        It describes impact on the closest PTM site or on a site choosen by
+        MIMP algorithm (so it applies only when 'network-rewiring' is returned)
+        """
         if self.is_ptm_direct:
             return 'direct'
         if self.meta_MIMP:
@@ -592,7 +607,7 @@ class MutationDetails:
         return db.Column(db.Integer, db.ForeignKey('mutation.id'))
 
 
-class CancerMutation(MutationDetails, db.Model):
+class CancerMutation(MutationDetails, BioData):
     """Metadata for cancer mutations from ICGC data portal"""
     sample_name = db.Column(db.String(64))
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
@@ -600,7 +615,7 @@ class CancerMutation(MutationDetails, db.Model):
     count = db.Column(db.Integer)
 
 
-class InheritedMutation(MutationDetails, db.Model):
+class InheritedMutation(MutationDetails, BioData):
     """Metadata for inherited diseased mutations from ClinVar from NCBI"""
     pass
 
@@ -614,7 +629,7 @@ class PopulationMutation(MutationDetails):
     maf_all = db.Column(db.Float)
 
 
-class ExomeSequencingMutation(PopulationMutation, db.Model):
+class ExomeSequencingMutation(PopulationMutation, BioData):
     """Metadata for ESP 6500 mutation
 
     MAF:
@@ -625,7 +640,7 @@ class ExomeSequencingMutation(PopulationMutation, db.Model):
     maf_aa = db.Column(db.Float)
 
 
-class The1000GenomesMutation(PopulationMutation, db.Model):
+class The1000GenomesMutation(PopulationMutation, BioData):
     """Metadata for 1 KG mutation"""
     maf_eas = db.Column(db.Float)
     maf_amr = db.Column(db.Float)
@@ -634,7 +649,7 @@ class The1000GenomesMutation(PopulationMutation, db.Model):
     maf_sas = db.Column(db.Float)
 
 
-class MIMPMutation(MutationDetails, db.Model):
+class MIMPMutation(MutationDetails, BioData):
     """Metadata for MIMP mutation"""
 
     pwm = db.Column(db.Text)
