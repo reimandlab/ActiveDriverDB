@@ -1,10 +1,58 @@
+var Tooltip = function()
+{
+    var tooltip
+
+    var _template = function(d)
+    {
+        return d.title
+    }
+
+    function _move()
+    {
+        tooltip
+            .style('left', (d3.event.pageX) + 'px')
+            .style('top', (d3.event.pageY - 28) + 'px')
+    }
+
+    var publicSpace = {
+        init: function(custom_template)
+        {
+            tooltip = d3.select('body')
+                .append('div')
+                .attr('class', 'tooltip')
+                .style('opacity', 0)
+                .style('pointer-events', 'none')
+            if(custom_template !== undefined)
+            {
+                _template = custom_template
+            }
+        },
+        show: function(d)
+        {
+            tooltip.transition()
+                .duration(50)
+                .style('opacity', 1)
+            tooltip.html(_template(d))
+            _move()
+        },
+        hide: function()
+        {
+            tooltip.transition()
+                .duration(200)
+                .style('opacity', 0)
+        },
+        move: _move
+    }
+
+    return publicSpace
+}
+
 var NeedlePlot = function ()
 {
     var svg, zoom, vis, vertical_scalable, unit
     var scale = 1
 	var position = 0
     var height_unit
-    var tooltip
 
     var legend = {
         x:
@@ -256,25 +304,19 @@ var NeedlePlot = function ()
                 .style('text-anchor','middle')
         }
 
+        var needle_tooltip = Tooltip()
+        needle_tooltip.init(function(d){
+            return d.category + '<br>' + d.coord
+        })
+
         needles = vis.selectAll('.needle')
             .data(config.mutations)
             .enter()
             .append('g')
             .attr('class', 'needle')
-            .on('mouseover', function(d) {
-                tooltip.transition()
-                    .duration(100)
-                    .style('opacity', 1)
-                tooltip.html(d.category + '<br>' + d.coord)
-                    .style('left', (d3.event.pageX) + 'px')
-                    .style('top', (d3.event.pageY - 28) + 'px')
-            })
-            .on('mouseout', function(d) {
-                tooltip.transition()
-                    .duration(300)
-                    .style('opacity', 0)
-                }
-            )
+            .on('mouseover', needle_tooltip.show)
+            .on('mousemove', needle_tooltip.move)
+            .on('mouseout', needle_tooltip.hide)
 
         needles
             .append('line')
@@ -290,11 +332,19 @@ var NeedlePlot = function ()
                     }
                 )
 
+        var site_tooltip = Tooltip()
+        site_tooltip.init(function(d){
+            return d.type + '<br>' + (d.start + 7)
+        })
+
         sites = vis.selectAll('.site')
             .data(config.sites)
             .enter()
             .append('g')
             .attr('class', 'site')
+            .on('mouseover', site_tooltip.show)
+            .on('mousemove', site_tooltip.move)
+            .on('mouseout', site_tooltip.hide)
 
         site_boxes = sites
 			.append('rect')
@@ -309,12 +359,6 @@ var NeedlePlot = function ()
             )
 
         _rescalePlot()
-
-        tooltip = d3.select('body')
-            .append('div')
-            .attr('class', 'tooltip')
-            .style('opacity', 0)
-            .style('pointer-events', 'none')
 
     }
 
