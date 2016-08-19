@@ -3,19 +3,23 @@ from database import db
 from sqlalchemy import and_
 from sqlalchemy import func
 from sqlalchemy.sql import exists, select
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.utils import cached_property
 
 
-class BioData(db.Model):
+class BioData:
     """Default model configuration to be used across whole file.
 
     Models descending from BioData are supposed to hold biology-related
     data and will be stored in a 'bio' database, separated from visualisation
     settings and other data handled by 'content managment system'.
     """
-    __bind_key__ = 'bio'  # use 'bio' database (specified in `config.py` file)
+    @declared_attr
+    def __bind_key__(cls):
+        """Always use 'bio' database (specified in `config.py` file)."""
+        return 'bio'
 
 
 def make_association_table(fk1, fk2):
@@ -33,7 +37,7 @@ def make_association_table(fk1, fk2):
     )
 
 
-class Kinase(BioData):
+class Kinase(db.Model, BioData):
     """Kinase represents an entity interacting with some site.
 
     The protein linked to a kinase is chosen as the `preferred_isoform` of a
@@ -54,7 +58,7 @@ class Kinase(BioData):
         )
 
 
-class KinaseGroup(BioData):
+class KinaseGroup(db.Model, BioData):
     """Kinase group is the only grouping of kinases currently in use.
 
     The nomenclature may differ across sources and a `group` here
@@ -76,7 +80,7 @@ class KinaseGroup(BioData):
         )
 
 
-class Gene(BioData):
+class Gene(db.Model, BioData):
     """Gene is uniquely identified although has multiple protein isoforms.
 
     The isoforms are always located on the same chromsome, strand and are
@@ -131,7 +135,7 @@ class Gene(BioData):
         )
 
 
-class Protein(BioData):
+class Protein(db.Model, BioData):
     """Protein represents a single isoform of a product of given gene."""
     __tablename__ = 'protein'
 
@@ -303,7 +307,7 @@ class Protein(BioData):
         return len(self.kinases) + len(self.kinase_groups)
 
 
-class Site(BioData):
+class Site(db.Model, BioData):
     __tablename__ = 'site'
     id = db.Column(db.Integer, primary_key=True)
     position = db.Column(db.Integer, index=True)
@@ -327,7 +331,7 @@ class Site(BioData):
         )
 
 
-class Cancer(BioData):
+class Cancer(db.Model, BioData):
     __tablename__ = 'cancer'
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16))
@@ -340,7 +344,7 @@ class Cancer(BioData):
         )
 
 
-class InterproDomain(BioData):
+class InterproDomain(db.Model, BioData):
     __tablename__ = 'interpro_domain'
     id = db.Column(db.Integer, primary_key=True)
 
@@ -356,7 +360,7 @@ class InterproDomain(BioData):
     occurrences = db.relationship('Domain', backref='interpro')
 
 
-class Domain(BioData):
+class Domain(db.Model, BioData):
     __tablename__ = 'domain'
     id = db.Column(db.Integer, primary_key=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
@@ -388,7 +392,7 @@ def mutation_details_relationship(class_name):
 mutation_site_association = make_association_table('site.id', 'mutation.id')
 
 
-class Mutation(BioData):
+class Mutation(db.Model, BioData):
     __tablename__ = 'mutation'
     __table_args__ = (
         db.Index('mutation_index', 'alt', 'protein_id', 'position'),
@@ -592,7 +596,6 @@ class Mutation(BioData):
 
 class MutationDetails:
     """Base for tables defining detailed metadata for specific mutations"""
-    from sqlalchemy.ext.declarative import declared_attr
 
     @declared_attr
     def __tablename__(cls):
@@ -607,7 +610,7 @@ class MutationDetails:
         return db.Column(db.Integer, db.ForeignKey('mutation.id'))
 
 
-class CancerMutation(MutationDetails, BioData):
+class CancerMutation(MutationDetails, db.Model, BioData):
     """Metadata for cancer mutations from ICGC data portal"""
     sample_name = db.Column(db.String(64))
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
@@ -615,7 +618,7 @@ class CancerMutation(MutationDetails, BioData):
     count = db.Column(db.Integer)
 
 
-class InheritedMutation(MutationDetails, BioData):
+class InheritedMutation(MutationDetails, db.Model, BioData):
     """Metadata for inherited diseased mutations from ClinVar from NCBI"""
     pass
 
@@ -629,7 +632,7 @@ class PopulationMutation(MutationDetails):
     maf_all = db.Column(db.Float)
 
 
-class ExomeSequencingMutation(PopulationMutation, BioData):
+class ExomeSequencingMutation(PopulationMutation, db.Model, BioData):
     """Metadata for ESP 6500 mutation
 
     MAF:
@@ -640,7 +643,7 @@ class ExomeSequencingMutation(PopulationMutation, BioData):
     maf_aa = db.Column(db.Float)
 
 
-class The1000GenomesMutation(PopulationMutation, BioData):
+class The1000GenomesMutation(PopulationMutation, db.Model, BioData):
     """Metadata for 1 KG mutation"""
     maf_eas = db.Column(db.Float)
     maf_amr = db.Column(db.Float)
@@ -649,7 +652,7 @@ class The1000GenomesMutation(PopulationMutation, BioData):
     maf_sas = db.Column(db.Float)
 
 
-class MIMPMutation(MutationDetails, BioData):
+class MIMPMutation(MutationDetails, db.Model, BioData):
     """Metadata for MIMP mutation"""
 
     pwm = db.Column(db.Text)

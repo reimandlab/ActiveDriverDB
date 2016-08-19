@@ -4,6 +4,7 @@ from database import db
 from database import bdb
 from database import bdb_refseq
 import import_data
+from website.models.cms import User
 
 
 def reset_relational_db(**kwargs):
@@ -77,7 +78,12 @@ if __name__ == '__main__':
         if args.recreate_cms:
             reset_relational_db(bind='cms')
             print('Creating root user account')
-            # TODO
+            email = input('Please type root email: ')
+            password = input('Please type root password: ')
+            root = User(email, password)
+            db.session.add(root)
+            db.session.commit()
+            print('Root user with email', email, 'created')
 
             print('Root user account created')
     print('Done, all tasks completed.')

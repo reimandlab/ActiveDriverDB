@@ -11,7 +11,9 @@ and that the installation of the package is valid.
 hashh = passlib.hash.pbkdf2_sha512
 
 # Pepper is not implemented in passlib 1.6.5, so we I've done it manually
-PEPPER = 'liJUVcf7p2y94N3Xsyc18JSYexfIRyM8kKAxdNM4LUWnrFxjtIN4j0sZjInblDuUR0rETIGkF7p1VY25'
+PEPPER = str.encode(
+	'liJUVcN3Xsyc18JSYexfIRyM8kKAxdNM4LUWnrFxjtIN4j0sZjInblDuUR0rETIGkF7p1VY25'
+)
 
 
 def condiment(salt):
@@ -19,7 +21,10 @@ def condiment(salt):
 
 
 def replace_salt(hash, new_salt):
-	return '$'.join([ab64_encode(new_salt) if i == 3 else x for i, x in enumerate(hash.split('$'))])
+	return str.encode('$').join([
+		ab64_encode(new_salt) if i == 3 else x
+		for i, x in enumerate([str.encode(z) for z in hash.split('$')])
+	])
 
 
 def get_passlib_salt(size):
@@ -33,7 +38,8 @@ def extract_salt(raw_hash):
 		$pbkdf2-digest$rounds$salt$checksum
 	so salt is on second third position
 	"""
-	return ab64_decode(raw_hash.split('$')[3])
+	substr = raw_hash.split('$')[3]
+	return ab64_decode(str.encode(substr))
 
 
 def random_base64(size=50):
