@@ -35,7 +35,7 @@ class User(db.Model, Model):
 
     def __init__(self, email, password):
         self.email = email
-        self.hash = security.generate_secret_hash(password)
+        self.pass_hash = security.generate_secret_hash(password)
 
     @property
     def is_authenticated(self):

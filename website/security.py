@@ -21,9 +21,9 @@ def condiment(salt):
 
 
 def replace_salt(hash, new_salt):
-	return str.encode('$').join([
-		ab64_encode(new_salt) if i == 3 else x
-		for i, x in enumerate([str.encode(z) for z in hash.split('$')])
+	return '$'.join([
+		str(ab64_encode(new_salt)) if i == 3 else x
+		for i, x in enumerate(hash.split('$'))
 	])
 
 
