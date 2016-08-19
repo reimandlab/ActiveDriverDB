@@ -2,15 +2,16 @@ from flask import Flask
 from flask_assets import Bundle
 from flask_assets import Environment
 from flask_login import LoginManager
-from database import db
+from models.base import db
 
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
 
-db.init_app(app)
 db.app = app
-db.create_all()
+db.init_app(app)
+db.create_all(bind='__all__')
+print(db)
 
 """
 Configure Login Manager

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from database import db
+from .base import db
 from sqlalchemy import and_
 from sqlalchemy import func
 from sqlalchemy.sql import exists, select

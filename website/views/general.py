@@ -1,5 +1,5 @@
 from flask import render_template as template, Blueprint
-from website.models import Gene
+from models.biological import Gene
 
 general = Blueprint('general', __name__)
 

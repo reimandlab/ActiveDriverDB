@@ -4,7 +4,7 @@ from flask import redirect
 from flask import url_for
 from flask import render_template as template
 from flask_classful import FlaskView
-from website.models import Protein
+from models.biological import Protein
 from website.helpers.tracks import Track
 from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack

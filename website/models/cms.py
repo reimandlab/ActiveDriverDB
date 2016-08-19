@@ -1,5 +1,5 @@
 from website import security
-from website.database import db
+from .base import db
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property

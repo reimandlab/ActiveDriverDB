@@ -1,31 +1,31 @@
 import time
 import psutil
 from tqdm import tqdm
-from app import app
-from app import db
+from models.base import db
 from collections import defaultdict
 from database import get_or_create
 from helpers.bioinf import decode_mutation
 from helpers.bioinf import decode_raw_mutation
-from website.models import Cancer
-from website.models import CancerMutation
-from website.models import Domain
-from website.models import ExomeSequencingMutation
-from website.models import Gene
-from website.models import InterproDomain
-from website.models import Kinase
-from website.models import KinaseGroup
-from website.models import MIMPMutation
-from website.models import mutation_site_association
-from website.models import Mutation
-from website.models import Protein
-from website.models import Site
-from website.models import The1000GenomesMutation
+from models.biological import Cancer
+from models.biological import CancerMutation
+from models.biological import Domain
+from models.biological import ExomeSequencingMutation
+from models.biological import Gene
+from models.biological import InterproDomain
+from models.biological import Kinase
+from models.biological import KinaseGroup
+from models.biological import MIMPMutation
+from models.biological import mutation_site_association
+from models.biological import Mutation
+from models.biological import Protein
+from models.biological import Site
+from models.biological import The1000GenomesMutation
 from helpers.parsers import buffered_readlines
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import chunked_list
 from helpers.parsers import read_from_files
+from app import app
 
 
 # remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
