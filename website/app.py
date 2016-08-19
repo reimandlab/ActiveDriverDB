@@ -68,6 +68,11 @@ bundles = {
         'sass/search.css',
         filters='cssutils',
         output='min/search.css'
+    ),
+    'css_page': Bundle(
+        'sass/page.css',
+        filters='cssutils',
+        output='min/page.css'
     )
 }
 

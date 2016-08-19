@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+
+{% block head %}
+  {% assets "css_page" %}
+  <link href="{{ ASSET_URL }}" rel="stylesheet" />
+  {% endassets %}
+{% endblock %}
+
+
+{% block title %} {{ page.title }} - {{ super() }} {% endblock %}
+
+
+{% block content %}
+
+  <h3>{{ page.title }}</h3>
+
+  <div>
+    {{ page.content }}
+  </div>
+{% endblock %}
