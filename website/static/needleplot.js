@@ -4,6 +4,7 @@ var NeedlePlot = function ()
     var scale = 1
 	var position = 0
     var height_unit
+    var tooltip
 
     var legend = {
         x:
@@ -260,6 +261,20 @@ var NeedlePlot = function ()
             .enter()
             .append('g')
             .attr('class', 'needle')
+            .on('mouseover', function(d) {
+                tooltip.transition()
+                    .duration(100)
+                    .style('opacity', 1)
+                tooltip.html(d.category + '<br>' + d.coord)
+                    .style('left', (d3.event.pageX) + 'px')
+                    .style('top', (d3.event.pageY - 28) + 'px')
+            })
+            .on('mouseout', function(d) {
+                tooltip.transition()
+                    .duration(300)
+                    .style('opacity', 0)
+                }
+            )
 
         needles
             .append('line')
@@ -294,6 +309,12 @@ var NeedlePlot = function ()
             )
 
         _rescalePlot()
+
+        tooltip = d3.select('body')
+            .append('div')
+            .attr('class', 'tooltip')
+            .style('opacity', 0)
+            .style('pointer-events', 'none')
 
     }
 
