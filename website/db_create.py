@@ -3,18 +3,16 @@ import argparse
 from database import bdb
 from database import bdb_refseq
 import import_data
-from models.base import db
-from models.cms import User
+from database import db
+from models import User
 
 
 def reset_relational_db(**kwargs):
 
     name = kwargs.get('bind', 'default')
 
-    print(db)
-
     print('Removing', name, 'database...')
-    db.reflect()    # TODO: does reflect needs bind?
+    db.reflect()
     db.drop_all(**kwargs)
     print('Removing', name, 'database completed.')
 

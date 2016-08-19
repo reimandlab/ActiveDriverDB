@@ -1,6 +1,10 @@
 import os
 from sqlalchemy.orm.exc import NoResultFound
 import bsddb3 as bsddb
+from flask_sqlalchemy import SQLAlchemy
+
+
+db = SQLAlchemy()
 
 
 def get_or_create(model, **kwargs):
