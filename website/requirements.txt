@@ -9,3 +9,4 @@ mysqlclient
 psutil
 tqdm
 python-Levenshtein
+flask_login
