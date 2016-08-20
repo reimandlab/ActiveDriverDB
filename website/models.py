@@ -674,11 +674,6 @@ class Model:
     settings and other data handled by 'content managment system'.
     """
     @declared_attr
-    def __bind_key__(cls):
-        """Always use 'cms' database (specified in `config.py` file)."""
-        return 'cms'
-
-    @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()
 
@@ -689,10 +684,11 @@ class Model:
 
 class User(db.Model, Model):
     """Model for use with Flask-Login"""
+    __bind_key__ = 'cms'
 
     # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
     email = db.Column(db.String(254), unique=True)
-    pass_hash = db.Column(db.String(256))
+    pass_hash = db.Column(db.Text())
 
     def __init__(self, email, password):
         self.email = email
@@ -726,6 +722,7 @@ class User(db.Model, Model):
 
 class Page(db.Model, Model):
     """Model representing a single CMS page"""
+    __bind_key__ = 'cms'
 
     address = db.Column(db.String(256), unique=True, index=True)
     title = db.Column(db.String(256))

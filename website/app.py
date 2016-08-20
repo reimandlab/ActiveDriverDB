@@ -103,9 +103,11 @@ import sys
 sys.path.insert(0, '..')
 
 from website.views import general, ProteinView, SearchView, NetworkView
+from website.views import ContentManagmentSystem
 
 app.register_blueprint(general)
 
 ProteinView.register(app)
 NetworkView.register(app)
 SearchView.register(app)
+ContentManagmentSystem.register(app)

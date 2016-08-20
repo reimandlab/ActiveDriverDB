@@ -5,8 +5,8 @@ from flask import request
 from flask import url_for
 from flask_classful import FlaskView
 from flask_classful import route
-from website.models import Page
-from website.models import User
+from models import Page
+from models import User
 from database import db
 from app import login_manager
 from flask_login import login_user, logout_user, current_user, login_required
@@ -22,22 +22,37 @@ def load_user(user_id):
 
 class ContentManagmentSystem(FlaskView):
 
-    def _template(name, **kwargs):
+    route_base = '/'
+
+    def _template(self, name, **kwargs):
         return template('cms/' + name + '.html', **kwargs)
 
-    @route('/<page_name>')
-    def page(self, page_name):
-        page = Page.query.filter_by(codename=page_name)
+    @route('/<page_name>/')
+    def page(self, address):
+        page = Page.query.filter_by(address=address)
         return self._template('page', page=page)
 
     @login_required
-    def show_pages(self, page_name):
+    def show_pages(self):
         pages = Page.query.all()
         return self._template('show_page', pages=pages)
 
+    @route('/add/', methods=['GET', 'POST'])
     @login_required
-    def edit_page(self, page_name):
-        page = Page.query.filter_by(codename=page_name)
+    def add_page(self):
+        if request.method == 'GET':
+            return self._template('add')
+
+        page = Page(
+            title=request.form['title'],
+            address=request.form['address'],
+            content=request.form['content']
+        )
+        return self._template('add', page=page)
+
+    @login_required
+    def edit_page(self, page_name, content):
+        page = Page.query.filter_by(address=page_name).one()
         return self._template('edit', page=page)
 
     @login_required
@@ -56,10 +71,14 @@ class ContentManagmentSystem(FlaskView):
     @route('/save/<page_name>', methods=['POST'])
     @login_required
     def save_page(self, page_name):
-        page = Page.query.filter_by(codename=page_name)
-        return self._template('edit', page=page, saved=True)
+        page = Page.query.filter_by(address=page_name).one()
+        page.title = request.form['title']
+        page.address = request.form['address']
+        page.content = request.form['content']
+        flash('Page saved')
+        return self._template('edit', page=page)
 
-    @route('/login', methods=['GET', 'POST'])
+    @route('/login/', methods=['GET', 'POST'])
     def login(self):
         if request.method == 'GET':
             return self._template('login')
@@ -80,3 +99,7 @@ class ContentManagmentSystem(FlaskView):
         else:
             flash('Password is invalid', 'error')
             return redirect(url_for('ContentManagmentSystem:login'))
+
+    def logout(self):
+        logout_user()
+        return redirect(url_for('index'))
