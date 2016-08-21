@@ -719,6 +719,9 @@ class User(db.Model, Model):
             self.id
         )
 
+    def get_id(self):
+        return self.id
+
 
 class Page(db.Model, Model):
     """Model representing a single CMS page"""

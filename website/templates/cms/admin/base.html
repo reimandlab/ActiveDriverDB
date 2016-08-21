@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+
+{% block head %}
+  {% assets "css_page" %}
+  <link href="{{ ASSET_URL }}" rel="stylesheet" />
+  {% endassets %}
+  {% assets "css_admin" %}
+  <link href="{{ ASSET_URL }}" rel="stylesheet" />
+  {% endassets %}
+{% endblock %}
+
+
+{% block title %} admin dashboard - {{ super() }} {% endblock %}

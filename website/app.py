@@ -24,6 +24,15 @@ Define assets
 """
 assets = Environment(app)
 
+
+def css_bundle(name, *args):
+    return Bundle(
+        *args,
+        filters='cssutils',
+        output='min/' + name + '.css'
+    )
+
+
 bundles = {
     'js_search': Bundle(
         'search.js',
@@ -46,33 +55,32 @@ bundles = {
         filters='rjsmin',
         output='min/networkView.js'
     ),
-    'css_common': Bundle(
-        'sass/style.css',
-        filters='cssutils',
-        output='min/style.css'
+    'css_common': css_bundle(
+        'style',
+        'sass/style.css'
     ),
-    'css_network': Bundle(
+    'css_network': css_bundle(
+        'network',
         'sass/network.css',
-        'sass/filters.css',
-        filters='cssutils',
-        output='min/network.css'
+        'sass/filters.css'
     ),
-    'css_protein': Bundle(
+    'css_protein': css_bundle(
+        'protein',
         'sass/protein.css',
         'sass/tracks.css',
-        'sass/filters.css',
-        filters='cssutils',
-        output='min/protein.css'
+        'sass/filters.css'
     ),
-    'css_search': Bundle(
-        'sass/search.css',
-        filters='cssutils',
-        output='min/search.css'
+    'css_search': css_bundle(
+        'search',
+        'sass/search.css'
     ),
-    'css_page': Bundle(
-        'sass/page.css',
-        filters='cssutils',
-        output='min/page.css'
+    'css_page': css_bundle(
+        'page',
+        'sass/page.css'
+    ),
+    'css_admin': css_bundle(
+        'admin',
+        'sass/admin.css'
     )
 }
 

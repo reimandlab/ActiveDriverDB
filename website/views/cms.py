@@ -27,56 +27,74 @@ class ContentManagmentSystem(FlaskView):
     def _template(self, name, **kwargs):
         return template('cms/' + name + '.html', **kwargs)
 
-    @route('/<page_name>/')
+    @route('/<address>/')
     def page(self, address):
-        page = Page.query.filter_by(address=address)
+        page = Page.query.filter_by(address=address).one()
         return self._template('page', page=page)
 
     @login_required
-    def show_pages(self):
+    def list_pages(self):
         pages = Page.query.all()
-        return self._template('show_page', pages=pages)
+        return self._template('admin/list', entries=pages, entity_name='Page')
 
     @route('/add/', methods=['GET', 'POST'])
     @login_required
     def add_page(self):
         if request.method == 'GET':
-            return self._template('add')
+            return self._template(
+                'admin/add_page',
+            )
 
+        address = request.form['address']
         page = Page(
             title=request.form['title'],
-            address=request.form['address'],
+            address=address,
             content=request.form['content']
         )
-        return self._template('add', page=page)
+        db.session.add(page)
+        db.session.commit()
+        flash('Successfuly added new page')
+        return redirect(
+            url_for('ContentManagmentSystem:edit_page', address=address)
+        )
+
+    @route('/edit/<address>', methods=['GET', 'POST'])
+    @login_required
+    def edit_page(self, address):
+        page = Page.query.filter_by(address=address).one()
+        if request.method == 'POST':
+            page.title = request.form['title']
+            page.address = request.form['address']
+            page.content = request.form['content']
+            flash('Page saved')
+        return self._template('admin/edit_page', page=page)
 
     @login_required
-    def edit_page(self, page_name, content):
-        page = Page.query.filter_by(address=page_name).one()
-        return self._template('edit', page=page)
-
-    @login_required
-    def remove_page(self, page_name):
+    def remove_page(self, address):
+        from sqlalchemy.orm.exc import NoResultFound
+        from sqlalchemy.orm.exc import MultipleResultsFound
         try:
-            page = Page.query.filter_by(codename=page_name).one()
+            page = Page.query.filter_by(address=address).one()
             title, page_id = page.title, page.id
             db.session.delete(page)
             db.session.commit()
-            flash('Successfuly removed page', title, '(id:', page_id, ')')
-            return redirect(url_for('ContentManagmentSystem:show_pages'))
-        except Exception:
-            # TODO
-            pass
-
-    @route('/save/<page_name>', methods=['POST'])
-    @login_required
-    def save_page(self, page_name):
-        page = Page.query.filter_by(address=page_name).one()
-        page.title = request.form['title']
-        page.address = request.form['address']
-        page.content = request.form['content']
-        flash('Page saved')
-        return self._template('edit', page=page)
+            flash(
+                'Successfuly removed page "{0}" (id: {1})'.format(
+                    title,
+                    page_id
+                )
+            )
+        except NoResultFound:
+            flash(
+                'Remove failed: no such page',
+                'danger'
+            )
+        except MultipleResultsFound:
+            flash(
+                'Remove failed: multiple results found - manual revision of the database needed.',
+                'danger'
+            )
+        return redirect(url_for('ContentManagmentSystem:list_pages'))
 
     @route('/login/', methods=['GET', 'POST'])
     def login(self):
@@ -95,11 +113,11 @@ class ContentManagmentSystem(FlaskView):
 
         if user.authenticate(password):
             login_user(user, remember=remember_me)
-            return redirect(url_for('ContentManagmentSystem:show_pages'))
+            return redirect(url_for('ContentManagmentSystem:list_pages'))
         else:
             flash('Password is invalid', 'error')
             return redirect(url_for('ContentManagmentSystem:login'))
 
     def logout(self):
         logout_user()
-        return redirect(url_for('index'))
+        return redirect(request.url_root)

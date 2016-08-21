@@ -16,6 +16,14 @@
   <h3>{{ page.title }}</h3>
 
   <div>
-    {{ page.content }}
+    {{ page.content | safe }}
   </div>
+{% endblock %}
+
+{% block user_menu %}
+  <a href="{{ url_for('ContentManagmentSystem:edit_page', address=page.address) }}" class="btn btn-warning">
+	<span class="glyphicon glyphicon-pencil"></span>
+	Edit this page
+  </a>
+  {{ super() }}
 {% endblock %}

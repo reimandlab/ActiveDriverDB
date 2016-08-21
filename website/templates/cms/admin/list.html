@@ -1,0 +1,73 @@
+{% extends "cms/admin/base.html" %}
+
+
+{% block head %}
+  {{ super () }}
+
+  {# jQuery #}
+  <script src="/static/thirdparty/jquery-1.12.0.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+  {# Bootstrap-Table #}
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
+{% endblock %}
+
+
+{% block title %} {{ entity_name }} list - {{ super() }} {% endblock %}
+
+
+{% block content %}
+
+<h3>{{ entity_name }} list</h3>
+
+<div id="toolbar">
+  <a href="{{ url_for('ContentManagmentSystem:add_page') }}" class="btn btn-default">
+    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+    Add a new {{ entity_name }}
+  </a>
+</div>
+
+
+<table class="table"
+       data-toolbar="#toolbar"
+       data-toggle="table"
+       data-search="true"
+       data-show-columns="true"
+       data-minimum-count-columns="2"
+       data-show-export="true"
+       >
+    <thead>
+        <tr>
+            <th data-sortable=true>Title (click to edit)</th>
+            <th data-sortable=true>Address (click to visit)</th>
+            <th data-sortable=true>Remove</th>
+        </tr>
+    </thead>
+    <tbody>
+		{% for entry in entries or [] %}
+        <tr>
+            <td>
+              <a href="{{ url_for('ContentManagmentSystem:edit_page', address=entry.address) }}">
+                  <span class="glyphicon glyphicon-pencil" aria-hidden="true" title="Edit"></span>
+                  {{ entry.title }}
+              </a>
+            </td>
+            <td>
+                <a href="{{ url_for('ContentManagmentSystem:page', address=entry.address) }}">
+                  <span class="glyphicon glyphicon-globe" aria-hidden="true" title="Visit the page"></span>
+                  {{ entry.address }}
+              </a>
+            </td>
+            <td>
+              <a href="{{ url_for('ContentManagmentSystem:remove_page', address=entry.address) }}">
+                  <span class="glyphicon glyphicon-trash" aria-hidden="true" title="Remove"></span>
+                  Remove
+              </a>
+            </td>
+        </tr>
+		{% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
