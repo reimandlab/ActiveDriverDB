@@ -63,7 +63,7 @@
 Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
 {% set other_isoforms_count = protein.gene.isoforms | length - 1 %}
 {% if other_isoforms_count > 0 %}
-    There {{ 'is' if other_isoforms_count == 1 else 'are' }} <a href="{{ url_for('general.gene_view', gene_name=protein.gene.name) }}">{{ other_isoforms_count }} isoform{{ 's' if other_isoforms_count > 1}} more</a> for this protein in the database.
+    There {{ 'is' if other_isoforms_count == 1 else 'are' }} <a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}">{{ other_isoforms_count }} isoform{{ 's' if other_isoforms_count > 1}} more</a> for this protein in the database.
 {% endif %}
 
 <ul>
