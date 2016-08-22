@@ -17,8 +17,8 @@ All used HTML, CSS and JS features are required to meet 95% level of support in 
 The website is developed inside Python3-based virtual environment. To quickly recreate the environment, use:
 
 ```bash
-virtualenv -p python3 website_env
-source website_env/bin/activate
+virtualenv -p python3 virtual_environment
+source virtual_environment/bin/activate
 cd website
 python3 -m pip install -r requirements.py
 ```
