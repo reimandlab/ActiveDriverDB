@@ -110,11 +110,10 @@ Import viwes
 import sys
 sys.path.insert(0, '..')
 
-from website.views import general, ProteinView, SearchView, NetworkView
+from website.views import ProteinView, SearchView, NetworkView, GeneView
 from website.views import ContentManagmentSystem
 
-app.register_blueprint(general)
-
+GeneView.register(app)
 ProteinView.register(app)
 NetworkView.register(app)
 SearchView.register(app)
