@@ -136,7 +136,8 @@ class ContentManagmentSystem(FlaskView):
                     ' Please, change the address and try saving again.',
                     'danger'
                 )
-        return self._template('admin/edit_page', page=page_new_data)
+                page = page_new_data
+        return self._template('admin/edit_page', page=page)
 
     @login_required
     def remove_page(self, address):
