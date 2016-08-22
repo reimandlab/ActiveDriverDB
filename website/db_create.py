@@ -86,7 +86,7 @@ if __name__ == '__main__':
             reset_relational_db(bind='cms')
             main_page = Page(
                 content=content,
-                title='Visualistion Framework for Genome Mutations',
+                title='Visualisation Framework for Genome Mutations',
                 address='index'
             )
             db.session.add(main_page)
