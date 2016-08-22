@@ -10,17 +10,15 @@ from werkzeug.utils import cached_property
 import security
 
 
-class BioData:
+class BioModel(db.Model):
     """Default model configuration to be used across whole file.
 
     Models descending from BioData are supposed to hold biology-related
     data and will be stored in a 'bio' database, separated from visualisation
     settings and other data handled by 'content managment system'.
     """
-    @declared_attr
-    def __bind_key__(cls):
-        """Always use 'bio' database (specified in `config.py` file)."""
-        return 'bio'
+    __abstract__ = True
+    __bind_key__ = 'bio'
 
 
 def make_association_table(fk1, fk2):
@@ -38,7 +36,7 @@ def make_association_table(fk1, fk2):
     )
 
 
-class Kinase(db.Model, BioData):
+class Kinase(BioModel):
     """Kinase represents an entity interacting with some site.
 
     The protein linked to a kinase is chosen as the `preferred_isoform` of a
@@ -59,7 +57,7 @@ class Kinase(db.Model, BioData):
         )
 
 
-class KinaseGroup(db.Model, BioData):
+class KinaseGroup(BioModel):
     """Kinase group is the only grouping of kinases currently in use.
 
     The nomenclature may differ across sources and a `group` here
@@ -81,7 +79,7 @@ class KinaseGroup(db.Model, BioData):
         )
 
 
-class Gene(db.Model, BioData):
+class Gene(BioModel):
     """Gene is uniquely identified although has multiple protein isoforms.
 
     The isoforms are always located on the same chromsome, strand and are
@@ -136,7 +134,7 @@ class Gene(db.Model, BioData):
         )
 
 
-class Protein(db.Model, BioData):
+class Protein(BioModel):
     """Protein represents a single isoform of a product of given gene."""
     __tablename__ = 'protein'
 
@@ -308,7 +306,7 @@ class Protein(db.Model, BioData):
         return len(self.kinases) + len(self.kinase_groups)
 
 
-class Site(db.Model, BioData):
+class Site(BioModel):
     __tablename__ = 'site'
     id = db.Column(db.Integer, primary_key=True)
     position = db.Column(db.Integer, index=True)
@@ -332,7 +330,7 @@ class Site(db.Model, BioData):
         )
 
 
-class Cancer(db.Model, BioData):
+class Cancer(BioModel):
     __tablename__ = 'cancer'
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16))
@@ -345,7 +343,7 @@ class Cancer(db.Model, BioData):
         )
 
 
-class InterproDomain(db.Model, BioData):
+class InterproDomain(BioModel):
     __tablename__ = 'interpro_domain'
     id = db.Column(db.Integer, primary_key=True)
 
@@ -361,7 +359,7 @@ class InterproDomain(db.Model, BioData):
     occurrences = db.relationship('Domain', backref='interpro')
 
 
-class Domain(db.Model, BioData):
+class Domain(BioModel):
     __tablename__ = 'domain'
     id = db.Column(db.Integer, primary_key=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
@@ -393,7 +391,7 @@ def mutation_details_relationship(class_name):
 mutation_site_association = make_association_table('site.id', 'mutation.id')
 
 
-class Mutation(db.Model, BioData):
+class Mutation(BioModel):
     __tablename__ = 'mutation'
     __table_args__ = (
         db.Index('mutation_index', 'alt', 'protein_id', 'position'),
@@ -433,6 +431,17 @@ class Mutation(db.Model, BioData):
             self.position,
             self.alt
         )
+
+    @cached_property
+    def source(self):
+        if self.meta_cancer:
+            return 'cancer'
+        if self.meta_inherited:
+            return 'inherited'
+        if self.meta_ESP6500:
+            return 'ESP6500'
+        if self.meta_1KG:
+            return '1K Genomes'
 
     @cached_property
     def is_confirmed(self):
@@ -611,7 +620,7 @@ class MutationDetails:
         return db.Column(db.Integer, db.ForeignKey('mutation.id'))
 
 
-class CancerMutation(MutationDetails, db.Model, BioData):
+class CancerMutation(MutationDetails, BioModel):
     """Metadata for cancer mutations from ICGC data portal"""
     sample_name = db.Column(db.String(64))
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
@@ -619,7 +628,7 @@ class CancerMutation(MutationDetails, db.Model, BioData):
     count = db.Column(db.Integer)
 
 
-class InheritedMutation(MutationDetails, db.Model, BioData):
+class InheritedMutation(MutationDetails, BioModel):
     """Metadata for inherited diseased mutations from ClinVar from NCBI"""
     pass
 
@@ -633,7 +642,7 @@ class PopulationMutation(MutationDetails):
     maf_all = db.Column(db.Float)
 
 
-class ExomeSequencingMutation(PopulationMutation, db.Model, BioData):
+class ExomeSequencingMutation(PopulationMutation, BioModel):
     """Metadata for ESP 6500 mutation
 
     MAF:
@@ -644,7 +653,7 @@ class ExomeSequencingMutation(PopulationMutation, db.Model, BioData):
     maf_aa = db.Column(db.Float)
 
 
-class The1000GenomesMutation(PopulationMutation, db.Model, BioData):
+class The1000GenomesMutation(PopulationMutation, BioModel):
     """Metadata for 1 KG mutation"""
     maf_eas = db.Column(db.Float)
     maf_amr = db.Column(db.Float)
@@ -653,7 +662,7 @@ class The1000GenomesMutation(PopulationMutation, db.Model, BioData):
     maf_sas = db.Column(db.Float)
 
 
-class MIMPMutation(MutationDetails, db.Model, BioData):
+class MIMPMutation(MutationDetails, BioModel):
     """Metadata for MIMP mutation"""
 
     pwm = db.Column(db.Text)
@@ -666,13 +675,15 @@ class MIMPMutation(MutationDetails, db.Model, BioData):
     position_in_motif = db.Column(db.Integer)
 
 
-
-class Model:
+class Model(db.Model):
     """Default model configuration to be used across whole file.
 
     Models descending from Model are supposed to hold visualisation
     settings and other data handled by 'content managment system'.
     """
+    __abstract__ = True
+    __bind_key__ = 'cms'
+
     @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()
@@ -682,9 +693,8 @@ class Model:
         return db.Column('id', db.Integer, primary_key=True)
 
 
-class User(db.Model, Model):
+class User(Model):
     """Model for use with Flask-Login"""
-    __bind_key__ = 'cms'
 
     # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
     email = db.Column(db.String(254), unique=True)
@@ -723,9 +733,8 @@ class User(db.Model, Model):
         return self.id
 
 
-class Page(db.Model, Model):
+class Page(Model):
     """Model representing a single CMS page"""
-    __bind_key__ = 'cms'
 
     address = db.Column(db.String(256), unique=True, index=True)
     title = db.Column(db.String(256))

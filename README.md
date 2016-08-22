@@ -23,6 +23,8 @@ cd website
 python3 -m pip install -r requirements.py
 ```
 
+As currently there is no new version of flask-sqlalchemy released since Oct 2015, but there are some crucial patches merged to the official repository, you will needed to clone [flask_sqlalchemy directory](https://github.com/mitsuhiko/flask-sqlalchemy/tree/master/flask_sqlalchemy) into `website` directory.
+
 ### Database creation & data imports
 
 Before server start, database have to be created. Safiest way to do this is to run:
