@@ -687,7 +687,12 @@ def load_mutations(proteins, removed):
                 (
                     mutation_id,
                     maf_all,
-                    *maf_by_population,
+                    # *maf_by_population,   # Python 3.5 makes it easy, but is not avaialable on the server
+                    maf_by_population[0],
+                    maf_by_population[1],
+                    maf_by_population[2],
+                    maf_by_population[3],
+                    maf_by_population[4],
                 )
             )
 
