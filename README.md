@@ -98,6 +98,10 @@ Following extract from configuration file might be usefull help for writing you 
     </Location>
 ```
 
+### Using Content Managment System
+
+To login to root account (created with `db_create.py` script) visit `/login/` page on your server. It will allow you to create, edit and remove standalone pages.
+
 ## Debian-based servers
 
 For proper compilation of some requirements, additional software will be needed on Debian-based servers. The required packages are:
