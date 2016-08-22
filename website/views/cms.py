@@ -14,9 +14,10 @@ from database import db
 from app import login_manager
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
-"""
-from flask import jsonify
-"""
+from sqlalchemy.exc import IntegrityError
+
+
+PAGE_COLUMNS = ('title', 'address', 'content')
 
 
 @login_manager.user_loader
@@ -48,6 +49,15 @@ def get_page(address, operation=''):
     return None
 
 
+def update_obj_with_dict(instance, dictionary):
+    for key, value in dictionary.items():
+        setattr(instance, key, value)
+
+
+def dict_subset(dictionary, keys):
+    return {k: v for k, v in dictionary.items() if k in keys}
+
+
 class ContentManagmentSystem(FlaskView):
 
     route_base = '/'
@@ -76,37 +86,57 @@ class ContentManagmentSystem(FlaskView):
             return self._template(
                 'admin/add_page',
             )
+        page_data = dict_subset(request.form, PAGE_COLUMNS)
+        try:
+            address = request.form['address']
+            page = Page(
+                **page_data
+            )
+            db.session.add(page)
+            db.session.commit()
+            flash(
+                'Added new page: ' + html_link(page.address, page.title),
+                'success'
+            )
+            return redirect(
+                url_for('ContentManagmentSystem:edit_page', address=address)
+            )
+        except IntegrityError:
+            db.session.rollback()
+            flash(
+                'Page with address: ' + html_link(address, '/' + address) +
+                ' already exists. Please, change the address and try again.',
+                'danger'
+            )
+        return self._template(
+            'admin/add_page',
+            page=page_data
+        )
 
-        address = request.form['address']
-        page = Page(
-            title=request.form['title'],
-            address=address,
-            content=request.form['content']
-        )
-        db.session.add(page)
-        db.session.commit()
-        flash(
-            'Added new page: ' + html_link(page.address, page.title),
-            'success'
-        )
-        return redirect(
-            url_for('ContentManagmentSystem:edit_page', address=address)
-        )
-
-    @route('/edit/<address>', methods=['GET', 'POST'])
+    @route('/edit/<address>/', methods=['GET', 'POST'])
     @login_required
     def edit_page(self, address):
         page = get_page(address, 'Edit')
         if request.method == 'POST' and page:
-            page.title = request.form['title']
-            page.address = request.form['address']
-            page.content = request.form['content']
-            db.session.commit()
-            flash(
-                'Page saved: ' + html_link(page.address, page.title),
-                'success'
-            )
-        return self._template('admin/edit_page', page=page)
+            page_new_data = dict_subset(request.form, PAGE_COLUMNS)
+            try:
+                update_obj_with_dict(page, page_new_data)
+                db.session.commit()
+                flash(
+                    'Page saved: ' + html_link(page.address, page.title),
+                    'success'
+                )
+            except IntegrityError:
+                db.session.rollback()
+                flash(
+                    'Page with address: ' + html_link(
+                        page_new_data['address'],
+                        '/' + page_new_data['address']
+                    ) + ' already exists.' +
+                    ' Please, change the address and try saving again.',
+                    'danger'
+                )
+        return self._template('admin/edit_page', page=page_new_data)
 
     @login_required
     def remove_page(self, address):

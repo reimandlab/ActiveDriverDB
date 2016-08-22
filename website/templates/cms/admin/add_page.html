@@ -20,7 +20,7 @@
 <h3>{{ title }}</h3>
 
 <form method="POST">
-  {% with page=None %}
+  {% with page=(page or None) %}
     {% include 'cms/admin/editor.html' %}
   {% endwith %}
   <div class="submit">
