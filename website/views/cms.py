@@ -5,11 +5,15 @@ from flask import request
 from flask import url_for
 from flask_classful import FlaskView
 from flask_classful import route
+from flask_login import login_user
+from flask_login import logout_user
+from flask_login import login_required
 from models import Page
 from models import User
 from database import db
 from app import login_manager
-from flask_login import login_user, logout_user, current_user, login_required
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import MultipleResultsFound
 """
 from flask import jsonify
 """
@@ -22,6 +26,26 @@ def load_user(user_id):
 
 def html_link(address, content):
     return '<a href="/{0}">{1}</a>'.format(address, content)
+
+
+def get_page(address, operation=''):
+    if operation:
+        operation += ' failed: '
+
+    try:
+        return Page.query.filter_by(address=address).one()
+    except NoResultFound:
+        flash(
+            operation + 'no such page: /' + address,
+            'warning'
+        )
+    except MultipleResultsFound:
+        flash(
+            operation + 'multiple results found for page: /' + address +
+            'Manual check of the database is required',
+            'danger'
+        )
+    return None
 
 
 class ContentManagmentSystem(FlaskView):
@@ -37,7 +61,7 @@ class ContentManagmentSystem(FlaskView):
 
     @route('/<address>/')
     def page(self, address):
-        page = Page.query.filter_by(address=address).one()
+        page = get_page(address)
         return self._template('page', page=page)
 
     @login_required
@@ -72,8 +96,8 @@ class ContentManagmentSystem(FlaskView):
     @route('/edit/<address>', methods=['GET', 'POST'])
     @login_required
     def edit_page(self, address):
-        page = Page.query.filter_by(address=address).one()
-        if request.method == 'POST':
+        page = get_page(address, 'Edit')
+        if request.method == 'POST' and page:
             page.title = request.form['title']
             page.address = request.form['address']
             page.content = request.form['content']
@@ -86,10 +110,8 @@ class ContentManagmentSystem(FlaskView):
 
     @login_required
     def remove_page(self, address):
-        from sqlalchemy.orm.exc import NoResultFound
-        from sqlalchemy.orm.exc import MultipleResultsFound
-        try:
-            page = Page.query.filter_by(address=address).one()
+        page = get_page(address, 'Remove')
+        if page:
             title, page_id = page.title, page.id
             db.session.delete(page)
             db.session.commit()
@@ -97,17 +119,8 @@ class ContentManagmentSystem(FlaskView):
                 'Successfuly removed page "{0}" (id: {1})'.format(
                     title,
                     page_id
-                )
-            )
-        except NoResultFound:
-            flash(
-                'Remove failed: no such page',
-                'warning'
-            )
-        except MultipleResultsFound:
-            flash(
-                'Remove failed: multiple results found - manual revision of the database needed.',
-                'danger'
+                ),
+                'success'
             )
         return redirect(url_for('ContentManagmentSystem:list_pages'))
 
