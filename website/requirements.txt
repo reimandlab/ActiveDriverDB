@@ -1,6 +1,6 @@
 cssutils==1.0.1
-Flask==0.11
-Flask-Assets==0.11
+Flask==0.11.1
+Flask-Assets==0.12
 Flask-Classful==0.13.0
 Flask-SQLAlchemy==2.1
 passlib==1.6.5
