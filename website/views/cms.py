@@ -27,6 +27,10 @@ class ContentManagmentSystem(FlaskView):
     def _template(self, name, **kwargs):
         return template('cms/' + name + '.html', **kwargs)
 
+    @route('/')
+    def index(self):
+        return self.page('index')
+
     @route('/<address>/')
     def page(self, address):
         page = Page.query.filter_by(address=address).one()

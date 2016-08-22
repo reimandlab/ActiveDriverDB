@@ -4,6 +4,7 @@ from database import bdb
 from database import bdb_refseq
 import import_data
 from database import db
+from models import Page
 from models import User
 
 
@@ -76,7 +77,20 @@ if __name__ == '__main__':
                 import_data.import_mappings(proteins)
 
         if args.recreate_cms:
+            content = """
+            <ul>
+                <li><a href="/search/proteins">search for a protein</a>
+                <li><a href="/search/mutations">search for mutations</a>
+            </ul>
+            """
             reset_relational_db(bind='cms')
+            main_page = Page(
+                content=content,
+                title='Visualistion Framework for Genome Mutations',
+                address='index'
+            )
+            db.session.add(main_page)
+            print('Index page created')
             print('Creating root user account')
             email = input('Please type root email: ')
             password = input('Please type root password: ')
