@@ -1,21 +1,37 @@
 from flask import Flask
 from flask_assets import Bundle
 from flask_assets import Environment
+from flask_login import LoginManager
 from database import db
 
 
 app = Flask(__name__)
 app.config.from_pyfile('config.py')
 
-db.init_app(app)
 db.app = app
-db.create_all()
+db.init_app(app)
+db.create_all(bind='__all__')
+
+"""
+Configure Login Manager
+"""
+login_manager = LoginManager()
+login_manager.init_app(app)
+
 
 """
 Define assets
 """
-
 assets = Environment(app)
+
+
+def css_bundle(name, *args):
+    return Bundle(
+        *args,
+        filters='cssutils',
+        output='min/' + name + '.css'
+    )
+
 
 bundles = {
     'js_search': Bundle(
@@ -39,28 +55,32 @@ bundles = {
         filters='rjsmin',
         output='min/networkView.js'
     ),
-    'css_common': Bundle(
-        'sass/style.css',
-        filters='cssutils',
-        output='min/style.css'
+    'css_common': css_bundle(
+        'style',
+        'sass/style.css'
     ),
-    'css_network': Bundle(
+    'css_network': css_bundle(
+        'network',
         'sass/network.css',
-        'sass/filters.css',
-        filters='cssutils',
-        output='min/network.css'
+        'sass/filters.css'
     ),
-    'css_protein': Bundle(
+    'css_protein': css_bundle(
+        'protein',
         'sass/protein.css',
         'sass/tracks.css',
-        'sass/filters.css',
-        filters='cssutils',
-        output='min/protein.css'
+        'sass/filters.css'
     ),
-    'css_search': Bundle(
-        'sass/search.css',
-        filters='cssutils',
-        output='min/search.css'
+    'css_search': css_bundle(
+        'search',
+        'sass/search.css'
+    ),
+    'css_page': css_bundle(
+        'page',
+        'sass/page.css'
+    ),
+    'css_admin': css_bundle(
+        'admin',
+        'sass/admin.css'
     )
 }
 
@@ -90,10 +110,11 @@ Import viwes
 import sys
 sys.path.insert(0, '..')
 
-from website.views import general, ProteinView, SearchView, NetworkView
+from website.views import ProteinView, SearchView, NetworkView, GeneView
+from website.views import ContentManagmentSystem
 
-app.register_blueprint(general)
-
+GeneView.register(app)
 ProteinView.register(app)
 NetworkView.register(app)
 SearchView.register(app)
+ContentManagmentSystem.register(app)

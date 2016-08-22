@@ -20,7 +20,21 @@
 <body>
   <div class="container">
     {% include 'messages.html' %}
-      <div id="content">
+    {% if current_user.is_authenticated %}
+    <div class="user-menu">
+      {% block user_menu %}
+      <a href="{{ url_for('ContentManagmentSystem:list_pages') }}" class="btn btn-warning">
+        <span class="glyphicon glyphicon-list-alt"></span>
+        Edit pages
+      </a>
+      <a href="{{ url_for('ContentManagmentSystem:logout') }}" class="btn btn-warning">
+        <span class="glyphicon glyphicon-log-out"></span>
+        Logout
+      </a>
+      {% endblock %}
+    </div>
+    {% endif %}
+    <div id="content">
       {% block content %}
       {% endblock %}
     </div>

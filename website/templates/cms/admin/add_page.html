@@ -1,0 +1,30 @@
+{% extends "cms/admin/base.html" %}
+
+
+{% block head %}
+  {{ super () }}
+
+  {# TinyMCE #}
+  <script src="//cdn.tinymce.com/4/tinymce.min.js"></script>
+  {# <script src="/static/thirdparty/tinymce/tinymce.min.js"></script> #}
+  <script>tinymce.init({ selector:'textarea' })</script>
+{% endblock %}
+
+{% set title = 'Add page' %}
+
+{% block title %} {{ title }} - {{ super() }} {% endblock %}
+
+
+{% block content %}
+
+<h3>{{ title }}</h3>
+
+<form method="POST">
+  {% with page=(page or None) %}
+    {% include 'cms/admin/editor.html' %}
+  {% endwith %}
+  <div class="submit">
+    <button type="submit" class="btn btn-success">Create new page</button>
+  </div>
+</form>
+{% endblock %}

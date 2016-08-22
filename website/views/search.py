@@ -4,8 +4,8 @@ from flask import request
 from flask_classful import FlaskView
 from flask_classful import route
 from Levenshtein import distance
-from website.models import Protein
-from website.models import Gene
+from models import Protein
+from models import Gene
 from database import bdb, bdb_refseq
 from database import make_snv_key
 from database import decode_csv

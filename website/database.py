@@ -1,7 +1,7 @@
 import os
 from sqlalchemy.orm.exc import NoResultFound
-from flask_sqlalchemy import SQLAlchemy
 import bsddb3 as bsddb
+from flask_sqlalchemy import SQLAlchemy
 
 
 db = SQLAlchemy()

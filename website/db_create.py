@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
-from database import db
+import argparse
 from database import bdb
 from database import bdb_refseq
 import import_data
-import argparse
+from database import db
+from models import Page
+from models import User
 
 
-def restet_relational_db():
+def reset_relational_db(**kwargs):
 
-    print('Removing relational database...')
+    name = kwargs.get('bind', 'default')
+
+    print('Removing', name, 'database...')
     db.reflect()
-    db.drop_all()
-    print('Removing relational database completed.')
+    db.drop_all(**kwargs)
+    print('Removing', name, 'database completed.')
 
-    print('Recreating relational database...')
-    db.create_all()
-    print('Recreating relational database completed.')
+    print('Recreating', name, 'database...')
+    db.create_all(**kwargs)
+    print('Recreating', name, 'database completed.')
 
 
 def reset_mappings_db():
@@ -31,19 +35,25 @@ if __name__ == '__main__':
         '-i',
         '--import_mappings',
         action='store_true',
-        help='Should mappings be (re)imported'
+        help='should mappings (DNA -> protein) be (re)imported'
     )
     parser.add_argument(
         '-r',
-        '--reload_relational',
+        '--reload_biological',
         action='store_true',
-        help='Should relational database be (re)imported'
+        help='should biological database be (re)imported.'
+    )
+    parser.add_argument(
+        '-c',
+        '--recreate_cms',
+        action='store_true',
+        help='should Content Managment System database be (re)created'
     )
     parser.add_argument(
         '-m',
         '--only_mutations',
         action='store_true',
-        help='Should mutations be loaded without db restart?'
+        help='should mutations be loaded without db restart?'
     )
 
     args = parser.parse_args()
@@ -54,8 +64,8 @@ if __name__ == '__main__':
             proteins = import_data.get_proteins()
             mutations = import_data.load_mutations(proteins, set())
     else:
-        if args.reload_relational:
-            restet_relational_db()
+        if args.reload_biological:
+            reset_relational_db(bind='bio')
             print('Importing data')
             import_data.import_data()
 
@@ -66,6 +76,30 @@ if __name__ == '__main__':
                 proteins = import_data.get_proteins()
                 import_data.import_mappings(proteins)
 
+        if args.recreate_cms:
+            content = """
+            <ul>
+                <li><a href="/search/proteins">search for a protein</a>
+                <li><a href="/search/mutations">search for mutations</a>
+            </ul>
+            """
+            reset_relational_db(bind='cms')
+            main_page = Page(
+                content=content,
+                title='Visualistion Framework for Genome Mutations',
+                address='index'
+            )
+            db.session.add(main_page)
+            print('Index page created')
+            print('Creating root user account')
+            email = input('Please type root email: ')
+            password = input('Please type root password: ')
+            root = User(email, password)
+            db.session.add(root)
+            db.session.commit()
+            print('Root user with email', email, 'created')
+
+            print('Root user account created')
     print('Done, all tasks completed.')
 
 else:

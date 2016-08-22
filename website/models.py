@@ -3,9 +3,24 @@ from database import db
 from sqlalchemy import and_
 from sqlalchemy import func
 from sqlalchemy.sql import exists, select
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
 from werkzeug.utils import cached_property
+import security
+
+
+class BioData:
+    """Default model configuration to be used across whole file.
+
+    Models descending from BioData are supposed to hold biology-related
+    data and will be stored in a 'bio' database, separated from visualisation
+    settings and other data handled by 'content managment system'.
+    """
+    @declared_attr
+    def __bind_key__(cls):
+        """Always use 'bio' database (specified in `config.py` file)."""
+        return 'bio'
 
 
 def make_association_table(fk1, fk2):
@@ -19,10 +34,11 @@ def make_association_table(fk1, fk2):
         table_name, db.metadata,
         db.Column(fk1.replace('.', '_'), db.Integer, db.ForeignKey(fk1)),
         db.Column(fk2.replace('.', '_'), db.Integer, db.ForeignKey(fk2)),
+        info={'bind_key': 'bio'}    # use 'bio' database
     )
 
 
-class Kinase(db.Model):
+class Kinase(db.Model, BioData):
     """Kinase represents an entity interacting with some site.
 
     The protein linked to a kinase is chosen as the `preferred_isoform` of a
@@ -43,7 +59,7 @@ class Kinase(db.Model):
         )
 
 
-class KinaseGroup(db.Model):
+class KinaseGroup(db.Model, BioData):
     """Kinase group is the only grouping of kinases currently in use.
 
     The nomenclature may differ across sources and a `group` here
@@ -65,7 +81,7 @@ class KinaseGroup(db.Model):
         )
 
 
-class Gene(db.Model):
+class Gene(db.Model, BioData):
     """Gene is uniquely identified although has multiple protein isoforms.
 
     The isoforms are always located on the same chromsome, strand and are
@@ -120,7 +136,7 @@ class Gene(db.Model):
         )
 
 
-class Protein(db.Model):
+class Protein(db.Model, BioData):
     """Protein represents a single isoform of a product of given gene."""
     __tablename__ = 'protein'
 
@@ -292,7 +308,7 @@ class Protein(db.Model):
         return len(self.kinases) + len(self.kinase_groups)
 
 
-class Site(db.Model):
+class Site(db.Model, BioData):
     __tablename__ = 'site'
     id = db.Column(db.Integer, primary_key=True)
     position = db.Column(db.Integer, index=True)
@@ -316,7 +332,7 @@ class Site(db.Model):
         )
 
 
-class Cancer(db.Model):
+class Cancer(db.Model, BioData):
     __tablename__ = 'cancer'
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16))
@@ -329,7 +345,7 @@ class Cancer(db.Model):
         )
 
 
-class InterproDomain(db.Model):
+class InterproDomain(db.Model, BioData):
     __tablename__ = 'interpro_domain'
     id = db.Column(db.Integer, primary_key=True)
 
@@ -345,7 +361,7 @@ class InterproDomain(db.Model):
     occurrences = db.relationship('Domain', backref='interpro')
 
 
-class Domain(db.Model):
+class Domain(db.Model, BioData):
     __tablename__ = 'domain'
     id = db.Column(db.Integer, primary_key=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
@@ -377,7 +393,7 @@ def mutation_details_relationship(class_name):
 mutation_site_association = make_association_table('site.id', 'mutation.id')
 
 
-class Mutation(db.Model):
+class Mutation(db.Model, BioData):
     __tablename__ = 'mutation'
     __table_args__ = (
         db.Index('mutation_index', 'alt', 'protein_id', 'position'),
@@ -525,7 +541,11 @@ class Mutation(db.Model):
 
     @hybrid_property
     def impact_on_ptm(self):
-        """How intense might be impact of the mutation on the closest PTM site."""
+        """How intense might be an impact of the mutation on a PTM site.
+
+        It describes impact on the closest PTM site or on a site choosen by
+        MIMP algorithm (so it applies only when 'network-rewiring' is returned)
+        """
         if self.is_ptm_direct:
             return 'direct'
         if self.meta_MIMP:
@@ -577,7 +597,6 @@ class Mutation(db.Model):
 
 class MutationDetails:
     """Base for tables defining detailed metadata for specific mutations"""
-    from sqlalchemy.ext.declarative import declared_attr
 
     @declared_attr
     def __tablename__(cls):
@@ -592,7 +611,7 @@ class MutationDetails:
         return db.Column(db.Integer, db.ForeignKey('mutation.id'))
 
 
-class CancerMutation(MutationDetails, db.Model):
+class CancerMutation(MutationDetails, db.Model, BioData):
     """Metadata for cancer mutations from ICGC data portal"""
     sample_name = db.Column(db.String(64))
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
@@ -600,7 +619,7 @@ class CancerMutation(MutationDetails, db.Model):
     count = db.Column(db.Integer)
 
 
-class InheritedMutation(MutationDetails, db.Model):
+class InheritedMutation(MutationDetails, db.Model, BioData):
     """Metadata for inherited diseased mutations from ClinVar from NCBI"""
     pass
 
@@ -614,7 +633,7 @@ class PopulationMutation(MutationDetails):
     maf_all = db.Column(db.Float)
 
 
-class ExomeSequencingMutation(PopulationMutation, db.Model):
+class ExomeSequencingMutation(PopulationMutation, db.Model, BioData):
     """Metadata for ESP 6500 mutation
 
     MAF:
@@ -625,7 +644,7 @@ class ExomeSequencingMutation(PopulationMutation, db.Model):
     maf_aa = db.Column(db.Float)
 
 
-class The1000GenomesMutation(PopulationMutation, db.Model):
+class The1000GenomesMutation(PopulationMutation, db.Model, BioData):
     """Metadata for 1 KG mutation"""
     maf_eas = db.Column(db.Float)
     maf_amr = db.Column(db.Float)
@@ -634,7 +653,7 @@ class The1000GenomesMutation(PopulationMutation, db.Model):
     maf_sas = db.Column(db.Float)
 
 
-class MIMPMutation(MutationDetails, db.Model):
+class MIMPMutation(MutationDetails, db.Model, BioData):
     """Metadata for MIMP mutation"""
 
     pwm = db.Column(db.Text)
@@ -645,3 +664,75 @@ class MIMPMutation(MutationDetails, db.Model):
 
     # position of a mutation in an associated motif
     position_in_motif = db.Column(db.Integer)
+
+
+
+class Model:
+    """Default model configuration to be used across whole file.
+
+    Models descending from Model are supposed to hold visualisation
+    settings and other data handled by 'content managment system'.
+    """
+    @declared_attr
+    def __tablename__(cls):
+        return cls.__name__.lower()
+
+    @declared_attr
+    def id(cls):
+        return db.Column('id', db.Integer, primary_key=True)
+
+
+class User(db.Model, Model):
+    """Model for use with Flask-Login"""
+    __bind_key__ = 'cms'
+
+    # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
+    email = db.Column(db.String(254), unique=True)
+    pass_hash = db.Column(db.Text())
+
+    def __init__(self, email, password):
+        self.email = email
+        self.pass_hash = security.generate_secret_hash(password)
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_active(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+
+    def authenticate(self, password):
+        return security.verify_secret(password, str(self.pass_hash))
+
+    @cached_property
+    def username(self):
+        return self.email.split('@')[0].replace('.', ' ').title()
+
+    def __repr__(self):
+        return '<User {0} with id {1}>'.format(
+            self.email,
+            self.id
+        )
+
+    def get_id(self):
+        return self.id
+
+
+class Page(db.Model, Model):
+    """Model representing a single CMS page"""
+    __bind_key__ = 'cms'
+
+    address = db.Column(db.String(256), unique=True, index=True)
+    title = db.Column(db.String(256))
+    content = db.Column(db.Text())
+
+    def __repr__(self):
+        return '<Page {0} with id {1}>'.format(
+            self.address,
+            self.id
+        )
