@@ -61,7 +61,7 @@ python3 run.py
 For adjusting the port or IP address, check `-h` switch of the `run.py` script
 (note: to run on port 80 sudo privileges may be required).
 
-## Serving with Apache2
+### Serving with Apache2
 
 Deployment on Apache2 server is more powerfull alternative to Werkzeug webserver.
 
