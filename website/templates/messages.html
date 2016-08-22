@@ -1,11 +1,11 @@
-{% with messages=get_flashed_messages() %}
-	{% if messages %}
-		<div class="flashes">
-			{% for message in messages %}
-				<div class="alert alert-warning" role="alert">
-					{{ message }}
-				</div>
-			{% endfor %}
-		</div>
-	{% endif %}
+{% with messages=get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flashes">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category or 'warning' }}" role="alert">
+          {{ message | safe }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
 {% endwith %}

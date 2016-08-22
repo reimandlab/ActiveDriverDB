@@ -20,6 +20,10 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+def html_link(address, content):
+    return '<a href="/{0}">{1}</a>'.format(address, content)
+
+
 class ContentManagmentSystem(FlaskView):
 
     route_base = '/'
@@ -57,7 +61,10 @@ class ContentManagmentSystem(FlaskView):
         )
         db.session.add(page)
         db.session.commit()
-        flash('Successfuly added new page')
+        flash(
+            'Added new page: ' + html_link(page.address, page.title),
+            'success'
+        )
         return redirect(
             url_for('ContentManagmentSystem:edit_page', address=address)
         )
@@ -70,7 +77,11 @@ class ContentManagmentSystem(FlaskView):
             page.title = request.form['title']
             page.address = request.form['address']
             page.content = request.form['content']
-            flash('Page saved')
+            db.session.commit()
+            flash(
+                'Page saved: ' + html_link(page.address, page.title),
+                'success'
+            )
         return self._template('admin/edit_page', page=page)
 
     @login_required
@@ -91,7 +102,7 @@ class ContentManagmentSystem(FlaskView):
         except NoResultFound:
             flash(
                 'Remove failed: no such page',
-                'danger'
+                'warning'
             )
         except MultipleResultsFound:
             flash(
