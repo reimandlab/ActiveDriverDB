@@ -670,7 +670,7 @@ def load_mutations(proteins, removed):
         'G1000_chr*.txt.gz',
         skip_header=False
     ):
-        data = line.rstrip().split('\t')
+        line = line.rstrip().split('\t')
 
         metadata = line[20].split(';')
 
