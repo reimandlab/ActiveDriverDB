@@ -102,8 +102,8 @@ class ProteinView(FlaskView):
 
         response = [
             {
-                'start': str(site.position - 7),
-                'end': str(site.position + 7),
+                'start': site.position - 7,
+                'end': site.position + 7,
                 'type': str(site.type)
             } for site in protein.sites
         ]
