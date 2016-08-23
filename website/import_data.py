@@ -665,6 +665,19 @@ def load_mutations(proteins, removed):
 
     thousand_genoms_mutations = []
 
+    from collections import OrderedDict
+
+    maf_data = OrderedDict(
+        (
+            ('AF', None),
+            ('EAS_AF', None),
+            ('AMR_AF', None),
+            ('AFR_AF', None),
+            ('EUR_AF', None),
+            ('SAS_AF', None)
+        )
+    )
+
     for line in read_from_files(
         'data/mutations/G1000',
         'G1000_chr*.txt.gz',
@@ -673,26 +686,37 @@ def load_mutations(proteins, removed):
         line = line.rstrip().split('\t')
 
         metadata = line[20].split(';')
+        read_data_cnt = 0
+        mut = line[4]
 
-        assert metadata[1].startswith('AF=')
+        get_from = [seq[0] for seq in line[17].split(',')].index(mut)
 
-        maf_all = float(metadata[1][3:])
-        maf_by_population = map(float, [m[7:] for m in metadata[5:10]])
+        for m in metadata:
+            try:
+                key, value = m.split('=')
+                if key in maf_data:
+                    maf_data[key] = float(m[len(key) + 1:].split(',')[get_from])
+                    read_data_cnt += 1
+            except ValueError:
+                # we encountered something like 'MULTI_ALLELIC'
+                pass
 
-        maf_data = maf_by_population.append(maf_all)
+        assert read_data_cnt == 6
 
-        for mutation_id in preparse_mutations(data):
+        maf_values = list(maf_data.values())
+
+        for mutation_id in preparse_mutations(line):
 
             thousand_genoms_mutations.append(
                 (
                     mutation_id,
-                    maf_all,
-                    # *maf_by_population,   # Python 3.5 makes it easy, but is not avaialable on the server
-                    maf_by_population[0],
-                    maf_by_population[1],
-                    maf_by_population[2],
-                    maf_by_population[3],
-                    maf_by_population[4],
+                    # Python 3.5 makes it easy: **maf_values, but is not avaialable
+                    maf_values[0],
+                    maf_values[1],
+                    maf_values[2],
+                    maf_values[3],
+                    maf_values[4],
+                    maf_values[5],
                 )
             )
 
