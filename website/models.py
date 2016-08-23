@@ -426,10 +426,10 @@ class Mutation(BioModel):
 
     # mapping: source name -> column name
     source_fields = {
-        'TCGA (cancer)': 'meta_cancer',
+        'TCGA': 'meta_cancer',
         'inherited': 'meta_inherited',
         'ESP6500': 'meta_ESP6500',
-        '1K Genomes': 'meta_1KG'
+        '1KGenomes': 'meta_1KG'
     }
 
     def __repr__(self):
@@ -628,7 +628,7 @@ class MutationDetails:
         return db.Column(db.Integer, db.ForeignKey('mutation.id'))
 
     @property
-    def get_value(self):
+    def value(self):
         """Return number representing value to be used in needleplot"""
         raise NotImplementedError
 

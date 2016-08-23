@@ -20,7 +20,7 @@ class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
     allowed_filters = FilterSet([
-        Filter('sources', 'in', 'TCGA (cancer)', 'select', 'Source',
+        Filter('sources', 'in', 'TCGA', 'select', 'Source',
                choices=list(Mutation.source_fields.keys())),
         Filter('is_ptm', 'eq', None, 'with_without', 'PTM mutations'),
     ])
@@ -79,7 +79,7 @@ class ProteinView(FlaskView):
 
         response = []
 
-        source = filters.source
+        source = filters.sources
         source_field_name = Mutation.source_fields[source]
 
         mutations = list(filter(filters.test, protein.mutations))
@@ -88,7 +88,7 @@ class ProteinView(FlaskView):
 
             needle = {
                 'coord': mutation.position,
-                'value': getattr(mutation, source_field_name).get_value(),
+                'value': getattr(mutation, source_field_name).value,
                 'category': mutation.impact_on_ptm
             }
             response += [needle]

@@ -41,29 +41,7 @@ class Filters:
 
 class Filter:
 
-    field_separator = ' '
-
-    def __init__(self, property_name, comparator_name,
-                 default_value, filter_type, name, choices=None):
-        self.name = name
-        self.property = property_name
-        self.value = default_value
-        self.comparator_name = comparator_name
-        self.type = filter_type
-        self.choices = choices
-
-    def __str__(self):
-        return self.field_separator.join(
-            map(str, [self.property, self.comparator_name, self.value])
-        )
-
-
-class ObjectFilter(Filter):
-    """Single filter that tests if a passed instance has a property
-    with value passing the criteria specified during initialization.
-
-    It uses standard Python comaparators.
-    """
+    field_separator = ':'
 
     comparators = {
         'ge': operator.ge,
@@ -73,6 +51,52 @@ class ObjectFilter(Filter):
         'eq': operator.eq,
         'in': operator.contains,
     }
+
+    def __init__(self, property_name, comparator_name,
+                 default_value, filter_type, name, choices=None):
+        self.name = name
+        self.property = property_name
+        self.value = default_value
+        self.comparator_name = comparator_name
+        self.comparator_func = self.comparators[comparator_name]
+        self.type = filter_type
+        self.choices = choices
+
+    def __str__(self):
+        return self.field_separator.join(
+            map(str, [
+                self.property,
+                self.comparator_name,
+                self.value
+            ])
+        )
+
+    def test(self, obj):
+        """Test if a given object (instance) passes criteria of this filter.
+
+        If a property does not exists in tested object -1 will be returned,
+        to indicate that the filter is not applicable to the passed object.
+
+        Example: filter(my_filter.test, list_of_model_objects)
+        Note that an object without tested property will remain on the list.
+        """
+        if self.value is None:
+            # the filter is turned off
+            return -1
+        try:
+            obj_val = getattr(obj, self.property)
+            return self.comparator_func(obj_val, self.value)
+        except AttributeError:
+            # the filter is not applicable - the property does not exists in obj
+            return -1
+
+
+class ObjectFilter(Filter):
+    """Single filter that tests if a passed instance has a property
+    with value passing the criteria specified during initialization.
+
+    It uses standard Python comaparators.
+    """
 
     def __init__(self, property_name, comparator_name, value):
 
@@ -113,25 +137,6 @@ class ObjectFilter(Filter):
         """
         property_name, comparator, value = entry.split(cls.field_separator)
         return cls(property_name, comparator, value)
-
-    def test(self, obj):
-        """Test if a given object (instance) passes criteria of this filter.
-
-        If a property does not exists in tested object -1 will be returned,
-        to indicate that the filter is not applicable to the passed object.
-
-        Example: filter(my_filter.test, list_of_model_objects)
-        Note that an object without tested property will remain on the list.
-        """
-        if self.value is None:
-            # the filter is turned off
-            return -1
-        try:
-            obj_val = getattr(obj, self.property)
-            return self.comparator_func(obj_val, self.value)
-        except AttributeError:
-            # the filter is not applicable - the property does not exists in obj
-            return -1
 
 
 class FilterSet:
