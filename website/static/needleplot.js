@@ -85,6 +85,7 @@ var NeedlePlot = function ()
     }
 
     var config = {
+        value_type: 'Count', // count or frequency
         site_height: 10,
         animations_speed: 200,
         // 90 is width of description
@@ -319,7 +320,7 @@ var NeedlePlot = function ()
         needle_tooltip.init(function(d){
             return 'PTM type: ' + d.category + '<br>' +
                    'Position: ' + d.coord + '<br>' +
-                   'Freq/cnt: ' + d.value
+                   config.value_type + ': ' + d.value
         })
 
         needles = vis.selectAll('.needle')

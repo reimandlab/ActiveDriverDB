@@ -90,6 +90,7 @@ Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alterna
         })
         max_zoom = tracks.adjustMaxZoom()
         var params = {
+            value_type: '{{ value_type }}',
             max_zoom: max_zoom,
             element: document.getElementById('plot_area'),
             mutations: '{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.active.url_string) }}',
@@ -99,7 +100,7 @@ Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alterna
             legends:
             {
                 x: null,
-                y: '# of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
+                y: '{{ value_type }} of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
             },
             zoom_callback: tracks.setZoom,
             position_callback: tracks.setAAPosition,

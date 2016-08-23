@@ -65,11 +65,15 @@ class ProteinView(FlaskView):
 
         filters = Filters(active_filters, self.allowed_filters)
 
+        val_type = 'Count' if filters.active.sources == 'TCGA' else 'Frequency'
+
         # repeated on purpose
         mutations = active_filters.filtered(protein.mutations)
 
-        return template('protein.html', protein=protein, tracks=tracks,
-                        filters=filters, mutations=mutations)
+        return template(
+            'protein.html', protein=protein, tracks=tracks,
+            filters=filters, mutations=mutations, value_type=val_type
+        )
 
     def mutations(self, refseq):
         """List of mutations suitable for needleplot library"""
