@@ -461,13 +461,11 @@ class Mutation(BioModel):
 
     @cached_property
     def all_metadata(self):
-        x = {
+        return {
             self.get_source_name(key): value.representation
             for key, value in self.__dict__.items()
             if key.startswith('meta_') and value
         }
-        print(x)
-        return x
 
     @hybrid_property
     def is_cancer(self):
