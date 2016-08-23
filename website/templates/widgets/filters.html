@@ -23,6 +23,9 @@
 
 {% macro make_filter(filter) %}
     <li class="filter">
+        {% if filter.comparator_name != 'eq' %}
+            <input type="hidden" name="filter[{{ filter.property }}][cmp]" value="{{ filter.comparator_name }}">
+        {% endif %}
         <label class="name" for="filter[{{ filter.property }}]">
             {{ filter.name }}
         </label>
