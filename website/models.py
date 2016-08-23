@@ -636,9 +636,7 @@ class CancerMutation(MutationDetails, BioModel):
     """Metadata for cancer mutations from ICGC data portal"""
     sample_name = db.Column(db.String(64))
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
-    cancer = db.relationship(
-        'Cancer'
-    )
+    cancer = db.relationship('Cancer')
 
     count = db.Column(db.Integer)
 
@@ -721,6 +719,15 @@ class MIMPMutation(MutationDetails, BioModel):
 
     # position of a mutation in an associated motif
     position_in_motif = db.Column(db.Integer)
+
+    @property
+    def representation(self):
+        return {
+            'Effect': self.effect,
+            'PWM': self.pwm,
+            'Position in motif': self.position_in_motif,
+            'PWM family': self.pwm_family,
+        }
 
 
 class Model(db.Model):
