@@ -399,18 +399,11 @@ var Network = (function ()
         }
     }
 
-    function nodeHoverIn(node)
+    function nodeHover(node, hover_in)
     {
         nodes
-            .filter(function(d){ return d.name == node.name })
-            .classed('hover', true)
-    }
-
-    function nodeHoverOut(node)
-    {
-        nodes
-            .filter(function(d){ return d.name == node.name })
-            .classed('hover', false)
+            .filter(function(d){ return d.name === node.name })
+            .classed('hover', hover_in)
     }
 
     var publicSpace = {
@@ -495,15 +488,15 @@ var Network = (function ()
                 .attr('class', 'node')
                 .call(force.drag)
                 .on('click', nodeClick)
-                .on('mouseover', nodeHoverIn)
-                .on('mouseout', nodeHoverOut)
+                .on('mouseover', function(d){ nodeHover(d, true) })
+                .on('mouseout', function(d){ nodeHover(d, false) })
                 // cancel other events (like pining the background)
                 // to allow nodes movement (by force.drag)
                 .on("mousedown", function(d) { d3.event.stopPropagation() })
 
 
             var kinase_nodes = nodes
-                .filter(function(d){ return d.node_type != 'site' })
+                .filter(function(d){ return d.node_type !== 'site' })
 
             kinase_nodes
                 .append('circle')
@@ -514,7 +507,7 @@ var Network = (function ()
                 })
 
             var site_nodes = nodes
-                .filter(function(d){ return d.node_type == 'site' })
+                .filter(function(d){ return d.node_type === 'site' })
                 .append('g')
                 .attr('transform', function(d){ return 'translate(' + [-d.size / 2, -d.size / 2] + ')'} )
 
@@ -534,7 +527,7 @@ var Network = (function ()
             var labels = nodes.selectAll('.label')
                 .text(function(d){ return d.name })
                 .style('font-size', function(d) {
-                    if(d.node_type == 'site')
+                    if(d.node_type === 'site')
                         return '7px'
                     else
                         return fitTextIntoCircle(d, this) + 'px'
