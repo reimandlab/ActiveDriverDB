@@ -11,10 +11,9 @@ import security
 
 
 class BioModel(db.Model):
-    """Default model configuration to be used across whole file.
+    """Models descending from BioData are supposed to hold biology-related data
 
-    Models descending from BioData are supposed to hold biology-related
-    data and will be stored in a 'bio' database, separated from visualisation
+    and will be stored in a 'bio' database, separated from visualisation
     settings and other data handled by 'content managment system'.
     """
     __abstract__ = True
@@ -425,6 +424,14 @@ class Mutation(BioModel):
         secondary=mutation_site_association
     )
 
+    # mapping: source name -> column name
+    source_fields = {
+        'TCGA (cancer)': 'meta_cancer',
+        'inherited': 'meta_inherited',
+        'ESP6500': 'meta_ESP6500',
+        '1K Genomes': 'meta_1KG'
+    }
+
     def __repr__(self):
         return '<Mutation in {1}, at {2} aa, substitution to: {3}>'.format(
             self.protein.refseq,
@@ -432,16 +439,17 @@ class Mutation(BioModel):
             self.alt
         )
 
-    @cached_property
-    def source(self):
-        if self.meta_cancer:
-            return 'cancer'
-        if self.meta_inherited:
-            return 'inherited'
-        if self.meta_ESP6500:
-            return 'ESP6500'
-        if self.meta_1KG:
-            return '1K Genomes'
+    @hybrid_property
+    def sources(self):
+        """Return list of names of sources which mention this mutation
+
+        Names of sources are detemined by source_fields class property.
+        """
+        sources = []
+        for source_name, associated_field in self.source_fields.items():
+            if getattr(self, associated_field):
+                sources.append(source_name)
+        return sources
 
     @cached_property
     def is_confirmed(self):
@@ -619,6 +627,11 @@ class MutationDetails:
     def mutation_id(cls):
         return db.Column(db.Integer, db.ForeignKey('mutation.id'))
 
+    @property
+    def get_value(self):
+        """Return number representing value to be used in needleplot"""
+        raise NotImplementedError
+
 
 class CancerMutation(MutationDetails, BioModel):
     """Metadata for cancer mutations from ICGC data portal"""
@@ -626,6 +639,10 @@ class CancerMutation(MutationDetails, BioModel):
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
 
     count = db.Column(db.Integer)
+
+    @property
+    def value(self):
+        return self.count
 
 
 class InheritedMutation(MutationDetails, BioModel):
@@ -640,6 +657,10 @@ class PopulationMutation(MutationDetails):
         All - total value
     """
     maf_all = db.Column(db.Float)
+
+    @property
+    def value(self):
+        return self.maf_all
 
 
 class ExomeSequencingMutation(PopulationMutation, BioModel):
@@ -676,10 +697,9 @@ class MIMPMutation(MutationDetails, BioModel):
 
 
 class Model(db.Model):
-    """Default model configuration to be used across whole file.
+    """Models descending from Model are supposed to hold settings and other data
 
-    Models descending from Model are supposed to hold visualisation
-    settings and other data handled by 'content managment system'.
+    to handled by 'Content Managment System', including Users and Page models.
     """
     __abstract__ = True
     __bind_key__ = 'cms'

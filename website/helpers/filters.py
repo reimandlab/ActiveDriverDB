@@ -18,6 +18,7 @@ class Filters:
                 if allowed_filter.property == passed_filter.property:
                     passed_filter.name = allowed_filter.name
                     passed_filter.type = allowed_filter.type
+                    passed_filter.choices = allowed_filter.choices
                     available_filters.filters.remove(allowed_filter)
                     break
             else:
@@ -43,12 +44,13 @@ class Filter:
     field_separator = ' '
 
     def __init__(self, property_name, comparator_name,
-                 default_value, filter_type, name):
+                 default_value, filter_type, name, choices=None):
         self.name = name
         self.property = property_name
         self.value = default_value
         self.comparator_name = comparator_name
         self.type = filter_type
+        self.choices = choices
 
     def __str__(self):
         return self.field_separator.join(
@@ -69,6 +71,7 @@ class ObjectFilter(Filter):
         'gt': operator.gt,
         'lt': operator.lt,
         'eq': operator.eq,
+        'in': operator.contains,
     }
 
     def __init__(self, property_name, comparator_name, value):

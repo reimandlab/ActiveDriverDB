@@ -5,6 +5,7 @@ from flask import url_for
 from flask import render_template as template
 from flask_classful import FlaskView
 from models import Protein
+from models import Mutation
 from website.helpers.tracks import Track
 from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack
@@ -19,8 +20,9 @@ class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
     allowed_filters = FilterSet([
+        Filter('sources', 'in', 'TCGA (cancer)', 'select', 'Source',
+               choices=list(Mutation.source_fields.keys())),
         Filter('is_ptm', 'eq', None, 'with_without', 'PTM mutations'),
-        Filter('is_cancer', 'eq', None, 'with_without', 'Cancer mutations')
     ])
 
     def index(self):
@@ -77,18 +79,19 @@ class ProteinView(FlaskView):
 
         response = []
 
-        for key, mutations in protein.mutations_grouped.items():
+        source = filters.source
+        source_field_name = Mutation.source_fields[source]
 
-            mutations = list(filter(filters.test, mutations))
+        mutations = list(filter(filters.test, protein.mutations))
 
-            if len(mutations):
-                position, ptm_status = key
-                needle = {
-                    'coord': str(position),
-                    'value': len(mutations),
-                    'category': ptm_status
-                }
-                response += [needle]
+        for mutation in mutations:
+
+            needle = {
+                'coord': mutation.position,
+                'value': getattr(mutation, source_field_name).get_value(),
+                'category': mutation.impact_on_ptm
+            }
+            response += [needle]
 
         return jsonify(response)
 
