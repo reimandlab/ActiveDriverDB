@@ -19,6 +19,15 @@ class BioModel(db.Model):
     __abstract__ = True
     __bind_key__ = 'bio'
 
+    @declared_attr
+    def __tablename__(cls):
+        return cls.__name__.lower()
+
+    @declared_attr
+    def id(cls):
+        return db.Column('id', db.Integer, primary_key=True)
+
+
 
 def make_association_table(fk1, fk2):
     """Create an association table basing on names of two given foreign keys.
@@ -43,8 +52,6 @@ class Kinase(BioModel):
     refseq identificator for a single kinase).
     Not every kinase has an associated protein.
     """
-    __tablename__ = 'kinase'
-    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, index=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     group_id = db.Column(db.Integer, db.ForeignKey('kinase_group.id'))
@@ -63,7 +70,7 @@ class KinaseGroup(BioModel):
     may be equivalent to a `family` in some publications / datasets.
     """
     __tablename__ = 'kinase_group'
-    id = db.Column(db.Integer, primary_key=True)
+
     name = db.Column(db.String(80), unique=True, index=True)
     kinases = db.relationship(
         'Kinase',
@@ -86,10 +93,6 @@ class Gene(BioModel):
     isoforms classified as belonging to the same gene and to verify
     consistency of chromsomes and strands information across the database.
     """
-    __tablename__ = 'gene'
-
-    id = db.Column(db.Integer, primary_key=True)
-
     # HGNC symbols are allowed to be varchar(255) but 40 is still safe
     # as for storing symbols that are currently in use. Let's use 2 x 40.
     name = db.Column(db.String(80), unique=True, index=True)
@@ -135,9 +138,6 @@ class Gene(BioModel):
 
 class Protein(BioModel):
     """Protein represents a single isoform of a product of given gene."""
-    __tablename__ = 'protein'
-
-    id = db.Column(db.Integer, primary_key=True)
 
     gene_id = db.Column(db.Integer, db.ForeignKey('gene.id'))
 
@@ -306,8 +306,6 @@ class Protein(BioModel):
 
 
 class Site(BioModel):
-    __tablename__ = 'site'
-    id = db.Column(db.Integer, primary_key=True)
     position = db.Column(db.Integer, index=True)
     residue = db.Column(db.String(1))
     pmid = db.Column(db.Text)
@@ -330,8 +328,6 @@ class Site(BioModel):
 
 
 class Cancer(BioModel):
-    __tablename__ = 'cancer'
-    id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.String(16))
     name = db.Column(db.Text)
 
@@ -344,7 +340,6 @@ class Cancer(BioModel):
 
 class InterproDomain(BioModel):
     __tablename__ = 'interpro_domain'
-    id = db.Column(db.Integer, primary_key=True)
 
     # Interpro ID
     accession = db.Column(db.Text)
@@ -359,8 +354,6 @@ class InterproDomain(BioModel):
 
 
 class Domain(BioModel):
-    __tablename__ = 'domain'
-    id = db.Column(db.Integer, primary_key=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     interpro_id = db.Column(db.Integer, db.ForeignKey('interpro_domain.id'))
 
@@ -391,14 +384,12 @@ mutation_site_association = make_association_table('site.id', 'mutation.id')
 
 
 class Mutation(BioModel):
-    __tablename__ = 'mutation'
     __table_args__ = (
         db.Index('mutation_index', 'alt', 'protein_id', 'position'),
         # TODO: is constraint neccessary?
         # db.UniqueConstraint('alt', 'protein_id', 'position')
     )
 
-    id = db.Column(db.Integer, primary_key=True)
     position = db.Column(db.Integer)
     alt = db.Column(db.String(1))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
@@ -627,14 +618,6 @@ class Mutation(BioModel):
 
 class MutationDetails:
     """Base for tables defining detailed metadata for specific mutations"""
-
-    @declared_attr
-    def __tablename__(cls):
-        return cls.__name__.lower()
-
-    @declared_attr
-    def id(cls):
-        return db.Column('id', db.Integer, primary_key=True)
 
     @declared_attr
     def mutation_id(cls):
