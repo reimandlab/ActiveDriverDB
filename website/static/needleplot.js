@@ -7,13 +7,6 @@ var Tooltip = function()
         return d.title
     }
 
-    function _move()
-    {
-        tooltip
-            .style('left', (d3.event.pageX) + 'px')
-            .style('top', (d3.event.pageY - 28) + 'px')
-    }
-
     var publicSpace = {
         init: function(custom_template)
         {
@@ -33,7 +26,7 @@ var Tooltip = function()
                 .duration(50)
                 .style('opacity', 1)
             tooltip.html(_template(d))
-            _move()
+            publicSpace.move()
         },
         hide: function()
         {
@@ -41,7 +34,19 @@ var Tooltip = function()
                 .duration(200)
                 .style('opacity', 0)
         },
-        move: _move
+        move: function()
+        {
+            tooltip
+                .style('left', (d3.event.pageX) + 'px')
+                .style('top', (d3.event.pageY - 28) + 'px')
+        },
+        bind: function(selection)
+        {
+            selection
+                .on('mouseover', publicSpace.show)
+                .on('mousemove', publicSpace.move)
+                .on('mouseout', publicSpace.hide)
+        }
     }
 
     return publicSpace
@@ -234,6 +239,13 @@ var NeedlePlot = function ()
             legend.y.obj.attr('transform','translate(' + -40 + ' ' + config.height / 2 + ') rotate(-90)')
     }
 
+    function append_group(selection, class_name)
+    {
+        selection
+            .append('g')
+            .attr('class', class_name)
+    }
+
     function createPlot()
     {
         zoom = d3.behavior.zoom()
@@ -314,9 +326,7 @@ var NeedlePlot = function ()
             .enter()
             .append('g')
             .attr('class', 'needle')
-            .on('mouseover', needle_tooltip.show)
-            .on('mousemove', needle_tooltip.move)
-            .on('mouseout', needle_tooltip.hide)
+            .call(needle_tooltip.bind)
 
         needles
             .append('line')
@@ -342,16 +352,14 @@ var NeedlePlot = function ()
             .enter()
             .append('g')
             .attr('class', 'site')
-            .on('mouseover', site_tooltip.show)
-            .on('mousemove', site_tooltip.move)
-            .on('mouseout', site_tooltip.hide)
+            .call(site_tooltip.bind)
 
         site_boxes = sites
 			.append('rect')
 			.attr('height', config.site_height)
             .attr('class', function(d)
                 {
-                    if(d.type.indexOf(',') == -1)
+                    if(d.type.indexOf(',') === -1)
                         return d.type
                     else
                         return 'multi_ptm'
