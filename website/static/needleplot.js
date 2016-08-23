@@ -228,7 +228,6 @@ var NeedlePlot = function ()
             .attr('y1', function(d){ return -d.value * height_unit + 'px' })
 
         needles.selectAll('circle')
-            .attr('transform', function(d){ return 'translate('  + [0, -d.value * height_unit] + ')scale(1, '+ scale +') ' })
             .attr('r', posToX(1) / 2 + 'px')
 
         leftPadding.attr('height', config.height)
@@ -318,7 +317,9 @@ var NeedlePlot = function ()
 
         var needle_tooltip = Tooltip()
         needle_tooltip.init(function(d){
-            return d.category + '<br>' + d.coord
+            return 'PTM type: ' + d.category + '<br>' +
+                   'Position: ' + d.coord + '<br>' +
+                   'Freq/cnt: ' + d.value
         })
 
         needles = vis.selectAll('.needle')
