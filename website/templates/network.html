@@ -28,7 +28,7 @@
 <ol class="breadcrumb">
   <li><a href="/">Home</a></li>
   <li><a href="/network">Network</a></li>
-  <li><a href="{{ url_for('general.gene_view', gene_name=protein.gene.name) }}">{{ protein.gene.name }}</a></li>
+  <li><a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}">{{ protein.gene.name }}</a></li>
   <li class="active">{{ protein.refseq }}</li>
 </ol>
 
