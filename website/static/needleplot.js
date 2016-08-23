@@ -318,9 +318,22 @@ var NeedlePlot = function ()
 
         var needle_tooltip = Tooltip()
         needle_tooltip.init(function(d){
-            return 'PTM type: ' + d.category + '<br>' +
-                   'Position: ' + d.coord + '<br>' +
-                   config.value_type + ': ' + d.value
+            var text = 'PTM type: ' + d.category + '<br>' +
+                       'Position: ' + d.coord + '<br>' +
+                       config.value_type + ': ' + d.value + '<br>' +
+                       'Alt residue: ' + d.alt
+
+           for(var meta in d.meta)
+           {
+               text += '<br>' + meta + ':'
+               text += '<ul>'
+               for(var column in d.meta[meta])
+               {
+                   text += '<li>' + column + ': ' + d.meta[meta][column]
+               }
+               text += '</ul>'
+           }
+            return text
         })
 
         needles = vis.selectAll('.needle')

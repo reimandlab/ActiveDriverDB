@@ -432,6 +432,9 @@ class Mutation(BioModel):
         '1KGenomes': 'meta_1KG'
     }
 
+    def get_source_name(self, column_name):
+        return {v: k for k, v in self.source_fields.items()}[column_name]
+
     def __repr__(self):
         return '<Mutation in {1}, at {2} aa, substitution to: {3}>'.format(
             self.protein.refseq,
@@ -464,6 +467,16 @@ class Mutation(BioModel):
             self.meta_ESP6500 or
             self.meta_1KG
         )
+
+    @cached_property
+    def all_metadata(self):
+        x = {
+            self.get_source_name(key): value.representation
+            for key, value in self.__dict__.items()
+            if key.startswith('meta_') and value
+        }
+        print(x)
+        return x
 
     @hybrid_property
     def is_cancer(self):
@@ -632,6 +645,11 @@ class MutationDetails:
         """Return number representing value to be used in needleplot"""
         raise NotImplementedError
 
+    @property
+    def representation(self):
+        """Return text representation to be used in needleplot tooltips"""
+        raise NotImplementedError
+
 
 class CancerMutation(MutationDetails, BioModel):
     """Metadata for cancer mutations from ICGC data portal"""
@@ -643,6 +661,13 @@ class CancerMutation(MutationDetails, BioModel):
     @property
     def value(self):
         return self.count
+
+    @property
+    def representation(self):
+        return {
+            'Cancer': self.cancer.name,
+            'Sample': self.sample_name
+        }
 
 
 class InheritedMutation(MutationDetails, BioModel):
@@ -673,6 +698,13 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
     maf_ea = db.Column(db.Float)
     maf_aa = db.Column(db.Float)
 
+    @property
+    def representation(self):
+        return {
+            'MAF EA': self.maf_ea,
+            'MAF AA': self.maf_aa,
+        }
+
 
 class The1000GenomesMutation(PopulationMutation, BioModel):
     """Metadata for 1 KG mutation"""
@@ -681,6 +713,17 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
     maf_efr = db.Column(db.Float)
     maf_eur = db.Column(db.Float)
     maf_sas = db.Column(db.Float)
+
+    @property
+    def representation(self):
+        return {
+            'MAF': self.maf_all,
+            'MAF EAS': self.maf_eas,
+            'MAF AMR': self.maf_efr,
+            'MAF AFR': self.maf_efr,
+            'MAF EUR': self.maf_eur,
+            'MAF SAS': self.maf_sas,
+        }
 
 
 class MIMPMutation(MutationDetails, BioModel):

@@ -93,7 +93,9 @@ class ProteinView(FlaskView):
             needle = {
                 'coord': mutation.position,
                 'value': getattr(mutation, source_field_name).value,
-                'category': mutation.impact_on_ptm
+                'category': mutation.impact_on_ptm,
+                'alt': mutation.alt,
+                'meta': mutation.all_metadata
             }
             response += [needle]
 
