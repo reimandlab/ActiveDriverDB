@@ -653,8 +653,17 @@ class CancerMutation(MutationDetails, BioModel):
 
 
 class InheritedMutation(MutationDetails, BioModel):
-    """Metadata for inherited diseased mutations from ClinVar from NCBI"""
-    pass
+    """Metadata for inherited diseased mutations from ClinVar from NCBI
+
+    Columns description come from source VCF file headers.
+    """
+
+    # dbSNP ID (i.e. rs number)
+    snp_id = db.Column(db.Integer)
+
+    # Is mutation (journal citation, explicit fact):
+    # a low frequency variation that is cited in journal and other reputable sources
+    low_frequency_variation = db.Column(db.Boolean)
 
 
 class PopulationMutation(MutationDetails):
