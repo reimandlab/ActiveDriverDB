@@ -695,6 +695,8 @@ def load_mutations(proteins, removed):
         )
     )
 
+    # TODO: CLNDBN: not_specified => null
+    # TODO: CLNREVSTAT: no_criteria => null
     def clinvar_parser(line):
 
         metadata = line[20].split(';')

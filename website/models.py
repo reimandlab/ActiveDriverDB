@@ -658,12 +658,44 @@ class InheritedMutation(MutationDetails, BioModel):
     Columns description come from source VCF file headers.
     """
 
-    # dbSNP ID (i.e. rs number)
-    snp_id = db.Column(db.Integer)
+    # RS: dbSNP ID (i.e. rs number)
+    db_snp_id = db.Column(db.Integer)
 
-    # Is mutation (journal citation, explicit fact):
+    # MUT: Is mutation (journal citation, explicit fact):
     # a low frequency variation that is cited in journal and other reputable sources
-    low_frequency_variation = db.Column(db.Boolean)
+    is_low_freq_variation = db.Column(db.Boolean)
+
+    # VLD: This bit is set if the variant has 2+ minor allele
+    # count based on frequency or genotype data
+    is_validated = db.Column(db.Boolean)
+
+    # PMC: Links exist to PubMed Central article
+    is_in_pubmed_central = db.Column(db.Boolean)
+
+    # CLNSIG: Variant Clinical Significance:
+    # 0 - Uncertain significance,
+    # 1 - not provided,
+    # 2 - Benign,
+    # 3 - Likely benign,
+    # 4 - Likely pathogenic,
+    # 5 - Pathogenic,
+    # 6 - drug response,
+    # 7 - histocompatibility,
+    # 255 - other
+    clin_sig = db.Column(db.Integer)
+
+    # CLNDBN: Variant disease name
+    clin_disease_name = db.Column(db.Text)
+
+    # CLNREVSTAT: ?
+    # no_assertion - No assertion provided,
+    # no_criteria - No assertion criteria provided,
+    # single - Criteria provided single submitter,
+    # mult - Criteria provided multiple submitters no conflicts,
+    # conf - Criteria provided conflicting interpretations,
+    # exp - Reviewed by expert panel,
+    # guideline - Practice guideline
+    clin_rev_status = db.Column(db.Text)
 
 
 class PopulationMutation(MutationDetails):
