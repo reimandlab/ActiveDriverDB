@@ -20,6 +20,7 @@ from models import Mutation
 from models import Protein
 from models import Site
 from models import The1000GenomesMutation
+from models import InheritedMutation
 from helpers.parsers import buffered_readlines
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
@@ -419,7 +420,7 @@ def load_mutations(proteins, removed):
                 ]
             )
             db.session.flush()
-    mutations = {}
+        mutations = {}
 
     def get_or_make_mutation(key, is_ptm):
         nonlocal mutations_cnt, mutations
@@ -465,23 +466,40 @@ def load_mutations(proteins, removed):
 
             yield mutation_id
 
-    def values_from_dict_filled_by_metadata(dict_to_fill, metadata, get_from=0):
+    def make_metadata_ordered_dict(keys, metadata, get_from=0):
+        """Create an OrderedDict with given keys, and values
 
-        read_data_cnt = 0
+        extracted from metadata list (or beeing None if not present
+        in metadata list. If there is a need to choose values among
+        subfields (delimeted by ',') then get_from tells from which
+        subfield the data should be used. This function will demand
+        all keys existing in dictionary to be updated - if you want
+        to loosen this requirement you can specify which fields are
+        not compulsary, and should be assign with None value (as to
+        import flags from VCF file).
+        """
+        dict_to_fill = OrderedDict(
+            (
+                (key, None)
+                for key in keys
+            )
+        )
 
         for entry in metadata:
             try:
+                # given entry is an assigment
                 key, value = entry.split('=')
-                if key in dict_to_fill:
-                    dict_to_fill[key] = float(value.split(',')[get_from])
-                    read_data_cnt += 1
+                if ',' in value:
+                    value = float(value.split(',')[get_from])
             except ValueError:
-                # given entry is not an assigment, skip it
-                continue
+                # given entry is a flag
+                key = entry
+                value = True
 
-        assert read_data_cnt == len(dict_to_fill)
+            if key in keys:
+                dict_to_fill[key] = value
 
-        return list(dict_to_fill.values())
+        return dict_to_fill
 
     # MIMP MUTATIONS
 
@@ -683,28 +701,40 @@ def load_mutations(proteins, removed):
     print('Loading ClinVar mutations:')
     clinvar_mutations = []
 
-    clinvar_data = OrderedDict(
-        (
-            ('RS', None),
-            ('MUT', None),
-            ('VLD', None),
-            ('PMC', None),
-            ('CLNSIG', None),
-            ('CLNDBN', None),
-            ('CLNREVSTAT', None)
-        )
+    clinvar_keys = (
+        'RS',
+        'MUT',
+        'VLD',
+        'PMC',
+        'CLNSIG',
+        'CLNDBN',
+        'CLNREVSTAT',
     )
 
-    # TODO: CLNDBN: not_specified => null
-    # TODO: CLNREVSTAT: no_criteria => null
+    clinvar_value_map = {
+        'CLNDBN':
+        {
+            'not_specified': None
+        },
+        'CLNREVSTAT':
+        {
+            'no_criteria': None
+        },
+    }
+
     def clinvar_parser(line):
 
         metadata = line[20].split(';')
 
-        values = values_from_dict_filled_by_metadata(
-            clinvar_data,
-            metadata
-        )
+        clinvar_data = make_metadata_ordered_dict(clinvar_keys, metadata)
+
+        # TODO: atmoicity for CLN* fields
+        for field, mapping in clinvar_value_map.items():
+            for value, replacement in mapping.items():
+                if clinvar_data[field] == value:
+                     clinvar_data[field] = replacement
+
+        values = list(clinvar_data.values())
 
         for mutation_id in preparse_mutations(line):
 
@@ -728,12 +758,17 @@ def load_mutations(proteins, removed):
 
     for chunk in chunked_list(clinvar_mutations):
         db.session.bulk_insert_mappings(
-            ExomeSequencingMutation,
+            InheritedMutation,
             [
                 {
                     'mutation_id': mutation[0],
-                    'maf_aa': mutation[1],
-                    'maf_all': mutation[2],
+                    'db_snp_id': mutation[1],
+                    'is_low_freq_variation': mutation[2],
+                    'is_validated': mutation[2],
+                    'is_in_pubmed_central': mutation[2],
+                    'clin_sig': mutation[2],
+                    'clin_disease_name': mutation[2],
+                    'clin_rev_status': mutation[2],
                 }
                 for mutation in chunk
             ]
@@ -756,22 +791,19 @@ def load_mutations(proteins, removed):
         There are AF metadata for two different mutations: T -> TC and T -> G.
         The mutation which we are currently analysing is T -> C
         (look for fields 3 and 4; 4th field is sufficient to determine mutation)
- 
         """
         dna_mut = line[4]
         return [seq[0] for seq in line[17].split(',')].index(dna_mut)
 
     thousand_genoms_mutations = []
 
-    maf_data = OrderedDict(
-        (
-            ('AF', None),
-            ('EAS_AF', None),
-            ('AMR_AF', None),
-            ('AFR_AF', None),
-            ('EUR_AF', None),
-            ('SAS_AF', None)
-        )
+    maf_keys = (
+        'AF',
+        'EAS_AF',
+        'AMR_AF',
+        'AFR_AF',
+        'EUR_AF',
+        'SAS_AF',
     )
 
     for line in read_from_files(
@@ -783,11 +815,13 @@ def load_mutations(proteins, removed):
 
         metadata = line[20].split(';')
 
-        values = values_from_dict_filled_by_metadata(
-            maf_data,
+        maf_data = make_metadata_ordered_dict(
+            maf_keys,
             metadata,
             find_af_subfield_number(line)
         )
+
+        values = list(maf_data.values())
 
         for mutation_id in preparse_mutations(line):
 

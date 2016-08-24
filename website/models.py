@@ -682,7 +682,7 @@ class InheritedMutation(MutationDetails, BioModel):
     # 6 - drug response,
     # 7 - histocompatibility,
     # 255 - other
-    clin_sig = db.Column(db.Integer)
+    clin_sig = db.Column(db.Text)
 
     # CLNDBN: Variant disease name
     clin_disease_name = db.Column(db.Text)
