@@ -438,9 +438,9 @@ var NeedlePlot = function ()
             .attr('class', function(d)
                 {
                     if(d.type.indexOf(',') === -1)
-                        return 'site, '+ d.type
+                        return 'site '+ d.type
                     else
-                        return 'site, multi_ptm'
+                        return 'site multi_ptm'
                 }
             )
             .call(site_tooltip.bind)
