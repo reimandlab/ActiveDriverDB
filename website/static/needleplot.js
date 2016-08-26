@@ -196,16 +196,11 @@ var NeedlePlot = function ()
     {
 		if (config.y_scale === 'auto')
 		{
-            max = 0
-            min = Number.MAX_VALUE
-            muts = config.mutations
-            for(var i = 0; i < muts.length; i++)
-            {
-                max = Math.max(max, muts[i].value)
-                min = Math.min(min, muts[i].value)
+            var accessor = function(mutation) {
+                return mutation.value
             }
-			config.y_scale_max = max
-			config.y_scale_min = min
+			config.y_scale_max = d3.max(config.mutations, accessor)
+			config.y_scale_min = d3.min(config.mutations, accessor)
 		}
     }
 
