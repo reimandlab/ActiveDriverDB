@@ -57,7 +57,6 @@ var NeedlePlot = function ()
     var svg, zoom, vis, vertical_scalable, unit
     var scale = 1
 	var position = 0
-    var height_unit
 
     var legend = {
         x:
@@ -173,12 +172,15 @@ var NeedlePlot = function ()
 		if (config.y_scale === 'auto')
 		{
             max = 0
+            min = Number.MAX_VALUE
             muts = config.mutations
             for(var i = 0; i < muts.length; i++)
             {
                 max = Math.max(max, muts[i].value)
+                min = Math.min(min, muts[i].value)
             }
-			config.y_scale = max * 5 / 4
+			config.y_scale_max = max
+			config.y_scale_min = min
 		}
     }
 
@@ -194,8 +196,6 @@ var NeedlePlot = function ()
 
         axes.y.scale
             .range([config.height - config.paddings.top, config.paddings.bottom])
-
-        height_unit = (config.height - config.paddings.bottom - config.paddings.top) / config.y_scale
 
         axes.y.obj.scale(axes.y.scale)
         axes.y.group.call(axes.y.obj)
@@ -220,13 +220,14 @@ var NeedlePlot = function ()
         needles
             .attr('transform', function(d)
                 {
-                    return 'translate(' + [posToX(d.coord), bottom_axis_pos] + ')'
+                    return 'translate(' + [posToX(d.coord), 0] + ')'
                 }
             )
 
         needles.selectAll('line')
             .attr('stroke-width', posToX(1) / 2 + 'px')
-            .attr('y1', function(d){ return -d.value * height_unit + 'px' })
+            .attr('y1', function(d){ return axes.y.scale(d.value) + 'px' })
+            .attr('y2', bottom_axis_pos + 'px')
 
         needles.selectAll('circle')
             .attr('r', posToX(1) / 2 + 'px')
@@ -237,6 +238,8 @@ var NeedlePlot = function ()
             legend.x.obj.attr('x', config.width / 2)
         if(legend.y.obj)
             legend.y.obj.attr('transform','translate(' + -40 + ' ' + config.height / 2 + ') rotate(-90)')
+
+        adjustContent()
     }
 
     function append_group(selection, class_name)
@@ -270,15 +273,42 @@ var NeedlePlot = function ()
             .attr('width', config.paddings.left)
 			.attr('transform', 'translate(-' + config.paddings.left + ' , 0)')
 
-        axes.y.scale = d3.scale.linear()
-            .domain([0, config.y_scale])
+        var use_log = (config.value_type === 'Frequency')
+
+        if(use_log)
+        {
+            axes.y.scale = d3.scale.log()
+                .base(10)
+                // we have to avoid exact 0 on scale_min
+                .domain([config.y_scale_min || Number.MIN_VALUE, config.y_scale_max])
+        }
+        else
+        {
+            axes.y.scale = d3.scale.linear()
+                .domain([0, config.y_scale_max])
+        }
+
+        axes.y.scale.
+            nice()
 
         axes.y.obj = d3.svg.axis()
             .orient('left')
             .scale(axes.y.scale)
-            // TODO
-			.tickFormat(d3.format('d'))
-            .tickSubdivide(0)
+
+        var format = !use_log ? d3.format('d') : function(d){
+            d /= 100
+            if(d < 1)
+                return d3.format('.2%')(d)
+            if(d < 10)
+                return d3.format('.1%')(d)
+            return d3.format('%')(d)
+        }
+        var sub_div = !use_log ? 0 : 5
+
+        axes.y.obj
+            .ticks(10)
+            .tickFormat(format)
+            //.tickSubdivide(sub_div)
 
         axes.y.group = paddings.append('g')
 			.attr('class', 'y axis')
@@ -347,7 +377,6 @@ var NeedlePlot = function ()
             .append('line')
                 .attr('x1', 0)
                 .attr('x2', 0)
-                .attr('y2', 0)
 
         needles
             .append('circle')
@@ -428,7 +457,7 @@ var NeedlePlot = function ()
 		canvas.select('.vertical.scalable').attr('transform', 'translate(' + position + ', 0)scale(' + scale + ', 1)')
 
         needles.selectAll('circle')
-            .attr('transform', function(d){ return 'translate('  + [0, -d.value * height_unit] + ')scale(1, '+ scale +') ' })
+            .attr('transform', function(d){ return 'translate('  + [0, axes.y.scale(d.value)] + ')scale(1, '+ scale +') ' })
 
         site_boxes.
             attr('stroke-width', 1/scale + 'px')
