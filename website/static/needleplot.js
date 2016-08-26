@@ -233,9 +233,6 @@ var NeedlePlot = function ()
             .attr('y1', function(d){ return axes.y.scale(d.value) + 'px' })
             .attr('y2', bottom_axis_pos + 'px')
 
-        needles.selectAll('circle')
-            .attr('r', posToX(1) / 2 + 'px')
-
         leftPadding.attr('height', config.height)
 
         if(legend.x.obj)
@@ -478,6 +475,9 @@ var NeedlePlot = function ()
 
         site_boxes.
             attr('stroke-width', 1/scale + 'px')
+
+        needles.selectAll('circle')
+            .attr('r', posToX(1) / 2 * (config.max_zoom / scale) + 'px')
     }
 
     function xAxisCoverage()
