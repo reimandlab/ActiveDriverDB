@@ -282,7 +282,7 @@ var NeedlePlot = function ()
                 .domain([config.y_scale_min || Number.MIN_VALUE, config.y_scale_max])
 
             var cnt = -1
-            var labels_count_in_log = config.height / 38
+            var labels_count_in_log = config.height / 40
             var ticks_cnt = axes.y.scale.ticks().length
             config.log_ticks_per_label = Math.round(ticks_cnt / labels_count_in_log)
 
