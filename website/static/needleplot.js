@@ -440,20 +440,23 @@ var NeedlePlot = function ()
             .data(config.sites)
             .enter()
             .append('g')
-            .attr('class', 'site')
+            .attr('class', function(d)
+                {
+                    if(d.type.indexOf(',') === -1)
+                        return 'site, '+ d.type
+                    else
+                        return 'site, multi_ptm'
+                }
+            )
             .call(site_tooltip.bind)
 
         site_boxes = sites
 			.append('rect')
 			.attr('height', config.site_height)
-            .attr('class', function(d)
-                {
-                    if(d.type.indexOf(',') === -1)
-                        return d.type
-                    else
-                        return 'multi_ptm'
-                }
-            )
+
+        sites
+            .append('path')
+            .attr('d', d3.svg.symbol().size(4).type('triangle-up'))
 
         _rescalePlot()
 
@@ -506,6 +509,15 @@ var NeedlePlot = function ()
 
         site_boxes.
             attr('stroke-width', 1/scale + 'px')
+
+        sites.selectAll('path')
+            .attr('transform', function(d)
+                {
+                    // shift by -2 in yaxis is meant to lay the shape
+                    // on top of site box (it's size_of_shape/2 = 4/2 = 2)
+                    return 'translate(' + [posToX((d.end - d.start) / 2), -2] + ')scale(' + [1, posToX(1)] + ')'
+                }
+            )
 
         needles.selectAll('circle')
             .attr('r', posToX(1) / 2 * (config.max_zoom / scale) + 'px')
