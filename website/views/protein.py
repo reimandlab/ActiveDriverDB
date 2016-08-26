@@ -16,6 +16,12 @@ from website.helpers.filters import Filters
 from website.helpers.filters import Filter
 
 
+def get_source_field(filters):
+    source = filters.sources
+    source_field_name = Mutation.source_fields[source]
+    return source_field_name
+
+
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
@@ -84,10 +90,9 @@ class ProteinView(FlaskView):
 
         response = []
 
-        source = filters.sources
-        source_field_name = Mutation.source_fields[source]
-
         mutations = list(filter(filters.test, protein.mutations))
+
+        source_field_name = get_source_field(filters)
 
         for mutation in mutations:
 
