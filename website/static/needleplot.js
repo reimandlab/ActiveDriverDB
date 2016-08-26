@@ -89,7 +89,7 @@ var NeedlePlot = function ()
         site_height: 10,
         animations_speed: 200,
         // 90 is width of description
-        paddings: {bottom: 30, top: 30, left: 89, right: 1},
+        paddings: {bottom: 40, top: 30, left: 89, right: 1},
         y_scale: 'auto',
         sequenceLength: null,
         element: null,
@@ -196,22 +196,25 @@ var NeedlePlot = function ()
             .range([0, config.width - config.paddings.left - config.paddings.right])
 
         axes.y.scale
-            .range([config.height - config.paddings.top, config.paddings.bottom])
+            .range([config.height - config.paddings.top - config.site_height, config.paddings.bottom])
 
         axes.y.obj.scale(axes.y.scale)
         axes.y.group.call(axes.y.obj)
 
 		var bottom_axis_pos = config.height - config.paddings.bottom
 
-        axes.x.obj.scale(axes.x.scale)
+        axes.x.obj
+            .scale(axes.x.scale)
+            .tickSize(config.site_height + 3)
+
         axes.x.group
-	        .attr('transform', 'translate(0, ' + bottom_axis_pos + ')')
+	        .attr('transform', 'translate(' + [0, bottom_axis_pos] + ')')
             .call(axes.x.obj)
 
         sites
             .attr('transform', function(d)
                 {
-                    return 'translate(' + [posToX(d.start), bottom_axis_pos - config.site_height] + ')'
+                    return 'translate(' + [posToX(d.start), bottom_axis_pos] + ')'
                 }
             )
 
