@@ -6,9 +6,10 @@ var Tooltip = function()
     {
         return d.title
     }
+    var stuck = false
 
     var publicSpace = {
-        init: function(custom_template)
+        init: function(custom_template, id)
         {
             tooltip = d3.select('body')
                 .append('div')
@@ -19,23 +20,44 @@ var Tooltip = function()
             {
                 _template = custom_template
             }
+            d3.select('body')
+                .on('click.' + id, publicSpace.unstick)
         },
         show: function(d)
         {
+            if(stuck)
+                return
+
             tooltip.transition()
                 .duration(50)
                 .style('opacity', 1)
             tooltip.html(_template(d))
             publicSpace.move()
         },
-        hide: function()
+        hide: function(v)
         {
+            if(stuck)
+                return
             tooltip.transition()
                 .duration(200)
                 .style('opacity', 0)
         },
+        stick: function(d)
+        {
+            publicSpace.show(d)
+            stuck = true
+            d3.event.stopPropagation()
+        },
+        unstick: function()
+        {
+            stuck = false
+            publicSpace.hide(true)
+        },
         move: function()
         {
+            if(stuck)
+                return
+
             tooltip
                 .style('left', (d3.event.pageX) + 'px')
                 .style('top', (d3.event.pageY - 28) + 'px')
@@ -43,6 +65,7 @@ var Tooltip = function()
         bind: function(selection)
         {
             selection
+                .on('click', publicSpace.stick)
                 .on('mouseover', publicSpace.show)
                 .on('mousemove', publicSpace.move)
                 .on('mouseout', publicSpace.hide)
@@ -361,24 +384,27 @@ var NeedlePlot = function ()
         }
 
         var needle_tooltip = Tooltip()
-        needle_tooltip.init(function(d){
-            var text = 'PTM type: ' + d.category + '<br>' +
-                       'Position: ' + d.coord + '<br>' +
-                       config.value_type + ': ' + d.value + '<br>' +
-                       'Alt residue: ' + d.alt
+        needle_tooltip.init(
+            function(d){
+                var text = 'PTM type: ' + d.category + '<br>' +
+                           'Position: ' + d.coord + '<br>' +
+                           config.value_type + ': ' + d.value + '<br>' +
+                           'Alt residue: ' + d.alt
 
-           for(var meta in d.meta)
-           {
-               text += '<br>' + meta + ':'
-               text += '<ul>'
-               for(var column in d.meta[meta])
+               for(var meta in d.meta)
                {
-                   text += '<li>' + column + ': ' + d.meta[meta][column]
+                   text += '<br>' + meta + ':'
+                   text += '<ul>'
+                   for(var column in d.meta[meta])
+                   {
+                       text += '<li>' + column + ': ' + d.meta[meta][column]
+                   }
+                   text += '</ul>'
                }
-               text += '</ul>'
-           }
-            return text
-        })
+                return text
+            },
+            'needle'
+        )
 
         needles = vis.selectAll('.needle')
             .data(config.mutations)
@@ -401,9 +427,13 @@ var NeedlePlot = function ()
                 )
 
         var site_tooltip = Tooltip()
-        site_tooltip.init(function(d){
-            return d.type + '<br>' + (d.start + 7)
-        })
+
+        site_tooltip.init(
+            function(d){
+                return d.type + '<br>' + (d.start + 7)
+            },
+            'site'
+        )
 
         sites = vis.selectAll('.site')
             .data(config.sites)
