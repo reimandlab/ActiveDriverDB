@@ -403,7 +403,10 @@ var NeedlePlot = function ()
         )
 
         needles = vis.selectAll('.needle')
-            .data(config.mutations)
+            .data(
+                config.mutations
+                    .sort(function(a,b){ return b.value - a.value })
+            )
             .enter()
             .append('g')
             .attr('class', 'needle')
