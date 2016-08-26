@@ -501,6 +501,15 @@ var NeedlePlot = function ()
 
     function adjustContent(animate)
     {
+        if(scale == config.max_zoom)
+        {
+            axes.x.obj.ticks(20)
+        }
+        else if(axes.x.obj.ticks() != 10)
+        {
+            axes.x.obj.ticks(10)
+        }
+
         var canvas = canvasAnimated(animate)
 		canvas.select('.vertical.scalable').attr('transform', 'translate(' + position + ', 0)scale(' + scale + ', 1)')
 
