@@ -72,7 +72,8 @@ class ProteinView(FlaskView):
 
         return template(
             'protein.html', protein=protein, tracks=tracks,
-            filters=filters, mutations=mutations, value_type=val_type
+            filters=filters, mutations=mutations, value_type=val_type,
+            log_scale=(val_type == 'Frequency')
         )
 
     def mutations(self, refseq):

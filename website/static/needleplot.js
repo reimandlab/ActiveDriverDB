@@ -84,6 +84,7 @@ var NeedlePlot = function ()
     }
 
     var config = {
+        use_log: false, // should logaritmic (base 10) scale by used instead of linear?
         value_type: 'Count', // count or frequency
         site_height: 10,
         animations_speed: 200,
@@ -237,7 +238,7 @@ var NeedlePlot = function ()
         if(legend.x.obj)
             legend.x.obj.attr('x', config.width / 2)
         if(legend.y.obj)
-            legend.y.obj.attr('transform','translate(' + -40 + ' ' + config.height / 2 + ') rotate(-90)')
+            legend.y.obj.attr('transform','translate(' + -(config.paddings.left - 15) + ' ' + config.height / 2 + ') rotate(-90)')
 
         adjustContent()
     }
@@ -273,14 +274,34 @@ var NeedlePlot = function ()
             .attr('width', config.paddings.left)
 			.attr('transform', 'translate(-' + config.paddings.left + ' , 0)')
 
-        var use_log = (config.value_type === 'Frequency')
-
-        if(use_log)
+        if(config.use_log)
         {
             axes.y.scale = d3.scale.log()
                 .base(10)
                 // we have to avoid exact 0 on scale_min
                 .domain([config.y_scale_min || Number.MIN_VALUE, config.y_scale_max])
+
+            var cnt = -1
+            var labels_count_in_log = config.height / 38
+            var ticks_cnt = axes.y.scale.ticks().length
+            config.log_ticks_per_label = Math.round(ticks_cnt / labels_count_in_log)
+
+            function log_ticks_format(d){
+                cnt += 1
+
+                if(cnt % config.log_ticks_per_label !== 0)
+                    return ''
+
+                d /= 100
+                if(d < 0.0001)
+                    return d3.format('.3%')(d)
+                if(d < 0.001)
+                    return d3.format('.2%')(d)
+                if(d < 0.01)
+                    return d3.format('.1%')(d)
+                return d3.format('%')(d)
+            }
+
         }
         else
         {
@@ -295,15 +316,8 @@ var NeedlePlot = function ()
             .orient('left')
             .scale(axes.y.scale)
 
-        var format = !use_log ? d3.format('d') : function(d){
-            d /= 100
-            if(d < 1)
-                return d3.format('.2%')(d)
-            if(d < 10)
-                return d3.format('.1%')(d)
-            return d3.format('%')(d)
-        }
-        var sub_div = !use_log ? 0 : 5
+        var format = !config.use_log ? d3.format('d') : log_ticks_format
+        var sub_div = !config.use_log ? 0 : 5
 
         axes.y.obj
             .ticks(10)

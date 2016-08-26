@@ -90,6 +90,7 @@ Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alterna
         })
         max_zoom = tracks.adjustMaxZoom()
         var params = {
+            use_log: {{ log_scale | lower }},
             value_type: '{{ value_type }}',
             max_zoom: max_zoom,
             element: document.getElementById('plot_area'),
