@@ -514,8 +514,8 @@ var NeedlePlot = function ()
         needles.selectAll('circle')
             .attr('transform', function(d){ return 'translate('  + [0, axes.y.scale(d.value)] + ')scale(1, '+ scale +') ' })
 
-        site_boxes.
-            attr('stroke-width', 1/scale + 'px')
+        sites.selectAll('path, rect')
+            .attr('stroke-width', 1/scale + 'px')
 
         sites.selectAll('path')
             .attr('transform', function(d)
