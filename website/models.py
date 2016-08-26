@@ -672,6 +672,13 @@ class InheritedMutation(MutationDetails, BioModel):
     # PMC: Links exist to PubMed Central article
     is_in_pubmed_central = db.Column(db.Boolean)
 
+    clin_data = db.relationship('ClinicalData')
+
+
+class ClinicalData(BioModel):
+
+    mutation_id = db.Column(db.Integer, db.ForeignKey('mutation.id'))
+
     # CLNSIG: Variant Clinical Significance:
     # 0 - Uncertain significance,
     # 1 - not provided,

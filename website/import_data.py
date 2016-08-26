@@ -21,6 +21,7 @@ from models import Protein
 from models import Site
 from models import The1000GenomesMutation
 from models import InheritedMutation
+from models import ClinicalData
 from helpers.parsers import buffered_readlines
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
@@ -700,6 +701,7 @@ def load_mutations(proteins, removed):
     # CLINVAR MUTATIONS
     print('Loading ClinVar mutations:')
     clinvar_mutations = []
+    clinvar_data = []
 
     clinvar_keys = (
         'RS',
@@ -711,30 +713,33 @@ def load_mutations(proteins, removed):
         'CLNREVSTAT',
     )
 
-    clinvar_value_map = {
-        'CLNDBN':
-        {
-            'not_specified': None
-        },
-        'CLNREVSTAT':
-        {
-            'no_criteria': None
-        },
-    }
-
     def clinvar_parser(line):
 
         metadata = line[20].split(';')
 
-        clinvar_data = make_metadata_ordered_dict(clinvar_keys, metadata)
+        clinvar_entry = make_metadata_ordered_dict(clinvar_keys, metadata)
 
-        # TODO: atmoicity for CLN* fields
-        for field, mapping in clinvar_value_map.items():
-            for value, replacement in mapping.items():
-                if clinvar_data[field] == value:
-                     clinvar_data[field] = replacement
+        names, statuses, significances = (
+            (entry.replace('|', ',').split(',') if entry else None) 
+            for entry in
+            (
+                clinvar_entry[key]
+                for key in ('CLNDBN', 'CLNREVSTAT', 'CLNSIG')
+            )
+        )
 
-        values = list(clinvar_data.values())
+        sub_entries = max([len(x) for x in (names, statuses, significances)])
+
+        for i in range(sub_entries):
+
+            try:
+                if names and names[i] == 'not_specified':
+                    names[i] = None
+                if statuses and statuses[i] == 'no_criteria':
+                    statuses[i] = None
+            except:
+                print(statuses)
+        values = list(clinvar_entry.values())
 
         for mutation_id in preparse_mutations(line):
 
@@ -746,13 +751,24 @@ def load_mutations(proteins, removed):
                     values[1],
                     values[2],
                     values[3],
-                    values[4],
-                    values[5],
-                    values[6],
                 )
             )
 
+            for i in range(sub_entries):
+                try:
+                    clinvar_data.append(
+                        (
+                            len(clinvar_mutations),
+                            significances[i] if significances else None,
+                            names[i] if names else None,
+                            statuses[i] if statuses else None,
+                        )
+                    )
+                except:
+                    print(significances, names, statuses, sub_entries)
+
     parse_tsv_file('data/mutations/clinvar_muts_annotated.txt', clinvar_parser)
+
 
     flush_basic_mutations()
 
@@ -764,11 +780,8 @@ def load_mutations(proteins, removed):
                     'mutation_id': mutation[0],
                     'db_snp_id': mutation[1],
                     'is_low_freq_variation': mutation[2],
-                    'is_validated': mutation[2],
-                    'is_in_pubmed_central': mutation[2],
-                    'clin_sig': mutation[2],
-                    'clin_disease_name': mutation[2],
-                    'clin_rev_status': mutation[2],
+                    'is_validated': mutation[3],
+                    'is_in_pubmed_central': mutation[4],
                 }
                 for mutation in chunk
             ]
@@ -776,6 +789,24 @@ def load_mutations(proteins, removed):
         db.session.flush()
 
     db.session.commit()
+
+    for chunk in chunked_list(clinvar_data):
+        db.session.bulk_insert_mappings(
+            ClinicalData,
+            [
+                {
+                    'mutation_id': data[0],
+                    'clin_sig': data[1],
+                    'clin_disease_name': data[2],
+                    'clin_rev_status': data[3],
+                }
+                for data in chunk
+            ]
+        )
+        db.session.flush()
+
+    db.session.commit()
+
 
     # 1000 GENOMES MUTATIONS
     print('Loading 1000 Genomes mutations:')
