@@ -44,6 +44,7 @@ var Tooltip = function()
         },
         stick: function(d)
         {
+            publicSpace.unstick()
             publicSpace.show(d)
             stuck = true
             d3.event.stopPropagation()
