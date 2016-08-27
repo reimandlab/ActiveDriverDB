@@ -101,7 +101,12 @@ class ProteinView(FlaskView):
                 'value': getattr(mutation, source_field_name).value,
                 'category': mutation.impact_on_ptm,
                 'alt': mutation.alt,
-                'meta': mutation.all_metadata
+                'ref': mutation.ref,
+                'meta': mutation.all_metadata,
+                'sites': [
+                    site.representation
+                    for site in mutation.find_closest_sites()
+                ]
             }
             response += [needle]
 

@@ -28,7 +28,6 @@ class BioModel(db.Model):
         return db.Column('id', db.Integer, primary_key=True)
 
 
-
 def make_association_table(fk1, fk2):
     """Create an association table basing on names of two given foreign keys.
 
@@ -326,6 +325,14 @@ class Site(BioModel):
             self.position
         )
 
+    @property
+    def representation(self):
+        return {
+            'position': self.position,
+            'type': self.type,
+            'residue': self.residue
+        }
+
 
 class Cancer(BioModel):
     code = db.Column(db.String(16))
@@ -574,6 +581,25 @@ class Mutation(BioModel):
         if self.is_ptm_distal:
             return 'distal'
         return 'none'
+
+    def find_closest_sites(self, distance=7):
+        sites = {
+            site.position: site
+            for site in Protein.query.get(self.protein_id).sites
+        }
+        pos = self.position
+
+        found_sites = set()
+
+        for i in range(distance):
+            if pos + i in sites:
+                found_sites.add(sites[pos + i])
+            if pos - i in sites:
+                found_sites.add(sites[pos - i])
+            if found_sites:
+                break
+
+        return found_sites
 
     @hybrid_method
     def is_close_to_some_site(self, left, right):

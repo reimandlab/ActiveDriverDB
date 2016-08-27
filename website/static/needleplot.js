@@ -383,20 +383,33 @@ var NeedlePlot = function ()
         needle_tooltip.init(
             function(d){
                 var text = 'PTM type: ' + d.category + '<br>' +
+                           'Ref residue: ' + d.ref + '<br>' +
                            'Position: ' + d.coord + '<br>' +
-                           config.value_type + ': ' + d.value + '<br>' +
-                           'Alt residue: ' + d.alt
+                           'Alt residue: ' + d.alt + '<br>' +
+                           config.value_type + ': ' + d.value + '<br>'
 
-               for(var meta in d.meta)
-               {
-                   text += '<br>' + meta + ':'
-                   text += '<ul>'
-                   for(var column in d.meta[meta])
-                   {
-                       text += '<li>' + column + ': ' + d.meta[meta][column]
-                   }
-                   text += '</ul>'
-               }
+                var sites = d.sites
+                if(sites !== undefined && sites.length > 0)
+                {
+                    text += 'Closest affected sites: '
+                    text += '<ul>'
+                    for(var i = 0; i < sites.length; i++)
+                    {
+                        var site = sites[i]
+                        text += '<li>' + site.position + ': ' + site.residue + ' (' + site.type + ') '
+                    }
+                    text += '</ul>'
+                }
+                for(var meta in d.meta)
+                {
+                    text += meta + ':'
+                    text += '<ul>'
+                    for(var column in d.meta[meta])
+                    {
+                        text += '<li>' + column + ': ' + d.meta[meta][column]
+                    }
+                    text += '</ul>'
+                }
                 return text
             },
             'needle'
