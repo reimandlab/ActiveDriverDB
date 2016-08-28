@@ -461,13 +461,13 @@ var NeedlePlot = function ()
             )
             .call(site_tooltip.bind)
 
-        site_boxes = sites
-			.append('rect')
-			.attr('height', config.site_height)
-
         sites
             .append('path')
             .attr('d', d3.svg.symbol().size(4).type('triangle-up'))
+
+        site_boxes = sites
+			.append('rect')
+			.attr('height', config.site_height)
 
         _rescalePlot()
 
