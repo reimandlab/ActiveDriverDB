@@ -504,7 +504,7 @@ def load_mutations(proteins, removed):
 
     # MIMP MUTATIONS
 
-    # load("all_mimp_annotations.rsav")
+    # load("all_mimp_annotations_p085.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
     print('Loading MIMP mutations:')
@@ -562,7 +562,7 @@ def load_mutations(proteins, removed):
             )
         )
 
-    parse_tsv_file('data/all_mimp_annotations.tsv', parser, header)
+    parse_tsv_file('data/mutations/all_mimp_annotations.tsv', parser, header)
 
     flush_basic_mutations()
 
@@ -728,17 +728,21 @@ def load_mutations(proteins, removed):
             )
         )
 
-        sub_entries = max([len(x) for x in (names, statuses, significances)])
+        # those length should be always equal if they exists
+        sub_entries_cnt = max([len(x) for x in (names, statuses, significances)])
 
-        for i in range(sub_entries):
+        for i in range(sub_entries_cnt):
 
             try:
                 if names and names[i] == 'not_specified':
                     names[i] = None
                 if statuses and statuses[i] == 'no_criteria':
                     statuses[i] = None
-            except:
-                print(statuses)
+            except IndexError:
+                print('Malformed row (wrong count of subentries):')
+                print(line)
+                return False
+
         values = list(clinvar_entry.values())
 
         for mutation_id in preparse_mutations(line):
@@ -754,7 +758,7 @@ def load_mutations(proteins, removed):
                 )
             )
 
-            for i in range(sub_entries):
+            for i in range(sub_entries_cnt):
                 try:
                     clinvar_data.append(
                         (
@@ -765,7 +769,7 @@ def load_mutations(proteins, removed):
                         )
                     )
                 except:
-                    print(significances, names, statuses, sub_entries)
+                    print(significances, names, statuses, sub_entries_cnt)
 
     parse_tsv_file('data/mutations/clinvar_muts_annotated.txt', clinvar_parser)
 

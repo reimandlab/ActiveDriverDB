@@ -28,7 +28,6 @@ class BioModel(db.Model):
         return db.Column('id', db.Integer, primary_key=True)
 
 
-
 def make_association_table(fk1, fk2):
     """Create an association table basing on names of two given foreign keys.
 
@@ -427,7 +426,7 @@ class Mutation(BioModel):
         return {v: k for k, v in self.source_fields.items()}[column_name]
 
     def __repr__(self):
-        return '<Mutation in {1}, at {2} aa, substitution to: {3}>'.format(
+        return '<Mutation in {0}, at {1} aa, substitution to: {2}>'.format(
             self.protein.refseq,
             self.position,
             self.alt
@@ -662,7 +661,8 @@ class InheritedMutation(MutationDetails, BioModel):
     db_snp_id = db.Column(db.Integer)
 
     # MUT: Is mutation (journal citation, explicit fact):
-    # a low frequency variation that is cited in journal and other reputable sources
+    # a low frequency variation that is cited
+    # in journal and other reputable sources
     is_low_freq_variation = db.Column(db.Boolean)
 
     # VLD: This bit is set if the variant has 2+ minor allele
@@ -672,23 +672,47 @@ class InheritedMutation(MutationDetails, BioModel):
     # PMC: Links exist to PubMed Central article
     is_in_pubmed_central = db.Column(db.Boolean)
 
-    clin_data = db.relationship('ClinicalData')
+    clin_data = db.relationship(
+        'ClinicalData',
+        primaryjoin='foreign(InheritedMutation.id)==ClinicalData.mutation_id',
+        uselist=True
+    )
+
+    @property
+    def value(self):
+        return len(self.clin_data)
+
+    @property
+    def representation(self):
+        return {
+            'dbSNP id': 'rs' + str(self.db_snp_id),
+            'Is validated': bool(self.is_validated),
+            'Is low frequency variation': bool(self.is_low_freq_variation),
+            'Is in PubMed Central': bool(self.is_in_pubmed_central),
+            'Clinical:': [
+                d.representation
+                for d in self.clin_data
+            ]
+        }
 
 
 class ClinicalData(BioModel):
 
-    mutation_id = db.Column(db.Integer, db.ForeignKey('mutation.id'))
+    mutation_id = db.Column(db.Integer, db.ForeignKey('InheritedMutation.id'))
+
+    significance_codes = {
+        '0': 'Uncertain significance',
+        '1': 'Not provided',
+        '2': 'Benign',
+        '3': 'Likely benign',
+        '4': 'Likely pathogenic',
+        '5': 'Pathogenic',
+        '6': 'Drug response',
+        '7': 'Histocompatibility',
+        '255': 'Other'
+    }
 
     # CLNSIG: Variant Clinical Significance:
-    # 0 - Uncertain significance,
-    # 1 - not provided,
-    # 2 - Benign,
-    # 3 - Likely benign,
-    # 4 - Likely pathogenic,
-    # 5 - Pathogenic,
-    # 6 - drug response,
-    # 7 - histocompatibility,
-    # 255 - other
     clin_sig = db.Column(db.Text)
 
     # CLNDBN: Variant disease name
@@ -703,6 +727,20 @@ class ClinicalData(BioModel):
     # exp - Reviewed by expert panel,
     # guideline - Practice guideline
     clin_rev_status = db.Column(db.Text)
+
+    @property
+    def significance(self):
+        if self.clin_sig in self.significance_codes:
+            return self.significance_codes[self.clin_sig]
+        return self.clin_sig
+
+    @property
+    def representation(self):
+        return {
+            'Disease': self.clin_disease_name,
+            'Significane': self.significance,
+            'Review status': self.clin_rev_status
+        }
 
 
 class PopulationMutation(MutationDetails):
