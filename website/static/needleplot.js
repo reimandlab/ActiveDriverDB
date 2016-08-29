@@ -304,6 +304,7 @@ var NeedlePlot = function ()
             var labels_count_in_log = config.height / 40
             var ticks_cnt = axes.y.scale.ticks().length
             config.log_ticks_per_label = Math.round(ticks_cnt / labels_count_in_log)
+            //TODO does not work e.g. with CDK1 and other small freq. proteins console.log()
 
             function log_ticks_format(d){
                 cnt += 1
@@ -406,7 +407,16 @@ var NeedlePlot = function ()
                     text += '<ul>'
                     for(var column in d.meta[meta])
                     {
-                        text += '<li>' + column + ': ' + d.meta[meta][column]
+                        if(column === 'PWM')
+                        {
+                            var pos = d.meta[meta]['Position in motif']
+                            console.log(pos)
+                            text += '<li>' + '<img src="static/mimp/logos/' + column + '.svg">'
+                        }
+                        else
+                        {
+                            text += '<li>' + column + ': ' + d.meta[meta][column]
+                        }
                     }
                     text += '</ul>'
                 }
