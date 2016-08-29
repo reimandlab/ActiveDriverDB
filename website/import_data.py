@@ -20,6 +20,8 @@ from models import Mutation
 from models import Protein
 from models import Site
 from models import The1000GenomesMutation
+from models import InheritedMutation
+from models import ClinicalData
 from helpers.parsers import buffered_readlines
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
@@ -392,6 +394,7 @@ def load_cancers():
 
 
 def load_mutations(proteins, removed):
+    from collections import OrderedDict
 
     broken_seq = defaultdict(list)
 
@@ -401,7 +404,8 @@ def load_mutations(proteins, removed):
     mutations_cnt = 1
     mutations = {}
 
-    def flush_basic_mutations(mutations):
+    def flush_basic_mutations():
+        nonlocal mutations
         for chunk in chunked_list(mutations.items()):
             db.session.bulk_insert_mappings(
                 Mutation,
@@ -417,6 +421,7 @@ def load_mutations(proteins, removed):
                 ]
             )
             db.session.flush()
+        mutations = {}
 
     def get_or_make_mutation(key, is_ptm):
         nonlocal mutations_cnt, mutations
@@ -462,9 +467,44 @@ def load_mutations(proteins, removed):
 
             yield mutation_id
 
+    def make_metadata_ordered_dict(keys, metadata, get_from=0):
+        """Create an OrderedDict with given keys, and values
+
+        extracted from metadata list (or beeing None if not present
+        in metadata list. If there is a need to choose values among
+        subfields (delimeted by ',') then get_from tells from which
+        subfield the data should be used. This function will demand
+        all keys existing in dictionary to be updated - if you want
+        to loosen this requirement you can specify which fields are
+        not compulsary, and should be assign with None value (as to
+        import flags from VCF file).
+        """
+        dict_to_fill = OrderedDict(
+            (
+                (key, None)
+                for key in keys
+            )
+        )
+
+        for entry in metadata:
+            try:
+                # given entry is an assigment
+                key, value = entry.split('=')
+                if ',' in value:
+                    value = float(value.split(',')[get_from])
+            except ValueError:
+                # given entry is a flag
+                key = entry
+                value = True
+
+            if key in keys:
+                dict_to_fill[key] = value
+
+        return dict_to_fill
+
     # MIMP MUTATIONS
 
-    # load("all_mimp_annotations.rsav")
+    # load("all_mimp_annotations_p085.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
     print('Loading MIMP mutations:')
@@ -522,9 +562,9 @@ def load_mutations(proteins, removed):
             )
         )
 
-    parse_tsv_file('data/all_mimp_annotations.tsv', parser, header)
+    parse_tsv_file('data/mutations/all_mimp_annotations.tsv', parser, header)
 
-    flush_basic_mutations(mutations)
+    flush_basic_mutations()
 
     for chunk in chunked_list(mimps):
         db.session.bulk_insert_mappings(
@@ -568,8 +608,6 @@ def load_mutations(proteins, removed):
     from collections import Counter
     mutations_counter = Counter()
 
-    mutations = {}
-
     def cancer_parser(line):
 
         nonlocal mutations_counter
@@ -594,7 +632,7 @@ def load_mutations(proteins, removed):
 
     parse_tsv_file('data/mutations/TCGA_muts_annotated.txt', cancer_parser)
 
-    flush_basic_mutations(mutations)
+    flush_basic_mutations()
 
     for chunk in chunked_list(mutations_counter.items()):
         db.session.bulk_insert_mappings(
@@ -617,7 +655,6 @@ def load_mutations(proteins, removed):
 
     # ESP6500 MUTATIONS
     print('Loading ExomeSequencingProject 6500 mutations:')
-    mutations = {}
     esp_mutations = []
 
     def esp_parser(line):
@@ -642,7 +679,7 @@ def load_mutations(proteins, removed):
 
     parse_tsv_file('data/mutations/ESP6500_muts_annotated.txt', esp_parser)
 
-    flush_basic_mutations(mutations)
+    flush_basic_mutations()
 
     for chunk in chunked_list(esp_mutations):
         db.session.bulk_insert_mappings(
@@ -661,21 +698,147 @@ def load_mutations(proteins, removed):
 
     db.session.commit()
 
+    # CLINVAR MUTATIONS
+    print('Loading ClinVar mutations:')
+    clinvar_mutations = []
+    clinvar_data = []
+
+    clinvar_keys = (
+        'RS',
+        'MUT',
+        'VLD',
+        'PMC',
+        'CLNSIG',
+        'CLNDBN',
+        'CLNREVSTAT',
+    )
+
+    def clinvar_parser(line):
+
+        metadata = line[20].split(';')
+
+        clinvar_entry = make_metadata_ordered_dict(clinvar_keys, metadata)
+
+        names, statuses, significances = (
+            (entry.replace('|', ',').split(',') if entry else None) 
+            for entry in
+            (
+                clinvar_entry[key]
+                for key in ('CLNDBN', 'CLNREVSTAT', 'CLNSIG')
+            )
+        )
+
+        # those length should be always equal if they exists
+        sub_entries_cnt = max([len(x) for x in (names, statuses, significances)])
+
+        for i in range(sub_entries_cnt):
+
+            try:
+                if names and names[i] == 'not_specified':
+                    names[i] = None
+                if statuses and statuses[i] == 'no_criteria':
+                    statuses[i] = None
+            except IndexError:
+                print('Malformed row (wrong count of subentries):')
+                print(line)
+                return False
+
+        values = list(clinvar_entry.values())
+
+        for mutation_id in preparse_mutations(line):
+
+            clinvar_mutations.append(
+                (
+                    mutation_id,
+                    # Python 3.5 makes it easy: **values, but is not avaialable
+                    values[0],
+                    values[1],
+                    values[2],
+                    values[3],
+                )
+            )
+
+            for i in range(sub_entries_cnt):
+                try:
+                    clinvar_data.append(
+                        (
+                            len(clinvar_mutations),
+                            significances[i] if significances else None,
+                            names[i] if names else None,
+                            statuses[i] if statuses else None,
+                        )
+                    )
+                except:
+                    print(significances, names, statuses, sub_entries_cnt)
+
+    parse_tsv_file('data/mutations/clinvar_muts_annotated.txt', clinvar_parser)
+
+
+    flush_basic_mutations()
+
+    for chunk in chunked_list(clinvar_mutations):
+        db.session.bulk_insert_mappings(
+            InheritedMutation,
+            [
+                {
+                    'mutation_id': mutation[0],
+                    'db_snp_id': mutation[1],
+                    'is_low_freq_variation': mutation[2],
+                    'is_validated': mutation[3],
+                    'is_in_pubmed_central': mutation[4],
+                }
+                for mutation in chunk
+            ]
+        )
+        db.session.flush()
+
+    db.session.commit()
+
+    for chunk in chunked_list(clinvar_data):
+        db.session.bulk_insert_mappings(
+            ClinicalData,
+            [
+                {
+                    'mutation_id': data[0],
+                    'clin_sig': data[1],
+                    'clin_disease_name': data[2],
+                    'clin_rev_status': data[3],
+                }
+                for data in chunk
+            ]
+        )
+        db.session.flush()
+
+    db.session.commit()
+
+
     # 1000 GENOMES MUTATIONS
+    print('Loading 1000 Genomes mutations:')
+
+    # TODO: there are some issues with this function
+    def find_af_subfield_number(line):
+        """Get subfield number in 1000 Genoms VCF-originating metadata,
+        
+        where allele frequencies for given mutations are located.
+
+        Example record:
+        10	73567365	73567365	T	C	exonic	CDH23	.	nonsynonymous SNV	CDH23:NM_001171933:exon12:c.T1681C:p.F561L,CDH23:NM_001171934:exon12:c.T1681C:p.F561L,CDH23:NM_022124:exon57:c.T8401C:p.F2801L	0.001398	100	20719	10	73567365	rs3802707	TC,G	100	PASS	AC=2,5;AF=0.000399361,0.000998403;AN=5008;NS=2504;DP=20719;EAS_AF=0.001,0.005;AMR_AF=0,0;AFR_AF=0,0;EUR_AF=0,0;SAS_AF=0.001,0;AA=T|||;VT=SNP;MULTI_ALLELIC;EX_TARGET	GT
+        There are AF metadata for two different mutations: T -> TC and T -> G.
+        The mutation which we are currently analysing is T -> C
+        (look for fields 3 and 4; 4th field is sufficient to determine mutation)
+        """
+        dna_mut = line[4]
+        return [seq[0] for seq in line[17].split(',')].index(dna_mut)
 
     thousand_genoms_mutations = []
 
-    from collections import OrderedDict
-
-    maf_data = OrderedDict(
-        (
-            ('AF', None),
-            ('EAS_AF', None),
-            ('AMR_AF', None),
-            ('AFR_AF', None),
-            ('EUR_AF', None),
-            ('SAS_AF', None)
-        )
+    maf_keys = (
+        'AF',
+        'EAS_AF',
+        'AMR_AF',
+        'AFR_AF',
+        'EUR_AF',
+        'SAS_AF',
     )
 
     for line in read_from_files(
@@ -686,41 +849,31 @@ def load_mutations(proteins, removed):
         line = line.rstrip().split('\t')
 
         metadata = line[20].split(';')
-        read_data_cnt = 0
-        mut = line[4]
 
-        get_from = [seq[0] for seq in line[17].split(',')].index(mut)
+        maf_data = make_metadata_ordered_dict(
+            maf_keys,
+            metadata,
+            find_af_subfield_number(line)
+        )
 
-        for m in metadata:
-            try:
-                key, value = m.split('=')
-                if key in maf_data:
-                    maf_data[key] = float(m[len(key) + 1:].split(',')[get_from])
-                    read_data_cnt += 1
-            except ValueError:
-                # we encountered something like 'MULTI_ALLELIC'
-                pass
-
-        assert read_data_cnt == 6
-
-        maf_values = list(maf_data.values())
+        values = list(maf_data.values())
 
         for mutation_id in preparse_mutations(line):
 
             thousand_genoms_mutations.append(
                 (
                     mutation_id,
-                    # Python 3.5 makes it easy: **maf_values, but is not avaialable
-                    maf_values[0],
-                    maf_values[1],
-                    maf_values[2],
-                    maf_values[3],
-                    maf_values[4],
-                    maf_values[5],
+                    # Python 3.5 makes it easy: **values, but is not avaialable
+                    values[0],
+                    values[1],
+                    values[2],
+                    values[3],
+                    values[4],
+                    values[5],
                 )
             )
 
-    flush_basic_mutations(mutations)
+    flush_basic_mutations()
 
     for chunk in chunked_list(thousand_genoms_mutations):
         db.session.bulk_insert_mappings(
