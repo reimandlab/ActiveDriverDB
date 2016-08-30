@@ -425,7 +425,7 @@ class Mutation(BioModel):
     # mapping: source name -> column name
     source_fields = {
         'TCGA': 'meta_cancer',
-        'inherited': 'meta_inherited',
+        'ClinVar': 'meta_inherited',
         'ESP6500': 'meta_ESP6500',
         '1KGenomes': 'meta_1KG'
     }

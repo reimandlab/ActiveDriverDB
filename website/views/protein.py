@@ -71,7 +71,10 @@ class ProteinView(FlaskView):
 
         filters = Filters(active_filters, self.allowed_filters)
 
-        val_type = 'Count' if filters.active.sources == 'TCGA' else 'Frequency'
+        if filters.active.sources in ('TCGA', 'ClinVar'):
+            val_type = 'Count'
+        else:
+            val_type = 'Frequency'
 
         # repeated on purpose
         mutations = active_filters.filtered(protein.mutations)
