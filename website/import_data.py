@@ -27,6 +27,7 @@ from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import chunked_list
 from helpers.parsers import read_from_files
+from sqlalchemy.orm.exc import NoResultFound
 from app import app
 
 
@@ -434,7 +435,7 @@ def load_mutations(proteins, removed):
                     position=pos, protein_id=protein.id, alt=alt
                 ).one()
                 mutation_id = mutation.id
-            except Exception:
+            except NoResultFound:
                 mutation_id = mutations_cnt
                 mutations[key] = (mutations_cnt, is_ptm)
                 mutations_cnt += 1
@@ -537,19 +538,18 @@ def load_mutations(proteins, removed):
             broken_seq[refseq].append((protein.id, alt))
             return
 
-        # TBD
-        # print(line[9], line[10], protein.gene.name)
-
         assert line[13] in ('gain', 'loss')
 
         key = (pos, protein.id, alt)
 
         mutation_id = get_or_make_mutation(key, True)
 
+        psite_pos = int(psite_pos)
+
         sites.extend([
             (site.id, mutation_id)
             for site in protein.sites
-            if site.position == int(psite_pos)
+            if site.position == psite_pos
         ])
 
         mimps.append(
@@ -584,8 +584,9 @@ def load_mutations(proteins, removed):
 
     db.session.commit()
 
+    engine = db.get_engine(app, 'bio')
     for chunk in chunked_list(sites):
-        db.engine.execute(
+        engine.execute(
             mutation_site_association.insert(),
             [
                 {
