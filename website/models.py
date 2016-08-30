@@ -379,11 +379,11 @@ class Domain(BioModel):
         )
 
 
-def mutation_details_relationship(class_name):
+def mutation_details_relationship(class_name, use_list=False):
     return db.relationship(
         class_name,
         backref='mutation',
-        uselist=False
+        uselist=use_list
     )
 
 
@@ -428,7 +428,6 @@ class Mutation(BioModel):
         'ClinVar': 'meta_inherited',
         'ESP6500': 'meta_ESP6500',
         '1KGenomes': 'meta_1KG',
-        'MIMP': 'meta_MIMP'
     }
 
     def get_source_name(self, column_name):
@@ -759,9 +758,14 @@ class ClinicalData(BioModel):
         return self.clin_sig
 
     @property
+    def disease_name(self):
+        if self.clin_disease_name:
+            return self.clin_disease_name.replace('\\x2c', ',').replace('_', ' ')
+
+    @property
     def representation(self):
         return {
-            'Disease': self.clin_disease_name,
+            'Disease': self.disease_name,
             'Significane': self.significance,
             'Review status': self.clin_rev_status
         }
@@ -833,7 +837,7 @@ class MIMPMutation(MutationDetails, BioModel):
     @property
     def representation(self):
         return {
-            'Effect': self.effect,
+            'Effect': 'gain' if self.effect else 'loss',
             'PWM': self.pwm,
             'Position in motif': self.position_in_motif,
             'PWM family': self.pwm_family,
