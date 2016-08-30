@@ -95,17 +95,41 @@ class ProteinView(FlaskView):
 
         mutations = list(filter(filters.test, protein.mutations))
 
+        source = filters.sources
         source_field_name = get_source_field(filters)
 
-        for mutation in mutations:
+        def get_metadata(mutation):
+            nonlocal source_field_name, source
+            meta = {}
+            source_specific_data = getattr(mutation, source_field_name)
+            if isinstance(source_specific_data, list):
+                meta[source] = [
+                    datum.representation
+                    for datum in source_specific_data
+                ]
+            else:
+                meta[source] = source_specific_data.representation
+            mimp = getattr(mutation, 'meta_MIMP')
+            if mimp:
+                meta['MIMP'] = mimp.representation
+            return meta
 
+        def get_value(mutation):
+            nonlocal source_field_name
+
+            meta = getattr(mutation, source_field_name)
+            if isinstance(meta, list):
+                return sum((data.value for data in meta))
+            return meta.value
+
+        for mutation in mutations:
             needle = {
                 'coord': mutation.position,
-                'value': getattr(mutation, source_field_name).value,
+                'value': get_value(mutation),
                 'category': mutation.impact_on_ptm,
                 'alt': mutation.alt,
                 'ref': mutation.ref,
-                'meta': mutation.all_metadata,
+                'meta': get_metadata(mutation),
                 'sites': [
                     site.representation
                     for site in mutation.find_closest_sites()
