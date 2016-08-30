@@ -414,14 +414,16 @@ var NeedlePlot = function ()
                             console.log(pos)
                             text += '<li>' + '<img src="/static/mimp/logos/' + value + '.svg">'
                         }
-                        else if(Array.isArray(value))
+                        else if(column === 'Clinical')
                         {
-                            text += '<ul>'
-                            for(var subcolumn in value)
+                            for(var i in value)
                             {
-                                text += '<li>' + subcolumn + ': ' + value[subcolumn]
+                                text += '<li>' + value[i]['Disease']
+                                text += '<ul>'
+                                text += '<li>Significane: ' + value[i]['Significane']
+                                text += '<li>Review status: ' + value[i]['Review status']
+                                text += '</ul>'
                             }
-                            text += '</ul>'
                         }
                         else
                         {
