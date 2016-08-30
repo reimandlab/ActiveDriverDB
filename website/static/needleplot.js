@@ -411,7 +411,7 @@ var NeedlePlot = function ()
                         {
                             var pos = d.meta[meta]['Position in motif']
                             console.log(pos)
-                            text += '<li>' + '<img src="static/mimp/logos/' + column + '.svg">'
+                            text += '<li>' + '<img src="/static/mimp/logos/' + column + '.svg">'
                         }
                         else
                         {
