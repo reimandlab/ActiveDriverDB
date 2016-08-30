@@ -427,11 +427,12 @@ class Mutation(BioModel):
         'TCGA': 'meta_cancer',
         'ClinVar': 'meta_inherited',
         'ESP6500': 'meta_ESP6500',
-        '1KGenomes': 'meta_1KG'
+        '1KGenomes': 'meta_1KG',
+        'MIMP': 'meta_MIMP'
     }
 
     def get_source_name(self, column_name):
-        return {v: k for k, v in self.source_fields.items()}[column_name]
+        return {v: k for k, v in self.source_fields.items()}.get(column_name, 'other')
 
     def __repr__(self):
         return '<Mutation in {0}, at {1} aa, substitution to: {2}>'.format(
