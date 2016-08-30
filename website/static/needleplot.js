@@ -129,7 +129,7 @@ var NeedlePlot = function ()
         min_zoom: 1,
         max_zoom: 10,
         color_map: {
-          'distant': 'yellow',
+          'distal': 'yellow',
           'network-rewiring': 'red',
           'direct': 'darkred',
           'proximal': 'orange',
@@ -412,7 +412,8 @@ var NeedlePlot = function ()
                         {
                             var pos = d.meta[meta]['Position in motif']
                             console.log(pos)
-                            text += '<li>' + '<img src="/static/mimp/logos/' + value + '.svg">'
+                            text += '<li class="mimp-logo">' + '<img src="/static/mimp/logos/' + value + '.svg">'
+                            text += '<div class="mimp-outline ' + d.meta[meta]['Effect'] + '" style="left:' + ((7 + pos) * 22 + 47) + 'px"></div>'
                         }
                         else if(column === 'Clinical')
                         {
