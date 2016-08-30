@@ -407,24 +407,25 @@ var NeedlePlot = function ()
                     text += '<ul>'
                     for(var column in d.meta[meta])
                     {
+                        var value = d.meta[meta][column]
                         if(column === 'PWM')
                         {
                             var pos = d.meta[meta]['Position in motif']
                             console.log(pos)
-                            text += '<li>' + '<img src="/static/mimp/logos/' + column + '.svg">'
+                            text += '<li>' + '<img src="/static/mimp/logos/' + value + '.svg">'
                         }
-                        else if(Array.isArray(column))
+                        else if(Array.isArray(value))
                         {
                             text += '<ul>'
-                            for(var subcolumn in column)
+                            for(var subcolumn in value)
                             {
-                                text += '<li>' + subcolumn + ': ' + d.meta[meta][column][subcolumn]
+                                text += '<li>' + subcolumn + ': ' + value[subcolumn]
                             }
                             text += '</ul>'
                         }
                         else
                         {
-                            text += '<li>' + column + ': ' + d.meta[meta][column]
+                            text += '<li>' + column + ': ' + value
                         }
                     }
                     text += '</ul>'
