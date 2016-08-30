@@ -800,7 +800,7 @@ def load_mutations(proteins, removed):
             ClinicalData,
             [
                 {
-                    'mutation_id': data[0],
+                    'inherited_id': data[0],
                     'clin_sig': data[1],
                     'clin_disease_name': data[2],
                     'clin_rev_status': data[3],

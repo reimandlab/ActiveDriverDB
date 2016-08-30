@@ -475,10 +475,6 @@ class Mutation(BioModel):
         }
 
     @hybrid_property
-    def is_cancer(self):
-        return bool(self.meta_cancer)
-
-    @hybrid_property
     def ref(self):
         sequence = Protein.query.get(self.protein_id).sequence
         return sequence[self.position - 1]
@@ -701,7 +697,7 @@ class InheritedMutation(MutationDetails, BioModel):
 
     clin_data = db.relationship(
         'ClinicalData',
-        primaryjoin='foreign(InheritedMutation.id)==ClinicalData.mutation_id',
+        primaryjoin='foreign(InheritedMutation.id)==ClinicalData.inherited_id',
         uselist=True
     )
 
@@ -725,7 +721,7 @@ class InheritedMutation(MutationDetails, BioModel):
 
 class ClinicalData(BioModel):
 
-    mutation_id = db.Column(db.Integer, db.ForeignKey('InheritedMutation.id'))
+    inherited_id = db.Column(db.Integer, db.ForeignKey('InheritedMutation.id'))
 
     significance_codes = {
         '0': 'Uncertain significance',
