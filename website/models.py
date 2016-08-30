@@ -713,7 +713,7 @@ class InheritedMutation(MutationDetails, BioModel):
             'Is validated': bool(self.is_validated),
             'Is low frequency variation': bool(self.is_low_freq_variation),
             'Is in PubMed Central': bool(self.is_in_pubmed_central),
-            'Clinical:': [
+            'Clinical': [
                 d.representation
                 for d in self.clin_data
             ]

@@ -8,3 +8,13 @@ function update_object(modified_obj, modyfing_obj)
         }
     }
 }
+
+/* Polyfill from Mozilla Developer Network: */
+if (!Array.isArray)
+{
+	Array.isArray = function(arg)
+	{
+		return Object.prototype.toString.call(arg) === '[object Array]'
+	}
+}
+/* end of the polyfill */
