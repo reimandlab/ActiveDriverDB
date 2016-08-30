@@ -721,7 +721,7 @@ class InheritedMutation(MutationDetails, BioModel):
 
 class ClinicalData(BioModel):
 
-    inherited_id = db.Column(db.Integer, db.ForeignKey('InheritedMutation.id'))
+    inherited_id = db.Column(db.Integer, db.ForeignKey('inheritedmutation.id'))
 
     significance_codes = {
         '0': 'Uncertain significance',
