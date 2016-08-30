@@ -431,8 +431,9 @@ def load_mutations(proteins, removed):
             mutation_id = mutations[key][0]
         else:
             try:
+                pos, protein_id, alt = key
                 mutation = Mutation.query.filter_by(
-                    position=pos, protein_id=protein.id, alt=alt
+                    position=pos, protein_id=protein_id, alt=alt
                 ).one()
                 mutation_id = mutation.id
             except NoResultFound:
