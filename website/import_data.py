@@ -1,11 +1,15 @@
 import time
-import psutil
 from tqdm import tqdm
 from database import db
 from collections import defaultdict
 from database import get_or_create
 from helpers.bioinf import decode_mutation
 from helpers.bioinf import decode_raw_mutation
+from helpers.parsers import buffered_readlines
+from helpers.parsers import parse_fasta_file
+from helpers.parsers import parse_tsv_file
+from helpers.parsers import chunked_list
+from helpers.parsers import read_from_files
 from models import Cancer
 from models import CancerMutation
 from models import Domain
@@ -22,25 +26,8 @@ from models import Site
 from models import The1000GenomesMutation
 from models import InheritedMutation
 from models import ClinicalData
-from helpers.parsers import buffered_readlines
-from helpers.parsers import parse_fasta_file
-from helpers.parsers import parse_tsv_file
-from helpers.parsers import chunked_list
-from helpers.parsers import read_from_files
 from sqlalchemy.orm.exc import NoResultFound
 from app import app
-
-
-# remember to `set global max_allowed_packet=1073741824;` (it's max - 1GB)
-# (otherwise MySQL server will be gone)
-MEMORY_LIMIT = 2e9  # it can be greater than sql ma packet, since we will be
-# counting a lot of overhead into the current memory usage. Adjust manually.
-
-MEMORY_PERCENT_LIMIT = 80
-
-
-def system_memory_percent():
-    return psutil.virtual_memory().percent
 
 
 def import_data():
@@ -60,7 +47,6 @@ def import_data():
     del kinases
     del groups
     removed = remove_wrong_proteins(proteins)
-    print('Memory usage before first commit: ', memory_usage())
     calculate_interactors(proteins)
     db.session.commit()
     with app.app_context():
@@ -821,7 +807,7 @@ def load_mutations(proteins, removed):
     # TODO: there are some issues with this function
     def find_af_subfield_number(line):
         """Get subfield number in 1000 Genoms VCF-originating metadata,
-        
+
         where allele frequencies for given mutations are located.
 
         Example record:
@@ -1011,13 +997,6 @@ def load_kinase_classification(proteins, kinases, groups):
     parse_tsv_file('data/regphos_kinome_scraped_clean.txt', parser, header)
 
     return kinases, groups
-
-
-def memory_usage():
-    import os
-    import psutil
-    process = psutil.Process(os.getpid())
-    return process.memory_info().rss
 
 
 def import_mappings(proteins):
