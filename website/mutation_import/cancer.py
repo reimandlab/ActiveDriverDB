@@ -7,7 +7,7 @@ from helpers.parsers import parse_tsv_file
 from helpers.parsers import chunked_list
 
 
-class CancerMutationImporter(MutationImporter):
+class Importer(MutationImporter):
 
     model = CancerMutation
     default_path = 'data/mutations/TCGA_muts_annotated.txt'
