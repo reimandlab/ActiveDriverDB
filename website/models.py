@@ -53,7 +53,7 @@ class Kinase(BioModel):
     """
     name = db.Column(db.String(80), unique=True, index=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
-    group_id = db.Column(db.Integer, db.ForeignKey('kinase_group.id'))
+    group_id = db.Column(db.Integer, db.ForeignKey('kinasegroup.id'))
 
     def __repr__(self):
         return '<Kinase {0} belonging to {1} group>'.format(
@@ -68,8 +68,6 @@ class KinaseGroup(BioModel):
     The nomenclature may differ across sources and a `group` here
     may be equivalent to a `family` in some publications / datasets.
     """
-    __tablename__ = 'kinase_group'
-
     name = db.Column(db.String(80), unique=True, index=True)
     kinases = db.relationship(
         'Kinase',
@@ -316,7 +314,7 @@ class Site(BioModel):
     )
     kinase_groups = db.relationship(
         'KinaseGroup',
-        secondary=make_association_table('site.id', 'kinase_group.id')
+        secondary=make_association_table('site.id', 'kinasegroup.id')
     )
 
     def __repr__(self):
@@ -346,8 +344,6 @@ class Cancer(BioModel):
 
 
 class InterproDomain(BioModel):
-    __tablename__ = 'interpro_domain'
-
     # Interpro ID
     accession = db.Column(db.Text)
 
@@ -362,7 +358,7 @@ class InterproDomain(BioModel):
 
 class Domain(BioModel):
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
-    interpro_id = db.Column(db.Integer, db.ForeignKey('interpro_domain.id'))
+    interpro_id = db.Column(db.Integer, db.ForeignKey('interprodomain.id'))
 
     start = db.Column(db.Integer)
     end = db.Column(db.Integer)
@@ -736,10 +732,10 @@ class ClinicalData(BioModel):
     }
 
     # CLNSIG: Variant Clinical Significance:
-    clin_sig = db.Column(db.Text)
+    sig_code = db.Column(db.Text)
 
     # CLNDBN: Variant disease name
-    clin_disease_name = db.Column(db.Text)
+    disease_name = db.Column(db.Text)
 
     # CLNREVSTAT: ?
     # no_assertion - No assertion provided,
@@ -749,25 +745,18 @@ class ClinicalData(BioModel):
     # conf - Criteria provided conflicting interpretations,
     # exp - Reviewed by expert panel,
     # guideline - Practice guideline
-    clin_rev_status = db.Column(db.Text)
+    rev_status = db.Column(db.Text)
 
     @property
     def significance(self):
-        if self.clin_sig in self.significance_codes:
-            return self.significance_codes[self.clin_sig]
-        return self.clin_sig
-
-    @property
-    def disease_name(self):
-        if self.clin_disease_name:
-            return self.clin_disease_name.replace('\\x2c', ',').replace('_', ' ')
+        return self.significance_codes.get(self.sig_code, None)
 
     @property
     def representation(self):
         return {
             'Disease': self.disease_name,
             'Significane': self.significance,
-            'Review status': self.clin_rev_status
+            'Review status': self.rev_status
         }
 
 
@@ -806,7 +795,7 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
     """Metadata for 1 KG mutation"""
     maf_eas = db.Column(db.Float)
     maf_amr = db.Column(db.Float)
-    maf_efr = db.Column(db.Float)
+    maf_afr = db.Column(db.Float)
     maf_eur = db.Column(db.Float)
     maf_sas = db.Column(db.Float)
 
@@ -815,8 +804,8 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
         return {
             'MAF': self.maf_all,
             'MAF EAS': self.maf_eas,
-            'MAF AMR': self.maf_efr,
-            'MAF AFR': self.maf_efr,
+            'MAF AMR': self.maf_amr,
+            'MAF AFR': self.maf_afr,
             'MAF EUR': self.maf_eur,
             'MAF SAS': self.maf_sas,
         }

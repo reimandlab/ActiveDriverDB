@@ -628,7 +628,6 @@ def load_mutations(proteins, removed):
                 (
                     mutation_id,
                     cancer.id,
-                    sample
                 )
             ] += 1
 
@@ -643,7 +642,6 @@ def load_mutations(proteins, removed):
                 {
                     'mutation_id': mutation[0],
                     'cancer_id': mutation[1],
-                    'sample_name': mutation[2],
                     'count': count
                 }
                 for mutation, count in chunk
@@ -722,7 +720,7 @@ def load_mutations(proteins, removed):
         clinvar_entry = make_metadata_ordered_dict(clinvar_keys, metadata)
 
         names, statuses, significances = (
-            (entry.replace('|', ',').split(',') if entry else None) 
+            (entry.replace('|', ',').split(',') if entry else None)
             for entry in
             (
                 clinvar_entry[key]
@@ -740,6 +738,8 @@ def load_mutations(proteins, removed):
                     names[i] = None
                 if statuses and statuses[i] == 'no_criteria':
                     statuses[i] = None
+                if diseases:
+                    diseases[i] = diseases[i].replace('\\x2c', ',').replace('_', ' ')
             except IndexError:
                 print('Malformed row (wrong count of subentries):')
                 print(line)
@@ -802,9 +802,9 @@ def load_mutations(proteins, removed):
             [
                 {
                     'inherited_id': data[0],
-                    'clin_sig': data[1],
-                    'clin_disease_name': data[2],
-                    'clin_rev_status': data[3],
+                    'sig_code': data[1],
+                    'disease_name': data[2],
+                    'rev_status': data[3],
                 }
                 for data in chunk
             ]
@@ -888,7 +888,7 @@ def load_mutations(proteins, removed):
                             'maf_all',
                             'maf_eas',
                             'maf_amr',
-                            'maf_efr',
+                            'maf_afr',
                             'maf_eur',
                             'maf_sas',
                         ),
