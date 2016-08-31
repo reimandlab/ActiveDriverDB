@@ -4,7 +4,7 @@ from import_mutations import make_metadata_ordered_dict
 from helpers.parsers import read_from_files
 
 
-class The1000GenomesMutationImporter(MutationImporter):
+class Importer(MutationImporter):
 
     model = The1000GenomesMutation
     default_path = 'data/mutations/G1000'
