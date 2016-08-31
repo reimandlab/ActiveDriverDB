@@ -20,6 +20,35 @@ from sqlalchemy.orm.exc import NoResultFound
 from app import app
 
 
+def bulk_ORM_insert(model, keys, data):
+    for chunk in chunked_list(data):
+        db.session.bulk_insert_mappings(
+            model,
+            [
+                zip(keys, entry)
+                for entry in chunk
+            ]
+        )
+        db.session.flush()
+
+    db.session.commit()
+
+
+def bulk_raw_insert(table, keys, data, bind=None):
+    engine = db.get_engine(app, bind)
+    for chunk in chunked_list(data):
+        engine.execute(
+            table.insert(),
+            [
+                zip(keys, entry)
+                for entry in chunk
+            ]
+        )
+        db.session.flush()
+
+    db.session.commit()
+
+
 def load_mutations(proteins, removed):
 
     broken_seq = defaultdict(list)
@@ -129,105 +158,6 @@ def load_mutations(proteins, removed):
 
         return dict_to_fill
 
-    # MIMP MUTATIONS
-
-    # load("all_mimp_annotations_p085.rsav")
-    # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
-    # row.names=F, quote=F, sep='\t')
-    print('Loading MIMP mutations:')
-
-    mimps = []
-    sites = []
-
-    header = [
-        'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
-        'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
-    ]
-
-    def parser(line):
-        nonlocal mimps, mutations_cnt, sites
-
-        refseq = line[0]
-        mut = line[1]
-        psite_pos = line[2]
-
-        try:
-            protein = proteins[refseq]
-        except KeyError:
-            return
-
-        ref, pos, alt = decode_raw_mutation(mut)
-
-        try:
-            assert ref == protein.sequence[pos - 1]
-        except (AssertionError, IndexError):
-            broken_seq[refseq].append((protein.id, alt))
-            return
-
-        assert line[13] in ('gain', 'loss')
-
-        # MIMP mutations are always hardcoded PTM mutations
-        mutation_id = get_or_make_mutation(pos, protein.id, alt, True)
-
-        psite_pos = int(psite_pos)
-
-        sites.extend([
-            (site.id, mutation_id)
-            for site in protein.sites
-            if site.position == psite_pos
-        ])
-
-        mimps.append(
-            (
-                mutation_id,
-                int(line[3]),
-                1 if line[13] == 'gain' else 0,
-                line[9],
-                line[10]
-            )
-        )
-
-    parse_tsv_file('data/mutations/all_mimp_annotations.tsv', parser, header)
-
-    flush_basic_mutations()
-
-    for chunk in chunked_list(mimps):
-        db.session.bulk_insert_mappings(
-            MIMPMutation,
-            [
-                dict(
-                    zip(
-                        ('mutation_id', 'position_in_motif', 'effect',
-                         'pwm', 'pwm_family'),
-                        mutation_metadata
-                    )
-                )
-                for mutation_metadata in chunk
-            ]
-        )
-        db.session.flush()
-
-    db.session.commit()
-
-    engine = db.get_engine(app, 'bio')
-    for chunk in chunked_list(sites):
-        engine.execute(
-            mutation_site_association.insert(),
-            [
-                {
-                    'site_id': s[0],
-                    'mutation_id': s[1]
-                }
-                for s in chunk
-            ]
-        )
-        db.session.flush()
-
-    db.session.commit()
-
-    del mimps
-    del sites
-
     # CANCER MUTATIONS
     print('Loading cancer mutations:')
 
@@ -305,22 +235,11 @@ def load_mutations(proteins, removed):
 
     flush_basic_mutations()
 
-    for chunk in chunked_list(esp_mutations):
-        db.session.bulk_insert_mappings(
-            ExomeSequencingMutation,
-            [
-                {
-                    'maf_ea': mutation[0],
-                    'maf_aa': mutation[1],
-                    'maf_all': mutation[2],
-                    'mutation_id': mutation[3]
-                }
-                for mutation in chunk
-            ]
-        )
-        db.session.flush()
-
-    db.session.commit()
+    bulk_ORM_insert(
+        ExomeSequencingMutation,
+        ('maf_ea', 'maf_aa', 'maf_all', 'mutation_id'),
+        esp_mutations
+    )
 
     # CLINVAR MUTATIONS
     print('Loading ClinVar mutations:')
@@ -395,49 +314,36 @@ def load_mutations(proteins, removed):
                             statuses[i] if statuses else None,
                         )
                     )
+                # TODO why is it there?
                 except:
                     print(significances, names, statuses, sub_entries_cnt)
 
     parse_tsv_file('data/mutations/clinvar_muts_annotated.txt', clinvar_parser)
 
-
     flush_basic_mutations()
 
-    for chunk in chunked_list(clinvar_mutations):
-        db.session.bulk_insert_mappings(
-            InheritedMutation,
-            [
-                {
-                    'mutation_id': mutation[0],
-                    'db_snp_id': mutation[1],
-                    'is_low_freq_variation': mutation[2],
-                    'is_validated': mutation[3],
-                    'is_in_pubmed_central': mutation[4],
-                }
-                for mutation in chunk
-            ]
-        )
-        db.session.flush()
+    bulk_ORM_insert(
+        InheritedMutation,
+        (
+            'mutation_id',
+            'db_snp_id',
+            'is_low_freq_variation',
+            'is_validated',
+            'is_in_pubmed_central',
+        ),
+        clinvar_mutations
+    )
 
-    db.session.commit()
-
-    for chunk in chunked_list(clinvar_data):
-        db.session.bulk_insert_mappings(
-            ClinicalData,
-            [
-                {
-                    'inherited_id': data[0],
-                    'sig_code': data[1],
-                    'disease_name': data[2],
-                    'rev_status': data[3],
-                }
-                for data in chunk
-            ]
-        )
-        db.session.flush()
-
-    db.session.commit()
-
+    bulk_ORM_insert(
+        ClinicalData,
+        (
+            'inherited_id',
+            'sig_code',
+            'disease_name',
+            'rev_status',
+        ),
+        clinvar_data
+    )
 
     # 1000 GENOMES MUTATIONS
     print('Loading 1000 Genomes mutations:')
@@ -503,30 +409,106 @@ def load_mutations(proteins, removed):
 
     flush_basic_mutations()
 
-    for chunk in chunked_list(thousand_genoms_mutations):
-        db.session.bulk_insert_mappings(
-            The1000GenomesMutation,
-            [
-                dict(
-                    zip(
-                        (
-                            'mutation_id',
-                            'maf_all',
-                            'maf_eas',
-                            'maf_amr',
-                            'maf_afr',
-                            'maf_eur',
-                            'maf_sas',
-                        ),
-                        mutation_metadata
-                    )
-                )
-                for mutation_metadata in chunk
-            ]
-        )
-        db.session.flush()
+    bulk_ORM_insert(
+        The1000GenomesMutation,
+        (
+            'mutation_id',
+            'maf_all',
+            'maf_eas',
+            'maf_amr',
+            'maf_afr',
+            'maf_eur',
+            'maf_sas',
+        ),
+        thousand_genoms_mutations
+    )
 
-    db.session.commit()
+    # MIMP MUTATIONS
+
+    # load("all_mimp_annotations_p085.rsav")
+    # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
+    # row.names=F, quote=F, sep='\t')
+    print('Loading MIMP mutations:')
+
+    mimps = []
+    sites = []
+
+    header = [
+        'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
+        'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
+    ]
+
+    def parser(line):
+        nonlocal mimps, mutations_cnt, sites
+
+        refseq = line[0]
+        mut = line[1]
+        psite_pos = line[2]
+
+        try:
+            protein = proteins[refseq]
+        except KeyError:
+            return
+
+        ref, pos, alt = decode_raw_mutation(mut)
+
+        try:
+            assert ref == protein.sequence[pos - 1]
+        except (AssertionError, IndexError):
+            broken_seq[refseq].append((protein.id, alt))
+            return
+
+        assert line[13] in ('gain', 'loss')
+
+        # MIMP mutations are always hardcoded PTM mutations
+        mutation_id = get_or_make_mutation(pos, protein.id, alt, True)
+
+        psite_pos = int(psite_pos)
+
+        sites.extend([
+            (site.id, mutation_id)
+            for site in protein.sites
+            if site.position == psite_pos
+        ])
+
+        mimps.append(
+            (
+                mutation_id,
+                int(line[3]),
+                1 if line[13] == 'gain' else 0,
+                line[9],
+                line[10]
+            )
+        )
+
+    parse_tsv_file('data/mutations/all_mimp_annotations.tsv', parser, header)
+
+    flush_basic_mutations()
+
+    bulk_ORM_insert(
+        MIMPMutation,
+        (
+            'mutation_id',
+            'position_in_motif',
+            'effect',
+            'pwm',
+            'pwm_family'
+        ),
+        mimps
+    )
+
+    bulk_raw_insert(
+        mutation_site_association,
+        (
+            'site_id',
+            'mutation_id',
+        ),
+        sites,
+        bind='bio',
+    )
+
+    del mimps
+    del sites
 
     print('Mutations loaded')
 
