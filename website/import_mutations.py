@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections import OrderedDict
 from database import db
 from database import get_or_create
 from helpers.bioinf import decode_mutation
@@ -20,7 +21,6 @@ from app import app
 
 
 def load_mutations(proteins, removed):
-    from collections import OrderedDict
 
     broken_seq = defaultdict(list)
 
@@ -49,14 +49,14 @@ def load_mutations(proteins, removed):
             db.session.flush()
         mutations = {}
 
-    def get_or_make_mutation(key, is_ptm):
+    def get_or_make_mutation(pos, protein_id, alt, is_ptm):
         nonlocal mutations_cnt, mutations
 
+        key = (pos, protein_id, alt)
         if key in mutations:
             mutation_id = mutations[key][0]
         else:
             try:
-                pos, protein_id, alt = key
                 mutation = Mutation.query.filter_by(
                     position=pos, protein_id=protein_id, alt=alt
                 ).one()
@@ -88,9 +88,9 @@ def load_mutations(proteins, removed):
                 continue
 
             affected_sites = protein.get_sites_from_range(pos - 7, pos + 7)
+            is_ptm = bool(affected_sites)
 
-            key = (pos, protein.id, alt)
-            mutation_id = get_or_make_mutation(key, bool(affected_sites))
+            mutation_id = get_or_make_mutation(pos, protein.id, alt, is_ptm)
 
             yield mutation_id
 
@@ -166,9 +166,8 @@ def load_mutations(proteins, removed):
 
         assert line[13] in ('gain', 'loss')
 
-        key = (pos, protein.id, alt)
-
-        mutation_id = get_or_make_mutation(key, True)
+        # MIMP mutations are always hardcoded PTM mutations
+        mutation_id = get_or_make_mutation(pos, protein.id, alt, True)
 
         psite_pos = int(psite_pos)
 
@@ -453,7 +452,7 @@ def load_mutations(proteins, removed):
         10	73567365	73567365	T	C	exonic	CDH23	.	nonsynonymous SNV	CDH23:NM_001171933:exon12:c.T1681C:p.F561L,CDH23:NM_001171934:exon12:c.T1681C:p.F561L,CDH23:NM_022124:exon57:c.T8401C:p.F2801L	0.001398	100	20719	10	73567365	rs3802707	TC,G	100	PASS	AC=2,5;AF=0.000399361,0.000998403;AN=5008;NS=2504;DP=20719;EAS_AF=0.001,0.005;AMR_AF=0,0;AFR_AF=0,0;EUR_AF=0,0;SAS_AF=0.001,0;AA=T|||;VT=SNP;MULTI_ALLELIC;EX_TARGET	GT
         There are AF metadata for two different mutations: T -> TC and T -> G.
         The mutation which we are currently analysing is T -> C
-        
+
         Look for fields 3 and 4; 4th field is sufficient to determine mutation.
         """
         dna_mut = line[4]
