@@ -21,7 +21,7 @@ def bulk_ORM_insert(model, keys, data):
         db.session.bulk_insert_mappings(
             model,
             [
-                zip(keys, entry)
+                dict(zip(keys, entry))
                 for entry in chunk
             ]
         )

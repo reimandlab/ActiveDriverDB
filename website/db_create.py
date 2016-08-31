@@ -64,7 +64,8 @@ if __name__ == '__main__':
         help='Which mutations should be loaded? Available sources are: ' +
         ', '.join(importers) + '. By default all will be loaded.',
         choices=importers,
-        metavar=''
+        metavar='',
+        default='__all__',
     )
 
     args = parser.parse_args()
