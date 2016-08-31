@@ -669,8 +669,7 @@ class CancerMutation(MutationDetails, BioModel):
     @property
     def representation(self):
         return {
-            'Cancer': self.cancer.name,
-            'Sample': self.sample_name
+            self.cancer.name: self.count
         }
 
 
