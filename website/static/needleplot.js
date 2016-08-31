@@ -408,7 +408,14 @@ var NeedlePlot = function ()
                     for(var column in d.meta[meta])
                     {
                         var value = d.meta[meta][column]
-                        if(column === 'PWM')
+                        if(meta == 'TCGA')
+                        {
+                            for(var i in value)
+                            {
+                                text += '<li>' + i + ': ' + value[i]
+                            }
+                        }
+                        else if(column === 'PWM')
                         {
                             var pos = d.meta[meta]['Position in motif']
                             console.log(pos)
