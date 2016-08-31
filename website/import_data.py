@@ -734,12 +734,13 @@ def load_mutations(proteins, removed):
         for i in range(sub_entries_cnt):
 
             try:
-                if names and names[i] == 'not_specified':
-                    names[i] = None
+                if names:
+                    if names[i] == 'not_specified':
+                        names[i] = None
+                    else:
+                        names[i] = names[i].replace('\\x2c', ',').replace('_', ' ')
                 if statuses and statuses[i] == 'no_criteria':
                     statuses[i] = None
-                if diseases:
-                    diseases[i] = diseases[i].replace('\\x2c', ',').replace('_', ' ')
             except IndexError:
                 print('Malformed row (wrong count of subentries):')
                 print(line)
