@@ -14,7 +14,7 @@ from import_mutations import import_mappings
 from app import app
 
 
-def import_data():
+def import_data(restrict_mutations_to):
     global genes
     genes, proteins = create_proteins_and_genes()
     load_sequences(proteins)
@@ -34,16 +34,12 @@ def import_data():
     calculate_interactors(proteins)
     db.session.commit()
     with app.app_context():
-        load_mutations(proteins, removed)
+        load_mutations(proteins, restrict_mutations_to)
 
 
 def calculate_interactors(proteins):
     for protein in proteins.values():
         protein.interactors_count = protein._calc_interactors_count()
-
-
-def get_proteins():
-    return {protein.refseq: protein for protein in Protein.query.all()}
 
 
 def load_domains(proteins):

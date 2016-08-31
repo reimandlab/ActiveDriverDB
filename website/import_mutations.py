@@ -1,23 +1,19 @@
+from abc import ABC
+from abc import abstractmethod
 from collections import defaultdict
 from collections import OrderedDict
 from database import db
-from database import get_or_create
 from helpers.bioinf import decode_mutation
-from helpers.bioinf import decode_raw_mutation
-from helpers.parsers import parse_tsv_file
 from helpers.parsers import chunked_list
 from helpers.parsers import read_from_files
-from models import Cancer
-from models import CancerMutation
-from models import ExomeSequencingMutation
-from models import MIMPMutation
-from models import mutation_site_association
 from models import Mutation
-from models import The1000GenomesMutation
-from models import InheritedMutation
-from models import ClinicalData
+from models import Protein
 from sqlalchemy.orm.exc import NoResultFound
 from app import app
+
+
+def get_proteins():
+    return {protein.refseq: protein for protein in Protein.query.all()}
 
 
 def bulk_ORM_insert(model, keys, data):
@@ -49,18 +45,48 @@ def bulk_raw_insert(table, keys, data, bind=None):
     db.session.commit()
 
 
-def load_mutations(proteins, removed):
+def make_metadata_ordered_dict(keys, metadata, get_from=None):
+    """Create an OrderedDict with given keys, and values
 
-    broken_seq = defaultdict(list)
+    extracted from metadata list (or beeing None if not present
+    in metadata list. If there is a need to choose values among
+    subfields (delimeted by ',') then get_from tells from which
+    subfield the data should be used. This function will demand
+    all keys existing in dictionary to be updated - if you want
+    to loosen this requirement you can specify which fields are
+    not compulsary, and should be assign with None value (as to
+    import flags from VCF file).
+    """
+    dict_to_fill = OrderedDict(
+        (
+            (key, None)
+            for key in keys
+        )
+    )
 
-    print('Loading mutations:')
+    for entry in metadata:
+        try:
+            # given entry is an assigment
+            key, value = entry.split('=')
+            if get_from is not None and ',' in value:
+                value = float(value.split(',')[get_from])
+        except ValueError:
+            # given entry is a flag
+            key = entry
+            value = True
 
-    # a counter to give mutations.id as pk
-    mutations_cnt = 1
-    mutations = {}
+        if key in keys:
+            dict_to_fill[key] = value
 
-    def flush_basic_mutations():
-        nonlocal mutations
+    return dict_to_fill
+
+
+class BaseMutationsImporter:
+
+    def get_highest_id(self):
+        return Mutation.query.count() + 1
+
+    def flush(self, mutations):
         for chunk in chunked_list(mutations.items()):
             db.session.bulk_insert_mappings(
                 Mutation,
@@ -76,14 +102,70 @@ def load_mutations(proteins, removed):
                 ]
             )
             db.session.flush()
-        mutations = {}
 
-    def get_or_make_mutation(pos, protein_id, alt, is_ptm):
-        nonlocal mutations_cnt, mutations
+
+base_importer = BaseMutationsImporter()
+
+
+class MutationImporter(ABC):
+
+    default_path = None
+    insert_keys = None
+
+    def __init__(self, proteins=None):
+        if not proteins:
+            proteins = get_proteins()
+        self.proteins = proteins
+        self.broken_seq = defaultdict(list)
+
+    @property
+    def model_name(self):
+        return self.model.__name__
+
+    def load(self, path=None):
+        self.base_mutations = {}
+        print('Loading', self.model_name, ':')
+        if not path:
+            if not self.default_path:
+                raise Exception(
+                    'path is required when no default_path is set'
+                )
+            path = self.default_path
+
+        self.highest_base_id = base_importer.get_highest_id()
+        mutation_details = self.parse(path)
+
+        base_importer.flush(self.base_mutations)
+        self.insert_details(mutation_details)
+
+        db.session.commit()
+
+    @abstractmethod
+    def parse(self):
+        pass
+
+    @abstractmethod
+    def insert_details(self):
+        pass
+
+    def insert_list(self, data):
+        if not self.insert_keys:
+            raise Exception(
+                'To use insert_list, you have to specify insert_keys'
+            )
+        bulk_ORM_insert(self.model, self.insert_keys, data)
+
+    def delete_all(self):
+        print('Removing', self.model_name, ':')
+        count = db.session.delete(self.model.query.all())
+        db.session.commit()
+        print('Removed', count, self.model_name, '.')
+
+    def get_or_make_mutation(self, pos, protein_id, alt, is_ptm):
 
         key = (pos, protein_id, alt)
-        if key in mutations:
-            mutation_id = mutations[key][0]
+        if key in self.base_mutations:
+            mutation_id = self.base_mutations[key][0]
         else:
             try:
                 mutation = Mutation.query.filter_by(
@@ -91,12 +173,12 @@ def load_mutations(proteins, removed):
                 ).one()
                 mutation_id = mutation.id
             except NoResultFound:
-                mutation_id = mutations_cnt
-                mutations[key] = (mutations_cnt, is_ptm)
-                mutations_cnt += 1
+                mutation_id = self.highest_base_id
+                self.base_mutations[key] = (mutation_id, is_ptm)
+                self.highest_base_id += 1
         return mutation_id
 
-    def preparse_mutations(line):
+    def preparse_mutations(self, line):
         for mutation in [
             m.split(':')
             for m in line[9].replace(';', ',').split(',')
@@ -104,7 +186,7 @@ def load_mutations(proteins, removed):
             refseq = mutation[1]
 
             try:
-                protein = proteins[refseq]
+                protein = self.proteins[refseq]
             except KeyError:
                 continue
 
@@ -113,402 +195,40 @@ def load_mutations(proteins, removed):
             try:
                 assert ref == protein.sequence[pos - 1]
             except (AssertionError, IndexError):
-                broken_seq[refseq].append((protein.id, alt))
+                self.broken_seq[refseq].append((protein.id, alt))
                 continue
 
             affected_sites = protein.get_sites_from_range(pos - 7, pos + 7)
             is_ptm = bool(affected_sites)
 
-            mutation_id = get_or_make_mutation(pos, protein.id, alt, is_ptm)
+            mutation_id = self.get_or_make_mutation(
+                pos, protein.id, alt, is_ptm
+            )
 
             yield mutation_id
 
-    def make_metadata_ordered_dict(keys, metadata, get_from=0):
-        """Create an OrderedDict with given keys, and values
 
-        extracted from metadata list (or beeing None if not present
-        in metadata list. If there is a need to choose values among
-        subfields (delimeted by ',') then get_from tells from which
-        subfield the data should be used. This function will demand
-        all keys existing in dictionary to be updated - if you want
-        to loosen this requirement you can specify which fields are
-        not compulsary, and should be assign with None value (as to
-        import flags from VCF file).
-        """
-        dict_to_fill = OrderedDict(
-            (
-                (key, None)
-                for key in keys
-            )
-        )
+def get_importers():
+    import imp
+    import os
+    from helpers.parsers import get_files
+    importers = {}
 
-        for entry in metadata:
-            try:
-                # given entry is an assigment
-                key, value = entry.split('=')
-                if ',' in value:
-                    value = float(value.split(',')[get_from])
-            except ValueError:
-                # given entry is a flag
-                key = entry
-                value = True
+    for raw_path in get_files('mutation_import', '*.py'):
+        module_name = os.path.basename(raw_path[:-3])
+        module = imp.load_source(module_name, raw_path)
+        importers[module_name] = module
 
-            if key in keys:
-                dict_to_fill[key] = value
+    return importers
 
-        return dict_to_fill
 
-    # CANCER MUTATIONS
-    print('Loading cancer mutations:')
+def load_mutations(proteins, to_import='__all__'):
 
-    from collections import Counter
-    mutations_counter = Counter()
-
-    def cancer_parser(line):
-
-        nonlocal mutations_counter
-
-        assert line[10].startswith('comments: ')
-        cancer_name, sample, _ = line[10][10:].split(';')
-
-        cancer, created = get_or_create(Cancer, name=cancer_name)
-
-        if created:
-            db.session.add(cancer)
-
-        for mutation_id in preparse_mutations(line):
-
-            mutations_counter[
-                (
-                    mutation_id,
-                    cancer.id,
-                )
-            ] += 1
-
-    parse_tsv_file('data/mutations/TCGA_muts_annotated.txt', cancer_parser)
-
-    flush_basic_mutations()
-
-    for chunk in chunked_list(mutations_counter.items()):
-        db.session.bulk_insert_mappings(
-            CancerMutation,
-            [
-                {
-                    'mutation_id': mutation[0],
-                    'cancer_id': mutation[1],
-                    'count': count
-                }
-                for mutation, count in chunk
-            ]
-        )
-        db.session.flush()
-
-    db.session.commit()
-
-    del mutations_counter
-
-    # ESP6500 MUTATIONS
-    print('Loading ExomeSequencingProject 6500 mutations:')
-    esp_mutations = []
-
-    def esp_parser(line):
-
-        metadata = line[20].split(';')
-
-        # not flexible way to select MAF from metadata, but quite quick
-        assert metadata[4].startswith('MAF=')
-
-        maf_ea, maf_aa, maf_all = map(float, metadata[4][4:].split(','))
-
-        for mutation_id in preparse_mutations(line):
-
-            esp_mutations.append(
-                (
-                    maf_ea,
-                    maf_aa,
-                    maf_all,
-                    mutation_id
-                )
-            )
-
-    parse_tsv_file('data/mutations/ESP6500_muts_annotated.txt', esp_parser)
-
-    flush_basic_mutations()
-
-    bulk_ORM_insert(
-        ExomeSequencingMutation,
-        ('maf_ea', 'maf_aa', 'maf_all', 'mutation_id'),
-        esp_mutations
-    )
-
-    # CLINVAR MUTATIONS
-    print('Loading ClinVar mutations:')
-    clinvar_mutations = []
-    clinvar_data = []
-
-    clinvar_keys = (
-        'RS',
-        'MUT',
-        'VLD',
-        'PMC',
-        'CLNSIG',
-        'CLNDBN',
-        'CLNREVSTAT',
-    )
-
-    def clinvar_parser(line):
-
-        metadata = line[20].split(';')
-
-        clinvar_entry = make_metadata_ordered_dict(clinvar_keys, metadata)
-
-        names, statuses, significances = (
-            (entry.replace('|', ',').split(',') if entry else None)
-            for entry in
-            (
-                clinvar_entry[key]
-                for key in ('CLNDBN', 'CLNREVSTAT', 'CLNSIG')
-            )
-        )
-
-        # those length should be always equal if they exists
-        sub_entries_cnt = max([len(x) for x in (names, statuses, significances)])
-
-        for i in range(sub_entries_cnt):
-
-            try:
-                if names:
-                    if names[i] == 'not_specified':
-                        names[i] = None
-                    else:
-                        names[i] = names[i].replace('\\x2c', ',').replace('_', ' ')
-                if statuses and statuses[i] == 'no_criteria':
-                    statuses[i] = None
-            except IndexError:
-                print('Malformed row (wrong count of subentries):')
-                print(line)
-                return False
-
-        values = list(clinvar_entry.values())
-
-        for mutation_id in preparse_mutations(line):
-
-            clinvar_mutations.append(
-                (
-                    mutation_id,
-                    # Python 3.5 makes it easy: **values, but is not avaialable
-                    values[0],
-                    values[1],
-                    values[2],
-                    values[3],
-                )
-            )
-
-            for i in range(sub_entries_cnt):
-                try:
-                    clinvar_data.append(
-                        (
-                            len(clinvar_mutations),
-                            significances[i] if significances else None,
-                            names[i] if names else None,
-                            statuses[i] if statuses else None,
-                        )
-                    )
-                # TODO why is it there?
-                except:
-                    print(significances, names, statuses, sub_entries_cnt)
-
-    parse_tsv_file('data/mutations/clinvar_muts_annotated.txt', clinvar_parser)
-
-    flush_basic_mutations()
-
-    bulk_ORM_insert(
-        InheritedMutation,
-        (
-            'mutation_id',
-            'db_snp_id',
-            'is_low_freq_variation',
-            'is_validated',
-            'is_in_pubmed_central',
-        ),
-        clinvar_mutations
-    )
-
-    bulk_ORM_insert(
-        ClinicalData,
-        (
-            'inherited_id',
-            'sig_code',
-            'disease_name',
-            'rev_status',
-        ),
-        clinvar_data
-    )
-
-    # 1000 GENOMES MUTATIONS
-    print('Loading 1000 Genomes mutations:')
-
-    # TODO: there are some issues with this function
-    def find_af_subfield_number(line):
-        """Get subfield number in 1000 Genoms VCF-originating metadata,
-
-        where allele frequencies for given mutations are located.
-
-        Example record:
-        10	73567365	73567365	T	C	exonic	CDH23	.	nonsynonymous SNV	CDH23:NM_001171933:exon12:c.T1681C:p.F561L,CDH23:NM_001171934:exon12:c.T1681C:p.F561L,CDH23:NM_022124:exon57:c.T8401C:p.F2801L	0.001398	100	20719	10	73567365	rs3802707	TC,G	100	PASS	AC=2,5;AF=0.000399361,0.000998403;AN=5008;NS=2504;DP=20719;EAS_AF=0.001,0.005;AMR_AF=0,0;AFR_AF=0,0;EUR_AF=0,0;SAS_AF=0.001,0;AA=T|||;VT=SNP;MULTI_ALLELIC;EX_TARGET	GT
-        There are AF metadata for two different mutations: T -> TC and T -> G.
-        The mutation which we are currently analysing is T -> C
-
-        Look for fields 3 and 4; 4th field is sufficient to determine mutation.
-        """
-        dna_mut = line[4]
-        return [seq[0] for seq in line[17].split(',')].index(dna_mut)
-
-    thousand_genoms_mutations = []
-
-    maf_keys = (
-        'AF',
-        'EAS_AF',
-        'AMR_AF',
-        'AFR_AF',
-        'EUR_AF',
-        'SAS_AF',
-    )
-
-    for line in read_from_files(
-        'data/mutations/G1000',
-        'G1000_chr*.txt.gz',
-        skip_header=False
-    ):
-        line = line.rstrip().split('\t')
-
-        metadata = line[20].split(';')
-
-        maf_data = make_metadata_ordered_dict(
-            maf_keys,
-            metadata,
-            find_af_subfield_number(line)
-        )
-
-        values = list(maf_data.values())
-
-        for mutation_id in preparse_mutations(line):
-
-            thousand_genoms_mutations.append(
-                (
-                    mutation_id,
-                    # Python 3.5 makes it easy: **values, but is not avaialable
-                    values[0],
-                    values[1],
-                    values[2],
-                    values[3],
-                    values[4],
-                    values[5],
-                )
-            )
-
-    flush_basic_mutations()
-
-    bulk_ORM_insert(
-        The1000GenomesMutation,
-        (
-            'mutation_id',
-            'maf_all',
-            'maf_eas',
-            'maf_amr',
-            'maf_afr',
-            'maf_eur',
-            'maf_sas',
-        ),
-        thousand_genoms_mutations
-    )
-
-    # MIMP MUTATIONS
-
-    # load("all_mimp_annotations_p085.rsav")
-    # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
-    # row.names=F, quote=F, sep='\t')
-    print('Loading MIMP mutations:')
-
-    mimps = []
-    sites = []
-
-    header = [
-        'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
-        'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
-    ]
-
-    def parser(line):
-        nonlocal mimps, mutations_cnt, sites
-
-        refseq = line[0]
-        mut = line[1]
-        psite_pos = line[2]
-
-        try:
-            protein = proteins[refseq]
-        except KeyError:
-            return
-
-        ref, pos, alt = decode_raw_mutation(mut)
-
-        try:
-            assert ref == protein.sequence[pos - 1]
-        except (AssertionError, IndexError):
-            broken_seq[refseq].append((protein.id, alt))
-            return
-
-        assert line[13] in ('gain', 'loss')
-
-        # MIMP mutations are always hardcoded PTM mutations
-        mutation_id = get_or_make_mutation(pos, protein.id, alt, True)
-
-        psite_pos = int(psite_pos)
-
-        sites.extend([
-            (site.id, mutation_id)
-            for site in protein.sites
-            if site.position == psite_pos
-        ])
-
-        mimps.append(
-            (
-                mutation_id,
-                int(line[3]),
-                1 if line[13] == 'gain' else 0,
-                line[9],
-                line[10]
-            )
-        )
-
-    parse_tsv_file('data/mutations/all_mimp_annotations.tsv', parser, header)
-
-    flush_basic_mutations()
-
-    bulk_ORM_insert(
-        MIMPMutation,
-        (
-            'mutation_id',
-            'position_in_motif',
-            'effect',
-            'pwm',
-            'pwm_family'
-        ),
-        mimps
-    )
-
-    bulk_raw_insert(
-        mutation_site_association,
-        (
-            'site_id',
-            'mutation_id',
-        ),
-        sites,
-        bind='bio',
-    )
-
-    del mimps
-    del sites
+    importers = get_importers()
+    for name, module in importers.items():
+        if to_import != '__all__' and name not in to_import:
+            continue
+        module.Importer().load()
 
     print('Mutations loaded')
 
