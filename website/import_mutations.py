@@ -138,7 +138,9 @@ class MutationImporter(ABC):
         if self.broken_seq:
             print(
                 'Detected and skipped mutations with incorrectly mapped '
-                'reference sequences in % isoforms.' % len(self.broken_seq)
+                'reference sequences in {:d} isoforms.'.format(
+                    len(self.broken_seq)
+                )
             )
         print('Loaded %s.' % self.model_name)
 
