@@ -6,6 +6,7 @@ import import_data
 from database import db
 from models import Page
 from models import User
+import import_mutations
 
 
 def reset_relational_db(**kwargs):
@@ -55,19 +56,33 @@ if __name__ == '__main__':
         action='store_true',
         help='should mutations be loaded without db restart?'
     )
+    importers = import_mutations.get_importers().keys()
+    parser.add_argument(
+        '-t',
+        '--mutations_to_load',
+        nargs='*',
+        help='Which mutations should be loaded? Available sources are: ' +
+        ', '.join(importers) + '. By default all will be loaded.',
+        choices=importers,
+        metavar='',
+        default='__all__',
+    )
 
     args = parser.parse_args()
 
     if args.only_mutations:
         print('Importing mutations')
         with import_data.app.app_context():
-            proteins = import_data.get_proteins()
-            mutations = import_data.load_mutations(proteins, set())
+            proteins = import_mutations.get_proteins()
+            mutations = import_mutations.load_mutations(
+                proteins,
+                args.mutations_to_load
+            )
     else:
         if args.reload_biological:
             reset_relational_db(bind='bio')
             print('Importing data')
-            import_data.import_data()
+            import_data.import_data(args.mutations_to_load)
 
         if args.import_mappings:
             reset_mappings_db()

@@ -1,14 +1,26 @@
+import os
 from glob import glob
+import gzip
 from tqdm import tqdm
 
 
 def get_files(path, pattern):
-    return glob(path + '/' + pattern)
+    """Get all files from given `path` matching to given pattern
+
+    Patterns should be string expression with wildcards * following Unix style.
+    """
+    return glob(path + os.sep + pattern)
 
 
-def read_from_files(directory, pattern, skip_header=True):
+def read_from_gz_files(directory, pattern, skip_header=True):
+    """Creates generator yielding subsequent lines from compressed '.gz' files
 
-    import gzip
+    Lines from each file will be decoded to 'latin1' and read in chunk of 10000
+    lines each (to keep quite optimal memory usage / disk operations ratio),
+    what allows huge files to be read with this function.
+
+    Progress bar is embeded.
+    """
 
     files = get_files(directory, pattern)
 
@@ -53,10 +65,12 @@ def count_lines(filename):
 
 
 def parse_tsv_file(filename, parser, file_header=False):
-    """Utility function wraping file parser
+    """Utility function wraping tsv (tab-separated values) file parser.
 
-    It opens file, provides progress bar, and checks if the file header is the
-    same as given (if provided). For each line parser will be called.
+    It checks if the file header is the same as given (if provided).
+    For each line parser will be called.
+
+    Progress bar is embeded.
     """
     with open(filename) as f:
         header = f.readline().rstrip().split('\t')
@@ -68,17 +82,30 @@ def parse_tsv_file(filename, parser, file_header=False):
 
 
 def parse_fasta_file(filename, parser):
+    """Utility function wraping fasta file parser.
+
+    For each line parser will be called.
+
+    Progress bar is embeded.
+    """
     with open(filename) as f:
         for line in tqdm(f, total=count_lines(filename)):
             parser(line)
 
 
 def chunked_list(full_list, chunk_size=10000):
-    buffer = []
+    """Creates generator with `full_list` splited into chunks.
+
+    Each chunk will be no longer than `chunk_size` (the last chunk may have
+    less elements if provided `full_list` is not divisable by `chunk_size`).
+
+    Progress bar is embeded.
+    """
+    element_buffer = []
     for element in tqdm(full_list):
-        buffer.append(element)
-        if len(buffer) >= chunk_size:
-            yield buffer
-            buffer = []
-    if buffer:
-        yield buffer
+        element_buffer.append(element)
+        if len(element_buffer) >= chunk_size:
+            yield element_buffer
+            element_buffer = []
+    if element_buffer:
+        yield element_buffer

@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# rope
+.ropeproject
+
 # config data
 website/config.py
 
