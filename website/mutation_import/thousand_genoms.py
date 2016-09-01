@@ -1,7 +1,7 @@
 from models import The1000GenomesMutation
 from import_mutations import MutationImporter
 from import_mutations import make_metadata_ordered_dict
-from helpers.parsers import read_from_files
+from helpers.parsers import read_from_gz_files
 
 
 class Importer(MutationImporter):
@@ -47,7 +47,7 @@ class Importer(MutationImporter):
             'SAS_AF',
         )
 
-        for line in read_from_files(
+        for line in read_from_gz_files(
             path,
             'G1000_chr*.txt.gz',
             skip_header=False

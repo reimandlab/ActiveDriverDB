@@ -5,7 +5,7 @@ from collections import OrderedDict
 from database import db
 from helpers.bioinf import decode_mutation
 from helpers.parsers import chunked_list
-from helpers.parsers import read_from_files
+from helpers.parsers import read_from_gz_files
 from models import Mutation
 from models import Protein
 from sqlalchemy.orm.exc import NoResultFound
@@ -251,7 +251,7 @@ def import_mappings(proteins):
     bdb.reset()
     bdb_refseq.reset()
 
-    for line in read_from_files(
+    for line in read_from_gz_files(
         'data/200616/all_variants/playground',
         'annot_*.txt.gz'
     ):
