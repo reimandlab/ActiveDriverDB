@@ -1,3 +1,4 @@
+from collections import Counter
 from database import db
 from database import get_or_create
 from models import Cancer
@@ -13,7 +14,6 @@ class Importer(MutationImporter):
     default_path = 'data/mutations/TCGA_muts_annotated.txt'
 
     def parse(self, path):
-        from collections import Counter
         mutations_counter = Counter()
 
         def cancer_parser(line):
