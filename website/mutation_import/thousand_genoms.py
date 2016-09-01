@@ -69,7 +69,8 @@ class Importer(MutationImporter):
                 thousand_genoms_mutations.append(
                     (
                         mutation_id,
-                        # Python 3.5 makes it easy: **values, but is not avaialable
+                        # Python 3.5 makes it easy:
+                        # **values, but is not avaialable
                         values[0],
                         values[1],
                         values[2],
