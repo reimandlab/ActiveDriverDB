@@ -697,9 +697,16 @@ class InheritedMutation(MutationDetails, BioModel):
         uselist=True
     )
 
+    @cached_property
+    def informative_clin_data(self):
+        return (
+            entry for entry in self.clin_data
+            if entry.disease_name not in (None, 'not provided')
+        )
+
     @property
     def value(self):
-        return len(self.clin_data)
+        return len(self.informative_clin_data)
 
     @property
     def representation(self):
@@ -710,7 +717,7 @@ class InheritedMutation(MutationDetails, BioModel):
             'Is in PubMed Central': bool(self.is_in_pubmed_central),
             'Clinical': [
                 d.representation
-                for d in self.clin_data
+                for d in self.informative_clin_data
             ]
         }
 
