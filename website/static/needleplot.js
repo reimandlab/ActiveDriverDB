@@ -408,15 +408,16 @@ var NeedlePlot = function ()
                 {
                     text += meta + ':'
                     text += '<ul>'
+                    if(meta == 'TCGA')
+                    {
+                        text += '<li>TOTAL (' + d.value + ')'
+                    }
                     for(var column in d.meta[meta])
                     {
                         var value = d.meta[meta][column]
                         if(meta == 'TCGA')
                         {
-                            for(var i in value)
-                            {
-                                text += '<li>' + i + ': ' + value[i]
-                            }
+                            text += '<li>' + value['Cancer'] + ' (' + value['Value'] + ')'
                         }
                         else if(column === 'PWM')
                         {

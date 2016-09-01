@@ -107,6 +107,7 @@ class ProteinView(FlaskView):
                     datum.representation
                     for datum in source_specific_data
                 ]
+                meta[source].sort(key=lambda rep: rep['Value'], reverse=True)
             else:
                 meta[source] = source_specific_data.representation
             mimp = getattr(mutation, 'meta_MIMP')
