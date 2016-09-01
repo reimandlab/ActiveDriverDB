@@ -135,6 +135,12 @@ class MutationImporter(ABC):
         self.insert_details(mutation_details)
 
         db.session.commit()
+        if self.broken_seq:
+            print(
+                'Detected and skipped mutations with incorrectly mapped '
+                'reference sequences in % isoforms.' % len(self.broken_seq)
+            )
+        print('Loaded %s.' % self.model_name)
 
     @abstractmethod
     def parse(self):
