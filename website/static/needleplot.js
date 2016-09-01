@@ -16,6 +16,7 @@ var Tooltip = function()
                 .attr('class', 'tooltip')
                 .style('opacity', 0)
                 .style('pointer-events', 'none')
+
             if(custom_template !== undefined)
             {
                 _template = custom_template
@@ -46,6 +47,7 @@ var Tooltip = function()
         {
             publicSpace.unstick()
             publicSpace.show(d)
+            tooltip.style('pointer-events', 'auto')
             stuck = true
             d3.event.stopPropagation()
         },
@@ -53,6 +55,7 @@ var Tooltip = function()
         {
             stuck = false
             publicSpace.hide(true)
+            tooltip.style('pointer-events', 'none')
         },
         move: function()
         {
