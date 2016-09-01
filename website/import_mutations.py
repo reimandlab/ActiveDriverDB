@@ -27,8 +27,6 @@ def bulk_ORM_insert(model, keys, data):
         )
         db.session.flush()
 
-    db.session.commit()
-
 
 def bulk_raw_insert(table, keys, data, bind=None):
     engine = db.get_engine(app, bind)
@@ -36,13 +34,11 @@ def bulk_raw_insert(table, keys, data, bind=None):
         engine.execute(
             table.insert(),
             [
-                zip(keys, entry)
+                dict(zip(keys, entry))
                 for entry in chunk
             ]
         )
         db.session.flush()
-
-    db.session.commit()
 
 
 def make_metadata_ordered_dict(keys, metadata, get_from=None):
@@ -124,7 +120,7 @@ class MutationImporter(ABC):
 
     def load(self, path=None):
         self.base_mutations = {}
-        print('Loading', self.model_name, ':')
+        print('Loading %s:' % self.model_name)
         if not path:
             if not self.default_path:
                 raise Exception(
@@ -156,10 +152,10 @@ class MutationImporter(ABC):
         bulk_ORM_insert(self.model, self.insert_keys, data)
 
     def delete_all(self):
-        print('Removing', self.model_name, ':')
+        print('Removing %s:' % self.model_name)
         count = db.session.delete(self.model.query.all())
         db.session.commit()
-        print('Removed', count, self.model_name, '.')
+        print('Removed %s %s:' % (count, self.model_name))
 
     def get_or_make_mutation(self, pos, protein_id, alt, is_ptm):
 
