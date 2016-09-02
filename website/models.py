@@ -699,10 +699,10 @@ class InheritedMutation(MutationDetails, BioModel):
 
     @cached_property
     def informative_clin_data(self):
-        return (
+        return [
             entry for entry in self.clin_data
             if entry.disease_name not in (None, 'not provided')
-        )
+        ]
 
     @property
     def value(self):
