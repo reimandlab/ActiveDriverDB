@@ -8,16 +8,27 @@
   overflow: hidden
   margin-bottom: 20px
 
-.tooltip
-  background: rgba(80, 80, 80, 0.9)
-  color: #fff
-  padding: 5px 9px
-  border: 1px black
-  border-radius: 3px
+.popover
+  display: block!important
+  font-size: 12px!important
+  max-width: none!important
+
+  .wrapper
+    position: relative
 
   ul
     margin-bottom: 0
     padding-left: 20px
+
+  .popover-content
+    // margin leaves some space for the close button
+    margin-right: 12px
+
+  .close
+    position: absolute
+    top: 5px
+    right: 7px
+    font-size: 18px
 
 .site
   rect, path

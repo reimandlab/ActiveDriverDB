@@ -14,13 +14,17 @@ var Tooltip = function()
         {
             tooltip = d3.select('body')
                 .append('div')
-                .attr('class', 'tooltip')
+                .attr('class', 'tooltip popover')
                 .style('opacity', 0)
                 .style('pointer-events', 'none')
 
-            tooltip_content = tooltip
+            var wrapper = tooltip
                 .append('div')
-                .attr('class', 'content')
+                .attr('class', 'wrapper')
+
+            tooltip_content = wrapper
+                .append('div')
+                .attr('class', 'popover-content')
 
             if(custom_template !== undefined)
             {
@@ -30,8 +34,8 @@ var Tooltip = function()
                 .on('click.' + id, publicSpace.unstick)
 
             // create a close button
-            tooltip.append('a')
-                .attr('class', 'btn btn-xs btn-danger close')
+            wrapper.append('button')
+                .attr('class', 'close')
                 .html('x')
                 .on('mouseup', publicSpace.unstick)
         },
