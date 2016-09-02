@@ -303,11 +303,25 @@ var NeedlePlot = function ()
                 // we have to avoid exact 0 on scale_min
                 .domain([config.y_scale_min || Number.MIN_VALUE, config.y_scale_max])
 
+        }
+        else
+        {
+            axes.y.scale = d3.scale.linear()
+                .domain([0, config.y_scale_max])
+        }
+
+        axes.y.scale.
+            nice()
+
+        if(config.use_log)
+        {
             var cnt = -1
             var labels_count_in_log = config.height / 40
             var ticks_cnt = axes.y.scale.ticks().length
-            config.log_ticks_per_label = Math.round(ticks_cnt / labels_count_in_log)
-            //TODO does not work e.g. with CDK1 and other small freq. proteins console.log()
+            if (ticks_cnt > labels_count_in_log)
+                config.log_ticks_per_label = Math.round(ticks_cnt / labels_count_in_log)
+            else
+                config.log_ticks_per_label = ticks_cnt
 
             function log_ticks_format(d){
                 cnt += 1
@@ -324,28 +338,17 @@ var NeedlePlot = function ()
                     return d3.format('.1%')(d)
                 return d3.format('%')(d)
             }
-
         }
-        else
-        {
-            axes.y.scale = d3.scale.linear()
-                .domain([0, config.y_scale_max])
-        }
-
-        axes.y.scale.
-            nice()
 
         axes.y.obj = d3.svg.axis()
             .orient('left')
             .scale(axes.y.scale)
 
         var format = !config.use_log ? d3.format('d') : log_ticks_format
-        var sub_div = !config.use_log ? 0 : 5
 
         axes.y.obj
-            .ticks(10)
             .tickFormat(format)
-            //.tickSubdivide(sub_div)
+            .tickSubdivide(0)
 
         axes.y.group = paddings.append('g')
 			.attr('class', 'y axis')
@@ -422,7 +425,6 @@ var NeedlePlot = function ()
                         else if(column === 'PWM')
                         {
                             var pos = d.meta[meta]['Position in motif']
-                            console.log(pos)
                             text += '<li class="mimp-logo">' + '<img src="/static/mimp/logos/' + value + '.svg">'
                             text += '<div class="mimp-outline ' + d.meta[meta]['Effect'] + '" style="left:' + ((7 + pos) * 22 + 47) + 'px"></div>'
                         }
