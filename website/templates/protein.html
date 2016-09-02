@@ -95,7 +95,7 @@ Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alterna
             max_zoom: max_zoom,
             element: document.getElementById('plot_area'),
             mutations: '{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.active.url_string) }}',
-            sites: '{{ url_for('ProteinView:sites', refseq=protein.refseq) }}',
+            sites: {{ sites | safe or '"' + url_for('ProteinView:sites', refseq=protein.refseq) + '"' }},
             sequenceLength: {{ protein.sequence | length }},
             name: '{{ protein.gene.name }}',
             legends:

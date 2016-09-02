@@ -22,6 +22,10 @@ def get_source_field(filters):
     return source_field_name
 
 
+def get_response_content(response):
+    return response.get_data().decode('ascii')
+
+
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
@@ -82,7 +86,7 @@ class ProteinView(FlaskView):
         return template(
             'protein.html', protein=protein, tracks=tracks,
             filters=filters, mutations=mutations, value_type=val_type,
-            log_scale=(val_type == 'Frequency')
+            log_scale=(val_type == 'Frequency'), sites=get_response_content(self.sites(refseq))
         )
 
     def mutations(self, refseq):
