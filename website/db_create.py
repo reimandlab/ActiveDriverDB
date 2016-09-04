@@ -7,6 +7,7 @@ from database import db
 from models import Page
 from models import User
 import import_mutations
+from getpass import getpass
 
 
 def reset_relational_db(**kwargs):
@@ -121,7 +122,7 @@ if __name__ == '__main__':
             print('Index page created')
             print('Creating root user account')
             email = input('Please type root email: ')
-            password = input('Please type root password: ')
+            password = getpass('Please type root password: ')
             root = User(email, password)
             db.session.add(root)
             db.session.commit()
