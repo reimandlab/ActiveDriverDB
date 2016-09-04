@@ -3,7 +3,7 @@ import base64
 import os
 
 """
-NOTE: On deplyment, always make sure, that passlib is installed in secure place,
+On deplyment, always make sure, that passlib is installed in secure place,
 and that the installation of the package is valid.
 """
 
