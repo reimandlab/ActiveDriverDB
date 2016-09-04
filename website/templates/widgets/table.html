@@ -27,7 +27,7 @@
     </thead>
     <tbody>
 		{% for mutation in mutations or '' %}
-        <tr>
+        <tr class="{{ mutation.category }}">
             <td>{{ mutation.coord }}</td>
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
