@@ -7,7 +7,9 @@
   {# TinyMCE #}
   <script src="//cdn.tinymce.com/4/tinymce.min.js"></script>
   {# <script src="/static/thirdparty/tinymce/tinymce.min.js"></script> #}
-  <script>tinymce.init({ selector:'textarea' })</script>
+  {% assets "js_cms_editor" %}
+    <script src="{{ ASSET_URL }}"></script>
+  {% endassets %}
 {% endblock %}
 
 {% set title = 'Add page' %}

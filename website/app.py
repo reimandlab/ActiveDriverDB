@@ -55,6 +55,10 @@ bundles = {
         filters='rjsmin',
         output='min/networkView.js'
     ),
+    'js_cms_editor': Bundle(
+        'cms_editor.js',
+        output='min/editor.js'
+    ),
     'css_common': css_bundle(
         'style',
         'sass/style.css'
