@@ -183,12 +183,25 @@ class MutationImporter(ABC):
         return mutation_id
 
     def preparse_mutations(self, line):
+        """Preparse mutations from a line of Annovar annotation file.
+
+        Given line should be already splited by correct separator (usually
+        tabubator sign). The mutations will be extracted from 10th field.
+        The function gets first semicolon separated impact-list, and splits
+        the list by commas. The redundancy of semicolon separated imapct-lists
+        is guaranteed in the data by check_semicolon_separated_data_redundancy
+        test from `test_data.py` script.
+
+        For more explanation, check #43 issue on GitHub.
+        """
         for mutation in [
             m.split(':')
-            for m in line[9].replace(';', ',').split(',')
+            for m in line[9].split(';')[0].split(',')
         ]:
             refseq = mutation[1]
 
+            # if the mutation affects a protein
+            # which is not in our dataset, skip it
             try:
                 protein = self.proteins[refseq]
             except KeyError:
