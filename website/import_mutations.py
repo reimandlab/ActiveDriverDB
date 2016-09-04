@@ -170,7 +170,7 @@ class MutationImporter(ABC):
             db.session.rollback()
             print('Removing failed')
             raise
-        print('Removed %s entries of %s:' % (count, self.model_name))
+        print('Removed %s entries of %s' % (count, self.model_name))
 
     def get_or_make_mutation(self, pos, protein_id, alt, is_ptm):
 

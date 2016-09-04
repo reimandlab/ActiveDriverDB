@@ -28,7 +28,10 @@ def get_human_chromosomes():
 def decode_mutation(mut):
     """Return tuple with: reference residue, position and alternative residue.
 
-    Also, if assertions are enabled checks correctnes of the mutation.
+    Also, if assertions are enabled checks correctnes of the mutation string.
+
+    An example input string for this function is: p.R252H.
+    No assertion about source of mutations is made: you can use c.C110T as well
     """
     assert mut[1] == '.'
     result = (mut[2], int(mut[3:-1]), mut[-1])
@@ -36,6 +39,12 @@ def decode_mutation(mut):
 
 
 def decode_raw_mutation(mut):
-    """Return tuple with: reference residue, position and alternative residue."""
+    """Return tuple with: reference residue, position and alternative residue.
+
+    An example input string for this function is: R252H, where:
+        R is reference residue,
+        252 is position of mutation,
+        H is alternative residue,
+    """
     result = (mut[0], int(mut[1:-1]), mut[-1])
     return result
