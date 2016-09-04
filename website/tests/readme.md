@@ -1,10 +1,17 @@
 **How to test**
 
-Just use nosetests, from main project directory:
+Tests are compatibile with both nose and pytest, but pytest does not require extra configuration to start.
 
-`~/alike$ nosetests`
+To run tests with pytest, type:
+```bash
+~/website$ python3 -m pytest
+```
 
 
-**Installation**
+**Tools installation**
 
-`pip install nose`
+Both nose and pytests are not installed by default. To get them, use pip3:
+
+```bash
+pip3 install nose pytest
+```
