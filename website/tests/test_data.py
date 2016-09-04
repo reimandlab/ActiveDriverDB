@@ -3,7 +3,7 @@ def check_semicolon_separated_data_redundancy(path):
         for line in f:
             data = line.split('\t')
             mutation_field_elements = data[9].split(';')
-            assert len(set(mutation_field_elements)) != 1
+            assert len(set(mutation_field_elements)) == 1
 
 
 def test_data_assertions():
