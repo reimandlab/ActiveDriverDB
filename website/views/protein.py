@@ -52,7 +52,7 @@ class ProteinView(FlaskView):
         disorder = [
             TrackElement(*region) for region in protein.disorder_regions
         ]
-        mutations = active_filters.filtered(protein.mutations)
+        raw_mutations = active_filters.filtered(protein.mutations)
 
         tracks = [
             PositionTrack(protein.length, 25),
@@ -70,37 +70,68 @@ class ProteinView(FlaskView):
                     for domain in protein.domains
                 ]
             ),
-            MutationsTrack(mutations)
+            MutationsTrack(raw_mutations)
         ]
 
         filters = Filters(active_filters, self.allowed_filters)
 
         if filters.active.sources in ('TCGA', 'ClinVar'):
-            val_type = 'Count'
+            value_type = 'Count'
         else:
-            val_type = 'Frequency'
+            value_type = 'Frequency'
 
         # repeated on purpose
-        mutations = active_filters.filtered(protein.mutations)
+        raw_mutations = active_filters.filtered(protein.mutations)
+
+        parsed_mutations = self._represent_mutations(
+            raw_mutations,
+            active_filters.sources,
+            get_source_field(active_filters)
+        )
 
         return template(
             'protein.html', protein=protein, tracks=tracks,
-            filters=filters, mutations=mutations, value_type=val_type,
-            log_scale=(val_type == 'Frequency'), sites=get_response_content(self.sites(refseq))
+            filters=filters, value_type=value_type,
+            log_scale=(value_type == 'Frequency'),
+            mutations=parsed_mutations,
+            sites=get_response_content(self.sites(refseq)),
         )
 
     def mutations(self, refseq):
         """List of mutations suitable for needleplot library"""
+
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-        filters = request.args.get('filters', '')
-        filters = FilterSet.from_string(filters)
+        active_filters = FilterSet.from_request(request)
+
+        raw_mutations = active_filters.filtered(protein.mutations)
+
+        parsed_mutations = self._represent_mutations(
+            raw_mutations,
+            active_filters.sources,
+            get_source_field(active_filters)
+        )
+
+        return jsonify(parsed_mutations)
+
+    def sites(self, refseq):
+        """List of sites suitable for needleplot library"""
+
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+
+        response = [
+            {
+                'start': site.position - 7,
+                'end': site.position + 7,
+                'type': str(site.type)
+            } for site in protein.sites
+        ]
+
+        return jsonify(response)
+
+    @staticmethod
+    def _represent_mutations(mutations, source, source_field_name):
 
         response = []
-
-        mutations = list(filter(filters.test, protein.mutations))
-
-        source = filters.sources
-        source_field_name = get_source_field(filters)
 
         def get_metadata(mutation):
             nonlocal source_field_name, source
@@ -142,19 +173,4 @@ class ProteinView(FlaskView):
             }
             response += [needle]
 
-        return jsonify(response)
-
-    def sites(self, refseq):
-        """List of sites suitable for needleplot library"""
-
-        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-
-        response = [
-            {
-                'start': site.position - 7,
-                'end': site.position + 7,
-                'type': str(site.type)
-            } for site in protein.sites
-        ]
-
-        return jsonify(response)
+        return response
