@@ -39,7 +39,7 @@ if __name__ == '__main__':
         help='should mappings (DNA -> protein) be (re)imported'
     )
     parser.add_argument(
-        '-r',
+        '-b',
         '--reload_biological',
         action='store_true',
         help='should biological database be (re)imported.'
@@ -51,38 +51,51 @@ if __name__ == '__main__':
         help='should Content Managment System database be (re)created'
     )
     parser.add_argument(
-        '-m',
-        '--only_mutations',
+        '-l',
+        '--load_mutations',
         action='store_true',
         help='should mutations be loaded without db restart?'
     )
-    importers = import_mutations.get_importers().keys()
+    importers = import_mutations.get_all_importers().keys()
     parser.add_argument(
-        '-t',
-        '--mutations_to_load',
+        '-m',
+        '--mutation_sources',
         nargs='*',
-        help='Which mutations should be loaded? Available sources are: ' +
-        ', '.join(importers) + '. By default all will be loaded.',
+        help=(
+            'Which mutations should be loaded or removed?'
+            ' Available sources are: ' + ', '.join(importers) + '.'
+            ' By default all mutations will be used.'
+        ),
         choices=importers,
         metavar='',
         default='__all__',
     )
+    parser.add_argument(
+        '-r',
+        '--remove_mutations',
+        action='store_true',
+        help='should only mutations be removed without db restart?'
+    )
 
     args = parser.parse_args()
 
-    if args.only_mutations:
-        print('Importing mutations')
+    if args.remove_mutations:
+        with import_data.app.app_context():
+            import_mutations.remove_mutations(args.mutation_sources)
+
+    if args.load_mutations:
         with import_data.app.app_context():
             proteins = import_mutations.get_proteins()
             mutations = import_mutations.load_mutations(
                 proteins,
-                args.mutations_to_load
+                args.mutation_sources
             )
-    else:
+
+    if not args.load_mutations and not args.remove_mutations:
         if args.reload_biological:
             reset_relational_db(bind='bio')
             print('Importing data')
-            import_data.import_data(args.mutations_to_load)
+            import_data.import_data(args.mutation_sources)
 
         if args.import_mappings:
             reset_mappings_db()

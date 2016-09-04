@@ -9,6 +9,7 @@ from helpers.parsers import read_from_gz_files
 from models import Mutation
 from models import Protein
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import SQLAlchemyError
 from app import app
 
 
@@ -160,10 +161,16 @@ class MutationImporter(ABC):
         bulk_ORM_insert(self.model, self.insert_keys, data)
 
     def delete_all(self):
+
         print('Removing %s:' % self.model_name)
-        count = db.session.delete(self.model.query.all())
-        db.session.commit()
-        print('Removed %s %s:' % (count, self.model_name))
+        try:
+            count = self.model.query.delete()
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
+            print('Removing failed')
+            raise
+        print('Removed %s entries of %s:' % (count, self.model_name))
 
     def get_or_make_mutation(self, pos, protein_id, alt, is_ptm):
 
@@ -225,7 +232,7 @@ class MutationImporter(ABC):
             yield mutation_id
 
 
-def get_importers():
+def get_all_importers():
     import imp
     import os
     from helpers.parsers import get_files
@@ -239,15 +246,45 @@ def get_importers():
     return importers
 
 
-def load_mutations(proteins, to_import='__all__'):
+def select_importers(restrict_to='__all__'):
+    importers = get_all_importers()
+    if restrict_to == '__all__':
+        return importers
+    return {
+        name: importer
+        for name, importer in importers.items()
+        if name in restrict_to
+    }
 
-    importers = get_importers()
+
+def explain_current_action(action, sources):
+    print('{action} mutations from: {sources} source{suffix}'.format(
+        action=action,
+        sources=', '.join(sources),
+        suffix='s' if len(sources) > 1 else ''
+    ))
+
+
+def load_mutations(proteins, sources='__all__'):
+    explain_current_action('Loading', sources)
+
+    importers = select_importers(restrict_to=sources)
+
     for name, module in importers.items():
-        if to_import != '__all__' and name not in to_import:
-            continue
         module.Importer().load()
 
     print('Mutations loaded')
+
+
+def remove_mutations(sources='__all__'):
+    explain_current_action('Removing', sources)
+
+    importers = select_importers(restrict_to=sources)
+
+    for name, module in importers.items():
+        module.Importer().delete_all()
+
+    print('Mutations removed')
 
 
 def import_mappings(proteins):
