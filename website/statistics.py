@@ -1,3 +1,4 @@
+from database import db
 import models
 
 
@@ -21,7 +22,11 @@ class Statistics:
                 'all_confirmed': self.all_confirmed_mutations(),
                 'clinvar': self.count(models.InheritedMutation),
                 'esp': self.count(models.ExomeSequencingMutation),
-                'cancer': self.count(models.CancerMutation),
+                'cancer': db.session.query(models.Mutation).filter(
+                    models.Mutation.meta_cancer.any()
+                ).count(),
+                # each mutation can have multiple cancer annotations
+                'cancer_annotations': self.count(models.CancerMutation),
                 'thousand_genomes': self.count(models.The1000GenomesMutation),
                 'mimp': self.count(models.MIMPMutation),
             },
