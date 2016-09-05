@@ -6,6 +6,8 @@
     </div>
 {%- endmacro %}
 
+{% set source = filters.active.sources %}
+
 <div id="toolbar"></div>
 
 <table
@@ -25,17 +27,18 @@
             <th data-sortable=true>Reference</th>
             <th data-sortable=true>Mutated</th>
             <th data-sortable=true
+                data-visible={{ (source not in ('1KGenomes', 'ESP6500')) | string | lower }}
                 data-switchable=true>{{ value_type }}</th>
             <th data-sortable=true
                 data-switchable=true>Mutation type</th>
             <th data-sortable=true
-                data-visible={{ filters.active.is_ptm|lower }}>Impact on PTM</th>
+                data-visible={{ filters.active.is_ptm | lower }}>Impact on PTM</th>
             <th data-sortable=true
-                data-visible={{ filters.active.is_ptm|lower }}># PTMs affected</th>
+                data-visible={{ filters.active.is_ptm | lower }}># PTMs affected</th>
             <th data-sortable=true
                 data-visible=false>Closest affected site(s)</th>
             {% if mutations %}
-            {% for metadata_colum in mutations[0].meta[filters.active.sources].keys() %}
+            {% for metadata_colum in mutations[0].meta[source].keys() %}
                 <th data-sortable=true
                     data-switchable=true>{{ metadata_colum }}</th>
             {% endfor %}
@@ -44,7 +47,7 @@
     </thead>
     <tbody>
 		{% for mutation in mutations or '' %}
-        {% set metadata=mutation.meta[filters.active.sources] %}
+        {% set metadata = mutation.meta[source] %}
         <tr class="{{ mutation.category }}" id="{{ mutation.coord }}{{ mutation.alt }}">
             <td>{{ mutation.coord }}</td>
             <td>{{ mutation.ref }}</td>
