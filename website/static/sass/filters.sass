@@ -3,12 +3,8 @@
 $background: rgba(255, 255, 255, 0.8)
 
 .filters-panel
-  position: absolute
-  right: 10px
-  top: 100px
   background: $background
   z-index: 1
-  opacity: 0.25
 
   &:hover
     opacity: 1
@@ -24,13 +20,6 @@ $background: rgba(255, 255, 255, 0.8)
 
   div
     background: $background
-
-  @media #{$under-tablet}
-    position: static
-
-.docked
-  position: static
-  opacity: 1
 
 .filters
   ul
