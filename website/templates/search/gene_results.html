@@ -22,7 +22,7 @@
       <a href="{{ url_for('NetworkView:show', refseq=isoform.refseq) }}" class="{{ 'inactive' if not interactors }}">
       Site-specific PTM interaction network
       {% if interactors %}
-        ({{ interactors }} interactors)
+        ({{ interactors }} PTM enzymes)
       {% endif %}
     </a>
   </div>
