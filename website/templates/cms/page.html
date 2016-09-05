@@ -16,7 +16,7 @@
   <h3>{{ page.title }}</h3>
 
   <div class="page-content">
-    {{ page.content | safe }}
+    {{ page.content | safe | substitute_allowed_variables | safe }}
   </div>
 {% endblock %}
 

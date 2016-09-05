@@ -29,20 +29,6 @@ for name, bundle in bundles.items():
 
 
 """
-Register functions for Jinja
-"""
-
-import csrf
-import json
-
-app.jinja_env.trim_blocks = True
-app.jinja_env.lstrip_blocks = True
-
-app.jinja_env.globals['csrf_token'] = csrf.new_csrf_token
-
-app.jinja_env.filters['json'] = json.dumps
-
-"""
 Import viwes
 """
 
@@ -58,3 +44,20 @@ ProteinView.register(app)
 NetworkView.register(app)
 SearchView.register(app)
 ContentManagmentSystem.register(app)
+
+
+"""
+Register functions for Jinja
+"""
+
+from website.views.cms import substitute_variables
+import csrf
+import json
+
+app.jinja_env.trim_blocks = True
+app.jinja_env.lstrip_blocks = True
+
+app.jinja_env.globals['csrf_token'] = csrf.new_csrf_token
+
+app.jinja_env.filters['json'] = json.dumps
+app.jinja_env.filters['substitute_allowed_variables'] = substitute_variables

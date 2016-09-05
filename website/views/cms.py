@@ -15,6 +15,12 @@ from app import login_manager
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import IntegrityError
+from statistics import STATISTICS
+
+
+USER_ACCESSIBLE_VARIABLES = {
+    'stats': STATISTICS,
+}
 
 
 PAGE_COLUMNS = ('title', 'address', 'content')
@@ -56,6 +62,23 @@ def update_obj_with_dict(instance, dictionary):
 
 def dict_subset(dictionary, keys):
     return {k: v for k, v in dictionary.items() if k in keys}
+
+
+def replace_allowed_object(match_obj):
+    object_name = match_obj.group(1).strip()
+    element = USER_ACCESSIBLE_VARIABLES
+    for accessor in object_name.split('.'):
+        if accessor in element:
+            element = element[accessor]
+        else:
+            return '&lt;unknown variable: {}&gt;'.format(object_name)
+    return str(element)
+
+
+def substitute_variables(string):
+    import re
+    pattern = '\{\{ (.*?) \}\}'
+    return re.sub(pattern, replace_allowed_object, string)
 
 
 class ContentManagmentSystem(FlaskView):
