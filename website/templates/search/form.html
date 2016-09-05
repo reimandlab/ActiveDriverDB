@@ -39,7 +39,7 @@
   {% elif target == 'mutations' %}
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     {# TODO: the example should return more representative results #}
-    {% set example='HTR3E I183823756M\nSTAT6 W737C\nchr12 57490358 C A' %}
+    {% set example='HTR3E I183823756M\nSTAT6 W737C\nchr12 57490358 C A\nTP53 R282W\nBRCA1 L432V' %}
     <div class="options">
       <span class="btn btn-default btn-file">
         Select VCF file  <input type="file" name="mutations-file">
