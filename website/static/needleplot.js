@@ -430,15 +430,17 @@ var NeedlePlot = function ()
                 }
                 for(var meta in d.meta)
                 {
+                    var meta_value = d.meta[meta]
                     text += meta + ':'
                     text += '<ul>'
                     if(meta == 'TCGA')
                     {
+                        meta_value = d.meta[meta]['TCGA metadata']
                         text += '<li>TOTAL (' + d.value + ')'
                     }
-                    for(var column in d.meta[meta])
+                    for(var column in meta_value)
                     {
-                        var value = d.meta[meta][column]
+                        var value = meta_value[column]
                         if(meta == 'TCGA')
                         {
                             text += '<li>' + value['Cancer'] + ' (' + value['Value'] + ')'

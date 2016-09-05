@@ -21,12 +21,17 @@
                 data-visible={{ filters.active.is_ptm|lower }}>Impact on PTM</th>
             <th data-sortable=true
                 data-visible={{ filters.active.is_ptm|lower }}># PTMs affected</th>
-            <th data-sortable=true
-                data-switchable=true>Metadata</th>
+            {% if mutations %}
+            {% for metadata_colum in mutations[0].meta[filters.active.sources].keys() %}
+                <th data-sortable=true
+                    data-switchable=true>{{ metadata_colum }}</th>
+            {% endfor %}
+            {% endif %}
         </tr>
     </thead>
     <tbody>
 		{% for mutation in mutations or '' %}
+        {% set metadata=mutation.meta[filters.active.sources] %}
         <tr class="{{ mutation.category }}">
             <td>{{ mutation.coord }}</td>
             <td>{{ mutation.ref }}</td>
@@ -35,7 +40,21 @@
             <td>{{ 'PTM' if mutation.is_ptm else 'non-PTM' }}</td>
             <td>{{ mutation.impact_on_ptm or '' }}</td>
             <td>{{ mutation.cnt_ptm_affected }}</td>
-            <td>{{ mutation.meta }}</td>
+            {% for column in metadata.values() %}
+                <td>
+                    {% if column is sequence and column is not string %}
+                        {% for entry in column %}
+                            <div class="sub-cell">
+                                {% for key, value in entry.items() %}
+                                    {{ key }}: {{ value }}<br>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        {{ column }}
+                    {% endif %}
+                </td>
+            {% endfor %}
         </tr>
 		{% endfor %}
     </tbody>

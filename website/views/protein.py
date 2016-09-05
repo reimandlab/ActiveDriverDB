@@ -138,11 +138,17 @@ class ProteinView(FlaskView):
             meta = {}
             source_specific_data = getattr(mutation, source_field_name)
             if isinstance(source_specific_data, list):
-                meta[source] = [
-                    datum.representation
-                    for datum in source_specific_data
-                ]
-                meta[source].sort(key=lambda rep: rep['Value'], reverse=True)
+                meta[source] = {
+                    source + ' metadata':
+                    [
+                        datum.representation
+                        for datum in source_specific_data
+                    ]
+                }
+                meta[source][source + ' metadata'].sort(
+                    key=lambda rep: rep['Value'],
+                    reverse=True
+                )
             else:
                 meta[source] = source_specific_data.representation
             mimp = getattr(mutation, 'meta_MIMP')
