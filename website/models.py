@@ -1,6 +1,7 @@
 from collections import defaultdict
 from database import db
 from sqlalchemy import and_
+from sqlalchemy import or_
 from sqlalchemy import func
 from sqlalchemy.sql import exists, select
 from sqlalchemy.ext.declarative import declared_attr
@@ -454,7 +455,7 @@ class Mutation(BioModel):
                 sources.append(source_name)
         return sources
 
-    @cached_property
+    @hybrid_property
     def is_confirmed(self):
         """Mutation is confirmed if there are metadata from one of four studies
 
@@ -466,6 +467,23 @@ class Mutation(BioModel):
             self.meta_inherited or
             self.meta_ESP6500 or
             self.meta_1KG
+        )
+
+    @is_confirmed.expression
+    def is_confirmed(self):
+        """SQL expression for is_confirmed"""
+        return or_(
+            or_(
+                (
+                    relationship.has()
+                    for relationship in (
+                        self.meta_inherited,
+                        self.meta_ESP6500,
+                        self.meta_1KG,
+                    )
+                ),
+            ),
+            self.meta_cancer.any()
         )
 
     @cached_property

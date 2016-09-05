@@ -6,6 +6,9 @@ class Statistics:
     def count(self, model):
         return model.query.count()
 
+    def all_confirmed_mutations(self):
+        return models.Mutation.query.filter_by(is_confirmed=True).count()
+
     def get_all(self):
         return {
             'proteins': self.count(models.Protein),
@@ -13,7 +16,9 @@ class Statistics:
             'kinases': self.count(models.Kinase),
             'kinase_groups': self.count(models.KinaseGroup),
             'mutations': {
+                # both confirmed and MIMP mutations
                 'all': self.count(models.Mutation),
+                'all_confirmed': self.all_confirmed_mutations(),
                 'clinvar': self.count(models.InheritedMutation),
                 'esp': self.count(models.ExomeSequencingMutation),
                 'cancer': self.count(models.CancerMutation),
