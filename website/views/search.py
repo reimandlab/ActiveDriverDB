@@ -5,10 +5,12 @@ from flask_classful import FlaskView
 from flask_classful import route
 from Levenshtein import distance
 from models import Protein
+from models import Mutation
 from models import Gene
 from database import bdb, bdb_refseq
 from database import make_snv_key
 from database import decode_csv
+from database import get_or_create
 
 
 class GeneResult:
@@ -169,17 +171,30 @@ class SearchView(FlaskView):
 
                         refseqs = bdb_refseq[gene + ' ' + ref + pos + alt]
 
-                        items = [
-                            {
-                                'protein': Protein.query.filter_by(
-                                    refseq=refseq
-                                ).one(),
-                                'ref': ref,
-                                'alt': alt,
-                                'pos': pos
-                            }
-                            for refseq in refseqs
-                        ]
+                        items = []
+
+                        for refseq in refseqs:
+
+                            protein = Protein.query.filter_by(
+                                refseq=refseq
+                            ).one()
+
+                            mutation, created = get_or_create(
+                                Mutation,
+                                protein_id=protein.id,
+                                position=pos,
+                                alt=alt
+                            )
+
+                            items.append(
+                                {
+                                    'protein': protein,
+                                    'ref': ref,
+                                    'alt': alt,
+                                    'pos': pos,
+                                    'is_ptm': mutation.is_ptm
+                                }
+                            )
                     else:
                         badly_formatted.append(line)
                         continue
