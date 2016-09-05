@@ -48,13 +48,13 @@
     <tbody>
 		{% for mutation in mutations or '' %}
         {% set metadata = mutation.meta[source] %}
-        <tr class="{{ mutation.category }}" id="{{ mutation.coord }}{{ mutation.alt }}">
+        <tr id="{{ mutation.coord }}{{ mutation.alt }}">
             <td>{{ mutation.coord }}</td>
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
             <td>{{ mutation.value }}</td>
             <td>{{ 'non-PTM' if mutation.category == 'none' else 'PTM' }}</td>
-            <td>{{ mutation.category or '' }}</td>
+            <td class="{{ mutation.category or '' }}">{{ mutation.category or '' }}</td>
             <td>{{ mutation.cnt_ptm }}</td>
             <td>
                 {% for site in mutation.sites %}
