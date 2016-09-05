@@ -17,6 +17,7 @@ bundles = {
     ),
     'js_protein_view': Bundle(
         'common.js',
+        'table.js',
         'needleplot.js',
         'filters.js',
         'tracks.js',

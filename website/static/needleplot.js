@@ -469,6 +469,8 @@ var NeedlePlot = function ()
                     }
                     text += '</ul>'
                 }
+                var row_id = d.coord + d.alt
+                text += '<a href="#' + row_id + '" onclick="mutation_table.expandRow(\'' + row_id + '\')">show in table</a>'
                 return text
             },
             'needle'

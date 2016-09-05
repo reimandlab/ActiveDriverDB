@@ -1,13 +1,24 @@
+{% macro represent_dict(dict, class='mappings') -%}
+    <div class="{{ class }}">
+    {% for key, value in dict.items() %}
+        {{ key }}: {{ value }}<br>
+    {% endfor %}
+    </div>
+{%- endmacro %}
+
 <div id="toolbar"></div>
 
-<table class="table"
-       data-toolbar="#toolbar"
-       data-toggle="table"
-       data-search="true"
-       data-show-columns="true"
-       data-minimum-count-columns="2"
-       data-show-export="true"
-       >
+<table
+    id="{{ table_id or '' }}"
+    class="table"
+    data-toolbar="#toolbar"
+    data-toggle="table"
+    data-search="true"
+    data-show-columns="true"
+    data-minimum-count-columns="2"
+    data-show-export="true"
+    data-detail-view="true"
+>
     <thead>
         <tr>
             <th data-sortable=true>Position</th>
@@ -21,6 +32,8 @@
                 data-visible={{ filters.active.is_ptm|lower }}>Impact on PTM</th>
             <th data-sortable=true
                 data-visible={{ filters.active.is_ptm|lower }}># PTMs affected</th>
+            <th data-sortable=true
+                data-visible=false>Closest affected site(s)</th>
             {% if mutations %}
             {% for metadata_colum in mutations[0].meta[filters.active.sources].keys() %}
                 <th data-sortable=true
@@ -32,23 +45,24 @@
     <tbody>
 		{% for mutation in mutations or '' %}
         {% set metadata=mutation.meta[filters.active.sources] %}
-        <tr class="{{ mutation.category }}">
+        <tr class="{{ mutation.category }}" id="{{ mutation.coord }}{{ mutation.alt }}">
             <td>{{ mutation.coord }}</td>
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
             <td>{{ mutation.value }}</td>
             <td>{{ 'non-PTM' if mutation.category == 'none' else 'PTM' }}</td>
             <td>{{ mutation.category or '' }}</td>
-            <td>{{ mutation.sites | length }}</td>
+            <td>{{ mutation.cnt_ptm }}</td>
+            <td>
+                {% for site in mutation.sites %}
+                    {{ represent_dict(site, class='sub-cell') }}
+                {% endfor %}
+            </td>
             {% for column in metadata.values() %}
                 <td>
                     {% if column is sequence and column is not string %}
                         {% for entry in column %}
-                            <div class="sub-cell">
-                                {% for key, value in entry.items() %}
-                                    {{ key }}: {{ value }}<br>
-                                {% endfor %}
-                            </div>
+                            {{ represent_dict(entry, class='sub-cell') }}
                         {% endfor %}
                     {% else %}
                         {{ column }}

@@ -175,7 +175,8 @@ class ProteinView(FlaskView):
                 'sites': [
                     site.representation
                     for site in mutation.find_closest_sites()
-                ]
+                ],
+                'cnt_ptm': mutation.cnt_ptm_affected
             }
             response += [needle]
 

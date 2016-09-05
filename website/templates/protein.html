@@ -67,7 +67,7 @@ Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alterna
     <li><a href="{{ url_for('NetworkView:show', refseq=protein.refseq) }}">Show network</a>
 </ul>
 
-{% with mutations=mutations %}
+{% with mutations=mutations, table_id='table' %}
   {% include 'widgets/table.html' %}
 {% endwith %}
 
@@ -102,6 +102,8 @@ Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alterna
             position_callback: tracks.setAAPosition,
             width: $('#tracks-box').width()
         }
+        var mutation_table = MutationTable()
+        mutation_table.init($('#table'))
         var needle_plot = NeedlePlot()
         needle_plot.init(params)
         tracks.setNeedlePlotInstance(needle_plot)
