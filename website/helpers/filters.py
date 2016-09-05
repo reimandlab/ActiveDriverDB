@@ -259,7 +259,7 @@ class FilterSet:
         if not key:
             key = lambda x: x
 
-        return filter(lambda elem: self.test(key(elem)), iterable)
+        return list(filter(lambda elem: self.test(key(elem)), iterable))
 
     def filter_query(self, query, model):
         """NOT IN USE: Returns modified SQLAlchemy query with filters appended

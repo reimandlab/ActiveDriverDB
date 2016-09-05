@@ -46,6 +46,7 @@ class ProteinView(FlaskView):
         + tracks (seuqence + data tracks)
         """
         active_filters = FilterSet.from_request(request)
+        filters = Filters(active_filters, self.allowed_filters)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
@@ -73,15 +74,10 @@ class ProteinView(FlaskView):
             MutationsTrack(raw_mutations)
         ]
 
-        filters = Filters(active_filters, self.allowed_filters)
-
         if filters.active.sources in ('TCGA', 'ClinVar'):
             value_type = 'Count'
         else:
             value_type = 'Frequency'
-
-        # repeated on purpose
-        raw_mutations = active_filters.filtered(protein.mutations)
 
         parsed_mutations = self._represent_mutations(
             raw_mutations,
