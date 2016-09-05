@@ -583,7 +583,7 @@ class Mutation(BioModel):
 
         found_sites = set()
 
-        for i in range(distance):
+        for i in range(distance + 1):
             if pos + i in sites:
                 found_sites.add(sites[pos + i])
             if pos - i in sites:

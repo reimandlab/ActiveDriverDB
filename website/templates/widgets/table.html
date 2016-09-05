@@ -37,9 +37,9 @@
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
             <td>{{ mutation.value }}</td>
-            <td>{{ 'PTM' if mutation.is_ptm else 'non-PTM' }}</td>
-            <td>{{ mutation.impact_on_ptm or '' }}</td>
-            <td>{{ mutation.cnt_ptm_affected }}</td>
+            <td>{{ 'non-PTM' if mutation.category == 'none' else 'PTM' }}</td>
+            <td>{{ mutation.category or '' }}</td>
+            <td>{{ mutation.sites | length }}</td>
             {% for column in metadata.values() %}
                 <td>
                     {% if column is sequence and column is not string %}
