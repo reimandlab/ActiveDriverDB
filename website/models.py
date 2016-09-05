@@ -404,7 +404,10 @@ class Mutation(BioModel):
     a site (called here 'distal') will be included too.
     """
 
-    meta_cancer = mutation_details_relationship('CancerMutation', use_list=True)
+    meta_cancer = mutation_details_relationship(
+        'CancerMutation',
+        use_list=True
+    )
     meta_inherited = mutation_details_relationship('InheritedMutation')
     meta_ESP6500 = mutation_details_relationship('ExomeSequencingMutation')
     meta_1KG = mutation_details_relationship('The1000GenomesMutation')
@@ -427,7 +430,10 @@ class Mutation(BioModel):
     }
 
     def get_source_name(self, column_name):
-        return {v: k for k, v in self.source_fields.items()}.get(column_name, 'other')
+        return {v: k for k, v in self.source_fields.items()}.get(
+            column_name,
+            'other'
+        )
 
     def __repr__(self):
         return '<Mutation in {0}, at {1} aa, substitution to: {2}>'.format(
