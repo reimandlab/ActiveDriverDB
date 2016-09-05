@@ -109,11 +109,15 @@ def decode_csv(value):
     value = value
     strand, ref, alt, is_ptm = value[:4]
     cdna_pos, exon, protein_id = value[4:].split(':')
+    cdna_pos = int(cdna_pos, base=16)
     return dict(zip(
-        ('strand', 'ref', 'alt', 'pos', 'cdna_pos', 'exon', 'protein_id'),
         (
-            strand, ref, alt, bool(int(is_ptm)), (cdna_pos - 1) // 3 + 1,
-            int(cdna_pos, base=16), exon, int(protein_id, base=16)
+            'strand', 'ref', 'alt', 'pos',
+            'cdna_pos', 'exon', 'protein_id', 'is_ptm'
+        ),
+        (
+            strand, ref, alt, (cdna_pos - 1) // 3 + 1,
+            cdna_pos, exon, int(protein_id, base=16), bool(int(is_ptm))
         )
     ))
 
