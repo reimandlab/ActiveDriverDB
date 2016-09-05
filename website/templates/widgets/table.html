@@ -30,11 +30,9 @@
                 data-visible={{ (source not in ('1KGenomes', 'ESP6500')) | string | lower }}
                 data-switchable=true>{{ value_type }}</th>
             <th data-sortable=true
-                data-switchable=true>Mutation type</th>
+                >Impact on PTM</th>
             <th data-sortable=true
-                data-visible={{ filters.active.is_ptm | lower }}>Impact on PTM</th>
-            <th data-sortable=true
-                data-visible={{ filters.active.is_ptm | lower }}># PTMs affected</th>
+                ># PTMs affected</th>
             <th data-sortable=true
                 data-visible=false>Closest affected site(s)</th>
             {% if mutations %}
@@ -53,7 +51,6 @@
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
             <td>{{ mutation.value }}</td>
-            <td>{{ 'non-PTM' if mutation.category == 'none' else 'PTM' }}</td>
             <td class="{{ mutation.category or '' }}">{{ mutation.category or '' }}</td>
             <td>{{ mutation.cnt_ptm }}</td>
             <td>
