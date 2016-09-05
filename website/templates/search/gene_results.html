@@ -2,26 +2,27 @@
 <div class="isoform">
   <h5>{{ isoform.refseq }}</h5>
   <div class="isoform-data">
+      Protein: {{ isoform.length }} residues
       {% if isoform.cds_start and isoform.cds_end %}
-      Coding region:
-          start {{ isoform.cds_start }}
-          end {{ isoform.cds_end }}
-          Length: {{ isoform.cds_end - isoform.cds_start }}
+      CDS: {{ isoform.cds_start }}-{{ isoform.cds_end }}
       {% endif %}
       {% if isoform.tx_start and isoform.tx_end %}
-      Transcription positions:
-          start {{ isoform.tx_start }}
-          end {{ isoform.tx_end }}
+      Transcription: {{ isoform.tx_start }}-{{ isoform.tx_end }}
       {% endif %}
   </div>
   <div class="shortcuts">
-    <a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">protein</a>
+    Views:
+    <a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">
+        Protein sequence
+        ({{ isoform.sites | length }} PTM sites,
+         {{ isoform.mutations.count() }} mutations)
+    </a>
     {# Note: fetching interactors may be slow sometimes, although very useful #}
     {% set interactors = isoform.interactors_count %}
       <a href="{{ url_for('NetworkView:show', refseq=isoform.refseq) }}" class="{{ 'inactive' if not interactors }}">
-      network
+      Site-specific PTM interaction network
       {% if interactors %}
-        ({{ interactors }})
+        ({{ interactors }} interactors)
       {% endif %}
     </a>
   </div>
