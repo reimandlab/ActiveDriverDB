@@ -4,9 +4,21 @@ var MutationTable = function ()
 
     function detailFormatter(index, row, element)
     {
-        html = 'Impact: ' + row[4] + '<br>'
-        html += 'Sites affected: ' + row[5] + '<br>'
-        html += 'Closest affected site(s): <div>' + row[6] + '</div>'
+        var row_element = $('#' + row[0] + row[2])
+        var meta = $(row_element).data('metadata')
+        console.log(meta)
+        var impact = row[4]
+        var affected_sites_count = row[5]
+        html = 'Impact: ' + impact + '<br>'
+        html += '# of affected sites: ' + affected_sites_count + '<br>'
+        if(affected_sites_count != 0)
+        {
+            html += 'Closest affected site(s): <div>' + row[6] + '</div>'
+        }
+        if(impact == 'network-rewiring')
+        {
+            html += 'MIMP'
+        }
         return html
     }
 

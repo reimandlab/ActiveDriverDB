@@ -46,7 +46,8 @@
     <tbody>
 		{% for mutation in mutations or '' %}
         {% set metadata = mutation.meta[source] %}
-        <tr id="{{ mutation.coord }}{{ mutation.alt }}">
+        <tr id="{{ mutation.coord }}{{ mutation.alt }}"
+            data-metadata="{{ mutation.meta | json }}">
             <td>{{ mutation.coord }}</td>
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
