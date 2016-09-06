@@ -46,7 +46,8 @@ class Statistics:
         source_relationship_map = {
             'clinvar': Mutation.meta_inherited,
             'esp': Mutation.meta_ESP6500,
-            '1kg': Mutation.meta_1KG
+            '1kg': Mutation.meta_1KG,
+            'mimp': Mutation.meta_MIMP,
         }
 
         filters = and_(
