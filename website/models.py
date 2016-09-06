@@ -817,6 +817,7 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
     @property
     def representation(self):
         return {
+            'MAF': self.maf_all,
             'MAF EA': self.maf_ea,
             'MAF AA': self.maf_aa,
         }
