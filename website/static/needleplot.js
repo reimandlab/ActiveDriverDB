@@ -524,7 +524,7 @@ var NeedlePlot = function ()
 
         sites
             .append('path')
-            .attr('d', d3.svg.symbol().size(4).type('triangle-up'))
+            .attr('d', d3.svg.symbol().size(1).type('triangle-up'))
 
         site_boxes = sites
 			.append('rect')
@@ -581,6 +581,7 @@ var NeedlePlot = function ()
         {
             axes.x.obj.ticks(10)
         }
+        var constant_scale = (config.max_zoom / scale)
 
         var canvas = canvasAnimated(animate)
 		canvas.select('.vertical.scalable').attr('transform', 'translate(' + position + ', 0)scale(' + scale + ', 1)')
@@ -589,19 +590,19 @@ var NeedlePlot = function ()
             .attr('transform', function(d){ return 'translate('  + [0, axes.y.scale(d.value)] + ')scale(1, '+ scale +') ' })
 
         sites.selectAll('path, rect')
-            .attr('stroke-width', 1/scale + 'px')
+            .attr('stroke-width', posToX(1) / 10 + 'px')
 
         sites.selectAll('path')
             .attr('transform', function(d)
                 {
-                    // shift by -2 in yaxis is meant to lay the shape
+                    // shift by -2 in y axis is meant to lay the shape
                     // on top of site box (it's size_of_shape/2 = 4/2 = 2)
-                    return 'translate(' + [posToX((d.end - d.start) / 2), -2] + ')scale(' + [1, posToX(1)] + ')'
+                    return 'translate(' + [posToX((d.end - d.start) / 2), -2] + ')scale(' + [posToX(1), 4] + ')'
                 }
             )
 
         needles.selectAll('circle')
-            .attr('r', posToX(1) / 2 * (config.max_zoom / scale) + 'px')
+            .attr('r', posToX(1) / 2 * constant_scale + 'px')
     }
 
     function xAxisCoverage()
