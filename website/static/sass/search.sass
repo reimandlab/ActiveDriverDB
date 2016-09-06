@@ -76,6 +76,18 @@
   .show-alt
     float: right
 
+  .isoform-data .datum, .shortcuts a
+    display: inline
+    margin-right: 5px
+
+    &:after
+      color: #ccc
+      content: '|'
+      margin-left: 5px
+
+    &:last-child:after
+      content: ''
+
 .table-rowspan-hover
   /*
     tbody:nth-child(odd)

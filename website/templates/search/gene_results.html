@@ -2,12 +2,12 @@
 <div class="isoform">
   <h5>{{ isoform.refseq }}</h5>
   <div class="isoform-data">
-      Protein: {{ isoform.length }} residues
+      <div class="datum">Protein: {{ isoform.length }} residues</div>
       {% if isoform.cds_start and isoform.cds_end %}
-      CDS: {{ isoform.cds_start }}-{{ isoform.cds_end }}
+      <div class="datum">CDS: {{ isoform.cds_start }}-{{ isoform.cds_end }}</div>
       {% endif %}
       {% if isoform.tx_start and isoform.tx_end %}
-      Transcription: {{ isoform.tx_start }}-{{ isoform.tx_end }}
+      <div class="datum">Transcription: {{ isoform.tx_start }}-{{ isoform.tx_end }}</div>
       {% endif %}
   </div>
   <div class="shortcuts">
