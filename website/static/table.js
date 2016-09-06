@@ -4,9 +4,6 @@ var MutationTable = function ()
 
     function detailFormatter(index, row, element)
     {
-        var row_element = $('#' + row[0] + row[2])
-        var meta = $(row_element).data('metadata')
-        console.log(meta)
         var impact = row[4]
         var affected_sites_count = row[5]
         html = 'Impact: ' + impact + '<br>'
@@ -17,7 +14,9 @@ var MutationTable = function ()
         }
         if(impact == 'network-rewiring')
         {
-            html += 'MIMP'
+            var row_element = $('#' + row[0] + row[2])
+            var meta = JSON.parse($(row_element).data('metadata').slice(2, -2).replace(/'/g, '"'))
+            html += MIMP_image_from_meta(meta.MIMP)
         }
         return html
     }

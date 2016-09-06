@@ -447,7 +447,7 @@ var NeedlePlot = function ()
                         }
                         else if(column === 'PWM')
                         {
-                            text += MIMP_image_from_meta(d.meta[meta])
+                            text += '<li>' + MIMP_image_from_meta(d.meta[meta]) + '</li>'
                         }
                         else if(column === 'Clinical')
                         {
