@@ -447,9 +447,7 @@ var NeedlePlot = function ()
                         }
                         else if(column === 'PWM')
                         {
-                            var pos = d.meta[meta]['Position in motif']
-                            text += '<li class="mimp-logo">' + '<img src="/static/mimp/logos/' + value + '.svg">'
-                            text += '<div class="mimp-outline ' + d.meta[meta]['Effect'] + '" style="left:' + ((7 + pos) * 22 + 47) + 'px"></div>'
+                            text += MIMP_image_from_meta(d.meta[meta])
                         }
                         else if(column === 'Clinical')
                         {
