@@ -433,7 +433,7 @@ var NeedlePlot = function ()
                     var meta_value = d.meta[meta]
                     text += meta + ':'
                     text += '<ul>'
-                    if(meta == 'TCGA')
+                    if(meta === 'TCGA')
                     {
                         meta_value = d.meta[meta]['TCGA metadata']
                         text += '<li>TOTAL (' + d.value + ')'
@@ -441,7 +441,7 @@ var NeedlePlot = function ()
                     for(var column in meta_value)
                     {
                         var value = meta_value[column]
-                        if(meta == 'TCGA')
+                        if(meta === 'TCGA')
                         {
                             text += '<li>' + value['Cancer'] + ' (' + value['Value'] + ')'
                         }
@@ -569,15 +569,21 @@ var NeedlePlot = function ()
         return t
     }
 
+    function changeTicksCount(ticks_count)
+    {
+        axes.x.obj.ticks(ticks_count)
+        canvasAnimated(true).select('.x.axis').call(axes.x.obj)
+    }
+
     function adjustContent(animate)
     {
-        if(scale == config.max_zoom)
+        if(scale === config.max_zoom)
         {
-            axes.x.obj.ticks(20)
+            changeTicksCount(20)
         }
         else if(axes.x.obj.ticks() != 10)
         {
-            axes.x.obj.ticks(10)
+            changeTicksCount(10)
         }
         var constant_scale = (config.max_zoom / scale)
 
