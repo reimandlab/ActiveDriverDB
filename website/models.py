@@ -11,14 +11,9 @@ from werkzeug.utils import cached_property
 import security
 
 
-class BioModel(db.Model):
-    """Models descending from BioData are supposed to hold biology-related data
-
-    and will be stored in a 'bio' database, separated from visualisation
-    settings and other data handled by 'content managment system'.
-    """
+class Model(db.Model):
+    """General abstract model"""
     __abstract__ = True
-    __bind_key__ = 'bio'
 
     @declared_attr
     def __tablename__(cls):
@@ -27,6 +22,16 @@ class BioModel(db.Model):
     @declared_attr
     def id(cls):
         return db.Column('id', db.Integer, primary_key=True)
+
+
+class BioModel(Model):
+    """Models descending from BioData are supposed to hold biology-related data
+
+    and will be stored in a 'bio' database, separated from visualisation
+    settings and other data handled by 'content managment system'.
+    """
+    __abstract__ = True
+    __bind_key__ = 'bio'
 
 
 def make_association_table(fk1, fk2):
@@ -865,7 +870,7 @@ class MIMPMutation(MutationDetails, BioModel):
         }
 
 
-class Model(db.Model):
+class CMSModel(Model):
     """Models descending from Model are supposed to hold settings and other data
 
     to handled by 'Content Managment System', including Users and Page models.
@@ -873,16 +878,8 @@ class Model(db.Model):
     __abstract__ = True
     __bind_key__ = 'cms'
 
-    @declared_attr
-    def __tablename__(cls):
-        return cls.__name__.lower()
 
-    @declared_attr
-    def id(cls):
-        return db.Column('id', db.Integer, primary_key=True)
-
-
-class User(Model):
+class User(CMSModel):
     """Model for use with Flask-Login"""
 
     # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
@@ -922,7 +919,7 @@ class User(Model):
         return self.id
 
 
-class Page(Model):
+class Page(CMSModel):
     """Model representing a single CMS page"""
 
     address = db.Column(db.String(256), unique=True, index=True)
