@@ -119,10 +119,15 @@ var NeedlePlot = function ()
 
     var Axis = function()
     {
-        return {
-            scale: null,
-            group: null,
-            obj: null
+        this.scale = null
+        this.group = null
+        this.obj = null
+
+        this.createObj = function(orient)
+        {
+            this.obj = d3.svg.axis()
+                .orient(orient)
+                .scale(this.scale)
         }
     }
 
@@ -361,9 +366,7 @@ var NeedlePlot = function ()
             }
         }
 
-        axes.y.obj = d3.svg.axis()
-            .orient('left')
-            .scale(axes.y.scale)
+        axes.y.createObj('left')
 
         var format = !config.use_log ? d3.format('d') : log_ticks_format
 
@@ -378,9 +381,7 @@ var NeedlePlot = function ()
         axes.x.scale = d3.scale.linear()
             .domain([0, config.sequenceLength])
 
-        axes.x.obj = d3.svg.axis()
-            .orient('bottom')
-            .scale(axes.x.scale)
+        axes.x.createObj('bottom')
 
         axes.x.group = paddings.append('g')
 			.attr('class', 'x axis')
@@ -581,7 +582,7 @@ var NeedlePlot = function ()
         {
             changeTicksCount(20)
         }
-        else if(axes.x.obj.ticks() != 10)
+        else if(axes.x.obj.ticks() !== 10)
         {
             changeTicksCount(10)
         }
