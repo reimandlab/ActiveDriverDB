@@ -33,7 +33,7 @@ class Statistics:
                 # 'from_many_sources' is very expensive, and it might be better
                 # to disable when not necessary (it will be useful for debuging
                 # purposes - so we can check if mutations count is correct)
-                'from_more_than_one_source': self.from_many_sources(),
+                # 'from_more_than_one_source': self.from_many_sources(),
             },
             'sites': self.count(models.Site),
             'cancer': self.count(models.Cancer),
