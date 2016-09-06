@@ -1,5 +1,6 @@
 from database import db
 import models
+from sqlalchemy import and_
 
 
 class Statistics:
@@ -29,10 +30,61 @@ class Statistics:
                 'cancer_annotations': self.count(models.CancerMutation),
                 'thousand_genomes': self.count(models.The1000GenomesMutation),
                 'mimp': self.count(models.MIMPMutation),
+                # 'from_many_sources' is very expensive, and it might be better
+                # to disable when not necessary (it will be useful for debuging
+                # purposes - so we can check if mutations count is correct)
+                'from_more_than_one_source': self.from_many_sources(),
             },
             'sites': self.count(models.Site),
             'cancer': self.count(models.Cancer),
         }
+
+    def get_filter_by_sources(self, sources):
+
+        Mutation = models.Mutation
+
+        source_relationship_map = {
+            'clinvar': Mutation.meta_inherited,
+            'esp': Mutation.meta_ESP6500,
+            '1kg': Mutation.meta_1KG
+        }
+
+        filters = and_(
+            (
+                source_relationship_map[source].has()
+                for source in sources
+                if source != 'cancer'
+            )
+        )
+
+        if 'cancer' in sources:
+            filters = and_(filters, Mutation.meta_cancer.any())
+
+        return filters
+
+    def count_by_source(self, sources):
+        return models.Mutation.query.filter(
+            self.get_filter_by_sources(sources)
+        ).count()
+
+    def from_many_sources(self):
+
+        in_all = self.count_by_source(['clinvar', 'esp', '1kg', 'cancer'])
+
+        ev = self.count_by_source(['clinvar', 'esp'])
+        kv = self.count_by_source(['clinvar', '1kg'])
+        cv = self.count_by_source(['clinvar', 'cancer'])
+        ck = self.count_by_source(['cancer', '1kg'])
+        ce = self.count_by_source(['cancer', 'esp'])
+        ek = self.count_by_source(['1kg', 'esp'])
+
+        cek = self.count_by_source(['1kg', 'esp', 'cancer'])
+        ekv = self.count_by_source(['1kg', 'esp', 'clinvar'])
+        cev = self.count_by_source(['cancer', 'esp', 'clinvar'])
+        ckv = self.count_by_source(['1kg', 'cancer', 'clinvar'])
+
+        return (ev + kv + cv + ck + ce + ek) - (cek + ekv + cev + ckv) + in_all
+
 
 stats = Statistics()
 
