@@ -91,6 +91,9 @@ class BerkleyHashSet:
             key = bytes(key, 'utf-8')
         self.db[key] = bytes('|'.join(items), 'utf-8')
 
+    def __len__(self):
+        return len(self.db)
+
     def reset(self):
         """Reset database completely by removal. Assuming file == name."""
         os.remove(self.get_path())

@@ -9,7 +9,9 @@ class Statistics:
         return model.query.count()
 
     def all_confirmed_mutations(self):
-        return models.Mutation.query.filter_by(is_confirmed=True).count()
+        return models.Mutation.query.filter_by(
+            is_confirmed=True
+        ).count()
 
     def get_all(self):
         return {
@@ -34,10 +36,36 @@ class Statistics:
                 # to disable when not necessary (it will be useful for debuging
                 # purposes - so we can check if mutations count is correct)
                 # 'from_more_than_one_source': self.from_many_sources(),
+                'confirmed_in_ptm_sites': self.count_muts_in_sites(),
+                'confirmed_with_mimp': self.count_muts_with_mimp(),
             },
             'sites': self.count(models.Site),
             'cancer': self.count(models.Cancer),
+            # "number of mutation annotations
+            # (all DNA>protein table + MIMP annotations)"
+            'annotations': (
+                self.count(models.MIMPMutation) +
+                self.count_mappings()
+            ),
         }
+
+    def count_mappings(self):
+        from database import bdb
+        return len(bdb)
+
+    def count_muts_in_sites(self):
+        return models.Mutation.query.filter_by(
+            is_confirmed=True,
+            is_ptm=True
+        ).count()
+
+    def count_muts_with_mimp(self):
+        return models.Mutation.query.filter(
+            and_(
+                self.get_filter_by_sources(['mimp']),
+                models.Mutation.is_confirmed,
+            )
+        ).count()
 
     def get_filter_by_sources(self, sources):
 
