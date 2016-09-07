@@ -129,6 +129,13 @@ var NeedlePlot = function ()
                 .orient(orient)
                 .scale(this.scale)
         }
+
+        this.createGroup = function(class_name)
+        {
+            this.group = paddings.append('g')
+               .attr('class', 'axis ' + class_name)
+               .call(this.obj)
+        }
     }
 
     var axes = {
@@ -374,18 +381,14 @@ var NeedlePlot = function ()
             .tickFormat(format)
             .tickSubdivide(0)
 
-        axes.y.group = paddings.append('g')
-			.attr('class', 'y axis')
-            .call(axes.y.obj)
+        axes.y.createGroup('y')
 
         axes.x.scale = d3.scale.linear()
             .domain([0, config.sequenceLength])
 
         axes.x.createObj('bottom')
 
-        axes.x.group = paddings.append('g')
-			.attr('class', 'x axis')
-            .call(axes.x.obj)
+        axes.x.createGroup('x')
 
         vis = vertical_scalable.append('g')
 
