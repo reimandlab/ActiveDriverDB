@@ -136,6 +136,28 @@ var NeedlePlot = function ()
                .attr('class', 'axis ' + class_name)
                .call(this.obj)
         }
+
+        this.setDomain = function(start, end)
+        {
+            this.start = start
+            this.end = end
+            this.scale.domain([start, end])
+        }
+
+        this.getCoverage = function()
+        {
+            return this.end / scale
+        }
+
+        this.moveTo = function(start_pos)
+        {
+            this.scale.domain([start_pos, start_pos + this.getCoverage()])
+        }
+
+        this.getShiftLimit = function()
+        {
+            return this.getCoverage() - this.end
+        }
     }
 
     var axes = {
@@ -334,13 +356,12 @@ var NeedlePlot = function ()
             axes.y.scale = d3.scale.log()
                 .base(10)
                 // we have to avoid exact 0 on scale_min
-                .domain([config.y_scale_min || Number.MIN_VALUE, config.y_scale_max])
-
+            axes.y.setDomain(config.y_scale_min || Number.MIN_VALUE, config.y_scale_max)
         }
         else
         {
             axes.y.scale = d3.scale.linear()
-                .domain([0, config.y_scale_max])
+            axes.y.setDomain(0, config.y_scale_max)
         }
 
         axes.y.scale.
@@ -384,10 +405,9 @@ var NeedlePlot = function ()
         axes.y.createGroup('y')
 
         axes.x.scale = d3.scale.linear()
-            .domain([0, config.sequenceLength])
+        axes.x.setDomain(0, config.sequenceLength)
 
         axes.x.createObj('bottom')
-
         axes.x.createGroup('x')
 
         vis = vertical_scalable.append('g')
@@ -538,8 +558,7 @@ var NeedlePlot = function ()
 
 	function _setPosition(new_position, stop_callback)
 	{
-        var axis_coverage = xAxisCoverage()
-		var boundary = posToX(axis_coverage - config.sequenceLength) * scale
+		var boundary = posToX(axes.x.getShiftLimit()) * scale
 
 		if(new_position > 0)
 			position = 0
@@ -613,11 +632,6 @@ var NeedlePlot = function ()
             .attr('r', posToX(1) / 2 * constant_scale + 'px')
     }
 
-    function xAxisCoverage()
-    {
-        return config.sequenceLength / scale
-    }
-
 	function posToX(pos)
 	{
 		return pos * unit
@@ -631,9 +645,8 @@ var NeedlePlot = function ()
     function adjustXAxis(animate)
     {
         var canvas = canvasAnimated(animate)
-        var axis_coverage = xAxisCoverage()
-        var start = xToPos(position)
-		axes.x.scale.domain([start, start + axis_coverage])
+        var start_position = xToPos(position)
+        axes.x.moveTo(start_position)
 		canvas.select('.x.axis').call(axes.x.obj)
     }
 
