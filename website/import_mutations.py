@@ -287,10 +287,26 @@ def remove_mutations(sources='__all__'):
     print('Mutations removed')
 
 
+def determine_strand(ref, cdna_ref, alt, cdna_alt):
+    from helpers.bioinf import complement
+
+    if (cdna_ref.lower() == ref and cdna_alt.lower() == alt):
+        return '+'
+    elif (
+            complement(cdna_ref).lower() == ref and
+            complement(cdna_alt).lower() == alt
+    ):
+        return '-'
+    else:
+        raise Exception(
+            'Unbale to determine strand for: ' +
+            str([ref, cdna_ref, alt, cdna_alt])
+        )
+
+
 def import_mappings(proteins):
     print('Importing mappings:')
 
-    from helpers.bioinf import complement
     from helpers.bioinf import get_human_chromosomes
     from database import bdb
     from database import bdb_refseq
@@ -329,19 +345,13 @@ def import_mappings(proteins):
 
             assert exon.startswith('exon')
             exon = exon[4:]
-            assert cdna_mut.startswith('c.')
 
-            if (cdna_mut[2].lower() == ref and
-                    cdna_mut[-1].lower() == alt):
-                strand = '+'
-            elif (complement(cdna_mut[2]).lower() == ref and
-                    complement(cdna_mut[-1]).lower() == alt):
-                strand = '-'
-            else:
-                raise Exception(line)
+            assert cdna_mut.startswith('c')
+            cdna_ref, cdna_pos, cdna_alt = decode_mutation(cdna_mut)
 
-            cdna_pos = cdna_mut[3:-1]
-            assert prot_mut.startswith('p.')
+            strand = determine_strand(ref, cdna_ref, pos, cdna_pos)
+
+            assert prot_mut.startswith('p')
             # we can check here if a given reference nuc is consistent
             # with the reference amino acid. For example cytosine in
             # reference implies that there should't be a methionine,
