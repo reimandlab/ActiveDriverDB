@@ -3,6 +3,10 @@ import models
 from sqlalchemy import and_
 
 
+MAPPINGS_COUNT = 73093771   # this is result of stats.count_mappings() -
+# due to long execution time it was precomputed once and hardocded here
+
+
 class Statistics:
 
     def count(self, model):
@@ -45,7 +49,7 @@ class Statistics:
             # (all DNA>protein table + MIMP annotations)"
             'annotations': (
                 self.count(models.MIMPMutation) +
-                self.count_mappings()
+                MAPPINGS_COUNT   # self.count_mappings()
             ),
         }
 
