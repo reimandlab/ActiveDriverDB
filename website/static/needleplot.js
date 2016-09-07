@@ -475,12 +475,13 @@ var NeedlePlot = function ()
                         }
                         else if(column === 'Clinical')
                         {
-                            for(var i in value)
+                            for(var j in value)
                             {
-                                text += '<li>' + value[i]['Disease']
+                                var sub_value = value[j]
+                                text += '<li>' + sub_value['Disease']
                                 text += '<ul>'
-                                text += '<li>Significane: ' + value[i]['Significane']
-                                text += '<li>Review status: ' + value[i]['Review status']
+                                text += '<li>Significane: ' + sub_value['Significane']
+                                text += '<li>Review status: ' + sub_value['Review status']
                                 text += '</ul>'
                             }
                         }
