@@ -265,13 +265,13 @@ def explain_current_action(action, sources):
     ))
 
 
-def load_mutations(proteins, sources='__all__'):
+def load_mutations(proteins=None, sources='__all__'):
     explain_current_action('Loading', sources)
 
     importers = select_importers(restrict_to=sources)
 
     for name, module in importers.items():
-        module.Importer().load()
+        module.Importer(proteins).load()
 
     print('Mutations loaded')
 
