@@ -24,7 +24,7 @@ def read_from_gz_files(directory, pattern, skip_header=True):
 
     files = get_files(directory, pattern)
 
-    for filename in tqdm(files, unit='files'):
+    for filename in tqdm(files, unit=' files'):
 
         with gzip.open(filename, 'rb') as f:
 
@@ -79,7 +79,7 @@ def parse_tsv_file(filename, parser, file_header=None):
             header = f.readline().rstrip().split('\t')
             data_lines_count -= 1
             assert header == file_header
-        for line in tqdm(f, total=data_lines_count, unit='lines'):
+        for line in tqdm(f, total=data_lines_count, unit=' lines'):
             line = line.rstrip().split('\t')
             parser(line)
 
@@ -92,7 +92,7 @@ def parse_fasta_file(filename, parser):
     Progress bar is embeded.
     """
     with open(filename) as f:
-        for line in tqdm(f, total=count_lines(f), unit='lines'):
+        for line in tqdm(f, total=count_lines(f), unit=' lines'):
             parser(line)
 
 
