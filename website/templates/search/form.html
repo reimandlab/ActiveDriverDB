@@ -91,6 +91,8 @@
           <th data-sortable=true>Alt aa</th>
           <th data-sortable=true>Position</th>
           <th data-sortable=true>is PTM?</th>
+          <th data-sortable=true>Impact</th>
+          <th data-sortable=true>Link</th>
         </tr>
         </thead>
         {% for line in results %}
@@ -110,6 +112,17 @@
               <td>{{ result.alt }}</td>
               <td>{{ result.pos }}</td>
               <td>{{ result.is_ptm }}</td>
+              <td>
+                  {{ result.mutation.type }}
+                  {% if result.mutation.type == 'network-rewiring' %}
+                    {{ 'gain' if result.mutation.meta_MIMP.effect else 'loss' }}
+                  {% endif %}
+              </td>
+              <td>
+                  <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq) }}#{{ result.pos }}{{ result.alt }}">
+                    show mutation →
+                  </a>
+              </td>
             </tr>
           {% endfor %}
           </tbody>

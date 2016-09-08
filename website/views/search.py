@@ -87,9 +87,17 @@ def get_genomic_muts(chrom, pos, ref, alt):
     ]
 
     for item in items:
-        item['protein'] = Protein.query.get(
+        protein = Protein.query.get(
             item['protein_id']
         )
+        item['protein'] = protein
+        mutation, created = get_or_create(
+            Mutation,
+            protein_id=protein.id,
+            position=pos,
+            alt=alt
+        )
+        item['mutation'] = mutation
     return items
 
 
@@ -192,7 +200,8 @@ class SearchView(FlaskView):
                                     'ref': ref,
                                     'alt': alt,
                                     'pos': pos,
-                                    'is_ptm': mutation.is_ptm
+                                    'is_ptm': mutation.is_ptm,
+                                    'mutation': mutation,
                                 }
                             )
                     else:
