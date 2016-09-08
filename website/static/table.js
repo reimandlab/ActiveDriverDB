@@ -33,6 +33,10 @@ var MutationTable = function ()
             element.bootstrapTable({
                 detailFormatter: detailFormatter
             })
+            if(window.location.hash)
+            {
+                publicSpace.expandRow(window.location.hash.substring(1))
+            }
         },
         expandRow: function(mutation_id)
         {
