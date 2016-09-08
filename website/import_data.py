@@ -167,11 +167,11 @@ def load_cancers():
 
     def parser(line):
         code, name, color = line
-        cancer, created = get_or_create(Cancer, code=code, name=name)
+        cancer, created = get_or_create(Cancer, name=name)
         if created:
             db.session.add(cancer)
-        else:
-            cancer.code = code
+
+        cancer.code = code
 
     parse_tsv_file('data/cancer_types.txt', parser)
 

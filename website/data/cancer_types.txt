@@ -9,4 +9,4 @@ LAML	Acute Myeloid Leukemia	orange
 LUAD	Lung adenocarcinoma	cyan3
 LUSC	Lung squamous cell carcinoma	aquamarine
 OV	Ovarian serous cystadenocarcinoma	pink
-UCEC	Uterine Corpus Endometrioid Carcinoma	brown1
+UCEC	Uterine Corpus Endometrial Carcinoma	brown1
