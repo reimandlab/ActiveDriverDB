@@ -109,7 +109,11 @@ Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alterna
         tracks.setNeedlePlotInstance(needle_plot)
         $(window).on('resize', function()
             {
-                needle_plot.setSize($('#tracks-box').width(), null)
+                needle_plot.setSize(
+                    $('#tracks-box').width(),
+                    null,
+                    tracks.adjustMaxZoom()
+                )
             }
         )
 

@@ -612,10 +612,11 @@ var NeedlePlot = function ()
             _setPosition(converted_position, stop_callback)
             refresh(animate)
         },
-        setSize: function(width, height)
+        setSize: function(width, height, max_zoom)
         {
             config.width = width
             config.height = height
+            config.max_zoom = max_zoom
 
             _adjustPlotDimensions()
 
@@ -623,7 +624,7 @@ var NeedlePlot = function ()
 
             // refresh zoom and position with current values
             _setZoomAndMove(scale, position, true)
-        }
+        },
     }
 
     return publicSpace
