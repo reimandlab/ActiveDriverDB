@@ -339,8 +339,8 @@ class Site(BioModel):
 
 
 class Cancer(BioModel):
-    code = db.Column(db.String(16))
-    name = db.Column(db.Text)
+    code = db.Column(db.String(16), unique=True)
+    name = db.Column(db.Text, unique=True)
 
     def __repr__(self):
         return '<Cancer with code: {0}, named: {1}>'.format(
