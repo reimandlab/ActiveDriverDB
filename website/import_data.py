@@ -1,10 +1,12 @@
 from tqdm import tqdm
 from database import db
+from database import get_or_create
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
 from models import Domain
 from models import Gene
 from models import InterproDomain
+from models import Cancer
 from models import Kinase
 from models import KinaseGroup
 from models import Protein
@@ -21,7 +23,7 @@ def import_data(restrict_mutations_to):
     select_preferred_isoforms(genes)
     load_disorder(proteins)
     load_domains(proteins)
-    # cancers = load_cancers()
+    load_cancers()
     kinases, groups = load_sites(proteins)
     kinases, groups = load_kinase_classification(proteins, kinases, groups)
     print('Adding kinases to the session...')
@@ -50,6 +52,14 @@ def load_domains(proteins):
     skipped = 0
     wrong_length = 0
     not_matching_chrom = []
+
+    header = [
+        'Ensembl Gene ID', 'Ensembl Transcript ID', 'Ensembl Protein ID',
+        'Chromosome Name', 'Gene Start (bp)', 'Gene End (bp)',
+        'RefSeq mRNA [e.g. NM_001195597]', 'Interpro ID',
+        'Interpro Short Description', 'Interpro Description',
+        'Interpro end', 'Interpro start'
+    ]
 
     def parser(line):
 
@@ -142,7 +152,7 @@ def load_domains(proteins):
                 end=end
             )
 
-    parse_tsv_file('data/biomart_protein_domains_20072016.txt', parser)
+    parse_tsv_file('data/biomart_protein_domains_20072016.txt', parser, header)
 
     print(
         'Domains loaded,', skipped, 'proteins skipped.',
@@ -150,6 +160,20 @@ def load_domains(proteins):
         'Domains skipped due to not matching chromosomes:',
         len(not_matching_chrom)
     )
+
+
+def load_cancers():
+    print('Loading cancer data:')
+
+    def parser(line):
+        code, name, color = line
+        cancer, created = get_or_create(Cancer, code=code, name=name)
+        if created:
+            db.session.add(cancer)
+        else:
+            cancer.code = code
+
+    parse_tsv_file('data/cancer_types.txt', parser)
 
 
 def select_preferred_isoforms(genes):
