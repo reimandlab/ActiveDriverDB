@@ -11,6 +11,7 @@ from database import bdb, bdb_refseq
 from database import make_snv_key
 from database import decode_csv
 from database import get_or_create
+from helpers.bioinf import decode_raw_mutation
 
 
 class GeneResult:
@@ -78,8 +79,8 @@ def search_proteins(phase, limit=False):
     )
 
 
-def get_genomic_muts(chrom, pos, ref, alt):
-    snv = make_snv_key(chrom, pos, ref, alt)
+def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
+    snv = make_snv_key(chrom, dna_pos, dna_ref, dna_alt)
 
     items = [
         decode_csv(item)
@@ -94,11 +95,106 @@ def get_genomic_muts(chrom, pos, ref, alt):
         mutation, created = get_or_create(
             Mutation,
             protein_id=protein.id,
-            position=pos,
-            alt=alt
+            position=item['pos'],
+            alt=item['alt']
         )
         item['mutation'] = mutation
     return items
+
+
+def get_protein_muts(gene, mut):
+    ref, pos, alt = decode_raw_mutation(mut)
+
+    # get all refseq ids associated with given (pos, ref,
+    # alt, gene) tuple by looking in berkleydb hashmap
+
+    refseqs = bdb_refseq[gene + ' ' + ref + str(pos) + alt]
+
+    items = []
+
+    for refseq in refseqs:
+
+        protein = Protein.query.filter_by(refseq=refseq).one()
+
+        mutation, created = get_or_create(
+            Mutation,
+            protein_id=protein.id,
+            position=pos,
+            alt=alt
+        )
+
+        items.append(
+            {
+                'protein': protein,
+                'ref': ref,
+                'alt': alt,
+                'pos': pos,
+                'is_ptm': mutation.is_ptm,
+                'mutation': mutation,
+            }
+        )
+    return items
+
+
+def search_mutations(vcf_file, textarea_query):
+    # note: entries from both file and textarea will be merged
+
+    query = ''
+
+    results = []
+    without_mutations = []
+    badly_formatted = []
+
+    if vcf_file:
+        for line in vcf_file:
+            if line.startswith('#'):
+                continue
+            data = line.split()
+            chrom, pos, var_id, ref, alts = data[:4]
+            alts = alts.split(',')
+            for alt in alts:
+                query += ' '.join((chrom, pos, ref, alt)) + '\n'
+                items = get_genomic_muts(chrom, pos, ref, alt)
+                if items:
+                    if len(alts) > 1:
+                        line += ' (' + alt + ')'
+                    results.append(
+                        {
+                            'user_input': line,
+                            'results': items
+                        }
+                    )
+                else:
+                    without_mutations.append(line)
+
+    if textarea_query:
+        query += textarea_query
+        for line in textarea_query.split('\n'):
+            data = line.split()
+            if len(data) == 4:
+                chrom, pos, ref, alt = [x.lower() for x in data]
+                chrom = chrom[3:]
+
+                items = get_genomic_muts(chrom, pos, ref, alt)
+
+            elif len(data) == 2:
+                gene, mut = [x.upper() for x in data]
+
+                items = get_protein_muts(gene, mut)
+            else:
+                badly_formatted.append(line)
+                continue
+
+            if items:
+                results.append(
+                    {
+                        'user_input': line, 'results': items
+                    }
+                )
+            else:
+                without_mutations.append(line)
+
+    return results, without_mutations, badly_formatted, query
 
 
 class SearchView(FlaskView):
@@ -127,95 +223,12 @@ class SearchView(FlaskView):
         # if the target is 'mutations' but we did not received 'POST'
         elif target == 'mutations' and request.method == 'POST':
 
-            query = ''
-
             textarea_query = request.form.get(target, False)
             vcf_file = request.files.get('vcf_file', False)
 
-            # note: entries from both file and textarea will be merged
-
-            results = []
-
-            if vcf_file:
-                for line in vcf_file:
-                    if line.startswith('#'):
-                        continue
-                    data = line.split()
-                    chrom, pos, var_id, ref, alts = data[:4]
-                    alts = alts.split(',')
-                    for alt in alts:
-                        items = get_genomic_muts(chrom, pos, ref, alt)
-                        if items:
-                            if len(alts) > 1:
-                                line += ' (' + alt + ')'
-                            results.append(
-                                {
-                                    'user_input': line,
-                                    'results': items
-                                }
-                            )
-                        else:
-                            without_mutations.append(line)
-
-            if textarea_query:
-                query += textarea_query
-                for line in textarea_query.split('\n'):
-                    data = line.split()
-                    if len(data) == 4:
-                        chrom, pos, ref, alt = [x.lower() for x in data]
-                        chrom = chrom[3:]
-
-                        items = get_genomic_muts(chrom, pos, ref, alt)
-
-                    elif len(data) == 2:
-                        # protein handling
-                        gene, mut = [x.upper() for x in data]
-                        ref = mut[0]
-                        alt = mut[-1]
-                        pos = mut[1:-1]
-
-                        # get all refseq ids associated with given (pos, ref,
-                        # alt, gene) tuple by looking in berkleydb hashmap
-
-                        refseqs = bdb_refseq[gene + ' ' + ref + pos + alt]
-
-                        items = []
-
-                        for refseq in refseqs:
-
-                            protein = Protein.query.filter_by(
-                                refseq=refseq
-                            ).one()
-
-                            mutation, created = get_or_create(
-                                Mutation,
-                                protein_id=protein.id,
-                                position=pos,
-                                alt=alt
-                            )
-
-                            items.append(
-                                {
-                                    'protein': protein,
-                                    'ref': ref,
-                                    'alt': alt,
-                                    'pos': pos,
-                                    'is_ptm': mutation.is_ptm,
-                                    'mutation': mutation,
-                                }
-                            )
-                    else:
-                        badly_formatted.append(line)
-                        continue
-
-                    if items:
-                        results.append(
-                            {
-                                'user_input': line, 'results': items
-                            }
-                        )
-                    else:
-                        without_mutations.append(line)
+            results, without_mutations, badly_formatted, query = search_mutations(
+                vcf_file, textarea_query
+            )
 
             # TODO: redirect with an url containing session id, so user can
             # save line as a bookmark and return there later. We can create a
