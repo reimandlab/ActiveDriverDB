@@ -113,15 +113,20 @@
               <td>{{ result.pos }}</td>
               <td>{{ result.is_ptm }}</td>
               <td>
-                  {{ result.mutation.type }}
-                  {% if result.mutation.type == 'network-rewiring' %}
+                  {{ result.mutation.impact_on_ptm }}
+                  {% if result.mutation.impact_on_ptm == 'network-rewiring' %}
                     {{ 'gain' if result.mutation.meta_MIMP.effect else 'loss' }}
                   {% endif %}
               </td>
               <td>
+                  {% if result.mutation.is_confirmed %}
+                  {# TODO: chose correct dataset to show #}
                   <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq) }}#{{ result.pos }}{{ result.alt }}">
-                    show mutation →
+                    show mutation details →
                   </a>
+                  {% else %}
+                    This mutation does not have any details associated with (in this database).
+                  {% endif %}
               </td>
             </tr>
           {% endfor %}
