@@ -698,6 +698,10 @@ class CancerMutation(MutationDetails, BioModel):
             'Value': self.count
         }
 
+    @property
+    def summary(self):
+        return self.cancer.code
+
 
 class InheritedMutation(MutationDetails, BioModel):
     """Metadata for inherited diseased mutations from ClinVar from NCBI
@@ -749,6 +753,13 @@ class InheritedMutation(MutationDetails, BioModel):
                 for d in self.informative_clin_data
             ]
         }
+
+    @property
+    def summary(self):
+        return [
+            d.disease_name
+            for d in self.informative_clin_data
+        ]
 
 
 class ClinicalData(BioModel):
@@ -807,6 +818,10 @@ class PopulationMutation(MutationDetails):
     @property
     def value(self):
         return self.maf_all
+
+    @property
+    def summary(self):
+        return self.value
 
 
 class ExomeSequencingMutation(PopulationMutation, BioModel):

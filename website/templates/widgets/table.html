@@ -38,8 +38,19 @@
             {% if mutations %}
             {% for metadata_colum in mutations[0].meta[source].keys() %}
                 <th data-sortable=true
-                    data-switchable=true>{{ metadata_colum }}</th>
+                    data-switchable=true
+                    data-visible=false>{{ metadata_colum }}</th>
             {% endfor %}
+            <th data-sortable=true
+                data-switchable=true>Summary:
+                {% if source in ('1KGenomes', 'ESP6500') %}
+                    MAF
+                {% elif source == 'TCGA' %}
+                    cancer types
+                {% elif source == 'ClinVar' %}
+                    disease annotations
+                {% endif %}
+            </th>
             {% endif %}
         </tr>
     </thead>
@@ -70,6 +81,13 @@
                     {% endif %}
                 </td>
             {% endfor %}
+            <td>
+                {% if mutation.summary is sequence and mutation.summary is not string %}
+                    {{ mutation.summary | join(', ') }}
+                {% else %}
+                    {{ mutation.summary }}
+                {% endif %}
+            </td>
         </tr>
 		{% endfor %}
     </tbody>

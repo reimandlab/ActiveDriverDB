@@ -152,6 +152,16 @@ class ProteinView(FlaskView):
                 meta['MIMP'] = mimp.representation
             return meta
 
+        def get_summary(mutation):
+            source_specific_data = getattr(mutation, source_field_name)
+            if isinstance(source_specific_data, list):
+                return [
+                    datum.summary
+                    for datum in source_specific_data
+                ]
+            else:
+                return source_specific_data.summary
+
         def get_value(mutation):
             nonlocal source_field_name
 
@@ -172,7 +182,8 @@ class ProteinView(FlaskView):
                     site.representation
                     for site in mutation.find_closest_sites()
                 ],
-                'cnt_ptm': mutation.cnt_ptm_affected
+                'cnt_ptm': mutation.cnt_ptm_affected,
+                'summary': get_summary(mutation),
             }
             response += [needle]
 
