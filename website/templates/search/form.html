@@ -84,6 +84,7 @@
       >
         <thead>
         <tr>
+          {% set columns_count = 9 %}
           <th>User input</th>
           <th data-sortable=true>Gene name</th>
           <th data-sortable=true>Refseq</th>
@@ -135,12 +136,18 @@
         <tfoot>
         {% if without_mutations %}
           <tr>
-            <td colspan=7>{{ without_mutations | length }} {{ 'queries' if badly_formatted | length > 1 else 'query' }} without mutations found in the database: {{ without_mutations | map('trim') | join(', ') }}.</td>
+            <td colspan={{ columns_count }}>
+              {{ without_mutations | length }} {{ 'queries' if without_mutations | length > 1 else 'query' }} without mutations found in the database: {{ without_mutations | map('trim') | join(', ') }}.
+
+              <p>This might also indicate that given reference allele is not corresponding to given position or that there is a shift by one in your numeration.</p>
+            </td>
           </tr>
         {% endif %}
         {% if badly_formatted %}
           <tr>
-            <td colspan=7>{{ badly_formatted | length }} {{ 'queries were' if badly_formatted | length > 1 else 'query was' }} not recognised by the system: {{ badly_formatted | map('trim') | join(', ') }}.</td>
+            <td colspan={{ columns_count }}>
+              {{ badly_formatted | length }} {{ 'queries were' if badly_formatted | length > 1 else 'query was' }} not recognised by the system: {{ badly_formatted | map('trim') | join(', ') }}.
+            </td>
           </tr>
         {% endif %}
         </tfoot>
