@@ -19,6 +19,7 @@ bundles = {
         'common.js',
         'mimp.js',
         'table.js',
+        'tooltip.js',
         'needleplot.js',
         'filters.js',
         'tracks.js',
