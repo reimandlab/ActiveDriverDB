@@ -67,7 +67,12 @@
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
             <td>{{ mutation.value }}</td>
-            <td class="{{ mutation.category or '' }}">{{ mutation.category or '' }}</td>
+            <td class="{{ mutation.category or '' }}">
+                {{ mutation.category or '' }}
+                {% if mutation.category == 'network-rewiring' %}
+                    - motif {{ 'gain' if mutation.meta['MIMP'].effect else 'loss' }}
+                {% endif %}
+            </td>
             <td>{{ mutation.cnt_ptm }}</td>
             <td>
                 {% for site in mutation.sites %}
