@@ -24,7 +24,7 @@ def read_from_gz_files(directory, pattern, skip_header=True):
 
     files = get_files(directory, pattern)
 
-    for filename in tqdm(files):
+    for filename in tqdm(files, unit='files'):
 
         with gzip.open(filename, 'rb') as f:
 
@@ -58,13 +58,14 @@ def buffered_readlines(file_handle, line_count=5000):
             yield line
 
 
-def count_lines(filename):
+def count_lines(file_object):
     """Returns number of lines in a given file."""
-    with open(filename) as file_object:
-        return sum(1 for line in file_object)
+    count = sum(1 for line in file_object)
+    file_object.seek(0)   # return to the begining of the file
+    return count
 
 
-def parse_tsv_file(filename, parser, file_header=False):
+def parse_tsv_file(filename, parser, file_header=None):
     """Utility function wraping tsv (tab-separated values) file parser.
 
     It checks if the file header is the same as given (if provided).
@@ -73,10 +74,12 @@ def parse_tsv_file(filename, parser, file_header=False):
     Progress bar is embeded.
     """
     with open(filename) as f:
-        header = f.readline().rstrip().split('\t')
+        data_lines_count = count_lines(f)
         if file_header:
+            header = f.readline().rstrip().split('\t')
+            data_lines_count -= 1
             assert header == file_header
-        for line in tqdm(f, total=count_lines(filename)):
+        for line in tqdm(f, total=data_lines_count, unit='lines'):
             line = line.rstrip().split('\t')
             parser(line)
 
@@ -89,7 +92,7 @@ def parse_fasta_file(filename, parser):
     Progress bar is embeded.
     """
     with open(filename) as f:
-        for line in tqdm(f, total=count_lines(filename)):
+        for line in tqdm(f, total=count_lines(f), unit='lines'):
             parser(line)
 
 

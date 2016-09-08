@@ -13,6 +13,10 @@ class Importer(MutationImporter):
 
     model = MIMPMutation
     default_path = 'data/mutations/all_mimp_annotations.tsv'
+    header = [
+        'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
+        'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
+    ]
     insert_keys = (
         'mutation_id',
         'position_in_motif',
@@ -24,11 +28,6 @@ class Importer(MutationImporter):
     def parse(self, path):
         mimps = []
         sites = []
-
-        header = [
-            'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
-            'score_mt', 'log_ratio', 'pwm', 'pwm_fam', 'nseqs', 'prob', 'effect'
-        ]
 
         def parser(line):
             nonlocal mimps, sites
@@ -73,7 +72,7 @@ class Importer(MutationImporter):
                 )
             )
 
-        parse_tsv_file(path, parser, header)
+        parse_tsv_file(path, parser, self.header)
 
         return mimps, sites
 

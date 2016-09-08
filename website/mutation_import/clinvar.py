@@ -10,6 +10,11 @@ class Importer(MutationImporter):
 
     model = InheritedMutation
     default_path = 'data/mutations/clinvar_muts_annotated.txt'
+    header = [
+        'Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
+        'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'V11',
+        'V12', 'V13', 'V14', 'V15', 'V16', 'V17', 'V18', 'V19', 'V20', 'V21'
+    ]
     insert_keys = (
         'mutation_id',
         'db_snp_id',
@@ -100,7 +105,7 @@ class Importer(MutationImporter):
                         )
                     )
 
-        parse_tsv_file(path, clinvar_parser)
+        parse_tsv_file(path, clinvar_parser, self.header)
 
         return clinvar_mutations, clinvar_data
 
