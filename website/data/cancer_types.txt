@@ -1,11 +1,12 @@
-blca	bladder urothelial carcinoma	yellow
-brca	breast invasive carcinoma	darkolivegreen2
-coadread	colon,rectum adenocarcinoma	cornflowerblue
-gbm	glioblastoma multiforme	darkorchid1
-hnsc	head and neck squamous cell carcinoma	chartreuse
-kirc	kidney renal clear cell carcinoma	burlywood1
-laml	acute myeloid leukemia	orange
-luad	lung adenocarcinoma	cyan3
-lusc	lung squamous cell carcinoma	aquamarine
-ov	ovarian serous cystadenocarcinoma	pink
-ucec	uterine corpus endometrioid carcinoma	brown1
+BLCA	Bladder Urothelial Carcinoma	yellow
+BRCA	Breast invasive carcinoma	darkolivegreen2
+COAD	Colon adenocarcinoma	cornflowerblue
+READ	Rectum adenocarcinoma	cornflowerblue
+GBM	Glioblastoma multiforme	darkorchid1
+HNSC	Head and Neck squamous cell carcinoma	chartreuse
+KIRC	Kidney renal clear cell carcinoma	burlywood1
+LAML	Acute Myeloid Leukemia	orange
+LUAD	Lung adenocarcinoma	cyan3
+LUSC	Lung squamous cell carcinoma	aquamarine
+OV	Ovarian serous cystadenocarcinoma	pink
+UCEC	Uterine Corpus Endometrioid Carcinoma	brown1
