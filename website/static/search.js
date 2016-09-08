@@ -70,9 +70,10 @@ var multlinePlaceholderPolyfill = (function()
 var ProteinForm = (function ()
 {
     var element
-    var empty_indicator
+    var empty_indicator, no_results_indicator, waiting_indicator
     var result_ul
     var recent_value
+    var search_button
 
     function get_url()
     {
@@ -84,8 +85,6 @@ var ProteinForm = (function ()
         return href
     }
 
-    // TODO autocomplete should only show quick sugesstion?
-    // TODO and use search instead? Moot point.
     function autocomplete(query)
     {
         $.ajax({
@@ -99,10 +98,21 @@ var ProteinForm = (function ()
                 var results = JSON.parse(rawResult)
                 // TODO add animation
                 result_ul.innerHTML = ''
-                for(var i = 0; i < results.length; i++)
+
+                waiting_indicator.addClass('hidden')
+                if(!results.length)
                 {
-                    result_ul.innerHTML += results[i].html
+                    no_results_indicator.removeClass('hidden')
                 }
+                else
+                {
+                    no_results_indicator.addClass('hidden')
+                    for(var i = 0; i < results.length; i++)
+                    {
+                        result_ul.innerHTML += results[i].html
+                    }
+                }
+
             }
         })
     }
@@ -116,16 +126,20 @@ var ProteinForm = (function ()
 
         if(query)
         {
-            if(!recent_value)
+            if(query.length >= 3)
             {
                 empty_indicator.addClass('hidden')
+                no_results_indicator.addClass('hidden')
+                waiting_indicator.removeClass('hidden')
+                search_button.hide()
+                autocomplete(query)
             }
-            autocomplete(query)
-        }
-        else if(!query && recent_value)
-        {
-            result_ul.innerHTML = ''
-            empty_indicator.removeClass('hidden')
+            else
+            {
+                search_button.show()
+                result_ul.innerHTML = ''
+                empty_indicator.removeClass('hidden')
+            }
         }
 
         recent_value = query
@@ -157,7 +171,7 @@ var ProteinForm = (function ()
         init: function(dom_element)
         {
             element = dom_element
-            $(element).find('button[type="submit"]').hide()
+            search_button = $(element).find('button[type="submit"]')
             // handle all edge cases like dragging the text into the input
             var protein_search = $(element).find('#protein_search')
             protein_search.on('change mouseup drop input', onChangeHandler)
@@ -165,6 +179,8 @@ var ProteinForm = (function ()
             result_ul = $(result_box).find('ul')[0]
             $(result_box).removeClass('hidden')
             empty_indicator = $(result_box).find('.empty')
+            no_results_indicator = $(result_box).find('.no-results')
+            waiting_indicator = $(result_box).find('.waiting')
 
             var placeholder_manager = multlinePlaceholderPolyfill()
             placeholder_manager.init(

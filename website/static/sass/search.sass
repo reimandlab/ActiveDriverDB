@@ -31,7 +31,7 @@
       &:nth-child(odd)
         background-color: #f9f9f9
 
-  .empty
+  .empty, .waiting, .no-results
     text-align: center
 
     span
@@ -42,8 +42,19 @@
     p
       color: #aaa
       font-size: 120%
-      padding: 15px
+      padding: 0 5px
+      padding-bottom: 0
+      margin-bottom: 5px
 
+      &.addition
+        font-size: 100%
+        padding-top: 20px
+
+      &:last-child
+        padding-bottom: 25px
+
+      &:first-of-type
+        padding-top: 25px
 
 .search-form
 
