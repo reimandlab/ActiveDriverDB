@@ -187,7 +187,11 @@ class ProteinView(FlaskView):
                 meta[source] = source_specific_data.representation
             mimp = getattr(mutation, 'meta_MIMP')
             if mimp:
-                meta['MIMP'] = mimp.representation
+                mimp_representation = mimp.representation
+                mimp_representation['sites'] = [
+                    site.representation for site in mutation.sites
+                ]
+                meta['MIMP'] = mimp_representation
             return meta
 
         def get_summary(mutation):
