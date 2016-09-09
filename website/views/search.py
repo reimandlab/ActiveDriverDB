@@ -60,7 +60,7 @@ def search_proteins(phase, limit=False):
                 if isoform not in genes[gene.name].isoforms:
                     genes[gene.name].isoforms.append(isoform)
             else:
-                genes[gene.name] = GeneResult(gene, restrict_to=isoform)
+                genes[gene.name] = GeneResult(gene, restrict_to_isoform=isoform)
 
         sort_key = lambda gene: min(
             [
