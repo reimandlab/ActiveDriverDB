@@ -16,10 +16,10 @@ from helpers.bioinf import decode_raw_mutation
 
 class GeneResult:
 
-    def __init__(self, gene, restrict_to=None):
+    def __init__(self, gene, restrict_to_isoform=None):
         self.gene = gene
-        if restrict_to:
-            self.isoforms = restrict_to
+        if restrict_to_isoform:
+            self.preffered_isoform = restrict_to_isoform
 
     def __getattr__(self, key):
         return getattr(self.gene, key)
@@ -60,7 +60,7 @@ def search_proteins(phase, limit=False):
                 if isoform not in genes[gene.name].isoforms:
                     genes[gene.name].isoforms.append(isoform)
             else:
-                genes[gene.name] = GeneResult(gene, restrict_to=[isoform])
+                genes[gene.name] = GeneResult(gene, restrict_to=isoform)
 
         sort_key = lambda gene: min(
             [
