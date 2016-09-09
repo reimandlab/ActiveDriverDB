@@ -126,10 +126,10 @@ var ProteinForm = (function ()
 
         if(query)
         {
+            no_results_indicator.addClass('hidden')
             if(query.length >= 3)
             {
                 empty_indicator.addClass('hidden')
-                no_results_indicator.addClass('hidden')
                 waiting_indicator.removeClass('hidden')
                 search_button.hide()
                 autocomplete(query)
