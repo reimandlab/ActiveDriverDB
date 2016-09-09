@@ -87,6 +87,7 @@ var ProteinForm = (function ()
 
     function autocomplete(query)
     {
+        result_ul.innerHTML = ''
         $.ajax({
             url: '/search/autocomplete_proteins',
             type: 'GET',
@@ -97,7 +98,6 @@ var ProteinForm = (function ()
             success: function(rawResult) {
                 var results = JSON.parse(rawResult)
                 // TODO add animation
-                result_ul.innerHTML = ''
 
                 waiting_indicator.addClass('hidden')
                 if(!results.length)
