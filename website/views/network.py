@@ -5,9 +5,8 @@ from flask import url_for
 from flask import render_template as template
 from flask_classful import FlaskView
 from models import Protein
-from website.helpers.filters import FilterSet
-from website.helpers.filters import Filters
 from website.helpers.filters import Filter
+from website.helpers.filters import FilterManager
 
 
 def get_nearby_sequence(site, protein, dst=3):
@@ -20,13 +19,29 @@ def get_nearby_sequence(site, protein, dst=3):
     )
 
 
+class Target:
+    __name__ = 'JavaScript'
+
+
 class NetworkView(FlaskView):
     """View for local network of proteins"""
 
-    allowed_filters = FilterSet([
-        Filter('show_sites', 'eq', True, 'binary', 'Show sites'),
-        Filter('clone_by_site', 'eq', True, 'binary', 'Clone kinases by site')
-    ])
+    filter_manager = FilterManager(
+        [
+            Filter(
+                'Show sites', Target(), 'show_sites',
+                default_comparator='eq', default=True, widget='binary'
+            ),
+            Filter(
+                'Clone kinases by site', Target(), 'clone_by_site',
+                default_comparator='eq', default=True, widget='binary'
+            )
+        ]
+    )
+
+    def before_request(self, name, *args, **kwargs):
+        self.filter_manager.reset()
+        self.filter_manager.update_from_request(request)
 
     def index(self):
         """Show SearchView as deafault page"""
@@ -34,14 +49,12 @@ class NetworkView(FlaskView):
 
     def show(self, refseq):
         """Show a protein by"""
-        active_filters = FilterSet.from_request(request)
-        filters = Filters(active_filters, self.allowed_filters)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
         data = self._prepare_network_repr(protein)
 
         return template('network.html', protein=protein, data=data,
-                        filters=filters)
+                        filters=self.filter_manager)
 
     def _prepare_network_repr(self, protein, include_kinases_from_groups=False):
 

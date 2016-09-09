@@ -1,75 +1,97 @@
 """Implementation of filters to be used with Ajax and URL based queries"""
 import operator
-from copy import deepcopy
 import re
+from collections import namedtuple
 from collections import defaultdict
 from urllib.parse import unquote
 
 
-class Filters:
-
-    def __init__(self, active_filters, allowed_filters):
-
-        active_filters.remove_unused()
-        available_filters = deepcopy(allowed_filters)
-
-        for passed_filter in active_filters:
-            for allowed_filter in available_filters:
-                if allowed_filter.property == passed_filter.property:
-                    passed_filter.name = allowed_filter.name
-                    passed_filter.type = allowed_filter.type
-                    passed_filter.choices = allowed_filter.choices
-                    available_filters.filters.remove(allowed_filter)
-                    break
-            else:
-                raise Exception('Filter {0} not allowed'.format(passed_filter))
-
-        active_by_default = []
-
-        for allowed_filter in available_filters:
-            if allowed_filter.value is not None:
-                active_by_default.append(allowed_filter)
-
-        for active_filter in active_by_default:
-            available_filters.filters.remove(active_filter)
-
-        active_filters.filters.extend(active_by_default)
-
-        self.active = active_filters
-        self.available = available_filters
+field_separator = ':'
 
 
 class Filter:
 
-    field_separator = ':'
-
-    comparators = {
+    possible_comparators = {
         'ge': operator.ge,
         'le': operator.le,
         'gt': operator.gt,
         'lt': operator.lt,
         'eq': operator.eq,
         'in': operator.contains,
+        'ni': lambda x, y: operator.contains(y, x)
     }
 
-    def __init__(self, property_name, comparator_name,
-                 default_value, filter_type, name, choices=None):
+    def __init__(
+        self, name, target, attribute, default=None, nullable=True,
+        comparators='__all__', choices='__all__', widget='default',
+        default_comparator=None
+    ):
+        self.widget = widget
+        if comparators != '__all__':
+            for comparator in comparators:
+                assert comparator in self.possible_comparators.keys()
+        self.allowed_comparators = comparators
+        self.allowed_values = choices
+        self.target = target
+        self.default = default
+        self.attribute = attribute
+        self.nullable = nullable
         self.name = name
-        self.property = property_name
-        self.value = default_value
-        self.comparator_name = comparator_name
-        self.comparator_func = self.comparators[comparator_name]
-        self.type = filter_type
-        self.choices = choices
+        self._value = None
+        self.manager = None
+        if default_comparator:
+            self._verify_comparator(default_comparator)
+        self._default_comparator = default_comparator
+        self._comparator = None
+        if default:
+            assert default_comparator
 
-    def __str__(self):
-        return self.field_separator.join(
-            map(str, [
-                self.property,
-                self.comparator_name,
-                self.value
-            ])
-        )
+    @property
+    def id(self):
+        return self.target.__name__ + '.' + self.attribute
+
+    def _verify_value(self, value):
+        if not (
+                self.nullable or
+                value
+        ):
+            raise Exception('Filter ' + self.name + ' is not nullable')
+        if not (
+                self.allowed_values == '__all__' or
+                value in self.allowed_values
+        ):
+            raise Exception(
+                'Filter ' + self.name + ' recieved forbiddden value'
+            )
+
+    def _verify_comparator(self, comparator):
+        if not (
+                (
+                    self.allowed_comparators == '__all__' and
+                    comparator in self.possible_comparators.keys()
+                )
+                or
+                comparator in self.allowed_comparators
+        ):
+            raise Exception(
+                'Filter ' + self.name + ' recieved forbiddden comparator: ' + comparator
+            )
+
+    def _verify(self, value, comparator):
+        self._verify_value(value)
+        self._verify_comparator(comparator)
+
+    def update(self, comparator, value):
+        if comparator and comparator != 'None':
+            self._verify_comparator(comparator)
+            self._comparator = comparator
+        if value is not None:
+            self._verify_value(value)
+            self._value = value
+
+    def compare(self, value):
+        comparator_function = self.possible_comparators[self.comparator]
+        return comparator_function(value, self.value)
 
     def test(self, obj):
         """Test if a given object (instance) passes criteria of this filter.
@@ -83,87 +105,95 @@ class Filter:
         if self.value is None:
             # the filter is turned off
             return -1
-        try:
-            obj_val = getattr(obj, self.property)
-            return self.comparator_func(obj_val, self.value)
-        except AttributeError:
-            # the filter is not applicable - the property does not exists in obj
-            return -1
+        #try:
+        obj_value = getattr(obj, self.attribute)
+        return self.compare(obj_value)
+        #except AttributeError:
+        #    # the filter is not applicable: the property does not exists in obj
+        #    return -1
+
+    def apply(self, elements):
+        return list(filter(lambda element: self.test(element), elements))
+
+    @property
+    def is_active(self):
+        return bool(self.value)
+
+    @property
+    def value(self):
+        if self._value is not None:
+            return self._value
+        return self.default
+
+    @property
+    def comparator(self):
+        if self._comparator:
+            return self._comparator
+        return self._default_comparator
+
+    @property
+    def visible(self):
+        return True
+
+    def __str__(self):
+        return field_separator.join(
+            map(str, [
+                self.name,
+                self.comparator,
+                self.value
+            ])
+        )
 
 
-class ObjectFilter(Filter):
-    """Single filter that tests if a passed instance has a property
-    with value passing the criteria specified during initialization.
-
-    It uses standard Python comaparators.
-    """
-
-    def __init__(self, property_name, comparator_name, value):
-
-        assert property_name and comparator_name and value
-
-        self.property = property_name
-        self.comparator_name = comparator_name
-        self.comparator_func = self.comparators[comparator_name]
-        self.value = self._parse_value(value)
-
-    @staticmethod
-    def _parse_value(value):
-        """Safely parse value from string, without eval"""
-        try:
-            return int(value)
-        except ValueError:
-            pass
-
-        try:
-            return float(value)
-        except ValueError:
-            pass
-
-        if value == 'True':
-            return True
-        elif value == 'False':
-            return False
-        elif value == 'None':
-            return None
-
-        return value
-
-    @classmethod
-    def from_string(cls, entry):
-        """Create a filter from string.
-
-        Example: Filter.from_string('is_ptm eq 1')
-        """
-        property_name, comparator, value = entry.split(cls.field_separator)
-        return cls(property_name, comparator, value)
-
-
-class FilterSet:
-    """Group of filters that can be parsed or testes at once.
-
-    An object has to pass tests of all filters to pass the FilterSet
-    test (subsequent filters' tests results are always joined with 'and')
-    """
+class FilterManager:
 
     filters_separator = ';'
+    UpdateTuple = namedtuple('UpdateTuple', ['id', 'comparator', 'value'])
 
     def __init__(self, filters):
-        self.filters = filters
+        for filter in filters:
+            filter.manager = self
 
-    def remove_unused(self):
-        """Removes unused filters from the current FilterSet.
+        self.filters = {
+            filter.id: filter
+            for filter in filters
+        }
 
-        Unused filters are defined as those with value equal to None.
-        """
-        self.filters = list(filter(lambda x: x.value is not None, self.filters))
+    def get_active(self):
+        return list(filter(lambda f: f.is_active, self.filters.values()))
+
+    def get_inactive(self):
+        return list(filter(lambda f: not f.is_active, self.filters.values()))
+
+    def apply(self, target_type, elements):
+        for _filter in self._get_active_by_target(target_type):
+            elements = _filter.apply(elements)
+        return elements
+
+    def _get_active_by_target(self, target_type):
+        return [
+            filter
+            for filter in self.filters.values()
+            if filter.target == target_type and filter.is_active
+        ]
+
+    def get_value(self, filter_id):
+        return self.filters[filter_id].value
+
+    def update_from_request(self, request):
+        filter_updates = self._parse_request(request)
+        for update in filter_updates:
+            self.filters[update.id].update(
+                update.comparator,
+                self._parse_value(update.value)
+            )
 
     @staticmethod
-    def parse_fallback_query(query):
+    def _parse_fallback_query(query):
         """Parse query in fallback format to a dict of dicts."""
 
-        re_value = re.compile(r'filter\[(\w+)\]')
-        re_cmp = re.compile(r'filter\[(\w+)\]\[cmp\]')
+        re_value = re.compile(r'filter\[([\w\.]+)\]')
+        re_cmp = re.compile(r'filter\[([\w\.]+)\]\[cmp\]')
 
         filters = defaultdict(dict)
 
@@ -182,8 +212,7 @@ class FilterSet:
 
         return filters
 
-    @classmethod
-    def from_request(cls, request):
+    def _parse_request(self, request):
         """Create a group of filters basing of Flask's request object.
 
         For browser that sent request with AJAX it just passes 'filters'
@@ -199,100 +228,61 @@ class FilterSet:
         if request.args.get('fallback'):
 
             query = unquote(str(request.query_string, 'utf-8'))
-            filters_dict = cls.parse_fallback_query(query)
+            filters_dict = self._parse_fallback_query(query)
 
-            join_fields = Filter.field_separator.join
+            join_fields = field_separator.join
             filters_list = [
                 join_fields([name, data.get('cmp', 'eq'), data.get('value')])
                 for name, data in filters_dict.items()
             ]
-            string = cls.filters_separator.join(filters_list)
+            string = self.filters_separator.join(filters_list)
         else:
             string = request.args.get('filters', '')
 
-        return cls.from_string(string)
+        return self._parse_string(string)
 
-    @classmethod
-    def from_string(cls, filters_string):
+    def _parse_string(self, filters_string):
         """Create a group of filters from string.
 
         Example:
             x = FilterSet.from_string('is_ptm eq 1; is_ptm_direct eq 0')
 
             will create set of filters that will positively
-            evalueate PTM mutations located in flanks
+            evaluate PTM mutations located in flanks
         """
-        raw_filters = filters_string.split(cls.filters_separator)
+        raw_filters = filters_string.split(self.filters_separator)
         # remove empty strings
         raw_filters = filter(bool, raw_filters)
 
-        new_filter = ObjectFilter.from_string
-        filters = [new_filter(filter_str) for filter_str in raw_filters]
+        return [
+            self.UpdateTuple(*filter_update.split(field_separator))
+            for filter_update in raw_filters
+        ]
 
-        return cls(filters)
+    @staticmethod
+    def _parse_value(value):
+        """Safely parse value from string, without eval"""
 
-    def __bool__(self):
-        """If there is nothing to iterate, casting to bool returns False."""
-        return bool(self.filters)
+        try:
+            return int(value)
+        except ValueError:
+            pass
 
-    def __getattr__(self, k):
-        if k.startswith('__') and k.endswith('__'):
-            return super().__getattr__(k)
-        for f in self.filters:
-            if f.property == k:
-                return f.value
-        raise AttributeError
+        try:
+            return float(value)
+        except ValueError:
+            pass
 
-    def test(self, obj):
-        """Test if an object (obj) passes tests of all filters from the set."""
-        for condition in self.filters:
-            if not condition.test(obj):
-                return False
-        return True
+        if value == 'True':
+            return True
+        elif value == 'False':
+            return False
+        elif value == 'None':
+            return None
 
-    def filtered(self, iterable, key=None):
-        """Return an iterator over filtered list or other passed iterable obj.
+        value = value.replace('+', ' ')
 
-        Key is an item getter to show which item from an element in
-        iterable should be taken as a value during filtering.
-        """
-        if not key:
-            key = lambda x: x
-
-        return list(filter(lambda elem: self.test(key(elem)), iterable))
-
-    def filter_query(self, query, model):
-        """NOT IN USE: Returns modified SQLAlchemy query with filters appended
-
-        The function could be used to apply filters on the database side
-        (by construction of appropriate SQL query). Due to troubles with
-        constructing appropriate expressions for hybrid_properties I just
-        left the code untouched here for reference in future.
-        """
-        for condition in self.filters:
-            column = getattr(model, condition.property)
-            attr_name = None
-            for attr_name_template in ['%s', '%s_', '__%s__']:
-                tested_name = attr_name_template % condition.comparator_name
-                if hasattr(column, tested_name):
-                    attr_name = tested_name
-                    break
-            else:
-                raise Exception(
-                    'The column %s has no comparator %s' % (
-                        condition.property,
-                        condition.comparator_name
-                    )
-                )
-
-            filter_expression = getattr(column, attr_name)(condition.value)
-            query = query.filter(filter_expression)
-
-        return query
-
-    def __iter__(self):
-        """Iteration over FilterSet is an iteration over its filters"""
-        return iter(self.filters)
+        return value
 
     @property
     def url_string(self):
@@ -300,4 +290,13 @@ class FilterSet:
 
         Produced string is ready to be included as a query argument in URL path
         """
-        return self.filters_separator.join([str(f) for f in self])
+        return self.filters_separator.join(
+            [
+                str(f)
+                for f in self.filters.values()
+            ]
+        )
+
+    def reset(self):
+        for filter in self.filters.values():
+            filter._value = None

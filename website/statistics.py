@@ -121,4 +121,4 @@ class Statistics:
 
 stats = Statistics()
 
-STATISTICS = stats.get_all()
+STATISTICS = ''#stats.get_all()

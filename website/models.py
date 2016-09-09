@@ -435,6 +435,15 @@ class Mutation(BioModel):
         '1KGenomes': 'meta_1KG',
     }
 
+    @property
+    def cancer_types(self):
+        if not self.meta_cancer:
+            return []
+        return [
+            meta.cancer.name
+            for meta in self.meta_cancer
+        ]
+
     def get_source_name(self, column_name):
         return {v: k for k, v in self.source_fields.items()}.get(
             column_name,

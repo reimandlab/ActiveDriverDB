@@ -89,8 +89,8 @@ Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alterna
             value_type: '{{ value_type }}',
             max_zoom: max_zoom,
             element: document.getElementById('plot_area'),
-            mutations: {{ mutations | json | safe or '"' + url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.active.url_string) + '"' }},
-            sites: {{ sites | safe or '"' + url_for('ProteinView:sites', refseq=protein.refseq) + '"' }},
+            mutations: {{ mutations | json | safe or '"' + url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.url_string) + '"' }},
+            sites: {{ sites | json | safe or '"' + url_for('ProteinView:sites', refseq=protein.refseq, filters=filters.url_string) + '"' }},
             sequenceLength: {{ protein.sequence | length }},
             name: '{{ protein.gene.name }}',
             legends:
