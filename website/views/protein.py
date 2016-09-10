@@ -56,7 +56,7 @@ class ProteinView(FlaskView):
             ),
             Filter(
                 'Site type', Site, 'type', widget='select',
-                comparators=['ni'], default_comparator='ni',
+                comparators=['in'], default_comparator='in',
                 choices=['phosphorylation', 'acetylation', 'ubiquitination', 'methylation'],
             ),
             SourceDependentFilter(
