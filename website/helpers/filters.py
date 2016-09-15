@@ -354,7 +354,7 @@ class FilterManager:
         """Return string representation of given value (of a filter)."""
         if is_iterable_but_not_str(value):
             return FilterManager.sub_value_separator.join(value)
-        return value
+        return str(value)
 
     @property
     def url_string(self):
