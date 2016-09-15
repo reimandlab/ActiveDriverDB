@@ -109,7 +109,7 @@ class ProteinView(FlaskView):
         disorder = [
             TrackElement(*region) for region in protein.disorder_regions
         ]
-        raw_mutations = self.filter_manager.apply(Mutation, protein.mutations)
+        raw_mutations = self.filter_manager.apply(protein.mutations)
 
         tracks = [
             PositionTrack(protein.length, 25),
@@ -155,7 +155,7 @@ class ProteinView(FlaskView):
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
-        raw_mutations = self.filter_manager.apply(Mutation, protein.mutations)
+        raw_mutations = self.filter_manager.apply(protein.mutations)
 
         parsed_mutations = self._represent_mutations(
             raw_mutations,
@@ -175,7 +175,7 @@ class ProteinView(FlaskView):
         return jsonify(response)
 
     def _prepare_sites(self, protein):
-        sites = self.filter_manager.apply(Site, protein.sites)
+        sites = self.filter_manager.apply(protein.sites)
         return [
             {
                 'start': site.position - 7,

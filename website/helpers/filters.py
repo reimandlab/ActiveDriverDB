@@ -7,18 +7,8 @@ from urllib.parse import unquote
 from collections import Iterable
 
 
-field_separator = ':'
-sub_value_separator = ','
-
-
 def is_iterable_but_not_str(obj):
     return isinstance(obj, Iterable) and not isinstance(obj, str)
-
-
-def repr_value(value):
-    if is_iterable_but_not_str(value):
-        return sub_value_separator.join(value)
-    return value
 
 
 class Filter:
@@ -166,17 +156,6 @@ class Filter:
     def visible(self):
         return True
 
-    def __str__(self):
-        value = self.value
-
-        return field_separator.join(
-            map(str, [
-                self.name,
-                self.comparator,
-                repr_value(value)
-            ])
-        )
-
     def __repr__(self):
         return '<Filter {1} ({0}active) with value "{2}">'.format(
             '' if self.is_active else 'in',
@@ -186,53 +165,88 @@ class Filter:
 
 
 class FilterManager:
+    """Main class used to parse & apply filters' data specified by request.
 
+    All allowed filters have to be registered during initialization."""
+
+    # An example of separators use:
+    # mutation.frequency:gt:0.2;mutation.cancer:in:KIRC,COAD
     filters_separator = ';'
+    field_separator = ':'
+    sub_value_separator = ','
+
+    # a shorthand for structure to update filters
     UpdateTuple = namedtuple('UpdateTuple', ['id', 'comparator', 'value'])
 
     def __init__(self, filters):
+        # let each filter know where to seek data about other filters
+        # (so one filter can relay on state of other filters,
+        # eg. be active conditionaly, if another filter is set).
         for filter in filters:
             filter.manager = self
 
+        # store filters as dict of filter_id -> filter for quick access
         self.filters = {
             filter.id: filter
             for filter in filters
         }
 
     def get_active(self):
-        #return [f for f in self.filters.values() if f.is_active]
-        return list(filter(lambda f: f.is_active, self.filters.values()))
+        """Return a list of active filters"""
+        return [f for f in self.filters.values() if f.is_active]
 
     def get_inactive(self):
-        return list(filter(lambda f: not f.is_active, self.filters.values()))
+        """Return a list of inactive filters"""
+        return [f for f in self.filters.values() if not f.is_active]
 
-    def apply(self, target_type, elements):
-        for _filter in self._get_active_by_target(target_type):
-            elements = _filter.apply(elements)
+    def apply(self, elements):
+        """Apply all appropriate filters to given list of elements.
+
+        Only filters targeting the same model and beeing currently active will
+        be applied. The target model will be deduced from passed elements.
+        """
+        try:
+            target_type = type(elements[0])
+        except IndexError:
+            # the list was empty or was eptied before we were able to
+            # investigate the type of targeted objects
+            return []
+
+        for filter_ in self._get_active_by_target(target_type):
+            elements = filter_.apply(elements)
         return elements
 
     def _get_active_by_target(self, target_type):
+        """Return filters which are active & target the same type of objects"""
         return [
-            filter
-            for filter in self.filters.values()
-            if filter.target == target_type and filter.is_active
+            filter_
+            for filter_ in self.filters.values()
+            if filter_.target == target_type and filter_.is_active
         ]
 
     def get_value(self, filter_id):
+        """Return value of filter with specified identificator."""
         return self.filters[filter_id].value
 
     def update_from_request(self, request):
+        """Set states of child filters to match those specified in request.
+
+        The query part of request will be looked upon to get filter's data, in
+        one of two available formats: modern or fallback.
+
+        For details see _parse_request() method in this class.
+        """
         filter_updates = self._parse_request(request)
+
         for update in filter_updates:
             self.filters[update.id].update(
                 self._parse_value(update.value),
-                # parse comparator inline
-                None if update.comparator == 'None' else update.comparator,
+                self._parse_comparator(update.comparator),
             )
 
     @staticmethod
     def _parse_fallback_query(query):
-        """Parse query in fallback format to a dict of dicts."""
+        """Parse query in fallback format."""
 
         re_value = re.compile(r'filter\[([\w\.]+)\]')
         re_cmp = re.compile(r'filter\[([\w\.]+)\]\[cmp\]')
@@ -252,72 +266,64 @@ class FilterManager:
                 name = match.group(1)
                 filters[name]['cmp'] = value
 
-        return filters
+        filters_list = [
+            [
+                name,
+                data.get('cmp', 'eq'),
+                FilterManager._repr_value(data.get('value'))
+            ]
+            for name, data in filters.items()
+        ]
+        return filters_list
 
     def _parse_request(self, request):
-        """Create a group of filters basing of Flask's request object.
+        """Extract and normalize filters' data from Flask's request object.
 
-        For browser that sent request with AJAX it just passes 'filters'
-        argument from request to 'from_string' classmethod. For browsers
-        without JS it parses query in a 'fallback format' that is a long
-        format generated automatically from form, with PHP-like syntax.
+        Two formats for specifing filters are available:
+            modern request format:
+                Model.filters=is_ptm:eq:True;Model.frequency:gt:2
+            fallback format:
+                filter[Model.is_ptm]=True&filter[Model.frequency]=2&\
+                filter[Model.frequency][cmp]=gt&fallback=True
 
-        Modern request format:
-            filters=is_ptm eq True;frequency gt 2
-        Fallback format:
-            filter[is_ptm]=True&filter[frequency]=2&filter[frequency][cmp]=gt&fallback=True
+        where fallback format is what will be generated by browsers after
+        posting HTML form and modern format is designed to be used with AJAX
+        requests, to create readable REST interfaces and for internal usage.
         """
         if request.args.get('fallback'):
 
             query = unquote(str(request.query_string, 'utf-8'))
-            filters_dict = self._parse_fallback_query(query)
+            filters_list = self._parse_fallback_query(query)
 
-            join_fields = field_separator.join
-            filters_list = [
-                join_fields([
-                    name,
-                    data.get('cmp', 'eq'),
-                    str(repr_value(data.get('value')))
-                ])
-                for name, data in filters_dict.items()
-            ]
-            string = self.filters_separator.join(filters_list)
         else:
             string = request.args.get('filters', '')
+            filters_list = self._parse_string(string)
 
-        return self._parse_string(string)
+        return [
+            self.UpdateTuple(*filter_update)
+            for filter_update in filters_list
+        ]
 
     def _parse_string(self, filters_string):
-        """Create a group of filters from string.
-
-        Example:
-            x = FilterSet.from_string('is_ptm eq 1; is_ptm_direct eq 0')
-
-            will create set of filters that will positively
-            evaluate PTM mutations located in flanks
-        """
+        """Split modern query string into list describing filter's settings."""
         raw_filters = filters_string.split(self.filters_separator)
         # remove empty strings
         raw_filters = filter(bool, raw_filters)
 
         return [
-            self.UpdateTuple(*filter_update.split(field_separator))
+            filter_update.split(self.field_separator)
             for filter_update in raw_filters
         ]
 
     @staticmethod
+    def _parse_comparator(comparator):
+        if comparator == 'None':
+            return None
+        return comparator
+
+    @staticmethod
     def _parse_value(value):
-        """Safely parse value from string, without eval"""
-
-        try:
-            return int(value)
-        except ValueError:
-            pass
-
-        try:
-            return float(value)
-        except ValueError:
-            pass
+        """Safely parse value from string, without eval."""
 
         if value == 'True':
             return True
@@ -326,11 +332,28 @@ class FilterManager:
         elif value == 'None':
             return None
 
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            pass
+
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            pass
+
         value = value.replace('+', ' ')
 
-        if sub_value_separator in value:
-            return value.split(sub_value_separator)
+        if FilterManager.sub_value_separator in value:
+            return value.split(FilterManager.sub_value_separator)
 
+        return value
+
+    @staticmethod
+    def _repr_value(value):
+        """Return string representation of given value (of a filter)."""
+        if is_iterable_but_not_str(value):
+            return FilterManager.sub_value_separator.join(value)
         return value
 
     @property
@@ -341,11 +364,18 @@ class FilterManager:
         """
         return self.filters_separator.join(
             [
-                str(f)
+                FilterManager.field_separator.join(
+                    map(str, [
+                        f.name,
+                        f.comparator,
+                        self._repr_value(f.value)
+                    ])
+                )
                 for f in self.filters.values()
             ]
         )
 
     def reset(self):
+        """Reset values of child filters to bring them into a neutral state."""
         for filter in self.filters.values():
             filter._value = None
