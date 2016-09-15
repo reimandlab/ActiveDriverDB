@@ -436,6 +436,16 @@ class Mutation(BioModel):
     }
 
     @property
+    def significance(self):
+        if not self.meta_inherited:
+            return []
+        return set(
+            clin_datum.significance
+            for clin_datum in
+            self.meta_inherited.clin_data
+        )
+
+    @property
     def populations_1KG(self):
         if not self.meta_1KG:
             return []

@@ -10,6 +10,7 @@ from models import Mutation
 from models import Site
 from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
+from models import ClinicalData
 from website.helpers.tracks import Track
 from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack
@@ -45,46 +46,58 @@ class ProteinView(FlaskView):
     cancer_types = [cancer.name for cancer in Cancer.query.all()]
     populations_1kg = The1000GenomesMutation.populations.values()
     populations_esp = ExomeSequencingMutation.populations.values()
+    significances = ClinicalData.significance_codes.values()
 
     filter_manager = FilterManager(
         [
             Filter(
                 'Source', Mutation, 'sources', widget='select',
-                comparators=['in'], default_comparator='in',
+                comparators=['in'],
                 choices=list(Mutation.source_fields.keys()),
                 default='TCGA', nullable=False,
             ),
             Filter(
                 'PTM mutations', Mutation, 'is_ptm', widget='with_without',
-                comparators=['eq'], default_comparator='eq',
+                comparators=['eq'],
             ),
             Filter(
                 'Site type', Site, 'type', widget='select',
-                comparators=['in'], default_comparator='in',
+                comparators=['in'],
                 choices=['phosphorylation', 'acetylation', 'ubiquitination', 'methylation'],
             ),
             SourceDependentFilter(
                 'Cancer', Mutation, 'cancer_types', widget='select_multiple',
-                comparators=['in'], default_comparator='in',
+                comparators=['in'],
                 choices=cancer_types,
                 default=cancer_types, nullable=False,
                 source='TCGA',
                 multiple='any',
             ),
             SourceDependentFilter(
-                'Population', Mutation, 'populations_1KG', widget='select_multiple',
-                comparators=['in'], default_comparator='in',
+                'Population', Mutation, 'populations_1KG',
+                widget='select_multiple',
+                comparators=['in'],
                 choices=populations_1kg,
                 default=populations_1kg, nullable=False,
                 source='1KGenomes',
                 multiple='any',
             ),
             SourceDependentFilter(
-                'Population', Mutation, 'populations_ESP6500', widget='select_multiple',
-                comparators=['in'], default_comparator='in',
+                'Population', Mutation, 'populations_ESP6500',
+                widget='select_multiple',
+                comparators=['in'],
                 choices=populations_esp,
                 default=populations_esp, nullable=False,
                 source='ESP6500',
+                multiple='any',
+            ),
+            SourceDependentFilter(
+                'Clinical significance', Mutation, 'significance',
+                widget='select_multiple',
+                comparators=['in'],
+                choices=significances,
+                default=significances, nullable=False,
+                source='ClinVar',
                 multiple='any',
             )
         ]

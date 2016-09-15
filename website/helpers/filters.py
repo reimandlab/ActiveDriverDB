@@ -35,10 +35,17 @@ class Filter:
     ):
         self.widget = widget
         if comparators != '__all__':
+            if not default_comparator and len(comparators) == 1:
+                default_comparator = comparators[0]
             for comparator in comparators:
                 assert comparator in self.possible_comparators.keys()
         self.allowed_comparators = comparators
         self.allowed_values = choices
+        """TBD: save choices as key (id) -> value (description) mappings.
+        if choices != '__all__':
+            if isinstance(choices, dict):
+                self.allowed_values = choices.keys()
+        """
         self.target = target
         self.default = default
         self.attribute = attribute
