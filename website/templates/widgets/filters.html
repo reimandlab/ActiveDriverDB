@@ -54,7 +54,13 @@
               {% endfor %}
             </select>
         {% elif filter.widget == 'select_multiple' %}
-          <select name="filter[{{ filter.id }}]" id="filter[{{ filter.id }}]" class="form-control multiselect" multiple="multiple">
+          <select
+            name="filter[{{ filter.id }}]"
+            id="filter[{{ filter.id }}]"
+            class="form-control multiselect"
+            multiple="multiple"
+            {{ 'required' if not filter.nullable }}
+          >
               {% if filter.nullable %}
                 <option value="None" {{ 'selected' if filter.value == None }}>disabled</option>
               {% endif %}

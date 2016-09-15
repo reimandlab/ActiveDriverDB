@@ -29,7 +29,8 @@ var Filters = (function ()
             // initialize multiselect fields
             $('.multiselect').multiselect({
                 onDropdownHidden: update,
-                includeSelectAllOption: true
+                includeSelectAllOption: true,
+                dropRight: true
             })
 		}
 	}

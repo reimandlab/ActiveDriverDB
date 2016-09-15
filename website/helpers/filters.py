@@ -15,6 +15,12 @@ def is_iterable_but_not_str(obj):
     return isinstance(obj, Iterable) and not isinstance(obj, str)
 
 
+def repr_value(value):
+    if is_iterable_but_not_str(value):
+        return sub_value_separator.join(value)
+    return value
+
+
 class Filter:
 
     possible_comparators = {
@@ -163,14 +169,11 @@ class Filter:
     def __str__(self):
         value = self.value
 
-        if is_iterable_but_not_str(value):
-            value = sub_value_separator.join(value)
-
         return field_separator.join(
             map(str, [
                 self.name,
                 self.comparator,
-                value
+                repr_value(value)
             ])
         )
 
@@ -270,12 +273,11 @@ class FilterManager:
             filters_dict = self._parse_fallback_query(query)
 
             join_fields = field_separator.join
-            join_sub_values = sub_value_separator.join
             filters_list = [
                 join_fields([
                     name,
                     data.get('cmp', 'eq'),
-                    join_sub_values(data.get('value'))
+                    str(repr_value(data.get('value')))
                 ])
                 for name, data in filters_dict.items()
             ]
