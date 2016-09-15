@@ -436,6 +436,18 @@ class Mutation(BioModel):
     }
 
     @property
+    def populations_1KG(self):
+        if not self.meta_1KG:
+            return []
+        return self.meta_1KG.affected_populations
+
+    @property
+    def populations_ESP6500(self):
+        if not self.meta_ESP6500:
+            return []
+        return self.meta_ESP6500.affected_populations
+
+    @property
     def cancer_types(self):
         if not self.meta_cancer:
             return []
@@ -822,6 +834,10 @@ class PopulationMutation(MutationDetails):
     MAF:
         All - total value
     """
+    populations = {
+        # place mappings here: field name -> population name
+    }
+
     maf_all = db.Column(db.Float)
 
     @property
@@ -832,6 +848,14 @@ class PopulationMutation(MutationDetails):
     def summary(self):
         return self.value
 
+    @property
+    def affected_populations(self):
+        return [
+            population_name
+            for field, population_name in self.populations.items()
+            if getattr(self, field)
+        ]
+
 
 class ExomeSequencingMutation(PopulationMutation, BioModel):
     """Metadata for ESP 6500 mutation
@@ -840,6 +864,11 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
         EA - european american
         AA - african american
     """
+    populations = {
+        'maf_ea': 'European American',
+        'maf_aa': 'African American'
+    }
+
     maf_ea = db.Column(db.Float)
     maf_aa = db.Column(db.Float)
 
@@ -859,6 +888,15 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
     maf_afr = db.Column(db.Float)
     maf_eur = db.Column(db.Float)
     maf_sas = db.Column(db.Float)
+
+    # note: those are defined as super populations by 1000 Genomes project
+    populations = {
+        'maf_eas': 'East Asian',
+        'maf_amr': 'Ad Mixed American',
+        'maf_afr': 'African',
+        'maf_eur': 'European',
+        'maf_sas': 'South Asian'
+    }
 
     @property
     def representation(self):

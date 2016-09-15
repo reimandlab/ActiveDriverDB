@@ -8,6 +8,8 @@ from models import Cancer
 from models import Protein
 from models import Mutation
 from models import Site
+from models import The1000GenomesMutation
+from models import ExomeSequencingMutation
 from website.helpers.tracks import Track
 from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack
@@ -41,6 +43,8 @@ class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
     cancer_types = [cancer.name for cancer in Cancer.query.all()]
+    populations_1kg = The1000GenomesMutation.populations.values()
+    populations_esp = ExomeSequencingMutation.populations.values()
 
     filter_manager = FilterManager(
         [
@@ -65,6 +69,22 @@ class ProteinView(FlaskView):
                 choices=cancer_types,
                 default=cancer_types, nullable=False,
                 source='TCGA',
+                multiple='any',
+            ),
+            SourceDependentFilter(
+                'Population', Mutation, 'populations_1KG', widget='select_multiple',
+                comparators=['in'], default_comparator='in',
+                choices=populations_1kg,
+                default=populations_1kg, nullable=False,
+                source='1KGenomes',
+                multiple='any',
+            ),
+            SourceDependentFilter(
+                'Population', Mutation, 'populations_ESP6500', widget='select_multiple',
+                comparators=['in'], default_comparator='in',
+                choices=populations_esp,
+                default=populations_esp, nullable=False,
+                source='ESP6500',
                 multiple='any',
             )
         ]
