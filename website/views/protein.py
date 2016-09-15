@@ -60,10 +60,12 @@ class ProteinView(FlaskView):
                 choices=['phosphorylation', 'acetylation', 'ubiquitination', 'methylation'],
             ),
             SourceDependentFilter(
-                'Cancer', Mutation, 'cancer_types', widget='select',
+                'Cancer', Mutation, 'cancer_types', widget='select_multiple',
                 comparators=['in'], default_comparator='in',
                 choices=cancer_types,
+                default=cancer_types, nullable=False,
                 source='TCGA',
+                multiple='any',
             )
         ]
     )

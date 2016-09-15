@@ -53,6 +53,15 @@
                 <option value="{{ option }}" {{ 'selected' if filter.value == option }}>{{ option }}</option>
               {% endfor %}
             </select>
+        {% elif filter.widget == 'select_multiple' %}
+          <select name="filter[{{ filter.id }}]" id="filter[{{ filter.id }}]" class="form-control multiselect" multiple="multiple">
+              {% if filter.nullable %}
+                <option value="None" {{ 'selected' if filter.value == None }}>disabled</option>
+              {% endif %}
+              {% for option in filter.allowed_values %}
+                <option value="{{ option }}" {{ 'selected' if filter.value and option in filter.value }}>{{ option }}</option>
+              {% endfor %}
+            </select>
         {% else %}
             Unimplemented filter widget: '{{ filter.widget }}'
         {% endif %}

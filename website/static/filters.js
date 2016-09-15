@@ -1,30 +1,35 @@
 var Filters = (function ()
 {
 
+    var box
+    var form
+
     function update(e)
     {
-        this.closest('form').submit()
+        form.submit()
     }
 
 	var publicSpace = {
-		init: function(data)
+		init: function(filter_box)
 		{
-            var boxes = $('.filters')
-            for(var i = 0; i < boxes.length; i++)
+            var box = $(filter_box)
+
+            box.find('.save').hide()
+
+            form = box.closest('form')
+
+            var filters = box.find('.filter')
+            for(var j = 0; j < filters.length; j++)
             {
-                var box = $(boxes[i])
-
-                box.find('.save').hide()
-
-                var filters = box.find('.filter')
-                for(var j = 0; j < filters.length; j++)
-                {
-                    var filter = filters[j]
-                    var select = $(filter).find('select')
-                    select.change(update)
-                }
-
+                var filter = filters[j]
+                var select = $(filter).find('select').not('.multiselect')
+                select.change(update)
             }
+
+            // initialize multiselect fields
+            $('.multiselect').multiselect({
+                onDropdownHidden: update
+            })
 		}
 	}
 
@@ -32,4 +37,4 @@ var Filters = (function ()
 }())
 
 
-Filters.init()
+Filters.init($('.filters')[0])

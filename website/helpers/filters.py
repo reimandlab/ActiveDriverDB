@@ -7,6 +7,7 @@ from urllib.parse import unquote
 
 
 field_separator = ':'
+sub_value_separator = ','
 
 
 class Filter:
@@ -18,13 +19,18 @@ class Filter:
         'lt': operator.lt,
         'eq': operator.eq,
         'in': operator.contains,
-        'ni': lambda x, y: operator.contains(y, x)
+        'ni': lambda x, y: operator.contains(y, x),
+    }
+
+    possible_join_operators = {
+        'all': all,
+        'any': any,
     }
 
     def __init__(
         self, name, target, attribute, default=None, nullable=True,
         comparators='__all__', choices='__all__', widget='default',
-        default_comparator=None
+        default_comparator=None, multiple=False
     ):
         self.widget = widget
         if comparators != '__all__':
@@ -35,6 +41,8 @@ class Filter:
         self.target = target
         self.default = default
         self.attribute = attribute
+        self.multiple = multiple    # specify behaviour for multiple-value
+        # filtering (either 'any' (or) or 'all' (and)).
         self.nullable = nullable
         self.name = name
         self._value = None
@@ -58,7 +66,14 @@ class Filter:
             raise Exception('Filter ' + self.name + ' is not nullable')
         if not (
                 self.allowed_values == '__all__' or
-                value in self.allowed_values
+                value in self.allowed_values or
+                (
+                    type(value) is list and
+                    all(
+                        sub_value in self.allowed_values
+                        for sub_value in value
+                    )
+                )
         ):
             raise Exception(
                 'Filter ' + self.name + ' recieved forbiddden value'
@@ -91,6 +106,14 @@ class Filter:
 
     def compare(self, value):
         comparator_function = self.possible_comparators[self.comparator]
+
+        if self.multiple and type(self.value) is list:
+            multiple_test = self.possible_join_operators[self.multiple]
+            return multiple_test(
+                comparator_function(value, sub_value)
+                for sub_value in self.value
+            )
+
         return comparator_function(value, self.value)
 
     def test(self, obj):
@@ -105,12 +128,9 @@ class Filter:
         if self.value is None:
             # the filter is turned off
             return -1
-        #try:
+
         obj_value = getattr(obj, self.attribute)
         return self.compare(obj_value)
-        #except AttributeError:
-        #    # the filter is not applicable: the property does not exists in obj
-        #    return -1
 
     def apply(self, elements):
         return list(filter(lambda element: self.test(element), elements))
@@ -160,6 +180,7 @@ class FilterManager:
         }
 
     def get_active(self):
+        #return [f for f in self.filters.values() if f.is_active]
         return list(filter(lambda f: f.is_active, self.filters.values()))
 
     def get_inactive(self):
@@ -195,7 +216,7 @@ class FilterManager:
         re_value = re.compile(r'filter\[([\w\.]+)\]')
         re_cmp = re.compile(r'filter\[([\w\.]+)\]\[cmp\]')
 
-        filters = defaultdict(dict)
+        filters = defaultdict(lambda: defaultdict(list))
 
         for entry in query.split('&'):
             key, value = entry.split('=')
@@ -203,7 +224,7 @@ class FilterManager:
             match = re_value.fullmatch(key)
             if match:
                 name = match.group(1)
-                filters[name]['value'] = value
+                filters[name]['value'].append(value)
 
             match = re_cmp.fullmatch(key)
             if match:
@@ -231,8 +252,13 @@ class FilterManager:
             filters_dict = self._parse_fallback_query(query)
 
             join_fields = field_separator.join
+            join_sub_values = sub_value_separator.join
             filters_list = [
-                join_fields([name, data.get('cmp', 'eq'), data.get('value')])
+                join_fields([
+                    name,
+                    data.get('cmp', 'eq'),
+                    join_sub_values(data.get('value'))
+                ])
                 for name, data in filters_dict.items()
             ]
             string = self.filters_separator.join(filters_list)
@@ -281,6 +307,9 @@ class FilterManager:
             return None
 
         value = value.replace('+', ' ')
+
+        if sub_value_separator in value:
+            return value.split(sub_value_separator)
 
         return value
 
