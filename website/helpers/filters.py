@@ -4,10 +4,15 @@ import re
 from collections import namedtuple
 from collections import defaultdict
 from urllib.parse import unquote
+from collections import Iterable
 
 
 field_separator = ':'
 sub_value_separator = ','
+
+
+def is_iterable_but_not_str(obj):
+    return isinstance(obj, Iterable) and not isinstance(obj, str)
 
 
 class Filter:
@@ -68,7 +73,7 @@ class Filter:
                 self.allowed_values == '__all__' or
                 value in self.allowed_values or
                 (
-                    type(value) is list and
+                    is_iterable_but_not_str(value) and
                     all(
                         sub_value in self.allowed_values
                         for sub_value in value
@@ -96,8 +101,8 @@ class Filter:
         self._verify_value(value)
         self._verify_comparator(comparator)
 
-    def update(self, comparator, value):
-        if comparator and comparator != 'None':
+    def update(self, value, comparator=None):
+        if comparator:
             self._verify_comparator(comparator)
             self._comparator = comparator
         if value is not None:
@@ -107,7 +112,7 @@ class Filter:
     def compare(self, value):
         comparator_function = self.possible_comparators[self.comparator]
 
-        if self.multiple and type(self.value) is list:
+        if self.multiple and is_iterable_but_not_str(self.value):
             multiple_test = self.possible_join_operators[self.multiple]
             return multiple_test(
                 comparator_function(value, sub_value)
@@ -137,7 +142,7 @@ class Filter:
 
     @property
     def is_active(self):
-        return bool(self.value)
+        return bool(self.value) and self.visible
 
     @property
     def value(self):
@@ -156,12 +161,24 @@ class Filter:
         return True
 
     def __str__(self):
+        value = self.value
+
+        if is_iterable_but_not_str(value):
+            value = sub_value_separator.join(value)
+
         return field_separator.join(
             map(str, [
                 self.name,
                 self.comparator,
-                self.value
+                value
             ])
+        )
+
+    def __repr__(self):
+        return '<Filter {1} ({0}active) with value "{2}">'.format(
+            '' if self.is_active else 'in',
+            self.name,
+            self.value
         )
 
 
@@ -205,8 +222,9 @@ class FilterManager:
         filter_updates = self._parse_request(request)
         for update in filter_updates:
             self.filters[update.id].update(
-                update.comparator,
-                self._parse_value(update.value)
+                self._parse_value(update.value),
+                # parse comparator inline
+                None if update.comparator == 'None' else update.comparator,
             )
 
     @staticmethod
