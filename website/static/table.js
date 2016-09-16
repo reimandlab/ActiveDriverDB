@@ -24,7 +24,7 @@ var MutationTable = function ()
             }
             html += MIMP_image_from_meta(meta.MIMP)
         }
-        else if(affected_sites_count != 0)
+        else if(affected_sites_count !== 0)
         {
             html += 'Closest affected site(s): <div>' + row_data[6] + '</div>'
         }
@@ -44,7 +44,7 @@ var MutationTable = function ()
                 detailFormatter: detailFormatter,
                 onClickRow: function(row_data){
                     publicSpace.expandRow(row_data[0] + row_data[2])
-                },
+                }
             })
             if(window.location.hash)
             {
@@ -57,7 +57,7 @@ var MutationTable = function ()
                 'expandRow',
                 getMutationRow(mutation_id).data('index')
             )
-        },
+        }
     }
 
     return publicSpace

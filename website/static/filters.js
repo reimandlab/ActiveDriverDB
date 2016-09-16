@@ -11,12 +11,12 @@ var Filters = (function ()
 
     function checkEquality(obj1, obj2)
     {
-        if(obj1.length != obj2.length)
+        if(obj1.length !== obj2.length)
             return false
 
         for(var i = 0; i < obj1.length; i++)
         {
-            if(obj1[i] != obj2[i])
+            if(obj1[i] !== obj2[i])
                 return false
         }
         return true

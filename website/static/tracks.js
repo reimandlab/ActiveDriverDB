@@ -205,7 +205,7 @@ var Tracks = function ()
             {
                 var scroll = $(event.target).scrollLeft()
                 // is that a meaningful, nonprogramatic scroll?
-                if(scroll != Math.round(position * config.char_size))
+                if(scroll !== Math.round(position * config.char_size))
                 {
                     _setAAPosition(scroll / config.char_size)
                 }

@@ -25,7 +25,7 @@ var multlinePlaceholderPolyfill = (function()
 
     function stopPlaceholder()
     {
-        if(active && field.val() == placeholder)
+        if(active && field.val() === placeholder)
         {
             field.val('')
             field.removeClass('placeholder')

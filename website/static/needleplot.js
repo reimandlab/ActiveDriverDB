@@ -265,6 +265,8 @@ var NeedlePlot = function ()
         axes.y.scale.
             nice()
 
+        var format
+
         if(config.use_log)
         {
             var cnt = -1
@@ -275,7 +277,7 @@ var NeedlePlot = function ()
             else
                 config.log_ticks_per_label = ticks_cnt
 
-            function log_ticks_format(d){
+            format = function(d){
                 cnt += 1
 
                 if(cnt % config.log_ticks_per_label !== 0)
@@ -291,10 +293,12 @@ var NeedlePlot = function ()
                 return d3.format('%')(d)
             }
         }
+        else
+        {
+          format = d3.format('d')
+        }
 
         axes.y.createObj('left')
-
-        var format = !config.use_log ? d3.format('d') : log_ticks_format
 
         axes.y.obj
             .tickFormat(format)

@@ -3,7 +3,7 @@ tinymce.init({
     body_class: 'page-content',
     content_css : [
         '/static/min/page.css',
-        '/static/thirdparty/bootstrap/css/bootstrap.min.css',
+        '/static/thirdparty/bootstrap/css/bootstrap.min.css'
     ],
     height: 160,
     browser_spellcheck: true,
@@ -15,7 +15,7 @@ tinymce.init({
         {title: 'Default', value: 'table table-bordered table-hover'},
         {title: 'Striped', value: 'table table-bordered table-hover table-striped'},
         {title: 'Without borders', value: 'table table-hover table-striped'},
-        {title: 'Striped, without borders', value: 'table table-hover table-striped'},
+        {title: 'Striped, without borders', value: 'table table-hover table-striped'}
     ]
 
 })
