@@ -6,7 +6,7 @@
     </div>
 {%- endmacro %}
 
-{% set source = filters.active.sources %}
+{% set source = filters.get_value('Mutation.sources') %}
 
 <div id="toolbar"></div>
 

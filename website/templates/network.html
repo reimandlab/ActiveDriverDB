@@ -47,8 +47,8 @@
     <script type="text/javascript">
 
     Network.init({
-        show_sites: {{ filters.active.show_sites | lower }},
-        clone_by_site: {{ filters.active.clone_by_site | lower }},
+        show_sites: {{ filters.get_value('JavaScript.show_sites') | lower }},
+        clone_by_site: {{ filters.get_value('JavaScript.clone_by_site') | lower }},
         element: document.getElementById('network_plot'),
         data: {{ data | safe }},
         dataURL: '{{ url_for('NetworkView:kinases', refseq=protein.refseq) }}',

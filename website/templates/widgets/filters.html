@@ -1,17 +1,19 @@
 {% macro make_filter_box(filters) %}
   <form method="get" class="filters">
-    {% if filters.active %}
+    {% set active_filters = filters.get_active() %}
+    {% set inactive_filters = filters.get_inactive() %}
+    {% if active_filters %}
         <h5>Active</h5>
         <ul class="active">
-            {% for filter in filters.active %}
+            {% for filter in active_filters %}
                {{ make_filter(filter) }}
             {% endfor %}
         </ul>
     {% endif %}
-    {% if filters.available %}
+    {% if inactive_filters %}
         <h5>Available</h5>
         <ul class="available">
-            {% for filter in filters.available %}
+            {% for filter in inactive_filters %}
                {{ make_filter(filter) }}
             {% endfor %}
         </ul>
@@ -22,36 +24,56 @@
 {% endmacro %}
 
 {% macro make_filter(filter) %}
+    {% if filter.visible %}
     <li class="filter">
-        {% if filter.comparator_name != 'eq' %}
-            <input type="hidden" name="filter[{{ filter.property }}][cmp]" value="{{ filter.comparator_name }}">
+        {% if filter.comparator != 'eq' %}
+            <input type="hidden" name="filter[{{ filter.id }}][cmp]" value="{{ filter.comparator }}">
         {% endif %}
-        <label class="name" for="filter[{{ filter.property }}]">
+        <label class="name" for="filter[{{ filter.id }}]">
             {{ filter.name }}
         </label>
         <div class="value">
-        {% if filter.type == 'binary' %}
-            <select name="filter[{{ filter.property }}]" id="filter[{{ filter.property }}]" class="form-control">
+        {% if filter.widget == 'binary' %}
+            <select name="filter[{{ filter.id }}]" id="filter[{{ filter.id }}]" class="form-control">
                 <option value="True" {{ 'selected' if filter.value == True }}>Yes</option>
                 <option value="False" {{ 'selected' if not filter.value }}>No</option>
             </select>
-        {% elif filter.type == 'with_without' %}
-            <select name="filter[{{ filter.property }}]" id="filter[{{ filter.property }}]" class="form-control">
+        {% elif filter.widget == 'with_without' %}
+            <select name="filter[{{ filter.id }}]" id="filter[{{ filter.id }}]" class="form-control">
                 <option value="None">disabled</option>
                 <option value="True" {{ 'selected' if filter.value == True }}>only</option>
                 <option value="False" {{ 'selected' if filter.value == False }}>without</option>
             </select>
-        {% elif filter.type == 'select' %}
-          <select name="filter[{{ filter.property }}]" id="filter[{{ filter.property }}]" class="form-control">
-              {% for option in filter.choices %}
+        {% elif filter.widget == 'select' %}
+          <select name="filter[{{ filter.id }}]" id="filter[{{ filter.id }}]" class="form-control">
+              {% if filter.nullable %}
+                <option value="None" {{ 'selected' if filter.value == None }}>disabled</option>
+              {% endif %}
+              {% for option in filter.allowed_values %}
                 <option value="{{ option }}" {{ 'selected' if filter.value == option }}>{{ option }}</option>
               {% endfor %}
             </select>
+        {% elif filter.widget == 'select_multiple' %}
+          <select
+            name="filter[{{ filter.id }}]"
+            id="filter[{{ filter.id }}]"
+            class="form-control multiselect"
+            multiple="multiple"
+            {{ 'required' if not filter.nullable }}
+          >
+              {% if filter.nullable %}
+                <option value="None" {{ 'selected' if filter.value == None }}>disabled</option>
+              {% endif %}
+              {% for option in filter.allowed_values %}
+                <option value="{{ option }}" {{ 'selected' if filter.value and option in filter.value }}>{{ option }}</option>
+              {% endfor %}
+            </select>
         {% else %}
-            Unknown filter type: '{{ filter.type }}'
+            Unimplemented filter widget: '{{ filter.widget }}'
         {% endif %}
         </div>
     </li>
+    {% endif %}
 {% endmacro %}
 
 <div class="panel panel-default filters-panel">

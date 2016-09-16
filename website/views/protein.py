@@ -4,20 +4,23 @@ from flask import redirect
 from flask import url_for
 from flask import render_template as template
 from flask_classful import FlaskView
+from models import Cancer
 from models import Protein
 from models import Mutation
+from models import Site
+from models import The1000GenomesMutation
+from models import ExomeSequencingMutation
+from models import ClinicalData
 from website.helpers.tracks import Track
 from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack
 from website.helpers.tracks import SequenceTrack
 from website.helpers.tracks import MutationsTrack
-from website.helpers.filters import FilterSet
-from website.helpers.filters import Filters
 from website.helpers.filters import Filter
+from website.helpers.filters import FilterManager
 
 
-def get_source_field(filters):
-    source = filters.sources
+def get_source_field(source):
     source_field_name = Mutation.source_fields[source]
     return source_field_name
 
@@ -26,14 +29,83 @@ def get_response_content(response):
     return response.get_data().decode('ascii')
 
 
+class SourceDependentFilter(Filter):
+
+    def __init__(self, *args, **kwargs):
+        self.source = kwargs.pop('source')
+        super().__init__(*args, **kwargs)
+
+    @property
+    def visible(self):
+        return self.manager.get_value('Mutation.sources') == self.source
+
+
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
-    allowed_filters = FilterSet([
-        Filter('sources', 'in', 'TCGA', 'select', 'Source',
-               choices=list(Mutation.source_fields.keys())),
-        Filter('is_ptm', 'eq', None, 'with_without', 'PTM mutations'),
-    ])
+    cancer_types = [cancer.name for cancer in Cancer.query.all()]
+    populations_1kg = The1000GenomesMutation.populations.values()
+    populations_esp = ExomeSequencingMutation.populations.values()
+    significances = ClinicalData.significance_codes.values()
+
+    filter_manager = FilterManager(
+        [
+            Filter(
+                'Source', Mutation, 'sources', widget='select',
+                comparators=['in'],
+                choices=list(Mutation.source_fields.keys()),
+                default='TCGA', nullable=False,
+            ),
+            Filter(
+                'PTM mutations', Mutation, 'is_ptm', widget='with_without',
+                comparators=['eq'],
+            ),
+            Filter(
+                'Site type', Site, 'type', widget='select',
+                comparators=['in'],
+                choices=['phosphorylation', 'acetylation', 'ubiquitination', 'methylation'],
+            ),
+            SourceDependentFilter(
+                'Cancer', Mutation, 'cancer_types', widget='select_multiple',
+                comparators=['in'],
+                choices=cancer_types,
+                default=cancer_types, nullable=False,
+                source='TCGA',
+                multiple='any',
+            ),
+            SourceDependentFilter(
+                'Population', Mutation, 'populations_1KG',
+                widget='select_multiple',
+                comparators=['in'],
+                choices=populations_1kg,
+                default=populations_1kg, nullable=False,
+                source='1KGenomes',
+                multiple='any',
+            ),
+            SourceDependentFilter(
+                'Population', Mutation, 'populations_ESP6500',
+                widget='select_multiple',
+                comparators=['in'],
+                choices=populations_esp,
+                default=populations_esp, nullable=False,
+                source='ESP6500',
+                multiple='any',
+            ),
+            SourceDependentFilter(
+                'Clinical significance', Mutation, 'significance',
+                widget='select_multiple',
+                comparators=['in'],
+                choices=significances,
+                default=significances, nullable=False,
+                source='ClinVar',
+                multiple='any',
+            )
+        ]
+    )
+
+    def before_request(self, name, *args, **kwargs):
+        self.filter_manager.reset()
+        self.filter_manager.update_from_request(request)
 
     def index(self):
         """Show SearchView as deafault page"""
@@ -45,15 +117,12 @@ class ProteinView(FlaskView):
         + needleplot
         + tracks (seuqence + data tracks)
         """
-        active_filters = FilterSet.from_request(request)
-        filters = Filters(active_filters, self.allowed_filters)
-
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
         disorder = [
             TrackElement(*region) for region in protein.disorder_regions
         ]
-        raw_mutations = active_filters.filtered(protein.mutations)
+        raw_mutations = self.filter_manager.apply(protein.mutations)
 
         tracks = [
             PositionTrack(protein.length, 25),
@@ -74,37 +143,37 @@ class ProteinView(FlaskView):
             MutationsTrack(raw_mutations)
         ]
 
-        if filters.active.sources in ('TCGA', 'ClinVar'):
+        source = self.filter_manager.get_value('Mutation.sources')
+        if source in ('TCGA', 'ClinVar'):
             value_type = 'Count'
         else:
             value_type = 'Frequency'
 
         parsed_mutations = self._represent_mutations(
             raw_mutations,
-            active_filters.sources,
-            get_source_field(active_filters)
+            source,
+            get_source_field(source)
         )
 
         return template(
             'protein.html', protein=protein, tracks=tracks,
-            filters=filters, value_type=value_type,
+            filters=self.filter_manager, value_type=value_type,
             log_scale=(value_type == 'Frequency'),
             mutations=parsed_mutations,
-            sites=get_response_content(self.sites(refseq)),
+            sites=self._prepare_sites(protein),
         )
 
     def mutations(self, refseq):
         """List of mutations suitable for needleplot library"""
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-        active_filters = FilterSet.from_request(request)
 
-        raw_mutations = active_filters.filtered(protein.mutations)
+        raw_mutations = self.filter_manager.apply(protein.mutations)
 
         parsed_mutations = self._represent_mutations(
             raw_mutations,
-            active_filters.sources,
-            get_source_field(active_filters)
+            source,
+            get_source_field(source)
         )
 
         return jsonify(parsed_mutations)
@@ -114,15 +183,19 @@ class ProteinView(FlaskView):
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
-        response = [
+        response = self._prepare_sites(protein)
+
+        return jsonify(response)
+
+    def _prepare_sites(self, protein):
+        sites = self.filter_manager.apply(protein.sites)
+        return [
             {
                 'start': site.position - 7,
                 'end': site.position + 7,
                 'type': str(site.type)
-            } for site in protein.sites
+            } for site in sites
         ]
-
-        return jsonify(response)
 
     @staticmethod
     def _represent_mutations(mutations, source, source_field_name):

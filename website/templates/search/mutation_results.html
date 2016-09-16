@@ -1,0 +1,84 @@
+{#
+  Results should be in a form of a table where mappings are shown
+  together with links to appropiate sites. Below the table information
+  about positions that where not found in the database should be displayed
+#}
+<div id="toolbar"></div>
+
+<table
+  class="table table-rowspan-hover"
+  data-toolbar="#toolbar"
+  data-toggle="table"
+  data-search="true"
+  data-show-columns="true"
+>
+  <thead>
+  <tr>
+    {% set columns_count = 9 %}
+    <th>User input</th>
+    <th data-sortable=true>Gene name</th>
+    <th data-sortable=true>Refseq</th>
+    <th data-sortable=true>Ref aa</th>
+    <th data-sortable=true>Alt aa</th>
+    <th data-sortable=true>Position</th>
+    <th data-sortable=true>is PTM?</th>
+    <th data-sortable=true>Impact</th>
+    <th data-sortable=true>Link</th>
+  </tr>
+  </thead>
+  {% for line in results %}
+    <tbody>
+    {% for result in line.results %}
+      <tr>
+        {% if loop.first %}
+            <td rowspan={{ loop.length }}>{{ line.user_input }}</td>
+        {% endif %}
+        <td>{{ result.protein.gene.name }}</td>
+        <td>
+          <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq) }}">
+            {{ result.protein.refseq }}
+          </a>
+        </td>
+        <td>{{ result.ref }}</td>
+        <td>{{ result.alt }}</td>
+        <td>{{ result.pos }}</td>
+        <td>{{ result.is_ptm }}</td>
+        <td>
+            {{ result.mutation.impact_on_ptm }}
+            {% if result.mutation.impact_on_ptm == 'network-rewiring' %}
+              {{ 'gain' if result.mutation.meta_MIMP.effect else 'loss' }}
+            {% endif %}
+        </td>
+        <td>
+            {% if result.mutation.is_confirmed %}
+            {# TODO: chose correct dataset to show #}
+            <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq) }}#{{ result.pos }}{{ result.alt }}">
+              show mutation details →
+            </a>
+            {% else %}
+              This mutation does not have any details associated with (in this database).
+            {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  {% endfor %}
+  <tfoot>
+  {% if without_mutations %}
+    <tr>
+      <td colspan={{ columns_count }}>
+        {{ without_mutations | length }} {{ 'queries' if without_mutations | length > 1 else 'query' }} without mutations found in the database: {{ without_mutations | map('trim') | join(', ') }}.
+
+        <p>This might also indicate that given reference allele is not corresponding to given position or that there is a shift by one in your numeration.</p>
+      </td>
+    </tr>
+  {% endif %}
+  {% if badly_formatted %}
+    <tr>
+      <td colspan={{ columns_count }}>
+        {{ badly_formatted | length }} {{ 'queries were' if badly_formatted | length > 1 else 'query was' }} not recognised by the system: {{ badly_formatted | map('trim') | join(', ') }}.
+      </td>
+    </tr>
+  {% endif %}
+  </tfoot>
+</table>
