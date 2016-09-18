@@ -1,3 +1,5 @@
+@import "gene"
+
 // btn-file hacks idea thanks to free gist by Cory LaViska
 .btn-file
   position: relative
@@ -58,47 +60,14 @@
 
 .search-form
 
-  .result, .results, .inputs, .options
-    margin: 20px 0
-
-  .isoform
-    margin-left: 20px
-    margin-bottom: 0
-
-  // gene
-  h4
-    clear: both
-
-  // refseq
-  h5
-    margin-top: 15px
-    margin-bottom: 5px
-    font-weight: bold
-
-  .shortcuts
-    margin: 0
+  .show-alt
+    float: right
 
   .buttons
     text-align: right
 
   .mut-search
     float: right
-
-  .show-alt
-    float: right
-
-  .isoform-data .datum, .shortcuts a
-    display: inline
-    margin-right: 5px
-    text-decoration: none
-
-    &:after
-      color: #ccc
-      content: '|'
-      margin-left: 5px
-
-    &:last-child:after
-      content: ''
 
 .table-rowspan-hover
   /*
@@ -111,20 +80,6 @@
 
 .placeholder
   color: #aaa
-
-.strand, .chrom
-
-  display: inline-block
-
-.chrom
-  &::before
-    content: 'Chromosome:'
-    margin-right: 1ch
-
-.strand
-  &::before
-    content: 'Strand:'
-    margin-right: 1ch
 
 .inactive
   color: #bbb

@@ -1,6 +1,6 @@
 {% macro isoform_result(isoform) %}
 <div class="isoform">
-  <h5>{{ isoform.refseq }}</h5>
+  <h5 class="refseq">{{ isoform.refseq }}</h5>
   <div class="isoform-data">
       <div class="datum">Protein: {{ isoform.length }} residues</div>
       {% if isoform.cds_start and isoform.cds_end %}
@@ -31,7 +31,7 @@
 
 {% macro gene_results(gene) %}
   <div class="result">
-    <h4><a href="{{ url_for('ProteinView:show', refseq=gene.preferred_isoform.refseq) }}">{{ gene.name }}</a></h4>
+    <h4 class="gene"><a href="{{ url_for('ProteinView:show', refseq=gene.preferred_isoform.refseq) }}">{{ gene.name }}</a></h4>
     <div class="chrom">{{ gene.chrom }}</div>
     <div class="strand">{{ '+' if gene.strand else '-' }}</div>
     {% if gene.preferred_isoform or gene.isoform %}

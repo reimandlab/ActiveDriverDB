@@ -1,0 +1,43 @@
+.strand, .chrom
+  display: inline-block
+
+.chrom
+  &::before
+    content: 'Chromosome:'
+    margin-right: 1ch
+
+.strand
+  &::before
+    content: 'Strand:'
+    margin-right: 1ch
+
+.isoform
+  margin-left: 20px
+  margin-bottom: 0
+
+.result, .results, .inputs, .options
+  margin: 20px 0
+
+h4.gene
+  clear: both
+
+h5.refseq
+  margin-top: 15px
+  margin-bottom: 5px
+  font-weight: bold
+
+.shortcuts
+  margin: 0
+
+.isoform-data .datum, .shortcuts a
+  display: inline
+  margin-right: 5px
+  text-decoration: none
+
+  &:after
+    color: #ccc
+    content: '|'
+    margin-left: 5px
+
+  &:last-child:after
+    content: ''

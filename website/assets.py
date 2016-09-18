@@ -53,6 +53,10 @@ bundles = {
         'sass/tracks.css',
         'sass/widgets.css'
     ),
+    'css_gene': css_bundle(
+        'gene',
+        'sass/gene.css'
+    ),
     'css_search': css_bundle(
         'search',
         'sass/search.css'

@@ -1,7 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %} {{ gene.name }} - {{ super() }} {% endblock %}
+    {% block title %} {{ gene.name }} - {{ super() }} {% endblock %}
 
+    {% assets "css_gene" %}
+        <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
 
 {% block content %}
 
