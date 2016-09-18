@@ -628,7 +628,7 @@ var NeedlePlot = function ()
 
             // refresh zoom and position with current values
             _setZoomAndMove(scale, position, true)
-        },
+        }
     }
 
     return publicSpace

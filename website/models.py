@@ -1,4 +1,5 @@
 from collections import defaultdict
+from collections import OrderedDict
 from database import db
 from sqlalchemy import and_
 from sqlalchemy import or_
@@ -428,12 +429,14 @@ class Mutation(BioModel):
     )
 
     # mapping: source name -> column name
-    source_fields = {
-        'TCGA': 'meta_cancer',
-        'ClinVar': 'meta_inherited',
-        'ESP6500': 'meta_ESP6500',
-        '1KGenomes': 'meta_1KG',
-    }
+    source_fields = OrderedDict(
+        (
+            ('TCGA', 'meta_cancer'),
+            ('ClinVar', 'meta_inherited'),
+            ('ESP6500', 'meta_ESP6500'),
+            ('1KGenomes', 'meta_1KG'),
+        )
+    )
 
     @property
     def significance(self):
@@ -462,7 +465,7 @@ class Mutation(BioModel):
         if not self.meta_cancer:
             return []
         return [
-            meta.cancer.name
+            meta.cancer.code
             for meta in self.meta_cancer
         ]
 
@@ -874,10 +877,12 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
         EA - european american
         AA - african american
     """
-    populations = {
-        'maf_ea': 'European American',
-        'maf_aa': 'African American'
-    }
+    populations = OrderedDict(
+        (
+            ('maf_ea', 'European American'),
+            ('maf_aa', 'African American')
+        )
+    )
 
     maf_ea = db.Column(db.Float)
     maf_aa = db.Column(db.Float)
@@ -900,13 +905,15 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
     maf_sas = db.Column(db.Float)
 
     # note: those are defined as super populations by 1000 Genomes project
-    populations = {
-        'maf_eas': 'East Asian',
-        'maf_amr': 'Ad Mixed American',
-        'maf_afr': 'African',
-        'maf_eur': 'European',
-        'maf_sas': 'South Asian'
-    }
+    populations = OrderedDict(
+        (
+            ('maf_eas', 'East Asian'),
+            ('maf_amr', 'Ad Mixed American'),
+            ('maf_afr', 'African'),
+            ('maf_eur', 'European'),
+            ('maf_sas', 'South Asian')
+        )
+    )
 
     @property
     def representation(self):

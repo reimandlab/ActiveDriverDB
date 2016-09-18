@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %} {{ protein.gene.name }} - {{ protein.refseq }} - network view - {{ super() }} {% endblock %}
+{% block title %}
+    {{ protein.gene.name }} - {{ protein.refseq }} - network view - {{ super() }}
+{% endblock %}
 
 {% block head %}
   {{ super() }}
@@ -18,25 +20,37 @@
   {# <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script> #}
   <script src="/static/thirdparty/d3.v3.min.js" charset="utf-8"></script>
 
+  {# Bootstrap multiselect #}
+  <script type="text/javascript" src="/static/thirdparty/bootstrap-multiselect/bootstrap-multiselect.js"></script>
+  <link rel="stylesheet" href="/static/thirdparty/bootstrap-multiselect/bootstrap-multiselect.css" type="text/css"/>
 {% endblock %}
 
 
 {% block content %}
 
-<h3>{{ protein.gene.name }} - {{ protein.refseq }}</h3>
+    <h3>{{ protein.gene.name }} - {{ protein.refseq }}</h3>
 
-<ol class="breadcrumb">
-  <li><a href="/">Home</a></li>
-  <li><a href="/network">Network</a></li>
-  <li><a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}">{{ protein.gene.name }}</a></li>
-  <li class="active">{{ protein.refseq }}</li>
-</ol>
+    <ol class="breadcrumb">
+        <li><a href="/">Home</a></li>
+        <li><a href="/network">Network</a></li>
+        <li><a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}">{{ protein.gene.name }}</a></li>
+        <li class="active">{{ protein.refseq }}</li>
+    </ol>
 
-<div id="network_plot"></div>
+    <form method="get" id="widget-form">
+        {% with filter_widgets=filter_widgets %}
+            {% include 'forms/filters.html' %}
+        {% endwith %}
 
-{% with filters=filters %}
-  {% include 'widgets/filters.html' %}
-{% endwith %}
+        {% with option_widgets=option_widgets %}
+            {% include 'forms/options.html' %}
+        {% endwith %}
+
+        <input type="hidden" name="fallback" value="True">
+    </form>
+
+    <div id="network_plot"></div>
+
 {% endblock %}
 
 

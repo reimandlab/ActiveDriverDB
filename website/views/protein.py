@@ -18,6 +18,7 @@ from website.helpers.tracks import SequenceTrack
 from website.helpers.tracks import MutationsTrack
 from website.helpers.filters import Filter
 from website.helpers.filters import FilterManager
+from website.helpers.widgets import FilterWidget
 
 
 def get_source_field(source):
@@ -28,6 +29,13 @@ def get_source_field(source):
 def get_response_content(response):
     return response.get_data().decode('ascii')
 
+
+def populations_labels(populations):
+    return [
+        population_name + ' (' + field_name[4:].upper() + ')'
+        for field_name, population_name
+        in populations.items()
+    ]
 
 class SourceDependentFilter(Filter):
 
@@ -43,7 +51,7 @@ class SourceDependentFilter(Filter):
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
-    cancer_types = [cancer.name for cancer in Cancer.query.all()]
+    cancer_types = [cancer.code for cancer in Cancer.query.all()]
     populations_1kg = The1000GenomesMutation.populations.values()
     populations_esp = ExomeSequencingMutation.populations.values()
     significances = ClinicalData.significance_codes.values()
@@ -51,50 +59,43 @@ class ProteinView(FlaskView):
     filter_manager = FilterManager(
         [
             Filter(
-                'Source', Mutation, 'sources', widget='select',
-                comparators=['in'],
+                Mutation, 'sources', comparators=['in'],
                 choices=list(Mutation.source_fields.keys()),
                 default='TCGA', nullable=False,
             ),
             Filter(
-                'PTM mutations', Mutation, 'is_ptm', widget='with_without',
-                comparators=['eq'],
+                Mutation, 'is_ptm', comparators=['eq']
             ),
             Filter(
-                'Site type', Site, 'type', widget='select',
-                comparators=['in'],
-                choices=['phosphorylation', 'acetylation', 'ubiquitination', 'methylation'],
+                Site, 'type', comparators=['in'],
+                choices=[
+                    'phosphorylation', 'acetylation',
+                    'ubiquitination', 'methylation'
+                ],
             ),
             SourceDependentFilter(
-                'Cancer', Mutation, 'cancer_types', widget='select_multiple',
-                comparators=['in'],
+                Mutation, 'cancer_types', comparators=['in'],
                 choices=cancer_types,
                 default=cancer_types, nullable=False,
                 source='TCGA',
                 multiple='any',
             ),
             SourceDependentFilter(
-                'Population', Mutation, 'populations_1KG',
-                widget='select_multiple',
-                comparators=['in'],
+                Mutation, 'populations_1KG', comparators=['in'],
                 choices=populations_1kg,
                 default=populations_1kg, nullable=False,
                 source='1KGenomes',
                 multiple='any',
             ),
             SourceDependentFilter(
-                'Population', Mutation, 'populations_ESP6500',
-                widget='select_multiple',
-                comparators=['in'],
+                Mutation, 'populations_ESP6500', comparators=['in'],
                 choices=populations_esp,
                 default=populations_esp, nullable=False,
                 source='ESP6500',
                 multiple='any',
             ),
             SourceDependentFilter(
-                'Clinical significance', Mutation, 'significance',
-                widget='select_multiple',
-                comparators=['in'],
+                Mutation, 'significance', comparators=['in'],
                 choices=significances,
                 default=significances, nullable=False,
                 source='ClinVar',
@@ -102,6 +103,49 @@ class ProteinView(FlaskView):
             )
         ]
     )
+
+    filter_widgets = [
+        FilterWidget(
+            'Source', 'select',
+            filter=filter_manager.filters['Mutation.sources'],
+            labels=[
+                'Cancer (TCGA)',
+                'Clinical (ClinVar)',
+                'Population (ESP 6500)',
+                'Population (1000 Genomes)'
+            ]
+        ),
+        FilterWidget(
+            'PTM mutations', 'with_without',
+            filter=filter_manager.filters['Mutation.is_ptm']
+        ),
+        FilterWidget(
+            'Site type', 'select',
+            filter=filter_manager.filters['Site.type']
+        ),
+        FilterWidget(
+            'Cancer', 'select_multiple',
+            filter=filter_manager.filters['Mutation.cancer_types'],
+            labels=[
+                cancer.name + ' (' + cancer.code + ')'
+                for cancer in Cancer.query.all()
+            ]
+        ),
+        FilterWidget(
+            'Population', 'select_multiple',
+            filter=filter_manager.filters['Mutation.populations_1KG'],
+            labels=populations_labels(The1000GenomesMutation.populations)
+        ),
+        FilterWidget(
+            'Population', 'select_multiple',
+            filter=filter_manager.filters['Mutation.populations_ESP6500'],
+            labels=populations_labels(ExomeSequencingMutation.populations)
+        ),
+        FilterWidget(
+            'Clinical significance', 'select_multiple',
+            filter=filter_manager.filters['Mutation.significance']
+        )
+    ]
 
     def before_request(self, name, *args, **kwargs):
         self.filter_manager.reset()
@@ -156,8 +200,10 @@ class ProteinView(FlaskView):
         )
 
         return template(
-            'protein.html', protein=protein, tracks=tracks,
-            filters=self.filter_manager, value_type=value_type,
+            'protein/index.html', protein=protein, tracks=tracks,
+            filters=self.filter_manager,
+            filter_widgets=self.filter_widgets,
+            value_type=value_type,
             log_scale=(value_type == 'Frequency'),
             mutations=parsed_mutations,
             sites=self._prepare_sites(protein),

@@ -37,26 +37,26 @@ select.form-control
   option
     background: #fff
 
-.filters-panel
+.widget-panel
   background: $background
   z-index: 1
 
   &:hover
     opacity: 1
 
+  h3
+    font-weight: bold
+
   .panel-body
     padding: 10px 15px
-
-  .panel-heading
-    padding: 10px 0 0 0
-
-    h3
-      font-weight: bold
 
   &>div
     background: $background
 
-.filters
+  .save
+    float: right
+
+.widgets
   ul
     list-style: none
     padding: 5px
@@ -66,10 +66,7 @@ select.form-control
   label
     font-weight: normal
 
-  .save
-    float: right
-
-.filter
+.widget
   line-height: $button-height
   height: $button-height
   clear: both
@@ -77,7 +74,7 @@ select.form-control
   .name
     display: block
     float: left
-    margin-right: 20px
+    margin-left: 25px
 
   .value
     float: right

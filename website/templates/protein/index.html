@@ -43,16 +43,20 @@
   <li class="active">{{ protein.refseq }}</li>
 </ol>
 
-{% with filters=filters %}
-  {% include 'widgets/filters.html' %}
-{% endwith %}
+<form method="get" id="widget-form">
+    {% with filter_widgets=filter_widgets %}
+        {% include 'forms/filters.html' %}
+    {% endwith %}
+
+    <input type="hidden" name="fallback" value="True">
+</form>
 
 <div class="panel panel-default">
   <div class="panel-body">
     <div id="plot_area"></div>
     <div id="tracks-box">
       {% with tracks=tracks %}
-        {% include 'widgets/tracks.html' %}
+        {% include 'protein/tracks.html' %}
       {% endwith %}
     </div>
   </div>
@@ -71,7 +75,7 @@ Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alterna
 </ul>
 
 {% with mutations=mutations, table_id='table' %}
-  {% include 'widgets/table.html' %}
+  {% include 'protein/mutation_table.html' %}
 {% endwith %}
 
 {% endblock %}

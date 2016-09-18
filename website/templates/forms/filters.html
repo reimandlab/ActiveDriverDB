@@ -1,0 +1,16 @@
+{% extends "forms/widgets_panel.html" %}
+{% from 'forms/widgets.html' import widget_list %}
+
+
+{% block panel_title %}
+    Filters
+{% endblock %}
+
+
+{% block widgets %}
+    {% set active = filter_widgets | selectattr('is_active') %}
+    {% set inactive = filter_widgets | rejectattr('is_active') %}
+
+    {{ widget_list(active, 'Active', 'active') }}
+    {{ widget_list(inactive, 'Available', 'available') }}
+{% endblock %}

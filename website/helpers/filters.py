@@ -29,11 +29,10 @@ class Filter:
     }
 
     def __init__(
-        self, name, target, attribute, default=None, nullable=True,
-        comparators='__all__', choices='__all__', widget='default',
+        self, target, attribute, default=None, nullable=True,
+        comparators='__all__', choices='__all__',
         default_comparator=None, multiple=False
     ):
-        self.widget = widget
         if comparators != '__all__':
             if not default_comparator and len(comparators) == 1:
                 default_comparator = comparators[0]
@@ -52,7 +51,6 @@ class Filter:
         self.multiple = multiple    # specify behaviour for multiple-value
         # filtering (either 'any' (or) or 'all' (and)).
         self.nullable = nullable
-        self.name = name
         self._value = None
         self.manager = None
         if default_comparator:
@@ -71,7 +69,7 @@ class Filter:
                 self.nullable or
                 value
         ):
-            raise Exception('Filter ' + self.name + ' is not nullable')
+            raise Exception('Filter ' + self.id + ' is not nullable')
         if not (
                 self.allowed_values == '__all__' or
                 value in self.allowed_values or
@@ -84,7 +82,7 @@ class Filter:
                 )
         ):
             raise Exception(
-                'Filter ' + self.name + ' recieved forbiddden value'
+                'Filter ' + self.id + ' recieved forbiddden value'
             )
 
     def _verify_comparator(self, comparator):
@@ -97,7 +95,7 @@ class Filter:
                 comparator in self.allowed_comparators
         ):
             raise Exception(
-                'Filter ' + self.name + ' recieved forbiddden comparator: ' + comparator
+                'Filter ' + self.id + ' recieved forbiddden comparator: ' + comparator
             )
 
     def _verify(self, value, comparator):
@@ -166,7 +164,7 @@ class Filter:
     def __repr__(self):
         return '<Filter {1} ({0}active) with value "{2}">'.format(
             '' if self.is_active else 'in',
-            self.name,
+            self.id,
             self.value
         )
 
@@ -276,7 +274,8 @@ class FilterManager:
         filters_list = [
             [
                 name,
-                data.get('cmp', 'eq'),
+                data.get('cmp', None),    # allow not specyfing comparator -
+                # if so, we will use default comparator.
                 FilterManager._repr_value(data.get('value'))
             ]
             for name, data in filters.items()

@@ -1,0 +1,70 @@
+{% macro widget_list(filters, title, class) %}
+    {% set filters = filters | selectattr('visible') | list %}
+    {% if filters %}
+        <h5>{{ title }}</h5>
+        <ul class="{{ class }}">
+            {% for filter in filters %}
+               <li class="widget">{{ render_widget(filter) }}
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endmacro %}
+
+{% macro render_widget(widget) %}
+    {% if widget.visible %}
+    {% if widget.comparator_widget %}
+        {{ render_widget(widget.comparator_widget) }}
+    {% endif %}
+    <div class="widget">
+        <label class="name" for="{{ widget.target_name }}">
+            {{ widget.title }}
+        </label>
+        <div class="value">
+        {% if widget.template == 'binary' %}
+            <select name="{{ widget.target_name }}" id="{{ widget.target_name }}" class="form-control">
+                <option value="True" {{ 'selected' if widget.value == True }}>Yes</option>
+                <option value="False" {{ 'selected' if not widget.value }}>No</option>
+            </select>
+        {% elif widget.template == 'with_without' %}
+            <select name="{{ widget.target_name }}" id="{{ widget.target_name }}" class="form-control">
+                <option value="None">disabled</option>
+                <option value="True" {{ 'selected' if widget.value == True }}>only</option>
+                <option value="False" {{ 'selected' if widget.value == False }}>without</option>
+            </select>
+        {% elif widget.template == 'select' %}
+          <select name="{{ widget.target_name }}" id="{{ widget.target_name }}" class="form-control">
+              {% if not widget.labels %}
+                  widget.labels = widget.data
+              {% endif %}
+              {% if widget.nullable %}
+                <option value="None" {{ 'selected' if widget.value == None }}>disabled</option>
+              {% endif %}
+              {% for value, label in widget.items %}
+                <option value="{{ value }}" {{ 'selected' if widget.value == value }}>{{ label }}</option>
+              {% endfor %}
+            </select>
+        {% elif widget.template == 'select_multiple' %}
+          <select
+            name="{{ widget.target_name }}"
+            id="{{ widget.target_name }}"
+            class="form-control multiselect"
+            multiple="multiple"
+            {{ 'required' if not widget.nullable }}
+          >
+              {% if not widget.labels %}
+                  widget.labels = widget.data
+              {% endif %}
+              {% if widget.nullable %}
+                <option value="None" {{ 'selected' if widget.value == None }}>disabled</option>
+              {% endif %}
+              {% for value, label in widget.items %}
+                <option value="{{ value }}" {{ 'selected' if widget.value and  value in widget.value }}>{{ label }}</option>
+              {% endfor %}
+            </select>
+        {% else %}
+            Unimplemented widget template: '{{ widget.template }}'
+        {% endif %}
+        </div>
+    </div>
+    {% endif %}
+{% endmacro %}
