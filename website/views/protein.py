@@ -7,6 +7,7 @@ from flask_classful import FlaskView
 from models import Cancer
 from models import Protein
 from models import Mutation
+from models import CancerMutation
 from models import Site
 from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
@@ -37,6 +38,7 @@ def populations_labels(populations):
         in populations.items()
     ]
 
+
 class SourceDependentFilter(Filter):
 
     def __init__(self, *args, **kwargs):
@@ -51,7 +53,7 @@ class SourceDependentFilter(Filter):
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
-    cancer_types = [cancer.code for cancer in Cancer.query.all()]
+    cancer_codes = [cancer.code for cancer in Cancer.query.all()]
     populations_1kg = The1000GenomesMutation.populations.values()
     populations_esp = ExomeSequencingMutation.populations.values()
     significances = ClinicalData.significance_codes.values()
@@ -74,9 +76,10 @@ class ProteinView(FlaskView):
                 ],
             ),
             SourceDependentFilter(
-                Mutation, 'cancer_types', comparators=['in'],
-                choices=cancer_types,
-                default=cancer_types, nullable=False,
+                [Mutation, CancerMutation], 'cancer_code',
+                comparators=['in'],
+                choices=cancer_codes,
+                default=cancer_codes, nullable=False,
                 source='TCGA',
                 multiple='any',
             ),
@@ -95,7 +98,7 @@ class ProteinView(FlaskView):
                 multiple='any',
             ),
             SourceDependentFilter(
-                Mutation, 'significance', comparators=['in'],
+                [Mutation, ClinicalData], 'significance', comparators=['in'],
                 choices=significances,
                 default=significances, nullable=False,
                 source='ClinVar',
@@ -125,7 +128,7 @@ class ProteinView(FlaskView):
         ),
         FilterWidget(
             'Cancer', 'select_multiple',
-            filter=filter_manager.filters['Mutation.cancer_types'],
+            filter=filter_manager.filters['Mutation.cancer_code'],
             labels=[
                 cancer.name + ' (' + cancer.code + ')'
                 for cancer in Cancer.query.all()
@@ -243,8 +246,7 @@ class ProteinView(FlaskView):
             } for site in sites
         ]
 
-    @staticmethod
-    def _represent_mutations(mutations, source, source_field_name):
+    def _represent_mutations(self, mutations, source, source_field_name):
 
         response = []
 
@@ -257,7 +259,8 @@ class ProteinView(FlaskView):
                     source + ' metadata':
                     [
                         datum.representation
-                        for datum in source_specific_data
+                        for datum in
+                        self.filter_manager.apply(source_specific_data)
                     ]
                 }
                 meta[source][source + ' metadata'].sort(
@@ -290,8 +293,9 @@ class ProteinView(FlaskView):
 
             meta = getattr(mutation, source_field_name)
             if isinstance(meta, list):
-                return sum((data.value for data in meta))
-            return meta.value
+                meta = self.filter_manager.apply(meta)
+                return sum((data.get_value() for data in meta))
+            return meta.get_value(self.filter_manager.apply)
 
         for mutation in mutations:
             needle = {

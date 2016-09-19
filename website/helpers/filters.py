@@ -11,6 +11,10 @@ def is_iterable_but_not_str(obj):
     return isinstance(obj, Iterable) and not isinstance(obj, str)
 
 
+class ValidationError(Exception):
+    pass
+
+
 class Filter:
 
     possible_comparators = {
@@ -29,7 +33,7 @@ class Filter:
     }
 
     def __init__(
-        self, target, attribute, default=None, nullable=True,
+        self, targets, attribute, default=None, nullable=True,
         comparators='__all__', choices='__all__',
         default_comparator=None, multiple=False
     ):
@@ -40,12 +44,10 @@ class Filter:
                 assert comparator in self.possible_comparators.keys()
         self.allowed_comparators = comparators
         self.allowed_values = choices
-        """TBD: save choices as key (id) -> value (description) mappings.
-        if choices != '__all__':
-            if isinstance(choices, dict):
-                self.allowed_values = choices.keys()
-        """
-        self.target = target
+        if not is_iterable_but_not_str(targets):
+            targets = [targets]
+        self.targets = targets
+        self.primary_target = targets[0]
         self.default = default
         self.attribute = attribute
         self.multiple = multiple    # specify behaviour for multiple-value
@@ -62,14 +64,16 @@ class Filter:
 
     @property
     def id(self):
-        return self.target.__name__ + '.' + self.attribute
+        return self.primary_target.__name__ + '.' + self.attribute
 
     def _verify_value(self, value):
         if not (
                 self.nullable or
                 value
         ):
-            raise Exception('Filter ' + self.id + ' is not nullable')
+            raise ValidationError(
+                'Filter %s is not nullable' % self.id
+            )
         if not (
                 self.allowed_values == '__all__' or
                 value in self.allowed_values or
@@ -81,8 +85,8 @@ class Filter:
                     )
                 )
         ):
-            raise Exception(
-                'Filter ' + self.id + ' recieved forbiddden value'
+            raise ValidationError(
+                'Filter % recieved forbiddden value' % self.id
             )
 
     def _verify_comparator(self, comparator):
@@ -94,8 +98,9 @@ class Filter:
                 or
                 comparator in self.allowed_comparators
         ):
-            raise Exception(
-                'Filter ' + self.id + ' recieved forbiddden comparator: ' + comparator
+            raise ValidationError(
+                'Filter %s recieved forbiddden comparator: %s' %
+                (self.id, comparator)
             )
 
     def _verify(self, value, comparator):
@@ -226,7 +231,7 @@ class FilterManager:
         return [
             filter_
             for filter_ in self.filters.values()
-            if filter_.target == target_type and filter_.is_active
+            if target_type in filter_.targets and filter_.is_active
         ]
 
     def get_value(self, filter_id):

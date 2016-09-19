@@ -19,8 +19,7 @@ def test_select_filter():
     ]
 
     tested_filter = filters.Filter(
-        'Source', Model, 'value', widget='select',
-        comparators=['in'], default_comparator='in',
+        Model, 'value', comparators=['in'],
         choices=['a', 'b', 'c', 'd'],
         default='a', nullable=False,
     )
@@ -38,7 +37,7 @@ def test_select_filter():
         tested_filter.update(value)
         assert len(tested_filter.apply(test_objects)) == length
 
-    with pytest.raises(Exception):
+    with pytest.raises(filters.ValidationError):
         tested_filter.update('e')
         tested_filter.apply(test_objects)
 
@@ -56,8 +55,7 @@ def test_multiselect_filter():
     ]
 
     tested_filter = filters.Filter(
-        'Source', Model, 'value', widget='multiselect',
-        comparators=['in'], default_comparator='in',
+        Model, 'value', comparators=['in'],
         choices=['a', 'b', 'c', 'd'],
         default='a', nullable=False,
         multiple='any'
@@ -75,7 +73,7 @@ def test_multiselect_filter():
     # test the default value
     assert len(tested_filter.apply(test_objects)) == 4
 
-    with pytest.raises(Exception):
+    with pytest.raises(filters.ValidationError):
         tested_filter.update('e')
         tested_filter.apply(test_objects)
 

@@ -461,11 +461,11 @@ class Mutation(BioModel):
         return self.meta_ESP6500.affected_populations
 
     @property
-    def cancer_types(self):
+    def cancer_code(self):
         if not self.meta_cancer:
             return []
         return [
-            meta.cancer.code
+            meta.cancer_code
             for meta in self.meta_cancer
         ]
 
@@ -702,8 +702,7 @@ class MutationDetails:
     def mutation_id(cls):
         return db.Column(db.Integer, db.ForeignKey('mutation.id'))
 
-    @property
-    def value(self):
+    def get_value(self, filter=lambda x: x):
         """Return number representing value to be used in needleplot"""
         raise NotImplementedError
 
@@ -721,8 +720,7 @@ class CancerMutation(MutationDetails, BioModel):
 
     count = db.Column(db.Integer)
 
-    @property
-    def value(self):
+    def get_value(self, filter=lambda x: x):
         return self.count
 
     @property
@@ -734,6 +732,10 @@ class CancerMutation(MutationDetails, BioModel):
 
     @property
     def summary(self):
+        return self.cancer_code
+
+    @property
+    def cancer_code(self):
         return self.cancer.code
 
 
@@ -771,9 +773,8 @@ class InheritedMutation(MutationDetails, BioModel):
             if entry.disease_name not in (None, 'not provided')
         ]
 
-    @property
-    def value(self):
-        return len(self.informative_clin_data)
+    def get_value(self, filter=lambda x: x):
+        return len(filter(self.informative_clin_data))
 
     @property
     def representation(self):
@@ -853,8 +854,7 @@ class PopulationMutation(MutationDetails):
 
     maf_all = db.Column(db.Float)
 
-    @property
-    def value(self):
+    def get_value(self, filter=lambda x: x):
         return self.maf_all
 
     @property
