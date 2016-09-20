@@ -8,6 +8,7 @@ from sqlalchemy.sql import exists, select
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.ext.associationproxy import association_proxy
 from werkzeug.utils import cached_property
 import security
 
@@ -448,26 +449,17 @@ class Mutation(BioModel):
             self.meta_inherited.clin_data
         )
 
-    @property
-    def populations_1KG(self):
-        if not self.meta_1KG:
-            return []
-        return self.meta_1KG.affected_populations
+    populations_1KG = association_proxy(
+        'meta_1KG',
+        'affected_populations'
+    )
 
-    @property
-    def populations_ESP6500(self):
-        if not self.meta_ESP6500:
-            return []
-        return self.meta_ESP6500.affected_populations
+    populations_ESP6500 = association_proxy(
+        'meta_ESP6500',
+        'affected_populations'
+    )
 
-    @property
-    def cancer_code(self):
-        if not self.meta_cancer:
-            return []
-        return [
-            meta.cancer_code
-            for meta in self.meta_cancer
-        ]
+    cancer_code = association_proxy('meta_cancer', 'cancer_code')
 
     def get_source_name(self, column_name):
         return {v: k for k, v in self.source_fields.items()}.get(
