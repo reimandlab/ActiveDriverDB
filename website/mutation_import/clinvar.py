@@ -123,3 +123,11 @@ class Importer(MutationImporter):
             ),
             clinvar_data
         )
+
+    def raw_delete_all(self):
+        # first - remove clinical data
+        ClinicalData.query.delete()
+        # then mutations
+        count = self.model.query.delete()
+        # count of removed mutations is more informative
+        return count

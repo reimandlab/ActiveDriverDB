@@ -160,11 +160,18 @@ class MutationImporter(ABC):
             )
         bulk_ORM_insert(self.model, self.insert_keys, data)
 
-    def delete_all(self):
+    def raw_delete_all(self):
+        """In sublcasses you can overwrite this function
 
+        in order implement advanced removal behaviour"""
+        count = self.model.query.delete()
+        return count
+
+    def delete_all(self):
+        """This function should stay untouched"""
         print('Removing %s:' % self.model_name)
         try:
-            count = self.model.query.delete()
+            count = self.raw_delete_all()
             db.session.commit()
         except SQLAlchemyError:
             db.session.rollback()
@@ -260,7 +267,7 @@ def select_importers(restrict_to='__all__'):
 def explain_current_action(action, sources):
     print('{action} mutations from: {sources} source{suffix}'.format(
         action=action,
-        sources=', '.join(sources),
+        sources=', '.join(sources) if sources != '__all__' else 'all',
         suffix='s' if len(sources) > 1 else ''
     ))
 
