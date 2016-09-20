@@ -40,7 +40,8 @@ def import_data(restrict_mutations_to):
 
 
 def calculate_interactors(proteins):
-    for protein in proteins.values():
+    print('Precalculating interactors counts:')
+    for protein in tqdm(proteins.values()):
         protein.interactors_count = protein._calc_interactors_count()
 
 
