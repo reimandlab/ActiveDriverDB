@@ -16,5 +16,3 @@ def system_memory_percent():
 def memory_usage():
     process = psutil.Process(os.getpid())
     return process.memory_info().rss
-
-
