@@ -859,7 +859,7 @@ class PopulationMutation(MutationDetails):
 
     @property
     def summary(self):
-        return self.value
+        return self.get_value()
 
     @property
     def affected_populations(self):
