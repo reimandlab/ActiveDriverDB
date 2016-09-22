@@ -6,5 +6,5 @@ Impact: {{ impact }}<br>
   {% include 'mimp.njk' %}
 {% elif affected_sites_count > 0 %}
   Closest affected site(s):
-  <div>{{ closest_afffected }}</div>
+  <div>{{ closest_afffected | safe }}</div>
 {% endif %}
