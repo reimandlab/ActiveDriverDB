@@ -119,6 +119,8 @@ class Filter:
         comparator_function = self.possible_comparators[self.comparator]
 
         if self.multiple and is_iterable_but_not_str(self.value):
+            if not value:
+                return False
             multiple_test = self.possible_join_operators[self.multiple]
             return multiple_test(
                 comparator_function(value, sub_value)
@@ -218,7 +220,7 @@ class FilterManager:
         try:
             target_type = type(elements[0])
         except IndexError:
-            # the list was empty or was eptied before we were able to
+            # the list was empty or was emptied before we were able to
             # investigate the type of targeted objects
             return []
 
