@@ -84,14 +84,15 @@ class Statistics:
 
         filters = and_(
             (
-                source_relationship_map[source].has()
+                (
+                    source_relationship_map[source].any()
+                    if source in ('cancer', 'mimp') else
+                    source_relationship_map[source].has()
+                )
                 for source in sources
-                if source != 'cancer'
+
             )
         )
-
-        if 'cancer' in sources:
-            filters = and_(filters, Mutation.meta_cancer.any())
 
         return filters
 
