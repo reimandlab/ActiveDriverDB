@@ -74,16 +74,31 @@ var Network = (function ()
     }
 
     var config = {
-        site_size_unit: 5,
-        show_sites: true,
-        clone_by_site: true,
+        // Required
+        element: null, // specifies where network will be embedded
+        data: null, // json-serialized network definition
+
+        // Dimensions
         width: 600,
         height: null,
+        ratio: 1,   // the aspect ratio
+        responsive: true,  /* if responsive is set, (width, height and ratio) does not count:
+        the dimensions will be adjusted to fit `element` boundaries */
+
+        // Configuration
+        show_sites: true,
+        clone_by_site: true,
+
+        // Element sizes
+        site_size_unit: 5,
         minimalRadius: 6,   // of a single node
-        ratio: 1,   // the aspect ratio of the network
+
+        // Callbacks
         nodeURL: (function(node) {
             return window.location.href + '#' + node.protein.refseq
         }),
+
+        // Zoom
         minZoom: 0.5,   // allow to zoom-out up to two times
         maxZoom: 2  // allow to zoom-in up to two times
     }
@@ -246,7 +261,7 @@ var Network = (function ()
                     addEdge(kinase.node_id, 0)
                 }
             }
-            // 
+            //
             if(kinases_in_groups.indexOf(kinase.name) !== -1)
             {
                 // add a kinase that binds to group to `kinases_grouped` list
@@ -314,7 +329,7 @@ var Network = (function ()
         {
             return orbits.getRadiusByNode(edge.source)
         }
-        // dynamically adjust the length of a link between 
+        // dynamically adjust the length of a link between
         // a kinase located in a group and its group's node
         if(edge.target.is_group)    // target node is a group
         {
@@ -367,7 +382,7 @@ var Network = (function ()
     function focusOn(node, radius)
     {
         area = radius * 2 * 1.2
-        
+
         var scale = Math.min(config.width / area, config.height / area)
         var translate = [config.width / 2 - node.x * scale, config.height / 2 - node.y * scale]
 
@@ -406,6 +421,18 @@ var Network = (function ()
             .classed('hover', hover_in)
     }
 
+    function resize()
+    {
+        if(config.responsive)
+        {
+            var dimensions = svg.node().getBoundingClientRect()
+            config.width = dimensions.width
+            config.height = dimensions.height
+            config.ratio = dimensions.height / dimensions.width
+        }
+        svg.attr('viewBox', '0 0 ' + config.width + ' ' + config.height)
+    }
+
     var publicSpace = {
         init: function(user_config)
         {
@@ -417,9 +444,10 @@ var Network = (function ()
 
             svg = d3.select(config.element).append('svg')
                 .attr('preserveAspectRatio', 'xMinYMin meet')
-                .attr('viewBox', '0 0 ' + config.width + ' ' + config.height)
                 .attr('class', 'svg-content-responsive')
                 .call(zoom)
+
+            resize()
 
             vis = svg.append('g')
 
@@ -484,7 +512,6 @@ var Network = (function ()
             nodes = vis.selectAll('.node')
                 .data(nodes_data)
                 .enter().append('g')
-                .attr('transform', function(d){ return 'translate(' + [d.x, d.y] + ')' })
                 .attr('class', 'node')
                 .call(force.drag)
                 .on('click', nodeClick)
@@ -560,7 +587,7 @@ var Network = (function ()
                 .style('font-size', function(d) {
                     return fitTextIntoCircle(d, this) * 0.5 + 'px'
                 })
-                .attr('dy', function(d) { 
+                .attr('dy', function(d) {
                     return fitTextIntoCircle(d, this) * 0.35 + 'px'
                 })
 
@@ -589,6 +616,8 @@ var Network = (function ()
                 // collapse the group immediately (time=0)
                 switchGroupState(kinase_groups[i], false, 0)
             }
+
+            $(window).on('resize', resize)
         }
     }
 
