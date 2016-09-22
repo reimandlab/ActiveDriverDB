@@ -24,7 +24,6 @@ var Network = (function ()
     var sites
     var kinases_grouped
     var kinase_groups
-    var protein
     var central_node
 
     // visualisation variables
@@ -50,7 +49,7 @@ var Network = (function ()
         return config.radius
     }
 
-    function createProteinNode()
+    function createProteinNode(protein)
     {
         var radius = calculateRadius()
         var name = protein.name
@@ -65,7 +64,8 @@ var Network = (function ()
             x: (config.width - radius) / 2,
             y: (config.height - radius) / 2,
             color: 'blue',
-            fixed: true
+            fixed: true,
+            protein: protein
         }
     }
 
@@ -237,7 +237,7 @@ var Network = (function ()
             // this property will be populated for kinases belonging to group in prepareKinaseGroups
             kinase.group = undefined
 
-            if(protein.kinases.indexOf(kinase.name) !== -1)
+            if(central_node.protein.kinases.indexOf(kinase.name) !== -1)
             {
                 // add a kinase that binds to the central protein to `kinases` list
                 kinase = clone(kinase)
@@ -484,9 +484,8 @@ var Network = (function ()
             var data = config.data
 
             kinase_groups = data.kinase_groups
-            protein = data.protein
 
-            central_node = createProteinNode()
+            central_node = createProteinNode(data.protein)
             var nodes_data = [central_node]
 
             prepareKinases(data.kinases, nodes_data.length)
