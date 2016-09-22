@@ -50,6 +50,19 @@
     </form>
 
     <div class="panel panel-default network">
+        <div class="panel-heading">
+            <div class="btn-group" role="group">
+              <button type="button" class="btn btn-default zoom-in" title="Zoom in">
+                  <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span> Zoom in
+              </button>
+              <button type="button" class="btn btn-default zoom-fit" title="Fit to the window">
+                  <span class="glyphicon glyphicon-screenshot" aria-hidden="true"></span> Fit to the window
+              </button>
+              <button type="button" class="btn btn-default zoom-out" title="Zoom out">
+                  <span class="glyphicon glyphicon-zoom-out" aria-hidden="true"></span> Zoom out
+              </button>
+            </div>
+        </div>
         <div id="network_plot" class="panel-body"></div>
     </div>
 
@@ -73,6 +86,10 @@
             return '{{ url_for('ProteinView:show', refseq='') }}' + node.protein.refseq
         }
     })
+
+    $('.zoom-in').on('click', Network.zoom_in)
+    $('.zoom-out').on('click', Network.zoom_out)
+    $('.zoom-fit').on('click', Network.zoom_fit)
 
     </script>
 {% endblock %}

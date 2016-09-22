@@ -25,6 +25,7 @@ var Network = (function ()
     var kinases_grouped
     var kinase_groups
     var protein
+    var central_node
 
     // visualisation variables
     var nodes
@@ -449,6 +450,28 @@ var Network = (function ()
         svg.attr('viewBox', '0 0 ' + config.width + ' ' + config.height)
     }
 
+    function set_zoom(new_scale)
+    {
+        var old_scale = zoom.scale()
+        zoom.scale(new_scale)
+
+        // if we exceed limits, new_scale as provided won't be the same as the real, set scale, so here it is measured again
+        new_scale = zoom.scale()
+
+        var translate = zoom.translate()
+        var factor = (old_scale - new_scale)
+
+        zoom.translate(
+            [
+                translate[0] + factor * config.width / 2 ,
+                translate[1] + factor * config.height / 2
+            ]
+        )
+
+        vis.transition().ease('linear').duration(150)
+            .attr('transform', 'translate(' + zoom.translate() + ')scale(' + zoom.scale() + ')')
+    }
+
     var publicSpace = {
         init: function(user_config)
         {
@@ -472,8 +495,8 @@ var Network = (function ()
             kinase_groups = data.kinase_groups
             protein = data.protein
 
-            var protein_node = createProteinNode()
-            var nodes_data = [protein_node]
+            central_node = createProteinNode()
+            var nodes_data = [central_node]
 
             prepareKinases(data.kinases, nodes_data.length)
             Array.prototype.push.apply(nodes_data, kinases)
@@ -493,7 +516,7 @@ var Network = (function ()
             }
 
             orbits = Orbits()
-            orbits.init(elements, protein_node)
+            orbits.init(elements, central_node)
             orbits.placeNodes()
 
             for(var j = 0; j < kinases_grouped.length; j++)
@@ -610,7 +633,7 @@ var Network = (function ()
 
             force.on('tick', forceTick)
 
-            focusOn(protein_node, orbits.getMaximalRadius())
+            publicSpace.zoom_fit()
 
             force.start()
 
@@ -621,7 +644,16 @@ var Network = (function ()
             }
 
             $(window).on('resize', resize)
-        }
+        },
+        zoom_in: function(){
+            set_zoom(zoom.scale() * 1.25)
+        },
+        zoom_out: function(){
+            set_zoom(zoom.scale() / 1.25)
+        },
+        zoom_fit: function(){
+            focusOn(central_node, orbits.getMaximalRadius())
+        },
     }
 
     return publicSpace
