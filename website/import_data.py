@@ -32,7 +32,7 @@ def import_data(restrict_mutations_to):
     db.session.add_all(groups.values())
     del kinases
     del groups
-    removed = remove_wrong_proteins(proteins)
+    remove_wrong_proteins(proteins)
     calculate_interactors(proteins)
     db.session.commit()
     with app.app_context():
@@ -177,6 +177,26 @@ def load_cancers():
     parse_tsv_file('data/cancer_types.txt', parser)
 
 
+def select_preferred_isoform(gene):
+    max_length = 0
+    longest_isoforms = []
+    for isoform in gene.isoforms:
+        length = isoform.length
+        if length == max_length:
+            longest_isoforms.append(isoform)
+        elif length > max_length:
+            longest_isoforms = [isoform]
+            max_length = length
+
+    # sort by refseq id (lower id will be earlier in the list)
+    longest_isoforms.sort(key=lambda isoform: int(isoform.refseq[3:]))
+
+    try:
+        return longest_isoforms[0]
+    except IndexError:
+        print('No isoform for:', gene)
+
+
 def select_preferred_isoforms(genes):
     """Performs selection of preferred isoform,
 
@@ -185,23 +205,14 @@ def select_preferred_isoforms(genes):
     print('Choosing preferred isoforms:')
 
     for gene in tqdm(genes.values()):
-        max_length = 0
-        longest_isoforms = []
-        for isoform in gene.isoforms:
-            length = isoform.length
-            if length == max_length:
-                longest_isoforms.append(isoform)
-            elif length > max_length:
-                longest_isoforms = [isoform]
-                max_length = length
-
-        # sort by refseq id (lower id will be earlier in the list)
-        longest_isoforms.sort(key=lambda isoform: int(isoform.refseq[3:]))
-
-        try:
-            gene.preferred_isoform = longest_isoforms[0]
-        except IndexError:
-            print('No isoform for:', gene)
+        isoform = select_preferred_isoform(gene)
+        if isoform:
+            gene.preferred_isoform = isoform
+        else:
+            name = gene.name
+            assert not gene.isoforms
+            remove(gene)
+            print('Removed gene %s without isoforms' % name)
 
 
 def load_sequences(proteins):
@@ -222,7 +233,14 @@ def load_sequences(proteins):
     parse_fasta_file('data/all_RefGene_proteins.fa', parser)
 
 
-def remove_wrong_proteins(proteins):
+def remove(object, soft=False):
+    if soft:
+        return db.session.expunge(object)
+    else:
+        return db.session.delete(object)
+
+
+def remove_wrong_proteins(proteins, soft=True):
     stop_inside = 0
     lack_of_stop = 0
     no_stop_at_the_end = 0
@@ -245,11 +263,20 @@ def remove_wrong_proteins(proteins):
         if hit:
             to_remove.add(protein)
 
-    removed = set()
-    for protein in to_remove:
-        removed.add(protein.refseq)
-        del proteins[protein.refseq]
-        db.session.expunge(protein)
+    with db.session.no_autoflush:
+        removed = set()
+        for protein in to_remove:
+            removed.add(protein.refseq)
+
+            gene = protein.gene
+            gene.preferred_isoform = None
+
+            remove(protein, soft)
+
+            # remove object
+            del proteins[protein.refseq]
+
+    select_preferred_isoforms({gene.name: gene for gene in Gene.query.all()})
 
     print('Removed proteins of sequences:')
     print('\twith stop codon inside (excluding the last pos.):', stop_inside)

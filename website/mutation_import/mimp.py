@@ -1,7 +1,5 @@
 from models import MIMPMutation
-from models import mutation_site_association
 from import_mutations import MutationImporter
-from import_mutations import bulk_raw_insert
 from helpers.bioinf import decode_raw_mutation
 from helpers.parsers import parse_tsv_file
 
@@ -22,7 +20,9 @@ class Importer(MutationImporter):
         'position_in_motif',
         'effect',
         'pwm',
-        'pwm_family'
+        'pwm_family',
+        'probability',
+        'site_id'
     )
 
     def parse(self, path):
@@ -56,11 +56,22 @@ class Importer(MutationImporter):
 
             psite_pos = int(psite_pos)
 
-            sites.extend([
-                (site.id, mutation_id)
+            affected_sites = [
+                site
                 for site in protein.sites
                 if site.position == psite_pos
-            ])
+            ]
+
+            if len(affected_sites) != 1:
+                print('MIMP site does not match to the database:')
+                if affected_sites:
+                    print('too many (' + len(affected_sites) + ') sites found')
+                else:
+                    print('given site not found')
+                print(protein, refseq, ref, pos, alt, mutation_id, psite_pos)
+                return
+
+            site_id = affected_sites[0].id
 
             mimps.append(
                 (
@@ -68,25 +79,16 @@ class Importer(MutationImporter):
                     int(line[3]),
                     1 if line[13] == 'gain' else 0,
                     line[9],
-                    line[10]
+                    line[10],
+                    float(line[12]),
+                    site_id
                 )
             )
 
         parse_tsv_file(path, parser, self.header)
 
-        return mimps, sites
+        return mimps
 
-    def insert_details(self, details):
+    def insert_details(self, mimps):
 
-        mimps, sites = details
         self.insert_list(mimps)
-
-        bulk_raw_insert(
-            mutation_site_association,
-            (
-                'site_id',
-                'mutation_id',
-            ),
-            sites,
-            bind='bio',
-        )

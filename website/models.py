@@ -1,5 +1,6 @@
 from collections import defaultdict
 from collections import OrderedDict
+from collections import UserList
 from database import db
 from sqlalchemy import and_
 from sqlalchemy import or_
@@ -331,8 +332,7 @@ class Site(BioModel):
             self.position
         )
 
-    @property
-    def representation(self):
+    def to_json(self):
         return {
             'position': self.position,
             'type': self.type,
@@ -342,7 +342,7 @@ class Site(BioModel):
 
 class Cancer(BioModel):
     code = db.Column(db.String(16), unique=True)
-    name = db.Column(db.Text, unique=True)
+    name = db.Column(db.String(64), unique=True)
 
     def __repr__(self):
         return '<Cancer with code: {0}, named: {1}>'.format(
@@ -383,15 +383,87 @@ class Domain(BioModel):
         )
 
 
-def mutation_details_relationship(class_name, use_list=False):
+def mutation_details_relationship(class_name, use_list=False, **kwargs):
     return db.relationship(
         class_name,
         backref='mutation',
-        uselist=use_list
+        uselist=use_list,
+        **kwargs
     )
 
 
 mutation_site_association = make_association_table('site.id', 'mutation.id')
+
+
+class CancerMetaManager(UserList):
+
+    def to_json(self, filter=lambda x: x):
+        cancer_occurances = [
+            datum.to_json()
+            for datum in
+            filter(self.data)
+        ]
+
+        return {'TCGA metadata': cancer_occurances}
+
+    @property
+    def summary(self):
+        return [
+            datum.summary
+            for datum in self.data
+        ]
+
+    def get_value(self, filter=lambda x: x):
+        return sum(
+            (
+                data.get_value()
+                for data in filter(self.data)
+            )
+        )
+
+
+class MIMPMetaManager(UserList):
+
+    @staticmethod
+    def sort_by_probability(mimps):
+        return mimps.sort(
+            key=lambda mimp: mimp.probability,
+            reverse=True
+        )
+
+    def to_json(self, filter=lambda x: x):
+
+        gains = []
+        losses = []
+
+        for mimp in self.data:
+            if mimp.effect:
+                gains.append(mimp)
+            else:
+                losses.append(mimp)
+
+        self.sort_by_probability(gains)
+        self.sort_by_probability(losses)
+
+        return {
+            'gain': [mimp.to_json() for mimp in gains],
+            'loss': [mimp.to_json() for mimp in losses],
+            'effect': self.effect
+        }
+
+    @property
+    def effect(self):
+        effects = set()
+
+        # TODO: sort by p-value, so first we will have loss
+        # if the loss data is more reliable and vice versa.
+        for mimp in self.data:
+            if mimp.effect:
+                effects.add('gain')
+            else:
+                effects.add('loss')
+
+        return '/'.join(effects)
 
 
 class Mutation(BioModel):
@@ -414,13 +486,18 @@ class Mutation(BioModel):
 
     meta_cancer = mutation_details_relationship(
         'CancerMutation',
-        use_list=True
+        use_list=True,
+        collection_class=CancerMetaManager
     )
     meta_inherited = mutation_details_relationship('InheritedMutation')
     meta_ESP6500 = mutation_details_relationship('ExomeSequencingMutation')
     meta_1KG = mutation_details_relationship('The1000GenomesMutation')
 
-    meta_MIMP = mutation_details_relationship('MIMPMutation')
+    meta_MIMP = mutation_details_relationship(
+        'MIMPMutation',
+        use_list=True,
+        collection_class=MIMPMetaManager
+    )
 
     # one mutation can affect multiple sites and
     # one site can be affected by multiple mutations
@@ -520,7 +597,7 @@ class Mutation(BioModel):
     @cached_property
     def all_metadata(self):
         return {
-            self.get_source_name(key): value.representation
+            self.get_source_name(key): value.to_json()
             for key, value in self.__dict__.items()
             if key.startswith('meta_') and value
         }
@@ -698,9 +775,8 @@ class MutationDetails:
         """Return number representing value to be used in needleplot"""
         raise NotImplementedError
 
-    @property
-    def representation(self):
-        """Return text representation to be used in needleplot tooltips"""
+    def to_json(self, filter=lambda x: x):
+        """Return json representation to be used in needleplot tooltips"""
         raise NotImplementedError
 
 
@@ -715,8 +791,7 @@ class CancerMutation(MutationDetails, BioModel):
     def get_value(self, filter=lambda x: x):
         return self.count
 
-    @property
-    def representation(self):
+    def to_json(self):
         return {
             'Cancer': self.cancer.name,
             'Value': self.count
@@ -768,15 +843,14 @@ class InheritedMutation(MutationDetails, BioModel):
     def get_value(self, filter=lambda x: x):
         return len(filter(self.informative_clin_data))
 
-    @property
-    def representation(self):
+    def to_json(self, filter=lambda x: x):
         return {
             'dbSNP id': 'rs' + str(self.db_snp_id),
             'Is validated': bool(self.is_validated),
             'Is low frequency variation': bool(self.is_low_freq_variation),
             'Is in PubMed Central': bool(self.is_in_pubmed_central),
             'Clinical': [
-                d.representation
+                d.to_json()
                 for d in self.informative_clin_data
             ]
         }
@@ -825,8 +899,7 @@ class ClinicalData(BioModel):
     def significance(self):
         return self.significance_codes.get(self.sig_code, None)
 
-    @property
-    def representation(self):
+    def to_json(self, filter=lambda x: x):
         return {
             'Disease': self.disease_name,
             'Significane': self.significance,
@@ -851,7 +924,7 @@ class PopulationMutation(MutationDetails):
 
     @property
     def summary(self):
-        return self.value
+        return self.get_value()
 
     @property
     def affected_populations(self):
@@ -879,8 +952,7 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
     maf_ea = db.Column(db.Float)
     maf_aa = db.Column(db.Float)
 
-    @property
-    def representation(self):
+    def to_json(self, filter=lambda x: x):
         return {
             'MAF': self.maf_all,
             'MAF EA': self.maf_ea,
@@ -907,8 +979,7 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
         )
     )
 
-    @property
-    def representation(self):
+    def to_json(self, filter=lambda x: x):
         return {
             'MAF': self.maf_all,
             'MAF EAS': self.maf_eas,
@@ -921,6 +992,10 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
 
 class MIMPMutation(MutationDetails, BioModel):
     """Metadata for MIMP mutation"""
+    site_id = db.Column(db.Integer, db.ForeignKey('site.id'))
+    site = db.relationship('Site')
+
+    probability = db.Column(db.Float)
 
     pwm = db.Column(db.Text)
     pwm_family = db.Column(db.Text)
@@ -931,14 +1006,18 @@ class MIMPMutation(MutationDetails, BioModel):
     # position of a mutation in an associated motif
     position_in_motif = db.Column(db.Integer)
 
-    @property
-    def representation(self):
+    def to_json(self, filter=lambda x: x):
         return {
-            'Effect': 'gain' if self.effect else 'loss',
-            'PWM': self.pwm,
-            'Position in motif': self.position_in_motif,
-            'PWM family': self.pwm_family,
+            'effect': 'gain' if self.effect else 'loss',
+            'pwm': self.pwm,
+            'pos_in_motif': self.position_in_motif,
+            'pwm_family': self.pwm_family,
+            'site': self.site.to_json(),
+            'probability': self.probability
         }
+
+    def __repr__(self):
+        return '<MIMPMutation %s>' % self.id
 
 
 class CMSModel(Model):

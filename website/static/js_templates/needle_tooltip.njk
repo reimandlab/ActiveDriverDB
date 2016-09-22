@@ -1,0 +1,57 @@
+{% from 'macros.njk' import represent_site %}
+
+PTM type: {{ mutation.category }}<br>
+Ref residue: {{ mutation.ref }}<br>
+Position: {{ mutation.coord }}<br>
+Alt residue: {{ mutation.alt }}<br>
+{{ value_type }}: {{ mutation.value }}<br>
+
+{% set sites = mutation.sites %}
+
+{% if sites %}
+Closest affected sites:
+<ul>
+    {% for site in sites %}
+        <li> {{ represent_site(site) }}
+    {% endfor %}
+</ul>
+{% endif %}
+
+
+
+{% for source, metadata in mutation.meta %}
+    {{ source }}:
+    <ul>
+
+    {% if source == 'TCGA' %}
+        <li> TOTAL ({{ mutation.value }})
+        {% for entry in metadata['TCGA metadata'] | sort(true, false, 'Value') %}
+            <li> {{ entry.Cancer }} ({{ entry.Value }})
+        {% endfor %}
+    {% elif source == 'MIMP' %}
+      {% set mimp_meta = metadata %}
+      {% include 'mimp.njk' %}
+    {% else %}
+        {% for column, value in metadata %}
+            {% if column == 'Clinical' %}
+                {% for sub_value in value %}
+                    <li> {{ sub_value['Disease'] }}
+                    <ul>
+                        <li> Significane: {{ sub_value['Significane'] }}
+                        <li> Review status: {{ sub_value['Review status'] }}
+                    </ul>
+                {% endfor %}
+            {% else %}
+                <li> {{ column }}: {{value}}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    </ul>
+{% endfor %}
+
+{% set row_id = mutation.coord + mutation.alt %}
+
+<a href="#{{ row_id }}" onclick="mutation_table.expandRow('{{ row_id }}')">
+    show in table
+</a>

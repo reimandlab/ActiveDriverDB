@@ -218,6 +218,7 @@ class ProteinView(FlaskView):
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
         raw_mutations = self.filter_manager.apply(protein.mutations)
+        source = self.filter_manager.get_value('Mutation.sources')
 
         parsed_mutations = self._represent_mutations(
             raw_mutations,
@@ -250,67 +251,31 @@ class ProteinView(FlaskView):
 
         response = []
 
-        def get_metadata(mutation):
-            nonlocal source_field_name, source
-            meta = {}
-            source_specific_data = getattr(mutation, source_field_name)
-            if isinstance(source_specific_data, list):
-                meta[source] = {
-                    source + ' metadata':
-                    [
-                        datum.representation
-                        for datum in
-                        self.filter_manager.apply(source_specific_data)
-                    ]
-                }
-                meta[source][source + ' metadata'].sort(
-                    key=lambda rep: rep['Value'],
-                    reverse=True
-                )
-            else:
-                meta[source] = source_specific_data.representation
-            mimp = getattr(mutation, 'meta_MIMP')
-            if mimp:
-                mimp_representation = mimp.representation
-                mimp_representation['sites'] = [
-                    site.representation for site in mutation.sites
-                ]
-                meta['MIMP'] = mimp_representation
-            return meta
-
-        def get_summary(mutation):
-            source_specific_data = getattr(mutation, source_field_name)
-            if isinstance(source_specific_data, list):
-                return [
-                    datum.summary
-                    for datum in source_specific_data
-                ]
-            else:
-                return source_specific_data.summary
-
-        def get_value(mutation):
-            nonlocal source_field_name
-
-            meta = getattr(mutation, source_field_name)
-            if isinstance(meta, list):
-                meta = self.filter_manager.apply(meta)
-                return sum((data.get_value() for data in meta))
-            return meta.get_value(self.filter_manager.apply)
-
         for mutation in mutations:
+
+            field = getattr(mutation, source_field_name)
+            mimp = getattr(mutation, 'meta_MIMP')
+
+            metadata = {
+                source: field.to_json(self.filter_manager.apply)
+            }
+
+            if mimp:
+                metadata['MIMP'] = mimp.to_json()
+
             needle = {
                 'coord': mutation.position,
-                'value': get_value(mutation),
+                'value': field.get_value(self.filter_manager.apply),
                 'category': mutation.impact_on_ptm,
                 'alt': mutation.alt,
                 'ref': mutation.ref,
-                'meta': get_metadata(mutation),
+                'meta': metadata,
                 'sites': [
-                    site.representation
+                    site.to_json()
                     for site in mutation.find_closest_sites()
                 ],
                 'cnt_ptm': mutation.cnt_ptm_affected,
-                'summary': get_summary(mutation),
+                'summary': field.summary,
             }
             response += [needle]
 

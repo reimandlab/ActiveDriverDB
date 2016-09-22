@@ -1,0 +1,4 @@
+
+{% macro represent_site(site) %}
+  {{ site.position }}: {{ site.residue }} ({{ site.type | replace(',', ', ') }})
+{% endmacro %}

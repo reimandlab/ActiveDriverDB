@@ -1,0 +1,10 @@
+Impact: {{ impact }}<br>
+# of affected sites: {{ affected_sites_count }}<br>
+
+{% if 'network-rewiring' in impact %}
+  {% set mimp_meta = meta.MIMP %}
+  {% include 'mimp.njk' %}
+{% elif affected_sites_count > 0 %}
+  Closest affected site(s):
+  <div>{{ closest_afffected }}</div>
+{% endif %}

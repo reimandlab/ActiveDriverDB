@@ -1,0 +1,8 @@
+{% set position = mimp.pos_in_motif + 7 %}
+<div class="mimp-logo">
+    <img src="/static/mimp/logos/{{ mimp.pwm }}.svg">
+    <div
+        class="mimp-outline {{ mimp.effect }}"
+        style="left: {{ position * 22 + 47 }}px"
+    ></div>
+</div>

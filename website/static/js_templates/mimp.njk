@@ -1,0 +1,32 @@
+{% from 'macros.njk' import represent_site %}
+
+{% macro represent_mimp(mimp) %}
+  <ul>
+      <li> {% include 'mimp_image.njk' %}
+      <li> Site: {{ represent_site(mimp.site) }}
+      <li> Probability: {{ mimp.probability }}
+      <li> Effect: {{ mimp.effect }}
+      <li> Position in motif: {{ mimp.pos_in_motif }}
+  </ul>
+{% endmacro %}
+
+{% for effect in ['gain', 'loss'] %}
+  {% if mimp_meta[effect] | length %}
+    {% set annotations_with_effect = mimp_meta[effect] %}
+    {% set effect_count = annotations_with_effect | length %}
+    {% set best = annotations_with_effect | first %}
+    <li> {{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }}:
+    {{ represent_mimp(best) }}
+    {% if effect_count > 1 %}
+      <p>
+        {{ effect_count - 1 }} other annotation{{ 's' if effect_count > 2 }} with predicted '{{ effect }}' effect exists. {{ 'Those' if effect_count > 2 else 'This' }} include predicted interactions with:
+        <ul>
+        {% for i in range(1, effect_count) %}
+          {% set mimp = annotations_with_effect[i] %}
+          <li> {{ mimp.pwm }} (probability: {{ mimp.probability }})
+        {% endfor %}
+        </ul>
+      </p>
+    {% endif %}
+  {% endif %}
+{% endfor %}

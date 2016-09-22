@@ -70,7 +70,7 @@
             <td class="{{ mutation.category or '' }}">
                 {{ mutation.category or '' }}
                 {% if mutation.category == 'network-rewiring' %}
-                    - motif {{ 'gain' if mutation.meta['MIMP'].effect else 'loss' }}
+                    - motif {{ mutation.meta['MIMP'].effect }}
                 {% endif %}
             </td>
             <td>{{ mutation.cnt_ptm }}</td>

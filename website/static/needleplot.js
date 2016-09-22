@@ -335,68 +335,14 @@ var NeedlePlot = function ()
 
         var needle_tooltip = Tooltip()
         needle_tooltip.init(
-            function(d){
-                var text = 'PTM type: ' + d.category + '<br>' +
-                           'Ref residue: ' + d.ref + '<br>' +
-                           'Position: ' + d.coord + '<br>' +
-                           'Alt residue: ' + d.alt + '<br>' +
-                           config.value_type + ': ' + d.value + '<br>'
-
-                var sites = d.sites
-                if(sites !== undefined && sites.length > 0)
-                {
-                    text += 'Closest affected sites: '
-                    text += '<ul>'
-                    for(var i = 0; i < sites.length; i++)
+            function(mutation){
+                return nunjucks.render(
+                    'needle_tooltip.njk',
                     {
-                        var site = sites[i]
-                        text += '<li>' + site.position + ': ' + site.residue + ' (' + site.type + ') '
+                        mutation: mutation,
+                        value_type: config.value_type
                     }
-                    text += '</ul>'
-                }
-                for(var meta in d.meta)
-                {
-                    var meta_value = d.meta[meta]
-                    text += meta + ':'
-                    text += '<ul>'
-                    if(meta === 'TCGA')
-                    {
-                        meta_value = d.meta[meta]['TCGA metadata']
-                        text += '<li>TOTAL (' + d.value + ')'
-                    }
-                    for(var column in meta_value)
-                    {
-                        var value = meta_value[column]
-                        if(meta === 'TCGA')
-                        {
-                            text += '<li>' + value['Cancer'] + ' (' + value['Value'] + ')'
-                        }
-                        else if(column === 'PWM')
-                        {
-                            text += '<li>' + MIMP_image_from_meta(d.meta[meta]) + '</li>'
-                        }
-                        else if(column === 'Clinical')
-                        {
-                            for(var j in value)
-                            {
-                                var sub_value = value[j]
-                                text += '<li>' + sub_value['Disease']
-                                text += '<ul>'
-                                text += '<li>Significane: ' + sub_value['Significane']
-                                text += '<li>Review status: ' + sub_value['Review status']
-                                text += '</ul>'
-                            }
-                        }
-                        else
-                        {
-                            text += '<li>' + column + ': ' + value
-                        }
-                    }
-                    text += '</ul>'
-                }
-                var row_id = d.coord + d.alt
-                text += '<a href="#' + row_id + '" onclick="mutation_table.expandRow(\'' + row_id + '\')">show in table</a>'
-                return text
+                )
             },
             'needle'
         )

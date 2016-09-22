@@ -119,6 +119,10 @@ class MutationImporter(ABC):
     def model_name(self):
         return self.model.__name__
 
+    @staticmethod
+    def commit():
+        db.session.commit()
+
     def load(self, path=None):
         self.base_mutations = {}
         print('Loading %s:' % self.model_name)
@@ -135,7 +139,7 @@ class MutationImporter(ABC):
         base_importer.flush(self.base_mutations)
         self.insert_details(mutation_details)
 
-        db.session.commit()
+        self.commit()
         if self.broken_seq:
             print(
                 'Detected and skipped mutations with incorrectly mapped '
@@ -247,6 +251,8 @@ def get_all_importers():
 
     for raw_path in get_files('mutation_import', '*.py'):
         module_name = os.path.basename(raw_path[:-3])
+        if module_name == '__init__':
+            pass
         module = imp.load_source(module_name, raw_path)
         importers[module_name] = module
 
