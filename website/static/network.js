@@ -31,6 +31,7 @@ var Network = (function ()
     var svg
     var vis
     var force
+    var links
 
     var zooom
 
@@ -45,7 +46,7 @@ var Network = (function ()
 
     function calculateRadius(mutations_count, is_group)
     {
-        var r = config.minimalRadius
+        var r = config.minimal_radius
         // the groups are shown as 1.5 times bigger
         r *= is_group ? 1.5 : 1
         // more mutations = bigger circle
@@ -91,7 +92,7 @@ var Network = (function ()
 
         // Element sizes
         site_size_unit: 5,
-        minimalRadius: 6,   // of a single node
+        minimal_radius: 6,   // of a single node
 
         // Callbacks
         nodeURL: (function(node) {
@@ -99,8 +100,8 @@ var Network = (function ()
         }),
 
         // Zoom
-        minZoom: 0.5,   // allow to zoom-out up to two times
-        maxZoom: 2  // allow to zoom-in up to two times
+        min_zoom: 0.2,   // allow to zoom-out up to five times
+        max_zoom: 2  // allow to zoom-in up to two times
     }
 
     function configure(new_config)
@@ -421,6 +422,21 @@ var Network = (function ()
             .classed('hover', hover_in)
     }
 
+    function forceTick(e)
+    {
+        force
+            .linkDistance(linkDistance)
+            .charge(charge)
+
+        links
+            .attr('x1', function(d) { return d.source.x })
+            .attr('y1', function(d) { return d.source.y })
+            .attr('x2', function(d) { return d.target.x })
+            .attr('y2', function(d) { return d.target.y })
+
+        nodes.attr('transform', function(d){ return 'translate(' + [d.x, d.y] + ')'} )
+    }
+
     function resize()
     {
         if(config.responsive)
@@ -439,7 +455,7 @@ var Network = (function ()
             configure(user_config)
 
             zoom = d3.behavior.zoom()
-                .scaleExtent([config.minZoom, config.maxZoom])
+                .scaleExtent([config.min_zoom, config.max_zoom])
                 .on('zoom', zoomAndMove)
 
             svg = d3.select(config.element).append('svg')
@@ -503,7 +519,7 @@ var Network = (function ()
                 // .on('start', start) and using `requestAnimationFrame` in start()
                 // but this creates a terrible effect of laggy animation
 
-            var links = vis.selectAll('.link')
+            links = vis.selectAll('.link')
                 .data(edges)
                 .enter().append('line')
                 .attr('class', 'link')
@@ -592,20 +608,7 @@ var Network = (function ()
                 })
 
 
-            force.on('tick', function(e) {
-                force
-                    .linkDistance(linkDistance)
-                    .charge(charge)
-
-                links
-                    .attr('x1', function(d) { return d.source.x })
-                    .attr('y1', function(d) { return d.source.y })
-                    .attr('x2', function(d) { return d.target.x })
-                    .attr('y2', function(d) { return d.target.y })
-
-                nodes.attr('transform', function(d){ return 'translate(' + [d.x, d.y] + ')'} )
-
-            })
+            force.on('tick', forceTick)
 
             focusOn(protein_node, orbits.getMaximalRadius())
 
