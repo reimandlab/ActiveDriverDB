@@ -109,9 +109,6 @@ var Network = (function ()
     {
         // Automatical configuration update:
         update_object(config, new_config)
-
-        // Manual configuration patching:
-        config.height = config.height || config.width * config.ratio
     }
 
     function getKinasesByName(names, kinases_set)
@@ -448,6 +445,9 @@ var Network = (function ()
             config.width = dimensions.width
             config.height = dimensions.height
             config.ratio = dimensions.height / dimensions.width
+        }
+        else {
+            config.height = config.height || config.width * config.ratio
         }
         svg.attr('viewBox', '0 0 ' + config.width + ' ' + config.height)
     }
