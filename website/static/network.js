@@ -45,20 +45,14 @@ var Network = (function ()
         return Math.min(2 * radius, (2 * radius - 8) / context.getComputedTextLength() * 24)
     }
 
-    function calculateRadius(mutations_count, is_group)
+    function calculateRadius()
     {
-        var r = config.minimal_radius
-        // the groups are shown as 1.5 times bigger
-        r *= is_group ? 1.5 : 1
-        // more mutations = bigger circle
-        r += 6 * Math.log10(mutations_count + 1)
-
-        return r
+        return config.radius
     }
 
     function createProteinNode()
     {
-        var radius = calculateRadius(protein.mutations_count)
+        var radius = calculateRadius()
         var name = protein.name
         if(!protein.is_preferred)
         {
@@ -93,7 +87,7 @@ var Network = (function ()
 
         // Element sizes
         site_size_unit: 5,
-        minimal_radius: 6,   // of a single node
+        radius: 6,   // of a single node
 
         // Callbacks
         nodeURL: (function(node) {
@@ -237,9 +231,7 @@ var Network = (function ()
         {
             var kinase = all_kinases[i]
 
-            kinase.r = calculateRadius(
-                kinase.protein ? kinase.protein.mutations_count : 0
-            )
+            kinase.r = calculateRadius()
             kinase.node_id = i + index_shift
 
             // this property will be populated for kinases belonging to group in prepareKinaseGroups
@@ -299,10 +291,7 @@ var Network = (function ()
                 addEdge(kinase.node_id + kinases.length, group_index)
             }
 
-            group.r = calculateRadius(
-                mutations_in_kinases / group_kinases.length || 0,
-                true
-            )
+            group.r = calculateRadius()
             group.color = 'red'
             if(!config.show_sites)
             {
@@ -593,7 +582,14 @@ var Network = (function ()
                 .attr('class', 'label')
 
             var labels = nodes.selectAll('.label')
-                .text(function(d){ return d.name })
+                .text(function(d){
+                    if(d.name.length > 6)
+                    {
+                        var name = d.name.substring(0, 7)
+                        return name + '...'
+                    }
+                    return d.name
+                })
                 .style('font-size', function(d) {
                     if(d.node_type === 'site')
                         return '7px'
