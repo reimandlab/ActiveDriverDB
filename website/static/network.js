@@ -381,15 +381,17 @@ var Network = (function ()
         vis.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')')
     }
 
-    function focusOn(node, radius)
+    function focusOn(node, radius, animation_speed)
     {
+        animation_speed = (typeof animation_speed == 'undefined') ? 750 : animation_speed
+
         area = radius * 2 * 1.2
 
         var scale = Math.min(config.width / area, config.height / area)
         var translate = [config.width / 2 - node.x * scale, config.height / 2 - node.y * scale]
 
         svg.transition()
-            .duration(750)
+            .duration(animation_speed)
             .call(zoom.translate(translate).scale(scale).event)
     }
 
@@ -633,7 +635,7 @@ var Network = (function ()
 
             force.on('tick', forceTick)
 
-            publicSpace.zoom_fit()
+            publicSpace.zoom_fit(0)    // grasp everything without animation (avoids repeating zoom lags if they occur)
 
             force.start()
 
@@ -651,8 +653,8 @@ var Network = (function ()
         zoom_out: function(){
             set_zoom(zoom.scale() / 1.25)
         },
-        zoom_fit: function(){
-            focusOn(central_node, orbits.getMaximalRadius())
+        zoom_fit: function(animation_speed){
+            focusOn(central_node, orbits.getMaximalRadius(), animation_speed)
         },
     }
 

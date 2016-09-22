@@ -89,7 +89,7 @@
 
     $('.zoom-in').on('click', Network.zoom_in)
     $('.zoom-out').on('click', Network.zoom_out)
-    $('.zoom-fit').on('click', Network.zoom_fit)
+    $('.zoom-fit').on('click', function(){Network.zoom_fit()})
 
     </script>
 {% endblock %}
