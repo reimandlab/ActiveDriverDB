@@ -103,13 +103,7 @@ class NetworkView(FlaskView):
 
         data = {
             'kinases': [
-                {
-                    'name': kinase.name,
-                    'protein': {
-                        'refseq': kinase.protein.refseq,
-                        'mutations_count': kinase.protein.mutations.count()
-                    } if kinase.protein else None
-                }
+                kinase.to_json()
                 for kinase in kinases
             ],
             'protein': {

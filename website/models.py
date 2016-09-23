@@ -70,6 +70,15 @@ class Kinase(BioModel):
             self.group
         )
 
+    def to_json(self):
+        return {
+            'name': self.name,
+            'protein': {
+                'refseq': self.protein.refseq,
+                'mutations_count': self.protein.mutations.count()
+            } if self.protein else None
+        }
+
 
 class KinaseGroup(BioModel):
     """Kinase group is the only grouping of kinases currently in use.

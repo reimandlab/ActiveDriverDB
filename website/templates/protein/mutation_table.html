@@ -85,11 +85,15 @@
                 {% set comma = joiner(',') %}
                 {% for group in mutation.kinase_groups %}
                     {{ comma() }} {{ group }} group
-                {% endfor %}
-                {% if mutation.kinases and mutation.kinase_groups %}
-                    ,
-                {% endif %}
-                {{ mutation.kinases | join(', ') }}
+                {%- endfor %}
+                {%- for kinase in mutation.kinases -%}
+                    {{ comma() }}
+                    {% if kinase.protein -%}
+                        <a href="{{ url_for('ProteinView:show', refseq=kinase.protein.refseq) }}">{{ kinase.name }}</a>
+                    {%- else -%}
+                        {{ kinase.name }}
+                    {%- endif -%}
+                {%- endfor -%}
             </td>
             {% for column in metadata.values() %}
                 <td>

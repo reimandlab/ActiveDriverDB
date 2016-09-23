@@ -277,7 +277,7 @@ class ProteinView(FlaskView):
                     for site in closest_sites
                 ],
                 'kinases': [
-                    kinase.name
+                    kinase.to_json()
                     for site in closest_sites
                     for kinase in site.kinases
                 ],
