@@ -48,6 +48,7 @@ bundles = {
     ),
     'css_protein': css_bundle(
         'protein',
+        'sass/tooltip.css',
         'sass/protein.css',
         'sass/tracks.css',
         'sass/widgets.css'
