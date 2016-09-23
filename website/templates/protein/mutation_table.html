@@ -38,6 +38,8 @@
                 title="Number of adjacent PTMs affected">PTMs affected</th>
             <th data-sortable=true
                 data-visible=false>Closest affected site(s)</th>
+            <th data-sortable=true
+                data-visible=true>Kinases</th>
             {% if mutations %}
             {% for metadata_colum in mutations[0].meta[source].keys() %}
                 <th data-sortable=true
@@ -78,6 +80,9 @@
                 {% for site in mutation.sites %}
                     {{ represent_dict(site, class='sub-cell') }}
                 {% endfor %}
+            </td>
+            <td>
+                {{ mutation.kinases | join(', ') }}
             </td>
             {% for column in metadata.values() %}
                 <td>

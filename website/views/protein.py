@@ -263,6 +263,8 @@ class ProteinView(FlaskView):
             if mimp:
                 metadata['MIMP'] = mimp.to_json()
 
+            closest_sites = mutation.find_closest_sites()
+
             needle = {
                 'coord': mutation.position,
                 'value': field.get_value(self.filter_manager.apply),
@@ -272,7 +274,16 @@ class ProteinView(FlaskView):
                 'meta': metadata,
                 'sites': [
                     site.to_json()
-                    for site in mutation.find_closest_sites()
+                    for site in closest_sites
+                ],
+                'kinases': [
+                    kinase.name
+                    for site in closest_sites
+                    for kinase in site.kinases
+                ] + [
+                    kinase.name
+                    for site in closest_sites
+                    for kinase in site.kinase_groups
                 ],
                 'cnt_ptm': mutation.cnt_ptm_affected,
                 'summary': field.summary,
