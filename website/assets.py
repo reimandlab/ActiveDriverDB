@@ -17,19 +17,19 @@ bundles = {
     ),
     'js_protein_view': Bundle(
         'common.js',
+        'widgets.js',
         'table.js',
         'tooltip.js',
         'needleplot.js',
-        'widgets.js',
         'tracks.js',
         filters='rjsmin',
         output='min/proteinView.js'
     ),
     'js_network_view': Bundle(
         'common.js',
+        'widgets.js',
         'orbits.js',
         'network.js',
-        'widgets.js',
         filters='rjsmin',
         output='min/networkView.js'
     ),
