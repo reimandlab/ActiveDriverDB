@@ -280,10 +280,11 @@ class ProteinView(FlaskView):
                     kinase.name
                     for site in closest_sites
                     for kinase in site.kinases
-                ] + [
-                    kinase.name
+                ],
+                'kinase_groups': [
+                    group.name
                     for site in closest_sites
-                    for kinase in site.kinase_groups
+                    for group in site.kinase_groups
                 ],
                 'cnt_ptm': mutation.cnt_ptm_affected,
                 'summary': field.summary,

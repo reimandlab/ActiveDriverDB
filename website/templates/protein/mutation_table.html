@@ -82,6 +82,13 @@
                 {% endfor %}
             </td>
             <td>
+                {% set comma = joiner(',') %}
+                {% for group in mutation.kinase_groups %}
+                    {{ comma() }} {{ group }} group
+                {% endfor %}
+                {% if mutation.kinases and mutation.kinase_groups %}
+                    ,
+                {% endif %}
                 {{ mutation.kinases | join(', ') }}
             </td>
             {% for column in metadata.values() %}
