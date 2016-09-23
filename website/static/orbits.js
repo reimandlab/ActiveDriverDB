@@ -5,8 +5,9 @@ var Orbits = function ()
 
     var by_node = {}
     var orbits = []
-    
+
     var config = {
+        order_by: 'r',  // new of data attribute to be used in placing nodes in orbits. The node with highest value of this attribute will be used to populate first place on the first orbit, then the next in order to populate second and so on until the orbit will be filled completely. Then the same will be applied to the second orbit and so on. Radius is the best choice in means of optimal place use, but if all nodes have the same radius it might be better idea to use sorting to encode something else.
         stroke: 2.2,
         spacing: 15, // the distance between orbits
         first_ring_scale: 1.5 // `first_ring_scale * central_node.radius` define radius of the first ring
@@ -25,11 +26,11 @@ var Orbits = function ()
         return 2 * Math.PI * R
     }
 
-    function compareRadius(a, b)
+    function compareNodes(a, b)
     {
-        if (a.r < b.r)
+        if (a[config.order_by] < b[config.order_by])
           return -1
-        if (a.r > b.r)
+        if (a[config.order_by] > b[config.order_by])
             return 1
           return 0
     }
@@ -107,7 +108,8 @@ var Orbits = function ()
             // finaly since it has to fit to the orbit right now, place it on the current orbit
             orbits[orbits.length - 1].addNode(node)
             available_space_on_outer_belt -= l
-            if(available_space_on_outer_belt < 0) available_space_on_outer_belt = 0
+            if(available_space_on_outer_belt < 0)
+                available_space_on_outer_belt = 0
 
         }
         orbits[orbits.length - 1].setDimensions(R, length_extend)
@@ -129,7 +131,7 @@ var Orbits = function ()
             central_node = the_central_node
             configure(config)
             // sort nodes by radius from the smallest
-            nodes.sort(compareRadius)
+            nodes.sort(compareNodes)
             calculateOrbits()
         },
         getRadiusByNode: function(node)

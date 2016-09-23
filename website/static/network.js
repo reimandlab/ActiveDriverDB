@@ -506,7 +506,10 @@ var Network = (function ()
             }
 
             orbits = Orbits()
-            orbits.init(elements, central_node)
+            orbits.init(elements, central_node, {
+                spacing: 120,
+                order_by: config.show_sites ? 'kinases_count' : 'r'
+            })
             orbits.placeNodes()
 
             for(var j = 0; j < kinases_grouped.length; j++)

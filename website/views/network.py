@@ -124,6 +124,7 @@ class NetworkView(FlaskView):
                     'position': site.position,
                     'residue': site.residue,
                     'kinases': [kinase.name for kinase in site.kinases],
+                    'kinases_count': len(site.kinases),
                     'nearby_sequence': get_nearby_sequence(site, protein)
                 }
                 # TODO: remove unused kinases
