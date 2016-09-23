@@ -18,15 +18,17 @@
     <li> {{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }}:
     {{ represent_mimp(best) }}
     {% if effect_count > 1 %}
-      <p>
-        {{ effect_count - 1 }} other annotation{{ 's' if effect_count > 2 }} with predicted '{{ effect }}' effect exists. {{ 'Those' if effect_count > 2 else 'This' }} include predicted interactions with:
+    <ul>
+      <li>
+        {{ effect_count - 1 }} other annotation{{ 's' if effect_count > 2 }} with predicted '{{ effect }}' effect exists.<br>
+        {{ 'Those' if effect_count > 2 else 'This' }} include predicted interactions with:
         <ul>
         {% for i in range(1, effect_count) %}
           {% set mimp = annotations_with_effect[i] %}
           <li> {{ mimp.pwm }} (probability: {{ mimp.probability }})
         {% endfor %}
         </ul>
-      </p>
+    </ul>
     {% endif %}
   {% endif %}
 {% endfor %}
