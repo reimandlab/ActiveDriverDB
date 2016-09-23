@@ -84,6 +84,7 @@ var Network = (function ()
         // Configuration
         show_sites: true,
         clone_by_site: true,
+        default_link_distance: 100,
 
         // Element sizes
         site_size_unit: 5,
@@ -95,7 +96,7 @@ var Network = (function ()
         }),
 
         // Zoom
-        min_zoom: 0.2,   // allow to zoom-out up to five times
+        min_zoom: 1/7,   // allow to zoom-out up to seven times
         max_zoom: 2  // allow to zoom-in up to two times
     }
 
@@ -208,7 +209,7 @@ var Network = (function ()
                     else
                         kinase.used = true
                 }
-                addEdge(site.node_id, kinase.node_id)
+                addEdge(site.node_id, kinase.node_id, 1.3)
             }
         }
         return cloned_kinases
@@ -323,7 +324,7 @@ var Network = (function ()
         {
             return edge.target.expanded ? edge.target.r + edge.source.r : 0
         }
-        return 100
+        return config.default_link_distance / edge.weight
     }
 
     function switchGroupState(node, state, time)
@@ -507,7 +508,7 @@ var Network = (function ()
 
             orbits = Orbits()
             orbits.init(elements, central_node, {
-                spacing: 120,
+                spacing: 80,
                 order_by: config.show_sites ? 'kinases_count' : 'r'
             })
             orbits.placeNodes()
@@ -652,7 +653,10 @@ var Network = (function ()
             set_zoom(zoom.scale() / 1.25)
         },
         zoom_fit: function(animation_speed){
-            focusOn(central_node, orbits.getMaximalRadius(), animation_speed)
+            radius = orbits.getMaximalRadius()
+            if(config.show_sites)
+                radius += config.default_link_distance
+            focusOn(central_node, radius, animation_speed)
         },
     }
 
