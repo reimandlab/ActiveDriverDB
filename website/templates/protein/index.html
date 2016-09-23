@@ -94,14 +94,16 @@ Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alterna
         tracks.init({
             box: document.getElementById('tracks-box')
         })
-        max_zoom = tracks.adjustMaxZoom()
+        var max_zoom = tracks.adjustMaxZoom()
+        var mutations = {{ mutations | json | safe or '"' + url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.url_string) + '"' }}
+        var sites = {{ sites | json | safe or '"' + url_for('ProteinView:sites', refseq=protein.refseq, filters=filters.url_string) + '"' }}
         var params = {
             use_log: {{ log_scale | lower }},
             value_type: '{{ value_type }}',
             max_zoom: max_zoom,
             element: document.getElementById('plot_area'),
-            mutations: {{ mutations | json | safe or '"' + url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.url_string) + '"' }},
-            sites: {{ sites | json | safe or '"' + url_for('ProteinView:sites', refseq=protein.refseq, filters=filters.url_string) + '"' }},
+            mutations: mutations,
+            sites: sites,
             sequenceLength: {{ protein.sequence | length }},
             name: '{{ protein.gene.name }}',
             legends:
@@ -114,7 +116,7 @@ Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alterna
             width: $('#tracks-box').width()
         }
         var mutation_table = MutationTable()
-        mutation_table.init($('#table'))
+        mutation_table.init($('#table'), mutations)
         var needle_plot = NeedlePlot()
         needle_plot.init(params)
         tracks.setNeedlePlotInstance(needle_plot)

@@ -266,7 +266,7 @@ class ProteinView(FlaskView):
             closest_sites = mutation.find_closest_sites()
 
             needle = {
-                'coord': mutation.position,
+                'pos': mutation.position,
                 'value': field.get_value(self.filter_manager.apply),
                 'category': mutation.impact_on_ptm,
                 'alt': mutation.alt,

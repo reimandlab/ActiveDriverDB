@@ -75,7 +75,6 @@ var NeedlePlot = function ()
         element: null,
         mutations: null,
         sites: null,
-        needles: null,
         legends: {x: 'Sequence', y: '# of mutations'},
         width: 600,
         height: null,
@@ -199,7 +198,7 @@ var NeedlePlot = function ()
         needles
             .attr('transform', function(d)
                 {
-                    return 'translate(' + [posToX(d.coord), 0] + ')'
+                    return 'translate(' + [posToX(d.pos), 0] + ')'
                 }
             )
 

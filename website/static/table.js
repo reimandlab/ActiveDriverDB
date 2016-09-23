@@ -1,20 +1,16 @@
 var MutationTable = function ()
 {
     var element
+    var mutations
 
     function detailFormatter(index, row_data, element)
     {
-        var row_element = getMutationRow(row_data[0] + row_data[2])
-        var meta = JSON.parse($(row_element).data('metadata').slice(2, -2).replace(/'/g, '"'))
+        var mutation_id = row_data._id
+        var mutation = mutations[mutation_id]
 
         return nunjucks.render(
             'row_details.njk',
-            {
-                impact: row_data[4],
-                affected_sites_count: row_data[5],
-                meta: meta,
-                closest_afffected: row_data[6]
-            }
+            {mutation: mutation}
         )
     }
 
@@ -24,8 +20,14 @@ var MutationTable = function ()
     }
 
     var publicSpace = {
-        init: function(table_element)
+        init: function(table_element, mutations_list)
         {
+            mutations = {}
+            for(var i = 0; i < mutations_list.length; i++)
+            {
+                var mutation = mutations_list[i]
+                mutations[mutation.pos + mutation.alt] = mutation
+            }
             element = table_element
             element.bootstrapTable({
                 detailFormatter: detailFormatter,

@@ -1,10 +1,16 @@
-Impact: {{ impact }}<br>
-# of affected sites: {{ affected_sites_count }}<br>
+Impact: {{ mutation.category }}<br>
+Number of affected sites: {{ mutation.cnt_ptm }}<br>
 
-{% if 'network-rewiring' in impact %}
-  {% set mimp_meta = meta.MIMP %}
+{% if 'network-rewiring' in mutation.category %}
+  {% set mimp_meta = mutation.meta.MIMP %}
   {% include 'mimp.njk' %}
-{% elif affected_sites_count > 0 %}
-  Closest affected site(s):
-  <div>{{ closest_afffected | safe }}</div>
+{% elif mutation.sites | length > 0 %}
+  Closest affected site{{ 's' if mutation.sites | length > 1 }}:
+  {% for site in mutation.sites %}
+    <div class="sub-cell">
+      Position: {{ site.position }}<br>
+      Residue: {{ site.residue }}<br>
+      Type: {{ site.type }}
+    </div>
+  {% endfor %}
 {% endif %}
