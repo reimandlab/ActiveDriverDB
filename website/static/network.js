@@ -194,7 +194,9 @@ var Network = (function ()
 
             sites.push(site)
 
-            var site_kinases = getKinasesByName(site.kinases, kinases) // TODO: also add groups here
+            var site_kinases = getKinasesByName(site.kinases, kinases)
+            site_kinases = site_kinases.concat(getKinasesByName(site.kinase_groups, kinase_groups))
+
             for(var j = 0; j < site_kinases.length; j++)
             {
                 var kinase = site_kinases[j]
@@ -209,7 +211,7 @@ var Network = (function ()
                     else
                         kinase.used = true
                 }
-                addEdge(site.node_id, kinase.node_id, 1.3)
+                addEdge(kinase.node_id, site.node_id, 1.3)
             }
         }
         return cloned_kinases
@@ -273,6 +275,7 @@ var Network = (function ()
             var group = kinase_groups[i]
 
             group.is_group = true
+            group.node_id = i + index_shift
 
             group.x = Math.random() * config.width
             group.y = Math.random() * config.height
@@ -304,15 +307,6 @@ var Network = (function ()
 
     function linkDistance(edge)
     {
-        /*
-        // make links between the core protein and groups longer,
-        // so the groups stand out and do not collide with kinases
-        if(edge.source.is_group)   // source node is a group
-        {
-            return 175
-        }
-        else
-        */
         // let's place them in layers around the central protein
         if(edge.target.index === 0)
         {
