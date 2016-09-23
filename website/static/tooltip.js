@@ -78,9 +78,25 @@ var Tooltip = function()
             if(stuck)
                 return
 
+            /*
+                Why movement is contraint only against right window boundary (tooltip is forced not to exceed width, but not height)?
+
+                First, if we include also height constraint, the tooltip will start jumping over the needle, so it will be hover over and block access (and view) to the needle. It would be very confusing for the end user. Second, detecting height of the screen would require much more calculation and work so it would be slower and more prone to cross-brrowser issues.
+            */
+            var size = tooltip.node().getBoundingClientRect()
+
+            var body_size = document.
+                getElementsByTagName('body')[0].
+                getBoundingClientRect()
+
+            var left = d3.event.pageX
+
+            if(size.width + left > body_size.width)
+                left -= size.width + left - body_size.width
+
             tooltip
-                .style('left', (d3.event.pageX) + 'px')
-                .style('top', (d3.event.pageY - 28) + 'px')
+                .style('left', left + 'px')
+                .style('top', d3.event.pageY + 'px')
         },
         bind: function(selection)
         {
