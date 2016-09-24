@@ -32,7 +32,7 @@ var MutationTable = function ()
             element.bootstrapTable({
                 detailFormatter: detailFormatter,
                 onClickRow: function(row_data){
-                    publicSpace.expandRow(row_data[0] + row_data[2])
+                    publicSpace.expandRow(row_data._id)
                 }
             })
             if(window.location.hash)
