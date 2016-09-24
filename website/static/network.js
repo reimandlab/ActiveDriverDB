@@ -85,6 +85,7 @@ var Network = (function ()
         show_sites: true,
         clone_by_site: true,
         default_link_distance: 100,
+        site_kinase_link_weight: 1.3,
 
         // Element sizes
         site_size_unit: 5,
@@ -213,7 +214,7 @@ var Network = (function ()
                     else
                         kinase.used = true
                 }
-                addEdge(kinase.node_id, site.node_id, 1.3)
+                addEdge(kinase.node_id, site.node_id, config.site_kinase_link_weight)
                 site.interactors.push(kinase)
             }
         }
@@ -470,6 +471,94 @@ var Network = (function ()
             .attr('transform', 'translate(' + zoom.translate() + ')scale(' + zoom.scale() + ')')
     }
 
+    function createNodes(data)
+    {
+
+        kinase_groups = data.kinase_groups
+
+        central_node = createProteinNode(data.protein)
+        var nodes_data = [central_node]
+
+        prepareKinases(data.kinases, nodes_data.length)
+        Array.prototype.push.apply(nodes_data, kinases)
+        Array.prototype.push.apply(nodes_data, kinases_grouped)
+
+        prepareKinaseGroups(nodes_data.length)
+        Array.prototype.push.apply(nodes_data, kinase_groups)
+
+        var elements = kinases.concat(kinase_groups)
+
+        if(config.show_sites)
+        {
+            cloned_kinases = prepareSites(data.sites, nodes_data.length)
+            Array.prototype.push.apply(nodes_data, sites)
+            Array.prototype.push.apply(nodes_data, cloned_kinases)
+        }
+
+        return nodes_data
+    }
+
+
+    function placeNodes(nodes_data)
+    {
+        var orbiting_nodes
+        orbits = Orbits()
+
+        if(config.show_sites)
+            orbiting_nodes = sites
+        else
+            orbiting_nodes = kinases.concat(kinase_groups)
+
+
+        orbits.init(orbiting_nodes, central_node, {
+            spacing: 95,
+            order_by: config.show_sites ? 'kinases_count' : 'r'
+        })
+        orbits.placeNodes()
+
+        for(var j = 0; j < kinases_grouped.length; j++)
+        {
+            // force positions of group members to be equal
+            // to initial positions of central node in the group
+            var kinase = kinases_grouped[j]
+            var group = nodes_data[kinase.group]
+
+            kinase.x = group.x
+            kinase.y = group.y
+        }
+
+        if(config.show_sites)
+        {
+            var link_distance = config.default_link_distance / config.site_kinase_link_weight
+
+            for(var i = 0; i < sites.length; i++)
+            {
+                var site = sites[i]
+                if(!site.x)
+                    site.x = 0.0001
+
+                tg_alpha = site.y / site.x
+                alpha = Math.atan(tg_alpha)
+                console.log(alpha)
+                // give 1/2 of angle space per interactor
+                var angles_per_actor = 1 * Math.PI / 180
+
+                // set starting angle for first interactor
+                var angle = alpha - (site.interactors.length - 1) / 2 * angles_per_actor
+
+                for(var k = 0; k < site.interactors.length; k++)
+                {
+                    x = Math.cos(angle) * link_distance
+                    y = Math.sin(angle) * link_distance
+                    var interactor = site.interactors[k]
+                    interactor.x = site.x + x
+                    interactor.y = site.y + y
+                    angle += angles_per_actor
+                }
+            }
+        }
+    }
+
     var publicSpace = {
         init: function(user_config)
         {
@@ -488,47 +577,9 @@ var Network = (function ()
 
             vis = svg.append('g')
 
-            var data = config.data
+            var nodes_data = createNodes(config.data)
 
-            kinase_groups = data.kinase_groups
-
-            central_node = createProteinNode(data.protein)
-            var nodes_data = [central_node]
-
-            prepareKinases(data.kinases, nodes_data.length)
-            Array.prototype.push.apply(nodes_data, kinases)
-            Array.prototype.push.apply(nodes_data, kinases_grouped)
-
-            prepareKinaseGroups(nodes_data.length)
-            Array.prototype.push.apply(nodes_data, kinase_groups)
-
-            var elements = kinases.concat(kinase_groups)
-
-            if(config.show_sites)
-            {
-                cloned_kinases = prepareSites(data.sites, nodes_data.length)
-                Array.prototype.push.apply(nodes_data, sites)
-                Array.prototype.push.apply(nodes_data, cloned_kinases)
-                elements = sites
-            }
-
-            orbits = Orbits()
-            orbits.init(elements, central_node, {
-                spacing: 80,
-                order_by: config.show_sites ? 'kinases_count' : 'r'
-            })
-            orbits.placeNodes()
-
-            for(var j = 0; j < kinases_grouped.length; j++)
-            {
-                // force positions of group members to be equal
-                // to initial positions of central node in the group
-                var kinase = kinases_grouped[j]
-                var group = nodes_data[kinase.group]
-
-                kinase.x = group.x
-                kinase.y = group.y
-            }
+            placeNodes(nodes_data)
 
             force = d3.layout.force()
                 .gravity(0.05)
