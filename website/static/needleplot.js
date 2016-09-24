@@ -226,14 +226,9 @@ var NeedlePlot = function ()
 
     function createPlot()
     {
-        zoom = d3.behavior.zoom()
-            .scaleExtent([config.min_zoom, config.max_zoom])
-            .on('zoom', zoomAndMove)
+        zoom = prepareZoom(config.min_zoom, config.max_zoom, zoomAndMove)
 
-
-        svg = d3.select(config.element).append('svg')
-            .attr('preserveAspectRatio', 'xMinYMin meet')
-            .attr('class', 'svg-content-responsive')
+        svg = prepareSVG(config.element)
             .call(zoom)
 
 		paddings = svg.append('g')

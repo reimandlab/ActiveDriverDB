@@ -368,7 +368,7 @@ var Network = (function ()
 
     function focusOn(node, radius, animation_speed)
     {
-        animation_speed = (typeof animation_speed == 'undefined') ? 750 : animation_speed
+        animation_speed = (typeof animation_speed === 'undefined') ? 750 : animation_speed
 
         area = radius * 2 * 1.2
 
@@ -405,7 +405,7 @@ var Network = (function ()
 
     function nodeHover(node, hover_in)
     {
-        if(node.node_type == 'site')
+        if(node.node_type === 'site')
         {
             nodes
                 .filter(function(d){ return node.interactors.indexOf(d) !== -1 })
@@ -539,7 +539,7 @@ var Network = (function ()
 
                 tg_alpha = site.y / site.x
                 alpha = Math.atan(tg_alpha)
-                console.log(alpha)
+
                 // give 1/2 of angle space per interactor
                 var angles_per_actor = 1 * Math.PI / 180
 
@@ -564,13 +564,9 @@ var Network = (function ()
         {
             configure(user_config)
 
-            zoom = d3.behavior.zoom()
-                .scaleExtent([config.min_zoom, config.max_zoom])
-                .on('zoom', zoomAndMove)
+            zoom = prepareZoom(config.min_zoom, config.max_zoom, zoomAndMove)
 
-            svg = d3.select(config.element).append('svg')
-                .attr('preserveAspectRatio', 'xMinYMin meet')
-                .attr('class', 'svg-content-responsive')
+            svg = prepareSVG(config.element)
                 .call(zoom)
 
             resize()
@@ -714,7 +710,7 @@ var Network = (function ()
             if(config.show_sites)
                 radius += config.default_link_distance
             focusOn(central_node, radius, animation_speed)
-        },
+        }
     }
 
     return publicSpace
