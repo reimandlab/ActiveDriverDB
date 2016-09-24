@@ -50,7 +50,7 @@ Closest affected sites:
     </ul>
 {% endfor %}
 
-{% set row_id = mutation.coord + mutation.alt %}
+{% set row_id = mutation.pos + mutation.alt %}
 
 <a href="#{{ row_id }}" onclick="mutation_table.expandRow('{{ row_id }}')">
     show in table
