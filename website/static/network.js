@@ -197,6 +197,8 @@ var Network = (function ()
             var site_kinases = getKinasesByName(site.kinases, kinases)
             site_kinases = site_kinases.concat(getKinasesByName(site.kinase_groups, kinase_groups))
 
+            site.interactors = []
+
             for(var j = 0; j < site_kinases.length; j++)
             {
                 var kinase = site_kinases[j]
@@ -212,6 +214,7 @@ var Network = (function ()
                         kinase.used = true
                 }
                 addEdge(kinase.node_id, site.node_id, 1.3)
+                site.interactors.push(kinase)
             }
         }
         return cloned_kinases
@@ -401,9 +404,18 @@ var Network = (function ()
 
     function nodeHover(node, hover_in)
     {
-        nodes
-            .filter(function(d){ return d.name === node.name })
-            .classed('hover', hover_in)
+        if(node.node_type == 'site')
+        {
+            nodes
+                .filter(function(d){ return node.interactors.indexOf(d) !== -1 })
+                .classed('hover', hover_in)
+        }
+        else
+        {
+            nodes
+                .filter(function(d){ return d.name === node.name })
+                .classed('hover', hover_in)
+        }
     }
 
     function forceTick(e)
