@@ -621,8 +621,13 @@ var Network = (function ()
                 .on("mousedown", function(d) { d3.event.stopPropagation() })
 
 
+
             var kinase_nodes = nodes
                 .filter(function(d){ return d.node_type !== 'site' })
+
+            var max_mutations = d3.max(kinases, function(d){ return d.protein ? d.protein.mutations_count : 0 })
+            console.log(max_mutations)
+            var mutations_color_scale = d3.scale.linear().domain([0, max_mutations]).interpolate(d3.interpolateHcl).range(['#ffffff', '#ff0000'])
 
             kinase_nodes
                 .append('circle')
@@ -630,6 +635,12 @@ var Network = (function ()
                 .attr('stroke', function(node) {
                     var default_color = '#905590'
                     return node.color || default_color
+                })
+                .attr('fill', function(d){
+                    if(d.protein)
+                        return mutations_color_scale(d.protein.mutations_count)
+                    else
+                        return 'lightblue'
                 })
 
             var site_nodes = nodes
