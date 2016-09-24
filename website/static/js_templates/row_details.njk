@@ -4,7 +4,9 @@ Number of affected sites: {{ mutation.cnt_ptm }}<br>
 {% if 'network-rewiring' in mutation.category %}
   {% set mimp_meta = mutation.meta.MIMP %}
   {% include 'mimp.njk' %}
-{% elif mutation.sites | length > 0 %}
+{% endif %}
+
+{% if mutation.sites | length > 0 %}
   Closest affected site{{ 's' if mutation.sites | length > 1 }}:
   {% for site in mutation.sites %}
     <div class="sub-cell">

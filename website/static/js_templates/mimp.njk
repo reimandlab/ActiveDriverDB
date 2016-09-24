@@ -4,8 +4,6 @@
   <ul>
       <li> {% include 'mimp_image.njk' %}
       <li> Site: {{ represent_site(mimp.site) }}
-      <li> Probability: {{ mimp.probability }}
-      <li> Effect: {{ mimp.effect }}
       <li> Position in motif: {{ mimp.pos_in_motif }}
   </ul>
 {% endmacro %}
@@ -15,17 +13,22 @@
     {% set annotations_with_effect = mimp_meta[effect] %}
     {% set effect_count = annotations_with_effect | length %}
     {% set best = annotations_with_effect | first %}
-    <li> {{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }}:
+    <li> {{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }}: {{ best.pwm }} (probability = {{ best.probability }})
     {{ represent_mimp(best) }}
     {% if effect_count > 1 %}
     <ul>
       <li>
-        {{ effect_count - 1 }} other annotation{{ 's' if effect_count > 2 }} with predicted '{{ effect }}' effect exists.<br>
-        {{ 'Those' if effect_count > 2 else 'This' }} include predicted interactions with:
-        <ul>
+        {% set plural = effect_count > 2 %}
+        There {{ 'are' if plural else 'is' }} {{ effect_count - 1 }} other predicted
+        {% if effect == 'gain' %}
+          {{ 'gains' if plural else 'gain' }}:
+        {% else %}
+          {{ 'losses' if plural else 'loss' }}:
+        {% endif %}
+        <ul class="minor_mimp_kinases">
         {% for i in range(1, effect_count) %}
           {% set mimp = annotations_with_effect[i] %}
-          <li> {{ mimp.pwm }} (probability: {{ mimp.probability }})
+          <li> {{ mimp.pwm }} (p={{ mimp.probability }})</li>
         {% endfor %}
         </ul>
     </ul>
