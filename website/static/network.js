@@ -311,6 +311,11 @@ var Network = (function ()
 
     function linkDistance(edge)
     {
+        // if a node wnats to overwrite other bahaviours, let him
+        if(edge.source.link_distance)
+        {
+            return edge.source.link_distance
+        }
         // let's place them in layers around the central protein
         if(edge.target.index === 0)
         {
@@ -394,6 +399,14 @@ var Network = (function ()
             if(node.is_group)
             {
                 switchGroupState(node)
+                force.start()
+            }
+            else if(node.node_type === 'site')
+            {
+                var shift = orbits.getMaximalRadius() * 3
+                node.x = central_node.x + shift
+                node.y = central_node.y
+                node.link_distance = shift
                 force.start()
             }
             else
@@ -706,7 +719,7 @@ var Network = (function ()
             set_zoom(zoom.scale() / 1.25)
         },
         zoom_fit: function(animation_speed){
-            radius = orbits.getMaximalRadius()
+            var radius = orbits.getMaximalRadius()
             if(config.show_sites)
                 radius += config.default_link_distance
             focusOn(central_node, radius, animation_speed)
