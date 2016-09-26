@@ -29,6 +29,7 @@ bundles = {
         'common.js',
         'widgets.js',
         'orbits.js',
+        'tooltip.js',
         'network.js',
         filters='rjsmin',
         output='min/networkView.js'
@@ -43,15 +44,16 @@ bundles = {
     ),
     'css_network': css_bundle(
         'network',
-        'sass/network.css',
-        'sass/widgets.css'
+        'sass/widgets.css',
+        'sass/tooltip.css',
+        'sass/network.css'
     ),
     'css_protein': css_bundle(
         'protein',
+        'sass/widgets.css',
         'sass/tooltip.css',
         'sass/protein.css',
-        'sass/tracks.css',
-        'sass/widgets.css'
+        'sass/tracks.css'
     ),
     'css_gene': css_bundle(
         'gene',

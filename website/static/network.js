@@ -608,6 +608,19 @@ var Network = (function ()
                 .attr('class', 'link')
                 .style('stroke-width', function(d) { return Math.sqrt(d.weight) })
 
+            var tooltip = Tooltip()
+            tooltip.init(
+                function(node){
+                    return nunjucks.render(
+                        'node_tooltip.njk',
+                        {
+                            node: node
+                        }
+                    )
+                },
+                'node'
+            )
+
             nodes = vis.selectAll('.node')
                 .data(nodes_data)
                 .enter().append('g')
@@ -619,7 +632,7 @@ var Network = (function ()
                 // cancel other events (like pining the background)
                 // to allow nodes movement (by force.drag)
                 .on("mousedown", function(d) { d3.event.stopPropagation() })
-
+                .call(tooltip.bind)
 
 
             var kinase_nodes = nodes

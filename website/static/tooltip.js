@@ -100,13 +100,19 @@ var Tooltip = function()
         },
         bind: function(selection)
         {
+            var old_click_event = selection.on('click')
             selection
-                .on('click', publicSpace.stick)
+                .on('click', function(e)
+                    {
+                        publicSpace.stick(e)
+                        old_click_event(e)
+                    }
+                )
                 .on('mouseover', publicSpace.show)
                 .on('mousemove', publicSpace.move)
                 .on('mouseout', publicSpace.hide)
 
-            // do not close the tooltip whene selecting
+            // do not close the tooltip when selecting
             tooltip
                 .on('click', function(){ d3.event.stopPropagation() })
 
