@@ -43,7 +43,8 @@ var Network = (function ()
     var types = {
         kinase: new String('Kinase'),
         group: new String('Family or group'),
-        site: new String('Site')
+        site: new String('Site'),
+        central: new String('Analysed protein')
     }
 
     function fitTextIntoCircle(d, context)
@@ -67,6 +68,7 @@ var Network = (function ()
         }
 
         return {
+            type: types.central,
             name: name,
             r: radius,
             x: (config.width - radius) / 2,
