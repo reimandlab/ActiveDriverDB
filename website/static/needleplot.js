@@ -3,6 +3,7 @@ var NeedlePlot = function ()
     var svg, zoom, vis, vertical_scalable, unit
     var scale = 1
 	var position = 0
+    var dispatch = d3.dispatch('zoomAndMove')
 
     var legend = {
         x:
@@ -341,6 +342,10 @@ var NeedlePlot = function ()
             'needle'
         )
 
+        dispatch.on('zoomAndMove', function(){
+            needle_tooltip.moveToElement()
+        })
+
         needles = vis.selectAll('.needle')
             .data(
                 config.mutations
@@ -510,6 +515,7 @@ var NeedlePlot = function ()
 		_setPosition(new_position)
 
         refresh(animate)
+        dispatch.zoomAndMove(this)
     }
 
 	function _setZoom(new_scale, stop_callback)

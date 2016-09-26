@@ -24,3 +24,11 @@ function prepareZoom(min, max, callback)
        .scaleExtent([min, max])
        .on('zoom', callback)
 }
+
+function checkEquality(obj1, obj2)
+{
+    if(obj1.length !== obj2.length)
+        return false
+
+    return JSON.stringify(obj1) === JSON.stringify(obj2)
+}

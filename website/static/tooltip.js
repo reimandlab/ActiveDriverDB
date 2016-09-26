@@ -1,7 +1,12 @@
 var Tooltip = function()
 {
-    var tooltip
-    var tooltip_content
+    var body = d3.select('body').node()
+
+    var element     // currently shown element (or undefined)
+    var tooltip     // tooltip d3js selection object
+    var tooltip_content     // tooltip HTML content (result of templating)
+    var selection
+    var viewport
 
     var _template = function(d)
     {
@@ -9,8 +14,30 @@ var Tooltip = function()
     }
     var stuck = false
 
+    function _move(left, top)
+    {
+        /*
+            Why movement is contraint only against right window boundary (tooltip is forced not to exceed width, but not height)?
+
+            First, if we include also height constraint, the tooltip will start jumping over the needle, so it will be hover over and block access (and view) to the needle. It would be very confusing for the end user. Second, detecting height of the screen would require much more calculation and work so it would be slower and more prone to cross-brrowser issues.
+        */
+        var size = tooltip.node().getBoundingClientRect()
+
+        var viewport_size = viewport.
+            getBoundingClientRect()
+
+        left = Math.min(left, viewport_size.right - size.width)
+        left = Math.max(left, viewport_size.left)
+        top = Math.max(top, viewport_size.top)
+        top = Math.min(top, viewport_size.bottom - size.height)
+
+        tooltip
+            .style('left', body.scrollLeft + left + 'px')
+            .style('top', body.scrollTop + top + 'px')
+    }
+
     var publicSpace = {
-        init: function(custom_template, id)
+        init: function(custom_template, id, custom_viewport)
         {
             tooltip = d3.select('body')
                 .append('div')
@@ -38,23 +65,33 @@ var Tooltip = function()
                 .attr('class', 'close')
                 .html('x')
                 .on('mouseup', publicSpace.unstick)
+
+            if(custom_viewport)
+                viewport = custom_viewport
+            else
+                viewport = body
         },
         show: function(d)
         {
             if(stuck)
                 return
 
+            element = selection
+                .filter(function(element){ return checkEquality(element, d) })
+                .node()
+
             tooltip.transition()
                 .duration(50)
                 .style('opacity', 1)
             tooltip_content.html(_template(d))
 
-            publicSpace.move()
+            publicSpace.moveToPointer()
         },
         hide: function(v)
         {
             if(stuck)
                 return
+
             tooltip.transition()
                 .duration(200)
                 .style('opacity', 0)
@@ -73,33 +110,27 @@ var Tooltip = function()
             publicSpace.hide(true)
             tooltip.style('pointer-events', 'none')
         },
-        move: function()
+        moveToPointer: function()
         {
             if(stuck)
                 return
 
-            /*
-                Why movement is contraint only against right window boundary (tooltip is forced not to exceed width, but not height)?
-
-                First, if we include also height constraint, the tooltip will start jumping over the needle, so it will be hover over and block access (and view) to the needle. It would be very confusing for the end user. Second, detecting height of the screen would require much more calculation and work so it would be slower and more prone to cross-brrowser issues.
-            */
-            var size = tooltip.node().getBoundingClientRect()
-
-            var body_size = document.
-                getElementsByTagName('body')[0].
-                getBoundingClientRect()
-
-            var left = d3.event.pageX
-
-            if(size.width + left > body_size.width)
-                left -= size.width + left - body_size.width
-
-            tooltip
-                .style('left', left + 'px')
-                .style('top', d3.event.pageY + 'px')
+            // move to pointer coordinates, as provided by d3 event
+            _move(d3.event.clientX, d3.event.clientY)
         },
-        bind: function(selection)
+        moveToElement: function()
         {
+            if(!element)
+                return
+
+            size = element.getBoundingClientRect()
+            // leave 5% uncovered so user will be able to see the element
+            _move(size.left + size.width * 0.05, size.top + size.height * 0.05)
+        },
+        bind: function(new_selection)
+        {
+            selection = new_selection
+
             var old_click_event = selection.on('click')
             selection
                 .on('click', function(e)
@@ -109,7 +140,7 @@ var Tooltip = function()
                     }
                 )
                 .on('mouseover', publicSpace.show)
-                .on('mousemove', publicSpace.move)
+                .on('mousemove', publicSpace.moveToPointer)
                 .on('mouseout', publicSpace.hide)
 
             // do not close the tooltip when selecting

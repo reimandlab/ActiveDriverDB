@@ -1,0 +1,12 @@
+<h5>{{ node.name }}</h5>
+<i>{{ node.type }}</i>
+<div>
+{% if node.type === types.site %}
+Nearby sequence: {{ node.nearby_sequence }}
+{% endif %}
+
+
+{% if node.protein %}
+  Total mutations count: {{ node.protein.mutations_count }}
+{% endif %}
+</div>

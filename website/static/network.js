@@ -38,6 +38,14 @@ var Network = (function ()
     var edges = []
     var orbits
 
+    var dispatch = d3.dispatch('networkmove')
+
+    var types = {
+        kinase: new String('Kinase'),
+        group: new String('Family or group'),
+        site: new String('Site')
+    }
+
     function fitTextIntoCircle(d, context)
     {
         var radius = d.r
@@ -184,7 +192,7 @@ var Network = (function ()
             site.size = Math.max(site.name.length, 6) * config.site_size_unit
             // the site visualised as a square has bounding radius of outscribed circle on that square
             site.r = Math.sqrt(site.size * site.size / 4)
-            site.node_type = 'site'
+            site.type = types.site
             site.node_id = i + index_shift
 
             // this property will be populated for kinases belonging to group in prepareKinaseGroups
@@ -238,6 +246,7 @@ var Network = (function ()
         {
             var kinase = all_kinases[i]
 
+            kinase.type = types.kinase
             kinase.r = calculateRadius()
             kinase.node_id = i + index_shift
 
@@ -278,7 +287,7 @@ var Network = (function ()
         {
             var group = kinase_groups[i]
 
-            group.is_group = true
+            group.type = types.group
             group.node_id = i + index_shift
 
             group.x = Math.random() * config.width
@@ -323,7 +332,7 @@ var Network = (function ()
         }
         // dynamically adjust the length of a link between
         // a kinase located in a group and its group's node
-        if(edge.target.is_group)    // target node is a group
+        if(edge.target.type === types.group)    // target node is a group
         {
             return edge.target.expanded ? edge.target.r + edge.source.r : 0
         }
@@ -369,6 +378,7 @@ var Network = (function ()
     function zoomAndMove()
     {
         vis.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')')
+        dispatch.networkmove(this)
     }
 
     function focusOn(node, radius, animation_speed)
@@ -396,12 +406,12 @@ var Network = (function ()
     {
         if(d3.event.defaultPrevented === false)
         {
-            if(node.is_group)
+            if(node.type === types.group)
             {
                 switchGroupState(node)
                 force.start()
             }
-            else if(node.node_type === 'site')
+            else if(node.type === types.site)
             {
                 var shift = orbits.getMaximalRadius() * 3
                 node.x = central_node.x + shift
@@ -418,7 +428,7 @@ var Network = (function ()
 
     function nodeHover(node, hover_in)
     {
-        if(node.node_type === 'site')
+        if(node.type === types.site)
         {
             nodes
                 .filter(function(d){ return node.interactors.indexOf(d) !== -1 })
@@ -614,11 +624,13 @@ var Network = (function ()
                     return nunjucks.render(
                         'node_tooltip.njk',
                         {
-                            node: node
+                            node: node,
+                            types: types
                         }
                     )
                 },
-                'node'
+                'node',
+                svg.node()
             )
 
             nodes = vis.selectAll('.node')
@@ -631,12 +643,16 @@ var Network = (function ()
                 .on('mouseout', function(d){ nodeHover(d, false) })
                 // cancel other events (like pining the background)
                 // to allow nodes movement (by force.drag)
-                .on("mousedown", function(d) { d3.event.stopPropagation() })
+                .on('mousedown', function(d) { d3.event.stopPropagation() })
                 .call(tooltip.bind)
+
+            dispatch.on('networkmove', function(){
+                tooltip.moveToElement()
+            })
 
 
             var kinase_nodes = nodes
-                .filter(function(d){ return d.node_type !== 'site' })
+                .filter(function(d){ return d.type !== types.site })
 
             var max_mutations = d3.max(kinases, function(d){ return d.protein ? d.protein.mutations_count : 0 })
             console.log(max_mutations)
@@ -657,7 +673,7 @@ var Network = (function ()
                 })
 
             var site_nodes = nodes
-                .filter(function(d){ return d.node_type === 'site' })
+                .filter(function(d){ return d.type === types.site })
                 .append('g')
                 .attr('transform', function(d){ return 'translate(' + [-d.size / 2, -d.size / 2] + ')'} )
 
@@ -684,7 +700,7 @@ var Network = (function ()
                     return d.name
                 })
                 .style('font-size', function(d) {
-                    if(d.node_type === 'site')
+                    if(d.type === types.site)
                         return '7px'
                     else
                         return fitTextIntoCircle(d, this) + 'px'
@@ -708,7 +724,7 @@ var Network = (function ()
                 })
 
             var group_nodes = nodes
-                .filter(function(d){ return d.is_group })
+                .filter(function(d){ return d.type === types.group })
 
             group_nodes
                 .append('text')

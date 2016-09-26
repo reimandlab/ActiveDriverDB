@@ -7,19 +7,6 @@ var Widgets = (function ()
         form.submit()
     }
 
-    function checkEquality(obj1, obj2)
-    {
-        if(obj1.length !== obj2.length)
-            return false
-
-        for(var i = 0; i < obj1.length; i++)
-        {
-            if(obj1[i] !== obj2[i])
-                return false
-        }
-        return true
-    }
-
   function init_box(widget_box)
   {
 
