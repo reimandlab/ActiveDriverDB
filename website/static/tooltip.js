@@ -7,6 +7,8 @@ var Tooltip = function()
     var tooltip_content     // tooltip HTML content (result of templating)
     var selection
     var viewport
+    var pointerOffsetX = 0
+    var pointerOffsetY = 0
 
     var _template = function(d)
     {
@@ -115,6 +117,10 @@ var Tooltip = function()
             if(stuck)
                 return
 
+            size = element.getBoundingClientRect()
+            pointerOffsetX = d3.event.clientX - size.left
+            pointerOffsetY = d3.event.clientY - size.top
+
             // move to pointer coordinates, as provided by d3 event
             _move(d3.event.clientX, d3.event.clientY)
         },
@@ -124,8 +130,7 @@ var Tooltip = function()
                 return
 
             size = element.getBoundingClientRect()
-            // leave 5% uncovered so user will be able to see the element
-            _move(size.left + size.width * 0.05, size.top + size.height * 0.05)
+            _move(size.left + pointerOffsetX, size.top + pointerOffsetY)
         },
         bind: function(new_selection)
         {
