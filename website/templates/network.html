@@ -25,7 +25,12 @@
   <link rel="stylesheet" href="/static/thirdparty/bootstrap-multiselect/bootstrap-multiselect.css" type="text/css"/>
 
   {# Nunjucks templates #}
-  <script type="text/javascript" src="/static/thirdparty/nunjucks.js"></script>
+  {% if is_debug_mode %}
+    <script type="text/javascript" src="/static/thirdparty/nunjucks.js"></script>
+  {% else %}
+    <script type="text/javascript" src="/static/thirdparty/nunjucks-slim.min.js"></script>
+    <script type="text/javascript" src="/static/js_templates/precompiled/network.js"></script>
+  {% endif %}
 {% endblock %}
 
 

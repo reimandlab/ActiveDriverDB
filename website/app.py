@@ -58,6 +58,7 @@ app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
 app.jinja_env.globals['csrf_token'] = csrf.new_csrf_token
+app.jinja_env.globals['is_debug_mode'] = app.debug
 
 app.jinja_env.filters['json'] = json.dumps
 app.jinja_env.filters['substitute_allowed_variables'] = substitute_variables
