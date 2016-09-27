@@ -1,22 +1,18 @@
 {% macro make_track(track) %}
     <div class="track {{ track.class_name }}">
         <div class="elements">
-        {% if track.elements is string %}
+        {%- if track.elements is string -%}
            {{ track.elements }}
-        {% else %}
-        {% for element in track.elements %}
-            <div
-              style="left:{{ element.start - 1 }}ch;width:{{ element.length }}ch"
-              {% if element.description %}
+        {%- else -%}
+        {%- for element in track.elements -%}
+            <div style="left:{{ element.start - 1 }}ch;width:{{ element.length }}ch" {% if element.description -%}
                 data-toggle="popover"
                 title="{{ element.name }}"
                 data-content="{{ element.description }}"
-              {% endif %}
-              >
-                {{ element.shown_name }}
-            </div>
-        {% endfor %}
-        {% endif %}
+              {%- endif -%}
+              >{{ element.shown_name }}</div>
+        {%- endfor -%}
+        {%- endif -%}
         </div>
         <div class="subtracks">
         {% for subtrack in track.subtracks %}
