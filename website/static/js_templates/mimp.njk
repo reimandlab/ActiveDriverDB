@@ -13,7 +13,7 @@
     {% set annotations_with_effect = mimp_meta[effect] %}
     {% set effect_count = annotations_with_effect | length %}
     {% set best = annotations_with_effect | first %}
-    <li> {{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }}: {{ best.pwm }} (probability = {{ best.probability }})
+    <li> {{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }}: {{ best.pwm }} (probability = {{ best.probability | round(3) }})
     {{ represent_mimp(best) }}
     {% if effect_count > 1 %}
     <ul>
@@ -28,7 +28,7 @@
         <ul class="minor_mimp_kinases">
         {% for i in range(1, effect_count) %}
           {% set mimp = annotations_with_effect[i] %}
-          <li> {{ mimp.pwm }} (p={{ mimp.probability }})</li>
+          <li> {{ mimp.pwm }} (p={{ mimp.probability | round(3) }})</li>
         {% endfor %}
         </ul>
     </ul>
