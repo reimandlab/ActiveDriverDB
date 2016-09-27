@@ -342,10 +342,6 @@ var NeedlePlot = function ()
             'needle'
         )
 
-        dispatch.on('zoomAndMove', function(){
-            needle_tooltip.moveToElement()
-        })
-
         needles = vis.selectAll('.needle')
             .data(
                 config.mutations
@@ -373,10 +369,16 @@ var NeedlePlot = function ()
 
         site_tooltip.init(
             function(d){
-                return d.type + '<br>' + (d.start + 7)
+                return (d.start + 7) + ' ' + d.type
             },
-            'site'
+            'site',
+            config.element.parentNode
         )
+
+        dispatch.on('zoomAndMove', function(){
+            needle_tooltip.moveToElement()
+            site_tooltip.moveToElement()
+        })
 
         sites = vis.selectAll('.site')
             .data(config.sites)
