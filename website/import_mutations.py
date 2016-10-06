@@ -252,7 +252,7 @@ def get_all_importers():
     for raw_path in get_files('mutation_import', '*.py'):
         module_name = os.path.basename(raw_path[:-3])
         if module_name == '__init__':
-            pass
+            continue
         module = imp.load_source(module_name, raw_path)
         importers[module_name] = module
 
