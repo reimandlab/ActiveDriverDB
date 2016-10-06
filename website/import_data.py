@@ -130,7 +130,7 @@ def load_domains(proteins):
             # - at least 75% of common coverage for shorter occurance of domain
             (
                 (min(domain.end, end) - max(domain.start, start))
-                / min(len(domain), end - start)
+                / max(len(domain), end - start)
                 > 0.75
             )
         ]
