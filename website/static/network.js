@@ -657,7 +657,7 @@ var Network = (function ()
                 .filter(function(d){ return d.type !== types.site })
 
             var max_mutations = d3.max(kinases, function(d){ return d.protein ? d.protein.mutations_count : 0 })
-            console.log(max_mutations)
+
             var mutations_color_scale = d3.scale.linear().domain([0, max_mutations]).interpolate(d3.interpolateHcl).range(['#ffffff', '#ff0000'])
 
             kinase_nodes

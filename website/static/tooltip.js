@@ -34,9 +34,12 @@ var Tooltip = function()
         top = Math.max(top, viewport_size.top)
         top = Math.min(top, viewport_size.bottom - size.height)
 
+        var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
+        var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft
+
         tooltip
-            .style('left', body.scrollLeft + left + 'px')
-            .style('top', body.scrollTop + top + 'px')
+            .style('left', scrollLeft + left + 'px')
+            .style('top', scrollTop + top + 'px')
     }
 
     var publicSpace = {
@@ -80,7 +83,7 @@ var Tooltip = function()
                 return
 
             element = selection
-                .filter(function(element){ return checkEquality(element, d) })
+                .filter(function(el){ return checkEquality(el, d) })
                 .node()
 
             tooltip.transition()
