@@ -13,7 +13,7 @@
     {% set annotations_with_effect = mimp_meta[effect] %}
     {% set effect_count = annotations_with_effect | length %}
     {% set best = annotations_with_effect | first %}
-    <li> {{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }}: {{ best.pwm }} (probability = {{ best.probability | round(3) }})
+    <li> {{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }} of PTM site: {{ best.pwm }} (probability p={{ best.probability | round(3) }})
     {{ represent_mimp(best) }}
     {% if effect_count > 1 %}
     <ul>
