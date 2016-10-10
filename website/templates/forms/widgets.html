@@ -4,7 +4,7 @@
         <h5>{{ title }}</h5>
         <ul class="{{ class }}">
             {% for filter in filters %}
-               <li class="widget">{{ render_widget(filter) }}
+               <li>{{ render_widget(filter) }}
             {% endfor %}
         </ul>
     {% endif %}

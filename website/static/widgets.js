@@ -23,7 +23,7 @@ var Widgets = (function ()
       }
 
       // initialize multiselect fields
-      $('.multiselect').multiselect({
+      box.find('.multiselect').multiselect({
           onDropdownShow: function(event)
           {
               var target = $(event.target)
