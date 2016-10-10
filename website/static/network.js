@@ -592,6 +592,12 @@ var Network = (function ()
             svg = prepareSVG(config.element)
                 .call(zoom)
 
+            // we don't want to close tooltips after panning (which is set to emit
+            // stopPropagation on start what allows us to detect end-of-panning events)
+            svg.on('click', function(){
+                if(d3.event.defaultPrevented) d3.event.stopPropagation()
+            })
+
             resize()
 
             vis = svg.append('g')

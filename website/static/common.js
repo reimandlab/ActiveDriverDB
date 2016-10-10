@@ -23,6 +23,10 @@ function prepareZoom(min, max, callback)
     return d3.behavior.zoom()
        .scaleExtent([min, max])
        .on('zoom', callback)
+       // allows to differentiante between pan-related clicks and normal clicks
+       .on('zoomstart', function(){
+           if(d3.event.sourceEvent) d3.event.sourceEvent.stopPropagation()
+       })
 }
 
 function checkEquality(obj1, obj2)
