@@ -421,10 +421,6 @@ var Network = (function ()
                 node.link_distance = shift
                 force.start()
             }
-            else
-            {
-                window.location.href = config.nodeURL(node)
-            }
         }
     }
 
@@ -627,7 +623,8 @@ var Network = (function ()
                         'node_tooltip.njk',
                         {
                             node: node,
-                            types: types
+                            types: types,
+                            nodeURL: config.nodeURL
                         }
                     )
                 },

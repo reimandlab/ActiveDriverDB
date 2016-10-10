@@ -8,5 +8,7 @@ Nearby sequence: {{ node.nearby_sequence }}
 
 {% if node.protein %}
   Total mutations count: {{ node.protein.mutations_count }}
+  <br>
+  <a href="{{ nodeURL(node) }}">Show associated protein</a>
 {% endif %}
 </div>
