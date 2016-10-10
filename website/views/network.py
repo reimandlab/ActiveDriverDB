@@ -5,10 +5,11 @@ from flask import url_for
 from flask import render_template as template
 from flask_classful import FlaskView
 from models import Protein
-from models import Site
 from website.helpers.filters import Filter
 from website.helpers.filters import FilterManager
 from website.helpers.widgets import FilterWidget
+from website.views._global_filters import COMMON_FILTERS
+from website.views._global_filters import COMMON_WIDGETS
 
 
 def get_nearby_sequence(site, protein, dst=3):
@@ -40,22 +41,10 @@ class NetworkView(FlaskView):
                 Target(), 'clone_by_site',
                 comparators=['eq'], default=True
             ),
-            Filter(
-                Site, 'type', comparators=['in'],
-                choices=[
-                    'phosphorylation', 'acetylation',
-                    'ubiquitination', 'methylation'
-                ],
-            ),
-        ]
+        ] + COMMON_FILTERS
     )
 
-    filter_widgets = [
-        FilterWidget(
-            'Site type', 'select',
-            filter=filter_manager.filters['Site.type']
-        )
-    ]
+    filter_widgets = COMMON_WIDGETS
 
     option_widgets = [
         FilterWidget(
@@ -90,14 +79,26 @@ class NetworkView(FlaskView):
 
     def _prepare_network_repr(self, protein, include_kinases_from_groups=False):
 
-        kinases = set(protein.kinases)
+        sites = [
+            site for site in self.filter_manager.apply(protein.sites)
+            if site.kinases or site.kinase_groups
+        ]
 
-        if include_kinases_from_groups:
-            kinases_from_groups = sum(
-                [group.kinases for group in protein.kinase_groups],
-                []
+        kinases = set(
+            kinase
+            for site in sites
+            for kinase in (
+                site.kinases +
+                (site.kinase_groups if include_kinases_from_groups else [])
             )
-            kinases.union(kinases_from_groups)
+            if len(self.filter_manager.apply(kinase.mutations))
+        )
+
+        sites = [
+            site
+            for site in sites
+            if kinases.intersection(site.kinases)
+        ]
 
         protein_kinases_names = [kinase.name for kinase in protein.kinases]
 
@@ -110,7 +111,9 @@ class NetworkView(FlaskView):
                 'name': protein.gene.name,
                 'is_preferred': protein.is_preferred_isoform,
                 'refseq': protein.refseq,
-                'mutations_count': protein.mutations.count(),
+                'mutations_count': len(
+                    self.filter_manager.apply(protein.mutations)
+                ),
                 'kinases': protein_kinases_names
             },
             'sites': [
@@ -124,9 +127,7 @@ class NetworkView(FlaskView):
                     'kinases_count': len(site.kinases),
                     'nearby_sequence': get_nearby_sequence(site, protein)
                 }
-                # TODO: remove unused kinases
-                for site in self.filter_manager.apply(protein.sites)
-                if site.kinases or site.kinase_groups
+                for site in sites
             ],
             'kinase_groups': [
                 {
@@ -137,7 +138,8 @@ class NetworkView(FlaskView):
                     }.intersection(protein_kinases_names)),
                     'total_cnt': len(group.kinases)
                 }
-                for group in protein.kinase_groups
+                for site in sites
+                for group in site.kinase_groups
             ]
         }
         return json.dumps(data)

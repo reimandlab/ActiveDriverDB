@@ -70,12 +70,20 @@ class Kinase(BioModel):
             self.group
         )
 
+    @property
+    def mutations(self):
+        if not self.protein:
+            return []
+        return self.protein.mutations.all()
+
     def to_json(self):
         return {
             'name': self.name,
             'protein': {
                 'refseq': self.protein.refseq,
-                'mutations_count': self.protein.mutations.count()
+                'mutations_count': len(
+                    self.mutations
+                )
             } if self.protein else None
         }
 
