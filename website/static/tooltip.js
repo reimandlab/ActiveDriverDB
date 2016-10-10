@@ -147,7 +147,8 @@ var Tooltip = function()
                 .on('click', function(e)
                     {
                         publicSpace.stick(e)
-                        old_click_event(e)
+                        if(old_click_event)
+                            old_click_event(e)
                     }
                 )
                 .on('mouseover', publicSpace.show)
