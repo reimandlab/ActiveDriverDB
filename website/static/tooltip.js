@@ -18,6 +18,22 @@ var Tooltip = function()
     // state
     var stuck = false
 
+    function addEventListener(selection, type, listener)
+    {
+        var old_callback = selection.on(type)
+        if(old_callback)
+        {
+            selection.on(type, function(e){
+                old_callback(e);
+                listener(e);
+            })
+        }
+        else
+        {
+            selection.on(type, listener)
+        }
+    }
+
     var _template = function(d)
     {
         return d.title
@@ -138,22 +154,14 @@ var Tooltip = function()
             size = element.getBoundingClientRect()
             _move(size.left + pointerOffsetX, size.top + pointerOffsetY)
         },
-        bind: function(new_selection)
+        bind: function(input_selection)
         {
-            selection = new_selection
+            selection = input_selection
 
-            var old_click_event = selection.on('click')
-            selection
-                .on('click', function(e)
-                    {
-                        publicSpace.stick(e)
-                        if(old_click_event)
-                            old_click_event(e)
-                    }
-                )
-                .on('mouseover', publicSpace.show)
-                .on('mousemove', publicSpace.moveToPointer)
-                .on('mouseout', publicSpace.hide)
+            addEventListener(selection, 'click', publicSpace.stick)
+            addEventListener(selection, 'mouseover', publicSpace.show)
+            addEventListener(selection, 'mousemove', publicSpace.moveToPointer)
+            addEventListener(selection, 'mouseout', publicSpace.hide)
 
             // do not close the tooltip when selecting
             tooltip
