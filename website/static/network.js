@@ -453,6 +453,8 @@ var Network = (function ()
             .attr('y2', function(d) { return d.target.y })
 
         nodes.attr('transform', function(d){ return 'translate(' + [d.x, d.y] + ')'} )
+
+        dispatch.networkmove(this)
     }
 
     function resize()
