@@ -91,8 +91,20 @@ class NetworkView(FlaskView):
                 site.kinases +
                 (site.kinase_groups if include_kinases_from_groups else [])
             )
-            if len(self.filter_manager.apply(kinase.mutations))
         )
+
+        kinases_counts = {
+            kinase: len(self.filter_manager.apply(kinase.mutations))
+            for kinase in kinases
+        }
+
+        kinases_counts = {
+            kinase: count
+            for kinase, count in kinases_counts.items()
+            if count > 0
+        }
+
+        kinases = set(kinases_counts.keys())
 
         sites = [
             site
@@ -102,11 +114,15 @@ class NetworkView(FlaskView):
 
         protein_kinases_names = [kinase.name for kinase in protein.kinases]
 
+        kinase_reprs = []
+        for kinase, count in kinases_counts.items():
+            json_repr = kinase.to_json()
+            if json_repr['protein']:
+                json_repr['protein']['mutations_count'] = count
+            kinase_reprs.append(json_repr)
+
         data = {
-            'kinases': [
-                kinase.to_json()
-                for kinase in kinases
-            ],
+            'kinases': kinase_reprs,
             'protein': {
                 'name': protein.gene.name,
                 'is_preferred': protein.is_preferred_isoform,

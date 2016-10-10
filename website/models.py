@@ -80,10 +80,7 @@ class Kinase(BioModel):
         return {
             'name': self.name,
             'protein': {
-                'refseq': self.protein.refseq,
-                'mutations_count': len(
-                    self.mutations
-                )
+                'refseq': self.protein.refseq
             } if self.protein else None
         }
 
