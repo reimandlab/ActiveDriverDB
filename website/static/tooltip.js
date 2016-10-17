@@ -20,7 +20,12 @@ var Tooltip = function()
 
     function addEventListener(selection, type, listener)
     {
+
+        if(selection.empty())
+            return
+
         var old_callback = selection.on(type)
+
         if(old_callback)
         {
             selection.on(type, function(e){
