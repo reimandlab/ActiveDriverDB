@@ -9,7 +9,7 @@ The application is Open Source and is licensed under the terms of [GNU Lesser Ge
 
 # Development
 
-The project is developed with Python 3. It uses Flask as a web framework with database access provided by SQLAlchemy. Templating is performed with Jinja2 on the server side and Nunjucks.js on the client side (they have mostly compatibile syntax). On the frontend the styles are written with SASS; the visualizations are jQuery and D3.js based.
+The project is developed with Python 3. It uses Flask as a web framework with database access provided by SQLAlchemy. Templating is performed with Jinja2 on the server side and Nunjucks.js on the client side (they have mostly compatible syntax). On the frontend the styles are written with SASS; the visualizations are jQuery and D3.js based.
 All used HTML, CSS and JS features are required to meet 95% level of support in web browsers as calculated by caniuse.com.
 
 ## Deployment
@@ -27,7 +27,7 @@ As currently there is no new version of flask-sqlalchemy released since Oct 2015
 
 ### Database creation & data imports
 
-Before server start, database have to be created. Safiest way to do this is to run:
+Before server start, database have to be created. Safest way to do this is to run:
 ```bash
 python3 db_create.py --import_mappings --reload_biological --recreate_cms
 ```
@@ -37,7 +37,7 @@ albeit one might want to use Python's optimized mode (so import will be a lot fa
 python3 -OO db_create.py --import_mappings --reload_biological --recreate_cms
 ```
 
-The given arguments instruct program to create and import data for: DNA -> protein mappings, biological relational database and Content Managment System. For further details use built-in help option:
+The given arguments instruct program to create and import data for: DNA -> protein mappings, biological relational database and Content Management System. For further details use built-in help option:
 
 ```bash
 python3 -OO db_create.py -h
@@ -54,8 +54,8 @@ sass --update .:.
 ```
 
 ### Precompiling Nunjucks templates
-Nunjucks templating sytstem is used for clint-side templating. It allows to move some repeatedly performed templating tasks to user's browser, which reduces transfer and speeds-up site loading. It uses jinja-nearly-compatibile syntax.
-To keep this process efficient, templates should be precompiled. To do so, you will need to get full nunjucks installation, for example with `npm` (you should be ablt to install `npm` with your system's package manager):
+Nunjucks templating system is used for clint-side templating. It allows to move some repeatedly performed templating tasks to user's browser, which reduces transfer and speeds-up site loading. It uses jinja-nearly-compatible syntax.
+To keep this process efficient, templates should be precompiled. To do so, you will need to get full nunjucks installation, for example with `npm` (you should be able to install `npm` with your system's package manager):
 ```bash
 sudo npm install -g nunjucks
 ```
@@ -80,11 +80,11 @@ For adjusting the port or IP address, check `-h` switch of the `run.py` script
 
 ### Serving with Apache2
 
-Deployment on Apache2 server is more powerfull alternative to Werkzeug webserver.
+Deployment on Apache2 server is more powerful alternative to Werkzeug webserver.
 
-As you may want to have a virtual environment for this application, `website/app.wsgi` provides ready-to go activation script to use with Apache2 (assuming that the name of yout virtual environment is `virtual_environment`).
+As you may want to have a virtual environment for this application, `website/app.wsgi` provides ready-to go activation script to use with Apache2 (assuming that the name of your virtual environment is `virtual_environment`).
 
-Following extract from configuration file might be usefull help for writing you own configuration:
+Following extract from configuration file might be useful help for writing you own configuration:
 
 
 ```apache
