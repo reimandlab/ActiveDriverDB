@@ -86,7 +86,8 @@ class Filter:
                 )
         ):
             raise ValidationError(
-                'Filter % recieved forbiddden value' % self.id
+                'Filter % recieved forbidden value: %s. Allowed: %s' %
+                (self.id, value, self.allowed_values)
             )
 
     def _verify_comparator(self, comparator):
@@ -99,8 +100,8 @@ class Filter:
                 comparator in self.allowed_comparators
         ):
             raise ValidationError(
-                'Filter %s recieved forbiddden comparator: %s' %
-                (self.id, comparator)
+                'Filter %s recieved forbidden comparator: %s. Allowed: %s' %
+                (self.id, comparator, self.allowed_comparators)
             )
 
     def _verify(self, value, comparator):
@@ -320,13 +321,15 @@ class FilterManager:
     def _parse_string(self, filters_string):
         """Split modern query string into list describing filter's settings."""
         raw_filters = filters_string.split(self.filters_separator)
+
         # remove empty strings
         raw_filters = filter(bool, raw_filters)
 
-        return [
+        filters_list = [
             filter_update.split(self.field_separator)
             for filter_update in raw_filters
         ]
+        return filters_list
 
     @staticmethod
     def _parse_comparator(comparator):
