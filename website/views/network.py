@@ -141,7 +141,14 @@ class NetworkView(FlaskView):
                         group.name for group in site.kinase_groups
                     ],
                     'kinases_count': len(site.kinases),
-                    'nearby_sequence': get_nearby_sequence(site, protein)
+                    'nearby_sequence': get_nearby_sequence(site, protein),
+                    'mutations_count': len(
+                        self.filter_manager.apply([
+                            mutation
+                            for mutation in protein.mutations
+                            if abs(mutation.position - site.position) < 7
+                        ])
+                    )
                 }
                 for site in sites
             ],

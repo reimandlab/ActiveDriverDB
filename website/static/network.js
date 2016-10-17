@@ -582,6 +582,16 @@ var Network = (function ()
         }
     }
 
+    function create_color_scale(domain, range)
+    {
+        return d3.scale
+            .linear()
+            .domain(domain)
+            .interpolate(d3.interpolateHcl)
+            .range(range)
+    }
+
+
     var publicSpace = {
         init: function(user_config)
         {
@@ -661,9 +671,20 @@ var Network = (function ()
             var kinase_nodes = nodes
                 .filter(function(d){ return d.type !== types.site })
 
-            var max_mutations = d3.max(kinases, function(d){ return d.protein ? d.protein.mutations_count : 0 })
+            var kinases_color_scale = create_color_scale(
+                [
+                    0,
+                    d3.max(kinases, function(d){
+                        return d.protein ? d.protein.mutations_count : 0
+                    })
+                ],
+                ['#ffffff', '#ff0000']
+            )
 
-            var mutations_color_scale = d3.scale.linear().domain([0, max_mutations]).interpolate(d3.interpolateHcl).range(['#ffffff', '#ff0000'])
+            var sites_color_scale = create_color_scale(
+                [0, central_node.protein.mutations_count],
+                ['#ffffff', '#ff0000']
+            )
 
             kinase_nodes
                 .append('circle')
@@ -674,7 +695,7 @@ var Network = (function ()
                 })
                 .attr('fill', function(d){
                     if(d.protein)
-                        return mutations_color_scale(d.protein.mutations_count)
+                        return kinases_color_scale(d.protein.mutations_count)
                     else
                         return 'lightblue'
                 })
@@ -688,6 +709,9 @@ var Network = (function ()
                 .append('rect')
                 .attr('width', function(d){ return d.size + 'px' })
                 .attr('height', function(d){ return d.size + 'px' })
+                .attr('fill', function(d){
+                    return sites_color_scale(d.mutations_count)
+                })
 
             kinase_nodes
                 .append('text')

@@ -2,7 +2,8 @@
 <i>{{ node.type }}</i>
 <div>
 {% if node.type === types.site %}
-Nearby sequence: {{ node.nearby_sequence }}
+Nearby sequence: {{ node.nearby_sequence }}<br>
+Mutations in nearby that satisfy applied filters: {{ node.mutations_count }}
 {% endif %}
 
 
