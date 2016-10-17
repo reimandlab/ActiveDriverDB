@@ -587,7 +587,7 @@ var Network = (function ()
         return d3.scale
             .linear()
             .domain(domain)
-            .interpolate(d3.interpolateHcl)
+            .interpolate(d3.interpolateRgb)
             .range(range)
     }
 
@@ -676,7 +676,7 @@ var Network = (function ()
                     0,
                     d3.max(kinases, function(d){
                         return d.protein ? d.protein.mutations_count : 0
-                    })
+                     })
                 ],
                 ['#ffffff', '#ff0000']
             )
