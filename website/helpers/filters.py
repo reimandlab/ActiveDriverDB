@@ -119,9 +119,15 @@ class Filter:
     def compare(self, value):
         comparator_function = self.possible_comparators[self.comparator]
 
+        # tricky: check if operator is usable on given value.
+        # Detects when one tries to check if x in None or y > "tree".
+        # As all of those are incorrect false will be returned.
+        try:
+            comparator_function(value, value)
+        except TypeError:
+            return False
+
         if self.multiple and is_iterable_but_not_str(self.value):
-            if not value:
-                return False
             multiple_test = self.possible_join_operators[self.multiple]
             return multiple_test(
                 comparator_function(value, sub_value)
