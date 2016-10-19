@@ -584,28 +584,22 @@ class Mutation(BioModel):
         (or experiments). Presence of MIMP metadata does not imply
         if mutation has been ever studied experimentally before.
         """
-        return (
-            self.meta_cancer or
-            self.meta_inherited or
-            self.meta_ESP6500 or
-            self.meta_1KG
-        )
+        return any([
+            getattr(self, field)
+            for field in self.source_fields.values()
+        ])
 
     @is_confirmed.expression
     def is_confirmed(self):
         """SQL expression for is_confirmed"""
         return or_(
-            or_(
-                (
-                    relationship.has()
-                    for relationship in (
-                        self.meta_inherited,
-                        self.meta_ESP6500,
-                        self.meta_1KG,
-                    )
-                ),
-            ),
-            self.meta_cancer.any()
+            relationship_field.any()
+            if relationship_field.prop.uselist
+            else relationship_field.has()
+            for relationship_field in map(
+                lambda field: getattr(self, field),
+                self.source_fields.values()
+            )
         )
 
     @cached_property
