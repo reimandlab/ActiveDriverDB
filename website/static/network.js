@@ -775,16 +775,19 @@ var Network = (function ()
 
             force.start()
 
+            function kinase_site_with_loss(d)
+            {
+                return (
+                    d.source.type == types.kinase &&
+                    d.target.type == types.site &&
+                    d.target.mimp_losses.indexOf(d.source.name) != -1
+                )
+            }
+
             links
-                .style('stroke', function(d) {
-                    if(d.source.type == types.kinase && d.target.type == types.site && d.target.mimp_gain)
-                        return 'red'
-                })
-                .style('stroke-width', function(d) {
-                    if(d.source.type == types.kinase && d.target.type == types.site && d.target.mimp_gain)
-                        return 2 + Math.sqrt(d.weight)
-                    return Math.sqrt(d.weight)
-                })
+                .filter(kinase_site_with_loss)
+                .style('stroke', 'red')
+                .style('stroke-width', 2)
 
             for(var i = 0; i < kinase_groups.length; i++)
             {

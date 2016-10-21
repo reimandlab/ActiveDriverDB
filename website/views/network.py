@@ -150,10 +150,12 @@ class NetworkView(FlaskView):
                     'kinases_count': len(site.kinases),
                     'nearby_sequence': get_nearby_sequence(site, protein),
                     'mutations_count': len(site_mutations(site)),
-                    'mimp_gains': any((
-                        mutation.meta_MIMP.has_gain
+                    'mimp_losses': [
+                        mimp.pwm
                         for mutation in site_mutations(site)
-                    ))
+                        for mimp in mutation.meta_MIMP
+                        if not mimp.effect
+                    ]
                 }
                 for site in sites
             ],
