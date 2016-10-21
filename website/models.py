@@ -798,7 +798,15 @@ class MutationDetails:
         raise NotImplementedError
 
     def to_json(self, filter=lambda x: x):
-        """Return json representation to be used in needleplot tooltips"""
+        """Return JSON serializable representation for needleplot tooltips.
+
+        The default serializer is: json.JSONEncoder
+            https://docs.python.org/3/library/json.html#json.JSONEncoder
+        """
+        raise NotImplementedError
+
+    def summary(self):
+        """Return short JSON serializable representation of the mutation"""
         raise NotImplementedError
 
 
