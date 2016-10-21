@@ -121,6 +121,13 @@ class NetworkView(FlaskView):
                 json_repr['protein']['mutations_count'] = count
             kinase_reprs.append(json_repr)
 
+        def site_mutations(site):
+            return self.filter_manager.apply([
+                mutation
+                for mutation in protein.mutations
+                if abs(mutation.position - site.position) < 7
+            ])
+
         data = {
             'kinases': kinase_reprs,
             'protein': {
@@ -142,13 +149,11 @@ class NetworkView(FlaskView):
                     ],
                     'kinases_count': len(site.kinases),
                     'nearby_sequence': get_nearby_sequence(site, protein),
-                    'mutations_count': len(
-                        self.filter_manager.apply([
-                            mutation
-                            for mutation in protein.mutations
-                            if abs(mutation.position - site.position) < 7
-                        ])
-                    )
+                    'mutations_count': len(site_mutations(site)),
+                    'mimp_gains': any((
+                        mutation.meta_MIMP.has_gain
+                        for mutation in site_mutations(site)
+                    ))
                 }
                 for site in sites
             ],

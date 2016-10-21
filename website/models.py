@@ -81,11 +81,7 @@ class Kinase(BioModel):
             'name': self.name,
             'protein': {
                 'refseq': self.protein.refseq
-            } if self.protein else None,
-            'mimp_gain': any([
-                mutation.meta_MIMP.has_gain
-                for mutation in self.mutations
-            ])
+            } if self.protein else None
         }
 
 
