@@ -81,7 +81,11 @@ class Kinase(BioModel):
             'name': self.name,
             'protein': {
                 'refseq': self.protein.refseq
-            } if self.protein else None
+            } if self.protein else None,
+            'mimp_gain': any([
+                mutation.meta_MIMP.has_gain
+                for mutation in self.mutations
+            ])
         }
 
 
@@ -464,6 +468,20 @@ class MIMPMetaManager(UserList):
             'loss': [mimp.to_json() for mimp in losses],
             'effect': self.effect
         }
+
+    @property
+    def has_gain(self):
+        for mimp in self.data:
+            if mimp.effect:
+                return True
+        return False
+
+    @property
+    def has_loss(self):
+        for mimp in self.data:
+            if not mimp.effect:
+                return True
+        return False
 
     @property
     def effect(self):

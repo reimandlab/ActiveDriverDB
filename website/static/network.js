@@ -632,7 +632,15 @@ var Network = (function ()
                 .data(edges)
                 .enter().append('line')
                 .attr('class', 'link')
-                .style('stroke-width', function(d) { return Math.sqrt(d.weight) })
+                .style('stroke', function(d) {
+                    if(d.source.type == types.kinase && d.source.mimp_gain)
+                        return 'red'
+                })
+                .style('stroke-width', function(d) {
+                    if(d.source.type == types.kinase && d.source.mimp_gain)
+                        return 2 + Math.sqrt(d.weight)
+                    return Math.sqrt(d.weight)
+                })
 
             var tooltip = Tooltip()
             tooltip.init(
