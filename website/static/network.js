@@ -685,10 +685,10 @@ var Network = (function ()
                 ['#ffffff', '#ff0000']
             )
 
-            var sites_color_scale = create_color_scale(
-                [0, central_node.protein.mutations_count],
-                ['#ffffff', '#ff0000']
-            )
+            //var sites_color_scale = create_color_scale(
+            //    [0, central_node.protein.mutations_count],
+            //    ['#ffffff', '#ff0000']
+            //)
 
             kinase_nodes
                 .append('circle')
@@ -737,10 +737,12 @@ var Network = (function ()
                 .append('rect')
                 .attr('width', function(d){ return d.size + 'px' })
                 .attr('height', function(d){ return d.size + 'px' })
-                .attr('fill', function(d){
-                    return sites_color_scale(d.mutations_count)
+                //.attr('fill', function(d){
+                //    return sites_color_scale(d.mutations_count)
+                //})
+                .attr('class', function(d){
+                    return 'site shape ' + d.impact
                 })
-                .attr('class', 'site shape')
                 .attr('transform', function(d){ return 'translate(' + [-d.size / 2, -d.size / 2] + ')'} )
 
             nodes

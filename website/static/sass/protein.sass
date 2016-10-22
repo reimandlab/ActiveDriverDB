@@ -67,26 +67,9 @@ rect, path
   &.gain
     border-color: green
 
-$lightness: 10%
-
 table
 
-  .distal
-    background: lighten(yellow, $lightness)
-  .network-rewiring
-    background: lighten(red, $lightness)
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.4)
-  .direct
-    background: lighten(darkred, $lightness)
-    color: white
-    text-shadow: 0 0 10px rgba(0, 0, 0, 0.3)
-  .proximal
-    background: lighten(orange, $lightness)
-  .none
-    background: lighten(darkgray, $lightness)
-  .none, .proximal, .distal
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.6)
-
+  @import 'impacts'
 
   .sub-cell
     margin-bottom: 5px

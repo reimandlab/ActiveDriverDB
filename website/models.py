@@ -466,20 +466,6 @@ class MIMPMetaManager(UserList):
         }
 
     @property
-    def has_gain(self):
-        for mimp in self.data:
-            if mimp.effect:
-                return True
-        return False
-
-    @property
-    def has_loss(self):
-        for mimp in self.data:
-            if not mimp.effect:
-                return True
-        return False
-
-    @property
     def effect(self):
         effects = set()
 
@@ -710,6 +696,17 @@ class Mutation(BioModel):
             filter(Site.position.between(pos - 8, pos + 8)).scalar()
 
         return count
+
+    def impact_on_specific_ptm(self, site):
+        if self.position == site.position:
+            return 'direct'
+        if site in [mimp.site for mimp in self.meta_MIMP]:
+            return 'network-rewiring'
+        if abs(self.position - site.position) < 4:
+            return 'proximal'
+        if abs(self.position - site.position) < 8:
+            return 'distal'
+        return 'none'
 
     @hybrid_property
     def impact_on_ptm(self):

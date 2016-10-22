@@ -141,6 +141,13 @@ class NetworkView(FlaskView):
                 if abs(mutation.position - site.position) < 7
             ]
 
+        def most_significant_impact(impacts):
+            desc = ['direct', 'network-rewiring', 'proximal', 'distal', 'none']
+            for impact in desc:
+                if impact in impacts:
+                    return impact
+            return desc[-1]
+
         def prepare_site(site):
             site_mutations = get_site_mutations(site)
             return {
@@ -158,7 +165,11 @@ class NetworkView(FlaskView):
                     for mutation in site_mutations
                     for mimp in mutation.meta_MIMP
                     if not mimp.effect
-                ]
+                ],
+                'impact': most_significant_impact(set(
+                    mutation.impact_on_specific_ptm(site)
+                    for mutation in site_mutations
+                ))
             }
 
         data = {
