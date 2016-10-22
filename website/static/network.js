@@ -192,6 +192,7 @@ var Network = (function ()
             site.name = site.position + ' ' + site.residue
             site.size = Math.max(site.name.length, 6) * config.site_size_unit
             // the site visualised as a square has bounding radius of outscribed circle on that square
+            site.size += site.mutations_count / 2
             site.r = Math.sqrt(site.size * site.size / 4)
             site.type = types.site
             site.node_id = i + index_shift
