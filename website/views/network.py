@@ -90,6 +90,8 @@ class NetworkView(FlaskView):
 
     def _prepare_network_repr(self, protein, filter_manager, include_kinases_from_groups=False):
 
+        protein_mutations = filter_manager.apply(protein.mutations)
+
         sites = [
             site for site in filter_manager.apply(protein.sites)
             if site.kinases or site.kinase_groups
@@ -133,11 +135,11 @@ class NetworkView(FlaskView):
             kinase_reprs.append(json_repr)
 
         def get_site_mutations(site):
-            return filter_manager.apply([
+            return [
                 mutation
-                for mutation in protein.mutations
+                for mutation in protein_mutations
                 if abs(mutation.position - site.position) < 7
-            ])
+            ]
 
         def prepare_site(site):
             site_mutations = get_site_mutations(site)
@@ -165,9 +167,7 @@ class NetworkView(FlaskView):
                 'name': protein.gene.name,
                 'is_preferred': protein.is_preferred_isoform,
                 'refseq': protein.refseq,
-                'mutations_count': len(
-                    filter_manager.apply(protein.mutations)
-                ),
+                'mutations_count': len(protein_mutations),
                 'kinases': protein_kinases_names
             },
             'sites': [
