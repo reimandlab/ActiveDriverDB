@@ -790,7 +790,7 @@ var Network = (function ()
                 // the link will be scaled lineary to the number of mimp loss
                 // predictions. ItThis number will be always >= 1 (because we
                 // are working on such filtered subset of links)
-                .attr('stroke-width', function(d){
+                .style('stroke-width', function(d){
                     return d.target.mimp_losses.length
                 })
 

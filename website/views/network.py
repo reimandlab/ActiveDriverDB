@@ -76,7 +76,6 @@ class NetworkView(FlaskView):
 
         filters, filter_manager = self._make_filters()
         filter_widgets, option_widgets = self._make_widgets(filters, filter_manager)
-        filter_manager.reset()
         filter_manager.update_from_request(request)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
