@@ -29,39 +29,43 @@ class Target:
 class NetworkView(FlaskView):
     """View for local network of proteins"""
 
-    filters = common_filters()
+    def make_filters(self):
+        filters = common_filters()
 
-    # TODO: use filter manager only for true filters,
-    # make an "option manager" for options.
-    filter_manager = FilterManager(
-        [
-            Filter(
-                Target(), 'show_sites',
-                comparators=['eq'], default=True
+        # TODO: use filter manager only for true filters,
+        # make an "option manager" for options.
+        filter_manager = FilterManager(
+            [
+                Filter(
+                    Target(), 'show_sites',
+                    comparators=['eq'], default=True
+                ),
+                Filter(
+                    Target(), 'clone_by_site',
+                    comparators=['eq'], default=True
+                ),
+            ] + filters
+        )
+        return filters, filter_manager
+
+    def make_widgets(self, filters, filter_manager):
+        filter_widgets = common_widgets(filters)
+
+        option_widgets = [
+            FilterWidget(
+                'Show sites', 'binary',
+                filter=filter_manager.filters['JavaScript.show_sites']
             ),
-            Filter(
-                Target(), 'clone_by_site',
-                comparators=['eq'], default=True
+            FilterWidget(
+                'Clone kinases by site', 'binary',
+                filter=filter_manager.filters['JavaScript.clone_by_site']
             ),
-        ] + filters
-    )
+        ]
 
-    filter_widgets = common_widgets(filters)
-
-    option_widgets = [
-        FilterWidget(
-            'Show sites', 'binary',
-            filter=filter_manager.filters['JavaScript.show_sites']
-        ),
-        FilterWidget(
-            'Clone kinases by site', 'binary',
-            filter=filter_manager.filters['JavaScript.clone_by_site']
-        ),
-    ]
+        return filter_widgets, option_widgets
 
     def before_request(self, name, *args, **kwargs):
-        self.filter_manager.reset()
-        self.filter_manager.update_from_request(request)
+        pass
 
     def index(self):
         """Show SearchView as deafault page"""
@@ -70,19 +74,25 @@ class NetworkView(FlaskView):
     def show(self, refseq):
         """Show a protein network visualisation"""
 
+        filters, filter_manager = self.make_filters()
+        filter_widgets, option_widgets = self.make_widgets(filters, filter_manager)
+        filter_manager.reset()
+        filter_manager.update_from_request(request)
+
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-        data = self._prepare_network_repr(protein)
+        data = self._prepare_network_repr(protein, filter_manager)
+
         return template(
             'network.html', protein=protein, data=data,
-            filters=self.filter_manager,
-            option_widgets=self.option_widgets,
-            filter_widgets=self.filter_widgets
+            filters=filter_manager,
+            option_widgets=option_widgets,
+            filter_widgets=filter_widgets
         )
 
-    def _prepare_network_repr(self, protein, include_kinases_from_groups=False):
+    def _prepare_network_repr(self, protein, filter_manager, include_kinases_from_groups=False):
 
         sites = [
-            site for site in self.filter_manager.apply(protein.sites)
+            site for site in filter_manager.apply(protein.sites)
             if site.kinases or site.kinase_groups
         ]
 
@@ -96,7 +106,7 @@ class NetworkView(FlaskView):
         )
 
         kinases_counts = {
-            kinase: len(self.filter_manager.apply(kinase.mutations))
+            kinase: len(filter_manager.apply(kinase.mutations))
             for kinase in kinases
         }
 
@@ -124,7 +134,7 @@ class NetworkView(FlaskView):
             kinase_reprs.append(json_repr)
 
         def site_mutations(site):
-            return self.filter_manager.apply([
+            return filter_manager.apply([
                 mutation
                 for mutation in protein.mutations
                 if abs(mutation.position - site.position) < 7
@@ -137,7 +147,7 @@ class NetworkView(FlaskView):
                 'is_preferred': protein.is_preferred_isoform,
                 'refseq': protein.refseq,
                 'mutations_count': len(
-                    self.filter_manager.apply(protein.mutations)
+                    filter_manager.apply(protein.mutations)
                 ),
                 'kinases': protein_kinases_names
             },
