@@ -116,8 +116,17 @@ class Filter:
             self._verify_value(value)
             self._value = value
 
+    def get_multiple_function(self):
+        if self.multiple and is_iterable_but_not_str(self.value):
+            return self.possible_join_operators[self.multiple]
+
     def compare(self, value):
         comparator_function = self.possible_comparators[self.comparator]
+        multiple_test = self.get_multiple_function()
+
+        return self._compare(value, comparator_function, multiple_test)
+
+    def _compare(self, value, comparator_function, multiple_test):
 
         # tricky: check if operator is usable on given value.
         # Detects when one tries to check if x in None or y > "tree".
@@ -127,8 +136,7 @@ class Filter:
         except TypeError:
             return False
 
-        if self.multiple and is_iterable_but_not_str(self.value):
-            multiple_test = self.possible_join_operators[self.multiple]
+        if multiple_test:
             return multiple_test(
                 comparator_function(value, sub_value)
                 for sub_value in self.value
@@ -153,7 +161,28 @@ class Filter:
         return self.compare(obj_value)
 
     def apply(self, elements):
-        return list(filter(lambda element: self.test(element), elements))
+        """Optimized equivalent to list(filter(my_filter.test, elements))"""
+
+        if self.value is None:
+            # the filter is turned off
+            return -1
+
+        attr = self.attribute
+
+        comparator_function = self.possible_comparators[self.comparator]
+        multiple_test = self.get_multiple_function()
+
+        compare = self._compare
+
+        return [
+            elem
+            for elem in elements
+            if compare(
+                getattr(elem, attr),
+                comparator_function,
+                multiple_test
+            )
+        ]
 
     @property
     def is_active(self):
@@ -201,6 +230,7 @@ class FilterManager:
         # let each filter know where to seek data about other filters
         # (so one filter can relay on state of other filters,
         # eg. be active conditionaly, if another filter is set).
+
         for filter in filters:
             filter.manager = self
 
