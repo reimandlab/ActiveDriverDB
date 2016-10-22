@@ -29,7 +29,7 @@ class Target:
 class NetworkView(FlaskView):
     """View for local network of proteins"""
 
-    def make_filters(self):
+    def _make_filters(self):
         filters = common_filters()
 
         # TODO: use filter manager only for true filters,
@@ -48,7 +48,7 @@ class NetworkView(FlaskView):
         )
         return filters, filter_manager
 
-    def make_widgets(self, filters, filter_manager):
+    def _make_widgets(self, filters, filter_manager):
         filter_widgets = common_widgets(filters)
 
         option_widgets = [
@@ -64,6 +64,9 @@ class NetworkView(FlaskView):
 
         return filter_widgets, option_widgets
 
+    def before_request(self, name, *args, **kwargs):
+        pass
+
     def index(self):
         """Show SearchView as deafault page"""
         return redirect(url_for('SearchView:index', target='proteins'))
@@ -71,8 +74,9 @@ class NetworkView(FlaskView):
     def show(self, refseq):
         """Show a protein network visualisation"""
 
-        filters, filter_manager = self.make_filters()
-        filter_widgets, option_widgets = self.make_widgets(filters, filter_manager)
+        filters, filter_manager = self._make_filters()
+        filter_widgets, option_widgets = self._make_widgets(filters, filter_manager)
+        filter_manager.reset()
         filter_manager.update_from_request(request)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
@@ -129,12 +133,32 @@ class NetworkView(FlaskView):
                 json_repr['protein']['mutations_count'] = count
             kinase_reprs.append(json_repr)
 
-        def site_mutations(site):
+        def get_site_mutations(site):
             return filter_manager.apply([
                 mutation
                 for mutation in protein.mutations
                 if abs(mutation.position - site.position) < 7
             ])
+
+        def prepare_site(site):
+            site_mutations = get_site_mutations(site)
+            return {
+                'position': site.position,
+                'residue': site.residue,
+                'kinases': [kinase.name for kinase in site.kinases],
+                'kinase_groups': [
+                    group.name for group in site.kinase_groups
+                ],
+                'kinases_count': len(site.kinases),
+                'nearby_sequence': get_nearby_sequence(site, protein),
+                'mutations_count': len(site_mutations),
+                'mimp_losses': [
+                    mimp.pwm
+                    for mutation in site_mutations
+                    for mimp in mutation.meta_MIMP
+                    if not mimp.effect
+                ]
+            }
 
         data = {
             'kinases': kinase_reprs,
@@ -148,23 +172,7 @@ class NetworkView(FlaskView):
                 'kinases': protein_kinases_names
             },
             'sites': [
-                {
-                    'position': site.position,
-                    'residue': site.residue,
-                    'kinases': [kinase.name for kinase in site.kinases],
-                    'kinase_groups': [
-                        group.name for group in site.kinase_groups
-                    ],
-                    'kinases_count': len(site.kinases),
-                    'nearby_sequence': get_nearby_sequence(site, protein),
-                    'mutations_count': len(site_mutations(site)),
-                    'mimp_losses': [
-                        mimp.pwm
-                        for mutation in site_mutations(site)
-                        for mimp in mutation.meta_MIMP
-                        if not mimp.effect
-                    ]
-                }
+                prepare_site(site)
                 for site in sites
             ],
             'kinase_groups': [

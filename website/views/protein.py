@@ -28,12 +28,12 @@ def get_response_content(response):
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
-    def make_filters(self):
+    def _make_filters(self):
         filters = common_filters()
         filter_manager = FilterManager(filters)
         return filters, filter_manager
 
-    def make_widgets(self, filters):
+    def _make_widgets(self, filters):
         return common_widgets(filters)
 
     def index(self):
@@ -46,8 +46,8 @@ class ProteinView(FlaskView):
         + needleplot
         + tracks (seuqence + data tracks)
         """
-        filters, filter_manager = self.make_filters()
-        filter_widgets = self.make_widgets(filters)
+        filters, filter_manager = self._make_filters()
+        filter_widgets = self._make_widgets(filters)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
@@ -102,7 +102,7 @@ class ProteinView(FlaskView):
         """List of mutations suitable for needleplot library"""
 
         if not filter_manager:
-            _, filter_manager = self.make_filters()
+            _, filter_manager = self._make_filters()
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
@@ -122,7 +122,7 @@ class ProteinView(FlaskView):
         """List of sites suitable for needleplot library"""
 
         if not filter_manager:
-            _, filter_manager = self.make_filters()
+            _, filter_manager = self._make_filters()
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
