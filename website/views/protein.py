@@ -12,8 +12,8 @@ from website.helpers.tracks import PositionTrack
 from website.helpers.tracks import SequenceTrack
 from website.helpers.tracks import MutationsTrack
 from website.helpers.filters import FilterManager
-from website.views._global_filters import COMMON_FILTERS
-from website.views._global_filters import COMMON_WIDGETS
+from website.views._global_filters import common_filters
+from website.views._global_filters import common_widgets
 
 
 def get_source_field(source):
@@ -28,11 +28,9 @@ def get_response_content(response):
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
-    filter_manager = FilterManager(
-        COMMON_FILTERS
-    )
-
-    filter_widgets = COMMON_WIDGETS
+    filters = common_filters()
+    filter_manager = FilterManager(filters)
+    filter_widgets = common_widgets(filters)
 
     def before_request(self, name, *args, **kwargs):
         self.filter_manager.reset()

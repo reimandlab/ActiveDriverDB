@@ -8,8 +8,8 @@ from models import Protein
 from website.helpers.filters import Filter
 from website.helpers.filters import FilterManager
 from website.helpers.widgets import FilterWidget
-from website.views._global_filters import COMMON_FILTERS
-from website.views._global_filters import COMMON_WIDGETS
+from website.views._global_filters import common_filters
+from website.views._global_filters import common_widgets
 
 
 def get_nearby_sequence(site, protein, dst=3):
@@ -29,6 +29,8 @@ class Target:
 class NetworkView(FlaskView):
     """View for local network of proteins"""
 
+    filters = common_filters()
+
     # TODO: use filter manager only for true filters,
     # make an "option manager" for options.
     filter_manager = FilterManager(
@@ -41,10 +43,10 @@ class NetworkView(FlaskView):
                 Target(), 'clone_by_site',
                 comparators=['eq'], default=True
             ),
-        ] + COMMON_FILTERS
+        ] + filters
     )
 
-    filter_widgets = COMMON_WIDGETS
+    filter_widgets = common_widgets(filters)
 
     option_widgets = [
         FilterWidget(
