@@ -786,8 +786,7 @@ var Network = (function ()
 
             links
                 .filter(kinase_site_with_loss)
-                .style('stroke', 'red')
-                .style('stroke-width', 2)
+                .classed('loss-prediction', true)
 
             for(var i = 0; i < kinase_groups.length; i++)
             {
