@@ -69,7 +69,23 @@ rect, path
 
 table
 
-  @import 'impacts'
+  @import "impacts"
+
+  .distal
+    background: lighten($distal, $lightness)
+  .network-rewiring
+    background: lighten($network-rewiring, $lightness)
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.4)
+  .direct
+    background: lighten($direct, $lightness)
+    color: white
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.3)
+  .proximal
+    background: lighten($proximal, $lightness)
+  .none
+    background: lighten($none, $lightness)
+  .none, .proximal, .distal
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.6)
 
   .sub-cell
     margin-bottom: 5px

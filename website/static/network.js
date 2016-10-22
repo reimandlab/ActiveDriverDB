@@ -735,15 +735,16 @@ var Network = (function ()
                 .filter(function(d){ return d.type === types.site })
 
             site_nodes
+                .attr('class', function(d){
+                    return 'node ' + d.impact
+                })
                 .append('rect')
                 .attr('width', function(d){ return d.size + 'px' })
                 .attr('height', function(d){ return d.size + 'px' })
                 //.attr('fill', function(d){
                 //    return sites_color_scale(d.mutations_count)
                 //})
-                .attr('class', function(d){
-                    return 'site shape ' + d.impact
-                })
+                .attr('class', 'site shape')
                 .attr('transform', function(d){ return 'translate(' + [-d.size / 2, -d.size / 2] + ')'} )
 
             nodes

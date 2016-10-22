@@ -1,21 +1,6 @@
 $lightness: 10%
-
-=universal-bg($background)
-  background: $background
-  fill:    $background
-
-.distal
-  +universal-bg(lighten(yellow, $lightness))
-.network-rewiring
-  +universal-bg(lighten(red, $lightness))
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.4)
-.direct
-  +universal-bg(lighten(darkred, $lightness))
-  color: white
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.3)
-.proximal
-  +universal-bg(lighten(orange, $lightness))
-.none
-  +universal-bg(lighten(darkgray, $lightness))
-.none, .proximal, .distal
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.6)
+$distal: yellow
+$proximal: orange
+$network-rewiring: red
+$direct: darkred
+$none: darkgrey

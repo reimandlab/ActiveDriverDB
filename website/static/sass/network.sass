@@ -29,7 +29,26 @@
       stroke: red
       stroke-width: 2.2px
 
-    @import 'impacts'
+  @import "impacts"
+
+  .distal
+    rect
+      fill: lighten($distal, $lightness)
+  .network-rewiring
+    rect
+      fill: lighten($network-rewiring, $lightness)
+  .direct
+    rect
+      fill: lighten($direct, $lightness)
+    text
+      fill: white
+  .proximal
+    rect
+      fill: lighten($proximal, $lightness)
+  .none
+    rect
+      fill: lighten($none, $lightness)
+
 
   text
     font: 24px "Helvetica Neue", Helvetica, Arial, sans-serif
