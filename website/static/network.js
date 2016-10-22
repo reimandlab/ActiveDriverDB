@@ -787,6 +787,12 @@ var Network = (function ()
             links
                 .filter(kinase_site_with_loss)
                 .classed('loss-prediction', true)
+                // the link will be scaled lineary to the number of mimp loss
+                // predictions. ItThis number will be always >= 1 (because we
+                // are working on such filtered subset of links)
+                .attr('stroke-width', function(d){
+                    return d.target.mimp_losses.length
+                })
 
             for(var i = 0; i < kinase_groups.length; i++)
             {
