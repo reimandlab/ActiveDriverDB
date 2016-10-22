@@ -682,7 +682,7 @@ var Network = (function ()
                         return d.protein ? d.protein.mutations_count : 0
                     }) || 0
                 ],
-                ['#ffffff', '#ff0000']
+                ['#ffffff', '#007FFF']
             )
 
             //var sites_color_scale = create_color_scale(
