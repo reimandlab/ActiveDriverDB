@@ -64,9 +64,6 @@ class NetworkView(FlaskView):
 
         return filter_widgets, option_widgets
 
-    def before_request(self, name, *args, **kwargs):
-        pass
-
     def index(self):
         """Show SearchView as deafault page"""
         return redirect(url_for('SearchView:index', target='proteins'))
@@ -76,7 +73,6 @@ class NetworkView(FlaskView):
 
         filters, filter_manager = self.make_filters()
         filter_widgets, option_widgets = self.make_widgets(filters, filter_manager)
-        filter_manager.reset()
         filter_manager.update_from_request(request)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
