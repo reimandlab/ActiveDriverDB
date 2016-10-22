@@ -73,7 +73,6 @@ var Network = (function ()
             r: radius,
             x: (config.width - radius) / 2,
             y: (config.height - radius) / 2,
-            color: 'blue',
             fixed: true,
             protein: protein
         }
@@ -311,7 +310,6 @@ var Network = (function ()
             }
 
             group.r = calculateRadius()
-            group.color = 'red'
             if(!config.show_sites)
             {
                 // 0 is (by convention) the index of the central protein
@@ -358,20 +356,20 @@ var Network = (function ()
                 .attr('opacity', node.expanded ? 1 : 0)
         }
 
-        d3.selectAll('.node')
+        nodes
             .filter(inGroup)
             .each(function(d){ d.collapsed = !node.expanded } )
 
-        d3.selectAll('circle')
+        nodes.selectAll('circle')
             .filter(inGroup)
             .transition().ease('linear').duration(time)
             .attr('r', function(d){return node.expanded ? d.r : 0})
 
-        d3.selectAll('.label')
+        nodes.selectAll('.name')
             .filter(inGroup)
             .call(fadeInOut)
 
-        d3.selectAll('.link')
+        links
             .filter(function(e) { return inGroup(e.source) } )
             .call(fadeInOut)
 
@@ -669,7 +667,13 @@ var Network = (function ()
 
 
             var kinase_nodes = nodes
-                .filter(function(d){ return d.type !== types.site })
+                .filter(function(d){ return d.type == types.kinase })
+
+            var group_nodes = nodes
+                .filter(function(d){ return d.type == types.group })
+
+            var central_nodes = nodes
+                .filter(function(d){ return d.type == types.central })
 
             var kinases_color_scale = create_color_scale(
                 [
@@ -689,21 +693,45 @@ var Network = (function ()
             kinase_nodes
                 .append('circle')
                 .attr('r', function(d){ return d.r })
-                .attr('stroke', function(node) {
-                    var default_color = '#905590'
-                    return node.color || default_color
+                .attr('class', 'kinase protein-like shape')
+
+            var octagon_cr_to_a_ratio = 1 / (Math.sqrt(4 + 2 * Math.sqrt(2)) / 2)
+            var octagon_angle = (180 - 135) * (2 * Math.PI) / 360
+
+            group_nodes
+                .append('polygon')
+                .attr('points', function(d){
+                    var points = []
+                    // d.r is a circumradius here
+                    var a = d.r * octagon_cr_to_a_ratio
+                    var x = -d.r + 1
+                    var y = d.r / 2
+                    //points.push([x, y])
+                    for(var i = 0; i < 8; i++)
+                    {
+                        var angle = octagon_angle * (i + 1)
+                        x += a * Math.sin(angle)
+                        y += a * Math.cos(angle)
+                        points.push([x, y])
+                    }
+                    return points
                 })
+                .attr('class', 'group shape')
+
+            central_nodes
+                .append('ellipse')
+                .attr('rx', function(d){ return d.r })
+                .attr('ry', function(d){ return d.r / 5 * 4 })
+                .attr('class', 'central protein-like shape')
+
+            nodes.selectAll('.protein-like')
                 .attr('fill', function(d){
                     if(d.protein)
                         return kinases_color_scale(d.protein.mutations_count)
-                    else
-                        return 'lightblue'
                 })
 
             var site_nodes = nodes
                 .filter(function(d){ return d.type === types.site })
-                .append('g')
-                .attr('transform', function(d){ return 'translate(' + [-d.size / 2, -d.size / 2] + ')'} )
 
             site_nodes
                 .append('rect')
@@ -712,50 +740,31 @@ var Network = (function ()
                 .attr('fill', function(d){
                     return sites_color_scale(d.mutations_count)
                 })
+                .attr('class', 'site shape')
+                .attr('transform', function(d){ return 'translate(' + [-d.size / 2, -d.size / 2] + ')'} )
 
-            kinase_nodes
+            nodes
                 .append('text')
-                .attr('class', 'label')
-
-            site_nodes
-                .append('text')
-                .attr('class', 'label')
-
-            var labels = nodes.selectAll('.label')
+                .attr('class', 'name')
                 .text(function(d){
-                    if(d.name.length > 6)
-                    {
-                        var name = d.name.substring(0, 7)
-                        return name + '...'
-                    }
+                    if(d.name.length > 9)
+                        return d.name.substring(0, 7) + '...'
                     return d.name
                 })
                 .style('font-size', function(d) {
-                    if(d.type === types.site)
-                        return '7px'
-                    else
+                    if(d.type !== types.site)
                         return fitTextIntoCircle(d, this) + 'px'
                 })
 
-            site_nodes.selectAll('.label')
-                .attr('dy', '1.5em')
-                .attr('dx', function(d) {
-                    return d.size/ 2 + 'px'
-                })
+            site_nodes.selectAll('.name')
+                .style('font-size', '8px')
+                .attr('dy', '-0.5em')
 
             site_nodes
                 .append('text')
                 .text(function(d) { return d.nearby_sequence })
-                .style('font-size', function(d) {
-                    return '5.5px'
-                })
-                .attr('dy', '3.8em')
-                .attr('dx', function(d) {
-                    return d.size/ 2 + 'px'
-                })
-
-            var group_nodes = nodes
-                .filter(function(d){ return d.type === types.group })
+                .style('font-size', '5.5px')
+                .attr('dy', '1.5em')
 
             group_nodes
                 .append('text')

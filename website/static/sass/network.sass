@@ -8,24 +8,34 @@
   overflow: hidden
 
   .node
-    circle
-      stroke-width: 2.2px
-      //fill: #ccc
-
     // site
-    rect
+    .site
       stroke: orange
 
     &:hover, &.hover
-      circle
-        fill: #efe
+      .shape
+        fill: lightgreen
+
+    .central
+      stroke: blue
+      stroke-width: 2.2px
+
+    .kinase
+      stroke: #905590
+      stroke-width: 2.2px
+
+    .group
+      fill: #fff
+      stroke: red
+      stroke-width: 2.2px
+
 
   text
     font: 24px "Helvetica Neue", Helvetica, Arial, sans-serif
     text-anchor: middle
     pointer-events: none
 
-    &.label
+    &.name
       transform: translate(0, .35em)
 
     &.type
