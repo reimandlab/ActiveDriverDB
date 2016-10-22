@@ -2,8 +2,12 @@
 <i>{{ node.type }}</i>
 <div>
 {% if node.type === types.site %}
-Nearby sequence: {{ node.nearby_sequence }}<br>
-Mutations in nearby that satisfy applied filters: {{ node.mutations_count }}
+  Nearby sequence: {{ node.nearby_sequence }}<br>
+  Mutations in nearby that satisfy applied filters: {{ node.mutations_count }}
+{% elif node.type === types.group %}
+  In this group there are:<br>
+  {{ node.kinases.length }} kinases satysfing all filters, and<br>
+  {{ node.total_cnt }} kinases at total.
 {% endif %}
 
 
