@@ -282,16 +282,22 @@ class FilterManager:
 
         The query part of request will be looked upon to get filter's data, in
         one of two available formats: modern or fallback.
+        Updates for unrecongized filters will be returned as feedback.
 
         For details see _parse_request() method in this class.
         """
         filter_updates = self._parse_request(request)
 
+        skipped = []
         for update in filter_updates:
+            if update.id not in self.filters:
+                skipped.append(update)
+                continue
             self.filters[update.id].update(
                 self._parse_value(update.value),
                 self._parse_comparator(update.comparator),
             )
+        return skipped
 
     @staticmethod
     def _parse_fallback_query(query):
