@@ -106,16 +106,23 @@ class NetworkView(FlaskView):
             )
         )
 
-        kinases_counts = {
-            kinase: len(filter_manager.apply(kinase.mutations))
-            for kinase in kinases
-        }
+        source = filter_manager.get_value('Mutation.sources')
 
-        kinases_counts = {
-            kinase: count
-            for kinase, count in kinases_counts.items()
-            if count > 0
-        }
+        kinases_counts = dict()
+        for kinase in kinases:
+            if kinase.protein:
+                from models import Mutation
+                from sqlalchemy import and_
+                mutations = Mutation.query.filter(
+                    and_(
+                        Mutation.protein == kinase.protein,
+                        source in Mutation.sources
+                    )
+                ).all()
+                count = len(filter_manager.apply(mutations))
+                # assert count == len(filter_manager.apply(kinase.mutations))
+                if count > 0:
+                    kinases_counts[kinase] = count
 
         kinases = set(kinases_counts.keys())
 

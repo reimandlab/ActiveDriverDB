@@ -167,7 +167,7 @@ class Filter:
             # the filter is turned off
             return -1
 
-        attr = self.attribute
+        attr_get = operator.attrgetter(self.attribute)
 
         comparator_function = self.possible_comparators[self.comparator]
         multiple_test = self.get_multiple_function()
@@ -178,7 +178,7 @@ class Filter:
             elem
             for elem in elements
             if compare(
-                getattr(elem, attr),
+                attr_get(elem),
                 comparator_function,
                 multiple_test
             )
