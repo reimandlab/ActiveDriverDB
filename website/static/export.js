@@ -47,13 +47,19 @@ var Export = (function ()
                     '<svg xmlns="http://www.w3.org/2000/svg"'
                 )
             }
+            if(!element_code.match(/<svg[^>]+"http\:\/\/www\.w3\.org\/1999\/xlink"/)){
+                element_code = element_code.replace(
+                    /<svg/,
+                    '<svg xmlns:xlink="http://www.w3.org/1999/xlink"'
+                )
+            }
 
             var css = ''
             if(styles)
                 css += styles
             element_code = element_code.replace(
                 /<svg(.*?)>/,
-                '<svg $1><style>/* <![CDATA[ */\n' + css + '\n/* ]]> */\n</style>'
+                '<svg $1><style type="text/css">/* <![CDATA[ */\n' + css + '\n/* ]]> */\n</style>'
             )
             var svg_blob = new Blob(
                 [element_code],
