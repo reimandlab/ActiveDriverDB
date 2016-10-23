@@ -115,6 +115,19 @@ Following extract from configuration file might be useful help for writing you o
     </Location>
 ```
 
+Usually you can find approriate configuration files in directories like `/etc/apache2/sites-enabled/` or so.
+
+
+#### Runing python3 in "optimized" mode
+
+You can modify the default path to python executable used by WSGI by adding a `python_path` argument to `WSGIDaemonProcess` directive. It allows you to use small middleware script turning optimalization mode on. Here is an example script:
+
+```bash
+#!/bin/sh
+exec python3 -OO "$@"
+```
+
+
 ### Using Content Managment System
 
 To login to root account (created with `db_create.py` script) visit `/login/` page on your server. It will allow you to create, edit and remove standalone pages.
