@@ -7,67 +7,67 @@
   vertical-align: top
   overflow: hidden
 
-  .node
-    // site
-    .site
-      stroke: orange
+.node
+  // site
+  .site
+    stroke: orange
 
-    &:hover, &.hover
-      .shape
-        fill: lightgreen
+  &:hover, &.hover
+    .shape
+      fill: lightgreen
 
-    .central
-      stroke: blue
-      stroke-width: 2.2px
+  .central
+    stroke: blue
+    stroke-width: 2.2px
 
-    .kinase
-      stroke: #905590
-      stroke-width: 2.2px
+  .kinase
+    stroke: #905590
+    stroke-width: 2.2px
 
-    .group
-      fill: #fff
-      stroke: red
-      stroke-width: 2.2px
-
-  @import "impacts"
-
-  .distal
-    rect
-      fill: lighten($distal, $lightness)
-  .network-rewiring
-    rect
-      fill: lighten($network-rewiring, $lightness)
-  .direct
-    rect
-      fill: lighten($direct, $lightness)
-    text
-      fill: white
-  .proximal
-    rect
-      fill: lighten($proximal, $lightness)
-  .none
-    rect
-      fill: lighten($none, $lightness)
-
-
-  text
-    font: 24px "Helvetica Neue", Helvetica, Arial, sans-serif
-    text-anchor: middle
-    pointer-events: none
-
-    &.name
-      transform: translate(0, .35em)
-
-    &.type
-      font-style: italic
-
-  .link
-    stroke: #777
-    stroke-width: 1px
-
-  .loss-prediction
+  .group
+    fill: #fff
     stroke: red
-    stroke-dasharray: 2px
+    stroke-width: 2.2px
+
+@import "impacts"
+
+.distal
+  rect
+    fill: lighten($distal, $lightness)
+.network-rewiring
+  rect
+    fill: lighten($network-rewiring, $lightness)
+.direct
+  rect
+    fill: lighten($direct, $lightness)
+  text
+    fill: white
+.proximal
+  rect
+    fill: lighten($proximal, $lightness)
+.none
+  rect
+    fill: lighten($none, $lightness)
+
+
+text
+  font: 24px "Helvetica Neue", Helvetica, Arial, sans-serif
+  text-anchor: middle
+  pointer-events: none
+
+  &.name
+    transform: translate(0, .35em)
+
+  &.type
+    font-style: italic
+
+.link
+  stroke: #777
+  stroke-width: 1px
+
+.loss-prediction
+  stroke: red
+  stroke-dasharray: 2px
 
 .network
   &.panel

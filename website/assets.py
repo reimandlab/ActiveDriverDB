@@ -22,6 +22,7 @@ bundles = {
         'tooltip.js',
         'needleplot.js',
         'tracks.js',
+        'export.js',
         filters='rjsmin',
         output='min/proteinView.js'
     ),
@@ -31,6 +32,7 @@ bundles = {
         'orbits.js',
         'tooltip.js',
         'network.js',
+        'export.js',
         filters='rjsmin',
         output='min/networkView.js'
     ),
@@ -58,6 +60,10 @@ bundles = {
     'css_gene': css_bundle(
         'gene',
         'sass/gene.css'
+    ),
+    'css_print': css_bundle(
+        'print',
+        'sass/print.css'
     ),
     'css_search': css_bundle(
         'search',

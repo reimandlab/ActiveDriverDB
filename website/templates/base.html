@@ -9,6 +9,9 @@
   {% assets "css_common" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}">
   {% endassets %}
+  {% assets "css_print" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}" media="print">
+  {% endassets %}
 
   <!--[if lt IE 9]>
   <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>

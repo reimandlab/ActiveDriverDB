@@ -66,6 +66,7 @@
               <span class="glyphicon glyphicon-globe" aria-hidden="true"></span> Show network
           </a>
         </div>
+        {% include 'export_buttons.html' %}
     </div>
   <div class="panel-body">
     <div id="plot_area"></div>
@@ -116,11 +117,12 @@ External references:
         var max_zoom = tracks.adjustMaxZoom()
         var mutations = {{ mutations | json | safe or '"' + url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.url_string) + '"' }}
         var sites = {{ sites | json | safe or '"' + url_for('ProteinView:sites', refseq=protein.refseq, filters=filters.url_string) + '"' }}
+        var plot = document.getElementById('plot_area')
         var params = {
             use_log: {{ log_scale | lower }},
             value_type: '{{ value_type }}',
             max_zoom: max_zoom,
-            element: document.getElementById('plot_area'),
+            element: plot,
             mutations: mutations,
             sites: sites,
             sequenceLength: {{ protein.sequence | length }},
@@ -149,5 +151,12 @@ External references:
             }
         )
 
+        {% assets "css_protein" %}
+        Export.init(
+            plot,
+            'protein_view:{{ protein.gene.name }}-{{ protein.refseq }}',
+            '{{ ASSET_URL }}'
+        )
+        {% endassets %}
     </script>
 {% endblock %}
