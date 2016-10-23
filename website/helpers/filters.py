@@ -410,7 +410,7 @@ class FilterManager:
 
     @property
     def url_string(self):
-        """String represntation of filters from the set for use in URL address.
+        """String representation of filters from the set for use in URL address.
 
         Produced string is ready to be included as a query argument in URL path
         """
@@ -418,7 +418,7 @@ class FilterManager:
             [
                 FilterManager.field_separator.join(
                     map(str, [
-                        f.name,
+                        f.id,
                         f.comparator,
                         self._repr_value(f.value)
                     ])
