@@ -252,7 +252,7 @@ class SearchView(FlaskView):
         return template('search/form.html', target=target)
 
     def autocomplete_proteins(self, limit=20):
-        """Autocompletion API for search for target model (by name)"""
+        """Autocompletion API for search for proteins"""
         # TODO: implement on client side requests with limit higher limits
         # and return the information about available results (.count()?)
         query = request.args.get('q') or ''
@@ -265,6 +265,23 @@ class SearchView(FlaskView):
                 'html': template('search/gene_results.html', gene=entry)
             }
             for entry in entries
+        ]
+
+        return json.dumps(response)
+
+    def autocomplete_searchbar(self, limit=6):
+        """Autocompletion API for search for proteins (untemplated)"""
+        query = request.args.get('q') or ''
+
+        entries = search_proteins(query, limit)
+
+        response = [
+            {
+                'name': gene.name,
+                'refseq': gene.preferred_isoform.refseq,
+                'count': len(gene.isoforms)
+            }
+            for gene in entries
         ]
 
         return json.dumps(response)

@@ -4,14 +4,6 @@
 #content
   position: relative
 
-#search-bar
-  .selectize-control, button
-    height: $button-height
-
-  .selectize-dropdown
-    position: absolute
-    z-index: 15
-
 footer
   margin-top: 50px
   border-top: 1px dashed #ccc
@@ -29,7 +21,23 @@ footer
   top: 10px
   left: 0
 
-.user-menu
+.header
   width: 100%
   text-align: right
-  margin-top: 10px
+  margin: 10px 0
+
+.user-menu, .search-box
+  display: inline-block
+
+.search-box
+  position: relative
+  text-align: left
+  width: 200px
+
+  .list-group-item
+    width: 200px
+
+#search-quick-results
+  position: absolute
+  z-index: 10
+  display: none

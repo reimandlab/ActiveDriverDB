@@ -1,0 +1,16 @@
+<div class="search-box">
+    <input
+      type="text"
+      name="search"
+      class="form-control"
+      placeholder="TP53 or NM_000345"
+      id="search-bar"
+      {# TODO: display only protein queries #}
+      {% if query %} value="{{ query }}" {% endif %}
+    >
+    <div class="list-group" id="search-quick-results">
+      <a href="#" class="list-group-item">
+          Start typing to get results 
+      </a>
+    </div>
+</div>

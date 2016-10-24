@@ -91,10 +91,7 @@ var ProteinForm = (function ()
         $.ajax({
             url: '/search/autocomplete_proteins',
             type: 'GET',
-            data:
-                {
-                    q: encodeURIComponent(query)
-                },
+            data: { q: encodeURIComponent(query) },
             success: function(rawResult) {
                 var results = JSON.parse(rawResult)
                 // TODO add animation
@@ -172,8 +169,8 @@ var ProteinForm = (function ()
         {
             element = dom_element
             search_button = $(element).find('button[type="submit"]')
-            // handle all edge cases like dragging the text into the input
             var protein_search = $(element).find('#protein_search')
+            // handle all edge cases like dragging the text into the input
             protein_search.on('change mouseup drop input', onChangeHandler)
             var result_box = $(element).find('.results')[0]
             result_ul = $(result_box).find('ul')[0]

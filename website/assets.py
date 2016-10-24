@@ -10,6 +10,11 @@ def css_bundle(name, *args):
 
 
 bundles = {
+    'js_search_bar': Bundle(
+        'searchbar.js',
+        filters='rjsmin',
+        output='min/searchbar.js'
+    ),
     'js_search': Bundle(
         'search.js',
         filters='rjsmin',
