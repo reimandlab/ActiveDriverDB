@@ -23,6 +23,14 @@ USER_ACCESSIBLE_VARIABLES = {
 }
 
 
+class ValidationError(Exception):
+    pass
+
+    @property
+    def message(self):
+        return self.args[0]
+
+
 PAGE_COLUMNS = ('title', 'address', 'content')
 
 
@@ -39,11 +47,15 @@ def get_page(address, operation=''):
     if operation:
         operation += ' failed: '
 
+    if not address:
+        flash('Address cannot be empty', 'warning')
+        return None
+
     try:
         return Page.query.filter_by(address=address).one()
     except NoResultFound:
         flash(
-            operation + 'no such page: /' + address,
+            operation + 'no such a page: /' + address,
             'warning'
         )
     except MultipleResultsFound:
@@ -81,6 +93,11 @@ def substitute_variables(string):
     return re.sub(pattern, replace_allowed_object, string)
 
 
+def link_to_page(page):
+    link_title = page.title or '[Page without a title]'
+    return html_link(page.address, link_title)
+
+
 class ContentManagmentSystem(FlaskView):
 
     route_base = '/'
@@ -110,20 +127,30 @@ class ContentManagmentSystem(FlaskView):
                 'admin/add_page',
             )
         page_data = dict_subset(request.form, PAGE_COLUMNS)
+
         try:
             address = request.form['address']
+
+            if not address:
+                raise ValidationError('Address cannot be empty')
+
             page = Page(
                 **page_data
             )
             db.session.add(page)
             db.session.commit()
+
             flash(
-                'Added new page: ' + html_link(page.address, page.title),
+                'Added new page: ' + link_to_page(page),
                 'success'
             )
             return redirect(
                 url_for('ContentManagmentSystem:edit_page', address=address)
             )
+
+        except ValidationError as error:
+            flash(error.message, 'warning')
+
         except IntegrityError:
             db.session.rollback()
             flash(
@@ -131,6 +158,7 @@ class ContentManagmentSystem(FlaskView):
                 ' already exists. Please, change the address and try again.',
                 'danger'
             )
+
         return self._template(
             'admin/add_page',
             page=page_data
@@ -144,11 +172,19 @@ class ContentManagmentSystem(FlaskView):
             page_new_data = dict_subset(request.form, PAGE_COLUMNS)
             try:
                 update_obj_with_dict(page, page_new_data)
+
+                if not page.address:
+                    raise ValidationError('Address cannot be empty')
+
                 db.session.commit()
                 flash(
-                    'Page saved: ' + html_link(page.address, page.title),
+                    'Page saved: ' + link_to_page(page),
                     'success'
                 )
+
+            except ValidationError as error:
+                flash(error.message, 'warning')
+
             except IntegrityError:
                 db.session.rollback()
                 flash(

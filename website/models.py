@@ -1099,12 +1099,18 @@ class User(CMSModel):
 class Page(CMSModel):
     """Model representing a single CMS page"""
 
-    address = db.Column(db.String(256), unique=True, index=True)
+    address = db.Column(
+        db.String(256),
+        unique=True,
+        index=True,
+        nullable=False,
+        default='index'
+    )
     title = db.Column(db.String(256))
     content = db.Column(db.Text())
 
     def __repr__(self):
-        return '<Page {0} with id {1}>'.format(
+        return '<Page /{0} with id {1}>'.format(
             self.address,
             self.id
         )
