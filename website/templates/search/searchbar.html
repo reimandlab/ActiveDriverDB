@@ -1,16 +1,24 @@
 <div class="search-box">
-    <input
-      type="text"
-      name="search"
-      class="form-control"
-      placeholder="TP53 or NM_000345"
-      id="search-bar"
-      {# TODO: display only protein queries #}
-      {% if query %} value="{{ query }}" {% endif %}
+    <form
+        method=GET
+        action="{{ url_for('SearchView:index', target='proteins') }}"
     >
-    <div class="list-group" id="search-quick-results">
-      <a href="#" class="list-group-item">
-          Start typing to get results 
-      </a>
-    </div>
+        <input
+          type="text"
+          name="proteins"
+          class="form-control"
+          placeholder="TP53 or NM_000345"
+          id="search-bar"
+          {#
+              If we already are on a search page (query & target are declared),
+              make use of those and populate default value with query
+          #}
+          {% if query and target == 'proteins' %} value="{{ query }}" {% endif %}
+        >
+        <div class="list-group" id="search-quick-results">
+          <a href="#" class="list-group-item">
+              Start typing to get results
+          </a>
+        </div>
+    </form>
 </div>

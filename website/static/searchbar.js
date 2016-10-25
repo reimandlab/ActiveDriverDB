@@ -4,7 +4,7 @@ var SearchBar = (function ()
     var results_div
     var old_query
 
-    var get_more = '<a href="/search/proteins" class="list-group-item">Get more results <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span></a>'
+    var get_more = '<button type="submit" class="list-group-item">Get more results <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span></button>'
 
     function templateResult(result)
     {
