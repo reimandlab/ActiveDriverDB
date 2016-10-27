@@ -39,8 +39,36 @@ var SearchBar = (function ()
                 html += get_more
             results_div.html(html)
 
+            add_dropdown_navigation(results_div)
+
         }
 
+    }
+
+    function add_dropdown_navigation(dropdown_element)
+    {
+        var elements = dropdown_element.find('.list-group-item')
+        for(var i = 0; i < elements.length; i++)
+        {
+            $(elements[i]).on('keydown', {i: i}, function(e)
+            {
+                var i = e.data.i
+                if(e.key == 'ArrowUp')
+                {
+                    if(i > 0)
+                        $(elements[i - 1]).focus()
+                    else
+                        input.focus()
+
+                    return false
+                }
+                else if(e.key == 'ArrowDown' && i + 1 < elements.length)
+                {
+                    $(elements[i + 1]).focus()
+                    return false
+                }
+            })
+        }
     }
 
     function searchOnType()
@@ -70,6 +98,15 @@ var SearchBar = (function ()
             input.on('change mouseup drop input', searchOnType)
             input.on('click', function(){ return false })
             input.on('focus', function(){ results_div.show() })
+            input.on('keydown', function(e){
+                if(e.key == 'ArrowDown')
+                {
+                    results_div.find('.list-group-item').first().focus()
+                    return false
+                }
+            })
+
+            add_dropdown_navigation(results_div)
 
             $(document.body).on('click', function(){ results_div.hide() })
         }

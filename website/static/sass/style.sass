@@ -29,14 +29,23 @@ footer
 .user-menu, .search-box
   float: right
 
+// when changing this, make sure that the longest gene name fits;
+// currently it is 'LOC400927-CSNK1E'; you can get this from db e.g. with:
+// r = db.session.execute(sqlalchemy.select([Gene.name])).fetchall()
+// max(r, key=lambda x: len(x[0]))[0]
+$search-box-width: 225px
+
 .search-box
   position: relative
   text-align: left
-  width: 200px
+  width: $search-box-width
   margin: 0 4px
 
   .list-group-item
-    width: 200px
+    width: $search-box-width
+
+    &:focus
+      outline: none
 
 #search-quick-results
   position: absolute
