@@ -2,7 +2,7 @@ var SearchBar = (function ()
 {
     var input
     var results_div
-    var old_query
+    var current_query
 
     var get_more = '<button type="submit" class="list-group-item">Get more results <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span></button>'
 
@@ -18,7 +18,12 @@ var SearchBar = (function ()
         return link
     }
 
-    function updateResults(rawResult) {
+    function updateResults(rawResult, originalQuery) {
+
+        // if we've got a result of an old query, it's not interesting anymore
+        if(originalQuery != current_query)
+            return false
+
         var results = JSON.parse(rawResult)
 
         if(!results.length)
@@ -42,7 +47,7 @@ var SearchBar = (function ()
             add_dropdown_navigation(results_div)
 
         }
-
+        indicator.hide()
     }
 
     function add_dropdown_navigation(dropdown_element)
@@ -75,17 +80,25 @@ var SearchBar = (function ()
     {
         var query = input.val()
 
-        if(!query || old_query == query)
+        if(!query || current_query == query)
             return
 
-        old_query = query
+        current_query = query
 
         $.ajax({
             url: '/search/autocomplete_searchbar',
             type: 'GET',
             data: { q: encodeURIComponent(query) },
-            success: updateResults
+            success: function(query)
+            {
+                return function(result)
+                {
+                    return updateResults(result, query)
+                }
+            }(query)
         })
+
+        indicator.show()
     }
 
 
@@ -94,6 +107,7 @@ var SearchBar = (function ()
         {
             input = $(data.input)
             results_div = $(data.results_div)
+            indicator = $(data.indicator)
 
             input.on('change mouseup drop input', searchOnType)
             input.on('click', function(){ return false })
@@ -117,5 +131,6 @@ var SearchBar = (function ()
 
 SearchBar.init({
     'input': document.getElementById('search-bar'),
-    'results_div': document.getElementById('search-quick-results')
+    'results_div': document.getElementById('search-quick-results'),
+    'indicator': document.getElementById('waiting-indicator'),
 })
