@@ -35,11 +35,17 @@ footer
 // max(r, key=lambda x: len(x[0]))[0]
 $search-box-width: 225px
 
+.navbar-form
+  padding: 0 5px
+
 .search-box
   position: relative
   text-align: left
   width: $search-box-width
   margin: 0 4px
+
+  input.form-control
+    width: inherit!important
 
   #waiting-indicator
     display: none

@@ -26,6 +26,29 @@
 </head>
 <body>
   <div class="container">
+
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">{{ system_setting('name') or 'Website Name' }}</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+            {{ system_menu('top_menu') }}
+          </ul>
+          <div class="nav navbar-nav navbar-right navbar-form">
+            {% include 'search/searchbar.html' %}
+          </div>
+        </div>
+      </div>
+    </nav>
+
     <div class="header">
         {% if current_user.is_authenticated %}
         <div class="user-menu">
@@ -34,6 +57,10 @@
             <span class="glyphicon glyphicon-list-alt"></span>
             Edit pages
           </a>
+          <a href="{{ url_for('ContentManagmentSystem:list_menus') }}" class="btn btn-warning">
+            <span class="glyphicon glyphicon-list"></span>
+            Manage menus
+          </a>
           <a href="{{ url_for('ContentManagmentSystem:logout') }}" class="btn btn-warning">
             <span class="glyphicon glyphicon-log-out"></span>
             Logout
@@ -41,7 +68,6 @@
           {% endblock %}
         </div>
         {% endif %}
-        {% include 'search/searchbar.html' %}
     </div>
     <div id="content">
       {% include 'messages.html' %}
@@ -49,14 +75,11 @@
       {% endblock %}
     </div>
     <footer class="footer">
-      {% block footer %}
-      <ul class="list-unstyled">
-        <li><a href="https://github.com/reimandlab/Visualistion-Framework-for-Genome-Mutations">Project on GitHub</a></li>
-        <li><a href="https://summerofcode.withgoogle.com/projects/#5460568475435008">Project on GSOC website</a></li>
-        <li><a href="https://github.com/reimandlab/Visualistion-Framework-for-Genome-Mutations/blob/master/LICENSE">Licence</a></li>
-        <li><a href="https://summerofcode.withgoogle.com/organizations/6212058194378752/">Open Genome Informatics</a></li>
+      <ul class="menu list-unstyled">
+        {% block footer %}
+          {{ system_menu('footer_menu') }}
+        {% endblock %}
       </ul>
-      {% endblock %}
     </footer>
     </div>
 

@@ -30,3 +30,14 @@
   </div>
 </form>
 {% endblock %}
+
+
+{% block user_menu %}
+  {% if page %}
+    <a href="{{ url_for('ContentManagmentSystem:page', address=page.address) }}" class="btn btn-warning">
+	  <span class="glyphicon glyphicon-share-alt"></span>
+	  Open this page
+    </a>
+  {% endif %}
+  {{ super() }}
+{% endblock %}

@@ -1109,8 +1109,81 @@ class Page(CMSModel):
     title = db.Column(db.String(256))
     content = db.Column(db.Text())
 
+    @property
+    def url(self):
+        """A URL-like identifier ready to be used in HTML <a> tag"""
+        return '/' + self.address
+
     def __repr__(self):
         return '<Page /{0} with id {1}>'.format(
             self.address,
             self.id
         )
+
+
+class MenuEntry(CMSModel):
+    """Base for tables defining links in menu"""
+
+    position = db.Column(db.Float, default=0)
+    menu_id = db.Column(db.Integer, db.ForeignKey('menu.id'))
+    type = db.Column(db.String(32))
+
+    @property
+    def title(self):
+        """Name of the link"""
+        raise NotImplementedError
+
+    @property
+    def url(self):
+        """The href value of the link"""
+        raise NotImplementedError
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'entry',
+        'polymorphic_on': type
+    }
+
+
+class PageMenuEntry(MenuEntry):
+    id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
+
+    page_id = db.Column(db.Integer, db.ForeignKey('page.id'))
+    page = db.relationship('Page')
+
+    title = association_proxy('page', 'title')
+    url = association_proxy('page', 'url')
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'page_entry',
+    }
+
+
+class CustomMenuEntry(MenuEntry):
+    id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
+
+    title = db.Column(db.String(256))
+    url = db.Column(db.String(256))
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'custom_entry',
+    }
+
+
+class Menu(CMSModel):
+    """Model for groups of links used as menu"""
+
+    # name of the menu
+    name = db.Column(db.String(256), nullable=False, unique=True, index=True)
+
+    # list of all entries (links) in this menu
+    entries = db.relationship('MenuEntry')
+
+
+class Setting(CMSModel):
+
+    name = db.Column(db.String(256), nullable=False, unique=True, index=True)
+    value = db.Column(db.String(256))
+
+    @property
+    def int_value(self):
+        return int(self.value)

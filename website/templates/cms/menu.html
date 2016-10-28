@@ -1,0 +1,5 @@
+{% if menu %}
+  {% for entry in menu.entries | sort(attribute='position') %}
+    <li><a href="{{ entry.url }}">{{ entry.title }}</a>
+  {% endfor %}
+{% endif %}

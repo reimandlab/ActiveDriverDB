@@ -1,26 +1,25 @@
-<div class="search-box">
-    <form
-        method=GET
-        action="{{ url_for('SearchView:index', target='proteins') }}"
+<form
+    class="form-group search-box"
+    method=GET
+    action="{{ url_for('SearchView:index', target='proteins') }}"
+  >
+    <input
+      type="text"
+      name="proteins"
+      class="form-control"
+      placeholder="TP53 or NM_000345"
+      autocomplete="off"
+      id="search-bar"
+      {#
+          If we already are on a search page (query & target are declared),
+          make use of those and populate default value with query
+      #}
+      {% if query and target == 'proteins' %} value="{{ query }}" {% endif %}
     >
-        <input
-          type="text"
-          name="proteins"
-          class="form-control"
-          placeholder="TP53 or NM_000345"
-          autocomplete="off"
-          id="search-bar"
-          {#
-              If we already are on a search page (query & target are declared),
-              make use of those and populate default value with query
-          #}
-          {% if query and target == 'proteins' %} value="{{ query }}" {% endif %}
-        >
-        <span class="glyphicon glyphicon-refresh" id="waiting-indicator" aria-hidden="true"></span>
-        <div class="list-group" id="search-quick-results">
-          <a href="#" class="list-group-item">
-              Start typing to get results
-          </a>
-        </div>
-    </form>
-</div>
+    <span class="glyphicon glyphicon-refresh" id="waiting-indicator" aria-hidden="true"></span>
+    <div class="list-group" id="search-quick-results">
+      <a href="#" class="list-group-item">
+          Start typing to get results
+      </a>
+    </div>
+</form>

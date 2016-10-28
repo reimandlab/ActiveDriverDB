@@ -1,0 +1,210 @@
+{% extends "cms/admin/base.html" %}
+
+
+{% block head %}
+  {{ super () }}
+
+  {# jQuery #}
+  <script src="/static/thirdparty/jquery-1.12.0.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+{% endblock %}
+
+
+{% block title %} Menu management - {{ super() }} {% endblock %}
+
+
+{% block content %}
+
+<h3>Manage menus</h3>
+
+<p>
+  <form
+    class="input-group"
+    action="{{ url_for('ContentManagmentSystem:add_menu') }}"
+    method="POST"
+  >
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+    <input type="text" name="name" class="form-control" placeholder="Name of the new menu">
+    <span class="input-group-btn">
+        <button type="submit" class="btn btn-default">
+            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+            Add a new menu
+        </button>
+    </span>
+  </form>
+</p>
+
+
+{% for menu in menus %}
+<form
+  action="{{ url_for('ContentManagmentSystem:edit_menu', menu_id=menu.id) }}"
+  method="POST"
+>
+  <div class="panel panel-default menu-panel">
+    <div class="panel-heading">
+      <input type="text" value="{{ menu.name }}" class="panel-title editable" name="name">
+      <div class="buttons">
+        <button type="button" class="btn btn-default" data-toggle="modal" data-target="#link_modal_{{ menu.id }}">
+            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+            Add a link
+        </button>
+        <button type="submit" class="btn btn-default">
+            <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+            Save changes
+        </button>
+        <a href="{{ url_for('ContentManagmentSystem:remove_menu', menu_id=menu.id) }}" class="btn btn-default">
+            <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+            Remove menu
+        </a>
+      </div>
+    </div>
+    <div class="panel-body">
+      <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+      <table class="table table-no-bordered">
+        <thead>
+          <tr>
+              <th data-sortable=true>Title</th>
+              <th data-sortable=true>Address</th>
+              <th data-sortable=true>Type</th>
+              <th data-sortable=true>Position</th>
+              <th data-sortable=true>Remove</th>
+            </tr>
+        </thead>
+        <tbody>
+    		{% for entry in menu.entries | sort(attribute='position') %}
+            <tr>
+                <td>{{ entry.title }}</td>
+                <td>
+                  <a href="{{ entry.url }}">
+                    <span class="glyphicon glyphicon-globe" aria-hidden="true" title="Visit the page"></span>
+                    {{ entry.url }}
+                  </a>
+                </td>
+                <td>{{ 'Page' if entry.type == 'page_entry' else 'Custom' }}</td>
+                <td><input type="number" name="position[{{ entry.id }}]" value="{{ entry.position }}" class="form-control" required step="0.1"></td>
+                <td>
+                  <a href="{{ url_for('ContentManagmentSystem:remove_menu_entry', menu_id=menu.id, entry_id=entry.id) }}">
+                    <span class="glyphicon glyphicon-trash" aria-hidden="true" title="Remove"></span>
+                    Remove
+                  </a>
+                </td>
+            </tr>
+    		{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</form>
+
+<div class="modal fade" id="link_modal_{{ menu.id }}" tabindex="-1">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Add link to menu "{{ menu.name }}"</h4>
+      </div>
+      <div class="modal-body">
+        <ul class="nav nav-tabs" role="tablist">
+          <li role="presentation" class="active"><a href="#page_{{ menu.id }}" aria-controls="home" role="tab" data-toggle="tab">CMS Page</a></li>
+          <li role="presentation"><a href="#custom_{{ menu.id }}" aria-controls="profile" role="tab" data-toggle="tab">Custom</a></li>
+        </ul>
+        <div class="tab-content">
+          <div role="tabpanel" class="tab-pane active" id="page_{{ menu.id }}">
+            <p>
+            <form
+              action="{{ url_for('ContentManagmentSystem:add_page_menu_entry', menu_id=menu.id) }}"
+              method="POST"
+            >
+              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+              <div class="form-group">
+                <label for="page_{{ menu.id }}">Choose a page</label>
+                <select name="page_id" class="form-control" id="page_{{ menu.id }}">
+                  {% for page in pages %}
+                    <option value="{{ page.id }}">{{ page.title }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary">
+                  <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                  Add a link to this CMS Page
+              </button>
+
+            </form>
+            </p>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="custom_{{ menu.id }}">
+            <form
+              action="{{ url_for('ContentManagmentSystem:add_custom_menu_entry', menu_id=menu.id) }}"
+              method="POST"
+            >
+              <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+              <div class="form-group">
+                <label for="address_{{ menu.id }}">Address</label>
+                <input type="text" name="url" class="form-control" placeholder="URL address" id="address_{{ menu.id }}">
+              </div>
+              <div class="form-group">
+                  <label for="title_{{ menu.id }}">Title</label>
+                  <input type="text" name="title" class="form-control" placeholder="Title" id="title_{{ menu.id }}">
+              </div>
+                <button type="submit" class="btn btn-primary">
+                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                    Add a link to the custom page
+                </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+
+<h3>Use of menus in templates</h3>
+
+{% if menus %}
+  {% for slot, value in menu_slots.items() %}
+  <form
+    action="{{ url_for('ContentManagmentSystem:set', name=slot) }}"
+    method="POST"
+  >
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+    <label for="{{ slot }}">{{ slot | replace('_', ' ') | title }}</label>
+    <div class="input-group">
+      <select class="form-control" id="{{ slot }}" name="value">
+          <option value="-1">-</option>
+        {% for menu in menus %}
+          <option value="{{ menu.id }}" {{ 'selected' if value.int_value == menu.id }}>{{ menu.name }}</option>
+        {% endfor %}
+      </select>
+      <span class="input-group-btn">
+        <button type="submit" class="btn btn-primary">
+            <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+            Save
+        </button>
+      </span>
+    </div>
+  </form>
+  {% endfor %}
+{% else %}
+  <p>You have to create at least one menu to use it in templates.</p>
+{% endif %}
+<script type="text/javascript">
+function autoscaleInput()
+{
+  var input = $(this)
+  var len = input.val().length
+  len = Math.max(len, 20)
+  len = Math.min(len, 50)
+  input.attr('size', len)
+}
+
+$('input[type="text"]')
+  .on('change mouseup drop input', autoscaleInput)
+  .each(autoscaleInput)
+</script>
+{% endblock %}
