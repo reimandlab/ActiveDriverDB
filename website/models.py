@@ -1112,7 +1112,7 @@ class Page(CMSModel):
     @property
     def url(self):
         """A URL-like identifier ready to be used in HTML <a> tag"""
-        return '/' + self.address
+        return '/' + self.address + '/'
 
     def __repr__(self):
         return '<Page /{0} with id {1}>'.format(
