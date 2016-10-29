@@ -129,7 +129,10 @@ class ContentManagmentSystem(FlaskView):
         menu_id = setting.int_value
         menu = Menu.query.get(menu_id)
         menu_code = ContentManagmentSystem._template('menu', menu=menu)
-        return Markup(menu_code)
+        return {
+            'name': menu.name,
+            'as_list': Markup(menu_code)
+        }
 
     @staticmethod
     def _system_setting(name):

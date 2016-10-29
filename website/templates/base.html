@@ -1,3 +1,4 @@
+{% set website_name = system_setting('name') or 'Website Name' %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,7 +21,7 @@
   <!--[if lt IE 9]>
   <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
   <![endif]-->
-  <title>{% block title %}Visualisation Framework for Genome Mutations{% endblock %}</title>
+  <title>{% block title %}{{ website_name }}{% endblock %}</title>
   {% block head %}
   {% endblock %}
 </head>
@@ -36,11 +37,11 @@
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="/">{{ system_setting('name') or 'Website Name' }}</a>
+          <a class="navbar-brand" href="/">{{ website_name  }}</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
           <ul class="nav navbar-nav">
-            {{ system_menu('top_menu') }}
+            {{ system_menu('top_menu').as_list }}
           </ul>
           <div class="nav navbar-nav navbar-right navbar-form">
             {% include 'search/searchbar.html' %}
@@ -69,6 +70,12 @@
         </div>
         {% endif %}
     </div>
+    {% set side_menu = system_setting('side_menu') %}
+    {% if side_menu %}
+    <div class="row">
+      <div class="col-md-9">
+    {% endif %}
+
     <div id="content">
       {% include 'messages.html' %}
       {% block content %}
@@ -77,11 +84,23 @@
     <footer class="footer">
       <ul class="menu list-unstyled">
         {% block footer %}
-          {{ system_menu('footer_menu') }}
+          {{ system_menu('footer_menu').as_list }}
         {% endblock %}
       </ul>
     </footer>
+
+    {% if side_menu %}
+      </div>
+      <div class="col-md-3">
+        <h3>{{ system_menu('side_menu').name }}</h3>
+        <ul class="nav nav-pills nav-stacked">
+          {{ system_menu('side_menu').as_list }}
+        </ul>
+      </div>
     </div>
+    {% endif %}
+
+  </div>
 
 {% assets "js_search_bar" %}
 <script type="text/javascript" src="{{ ASSET_URL }}"></script>
