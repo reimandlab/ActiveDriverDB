@@ -1,4 +1,4 @@
-{% set website_name = system_setting('name') or 'Website Name' %}
+{% set website_name = system_setting('website_name') or 'Website Name' %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,11 +56,15 @@
           {% block user_menu %}
           <a href="{{ url_for('ContentManagmentSystem:list_pages') }}" class="btn btn-warning">
             <span class="glyphicon glyphicon-list-alt"></span>
-            Edit pages
+            Pages
           </a>
           <a href="{{ url_for('ContentManagmentSystem:list_menus') }}" class="btn btn-warning">
             <span class="glyphicon glyphicon-list"></span>
-            Manage menus
+            Menus
+          </a>
+          <a href="{{ url_for('ContentManagmentSystem:settings') }}" class="btn btn-warning">
+            <span class="glyphicon glyphicon-cog"></span>
+            Settings
           </a>
           <a href="{{ url_for('ContentManagmentSystem:logout') }}" class="btn btn-warning">
             <span class="glyphicon glyphicon-log-out"></span>

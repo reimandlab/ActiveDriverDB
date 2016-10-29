@@ -26,7 +26,7 @@
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
     <input type="text" name="name" class="form-control" placeholder="Name of the new menu">
     <span class="input-group-btn">
-        <button type="submit" class="btn btn-default">
+        <button type="submit" class="btn btn-success">
             <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
             Add a new menu
         </button>
@@ -44,15 +44,15 @@
     <div class="panel-heading">
       <input type="text" value="{{ menu.name }}" class="panel-title editable" name="name">
       <div class="buttons">
-        <button type="button" class="btn btn-default" data-toggle="modal" data-target="#link_modal_{{ menu.id }}">
+        <button type="button" class="btn btn-success" data-toggle="modal" data-target="#link_modal_{{ menu.id }}">
             <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
             Add a link
         </button>
-        <button type="submit" class="btn btn-default">
+        <button type="submit" class="btn btn-primary">
             <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
             Save changes
         </button>
-        <a href="{{ url_for('ContentManagmentSystem:remove_menu', menu_id=menu.id) }}" class="btn btn-default">
+        <a href="{{ url_for('ContentManagmentSystem:remove_menu', menu_id=menu.id) }}" class="btn btn-danger">
             <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
             Remove menu
         </a>
@@ -64,11 +64,11 @@
       <table class="table table-no-bordered">
         <thead>
           <tr>
-              <th data-sortable=true>Title</th>
-              <th data-sortable=true>Address</th>
-              <th data-sortable=true>Type</th>
-              <th data-sortable=true>Position</th>
-              <th data-sortable=true>Remove</th>
+              <th>Title</th>
+              <th class=text-center>Address</th>
+              <th class=text-center>Type</th>
+              <th class=text-center>Position</th>
+              <th class=text-center>Remove</th>
             </tr>
         </thead>
         <tbody>
@@ -77,16 +77,22 @@
                 <td>{{ entry.title }}</td>
                 <td>
                   <a href="{{ entry.url }}">
-                    <span class="glyphicon glyphicon-globe" aria-hidden="true" title="Visit the page"></span>
                     {{ entry.url }}
                   </a>
                 </td>
-                <td>{{ 'Page' if entry.type == 'page_entry' else 'Custom' }}</td>
-                <td><input type="number" name="position[{{ entry.id }}]" value="{{ entry.position }}" class="form-control" required step="0.1"></td>
-                <td>
-                  <a href="{{ url_for('ContentManagmentSystem:remove_menu_entry', menu_id=menu.id, entry_id=entry.id) }}">
-                    <span class="glyphicon glyphicon-trash" aria-hidden="true" title="Remove"></span>
-                    Remove
+                <td class="text-center">
+                  {% if entry.type == 'page_entry' %}
+                    <span class="glyphicon glyphicon-file" aria-hidden="true" title="Page"></span>
+                  {% else %}
+                    <span class="glyphicon glyphicon-share-alt" aria-hidden="true" title="Custom"></span>
+                  {% endif %}
+                </td>
+                <td class=text-center>
+                  <input type="number" name="position[{{ entry.id }}]" value="{{ entry.position }}" class="form-control" required step="0.1">
+                </td>
+                <td class="text-center">
+                  <a href="{{ url_for('ContentManagmentSystem:remove_menu_entry', menu_id=menu.id, entry_id=entry.id) }}" title="Remove">
+                    <span class="glyphicon glyphicon-remove" aria-hidden="true" ></span>
                   </a>
                 </td>
             </tr>
@@ -126,11 +132,12 @@
                   {% endfor %}
                 </select>
               </div>
-              <button type="submit" class="btn btn-primary">
-                  <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-                  Add a link to this CMS Page
-              </button>
-
+              <div class="buttons-footer">
+                <button type="submit" class="btn btn-success">
+                    <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+                    Add a link to this CMS Page
+                </button>
+              </div>
             </form>
             </p>
           </div>
@@ -149,10 +156,12 @@
                   <label for="title_{{ menu.id }}">Title</label>
                   <input type="text" name="title" class="form-control" placeholder="Title" id="title_{{ menu.id }}">
               </div>
-                <button type="submit" class="btn btn-primary">
+              <div class="buttons-footer">
+                <button type="submit" class="btn btn-success">
                     <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
                     Add a link to the custom page
                 </button>
+              </div>
             </form>
           </div>
         </div>
@@ -166,30 +175,31 @@
 <h3>Use of menus in templates</h3>
 
 {% if menus %}
+<form
+  action="{{ url_for('ContentManagmentSystem:save_settings') }}"
+  method=POST
+>
+  <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="goto" value="{{ request.url }}">
   {% for slot, value in menu_slots.items() %}
-  <form
-    action="{{ url_for('ContentManagmentSystem:set', name=slot) }}"
-    method="POST"
-  >
-    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-
-    <label for="{{ slot }}">{{ slot | replace('_', ' ') | title }}</label>
-    <div class="input-group">
-      <select class="form-control" id="{{ slot }}" name="value">
+    <div class="form-group">
+      <label for="{{ slot }}">{{ slot | replace('_', ' ') | title }}</label>
+      <select class="form-control" id="{{ slot }}" name="setting[{{ slot }}]">
           <option value="-1">-</option>
         {% for menu in menus %}
           <option value="{{ menu.id }}" {{ 'selected' if value.int_value == menu.id }}>{{ menu.name }}</option>
         {% endfor %}
       </select>
-      <span class="input-group-btn">
-        <button type="submit" class="btn btn-primary">
-            <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
-            Save
-        </button>
-      </span>
     </div>
-  </form>
   {% endfor %}
+
+<div class="buttons-footer">
+  <button type="submit" class="btn btn-primary">
+      <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+      Save menus' assigments
+  </button>
+</div>
+</form>
 {% else %}
   <p>You have to create at least one menu to use it in templates.</p>
 {% endif %}

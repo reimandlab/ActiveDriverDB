@@ -24,6 +24,9 @@ from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import IntegrityError
 from statistics import STATISTICS
 
+BUILT_IN_SETTINGS = ['website_name']
+
+MENU_SLOT_NAMES = ['footer_menu', 'top_menu', 'side_menu']
 
 USER_ACCESSIBLE_VARIABLES = {
     'stats': STATISTICS
@@ -105,9 +108,6 @@ def link_to_page(page):
     return html_link(page.address, link_title)
 
 
-SLOT_NAMES = ['footer_menu', 'top_menu', 'side_menu']
-
-
 def get_system_setting(name):
     return Setting.query.filter_by(name=name).first()
 
@@ -122,7 +122,7 @@ class ContentManagmentSystem(FlaskView):
 
     @staticmethod
     def _system_menu(name):
-        assert name in SLOT_NAMES
+        assert name in MENU_SLOT_NAMES
         setting = get_system_setting(name)
         if not setting:
             return Markup('<!-- Menu "' + name + '" is not set --!>')
@@ -161,13 +161,28 @@ class ContentManagmentSystem(FlaskView):
 
         menu_slots = {
             slot: get_system_setting(slot)
-            for slot in SLOT_NAMES
+            for slot in MENU_SLOT_NAMES
         }
         return self._template(
             'admin/menu',
             menus=menus,
             pages=pages,
             menu_slots=menu_slots
+        )
+
+    @login_required
+    def settings(self):
+        settings = {
+            setting.name: setting
+            for setting in Setting.query.all()
+        }
+        for setting_name in BUILT_IN_SETTINGS:
+            if setting_name not in settings:
+                settings[setting_name] = get_system_setting(setting_name)
+
+        return self._template(
+            'admin/settings',
+            settings=settings
         )
 
     @route('/add_menu/', methods=['POST'])
@@ -215,17 +230,39 @@ class ContentManagmentSystem(FlaskView):
             flash('Wrong value for position', 'danger')
         return redirect(url_for('ContentManagmentSystem:list_menus'))
 
+    @route('/settings/save/', methods=['POST'])
+    @login_required
+    def save_settings(self):
+        goto = request.form.get(
+            'goto',
+            url_for('ContentManagmentSystem:settings')
+        )
+        for name, value in request.form.items():
+            if name.startswith('setting['):
+                name = name[8:-1]
+                setting, is_created = get_or_create(Setting, name=name)
+                if is_created:
+                    db.session.add(setting)
+                setting.value = value
+
+                db.session.commit()
+        return redirect(goto)
+
     @route('/settings/set/<name>', methods=['POST'])
     @login_required
     def set(self, name):
         value = request.form['value']
+        goto = request.form.get(
+            'goto',
+            url_for('ContentManagmentSystem:settings')
+        )
         setting, is_created = get_or_create(Setting, name=name)
         if is_created:
             db.session.add(setting)
         setting.value = value
 
         db.session.commit()
-        return redirect(url_for('ContentManagmentSystem:list_menus'))
+        return redirect(goto)
 
     @login_required
     def remove_menu(self, menu_id):
