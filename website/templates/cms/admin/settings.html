@@ -1,0 +1,30 @@
+{% extends "cms/admin/base.html" %}
+
+{% block title %} Settings - {{ super() }} {% endblock %}
+
+{% block content %}
+
+<h3>Settings</h3>
+
+<form
+  action="{{ url_for('ContentManagmentSystem:save_settings') }}"
+  method=POST
+>
+<input type=hidden name="_csrf_token" value="{{ csrf_token() }}">
+
+{% for slot, value in settings.items() %}
+<div class=form-group>
+  <label for="{{ slot }}">{{ slot | replace('_', ' ') | title }}</label>
+  <input type=text class=form-control id="{{ slot }}" name="setting[{{ slot }}]" value="{{ value.value }}">
+</div>
+{% endfor %}
+
+<div class="buttons-footer">
+  <button type=submit class="btn btn-primary">
+      <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
+      Save all
+  </button>
+</div>
+</form>
+
+{% endblock %}
