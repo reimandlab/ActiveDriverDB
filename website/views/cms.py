@@ -128,6 +128,8 @@ class ContentManagmentSystem(FlaskView):
             return Markup('<!-- Menu "' + name + '" is not set --!>')
         menu_id = setting.int_value
         menu = Menu.query.get(menu_id)
+        if not menu:
+            return Markup('<!-- Menu "' + name + '" not found --!>')
         menu_code = ContentManagmentSystem._template('menu', menu=menu)
         return {
             'name': menu.name,
