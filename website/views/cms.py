@@ -152,7 +152,7 @@ class ContentManagmentSystem(FlaskView):
     @login_required
     def list_pages(self):
         pages = Page.query.all()
-        return self._template('admin/list', entries=pages, entity_name='Page')
+        return self._template('admin/pages', entries=pages)
 
     @login_required
     def list_menus(self):
