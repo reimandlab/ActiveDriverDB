@@ -125,11 +125,20 @@ class ContentManagmentSystem(FlaskView):
         assert name in MENU_SLOT_NAMES
         setting = get_system_setting(name)
         if not setting:
-            return Markup('<!-- Menu "' + name + '" is not set --!>')
+            return {
+                'is_active': False,
+                'message': Markup('<!-- Menu "' + name + '" is not set --!>')
+            }
         menu_id = setting.int_value
         menu = Menu.query.get(menu_id)
+        if not menu:
+            return {
+                'is_active': False,
+                'message': Markup('<!-- Menu "' + name + '" not found --!>')
+            }
         menu_code = ContentManagmentSystem._template('menu', menu=menu)
         return {
+            'is_active': True,
             'name': menu.name,
             'as_list': Markup(menu_code)
         }

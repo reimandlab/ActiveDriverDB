@@ -75,7 +75,7 @@
         {% endif %}
     </div>
     {% set side_menu = system_setting('side_menu') %}
-    {% if side_menu %}
+    {% if side_menu.is_active %}
     <div class="row">
       <div class="col-md-9">
     {% endif %}
@@ -93,12 +93,12 @@
       </ul>
     </footer>
 
-    {% if side_menu %}
+    {% if side_menu.is_active %}
       </div>
       <div class="col-md-3">
-        <h3>{{ system_menu('side_menu').name }}</h3>
+        <h3>{{ side_menu.name }}</h3>
         <ul class="nav nav-pills nav-stacked">
-          {{ system_menu('side_menu').as_list }}
+          {{ side_menu.as_list }}
         </ul>
       </div>
     </div>
