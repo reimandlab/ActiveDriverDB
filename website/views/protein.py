@@ -6,6 +6,7 @@ from flask import render_template as template
 from flask_classful import FlaskView
 from models import Protein
 from models import Mutation
+from operator import attrgetter
 from website.helpers.tracks import Track
 from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack
@@ -84,10 +85,7 @@ class ProteinView(FlaskView):
             value_type = 'Frequency'
 
         parsed_mutations = self._represent_mutations(
-            raw_mutations,
-            source,
-            get_source_field(source),
-            filter_manager
+            raw_mutations, filter_manager
         )
 
         return template(
@@ -100,6 +98,27 @@ class ProteinView(FlaskView):
             sites=self._prepare_sites(protein, filter_manager),
         )
 
+    def mutation(self, refseq, position, alt):
+        _, filter_manager = self._make_filters()
+
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+        mutation = Mutation.query.filter_by(
+            protein=protein, position=position, alt=alt
+        ).first_or_404()
+
+        raw_mutations = filter_manager.apply([mutation])
+
+        if not raw_mutations:
+            return jsonify(
+                'There is a mutation, but it does not satisfy given filters'
+            )
+
+        parsed_mutations = self._represent_mutations(
+            raw_mutations, filter_manager
+        )
+
+        return jsonify(parsed_mutations)
+
     def mutations(self, refseq, filter_manager=None):
         """List of mutations suitable for needleplot library"""
 
@@ -109,12 +128,9 @@ class ProteinView(FlaskView):
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
         raw_mutations = filter_manager.apply(protein.mutations)
-        source = filter_manager.get_value('Mutation.sources')
 
         parsed_mutations = self._represent_mutations(
             raw_mutations,
-            source,
-            get_source_field(source),
             filter_manager
         )
 
@@ -142,14 +158,20 @@ class ProteinView(FlaskView):
             } for site in sites
         ]
 
-    def _represent_mutations(self, mutations, source, source_field_name, filter_manager):
+    def _represent_mutations(self, mutations, filter_manager):
+
+        source = filter_manager.get_value('Mutation.sources')
+        source_field_name = get_source_field(source)
+
+        get_source_data = attrgetter(source_field_name)
+        get_mimp_data = attrgetter('meta_MIMP')
 
         response = []
 
         for mutation in mutations:
 
-            field = getattr(mutation, source_field_name)
-            mimp = getattr(mutation, 'meta_MIMP')
+            field = get_source_data(mutation)
+            mimp = get_mimp_data(mutation)
 
             metadata = {
                 source: field.to_json(filter_manager.apply)
@@ -184,6 +206,6 @@ class ProteinView(FlaskView):
                 'cnt_ptm': mutation.cnt_ptm_affected,
                 'summary': field.summary,
             }
-            response += [needle]
+            response.append(needle)
 
         return response
