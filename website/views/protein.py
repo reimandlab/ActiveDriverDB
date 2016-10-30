@@ -6,7 +6,6 @@ from flask import render_template as template
 from flask_classful import FlaskView
 from models import Protein
 from models import Mutation
-from operator import attrgetter
 from website.helpers.tracks import Track
 from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack
@@ -15,15 +14,7 @@ from website.helpers.tracks import MutationsTrack
 from website.helpers.filters import FilterManager
 from website.views._global_filters import common_filters
 from website.views._global_filters import common_widgets
-
-
-def get_source_field(source):
-    source_field_name = Mutation.source_fields[source]
-    return source_field_name
-
-
-def get_response_content(response):
-    return response.get_data().decode('ascii')
+from website.views._commons import represent_mutations
 
 
 class ProteinView(FlaskView):
@@ -84,7 +75,7 @@ class ProteinView(FlaskView):
         else:
             value_type = 'Frequency'
 
-        parsed_mutations = self._represent_mutations(
+        parsed_mutations = represent_mutations(
             raw_mutations, filter_manager
         )
 
@@ -98,10 +89,11 @@ class ProteinView(FlaskView):
             sites=self._prepare_sites(protein, filter_manager),
         )
 
-    def mutation(self, refseq, position, alt):
+    def known_mutation(self, refseq, position, alt):
         _, filter_manager = self._make_filters()
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+
         mutation = Mutation.query.filter_by(
             protein=protein, position=position, alt=alt
         ).first_or_404()
@@ -113,13 +105,13 @@ class ProteinView(FlaskView):
                 'There is a mutation, but it does not satisfy given filters'
             )
 
-        parsed_mutations = self._represent_mutations(
+        parsed_mutations = represent_mutations(
             raw_mutations, filter_manager
         )
 
         return jsonify(parsed_mutations)
 
-    def mutations(self, refseq, filter_manager=None):
+    def known_mutations(self, refseq, filter_manager=None):
         """List of mutations suitable for needleplot library"""
 
         if not filter_manager:
@@ -129,7 +121,7 @@ class ProteinView(FlaskView):
 
         raw_mutations = filter_manager.apply(protein.mutations)
 
-        parsed_mutations = self._represent_mutations(
+        parsed_mutations = represent_mutations(
             raw_mutations,
             filter_manager
         )
@@ -157,55 +149,3 @@ class ProteinView(FlaskView):
                 'type': str(site.type)
             } for site in sites
         ]
-
-    def _represent_mutations(self, mutations, filter_manager):
-
-        source = filter_manager.get_value('Mutation.sources')
-        source_field_name = get_source_field(source)
-
-        get_source_data = attrgetter(source_field_name)
-        get_mimp_data = attrgetter('meta_MIMP')
-
-        response = []
-
-        for mutation in mutations:
-
-            field = get_source_data(mutation)
-            mimp = get_mimp_data(mutation)
-
-            metadata = {
-                source: field.to_json(filter_manager.apply)
-            }
-
-            if mimp:
-                metadata['MIMP'] = mimp.to_json()
-
-            closest_sites = mutation.find_closest_sites()
-
-            needle = {
-                'pos': mutation.position,
-                'value': field.get_value(filter_manager.apply),
-                'category': mutation.impact_on_ptm,
-                'alt': mutation.alt,
-                'ref': mutation.ref,
-                'meta': metadata,
-                'sites': [
-                    site.to_json()
-                    for site in closest_sites
-                ],
-                'kinases': [
-                    kinase.to_json()
-                    for site in closest_sites
-                    for kinase in site.kinases
-                ],
-                'kinase_groups': [
-                    group.name
-                    for site in closest_sites
-                    for group in site.kinase_groups
-                ],
-                'cnt_ptm': mutation.cnt_ptm_affected,
-                'summary': field.summary,
-            }
-            response.append(needle)
-
-        return response

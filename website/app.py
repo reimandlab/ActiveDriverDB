@@ -36,21 +36,17 @@ Import viwes
 import sys
 sys.path.insert(0, '..')
 
-from website.views import ProteinView, SearchView, NetworkView, GeneView
-from website.views import ContentManagmentSystem
+from website.views import views
 
-GeneView.register(app)
-ProteinView.register(app)
-NetworkView.register(app)
-SearchView.register(app)
-ContentManagmentSystem.register(app)
-
+for view in views:
+    view.register(app)
 
 """
 Register functions for Jinja
 """
 
 from website.views.cms import substitute_variables
+from website.views.cms import ContentManagmentSystem
 import csrf
 import json
 

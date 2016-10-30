@@ -5,13 +5,9 @@ from flask_classful import FlaskView
 from flask_classful import route
 from Levenshtein import distance
 from models import Protein
-from models import Mutation
 from models import Gene
-from database import bdb, bdb_refseq
-from database import make_snv_key
-from database import decode_csv
-from database import get_or_create
-from helpers.bioinf import decode_raw_mutation
+from website.views._commons import get_genomic_muts
+from website.views._commons import get_protein_muts
 
 
 class GeneResult:
@@ -79,61 +75,58 @@ def search_proteins(phase, limit=False):
     )
 
 
-def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
-    snv = make_snv_key(chrom, dna_pos, dna_ref, dna_alt)
+def parse_vcf(vcf_file, results, without_mutations):
 
-    items = [
-        decode_csv(item)
-        for item in bdb[snv]
-    ]
+    query = ''
 
-    for item in items:
-        protein = Protein.query.get(
-            item['protein_id']
-        )
-        item['protein'] = protein
-        mutation, created = get_or_create(
-            Mutation,
-            protein_id=protein.id,
-            position=item['pos'],
-            alt=item['alt']
-        )
-        item['mutation'] = mutation
-    return items
+    for line in vcf_file:
+        if line.startswith('#'):
+            continue
+        data = line.split()
+        chrom, pos, var_id, ref, alts = data[:4]
+        alts = alts.split(',')
+        for alt in alts:
+            query += ' '.join((chrom, pos, ref, alt)) + '\n'
+            items = get_genomic_muts(chrom, pos, ref, alt)
+            if items:
+                if len(alts) > 1:
+                    line += ' (' + alt + ')'
+                results.append(
+                    {
+                        'user_input': line,
+                        'results': items
+                    }
+                )
+            else:
+                without_mutations.append(line)
+    return query
 
 
-def get_protein_muts(gene, mut):
-    ref, pos, alt = decode_raw_mutation(mut)
+def parse_text(textarea_query, results, without_mutations, badly_formatted):
+    for line in textarea_query.split('\n'):
+        data = line.split()
+        if len(data) == 4:
+            chrom, pos, ref, alt = [x.lower() for x in data]
+            chrom = chrom[3:]
 
-    # get all refseq ids associated with given (pos, ref,
-    # alt, gene) tuple by looking in berkleydb hashmap
+            items = get_genomic_muts(chrom, pos, ref, alt)
 
-    refseqs = bdb_refseq[gene + ' ' + ref + str(pos) + alt]
+        elif len(data) == 2:
+            gene, mut = [x.upper() for x in data]
 
-    items = []
+            items = get_protein_muts(gene, mut)
+        else:
+            badly_formatted.append(line)
+            continue
 
-    for refseq in refseqs:
-
-        protein = Protein.query.filter_by(refseq=refseq).one()
-
-        mutation, created = get_or_create(
-            Mutation,
-            protein_id=protein.id,
-            position=pos,
-            alt=alt
-        )
-
-        items.append(
-            {
-                'protein': protein,
-                'ref': ref,
-                'alt': alt,
-                'pos': pos,
-                'is_ptm': mutation.is_ptm,
-                'mutation': mutation,
-            }
-        )
-    return items
+        if items:
+            results.append(
+                {
+                    'user_input': line, 'results': items
+                }
+            )
+        else:
+            without_mutations.append(line)
 
 
 def search_mutations(vcf_file, textarea_query):
@@ -143,56 +136,17 @@ def search_mutations(vcf_file, textarea_query):
 
     results = []
     without_mutations = []
-    badly_formatted = []
 
     if vcf_file:
-        for line in vcf_file:
-            if line.startswith('#'):
-                continue
-            data = line.split()
-            chrom, pos, var_id, ref, alts = data[:4]
-            alts = alts.split(',')
-            for alt in alts:
-                query += ' '.join((chrom, pos, ref, alt)) + '\n'
-                items = get_genomic_muts(chrom, pos, ref, alt)
-                if items:
-                    if len(alts) > 1:
-                        line += ' (' + alt + ')'
-                    results.append(
-                        {
-                            'user_input': line,
-                            'results': items
-                        }
-                    )
-                else:
-                    without_mutations.append(line)
+        query += parse_vcf(vcf_file, results, without_mutations)
+
+    badly_formatted = []
 
     if textarea_query:
         query += textarea_query
-        for line in textarea_query.split('\n'):
-            data = line.split()
-            if len(data) == 4:
-                chrom, pos, ref, alt = [x.lower() for x in data]
-                chrom = chrom[3:]
-
-                items = get_genomic_muts(chrom, pos, ref, alt)
-
-            elif len(data) == 2:
-                gene, mut = [x.upper() for x in data]
-
-                items = get_protein_muts(gene, mut)
-            else:
-                badly_formatted.append(line)
-                continue
-
-            if items:
-                results.append(
-                    {
-                        'user_input': line, 'results': items
-                    }
-                )
-            else:
-                without_mutations.append(line)
+        parse_text(
+            textarea_query, results, without_mutations, badly_formatted
+        )
 
     return results, without_mutations, badly_formatted, query
 
