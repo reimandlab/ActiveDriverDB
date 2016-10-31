@@ -43,6 +43,11 @@ def get_affected_isoforms(gene_name, ref, pos, alt):
     cover given mutation - so those with length Y: X <= Y, where
     X is the position (pos) of analysed mutation.
 
+    There is on more constraint: some proteomic mutations cannot
+    be caused by a single genomic mutations: F => S cannot be a
+    result of a single SNV/SNP because neither UUU nor UUC could be
+    changed to AGU or AGC in a single step.
+
     There are many such isoforms and simple lookup:
         gene_name => preferred_isoform, or
         gene_name => all_isoforms
@@ -56,6 +61,11 @@ def get_affected_isoforms(gene_name, ref, pos, alt):
         # that are not representing any of known amino acids.
 
         is_mut_allowed(alt)
+
+        # function above and below were not implemented but lets
+        # assume that they throw a flow-changing exception
+
+        can_be_result_of_single_snv(ref, alt)
 
         gene = Gene.query.filter_by(name=gene_name).one()
         return [
