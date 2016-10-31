@@ -16,13 +16,13 @@ def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
         for item in bdb[snv]
     ]
 
-    # this caould be speed up by: itemgetters, accumulative queries and so on
+    # this could be speed up by: itemgetters, accumulative queries and so on
 
     for item in items:
-        protein = Protein.query.get(
-            item['protein_id']
-        )
+
+        protein = Protein.query.get(item['protein_id'])
         item['protein'] = protein
+
         mutation, created = get_or_create(
             Mutation,
             protein_id=protein.id,
@@ -65,11 +65,9 @@ def get_affected_isoforms(gene_name, ref, pos, alt):
         ]
     """
     hash_key = gene_name + ' ' + ref + str(pos) + alt
+    refseqs = bdb_refseq[hash_key]
 
-    return [
-        Protein.query.filter_by(refseq=refseq).one()
-        for refseq in bdb_refseq[hash_key]
-    ]
+    return Protein.query.filter(Protein.refseq.in_(refseqs)).all()
 
 
 def get_protein_muts(gene_name, mut):
