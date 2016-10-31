@@ -30,6 +30,7 @@ def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
             alt=item['alt']
         )
         item['mutation'] = mutation
+        item['type'] = 'genomic'
     return items
 
 
@@ -97,7 +98,8 @@ def get_protein_muts(gene_name, mut):
                 'ref': ref,
                 'alt': alt,
                 'pos': pos,
-                'mutation': mutation
+                'mutation': mutation,
+                'type': 'proteomic'
             }
         )
     return items

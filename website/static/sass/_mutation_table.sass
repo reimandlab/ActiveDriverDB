@@ -1,0 +1,30 @@
+table.table
+
+  @import "impacts"
+
+  .distal
+    background: lighten($distal, $lightness)!important
+  .network-rewiring
+    background: lighten($network-rewiring, $lightness)!important
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.4)
+  .direct
+    background: lighten($direct, $lightness)!important
+    color: white
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.3)
+  .proximal
+    background: lighten($proximal, $lightness)!important
+  .none
+    background: lighten($none, $lightness)!important
+  .none, .proximal, .distal
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.6)
+
+  .sub-cell
+    margin-bottom: 5px
+    padding-bottom: 5px
+    font-size: 90%
+    border-bottom: 1px dashed #ddd
+
+    &:last-child
+      border: 0
+      margin: 0
+      padding: 0
