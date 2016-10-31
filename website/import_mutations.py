@@ -90,7 +90,7 @@ class BaseMutationsImporter:
                 [
                     {
                         'id': data[0],
-                        'is_ptm': data[1],
+                        'precomputed_is_ptm': data[1],
                         'position': mutation[0],
                         'protein_id': mutation[1],
                         'alt': mutation[2]

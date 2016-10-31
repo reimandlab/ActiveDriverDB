@@ -33,39 +33,73 @@ def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
     return items
 
 
-def get_protein_muts(gene, mut):
+def get_affected_isoforms(gene_name, ref, pos, alt):
+    """Returns all isoforms where specified mutation might happen.
+
+    Explanation: shouldn't we look for refseq with gene name only?
+
+    Well, we have to look for all isoforms of given gene which
+    cover given mutation - so those with length Y: X <= Y, where
+    X is the position (pos) of analysed mutation.
+
+    There are many such isoforms and simple lookup:
+        gene_name => preferred_isoform, or
+        gene_name => all_isoforms
+    is not enough to satisfy all conditions.
+
+    So what do we have here is (rougly) an equivalent to:
+
+        from models import Gene
+
+        # the function below should check if we don't have symbols
+        # that are not representing any of known amino acids.
+
+        is_mut_allowed(alt)
+
+        gene = Gene.query.filter_by(name=gene_name).one()
+        return [
+            isoform
+            for isoform in gene.isoforms
+            if (isoform.length >= pos and
+                isoform.sequence[pos - 1] == ref)
+        ]
+    """
+    hash_key = gene_name + ' ' + ref + str(pos) + alt
+
+    return [
+        Protein.query.filter_by(refseq=refseq).one()
+        for refseq in bdb_refseq[hash_key]
+    ]
+
+
+def get_protein_muts(gene_name, mut):
+    """Retrieve corresponding mutations from all isoforms
+
+    associated with given gene which are correct (i.e. they do not
+    lie outside the range of a protein isoform and have the same
+    reference residues). To speed up the lookup we use precomputed
+    berkleydb hashmap.
+    """
     ref, pos, alt = decode_raw_mutation(mut)
-
-    # get all refseq ids associated with given (pos, ref,
-    # alt, gene) tuple by looking in berkleydb hashmap
-
-    # why? we should look only for gene name!? TODO
-
-    refseqs = bdb_refseq[gene + ' ' + ref + str(pos) + alt]
 
     items = []
 
-    for refseq in refseqs:
-
-        protein = Protein.query.filter_by(refseq=refseq).one()
+    for isoform in get_affected_isoforms(gene_name, ref, pos, alt):
 
         mutation, created = get_or_create(
             Mutation,
-            protein_id=protein.id,
+            protein=isoform,
             position=pos,
             alt=alt
         )
 
         items.append(
             {
-                'protein': protein,
+                'protein': isoform,
                 'ref': ref,
                 'alt': alt,
                 'pos': pos,
-                'is_ptm': bool(mutation.is_ptm),
-                'mutation': mutation,
-                # TODO: make use of this:
-                'is_correct': bool(pos > protein.length)
+                'mutation': mutation
             }
         )
     return items

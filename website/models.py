@@ -491,12 +491,13 @@ class Mutation(BioModel):
     alt = db.Column(db.String(1))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
-    is_ptm = db.Column(db.Boolean)
-    """Mutation is PTM related if it may affect PTM site.
-
-    Mutations flanking PTM site in a distance up to 7 residues from
-    a site (called here 'distal') will be included too.
-    """
+    # To speed up results retrival one can precompute value of
+    # 'is_ptm' property. It does not carry meaningful information
+    # for novel mutations until correctly precomputed (e.g. with
+    # instruction: m.precomputed_is_ptm = m.is_ptm).
+    # You can distinguish if it was precomputed: check if the value
+    # is different than None. Be careful with boolen evaluation!
+    precomputed_is_ptm = db.Column(db.Boolean)
 
     meta_cancer = mutation_details_relationship(
         'CancerMutation',
@@ -610,6 +611,17 @@ class Mutation(BioModel):
             if key.startswith('meta_') and value
         }
 
+    @property
+    def is_ptm(self):
+        """Mutation is PTM related if it may affect PTM site.
+
+        Mutations flanking PTM site in a distance up to 7 residues
+        from a site (called here 'distal') will be included too.
+
+        This property is an alias for is_ptm_distal property.
+        """
+        return self.is_ptm_distal
+
     @hybrid_property
     def ref(self):
         sequence = Protein.query.get(self.protein_id).sequence
@@ -636,7 +648,12 @@ class Mutation(BioModel):
         Distal flank is defined here as [pos - 7, pos + 7] span,
         where pos is the position of a PTM site.
         """
-        return self.is_ptm
+        # if we have precomputed True or False (i.e. it's known
+        # mutations - so we precomputed this) then return this
+        if self.precomputed_is_ptm is not None:
+            return self.precomputed_is_ptm
+        # otherwise it's a novel mutation - let's check proximity
+        return self.is_close_to_some_site(7, 7)
 
     @hybrid_property
     def cnt_ptm_affected(self):

@@ -3,27 +3,20 @@
   together with links to appropiate sites. Below the table information
   about positions that where not found in the database should be displayed
 #}
-<div id="toolbar"></div>
 
-<table
-  class="table table-rowspan-hover"
-  data-toolbar="#toolbar"
-  data-toggle="table"
-  data-search="true"
-  data-show-columns="true"
->
+<table class="table table-rowspan-hover">
   <thead>
   <tr>
     {% set columns_count = 9 %}
     <th>User input</th>
-    <th data-sortable=true>Gene name</th>
-    <th data-sortable=true>Refseq</th>
-    <th data-sortable=true>Ref aa</th>
-    <th data-sortable=true>Alt aa</th>
-    <th data-sortable=true>Position</th>
-    <th data-sortable=true>is PTM?</th>
-    <th data-sortable=true>Impact</th>
-    <th data-sortable=true>Link</th>
+    <th>Gene name</th>
+    <th>Refseq</th>
+    <th>Ref aa</th>
+    <th>Alt aa</th>
+    <th>Position</th>
+    <th>is PTM?</th>
+    <th>Impact</th>
+    <th>Link</th>
   </tr>
   </thead>
   {% for line in results %}
@@ -42,7 +35,7 @@
         <td>{{ result.ref }}</td>
         <td>{{ result.alt }}</td>
         <td>{{ result.pos }}</td>
-        <td>{{ result.is_ptm }}</td>
+        <td>{{ result.mutation.is_ptm }}</td>
         <td>
             {{ result.mutation.impact_on_ptm }}
             {% if result.mutation.impact_on_ptm == 'network-rewiring' %}
@@ -56,7 +49,7 @@
               show mutation details →
             </a>
             {% else %}
-              This mutation does not have any details associated with (in this database).
+              <span title="This mutation does not have any details associated with (in this database).">no details</span>
             {% endif %}
         </td>
       </tr>
