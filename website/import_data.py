@@ -205,9 +205,10 @@ def load_domains_hierarchy():
 
         old_level = level
 
-    db.session.add_all(new_domains)
-
     parse_text_file('data/ParentChildTreeFile.txt', parser)
+
+    db.session.add_all(new_domains)
+    print('Domains\' hierarchy built,', len(new_domains), 'new domains added.')
 
 
 def load_cancers():
