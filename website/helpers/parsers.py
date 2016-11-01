@@ -84,6 +84,25 @@ def parse_tsv_file(filename, parser, file_header=None):
             parser(line)
 
 
+def parse_text_file(filename, parser, file_header=None):
+    """Utility function wraping raw text file parser.
+
+    It checks if the file header is the same as given (if provided).
+    For each line parser will be called.
+
+    Progress bar is embeded.
+    """
+    with open(filename) as f:
+        data_lines_count = count_lines(f)
+        if file_header:
+            header = f.readline().rstrip()
+            data_lines_count -= 1
+            assert header == file_header
+        for line in tqdm(f, total=data_lines_count, unit=' lines'):
+            line = line.rstrip()
+            parser(line)
+
+
 def parse_fasta_file(filename, parser):
     """Utility function wraping fasta file parser.
 

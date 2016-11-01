@@ -375,6 +375,19 @@ class InterproDomain(BioModel):
     # Interpro Description
     description = db.Column(db.Text)
 
+    # How deep in the hierarchy this interpro domain is placed
+    level = db.Column(db.Integer)
+
+    # What is the interpro domain above in hierarchy tree
+    parent_id = db.Column(db.Integer, db.ForeignKey('interprodomain.id'))
+
+    # Relation with backref allowings easy tree traversal
+    children = db.relationship(
+        'InterproDomain',
+        backref=db.backref('parent', remote_side='InterproDomain.id')
+    )
+
+    # Occurrences (annotations) of real biological domains
     occurrences = db.relationship('Domain', backref='interpro')
 
 

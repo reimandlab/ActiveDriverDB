@@ -3,6 +3,7 @@ from database import db
 from database import get_or_create
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
+from helpers.parsers import parse_text_file
 from models import Domain
 from models import Gene
 from models import InterproDomain
@@ -23,6 +24,7 @@ def import_data(restrict_mutations_to):
     select_preferred_isoforms(genes)
     load_disorder(proteins)
     load_domains(proteins)
+    load_domains_hierarchy()
     load_cancers()
     kinases, groups = load_sites(proteins)
     kinases, groups = load_kinase_classification(proteins, kinases, groups)
@@ -161,6 +163,51 @@ def load_domains(proteins):
         'Domains skipped due to not matching chromosomes:',
         len(not_matching_chrom)
     )
+
+
+def load_domains_hierarchy():
+
+    from re import compile
+
+    expr = compile('^(?P<dashes>-*)(?P<interpro_id>\w*)::(?P<desc>.*?)::$')
+
+    old_level = 0
+    parent = None
+    new_domains = []
+
+    def parser(line):
+        nonlocal parent, old_level, new_domains
+
+        result = expr.match(line)
+
+        dashes = result.group('dashes')
+        interpro_id = result.group('interpro_id')
+        description = result.group('desc')
+
+        # at each level deeper two dashes are added, starting from 0
+        level = len(dashes) / 2
+
+        # look out for "jumps" - we do not expect those
+        assert level - old_level <= 1 or level == 0
+
+        if level == 0:
+            parent = None
+
+        domain, created = get_or_create(InterproDomain, accession=interpro_id)
+        if created:
+            domain.description = description
+            new_domains.append(domain)
+
+        assert domain.description == description
+
+        domain.level = level
+        domain.parent = parent
+
+        old_level = level
+
+    db.session.add_all(new_domains)
+
+    parse_text_file('data/ParentChildTreeFile.txt', parser)
 
 
 def load_cancers():
