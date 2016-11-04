@@ -198,7 +198,14 @@ def load_domains_hierarchy():
             domain.description = description
             new_domains.append(domain)
 
-        assert domain.description == description
+        if domain.description != description:
+            print(
+                'InteproDomain descriptions differs between database and',
+                'hierarchy file: "{0}" vs "{1}" for: {2}'.format(
+                    domain.description,
+                    description,
+                    interpro_id
+                ))
 
         domain.level = level
         domain.parent = parent

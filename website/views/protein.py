@@ -11,6 +11,7 @@ from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack
 from website.helpers.tracks import SequenceTrack
 from website.helpers.tracks import MutationsTrack
+from website.helpers.tracks import DomainsTrack
 from website.helpers.filters import FilterManager
 from website.views._global_filters import common_filters
 from website.views._global_filters import common_widgets
@@ -54,18 +55,7 @@ class ProteinView(FlaskView):
             PositionTrack(protein.length, 25),
             SequenceTrack(protein),
             Track('disorder', disorder),
-            Track(
-                'domains',
-                [
-                    TrackElement(
-                        domain.start,
-                        domain.end - domain.start,
-                        domain.interpro.accession,
-                        domain.interpro.description
-                    )
-                    for domain in protein.domains
-                ]
-            ),
+            DomainsTrack(protein.domains),
             MutationsTrack(raw_mutations)
         ]
 

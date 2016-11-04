@@ -1,6 +1,8 @@
 """
 Group of classes useful to generate tracks like sequence, mutations etc.
 """
+from collections import defaultdict
+from collections import OrderedDict
 
 
 class Track(object):
@@ -122,6 +124,50 @@ class SequenceTrack(Track):
         while elements[final_pos][1] > self.length - elements[final_pos][0]:
             elements[final_pos][1] = self.length - elements[final_pos][0]
             final_pos -= 1
+
+
+class DomainsTrack(Track):
+
+    def __init__(self, domains):
+
+        tracks = OrderedDict()
+        print(self.group_domains(domains))
+        for level, domains in self.group_domains(domains).items():
+            track = [
+                TrackElement(
+                    domain.start,
+                    domain.end - domain.start,
+                    domain.interpro.accession,
+                    domain.interpro.description
+                )
+                for domain in domains
+            ]
+            tracks[level] = track
+
+        levels = list(tracks.keys())
+
+        subtracks = [
+            Track(str(level), tracks[level])
+            for level in levels[1:]
+        ]
+
+        super().__init__('domains', tracks[levels[0]], subtracks)
+
+    def group_domains(self, domains):
+
+        grouped = defaultdict(list)
+        for domain in domains:
+            level = domain.interpro.level
+            if not level:
+                level = 0
+            grouped[level].append(domain)
+
+        grouped_and_sorted = OrderedDict()
+        levels = list(grouped.keys())
+        for level in sorted(levels):
+            grouped_and_sorted[level] = grouped[level]
+
+        return grouped_and_sorted
 
 
 class MutationsTrack(Track):
