@@ -98,22 +98,25 @@ def parse_vcf(vcf_file, results, without_mutations, badly_formatted):
 
         alts = alts.split(',')
         for alt in alts:
+
             items = get_genomic_muts(chrom, pos, ref, alt)
 
             chrom = 'chr' + chrom
-            query += ' '.join((chrom, pos, ref, alt)) + '\n'
+            parsed_line = ' '.join((chrom, pos, ref, alt)) + '\n'
 
             if items:
                 if len(alts) > 1:
-                    line += ' (' + alt + ')'
+                    parsed_line += ' (' + alt + ')'
                 results.append(
                     {
-                        'user_input': line,
+                        'user_input': parsed_line,
                         'results': items
                     }
                 )
             else:
-                without_mutations.append(line)
+                without_mutations.append(parsed_line)
+
+            query += parsed_line
     return query
 
 
@@ -121,7 +124,7 @@ def parse_text(textarea_query, results, without_mutations, badly_formatted):
     for line in textarea_query.split('\n'):
         data = line.split()
         if len(data) == 4:
-            chrom, pos, ref, alt = [x.lower() for x in data]
+            chrom, pos, ref, alt = data
             chrom = chrom[3:]
 
             items = get_genomic_muts(chrom, pos, ref, alt)
@@ -146,7 +149,7 @@ def parse_text(textarea_query, results, without_mutations, badly_formatted):
 
 def search_mutations(vcf_file, textarea_query):
     # note: entries from both file and textarea will be merged
-
+    # TODO: we should prevent repeatitions (or count them)
     query = ''
 
     results = []

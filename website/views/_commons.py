@@ -9,6 +9,8 @@ from operator import attrgetter
 
 
 def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
+    dna_ref = dna_ref.lower()
+    dna_alt = dna_alt.lower()
     snv = make_snv_key(chrom, dna_pos, dna_ref, dna_alt)
 
     items = [
