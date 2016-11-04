@@ -62,8 +62,8 @@
         </td>
         <td>
             {% if result.mutation.is_confirmed %}
-            {# TODO: chose correct dataset to show #}
-            <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq) }}#{{ result.pos }}{{ result.alt }}">
+            {% set some_source = result.mutation.sources[0] %}
+            <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq, filters='Mutation.sources:in:' + some_source) }}#{{ result.pos }}{{ result.alt }}">
               show mutation details →
             </a>
             {% else %}
