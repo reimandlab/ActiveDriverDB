@@ -75,15 +75,27 @@ def search_proteins(phase, limit=False):
     )
 
 
-def parse_vcf(vcf_file, results, without_mutations):
+def parse_vcf(vcf_file, results, without_mutations, badly_formatted):
 
     query = ''
 
     for line in vcf_file:
+        line = line.decode('latin1')
         if line.startswith('#'):
             continue
         data = line.split()
-        chrom, pos, var_id, ref, alts = data[:4]
+
+        if len(data) < 5:
+            if not line:    # if we reached end of the file
+                break
+            badly_formatted.append(line)
+            continue
+
+        chrom, pos, var_id, ref, alts = data[:5]
+
+        if chrom.isnumeric():
+            chrom = 'chr' + chrom
+
         alts = alts.split(',')
         for alt in alts:
             query += ' '.join((chrom, pos, ref, alt)) + '\n'
@@ -137,10 +149,12 @@ def search_mutations(vcf_file, textarea_query):
     results = []
     without_mutations = []
 
-    if vcf_file:
-        query += parse_vcf(vcf_file, results, without_mutations)
-
     badly_formatted = []
+
+    if vcf_file:
+        query += parse_vcf(
+            vcf_file, results, without_mutations, badly_formatted
+        )
 
     if textarea_query:
         query += textarea_query
@@ -178,7 +192,7 @@ class SearchView(FlaskView):
         elif target == 'mutations' and request.method == 'POST':
 
             textarea_query = request.form.get(target, False)
-            vcf_file = request.files.get('vcf_file', False)
+            vcf_file = request.files.get('vcf-file', False)
 
             results, without_mutations, badly_formatted, query = search_mutations(
                 vcf_file, textarea_query

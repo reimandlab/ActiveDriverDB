@@ -49,7 +49,11 @@
         <td>{{ result.ref }}</td>
         <td>{{ result.alt }}</td>
         <td>{{ result.pos }}</td>
-        <td>{{ result.mutation.is_ptm }}</td>
+        <td>{{ result.mutation.is_ptm }}
+        {#
+          This might take advantage of precomputed PTMs for genomic mutations
+          result.is_ptm if (result.is_ptm != None) else result.mutation.is_ptm
+        #}</td>
         <td class="{{ result.mutation.impact_on_ptm or '' }}">
             {{ result.mutation.impact_on_ptm or '' }}
             {% if result.mutation.impact_on_ptm == 'network-rewiring' %}
@@ -74,8 +78,11 @@
   {% if without_mutations %}
     <tr>
       <td colspan={{ columns_count }}>
-        {{ without_mutations | length }} {{ 'queries' if without_mutations | length > 1 else 'query' }} without mutations found in the database: {{ without_mutations | map('trim') | join(', ') }}.
-
+        {{ without_mutations | length }} {{ 'queries' if without_mutations | length > 1 else 'query' }} without mutations found in the database.
+        {% if without_mutations | length < 10 %}
+          Those are:
+          {{ without_mutations | map('trim') | join(', ') }}.
+        {% endif %}
         <p>Some protein mutations are not possible to be caused by a Single Nucleotide Variation. Those are currently not shown in the table above.</p>
 
         <p>This might also indicate that given reference allele is not corresponding to given position or that there is a shift by one in your numeration.</p>

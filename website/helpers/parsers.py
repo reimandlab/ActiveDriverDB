@@ -32,7 +32,7 @@ def read_from_gz_files(directory, pattern, skip_header=True):
                 next(f)
 
             for line in buffered_readlines(f, 10000):
-                yield line.decode("latin1")
+                yield line.decode('latin1')
 
 
 def buffered_readlines(file_handle, line_count=5000):
