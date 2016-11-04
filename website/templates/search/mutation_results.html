@@ -22,13 +22,14 @@
   {% for line in results %}
     <tbody>
     {% for result in line.results %}
+      {% set mutation = result.mutation %}
       <tr>
         {% if loop.first %}
           <td rowspan={{ loop.length }}>{{ line.user_input }}</td>
           {% if result.type == 'proteomic' %}
           {# If the query was about one specific protein, it won't change #}
           <td rowspan={{ loop.length }}>
-            <a href="{{ url_for('GeneView:show', gene_name=result.protein.gene.name)}} ">
+            <a href="{{ url_for('GeneView:show', gene_name=result.protein.gene.name)}}">
               {{ result.protein.gene.name }}
             </a>
           </td>
@@ -36,7 +37,7 @@
         {% endif %}
         {% if result.type != 'proteomic' %}
         <td>
-          <a href="{{ url_for('GeneView:show', gene_name=result.protein.gene.name)}} ">
+          <a href="{{ url_for('GeneView:show', gene_name=result.protein.gene.name)}}">
             {{ result.protein.gene.name }}
           </a>
         </td>
@@ -49,25 +50,26 @@
         <td>{{ result.ref }}</td>
         <td>{{ result.alt }}</td>
         <td>{{ result.pos }}</td>
-        <td>{{ result.mutation.is_ptm }}
+        <td>{{ mutation.is_ptm }}
         {#
           This might take advantage of precomputed PTMs for genomic mutations
-          result.is_ptm if (result.is_ptm != None) else result.mutation.is_ptm
+          result.is_ptm if (result.is_ptm != None) else mutation.is_ptm
         #}</td>
-        <td class="{{ result.mutation.impact_on_ptm or '' }}">
-            {{ result.mutation.impact_on_ptm or '' }}
-            {% if result.mutation.impact_on_ptm == 'network-rewiring' %}
-                - motif {{ result.mutation.meta_MIMP.effect }}
+        <td class="{{ mutation.impact_on_ptm or '' }}">
+            {{ mutation.impact_on_ptm or '' }}
+            {% if mutation.impact_on_ptm == 'network-rewiring' %}
+                - motif {{ mutation.meta_MIMP.effect }}
             {% endif %}
         </td>
         <td>
-            {% if result.mutation.is_confirmed %}
-            {% set some_source = result.mutation.sources[0] %}
-            <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq, filters='Mutation.sources:in:' + some_source) }}#{{ result.pos }}{{ result.alt }}">
-              show mutation details →
-            </a>
+            {% if mutation.is_confirmed %}
+              {% for source in mutation.sources %}
+                <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq, filters='Mutation.sources:in:' + source) }}#{{ result.pos }}{{ result.alt }}">
+                mutation details ({{ mutation.get_source_name(source) }}) →
+              </a><br>
+              {% endfor %}
             {% else %}
-              <span title="This mutation does not have any details associated with (in this database).">no details</span>
+              <span title="None of datasets in this database include this mutation.">no details</span>
             {% endif %}
         </td>
       </tr>
