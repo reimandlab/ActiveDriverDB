@@ -93,13 +93,16 @@ def parse_vcf(vcf_file, results, without_mutations, badly_formatted):
 
         chrom, pos, var_id, ref, alts = data[:5]
 
-        if chrom.isnumeric():
-            chrom = 'chr' + chrom
+        if chrom.startswith('chr'):
+            chrom = chrom[3:]
 
         alts = alts.split(',')
         for alt in alts:
-            query += ' '.join((chrom, pos, ref, alt)) + '\n'
             items = get_genomic_muts(chrom, pos, ref, alt)
+
+            chrom = 'chr' + chrom
+            query += ' '.join((chrom, pos, ref, alt)) + '\n'
+
             if items:
                 if len(alts) > 1:
                     line += ' (' + alt + ')'
