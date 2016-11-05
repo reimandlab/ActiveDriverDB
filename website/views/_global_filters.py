@@ -102,11 +102,13 @@ def common_widgets(common_filters):
         ),
         FilterWidget(
             'PTM mutations', 'with_without',
-            filter=get_filter('Mutation.is_ptm')
+            filter=get_filter('Mutation.is_ptm'),
+            disabled_label='all mutations',
         ),
         FilterWidget(
             'Site type', 'select',
-            filter=get_filter('Site.type')
+            filter=get_filter('Site.type'),
+            disabled_label='all sites'
         ),
         FilterWidget(
             'Cancer', 'select_multiple',

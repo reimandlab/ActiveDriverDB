@@ -2,7 +2,8 @@
 class Widget:
 
     def __init__(
-        self, title, template, data, target_name, labels=None, value=None
+        self, title, template, data, target_name,
+        labels=None, disabled_label=None, value=None
     ):
         self.title = title
         self.target_name = target_name
@@ -12,6 +13,7 @@ class Widget:
         # (some widgets does not accept or does not require labels) (?TODO)
         self._value = value
         self.labels = labels if labels else data
+        self.disabled_label = disabled_label or 'disabled'
 
     @property
     def items(self):
@@ -38,13 +40,15 @@ class Widget:
 class FilterWidget(Widget):
 
     def __init__(
-        self, title, template, filter, labels=None,
+        self, title, template, filter, labels=None, disabled_label=None,
         associated_comparator_widget=None
     ):
         self.filter = filter
         data = filter.allowed_values
         target_name = 'filter[' + filter.id + ']'
-        super().__init__(title, template, data, target_name, labels)
+        super().__init__(
+            title, template, data, target_name, labels, disabled_label
+        )
         self.comparator_widget = associated_comparator_widget
 
     @property
