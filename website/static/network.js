@@ -419,24 +419,19 @@ var Network = (function ()
                     // move node back to the orbit
                     node.exposed = false
                     node.link_distance = config.default_link_distance
-                    focusOn(
-                        central_node,
-                        orbits.getMaximalRadius(),
-                        500
-                    )
+                    publicSpace.zoom_fit()
                 }
                 else
                 {
                     // let's expose the node
                     node.exposed = true
-                    var shift = orbits.getMaximalRadius() * 3
+                    var shift = get_max_radius() * 3
                     node.x = central_node.x + shift
                     node.y = central_node.y
                     node.link_distance = shift
                     focusOn(
-                        {x: central_node.x + shift/2 , y: central_node.y},
-                        shift,
-                        500
+                        {x: central_node.x + shift / 2 , y: central_node.y},
+                        shift / 2
                     )
                 }
                 force.start()
@@ -611,6 +606,14 @@ var Network = (function ()
             .range(range)
     }
 
+
+    function get_max_radius()
+    {
+        var radius = orbits.getMaximalRadius()
+        if(config.show_sites)
+            radius += config.default_link_distance
+        return radius
+    }
 
     var publicSpace = {
         init: function(user_config)
@@ -846,9 +849,7 @@ var Network = (function ()
             set_zoom(zoom.scale() / 1.25)
         },
         zoom_fit: function(animation_speed){
-            var radius = orbits.getMaximalRadius()
-            if(config.show_sites)
-                radius += config.default_link_distance
+            var radius = get_max_radius()
             focusOn(central_node, radius, animation_speed)
         }
     }
