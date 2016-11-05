@@ -414,10 +414,31 @@ var Network = (function ()
             }
             else if(node.type === types.site)
             {
-                var shift = orbits.getMaximalRadius() * 3
-                node.x = central_node.x + shift
-                node.y = central_node.y
-                node.link_distance = shift
+                if(node.exposed)
+                {
+                    // move node back to the orbit
+                    node.exposed = false
+                    node.link_distance = config.default_link_distance
+                    focusOn(
+                        central_node,
+                        orbits.getMaximalRadius(),
+                        500
+                    )
+                }
+                else
+                {
+                    // let's expose the node
+                    node.exposed = true
+                    var shift = orbits.getMaximalRadius() * 3
+                    node.x = central_node.x + shift
+                    node.y = central_node.y
+                    node.link_distance = shift
+                    focusOn(
+                        {x: central_node.x + shift/2 , y: central_node.y},
+                        shift,
+                        500
+                    )
+                }
                 force.start()
             }
         }
