@@ -65,14 +65,15 @@ class Importer(MutationImporter):
                 ] or [0]
             )
 
+            at_least_one_significant_sub_entry = False
+
             for i in range(sub_entries_cnt):
 
                 try:
                     if names:
-                        if names[i] == 'not_specified':
-                            names[i] = None
-                        else:
+                        if names[i] not in ('not_specified', 'not provided'):
                             names[i] = self._beautify_disease_name(names[i])
+                            at_least_one_significant_sub_entry = True
                     if statuses and statuses[i] == 'no_criteria':
                         statuses[i] = None
                 except IndexError:
@@ -81,6 +82,11 @@ class Importer(MutationImporter):
                     return False
 
             values = list(clinvar_entry.values())
+
+            # following 2 lines are result of issue #47 - we don't import those
+            # clinvar mutations that do not have any diseases specified:
+            if not at_least_one_significant_sub_entry:
+                return
 
             for mutation_id in self.preparse_mutations(line):
 

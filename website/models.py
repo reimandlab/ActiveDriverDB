@@ -890,15 +890,8 @@ class InheritedMutation(MutationDetails, BioModel):
         uselist=True
     )
 
-    @cached_property
-    def informative_clin_data(self):
-        return [
-            entry for entry in self.clin_data
-            if entry.disease_name not in (None, 'not provided')
-        ]
-
     def get_value(self, filter=lambda x: x):
-        return len(filter(self.informative_clin_data))
+        return len(self.clin_data)
 
     def to_json(self, filter=lambda x: x):
         return {
@@ -908,7 +901,7 @@ class InheritedMutation(MutationDetails, BioModel):
             'Is in PubMed Central': bool(self.is_in_pubmed_central),
             'Clinical': [
                 d.to_json()
-                for d in self.informative_clin_data
+                for d in self.clin_data
             ]
         }
 
@@ -916,7 +909,7 @@ class InheritedMutation(MutationDetails, BioModel):
     def summary(self):
         return [
             d.disease_name
-            for d in self.informative_clin_data
+            for d in self.clin_data
         ]
 
 
