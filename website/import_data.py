@@ -26,6 +26,8 @@ def import_data(restrict_mutations_to):
     load_domains(proteins)
     load_domains_hierarchy()
     load_cancers()
+    global kinase_protein_mappings
+    kinase_protein_mappings = load_kinase_mapings()
     kinases, groups = load_sites(proteins)
     kinases, groups = load_kinase_classification(proteins, kinases, groups)
     print('Adding kinases to the session...')
@@ -461,6 +463,25 @@ def get_preferred_gene_isoform(gene_name):
         return genes[gene_name].preferred_isoform
 
 
+def load_kinase_mapings():
+    """Read kinase -> protein name mappings into dict"""
+    kinase_protein_map = {}
+
+    def parser(line):
+        kinase_name, protein_name = line
+        kinase_protein_map[kinase_name] = protein_name
+
+    parse_tsv_file('data/curated_kinase_IDs.txt', parser)
+
+    return kinase_protein_map
+
+
+def get_protein_by_kinase_name(name):
+    """Return protein associated with given kinase name."""
+    name = kinase_protein_mappings.get(name, name)
+    return get_preferred_gene_isoform(name)
+
+
 def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
     site_kinases, site_groups = [], []
 
@@ -475,7 +496,7 @@ def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
             if name not in kinases:
                 kinases[name] = Kinase(
                     name=name,
-                    protein=get_preferred_gene_isoform(name)
+                    protein=get_protein_by_kinase_name(name)
                 )
             site_kinases.append(kinases[name])
 
