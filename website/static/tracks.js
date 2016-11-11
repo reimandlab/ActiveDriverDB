@@ -254,6 +254,11 @@ var Tracks = function ()
                     }
                 )
             })
+
+            $('.subtracks_collapsed').click(function(){
+                var track_name = $(this).data('track');
+                $('.' + track_name + ' .collapsible').toggleClass('hidden')
+            })
 		},
         setNeedlePlotInstance: function(instance)
         {

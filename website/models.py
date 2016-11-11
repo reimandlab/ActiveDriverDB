@@ -365,10 +365,6 @@ class Cancer(BioModel):
         )
 
 
-class InterproType(BioModel):
-    name = db.Column(db.Text, unique=True, index=True, nullable=False)
-
-
 class InterproDomain(BioModel):
     # Interpro ID
     accession = db.Column(db.Text)
@@ -380,8 +376,7 @@ class InterproDomain(BioModel):
     description = db.Column(db.Text)
 
     # is this a family? or domain? or maybe something else?
-    type = db.relationship('InterproType')
-    type_id = db.Column(db.Integer, db.ForeignKey('interprotype.id'))
+    type = db.Column(db.String(16))
 
     # How deep in the hierarchy this interpro domain is placed
     level = db.Column(db.Integer)

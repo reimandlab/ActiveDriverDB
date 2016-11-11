@@ -128,33 +128,52 @@ class SequenceTrack(Track):
 
 class DomainsTrack(Track):
 
+    collapsed = True
+
     def __init__(self, domains):
 
         tracks = OrderedDict()
 
-        for level, domains in self.group_domains(domains).items():
-            track = [
-                TrackElement(
-                    domain.start,
-                    domain.end - domain.start,
-                    domain.interpro.accession,
-                    domain.interpro.description
-                )
-                for domain in domains
-            ]
-            tracks[level] = track
+        grouped_domains = self.group_domains(domains)
+
+        consensus_track = []
+
+        for level, domains in grouped_domains.items():
+            tracks[level] = map(self.make_element, domains)
+
+            for domain in domains:
+                # if parent of element is already here, try to extend it
+                for consensus_domain in consensus_track:
+                    if domain.interpro.parent == consensus_domain.interpro:
+                        consensus_domain.start = min(
+                            consensus_domain.start, domain.start
+                        )
+                        consensus_domain.end = max(
+                            consensus_domain.end, domain.end
+                        )
+                        break
+                else:
+                    consensus_track.append(domain)
 
         levels = list(tracks.keys())
 
         subtracks = [
-            Track(str(level), tracks[level])
-            for level in levels[1:]
+            Track('', tracks[level])
+            for level in levels
         ]
 
         super().__init__(
             'domains',
-            tracks[levels[0]] if levels else [],
+            map(self.make_element, consensus_track),
             subtracks
+        )
+
+    def make_element(self, domain):
+        return TrackElement(
+            domain.start,
+            domain.end - domain.start,
+            domain.interpro.accession,
+            domain.interpro.description
         )
 
     def group_domains(self, domains):

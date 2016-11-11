@@ -1,5 +1,5 @@
-{% macro make_track(track) %}
-    <div class="track {{ track.class_name }}">
+{% macro make_track(track, collapsed=False) %}
+    <div class="track {{ track.class_name }} {{ 'hidden collapsible' if collapsed }}">
         <div class="elements">
         {%- if track.elements is string -%}
            {{ track.elements }}
@@ -16,20 +16,21 @@
         </div>
         <div class="subtracks">
         {% for subtrack in track.subtracks %}
-        {{ make_track(subtrack) }}
+          {{ make_track(subtrack, track.collapsed) }}
         {% endfor %}
         </div>
     </div>
 {% endmacro %}
 
-{% macro make_list(tracks) %}
+{% macro make_list(tracks, collapsed=False) %}
     <ul>
         {% for track in tracks %}
             {% if not track.inline %}
-            <li>
+            <li class="{{ 'hidden collapsible' if collapsed }} {{ track.class_name }} {{ 'subtracks_collapsed' if track.collapsed }}" data-track="{{ track.class_name }}">
                 {{ track.display_name | title | safe }}
+
                 {% if track.subtracks %}
-                    {{ make_list(track.subtracks) }}
+                    {{ make_list(track.subtracks, track.collapsed) }}
                 {% endif %}
             </li>
             {% endif %}

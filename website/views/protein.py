@@ -6,6 +6,7 @@ from flask import render_template as template
 from flask_classful import FlaskView
 from models import Protein
 from models import Mutation
+from models import Domain
 from website.helpers.tracks import Track
 from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack
@@ -16,6 +17,7 @@ from website.helpers.filters import FilterManager
 from website.views._global_filters import common_filters
 from website.views._global_filters import common_widgets
 from website.views._commons import represent_mutations
+from sqlalchemy import and_
 
 
 class ProteinView(FlaskView):
@@ -55,7 +57,14 @@ class ProteinView(FlaskView):
             PositionTrack(protein.length, 25),
             SequenceTrack(protein),
             Track('disorder', disorder),
-            DomainsTrack(protein.domains),
+            DomainsTrack(
+                Domain.query.filter(
+                    and_(
+                        Domain.protein == protein,
+                        Domain.interpro.has(type='Domain')
+                    )
+                )
+            ),
             MutationsTrack(raw_mutations)
         ]
 

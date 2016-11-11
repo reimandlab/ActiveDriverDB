@@ -216,6 +216,7 @@ def load_domains_hierarchy():
         domain.parent = parent
 
         old_level = level
+        parent = domain
 
     parse_text_file('data/ParentChildTreeFile.txt', parser)
 
@@ -224,7 +225,6 @@ def load_domains_hierarchy():
 
 
 def load_domains_types():
-    from models import InterproType
     import xml.etree.ElementTree as ElementTree
     import gzip
 
@@ -242,13 +242,7 @@ def load_domains_types():
             domain = domains[entry.get('id')]
         except KeyError:
             continue
-        entry_type, created = get_or_create(
-            InterproType,
-            name=entry.get('type')
-        )
-        domain.type = entry_type
-        if created:
-            db.session.add(entry_type)
+        domain.type = entry.get('type')
 
 
 def load_cancers():
