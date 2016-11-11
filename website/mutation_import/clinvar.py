@@ -4,6 +4,7 @@ from import_mutations import MutationImporter
 from import_mutations import make_metadata_ordered_dict
 from import_mutations import bulk_ORM_insert
 from helpers.parsers import parse_tsv_file
+from database import restart_autoincrement
 
 
 class Importer(MutationImporter):
@@ -135,5 +136,8 @@ class Importer(MutationImporter):
         ClinicalData.query.delete()
         # then mutations
         count = self.model.query.delete()
+
+        restart_autoincrement(ClinicalData)
+
         # count of removed mutations is more informative
         return count

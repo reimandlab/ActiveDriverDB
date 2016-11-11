@@ -1,5 +1,6 @@
 import os
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.sql.expression import func
 import bsddb3 as bsddb
 from flask_sqlalchemy import SQLAlchemy
@@ -28,14 +29,49 @@ def get_or_create(model, **kwargs):
 def get_highest_id(model):
     """Get the highest 'id' value from table corresponding to given model.
 
+    It tries to get autoincrement value (if the database-driver supports this)
+    or to manually find the highest id if autoincrement fetch fails. The first
+    case is better because we will get reliable value for empty tables!
+
     If you do not want to relay on database-side autoincrement it might be
-    usefull but not 100% reliable - you need to worry about concurency.
+    usefull but not 100% reliable - you still need to worry about concurency.
 
     For _some_ neat cases it's the same as `model.query.count()` but if at
-    least one record was manually removed the latter loses accuracy (until the
-    removed record was the last one).
+    least one record was manually removed the latter loses accuracy.
     """
-    return db.session.query(func.max(model.id)).scalar()
+    try:
+        # let's try to fetch the autoincrement value. Since not all databases
+        # will agree that we can do this and sometimes they might be fussy
+        # when it comes to syntax, we assume it might fail. Severly.
+        return get_autoincrement(model) - 1
+    except OperationalError:
+        # so if it has failed, let's try to find highest id the canonical way.
+        return db.session.query(func.max(model.id)).scalar()
+
+
+def restart_autoincrement(model):
+    """Restarts autoincrement counter"""
+    from app import app
+    engine = db.get_engine(app, model.__bind_key__)
+    db.session.close()
+    engine.execute(
+        'ALTER TABLE ' + model.__tablename__ + ' AUTO_INCREMENT = 0;'
+    )
+
+
+def get_autoincrement(model):
+    """Fetch autoincrement value from database.
+
+    It is database-engine dependent, might not work well with some drivers.
+    """
+    from app import app
+    engine = db.get_engine(app, model.__bind_key__)
+    return engine.execute(
+        'SELECT `AUTO_INCREMENT`' +
+        ' FROM INFORMATION_SCHEMA.TABLES' +
+        ' WHERE TABLE_SCHEMA = DATABASE()'
+        ' AND TABLE_NAME = \'%s\';' % model.__tablename__
+    ).scalar()
 
 
 class SetWithCallback(set):

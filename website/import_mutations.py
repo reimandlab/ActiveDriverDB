@@ -4,6 +4,7 @@ from collections import defaultdict
 from collections import OrderedDict
 from database import db
 from database import get_highest_id
+from database import restart_autoincrement
 from helpers.bioinf import decode_mutation
 from helpers.parsers import chunked_list
 from helpers.parsers import read_from_gz_files
@@ -12,6 +13,7 @@ from models import Protein
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import SQLAlchemyError
 from app import app
+
 
 def get_proteins():
     return {protein.refseq: protein for protein in Protein.query.all()}
@@ -176,6 +178,7 @@ class MutationImporter(ABC):
         print('Removing %s:' % self.model_name)
         try:
             count = self.raw_delete_all()
+            restart_autoincrement(self.model)
             db.session.commit()
         except SQLAlchemyError:
             db.session.rollback()
