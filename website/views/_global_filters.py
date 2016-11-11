@@ -91,7 +91,7 @@ def common_widgets(common_filters):
 
     return [
         FilterWidget(
-            'Source', 'select',
+            'Mutation dataset', 'select',
             filter=get_filter('Mutation.sources'),
             labels=[
                 'Cancer (TCGA)',
@@ -111,7 +111,7 @@ def common_widgets(common_filters):
             disabled_label='all sites'
         ),
         FilterWidget(
-            'Cancer', 'select_multiple',
+            'Cancer type', 'select_multiple',
             filter=get_filter('Mutation.cancer_code'),
             labels=[
                 cancer.name + ' (' + cancer.code + ')'
@@ -119,12 +119,12 @@ def common_widgets(common_filters):
             ]
         ),
         FilterWidget(
-            'Population', 'select_multiple',
+            'Ethnicity', 'select_multiple',
             filter=get_filter('Mutation.populations_1KG'),
             labels=populations_labels(The1000GenomesMutation.populations)
         ),
         FilterWidget(
-            'Population', 'select_multiple',
+            'Ethnicity', 'select_multiple',
             filter=get_filter('Mutation.populations_ESP6500'),
             labels=populations_labels(ExomeSequencingMutation.populations)
         ),
