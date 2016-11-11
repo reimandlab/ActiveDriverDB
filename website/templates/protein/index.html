@@ -63,7 +63,8 @@
     <div class="panel-heading">
         <div class="btn-group" role="group">
           <a href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string) }}" role="button" class="btn btn-default" title="Show network">
-              <span class="glyphicon glyphicon-globe" aria-hidden="true"></span> Show network
+              <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
+              Show interaction network view
           </a>
         </div>
         {% include 'export_buttons.html' %}

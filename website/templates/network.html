@@ -71,7 +71,8 @@
               </button>
             </div>
             <a href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string) }}"  role="button" class="btn btn-default" title="Show protein">
-                <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span> Show protein
+                <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
+                Show protein sequence view
             </a>
             {% include 'export_buttons.html' %}
         </div>
