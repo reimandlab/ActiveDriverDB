@@ -1,3 +1,4 @@
+from flask import request
 from flask_classful import FlaskView
 from flask import jsonify
 from models import Mutation
@@ -13,11 +14,15 @@ class ChromosomeView(FlaskView):
     def _make_filters(self):
         filters = common_filters()
         filter_manager = FilterManager(filters)
+        filter_manager.update_from_request(request)
         return filters, filter_manager
 
     def mutation(self, chrom, dna_pos, dna_ref, dna_alt):
 
         _, filter_manager = self._make_filters()
+
+        if chrom.startswith('chr'):
+            chrom = chrom[3:]
 
         items = get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt)
 

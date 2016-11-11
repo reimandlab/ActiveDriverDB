@@ -24,6 +24,7 @@ class ProteinView(FlaskView):
     def _make_filters(self):
         filters = common_filters()
         filter_manager = FilterManager(filters)
+        filter_manager.update_from_request(request)
         return filters, filter_manager
 
     def _make_widgets(self, filters):
@@ -41,7 +42,6 @@ class ProteinView(FlaskView):
         """
         filters, filter_manager = self._make_filters()
         filter_widgets = self._make_widgets(filters)
-        filter_manager.update_from_request(request)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 

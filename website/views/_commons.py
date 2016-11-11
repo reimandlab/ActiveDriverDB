@@ -27,7 +27,7 @@ def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
 
         mutation, created = get_or_create(
             Mutation,
-            protein_id=protein.id,
+            protein=protein,
             position=item['pos'],
             alt=item['alt']
         )
