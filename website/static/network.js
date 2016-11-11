@@ -831,7 +831,7 @@ var Network = (function ()
                     var count = 0
                     for(var i = 0; i < d.target.mimp_losses.length; i++)
                         count += (d.target.mimp_losses[i] == d.source.name)
-                    return count
+                    return count * 1.5
                 })
 
             for(var i = 0; i < kinase_groups.length; i++)
