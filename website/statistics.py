@@ -76,6 +76,7 @@ class Statistics:
         Mutation = models.Mutation
 
         source_relationship_map = {
+            'cancer': Mutation.meta_cancer,
             'clinvar': Mutation.meta_inherited,
             'esp': Mutation.meta_ESP6500,
             '1kg': Mutation.meta_1KG,
