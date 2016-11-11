@@ -139,12 +139,22 @@ class DomainsTrack(Track):
         consensus_track = []
 
         for level, domains in grouped_domains.items():
-            tracks[level] = map(self.make_element, domains)
+            tracks[level] = list(map(self.make_element, domains))
 
             for domain in domains:
                 # if parent of element is already here, try to extend it
                 for consensus_domain in consensus_track:
-                    if domain.interpro.parent == consensus_domain.interpro:
+                    consensus_interpro = consensus_domain.interpro
+
+                    checked_interpro = domain.interpro
+                    hit = False
+                    while checked_interpro.parent:
+                        if (consensus_interpro == checked_interpro.parent):
+                            hit = True
+                            break
+                        checked_interpro = checked_interpro.parent
+
+                    if hit:
                         consensus_domain.start = min(
                             consensus_domain.start, domain.start
                         )

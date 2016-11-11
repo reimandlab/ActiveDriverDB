@@ -393,6 +393,17 @@ class InterproDomain(BioModel):
     # Occurrences (annotations) of real biological domains
     occurrences = db.relationship('Domain', backref='interpro')
 
+    def __repr__(self):
+        return '<InterproDomain {0} of type {1} on {2} level "{3}" {4}>'.format(
+            self.accession,
+            self.type,
+            self.level,
+            self.short_description,
+            'with parent: ' + str(self.parent.accession)
+            if self.parent_id
+            else ''
+        )
+
 
 class Domain(BioModel):
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
