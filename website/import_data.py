@@ -25,6 +25,7 @@ def import_data(restrict_mutations_to):
     load_disorder(proteins)
     load_domains(proteins)
     load_domains_hierarchy()
+    load_domains_types()
     load_cancers()
     global kinase_protein_mappings
     kinase_protein_mappings = load_kinase_mapings()
@@ -171,6 +172,8 @@ def load_domains_hierarchy():
 
     from re import compile
 
+    print('Loading InterPro hierarchy:')
+
     expr = compile('^(?P<dashes>-*)(?P<interpro_id>\w*)::(?P<desc>.*?)::$')
 
     old_level = 0
@@ -218,6 +221,34 @@ def load_domains_hierarchy():
 
     db.session.add_all(new_domains)
     print('Domains\' hierarchy built,', len(new_domains), 'new domains added.')
+
+
+def load_domains_types():
+    from models import InterproType
+    import xml.etree.ElementTree as ElementTree
+    import gzip
+
+    print('Loading extended InterPro annotations:')
+
+    domains = {d.accession: d for d in InterproDomain.query.all()}
+
+    with gzip.open('data/interpro.xml.gz') as interpro_file:
+        tree = ElementTree.parse(interpro_file)
+
+    entries = tree.getroot().findall('interpro')
+
+    for entry in tqdm(entries):
+        try:
+            domain = domains[entry.get('id')]
+        except KeyError:
+            continue
+        entry_type, created = get_or_create(
+            InterproType,
+            name=entry.get('type')
+        )
+        domain.type = entry_type
+        if created:
+            db.session.add(entry_type)
 
 
 def load_cancers():

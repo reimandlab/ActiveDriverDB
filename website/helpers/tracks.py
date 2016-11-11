@@ -131,7 +131,7 @@ class DomainsTrack(Track):
     def __init__(self, domains):
 
         tracks = OrderedDict()
-        print(self.group_domains(domains))
+
         for level, domains in self.group_domains(domains).items():
             track = [
                 TrackElement(
