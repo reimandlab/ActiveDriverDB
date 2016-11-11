@@ -3,6 +3,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections import OrderedDict
 from database import db
+from database import get_highest_id
 from helpers.bioinf import decode_mutation
 from helpers.parsers import chunked_list
 from helpers.parsers import read_from_gz_files
@@ -11,7 +12,6 @@ from models import Protein
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import SQLAlchemyError
 from app import app
-
 
 def get_proteins():
     return {protein.refseq: protein for protein in Protein.query.all()}
@@ -81,7 +81,7 @@ def make_metadata_ordered_dict(keys, metadata, get_from=None):
 class BaseMutationsImporter:
 
     def get_highest_id(self):
-        return Mutation.query.count() + 1
+        return get_highest_id(Mutation)
 
     def flush(self, mutations):
         for chunk in chunked_list(mutations.items()):
@@ -195,9 +195,9 @@ class MutationImporter(ABC):
                 ).one()
                 mutation_id = mutation.id
             except NoResultFound:
+                self.highest_base_id += 1
                 mutation_id = self.highest_base_id
                 self.base_mutations[key] = (mutation_id, is_ptm)
-                self.highest_base_id += 1
         return mutation_id
 
     def preparse_mutations(self, line):

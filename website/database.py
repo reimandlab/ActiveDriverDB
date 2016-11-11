@@ -1,5 +1,6 @@
 import os
 from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.sql.expression import func
 import bsddb3 as bsddb
 from flask_sqlalchemy import SQLAlchemy
 
@@ -22,6 +23,19 @@ def get_or_create(model, **kwargs):
         return model.query.filter_by(**kwargs).one(), False
     except NoResultFound:
         return model(**kwargs), True
+
+
+def get_highest_id(model):
+    """Get the highest 'id' value from table corresponding to given model.
+
+    If you do not want to relay on database-side autoincrement it might be
+    usefull but not 100% reliable - you need to worry about concurency.
+
+    For _some_ neat cases it's the same as `model.query.count()` but if at
+    least one record was manually removed the latter loses accuracy (until the
+    removed record was the last one).
+    """
+    return db.session.query(func.max(model.id)).scalar()
 
 
 class SetWithCallback(set):
