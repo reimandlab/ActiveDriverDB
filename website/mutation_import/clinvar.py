@@ -5,6 +5,7 @@ from import_mutations import make_metadata_ordered_dict
 from import_mutations import bulk_ORM_insert
 from helpers.parsers import parse_tsv_file
 from database import restart_autoincrement
+from database import db
 
 
 class Importer(MutationImporter):
@@ -134,13 +135,18 @@ class Importer(MutationImporter):
             clinvar_data
         )
 
+    def restart_autoincrement(self):
+        restart_autoincrement(self.model)
+        db.session.commit()
+        restart_autoincrement(ClinicalData)
+        db.session.commit()
+
+
     def raw_delete_all(self):
         # first - remove clinical data
         ClinicalData.query.delete()
         # then mutations
         count = self.model.query.delete()
-
-        restart_autoincrement(ClinicalData)
 
         # count of removed mutations is more informative
         return count

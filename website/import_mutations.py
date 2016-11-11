@@ -173,17 +173,21 @@ class MutationImporter(ABC):
         count = self.model.query.delete()
         return count
 
+    def restart_autoincrement(self):
+        restart_autoincrement(self.model)
+        db.session.commit()
+
     def delete_all(self):
         """This function should stay untouched"""
         print('Removing %s:' % self.model_name)
         try:
             count = self.raw_delete_all()
-            restart_autoincrement(self.model)
             db.session.commit()
         except SQLAlchemyError:
             db.session.rollback()
             print('Removing failed')
             raise
+        self.restart_autoincrement()
         print('Removed %s entries of %s' % (count, self.model_name))
 
     def get_or_make_mutation(self, pos, protein_id, alt, is_ptm):

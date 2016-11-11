@@ -55,7 +55,7 @@ def restart_autoincrement(model):
     engine = db.get_engine(app, model.__bind_key__)
     db.session.close()
     engine.execute(
-        'ALTER TABLE ' + model.__tablename__ + ' AUTO_INCREMENT = 0;'
+        'ALTER TABLE ' + model.__tablename__ + ' AUTO_INCREMENT = 1;'
     )
 
 
