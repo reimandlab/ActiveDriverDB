@@ -75,7 +75,12 @@ def get_autoincrement(model):
 
 
 class SetWithCallback(set):
+    """A set implementation that trigggers callbacks on `add` or `update`.
 
+    It has an impotant use in BerkleyHashSet database implementation:
+    it allows a user to modify sets like native Python's structures while all
+    the changes are forwarded to the database, without addtional user's action.
+    """
     _modifying_methods = {'update', 'add'}
 
     def __init__(self, items, callback):
@@ -94,6 +99,10 @@ class SetWithCallback(set):
 
 
 class BerkleyHashSet:
+    """A hash-indexed database where values are equivalent to Python's sets.
+
+    It uses Berkley database for storage and accesses it through bsddb3 module.
+    """
 
     def __init__(self, name):
         self.name = name
@@ -145,7 +154,7 @@ class BerkleyHashSet:
         return len(self.db)
 
     def reset(self):
-        """Reset database completely by removal. Assuming file == name."""
+        """Reset database completely by its removal and recreation."""
         os.remove(self.get_path())
         self.open()
 
@@ -158,10 +167,10 @@ def make_snv_key(chrom, pos, ref, alt):
     return ':'.join((chrom, '%x' % int(pos.strip()))) + ref + alt
 
 
-def decode_csv(value):
-    value = value
-    strand, ref, alt, is_ptm = value[:4]
-    cdna_pos, exon, protein_id = value[4:].split(':')
+def decode_csv(encoded_data):
+    """Decode Coding Sequence Variant data from string made by encode_csv()."""
+    strand, ref, alt, is_ptm = encoded_data[:4]
+    cdna_pos, exon, protein_id = encoded_data[4:].split(':')
     cdna_pos = int(cdna_pos, base=16)
     return dict(zip(
         (
