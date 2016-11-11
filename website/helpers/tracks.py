@@ -151,7 +151,11 @@ class DomainsTrack(Track):
             for level in levels[1:]
         ]
 
-        super().__init__('domains', tracks[levels[0]], subtracks)
+        super().__init__(
+            'domains',
+            tracks[levels[0]] if levels else [],
+            subtracks
+        )
 
     def group_domains(self, domains):
 
