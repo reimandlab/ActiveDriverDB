@@ -103,11 +103,14 @@ class Importer(MutationImporter):
                 )
 
                 for i in range(sub_entries_cnt):
+                    # we don't won't _uninteresting_ data
+                    if names[i] in ('not_specified', 'not provided'):
+                        continue
                     clinvar_data.append(
                         (
                             len(clinvar_mutations),
                             significances[i] if significances else None,
-                            names[i] if names else None,
+                            names[i],
                             statuses[i] if statuses else None,
                         )
                     )
