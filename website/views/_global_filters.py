@@ -91,7 +91,7 @@ def common_widgets(common_filters):
 
     return [
         FilterWidget(
-            'Mutation dataset', 'select',
+            'Mutation dataset', 'radio',
             filter=get_filter('Mutation.sources'),
             labels=[
                 'Cancer (TCGA)',

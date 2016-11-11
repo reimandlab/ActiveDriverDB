@@ -18,7 +18,7 @@ var Widgets = (function ()
       for(var j = 0; j < widgets.length; j++)
       {
           var widget = widgets[j]
-          var select = $(widget).find('select').not('.multiselect')
+          var select = $(widget).find('select,input').not('.multiselect')
           select.change(update)
       }
 

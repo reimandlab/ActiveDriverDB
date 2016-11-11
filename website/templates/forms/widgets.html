@@ -40,6 +40,21 @@
                 <option value="{{ value }}" {{ 'selected' if widget.value == value }}>{{ label }}</option>
               {% endfor %}
             </select>
+        {% elif widget.template == 'radio' %}
+          <div class="form-control">
+              {% if widget.nullable %}
+                <label class="radio-inline">
+                  <input type="radio" name="{{ widget.target_name }}" value="None" {{ 'checked' if widget.value == None }}>
+                  {{ widget.disabled_label }}
+                </label>
+              {% endif %}
+              {% for value, label in widget.items %}
+                <label class="radio-inline">
+                  <input type="radio" name="{{ widget.target_name }}" value="{{ value }}" {{ 'checked' if widget.value == value }}>
+                  {{ label }}
+                </label>
+              {% endfor %}
+          </div>
         {% elif widget.template == 'select_multiple' %}
           <select
             name="{{ widget.target_name }}"
