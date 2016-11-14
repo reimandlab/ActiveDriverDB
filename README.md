@@ -31,11 +31,11 @@ For full deployment two MySQL databases will be needed: one for biological data 
 ```bash
 cp config_example.py config.py
 ```
-Carefully replace variables mentioned in comments in the file as some of those have critical importance on application's security. Check if you have properly entered database configuration running:
+Carefully replace variables mentioned in comments in the file as some of those have critical importance on application's security. To check if the database is configured properly, run the following command:
 ```bash
 python3 db_create.py
 ```
-A line with "Done, all tasks completed." at the very end indicates that everything is working properly.
+If you see (at the very end): `Done, all tasks completed.` it indicates that everything is working properly.
 
 
 ### Data import
