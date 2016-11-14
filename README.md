@@ -25,9 +25,22 @@ python3 -m pip install -r requirements.py
 
 As currently there is no new version of flask-sqlalchemy released since Oct 2015, but there are some crucial patches merged to the official repository, you will need to clone [flask_sqlalchemy directory](https://github.com/mitsuhiko/flask-sqlalchemy/tree/master/flask_sqlalchemy) into `website` directory.
 
-### Database creation & data imports
+### Database creation & configuration
 
-Before server start, database have to be created. Safest way to do this is to run:
+For full deployment two MySQL databases will be needed: one for biological data and one for CMS. You need to create them on your own, along with relevant database users and privilages. Afterwards, you can start writing your configuration by copying the examplar configuration file:
+```bash
+cp config_example.py config.py
+```
+Carefully replace variables mentioned in comments in the file as some of thoes have critical importance on aplication's security. Check if you have properly entered database configuration running:
+```bash
+python3 db_create.py
+```
+A line with "Done, all tasks completed." at the very end indicates that everything is working properly.
+
+
+### Data import
+
+Before server start, data have to be imported. Safest way to do this is to run:
 ```bash
 python3 db_create.py --import_mappings --reload_biological --recreate_cms
 ```
