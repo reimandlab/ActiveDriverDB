@@ -27,11 +27,11 @@ As currently there is no new version of flask-sqlalchemy released since Oct 2015
 
 ### Database creation & configuration
 
-For full deployment two MySQL databases will be needed: one for biological data and one for CMS. You need to create them on your own, along with relevant database users and privilages. Afterwards, you can start writing your configuration by copying the examplar configuration file:
+For full deployment two MySQL databases will be needed: one for biological data and one for CMS. You need to create them on your own, along with relevant database users and privileges. Afterwards, you can start writing your configuration by copying the exemplar configuration file:
 ```bash
 cp config_example.py config.py
 ```
-Carefully replace variables mentioned in comments in the file as some of thoes have critical importance on aplication's security. Check if you have properly entered database configuration running:
+Carefully replace variables mentioned in comments in the file as some of those have critical importance on application's security. Check if you have properly entered database configuration running:
 ```bash
 python3 db_create.py
 ```
@@ -141,7 +141,7 @@ exec python3 -OO "$@"
 ```
 
 
-### Using Content Managment System
+### Using Content Management System
 
 To login to root account (created with `db_create.py` script) visit `/login/` page on your server. It will allow you to create, edit and remove standalone pages.
 
