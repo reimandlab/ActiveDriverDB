@@ -106,15 +106,18 @@ class BerkleyHashSet:
 
     def __init__(self, name):
         self.name = name
+        self.path = self.create_path()
         self.open()
 
-    def get_path(self):
+    def create_path(self):
         """Returns path to a file containing the database.
 
-        The file is not guranted to exist.
+        The file is not guranted to exist, although the 'databases' directory
+        will be created (if it does not exist).
         """
         base_dir = os.path.abspath(os.path.dirname(__file__))
         databases_dir = os.path.join(base_dir, 'databases')
+        os.makedirs(databases_dir, exist_ok=True)
         return os.path.join(databases_dir, self.name)
 
     def open(self, mode='c'):
@@ -123,7 +126,7 @@ class BerkleyHashSet:
         By default it opens a database in read-write mode and in case
         if a database of given name does not exists it creates one.
         """
-        self.db = bsddb.hashopen(self.get_path(), mode)
+        self.db = bsddb.hashopen(self.path, mode)
 
     def __getitem__(self, key):
         """key: has to be str"""
@@ -155,7 +158,7 @@ class BerkleyHashSet:
 
     def reset(self):
         """Reset database completely by its removal and recreation."""
-        os.remove(self.get_path())
+        os.remove(self.path)
         self.open()
 
 
