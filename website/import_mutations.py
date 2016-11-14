@@ -16,7 +16,7 @@ from app import app
 
 
 def get_proteins():
-    """Fetch all proteins as refseq => protein object mapping from database."""
+    """Fetch all proteins from database as refseq => protein object mapping."""
     return {protein.refseq: protein for protein in Protein.query.all()}
 
 
@@ -370,7 +370,7 @@ def import_mappings(proteins):
             assert cdna_mut.startswith('c')
             cdna_ref, cdna_pos, cdna_alt = decode_mutation(cdna_mut)
 
-            strand = determine_strand(ref, cdna_ref, pos, cdna_pos)
+            strand = determine_strand(ref, cdna_ref, alt, cdna_alt)
 
             assert prot_mut.startswith('p')
             # we can check here if a given reference nuc is consistent
