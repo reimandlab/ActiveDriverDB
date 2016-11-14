@@ -102,7 +102,7 @@ if __name__ == '__main__':
             reset_mappings_db()
             print('Importing mappings')
             with import_data.app.app_context():
-                proteins = import_data.get_proteins()
+                proteins = import_mutations.get_proteins()
                 import_data.import_mappings(proteins)
 
         if args.recreate_cms:

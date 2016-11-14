@@ -16,6 +16,7 @@ from app import app
 
 
 def get_proteins():
+    """Fetch all proteins as refseq => protein object mapping from database."""
     return {protein.refseq: protein for protein in Protein.query.all()}
 
 
