@@ -31,10 +31,11 @@ $description-width: 90px
     ul
       list-style: none
       padding-left: 5px
-    
+
     li
       line-height: $track-height
-      padding-bottom: $track-margin
+      padding-bottom: $track-margin / 2
+      padding-top: $track-margin / 2
 
 .tracks
   font-size: 110%
@@ -53,6 +54,11 @@ $description-width: 90px
   .scalable
     transform-origin: left
 
+li.subtracks_collapsed
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg%20version%3D%221.1%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22%23999%22%20width%3D%2224px%22%20height%3D%2224px%22%3E%3Cpath%20d%3D%22M5%2C10l4%2C5l4-5%22%2F%3E%3C%2Fsvg%3E")!important
+  background-repeat: no-repeat
+  background-position: right -3px
+  cursor: pointer
 
 .subtracks
   .track
@@ -106,4 +112,3 @@ $description-width: 90px
   &.domains
     .elements div
       background-color: #a5e228
-
