@@ -50,13 +50,15 @@ albeit one might want to use Python's optimized mode (so import will be a lot fa
 python3 -OO db_create.py --import_mappings --reload_biological --recreate_cms
 ```
 
-The given arguments instruct program to create and import data for: DNA -> protein mappings, biological relational database and Content Management System. For further details use built-in help option:
+The given arguments instruct program to create and import data for: DNA -> protein mappings, biological relational database and Content Management System. During CMS creation you will be asked to set up login credentials for root user.
+
+**Warning:** after each migration affecting protein's identifiers it is crucial to reimport mappings: otherwise the mappings will point to wrong proteins!
+
+For further details use built-in help option:
 
 ```bash
-python3 -OO db_create.py -h
+python3 db_create.py -h
 ```
-
-During CMS creation you will be asked to set up login credentials for root user.
 
 ### Stylesheet creation
 Stylesheet files are important part of this visualisation framework. To compile them, you will need to have [`sass` gem installed](http://sass-lang.com/install).
