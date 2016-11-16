@@ -25,9 +25,22 @@ python3 -m pip install -r requirements.py
 
 As currently there is no new version of flask-sqlalchemy released since Oct 2015, but there are some crucial patches merged to the official repository, you will need to clone [flask_sqlalchemy directory](https://github.com/mitsuhiko/flask-sqlalchemy/tree/master/flask_sqlalchemy) into `website` directory.
 
-### Database creation & data imports
+### Database creation & configuration
 
-Before server start, database have to be created. Safest way to do this is to run:
+For full deployment two MySQL databases will be needed: one for biological data and one for CMS. You need to create them on your own, along with relevant database users and privileges. Afterwards, you can start writing your configuration by copying the exemplar configuration file:
+```bash
+cp config_example.py config.py
+```
+Carefully replace variables mentioned in comments in the file as some of those have critical importance on application's security. To check if the database is configured properly, run the following command:
+```bash
+python3 db_create.py
+```
+If you see (at the very end): `Done, all tasks completed.` it indicates that everything is working properly.
+
+
+### Data import
+
+Before server start, data have to be imported. Safest way to do this is to run:
 ```bash
 python3 db_create.py --import_mappings --reload_biological --recreate_cms
 ```
@@ -37,13 +50,15 @@ albeit one might want to use Python's optimized mode (so import will be a lot fa
 python3 -OO db_create.py --import_mappings --reload_biological --recreate_cms
 ```
 
-The given arguments instruct program to create and import data for: DNA -> protein mappings, biological relational database and Content Management System. For further details use built-in help option:
+The given arguments instruct program to create and import data for: DNA -> protein mappings, biological relational database and Content Management System. During CMS creation you will be asked to set up login credentials for root user.
+
+**Warning:** after each migration affecting protein's identifiers it is crucial to reimport mappings: otherwise the mappings will point to wrong proteins!
+
+For further details use built-in help option:
 
 ```bash
-python3 -OO db_create.py -h
+python3 db_create.py -h
 ```
-
-During CMS creation you will be asked to set up login credentials for root user.
 
 ### Stylesheet creation
 Stylesheet files are important part of this visualisation framework. To compile them, you will need to have [`sass` gem installed](http://sass-lang.com/install).
@@ -128,7 +143,7 @@ exec python3 -OO "$@"
 ```
 
 
-### Using Content Managment System
+### Using Content Management System
 
 To login to root account (created with `db_create.py` script) visit `/login/` page on your server. It will allow you to create, edit and remove standalone pages.
 
