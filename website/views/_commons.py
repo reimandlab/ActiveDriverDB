@@ -149,7 +149,7 @@ def represent_mutations(mutations, filter_manager):
         needle = {
             'pos': mutation.position,
             'value': field.get_value(filter_manager.apply),
-            'category': mutation.impact_on_ptm,
+            'category': mutation.impact_on_ptm(filter_manager.apply),
             'alt': mutation.alt,
             'ref': mutation.ref,
             'meta': metadata,

@@ -236,7 +236,7 @@ class Protein(BioModel):
         for mutation in self.mutations:
             key = (
                 mutation.position,
-                mutation.impact_on_ptm
+                mutation.impact_on_ptm()
             )
             mutations_grouped[key].append(mutation)
 
@@ -752,20 +752,20 @@ class Mutation(BioModel):
             return 'distal'
         return 'none'
 
-    @hybrid_property
-    def impact_on_ptm(self):
+    def impact_on_ptm(self, site_filter=lambda x: x):
         """How intense might be an impact of the mutation on a PTM site.
 
         It describes impact on the closest PTM site or on a site choosen by
         MIMP algorithm (so it applies only when 'network-rewiring' is returned)
         """
-        if self.is_ptm_direct:
+        sites = site_filter(Protein.query.get(self.protein_id).sites)
+        if self.is_close_to_some_site(0, 0, sites):
             return 'direct'
         if self.meta_MIMP:
             return 'network-rewiring'
-        if self.is_ptm_proximal:
+        if self.is_close_to_some_site(3, 3, sites):
             return 'proximal'
-        if self.is_ptm_distal:
+        if self.is_close_to_some_site(7, 7, sites):
             return 'distal'
         return 'none'
 
@@ -789,7 +789,7 @@ class Mutation(BioModel):
         return found_sites
 
     @hybrid_method
-    def is_close_to_some_site(self, left, right):
+    def is_close_to_some_site(self, left, right, sites=None):
         """Check if the mutation lies close to any of sites.
 
         Arguments define span around each site to be checked:
@@ -799,7 +799,8 @@ class Mutation(BioModel):
         Algoritm is based on bisection and an assumption,
         that sites are sorted by position in the database.
         """
-        sites = Protein.query.get(self.protein_id).sites
+        if not sites:
+            sites = Protein.query.get(self.protein_id).sites
         pos = self.position
         a = 0
         b = len(sites)
