@@ -1,2 +1,21 @@
 .widget-panel, .panel-heading, .breadcrumb, .controls, .header
   display: none
+
+.widget-panel.filters-panel
+  display: block
+
+  .form-control, button.multiselect
+    border: 0
+    background: none!important
+    text-align: left
+    min-width: 180px
+    padding-right: 0
+
+  .radio-inline
+    display: none
+    &.checked
+      display: block
+      min-width: 180px
+      text-align: left
+      input
+        display: none

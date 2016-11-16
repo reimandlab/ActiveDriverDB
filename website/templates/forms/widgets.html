@@ -43,13 +43,13 @@
         {% elif widget.template == 'radio' %}
           <div class="form-control">
               {% if widget.nullable %}
-                <label class="radio-inline">
+                <label class="radio-inline  {{ 'checked' if widget.value == None }}">
                   <input type="radio" name="{{ widget.target_name }}" value="None" {{ 'checked' if widget.value == None }}>
                   {{ widget.disabled_label }}
                 </label>
               {% endif %}
               {% for value, label in widget.items %}
-                <label class="radio-inline">
+                <label class="radio-inline {{ 'checked' if widget.value == value }}">
                   <input type="radio" name="{{ widget.target_name }}" value="{{ value }}" {{ 'checked' if widget.value == value }}>
                   {{ label }}
                 </label>
