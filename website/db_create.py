@@ -15,7 +15,9 @@ def reset_relational_db(**kwargs):
     name = kwargs.get('bind', 'default')
 
     print('Removing', name, 'database...')
+    db.session.commit()
     db.reflect()
+    db.session.commit()
     db.drop_all(**kwargs)
     print('Removing', name, 'database completed.')
 
