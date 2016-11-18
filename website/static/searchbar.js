@@ -122,7 +122,10 @@ var SearchBar = (function ()
 
             add_dropdown_navigation(results_div)
 
-            $(document.body).on('click', function(){ results_div.hide() })
+            $(document.body).on('click', function(){
+                results_div.hide()
+                indicator.hide()
+            })
         }
     }
 
