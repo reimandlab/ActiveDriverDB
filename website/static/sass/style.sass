@@ -72,3 +72,43 @@ $search-box-width: 225px
   position: absolute
   z-index: 10
   display: none
+
+@keyframes spin
+  from
+    transform: rotate(0deg)
+  to
+    transform: rotate(359deg)
+
+@-webkit-keyframes spin
+  from
+    -webkit-transform: rotate(0deg)
+  to
+    -webkit-transform: rotate(359deg)
+
+@-moz-keyframes spin
+  from
+    -moz-transform: rotate(0deg)
+  to
+    -moz-transform: rotate(359deg)
+
+
+#spinner
+  position: fixed
+  right: 0
+  bottom: 0
+  font-size: 35px
+  background-color: rgba(255, 255, 255, 0.8)
+  padding: 10px 7px
+  border-top-left-radius: 5px
+  z-index: 10
+
+.glyphicon-spin
+  transform-origin: 50% 49%
+  -webkit-transform-origin: 50% 49%
+  -ms-transform-origin: 50% 49%
+  $function: ease-in-out
+  $time: 3s
+  animation: spin $time infinite $function
+  -webkit-animation: spin $time infinite $function
+  -moz-animation: spin $time infinite $function
+  -ms-animation: spin $time infinite $function

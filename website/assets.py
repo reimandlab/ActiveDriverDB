@@ -4,7 +4,7 @@ from flask_assets import Bundle
 def css_bundle(name, *args):
     return Bundle(
         *args,
-        filters='cssutils',
+        # filters='cssutils',   # cssutils breaks keyframes :(
         output='min/' + name + '.css'
     )
 

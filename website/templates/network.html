@@ -95,12 +95,13 @@
         show_sites: {{ filters.get_value('JavaScript.show_sites') | lower }},
         clone_by_site: {{ filters.get_value('JavaScript.clone_by_site') | lower }},
         element: plot,
-        data: {{ data | safe }},
+        data: "{{ url_for('NetworkView:representation', refseq=protein.refseq, filters=filters.url_string) }}" {# {{ data | json | safe }} #},
         radius: 20,
         ratio: 0.5, /* remember to keep update with style of network */
         nodeURL: function(node){
             return '{{ url_for('ProteinView:show', refseq='') }}' + node.protein.refseq
-        }
+        },
+        onload: function(){ $('#spinner').hide() }
     })
 
     $('.zoom-in').on('click', Network.zoom_in)
@@ -114,5 +115,6 @@
         '{{ ASSET_URL }}'
     )
     {% endassets %}
+
     </script>
 {% endblock %}

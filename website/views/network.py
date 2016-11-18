@@ -2,6 +2,7 @@ import json
 from flask import request
 from flask import redirect
 from flask import url_for
+from flask import jsonify
 from flask import render_template as template
 from flask_classful import FlaskView
 from models import Protein
@@ -79,10 +80,10 @@ class NetworkView(FlaskView):
         filter_manager.update_from_request(request)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-        data = self._prepare_network_repr(protein, filter_manager)
+        #data = self._prepare_network_repr(protein, filter_manager)
 
         return template(
-            'network.html', protein=protein, data=data,
+            'network.html', protein=protein, #data=data,
             filters=filter_manager,
             option_widgets=option_widgets,
             filter_widgets=filter_widgets
@@ -205,11 +206,14 @@ class NetworkView(FlaskView):
                 for group in site.kinase_groups
             ]
         }
-        return json.dumps(data)
+        return data
 
-    def kinases(self, refseq):
+    def representation(self, refseq):
+
+        filters, filter_manager = self._make_filters()
+        filter_manager.update_from_request(request)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-        data = self._prepare_network_repr(protein)
+        data = self._prepare_network_repr(protein, filter_manager)
 
-        return data
+        return jsonify(data)

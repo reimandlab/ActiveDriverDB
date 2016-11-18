@@ -110,10 +110,12 @@ var Network = (function ()
         max_zoom: 2  // allow to zoom-in up to two times
     }
 
-    function configure(new_config)
+    function configure(new_config, callback)
     {
         // Automatical configuration update:
         update_object(config, new_config)
+
+        get_remote_if_needed(config, 'data', callback)
     }
 
     function getKinasesByName(names, kinases_set)
@@ -615,11 +617,8 @@ var Network = (function ()
         return radius
     }
 
-    var publicSpace = {
-        init: function(user_config)
-        {
-            configure(user_config)
-
+    function init()
+    {
             zoom = prepareZoom(config.min_zoom, config.max_zoom, zoomAndMove)
 
             svg = prepareSVG(config.element)
@@ -841,6 +840,22 @@ var Network = (function ()
             }
 
             $(window).on('resize', resize)
+
+            config.onload()
+    }
+
+    var publicSpace = {
+        init: function(user_config)
+        {
+            if(!user_config)
+            {
+                init()
+            }
+            else
+            {
+                configure(user_config, publicSpace.init)
+            }
+
         },
         zoom_in: function(){
             set_zoom(zoom.scale() * 1.25)

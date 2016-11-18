@@ -36,3 +36,21 @@ function checkEquality(obj1, obj2)
 
     return JSON.stringify(obj1) === JSON.stringify(obj2)
 }
+
+
+function get_remote_if_needed(new_config, name, callback)
+{
+    if(typeof new_config[name] === 'string')
+    {
+		$.ajax({
+			url: new_config[name],
+			type: 'GET',
+			async: true,
+			success: function(data)
+			{
+				new_config[name] = data
+                callback()
+			}
+		})
+    }
+}

@@ -26,6 +26,9 @@
   {% endblock %}
 </head>
 <body>
+  <div id="spinner">
+    <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>
+  </div>
   <div class="container">
 
     <nav class="navbar navbar-default">
@@ -110,6 +113,9 @@
 <script type="text/javascript" src="{{ ASSET_URL }}"></script>
 {% endassets %}
 {% block footer_js %}
+<script type="text/javascript">
+document.getElementById('spinner').style.display='none'
+</script>
 {% endblock %}
 </body>
 </html>

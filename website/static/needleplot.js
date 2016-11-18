@@ -93,22 +93,6 @@ var NeedlePlot = function ()
         }
     }
 
-	function get_remote_if_needed(new_config, name)
-	{
-        if(typeof new_config[name] === 'string')
-        {
-			$.ajax({
-				url: new_config[name],
-				type: 'GET',
-				async: false,
-				success: function(data)
-				{
-					new_config[name] = data
-				}
-			})
-        }
-	}
-
     function _adjustPlotDimensions()
     {
         if(!config.width && !config.height)
