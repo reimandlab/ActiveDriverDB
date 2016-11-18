@@ -167,7 +167,7 @@ def represent_mutations(mutations, filter_manager):
                 for site in closest_sites
                 for group in site.kinase_groups
             ],
-            'cnt_ptm': mutation.cnt_ptm_affected,
+            'cnt_ptm': mutation.cnt_ptm_affected(filter_manager.apply),
             'summary': field.summary,
         }
         response.append(needle)

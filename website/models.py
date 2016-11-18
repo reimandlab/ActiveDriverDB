@@ -682,13 +682,12 @@ class Mutation(BioModel):
         # otherwise it's a novel mutation - let's check proximity
         return self.is_close_to_some_site(7, 7)
 
-    @hybrid_property
-    def cnt_ptm_affected(self):
+    def cnt_ptm_affected(self, site_filter=lambda x: x):
         """How many PTM sites might be affected by this mutation,
 
         when taking into account -7 to +7 spans of each PTM site.
         """
-        sites = Protein.query.get(self.protein_id).sites
+        sites = site_filter(Protein.query.get(self.protein_id).sites)
         pos = self.position
         a = 0
         b = len(sites)
@@ -730,16 +729,6 @@ class Mutation(BioModel):
             pivot -= 1
 
         return cnt_affected
-
-    @cnt_ptm_affected.expression
-    def cnt_ptm_affected(self):
-        """SQL expression for cnt_ptm_affected"""
-        pos = self.position
-        count = db.session.query(func.count(Site.id)).\
-            filter_by(protein_id=self.protein_id).\
-            filter(Site.position.between(pos - 8, pos + 8)).scalar()
-
-        return count
 
     def impact_on_specific_ptm(self, site):
         if self.position == site.position:
