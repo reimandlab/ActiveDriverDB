@@ -116,22 +116,28 @@ External references:
             box: document.getElementById('tracks-box')
         })
         var max_zoom = tracks.adjustMaxZoom()
-        var mutations = {{ mutations | json | safe or '"' + url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.url_string) + '"' }}
-        var sites = {{ sites | json | safe or '"' + url_for('ProteinView:sites', refseq=protein.refseq, filters=filters.url_string) + '"' }}
+        var mutations = {{ mutations | json | safe }}
+        var sites = {{ sites | json | safe }}
+        {# An alternative form of getting data, not fully functional nor fast
+          var mutations = "{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.url_string) }}"
+          var sites = "{{ url_for('ProteinView:sites', refseq=protein.refseq, filters=filters.url_string) }}"
+        #}
         var plot = document.getElementById('plot_area')
         var params = {
             use_log: {{ log_scale | lower }},
             value_type: '{{ value_type }}',
             max_zoom: max_zoom,
             element: plot,
-            mutations: mutations,
-            sites: sites,
+            data: {
+              mutations: mutations,
+              sites: sites
+            },
             sequenceLength: {{ protein.sequence | length }},
             name: '{{ protein.gene.name }}',
             legends:
             {
-                x: null,
-                y: '{{ value_type }} of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
+              x: null,
+              y: '{{ value_type }} of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
             },
             zoom_callback: tracks.setZoom,
             position_callback: tracks.setAAPosition,

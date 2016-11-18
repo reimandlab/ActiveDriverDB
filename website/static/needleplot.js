@@ -74,8 +74,10 @@ var NeedlePlot = function ()
         y_scale: 'auto',
         sequenceLength: null,
         element: null,
-        mutations: null,
-        sites: null,
+        data: {
+            mutations: null,
+            sites: null
+        },
         legends: {x: 'Sequence', y: '# of mutations'},
         width: 600,
         height: null,
@@ -116,16 +118,10 @@ var NeedlePlot = function ()
 
     function configure(new_config)
     {
-		var allowed_remote_data = ['mutations', 'sites']
-
-		for(var i = 0; i < allowed_remote_data.length; i++)
-		{
-			var name = allowed_remote_data[i]
-			get_remote_if_needed(new_config, name)
-		}
-
         // Automatical configuration update:
         update_object(config, new_config)
+
+        get_remote_if_needed(config, 'data')
 
         // Manual configuration patching:
         _adjustPlotDimensions()
@@ -139,8 +135,8 @@ var NeedlePlot = function ()
             var accessor = function(mutation) {
                 return mutation.value
             }
-			config.y_scale_max = d3.max(config.mutations, accessor)
-			config.y_scale_min = d3.min(config.mutations, accessor)
+			config.y_scale_max = d3.max(config.data.mutations, accessor)
+			config.y_scale_min = d3.min(config.data.mutations, accessor)
 		}
     }
 
@@ -334,7 +330,7 @@ var NeedlePlot = function ()
 
         needles = vis.selectAll('.needle')
             .data(
-                config.mutations
+                config.data.mutations
                     .sort(function(a,b){ return b.value - a.value })
             )
             .enter()
@@ -371,7 +367,7 @@ var NeedlePlot = function ()
         })
 
         sites = vis.selectAll('.site')
-            .data(config.sites)
+            .data(config.data.sites)
             .enter()
             .append('g')
             .attr('class', function(d)
