@@ -682,8 +682,8 @@ class Mutation(BioModel):
         # otherwise it's a novel mutation - let's check proximity
         return self.is_close_to_some_site(7, 7)
 
-    def cnt_ptm_affected(self, site_filter=lambda x: x):
-        """How many PTM sites might be affected by this mutation,
+    def get_affected_ptm_sites(self, site_filter=lambda x: x):
+        """Get PTM sites that might be affected by this mutation,
 
         when taking into account -7 to +7 spans of each PTM site.
         """
@@ -691,8 +691,8 @@ class Mutation(BioModel):
         pos = self.position
         a = 0
         b = len(sites)
+        sites_affected = []
 
-        cnt_affected = 0
         hit = None
 
         while a != b:
@@ -700,35 +700,35 @@ class Mutation(BioModel):
             site_pos = sites[pivot].position
             if site_pos - 7 <= pos and pos <= site_pos + 7:
                 hit = pivot
-                cnt_affected += 1
+                sites_affected.append(sites[pivot])
                 break
             if pos > site_pos:
                 a = pivot + 1
             else:
                 b = pivot
         else:
-            return 0
+            return []
 
         def cond():
             try:
                 site_pos = sites[pivot].position
                 return site_pos - 7 <= pos and pos <= site_pos + 7
             except IndexError:
-                return False
+                return []
 
         # go to right from found site, check if there is more overlappig sites
         pivot = hit + 1
         while cond():
-            cnt_affected += 1
+            sites_affected.append(sites[pivot])
             pivot += 1
 
         # and then go to the left
         pivot = hit - 1
         while cond():
-            cnt_affected += 1
+            sites_affected.append(sites[pivot])
             pivot -= 1
 
-        return cnt_affected
+        return sites_affected
 
     def impact_on_specific_ptm(self, site):
         if self.position == site.position:
@@ -758,10 +758,10 @@ class Mutation(BioModel):
             return 'distal'
         return 'none'
 
-    def find_closest_sites(self, distance=7):
+    def find_closest_sites(self, distance=7, site_filter=lambda x: x):
         sites = {
             site.position: site
-            for site in Protein.query.get(self.protein_id).sites
+            for site in site_filter(Protein.query.get(self.protein_id).sites)
         }
         pos = self.position
 

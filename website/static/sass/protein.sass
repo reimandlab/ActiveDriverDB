@@ -78,7 +78,20 @@ rect, path
   ul.minor_mimp_kinases
     li
       display: inline-block
+
+  ul.minor_mimp_kinases, ul.kinases
     li::after
-      content: ','
+      content: ', '
     li:last-of-type::after
       content: ''
+
+  ul.kinases
+    padding-left: 1ch
+    &::before
+      content: '('
+    &::after
+      content: ')'
+    display: inline-block
+    li
+      padding: 0
+      display: inline

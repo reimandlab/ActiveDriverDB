@@ -1,3 +1,5 @@
+{% from 'macros.njk' import list_site_kinases %}
+
 Impact: {{ mutation.category }}<br>
 Number of affected sites: {{ mutation.cnt_ptm }}<br>
 
@@ -7,12 +9,13 @@ Number of affected sites: {{ mutation.cnt_ptm }}<br>
 {% endif %}
 
 {% if mutation.sites | length > 0 %}
-  Closest affected site{{ 's' if mutation.sites | length > 1 }}:
+  Affected site{{ 's' if mutation.sites | length > 1 }}:
   {% for site in mutation.sites %}
     <div class="sub-cell">
-      Position: {{ site.position }}<br>
-      Residue: {{ site.residue }}<br>
-      Type: {{ site.type }}
+      Position: {{ site.data.position }}<br>
+      Residue: {{ site.data.residue }}<br>
+      Type: {{ site.data.type | replace(',', ', ') }}<br>
+      Kinases: {{ list_site_kinases(site, '','-') }}
     </div>
   {% endfor %}
 {% endif %}

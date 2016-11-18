@@ -1,3 +1,20 @@
 {% macro represent_site(site) %}
-  {{ site.position }}{{ site.residue }} ({{ site.type | replace(',', ', ') }})
+  {{ site.data.position }}{{ site.data.residue }} ({{ site.data.type | replace(',', ', ') }})
+{% endmacro %}
+
+{% macro list_site_kinases(site, class_name, empty_indicator) %}
+  {% if (site.kinases | length) or (site.kinase_groups | length) %}
+    <ul class="{{ class_name }}">
+      {%- for kinase in site.kinases -%}
+      <li>
+      {%- if kinase.protein -%}
+          <a href="{{ kinase.protein.refseq }}">{{ kinase.name }}</a>
+      {%- else -%}
+          {{ kinase.name }}
+      {%- endif -%}
+      </li>
+    {%- endfor -%}{{ site.kinase_groups | join('<li>') }}</ul>
+  {% else %}
+    {{ empty_indicator }}
+  {% endif %}
 {% endmacro %}

@@ -144,7 +144,8 @@ def represent_mutations(mutations, filter_manager):
         if mimp:
             metadata['MIMP'] = mimp.to_json()
 
-        closest_sites = mutation.find_closest_sites()
+        # closest_sites = mutation.find_closest_sites(filter_manager.apply)
+        affected_sites = mutation.get_affected_ptm_sites(filter_manager.apply)
 
         needle = {
             'pos': mutation.position,
@@ -154,20 +155,20 @@ def represent_mutations(mutations, filter_manager):
             'ref': mutation.ref,
             'meta': metadata,
             'sites': [
-                site.to_json()
-                for site in closest_sites
+                {
+                    'data': site.to_json(),
+                    'kinases': [
+                        kinase.to_json()
+                        for kinase in site.kinases
+                    ],
+                    'kinase_groups': [
+                        group.name
+                        for group in site.kinase_groups
+                    ]
+                }
+                for site in affected_sites
             ],
-            'kinases': [
-                kinase.to_json()
-                for site in closest_sites
-                for kinase in site.kinases
-            ],
-            'kinase_groups': [
-                group.name
-                for site in closest_sites
-                for group in site.kinase_groups
-            ],
-            'cnt_ptm': mutation.cnt_ptm_affected(filter_manager.apply),
+            'cnt_ptm': len(affected_sites),
             'summary': field.summary,
         }
         response.append(needle)

@@ -37,7 +37,7 @@
             <th data-sortable=true
                 title="Number of adjacent PTMs affected">PTMs affected</th>
             <th data-sortable=true
-                data-visible=false>Closest affected site(s)</th>
+                data-visible=false>Affected site(s)</th>
             <th data-sortable=true
                 data-visible=true>Kinases</th>
             {% if mutations %}
@@ -77,23 +77,25 @@
             <td>{{ mutation.cnt_ptm }}</td>
             <td>
                 {% for site in mutation.sites %}
-                    {{ represent_dict(site, class='sub-cell') }}
+                    {{ represent_dict(site.data, class='sub-cell') }}
                 {% endfor %}
             </td>
             <td>
                 {% set comma = joiner(',') %}
-                {% for group in mutation.kinase_groups %}
-                    {{ comma() }} {{ group }} group
-                {%- endfor %}
-                {%- for kinase in mutation.kinases -%}
-                    {{ comma() }}
-                    {% if kinase.protein -%}
-                        <a href="{{ url_for('ProteinView:show', refseq=kinase.protein.refseq) }}">{{ kinase.name }}</a>
-                    {%- else -%}
-                        {{ kinase.name }}
-                    {%- endif -%}
+                {% for site in mutation.sites %}
+                  {% for group in site.kinase_groups %}
+                      {{ comma() }} {{ group }} group
+                  {%- endfor %}
+                  {%- for kinase in site.kinases -%}
+                      {{ comma() }}
+                      {% if kinase.protein -%}
+                          <a href="{{ url_for('ProteinView:show', refseq=kinase.protein.refseq) }}">{{ kinase.name }}</a>
+                      {%- else -%}
+                          {{ kinase.name }}
+                      {%- endif -%}
+                  {%- endfor -%}
                 {%- endfor -%}
-            </td>
+              </td>
             {% for column in metadata.values() %}
                 <td>
                     {% if column is sequence and column is not string %}
