@@ -638,7 +638,7 @@ class Mutation(BioModel):
             if key.startswith('meta_') and value
         }
 
-    @property
+    @hybrid_property
     def is_ptm(self):
         """Mutation is PTM related if it may affect PTM site.
 
