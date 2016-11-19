@@ -55,9 +55,10 @@
           This might take advantage of precomputed PTMs for genomic mutations
           result.is_ptm if (result.is_ptm != None) else mutation.is_ptm
         #}</td>
-        <td class="{{ mutation.impact_on_ptm or '' }}">
-            {{ mutation.impact_on_ptm or '' }}
-            {% if mutation.impact_on_ptm == 'network-rewiring' %}
+        {% set impact = mutation.impact_on_ptm() %}
+        <td class="{{ impact or '' }}">
+            {{ impact or '' }}
+            {% if impact == 'network-rewiring' %}
                 - motif {{ mutation.meta_MIMP.effect }}
             {% endif %}
         </td>
