@@ -1,5 +1,5 @@
-{% macro represent_site(site) %}
-  {{ site.data.position }}{{ site.data.residue }} ({{ site.data.type | replace(',', ', ') }})
+{% macro represent_site(site_data) %}
+  {{ site_data.position }}{{ site_data.residue }} ({{ site_data.type | replace(',', ', ') }})
 {% endmacro %}
 
 {% macro list_site_kinases(site, class_name, empty_indicator) %}
