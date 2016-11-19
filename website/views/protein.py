@@ -16,8 +16,47 @@ from website.helpers.tracks import DomainsTrack
 from website.helpers.filters import FilterManager
 from website.views._global_filters import common_filters
 from website.views._global_filters import common_widgets
-from website.views._commons import represent_mutations
+from website.views._commons import represent_mutation
+from website.views._commons import get_source_field
+from operator import attrgetter
 from sqlalchemy import and_
+
+
+def represent_mutations(mutations, filter_manager):
+
+    source_name = filter_manager.get_value('Mutation.sources')
+
+    source_field_name = get_source_field(source_name)
+    get_source_data = attrgetter(source_field_name)
+
+    get_mimp_data = attrgetter('meta_MIMP')
+
+    data_filter = filter_manager.apply
+
+    response = []
+
+    for mutation in mutations:
+
+        needle = represent_mutation(mutation, data_filter)
+
+        field = get_source_data(mutation)
+        metadata = {
+            source_name: field.to_json(data_filter)
+        }
+
+        mimp = get_mimp_data(mutation)
+
+        if mimp:
+            metadata['MIMP'] = mimp.to_json()
+
+        needle['summary'] = field.summary
+        needle['value'] = field.get_value(data_filter)
+        needle['meta'] = metadata
+        needle['category'] = mutation.impact_on_ptm(data_filter)
+
+        response.append(needle)
+
+    return response
 
 
 class ProteinView(FlaskView):

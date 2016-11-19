@@ -122,55 +122,27 @@ def get_source_field(source):
     return source_field_name
 
 
-def represent_mutations(mutations, filter_manager):
+def represent_mutation(mutation, data_filter):
 
-    source = filter_manager.get_value('Mutation.sources')
-    source_field_name = get_source_field(source)
+    affected_sites = mutation.get_affected_ptm_sites(data_filter)
 
-    get_source_data = attrgetter(source_field_name)
-    get_mimp_data = attrgetter('meta_MIMP')
-
-    response = []
-
-    for mutation in mutations:
-
-        field = get_source_data(mutation)
-        mimp = get_mimp_data(mutation)
-
-        metadata = {
-            source: field.to_json(filter_manager.apply)
-        }
-
-        if mimp:
-            metadata['MIMP'] = mimp.to_json()
-
-        # closest_sites = mutation.find_closest_sites(filter_manager.apply)
-        affected_sites = mutation.get_affected_ptm_sites(filter_manager.apply)
-
-        needle = {
-            'pos': mutation.position,
-            'value': field.get_value(filter_manager.apply),
-            'category': mutation.impact_on_ptm(filter_manager.apply),
-            'alt': mutation.alt,
-            'ref': mutation.ref,
-            'meta': metadata,
-            'sites': [
-                {
-                    'data': site.to_json(),
-                    'kinases': [
-                        kinase.to_json()
-                        for kinase in site.kinases
-                    ],
-                    'kinase_groups': [
-                        group.name
-                        for group in site.kinase_groups
-                    ]
-                }
-                for site in affected_sites
-            ],
-            'cnt_ptm': len(affected_sites),
-            'summary': field.summary,
-        }
-        response.append(needle)
-
-    return response
+    return {
+        'pos': mutation.position,
+        'alt': mutation.alt,
+        'ref': mutation.ref,
+        'sites': [
+            {
+                'data': site.to_json(),
+                'kinases': [
+                    kinase.to_json()
+                    for kinase in site.kinases
+                ],
+                'kinase_groups': [
+                    group.name
+                    for group in site.kinase_groups
+                ]
+            }
+            for site in affected_sites
+        ],
+        'cnt_ptm': len(affected_sites),
+    }

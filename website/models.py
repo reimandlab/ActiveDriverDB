@@ -594,6 +594,19 @@ class Mutation(BioModel):
         )
 
     @hybrid_property
+    def sources_dict(self):
+        """Return list of names of sources which mention this mutation
+
+        Names of sources are detemined by source_fields class property.
+        """
+        sources = {}
+        for source_name, associated_field in self.source_fields.items():
+            field_value = getattr(self, associated_field)
+            if field_value:
+                sources[source_name] = field_value
+        return sources
+
+    @hybrid_property
     def sources(self):
         """Return list of names of sources which mention this mutation
 

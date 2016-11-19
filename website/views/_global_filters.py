@@ -34,12 +34,12 @@ class SourceDependentFilter(Filter):
         return self.manager.get_value('Mutation.sources') == self.source
 
 
-def common_filters():
+def common_filters(default_source='TCGA', source_nullable=False):
     return [
         Filter(
             Mutation, 'sources', comparators=['in'],
             choices=list(Mutation.source_fields.keys()),
-            default='TCGA', nullable=False,
+            default=default_source, nullable=source_nullable,
         ),
         Filter(
             Mutation, 'is_ptm', comparators=['eq']
