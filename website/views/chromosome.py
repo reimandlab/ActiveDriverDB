@@ -48,7 +48,7 @@ def represent_mutations(mutations, filter_manager):
         else:
             metadata = {
                 name: field.to_json(data_filter)
-                for name, field in mutation.sources_dict
+                for name, field in mutation.sources_dict.items()
             }
 
         mimp = get_mimp_data(mutation)
