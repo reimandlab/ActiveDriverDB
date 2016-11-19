@@ -40,6 +40,27 @@ If you see (at the very end): `Done, all tasks completed.` it indicates that eve
 
 ### Data import
 
+Some data files can be downloaded easily with `./download.sh` script from `website/data` directory. Other needs to be manualy prepared and placed in following locations:
+
+```
+website/data/
+--biomart_protein_domains_20072016.txt
+--cancer_types.txt
+--all_RefGene_proteins.fa
+--protein_data.tsv
+--all_RefGene_disorder.fa
+--curated_kinase_IDs.txt
+--site_table.tsv
+--regphos_kinome_scraped_clean.txt
+--mutations/
+----all_mimp_annotations.tsv
+----clinvar_muts_annotated.txt
+----ESP6500_muts_annotated.txt
+----TCGA_muts_annotated.txt
+----G1000/
+------G1000_chr*.hg19_multianno_nsSNV.txt.gz (about 24 files)
+```
+
 Before server start, data have to be imported. Safest way to do this is to run:
 ```bash
 python3 db_create.py --import_mappings --reload_biological --recreate_cms
