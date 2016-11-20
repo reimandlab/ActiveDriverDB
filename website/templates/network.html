@@ -51,9 +51,11 @@
         {% include 'forms/filters_box.html' %}
     {% endwith %}
 
-    {% with option_widgets=option_widgets %}
-        {% include 'forms/options.html' %}
-    {% endwith %}
+    <div class="collapse-me" tabindex="-1">
+      {% with option_widgets=option_widgets %}
+          {% include 'forms/options.html' %}
+      {% endwith %}
+    </div>
 
     <div class="panel panel-default network">
         <div class="panel-heading">
@@ -111,6 +113,14 @@
     $('.zoom-in').on('click', Network.zoom_in)
     $('.zoom-out').on('click', Network.zoom_out)
     $('.zoom-fit').on('click', function(){Network.zoom_fit()})
+
+    var collapse_it = $('.collapse-me')
+    collapse_it.find('.panel-heading').on('click', function()
+      {
+        $(this).closest('.panel').find('.panel-body').toggleClass('hidden')
+      }
+    )
+    collapse_it.find('.panel-body').addClass('hidden')
 
     {% assets "css_network" %}
     Export.init(
