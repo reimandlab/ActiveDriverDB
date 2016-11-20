@@ -52,15 +52,15 @@
 </ol>
 
 <form method="get" id="widget-form">
-    {% with filter_widgets=filter_widgets %}
-        {% include 'forms/filters.html' %}
-    {% endwith %}
+  <input type="hidden" name="fallback" value="True">
+  {% with filter_widgets=box_filter_widgets %}
+      {% include 'forms/filters_box.html' %}
+  {% endwith %}
 
-    <input type="hidden" name="fallback" value="True">
-</form>
 
 <div class="panel panel-default">
     <div class="panel-heading">
+      <div class="heading-left">
         <div class="btn-group" role="group">
           <a href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string) }}" role="button" class="btn btn-default" title="Show network">
               <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
@@ -68,6 +68,12 @@
           </a>
         </div>
         {% include 'export_buttons.html' %}
+      </div>
+      <div class="heading-right">
+        {% with filter_widgets=bar_filter_widgets %}
+            {% include 'forms/filters_bar.html' %}
+        {% endwith %}
+      </div>
     </div>
   <div class="panel-body">
     <div id="plot_area"></div>
@@ -78,6 +84,8 @@
     </div>
   </div>
 </div>
+
+</form>
 
 Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
 {% set other_isoforms_count = protein.gene.isoforms | length - 1 %}

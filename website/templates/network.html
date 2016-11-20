@@ -45,20 +45,23 @@
         <li class="active">{{ protein.refseq }}</li>
     </ol>
 
-    <form method="get" id="widget-form">
-        {% with filter_widgets=filter_widgets %}
-            {% include 'forms/filters.html' %}
-        {% endwith %}
+  <form method="get" id="widget-form">
+    <input type="hidden" name="fallback" value="True">
+    {% with filter_widgets=box_filter_widgets %}
+        {% include 'forms/filters_box.html' %}
+    {% endwith %}
 
-        {% with option_widgets=option_widgets %}
-            {% include 'forms/options.html' %}
-        {% endwith %}
-
-        <input type="hidden" name="fallback" value="True">
-    </form>
+    {% with option_widgets=option_widgets %}
+        {% include 'forms/options.html' %}
+    {% endwith %}
 
     <div class="panel panel-default network">
         <div class="panel-heading">
+            <a href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string) }}"  role="button" class="btn btn-default" title="Show protein">
+                <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
+                Show protein sequence view
+            </a>
+
             <div class="btn-group" role="group">
               <button type="button" class="btn btn-default zoom-in" title="Zoom in">
                   <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span> Zoom in
@@ -70,14 +73,15 @@
                   <span class="glyphicon glyphicon-zoom-out" aria-hidden="true"></span> Zoom out
               </button>
             </div>
-            <a href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string) }}"  role="button" class="btn btn-default" title="Show protein">
-                <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
-                Show protein sequence view
-            </a>
             {% include 'export_buttons.html' %}
+            {% with filter_widgets=bar_filter_widgets %}
+                {% include 'forms/filters_bar.html' %}
+            {% endwith %}
         </div>
         <div id="network_plot" class="panel-body"></div>
     </div>
+
+  </form>
 
 {% endblock %}
 

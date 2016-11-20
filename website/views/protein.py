@@ -15,7 +15,8 @@ from website.helpers.tracks import MutationsTrack
 from website.helpers.tracks import DomainsTrack
 from website.helpers.filters import FilterManager
 from website.views._global_filters import common_filters
-from website.views._global_filters import common_widgets
+from website.views._global_filters import box_widgets
+from website.views._global_filters import bar_widgets
 from website.views._commons import represent_mutation
 from website.views._commons import get_source_field
 from operator import attrgetter
@@ -69,7 +70,8 @@ class ProteinView(FlaskView):
         return filters, filter_manager
 
     def _make_widgets(self, filters):
-        return common_widgets(filters)
+        filters_by_id = {f.id: f for f in filters}
+        return box_widgets(filters_by_id), bar_widgets(filters_by_id)
 
     def index(self):
         """Show SearchView as deafault page"""
@@ -82,7 +84,7 @@ class ProteinView(FlaskView):
         + tracks (seuqence + data tracks)
         """
         filters, filter_manager = self._make_filters()
-        filter_widgets = self._make_widgets(filters)
+        box_filter_widgets, bar_filter_widgets = self._make_widgets(filters)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
@@ -120,7 +122,8 @@ class ProteinView(FlaskView):
         return template(
             'protein/index.html', protein=protein, tracks=tracks,
             filters=filter_manager,
-            filter_widgets=filter_widgets,
+            box_filter_widgets=box_filter_widgets,
+            bar_filter_widgets=bar_filter_widgets,
             value_type=value_type,
             log_scale=(value_type == 'Frequency'),
             mutations=parsed_mutations,

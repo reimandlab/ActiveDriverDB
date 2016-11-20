@@ -83,16 +83,23 @@ def common_filters(default_source='TCGA', source_nullable=False):
     ]
 
 
-def common_widgets(common_filters):
-    def get_filter(filter_id):
-        selected = list(filter(lambda x: x.id == filter_id, common_filters))
-        assert len(selected) == 1
-        return selected[0]
+def bar_widgets(filters_by_id):
+    """WIdgets to be displayed on a bar above visualisation."""
+    return [
+        FilterWidget(
+            'PTM mutations only', 'checkbox',
+            filter=filters_by_id['Mutation.is_ptm'],
+            disabled_label='all mutations',
+        )
+    ]
 
+
+def box_widgets(filters_by_id):
+    """Widgets to be displayed in filter's box."""
     return [
         FilterWidget(
             'Mutation dataset', 'radio',
-            filter=get_filter('Mutation.sources'),
+            filter=filters_by_id['Mutation.sources'],
             labels=[
                 'Cancer (TCGA)',
                 'Clinical (ClinVar)',
@@ -101,18 +108,13 @@ def common_widgets(common_filters):
             ]
         ),
         FilterWidget(
-            'PTM mutations', 'with_without',
-            filter=get_filter('Mutation.is_ptm'),
-            disabled_label='all mutations',
-        ),
-        FilterWidget(
             'Site type', 'select',
-            filter=get_filter('Site.type'),
+            filter=filters_by_id['Site.type'],
             disabled_label='all sites'
         ),
         FilterWidget(
             'Cancer type', 'select_multiple',
-            filter=get_filter('Mutation.cancer_code'),
+            filter=filters_by_id['Mutation.cancer_code'],
             labels=[
                 cancer.name + ' (' + cancer.code + ')'
                 for cancer in Cancer.query.all()
@@ -120,16 +122,16 @@ def common_widgets(common_filters):
         ),
         FilterWidget(
             'Ethnicity', 'select_multiple',
-            filter=get_filter('Mutation.populations_1KG'),
+            filter=filters_by_id['Mutation.populations_1KG'],
             labels=populations_labels(The1000GenomesMutation.populations)
         ),
         FilterWidget(
             'Ethnicity', 'select_multiple',
-            filter=get_filter('Mutation.populations_ESP6500'),
+            filter=filters_by_id['Mutation.populations_ESP6500'],
             labels=populations_labels(ExomeSequencingMutation.populations)
         ),
         FilterWidget(
             'Clinical significance', 'select_multiple',
-            filter=get_filter('Mutation.significance')
+            filter=filters_by_id['Mutation.significance']
         )
     ]

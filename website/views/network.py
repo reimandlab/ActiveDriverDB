@@ -10,7 +10,8 @@ from website.helpers.filters import Filter
 from website.helpers.filters import FilterManager
 from website.helpers.widgets import FilterWidget
 from website.views._global_filters import common_filters
-from website.views._global_filters import common_widgets
+from website.views._global_filters import box_widgets
+from website.views._global_filters import bar_widgets
 
 
 def get_nearby_sequence(site, protein, dst=3):
@@ -50,7 +51,7 @@ class NetworkView(FlaskView):
         return filters, filter_manager
 
     def _make_widgets(self, filters, filter_manager):
-        filter_widgets = common_widgets(filters)
+        filters_by_id = {f.id: f for f in filters}
 
         option_widgets = [
             FilterWidget(
@@ -63,7 +64,11 @@ class NetworkView(FlaskView):
             ),
         ]
 
-        return filter_widgets, option_widgets
+        return (
+            box_widgets(filters_by_id),
+            bar_widgets(filters_by_id),
+            option_widgets
+        )
 
     def before_request(self, name, *args, **kwargs):
         pass
@@ -76,7 +81,8 @@ class NetworkView(FlaskView):
         """Show a protein network visualisation"""
 
         filters, filter_manager = self._make_filters()
-        filter_widgets, option_widgets = self._make_widgets(filters, filter_manager)
+        widgets = self._make_widgets(filters, filter_manager)
+        box_filter_widgets, bar_filter_widgets, option_widgets = widgets
         filter_manager.update_from_request(request)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
@@ -86,7 +92,8 @@ class NetworkView(FlaskView):
             'network.html', protein=protein, #data=data,
             filters=filter_manager,
             option_widgets=option_widgets,
-            filter_widgets=filter_widgets
+            box_filter_widgets=box_filter_widgets,
+            bar_filter_widgets=bar_filter_widgets
         )
 
     def _prepare_network_repr(self, protein, filter_manager, include_kinases_from_groups=False):
