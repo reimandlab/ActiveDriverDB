@@ -56,7 +56,7 @@
               {% endfor %}
           </div>
         {% elif widget.template == 'checkbox' %}
-          <input type="checkbox" name="{{ widget.target_name }}" id="{{ widget.target_name }}" {{ 'checked' if widget.value }}>
+          <input type="checkbox" name="{{ widget.target_name }}" value="True" id="{{ widget.target_name }}" {{ 'checked' if widget.value }}>
         {% elif widget.template == 'select_multiple' %}
           <select
             name="{{ widget.target_name }}"
