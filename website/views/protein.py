@@ -23,7 +23,7 @@ from operator import attrgetter
 from sqlalchemy import and_
 
 
-def represent_mutations(mutations, filter_manager):
+def represent_needles(mutations, filter_manager):
 
     source_name = filter_manager.get_value('Mutation.sources')
 
@@ -115,7 +115,7 @@ class ProteinView(FlaskView):
         else:
             value_type = 'Frequency'
 
-        parsed_mutations = represent_mutations(
+        parsed_mutations = represent_needles(
             raw_mutations, filter_manager
         )
 
@@ -130,14 +130,24 @@ class ProteinView(FlaskView):
             sites=self._prepare_sites(protein, filter_manager),
         )
 
-    def known_mutation(self, refseq, position, alt):
-        _, filter_manager = self._make_filters()
+    def mutation(self, refseq, position, alt):
+        from website.views.chromosome import represent_mutations
+        from database import get_or_create
+
+        filters = common_filters(default_source=None, source_nullable=False)
+        filter_manager = FilterManager(filters)
+        filter_manager.update_from_request(request)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
-        mutation = Mutation.query.filter_by(
-            protein=protein, position=position, alt=alt
-        ).first_or_404()
+        mutation, _ = get_or_create(
+            Mutation,
+            protein=protein,
+            # setting id directly is easier than forcing update outside session
+            protein_id=protein.id,
+            position=int(position),
+            alt=alt
+        )
 
         raw_mutations = filter_manager.apply([mutation])
 
@@ -162,7 +172,7 @@ class ProteinView(FlaskView):
 
         raw_mutations = filter_manager.apply(protein.mutations)
 
-        parsed_mutations = represent_mutations(
+        parsed_mutations = represent_needles(
             raw_mutations,
             filter_manager
         )
