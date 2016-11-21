@@ -5,12 +5,10 @@ from database import make_snv_key
 from database import decode_csv
 from database import get_or_create
 from helpers.bioinf import decode_raw_mutation
-from operator import attrgetter
 
 
 def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
-    dna_ref = dna_ref.lower()
-    dna_alt = dna_alt.lower()
+
     snv = make_snv_key(chrom, dna_pos, dna_ref, dna_alt)
 
     items = [

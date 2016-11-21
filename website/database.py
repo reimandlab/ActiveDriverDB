@@ -167,7 +167,9 @@ def make_snv_key(chrom, pos, ref, alt):
 
     to be used as a key in hashmap in snv -> csv mappings
     """
-    return ':'.join((chrom, '%x' % int(pos.strip()))) + ref + alt
+    return ':'.join(
+        (chrom, '%x' % int(pos.strip()))
+    ) + ref.lower() + alt.lower()
 
 
 def decode_csv(encoded_data):

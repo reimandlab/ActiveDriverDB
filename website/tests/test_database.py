@@ -1,6 +1,18 @@
 import database
 
 
+def test_make_snv_key():
+    test_data = (
+        # chrom, pos, ref, alt
+        (('1', '211', 'A', 'C'), ('1', '211', 'A', 'c')),
+        (('X', '2012', 'T', 'G'), ('X', '2012', 't', 'g')),
+    )
+    for attributes, equivalent_attributes in test_data:
+        result_1 = database.make_snv_key(*attributes)
+        result_2 = database.make_snv_key(*equivalent_attributes)
+        assert result_1 == result_2
+
+
 def test_encode_csv():
     test_data = (
         # strand, ref, alt, cdna_pos, exon, protein_id, is_ptm
