@@ -2,6 +2,7 @@
 from database import bdb
 from database import make_snv_key
 from database import decode_csv
+import app  # this will take some time (stats initialization)
 from models import Protein
 
 
@@ -14,16 +15,16 @@ def test_mappings():
 
     test_data = (
         # (chrom, dna_pos, dna_ref, dna_alt), (name, pos, ref, alt)
-        (('chr17', '7572934', 'G', 'A'), ('TP53', 353, 'S', 'L')),
-        (('chr17', '19282215', 't', 'a'), ('MAPK7', 1, 'M', 'K')),
-        (('chr21', '40547520', 'g', 'a'), ('PSMG1', 283, 'T', 'I')),
-        (('chr9', '125616157', 't', 'a'), ('RC3H2', 1064, 'Y' 'F')),
-        (('chr11', '120198175', 'g', 'a'), ('TMEM136', 31, 'V', 'M')),
-        (('chr10', '81838457', 't', 'a'), ('TMEM254', 1, 'M', 'K')),
-        (('chr13', '111267940', 't', 'a'), ('CARKD', 1, 'M', 'K')),
-        (('chr6', '30539266', 't', 'a'), ('ABCF1', 1, 'M', 'K')),
-        (('chr6', '36765430', 'g', 'a'), ('CPNE5', 140, 'L', 'F')),
-        (('chr12', '123464753', 't', 'a'), ('ARL6IP4', 1, 'M', 'K')),
+        (('17', '7572934', 'G', 'A'), ('TP53', 353, 'S', 'L')),
+        (('17', '19282215', 't', 'a'), ('MAPK7', 1, 'M', 'K')),
+        (('21', '40547520', 'g', 'a'), ('PSMG1', 283, 'T', 'I')),
+        (('9', '125616157', 't', 'a'), ('RC3H2', 1064, 'Y', 'F')),
+        (('11', '120198175', 'g', 'a'), ('TMEM136', 31, 'V', 'M')),
+        (('10', '81838457', 't', 'a'), ('TMEM254', 1, 'M', 'K')),
+        (('13', '111267940', 't', 'a'), ('CARKD', 1, 'M', 'K')),
+        (('6', '30539266', 't', 'a'), ('ABCF1', 1, 'M', 'K')),
+        (('6', '36765430', 'g', 'a'), ('CPNE5', 140, 'L', 'F')),
+        (('12', '123464753', 't', 'a'), ('ARL6IP4', 1, 'M', 'K')),
     )
 
     for genomic_data, protein_data in test_data:
@@ -34,15 +35,15 @@ def test_mappings():
             decode_csv(item)
             for item in bdb[snv]
         ]
-        hit = False
 
         for item in items:
-            if (
-                Protein.get(item['protein_id']).gene.name == protein_data[0] and
-                item['pos'] == protein_data[1] and
-                item['ref'] == protein_data[2] and
-                item['alt'] == protein_data[3]
-            ):
-                hit = True
-
-        assert hit
+            retrieved_data = (
+                Protein.query.get(item['protein_id']).gene.name,
+                item['pos'],
+                item['ref'],
+                item['alt']
+            )
+            if retrieved_data == protein_data:
+                break
+        else:
+            raise Exception(retrieved_data, protein_data)
