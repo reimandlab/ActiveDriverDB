@@ -1,4 +1,4 @@
-""""Tests in this module should be pass after data import and fail before"""
+""""This tests should be passed after successful data import and fail before"""
 from database import bdb
 from database import make_snv_key
 from database import decode_csv
