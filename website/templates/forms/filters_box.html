@@ -1,5 +1,6 @@
 {% extends "forms/widgets_panel.html" %}
 {% from 'forms/widgets.html' import widget_list %}
+{% from 'forms/widgets.html' import render_widget %}
 
 {% block panel_class %}filters-panel{% endblock %}
 
@@ -10,9 +11,23 @@
 
 
 {% block widgets %}
-    {% set active = filter_widgets | selectattr('is_active') %}
-    {% set inactive = filter_widgets | rejectattr('is_active') %}
 
-    {{ widget_list(active, 'Active', 'active') }}
-    {{ widget_list(inactive, 'Available', 'available') }}
+  <div class="dataset-widgets">
+    <div class="dataset">
+        {{ render_widget(widgets.dataset) }}
+    </div>
+    <div class="dataset-specific">
+        {{ widget_list(widgets.dataset_specific) }}
+    </div>
+  </div>
+
+  <div class="other-widgets">
+    <div class="ptm-type">
+        {{ render_widget(widgets.ptm_type) }}
+    </div>
+    <div class="other">
+        {{ widget_list(widgets.other) }}
+    </div>
+  </div>
+
 {% endblock %}

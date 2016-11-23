@@ -65,7 +65,8 @@ var Widgets = (function ()
                   $(option).parent().parent().popover('hide')
           },
           includeSelectAllOption: true,
-          dropRight: true
+          dropRight: true,
+          allSelectedText: $(this).data('all-selected-text')
       })
   }
 

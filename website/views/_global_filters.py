@@ -84,21 +84,10 @@ def common_filters(default_source='TCGA', source_nullable=False):
     ]
 
 
-def bar_widgets(filters_by_id):
-    """WIdgets to be displayed on a bar above visualisation."""
-    return [
-        FilterWidget(
-            'PTM mutations only', 'checkbox',
-            filter=filters_by_id['Mutation.is_ptm'],
-            disabled_label='all mutations',
-        )
-    ]
-
-
-def box_widgets(filters_by_id):
-    """Widgets to be displayed in filter's box."""
-    return [
-        FilterWidget(
+def create_widgets(filters_by_id):
+    """Widgets to be displayed on a bar above visualisation."""
+    return {
+        'dataset': FilterWidget(
             'Mutation dataset', 'radio',
             filter=filters_by_id['Mutation.sources'],
             labels=[
@@ -106,33 +95,50 @@ def box_widgets(filters_by_id):
                 'Clinical (ClinVar)',
                 'Population (ESP 6500)',
                 'Population (1000 Genomes)'
-            ]
+            ],
+            class_name='dataset-widget'
         ),
-        FilterWidget(
+        'dataset_specific': [
+            FilterWidget(
+                'Cancer type', 'select_multiple',
+                filter=filters_by_id['Mutation.cancer_code'],
+                labels=[
+                    cancer.name + ' (' + cancer.code + ')'
+                    for cancer in Cancer.query.all()
+                ],
+                all_selected_label='All cancer types',
+                class_name='dataset-specific-widget'
+            ),
+            FilterWidget(
+                'Ethnicity', 'select_multiple',
+                filter=filters_by_id['Mutation.populations_1KG'],
+                labels=populations_labels(The1000GenomesMutation.populations),
+                all_selected_label='All ethnicities',
+                class_name='dataset-specific-widget'
+            ),
+            FilterWidget(
+                'Ethnicity', 'select_multiple',
+                filter=filters_by_id['Mutation.populations_ESP6500'],
+                labels=populations_labels(ExomeSequencingMutation.populations),
+                all_selected_label='All ethnicities',
+                class_name='dataset-specific-widget'
+            ),
+            FilterWidget(
+                'Clinical significance', 'select_multiple',
+                filter=filters_by_id['Mutation.significance'],
+                all_selected_label='All clinical significance classes',
+                class_name='dataset-specific-widget'
+            )
+        ],
+        'is_ptm': FilterWidget(
+            'PTM mutations only', 'checkbox',
+            filter=filters_by_id['Mutation.is_ptm'],
+            disabled_label='all mutations',
+        ),
+        'ptm_type': FilterWidget(
             'Type of PTM site', 'radio',
             filter=filters_by_id['Site.type'],
             disabled_label='all sites'
         ),
-        FilterWidget(
-            'Cancer type', 'select_multiple',
-            filter=filters_by_id['Mutation.cancer_code'],
-            labels=[
-                cancer.name + ' (' + cancer.code + ')'
-                for cancer in Cancer.query.all()
-            ]
-        ),
-        FilterWidget(
-            'Ethnicity', 'select_multiple',
-            filter=filters_by_id['Mutation.populations_1KG'],
-            labels=populations_labels(The1000GenomesMutation.populations)
-        ),
-        FilterWidget(
-            'Ethnicity', 'select_multiple',
-            filter=filters_by_id['Mutation.populations_ESP6500'],
-            labels=populations_labels(ExomeSequencingMutation.populations)
-        ),
-        FilterWidget(
-            'Clinical significance', 'select_multiple',
-            filter=filters_by_id['Mutation.significance']
-        )
-    ]
+        'other': []
+    }

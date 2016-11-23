@@ -52,31 +52,31 @@
 </ol>
 
 <form method="get" id="widget-form">
-  <input type="hidden" name="fallback" value="True">
-  {% with filter_widgets=box_filter_widgets %}
-      {% include 'forms/filters_box.html' %}
-  {% endwith %}
-
-
-<div class="panel panel-default">
-    <div class="panel-heading">
-      <div class="heading-left">
-        <div class="btn-group" role="group">
-          <a href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string) }}" role="button" class="btn btn-default" title="Show network">
-              <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
-              Show interaction network view
-          </a>
+  {% include 'forms/filters_box.html' %}
+  <div class="panel panel-default panel-needleplot">
+      <div class="panel-heading">
+        <div class="heading-left">
+          <div class="btn-group" role="group">
+            <a href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string) }}" role="button" class="btn btn-default" title="Show network">
+                <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
+                Show interaction network view
+            </a>
+          </div>
+          {% include 'export_buttons.html' %}
         </div>
-        {% include 'export_buttons.html' %}
+        <div class="heading-right">
+          {% include 'forms/filters_bar.html' %}
+        </div>
       </div>
-      <div class="heading-right">
-        {% with filter_widgets=bar_filter_widgets %}
-            {% include 'forms/filters_bar.html' %}
-        {% endwith %}
-      </div>
+    <div class="panel-body">
+      <div id="plot_area"></div>
     </div>
+  </div>
+  <input type="hidden" name="fallback" value="True">
+</form>
+
+<div class="panel panel-default panel-tracks">
   <div class="panel-body">
-    <div id="plot_area"></div>
     <div id="tracks-box">
       {% with tracks=tracks %}
         {% include 'protein/tracks.html' %}
@@ -85,9 +85,8 @@
   </div>
 </div>
 
-</form>
 
-Your are viewing {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
+This is {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
 {% set other_isoforms_count = protein.gene.isoforms | length - 1 %}
 {% if other_isoforms_count > 0 %}
     There {{ 'is' if other_isoforms_count == 1 else 'are' }} <a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}">{{ other_isoforms_count }} isoform{{ 's' if other_isoforms_count > 1}} more</a> for this protein in the database.

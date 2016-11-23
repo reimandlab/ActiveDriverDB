@@ -3,7 +3,8 @@ class Widget:
 
     def __init__(
         self, title, template, data, target_name,
-        labels=None, disabled_label=None, value=None
+        labels=None, disabled_label=None, value=None,
+        all_selected_label=None, class_name=''
     ):
         self.title = title
         self.target_name = target_name
@@ -14,6 +15,8 @@ class Widget:
         self._value = value
         self.labels = labels if labels else data
         self.disabled_label = disabled_label or 'disabled'
+        self.all_selected_label = all_selected_label
+        self.class_name = class_name
 
     @property
     def items(self):
@@ -41,13 +44,14 @@ class FilterWidget(Widget):
 
     def __init__(
         self, title, template, filter, labels=None, disabled_label=None,
-        associated_comparator_widget=None
+        associated_comparator_widget=None, **kwargs
     ):
         self.filter = filter
         data = filter.allowed_values
         target_name = 'filter[' + filter.id + ']'
         super().__init__(
-            title, template, data, target_name, labels, disabled_label
+            title, template, data, target_name, labels, disabled_label,
+            **kwargs
         )
         self.comparator_widget = associated_comparator_widget
 

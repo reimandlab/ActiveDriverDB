@@ -65,10 +65,6 @@ select.form-control
     padding: 5px
     margin-bottom: 0
 
-  h5
-    margin-bottom: 0
-    display: none
-
   label
     font-weight: normal
 
@@ -84,6 +80,34 @@ select.form-control
   .value
     float: right
 
+
+.dataset-widgets
+  display: table
+  width: 100%
+
+  .dataset, .dataset-specific
+    display: table-cell
+
+  .dataset-specific
+    width: 100px
+
+    label.name
+      display: none
+
+  .widget
+    display: table
+    width: 100%
+
+  .name, .value
+    float: none
+    display: table-cell
+
+  .value
+    text-align: right
+
+.radio-group
+  border: 0
+  box-shadow: none
 
 .widgets-bar.widgets
   float: right

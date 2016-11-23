@@ -46,13 +46,10 @@
     </ol>
 
   <form method="get" id="widget-form">
-    <input type="hidden" name="fallback" value="True">
-    {% with filter_widgets=box_filter_widgets %}
-        {% include 'forms/filters_box.html' %}
-    {% endwith %}
+    {% include 'forms/filters_box.html' %}
 
     <div class="collapse-me" tabindex="-1">
-      {% with option_widgets=option_widgets, collapsed=True %}
+      {% with collapsed=True %}
           {% include 'forms/options.html' %}
       {% endwith %}
     </div>
@@ -76,13 +73,12 @@
               </button>
             </div>
             {% include 'export_buttons.html' %}
-            {% with filter_widgets=bar_filter_widgets %}
-                {% include 'forms/filters_bar.html' %}
-            {% endwith %}
+            {% include 'forms/filters_bar.html' %}
         </div>
         <div id="network_plot" class="panel-body"></div>
     </div>
 
+    <input type="hidden" name="fallback" value="True">
   </form>
 
 {% endblock %}

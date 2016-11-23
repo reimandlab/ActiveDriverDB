@@ -10,8 +10,7 @@ from website.helpers.filters import Filter
 from website.helpers.filters import FilterManager
 from website.helpers.widgets import FilterWidget
 from website.views._global_filters import common_filters
-from website.views._global_filters import box_widgets
-from website.views._global_filters import bar_widgets
+from website.views._global_filters import create_widgets
 
 
 def get_nearby_sequence(site, protein, dst=3):
@@ -50,10 +49,9 @@ class NetworkView(FlaskView):
         )
         return filters, filter_manager
 
-    def _make_widgets(self, filters, filter_manager):
-        filters_by_id = {f.id: f for f in filters}
+    def _create_option_widgets(self, filter_manager):
 
-        option_widgets = [
+        return [
             FilterWidget(
                 'Show sites', 'binary',
                 filter=filter_manager.filters['JavaScript.show_sites']
@@ -63,12 +61,6 @@ class NetworkView(FlaskView):
                 filter=filter_manager.filters['JavaScript.clone_by_site']
             ),
         ]
-
-        return (
-            box_widgets(filters_by_id),
-            bar_widgets(filters_by_id),
-            option_widgets
-        )
 
     def before_request(self, name, *args, **kwargs):
         pass
@@ -81,8 +73,7 @@ class NetworkView(FlaskView):
         """Show a protein network visualisation"""
 
         filters, filter_manager = self._make_filters()
-        widgets = self._make_widgets(filters, filter_manager)
-        box_filter_widgets, bar_filter_widgets, option_widgets = widgets
+        filters_by_id = {f.id: f for f in filters}
         filter_manager.update_from_request(request)
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
@@ -91,9 +82,8 @@ class NetworkView(FlaskView):
         return template(
             'network.html', protein=protein, #data=data,
             filters=filter_manager,
-            option_widgets=option_widgets,
-            box_filter_widgets=box_filter_widgets,
-            bar_filter_widgets=bar_filter_widgets
+            option_widgets=self._create_option_widgets(filter_manager),
+            widgets=create_widgets(filters_by_id),
         )
 
     def _prepare_network_repr(self, protein, filter_manager, include_kinases_from_groups=False):

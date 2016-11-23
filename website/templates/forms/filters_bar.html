@@ -1,12 +1,8 @@
-{% from 'forms/widgets.html' import widget_list %}
+{% from 'forms/widgets.html' import render_widget %}
 
 <div class="btn-group filters-bar widgets-bar widgets" role="group">
-    {% set active = filter_widgets | selectattr('is_active') %}
-    {% set inactive = filter_widgets | rejectattr('is_active') %}
-
     <div class="btn-group">
-    {{ widget_list(active, 'Active', 'active') }}
-    {{ widget_list(inactive, 'Available', 'available') }}
+      {{ render_widget(widgets.is_ptm) }}
     </div>
     <button class="btn btn-primary save js-hidden" type="submit" title="Update">
       <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>

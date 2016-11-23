@@ -15,7 +15,7 @@
     {% if widget.comparator_widget %}
         {{ render_widget(widget.comparator_widget) }}
     {% endif %}
-    <div class="widget">
+    <div class="widget {{ widget.class_name }}">
         <label class="name" for="{{ widget.target_name }}">
             {{ widget.title }}
         </label>
@@ -41,9 +41,9 @@
               {% endfor %}
             </select>
         {% elif widget.template == 'radio' %}
-          <div class="form-control">
+          <div class="radio-group form-control">
               {% if widget.nullable %}
-                <label class="radio-inline  {{ 'checked' if widget.value == None }}">
+                <label class="radio-inline {{ 'checked' if widget.value == None }}">
                   <input type="radio" name="{{ widget.target_name }}" value="None" {{ 'checked' if widget.value == None }}>
                   {{ widget.disabled_label }}
                 </label>
@@ -63,6 +63,7 @@
             id="{{ widget.target_name }}"
             class="form-control multiselect"
             multiple="multiple"
+            data-all-selected-text="{{ widget.all_selected_label }}"
             {{ 'required' if not widget.nullable }}
           >
               {% if widget.nullable %}
