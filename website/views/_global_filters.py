@@ -42,7 +42,8 @@ def common_filters(default_source='TCGA', source_nullable=False):
             default=default_source, nullable=source_nullable,
         ),
         Filter(
-            Mutation, 'is_ptm', comparators=['eq']
+            Mutation, 'is_ptm', comparators=['eq'],
+            is_attribute_a_method=True
         ),
         Filter(
             Site, 'type', comparators=['in'],

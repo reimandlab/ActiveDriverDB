@@ -651,16 +651,16 @@ class Mutation(BioModel):
             if key.startswith('meta_') and value
         }
 
-    @hybrid_property
-    def is_ptm(self):
+    def is_ptm(self, filter_manager=None):
         """Mutation is PTM related if it may affect PTM site.
 
         Mutations flanking PTM site in a distance up to 7 residues
         from a site (called here 'distal') will be included too.
 
-        This property is an alias for is_ptm_distal property.
+        This method works very similarly to is_ptm_distal property.
         """
-        return self.is_ptm_distal
+        sites = filter_manager.apply(Protein.query.get(self.protein_id).sites)
+        return self.is_close_to_some_site(7, 7, sites)
 
     @hybrid_property
     def ref(self):

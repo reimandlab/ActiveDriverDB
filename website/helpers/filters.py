@@ -35,7 +35,8 @@ class Filter:
     def __init__(
         self, targets, attribute, default=None, nullable=True,
         comparators='__all__', choices='__all__',
-        default_comparator=None, multiple=False
+        default_comparator=None, multiple=False,
+        is_attribute_a_method=False
     ):
         if comparators != '__all__':
             if not default_comparator and len(comparators) == 1:
@@ -47,6 +48,7 @@ class Filter:
         if not is_iterable_but_not_str(targets):
             targets = [targets]
         self.targets = targets
+        self.is_attribute_a_method = is_attribute_a_method
         self.primary_target = targets[0]
         self.default = default
         self.attribute = attribute
@@ -144,6 +146,17 @@ class Filter:
 
         return comparator_function(value, self.value)
 
+    def attr_getter(self):
+        """Attrgetter that passes a value to an method-attribute if needed"""
+        getter = operator.attrgetter(self.attribute)
+        if self.is_attribute_a_method:
+
+            def attr_get(element):
+                return getter(element)(self.manager)
+        else:
+            attr_get = getter
+        return attr_get
+
     def test(self, obj):
         """Test if a given object (instance) passes criteria of this filter.
 
@@ -157,7 +170,8 @@ class Filter:
             # the filter is turned off
             return -1
 
-        obj_value = getattr(obj, self.attribute)
+        attr_get = self.attr_getter()
+        obj_value = attr_get(obj)
         return self.compare(obj_value)
 
     def apply(self, elements):
@@ -167,7 +181,7 @@ class Filter:
             # the filter is turned off
             return -1
 
-        attr_get = operator.attrgetter(self.attribute)
+        attr_get = self.attr_getter()
 
         comparator_function = self.possible_comparators[self.comparator]
         multiple_test = self.get_multiple_function()
