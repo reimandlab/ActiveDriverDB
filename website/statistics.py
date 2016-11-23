@@ -60,7 +60,7 @@ class Statistics:
     def count_muts_in_sites(self):
         return models.Mutation.query.filter_by(
             is_confirmed=True,
-            is_ptm=True
+            is_ptm_distal=True
         ).count()
 
     def count_muts_with_mimp(self):
