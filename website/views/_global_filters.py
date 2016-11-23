@@ -109,7 +109,7 @@ def box_widgets(filters_by_id):
             ]
         ),
         FilterWidget(
-            'Site type', 'select',
+            'Type of PTM site', 'radio',
             filter=filters_by_id['Site.type'],
             disabled_label='all sites'
         ),
