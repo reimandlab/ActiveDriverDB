@@ -123,28 +123,40 @@ class Filter:
             return self.possible_join_operators[self.multiple]
 
     def compare(self, value):
+
         comparator_function = self.possible_comparators[self.comparator]
         multiple_test = self.get_multiple_function()
 
-        return self._compare(value, comparator_function, multiple_test)
+        compare = self.get_compare_func(comparator_function, multiple_test)
 
-    def _compare(self, value, comparator_function, multiple_test):
+        return compare(value)
 
-        # tricky: check if operator is usable on given value.
-        # Detects when one tries to check if x in None or y > "tree".
-        # As all of those are incorrect false will be returned.
-        try:
-            comparator_function(value, value)
-        except TypeError:
-            return False
-
+    def get_compare_func(self, comparator_function, multiple_test):
         if multiple_test:
-            return multiple_test(
-                comparator_function(value, sub_value)
-                for sub_value in self.value
-            )
+            def compare(value):
+                # tricky: check if operator is usable on given value.
+                # Detects when one tries to check if x in None or y > "tree".
+                # As all of those are incorrect false will be returned.
+                try:
+                    comparator_function(value, value)
+                except TypeError:
+                    return lambda x: False
 
-        return comparator_function(value, self.value)
+                return multiple_test(
+                    comparator_function(value, sub_value)
+                    for sub_value in self.value
+                )
+            return compare
+
+        def compare(value):
+
+            try:
+                comparator_function(value, value)
+            except TypeError:
+                return lambda x: False
+            return comparator_function(value, self.value)
+
+        return compare
 
     def attr_getter(self):
         """Attrgetter that passes a value to an method-attribute if needed"""
@@ -186,17 +198,15 @@ class Filter:
         comparator_function = self.possible_comparators[self.comparator]
         multiple_test = self.get_multiple_function()
 
-        compare = self._compare
+        compare = self.get_compare_func(comparator_function, multiple_test)
 
-        return [
+        return (
             elem
             for elem in elements
             if compare(
-                attr_get(elem),
-                comparator_function,
-                multiple_test
+                attr_get(elem)
             )
-        ]
+        )
 
     @property
     def is_active(self):
@@ -277,7 +287,7 @@ class FilterManager:
 
         for filter_ in self._get_active_by_target(target_type):
             elements = filter_.apply(elements)
-        return elements
+        return list(elements)
 
     def _get_active_by_target(self, target_type):
         """Return filters which are active & target the same type of objects"""
