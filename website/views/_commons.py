@@ -115,11 +115,6 @@ def get_protein_muts(gene_name, mut):
     return items
 
 
-def get_source_field(source):
-    source_field_name = Mutation.source_fields[source]
-    return source_field_name
-
-
 def represent_mutation(mutation, data_filter):
 
     affected_sites = mutation.get_affected_ptm_sites(data_filter)

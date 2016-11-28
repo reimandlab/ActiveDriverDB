@@ -87,11 +87,20 @@ class NetworkView(FlaskView):
         )
 
     def _prepare_network_repr(self, protein, filter_manager, include_kinases_from_groups=False):
+        from models import Mutation, Site
+        from sqlalchemy import and_
 
-        protein_mutations = filter_manager.apply(protein.mutations)
+        protein_mutations = filter_manager.sqlalchemy_query(
+            Mutation,
+            lambda q: and_(q, Mutation.protein_id == protein.id)
+        )
 
         sites = [
-            site for site in filter_manager.apply(protein.sites)
+            site
+            for site in filter_manager.sqlalchemy_query(
+                Site,
+                lambda q: and_(q, Site.protein_id == protein.id)
+            )
             if site.kinases or site.kinase_groups
         ]
 
@@ -104,21 +113,17 @@ class NetworkView(FlaskView):
             )
         )
 
-        source = filter_manager.get_value('Mutation.sources')
-
         kinases_counts = dict()
         for kinase in kinases:
             if kinase.protein:
-                from models import Mutation
-                from sqlalchemy import and_
-                mutations = Mutation.query.filter(
-                    and_(
-                        Mutation.protein == kinase.protein,
-                        source in Mutation.sources
-                    )
-                ).all()
-                count = len(filter_manager.apply(mutations))
-                # assert count == len(filter_manager.apply(kinase.mutations))
+
+                mutations = filter_manager.sqlalchemy_query(
+                    Mutation,
+                    lambda q: and_(q, Mutation.protein == kinase.protein)
+                )
+
+                count = len(mutations)
+
                 if count > 0:
                     kinases_counts[kinase] = count
 

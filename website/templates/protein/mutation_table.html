@@ -108,10 +108,11 @@
                 </td>
             {% endfor %}
             <td>
-                {% if mutation.summary is sequence and mutation.summary is not string %}
-                    {{ mutation.summary | join(', ') }}
+              {% set summary = mutation.summary %}
+                {% if summary is sequence and summary is not string %}
+                    {{ summary | join(', ') }}
                 {% else %}
-                    {{ mutation.summary }}
+                    {{ summary }}
                 {% endif %}
             </td>
         </tr>

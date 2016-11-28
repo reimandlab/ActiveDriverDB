@@ -447,11 +447,14 @@ class CancerMetaManager(UserList):
 
         return {'TCGA metadata': cancer_occurances}
 
-    @property
-    def summary(self):
+    def summary(self, filter=lambda x: x):
         return [
-            datum.summary
+            datum.summary()
             for datum in self.data
+            # one could use:
+            # datum.summary()
+            # for datum in filter(self.data)
+            # but I think that there is no need for that now
         ]
 
     def get_value(self, filter=lambda x: x):
@@ -558,27 +561,19 @@ class Mutation(BioModel):
         )
     )
 
-    @property
-    def significance(self):
-        if not self.meta_inherited:
-            return []
-        return set(
-            clin_datum.significance
-            for clin_datum in
-            self.meta_inherited.clin_data
-        )
-
     populations_1KG = association_proxy(
         'meta_1KG',
         'affected_populations'
     )
-
     populations_ESP6500 = association_proxy(
         'meta_ESP6500',
         'affected_populations'
     )
 
+    #affects_1KG = association_proxy('meta_1KG', 'affects')
     cancer_code = association_proxy('meta_cancer', 'cancer_code')
+    sig_code = association_proxy('meta_inherited', 'sig_code')
+
 
     def get_source_name(self, column_name):
         return {v: k for k, v in self.source_fields.items()}.get(
@@ -651,6 +646,7 @@ class Mutation(BioModel):
             if key.startswith('meta_') and value
         }
 
+    @hybrid_method
     def is_ptm(self, filter_manager=None):
         """Mutation is PTM related if it may affect PTM site.
 
@@ -849,7 +845,7 @@ class MutationDetails:
         """
         raise NotImplementedError
 
-    def summary(self):
+    def summary(self, filter=lambda x: x):
         """Return short JSON serializable representation of the mutation"""
         raise NotImplementedError
 
@@ -871,13 +867,10 @@ class CancerMutation(MutationDetails, BioModel):
             'Value': self.count
         }
 
-    @property
-    def summary(self):
+    def summary(self, filter=lambda x: x):
         return self.cancer_code
 
-    @property
-    def cancer_code(self):
-        return self.cancer.code
+    cancer_code = association_proxy('cancer', 'code')
 
 
 class InheritedMutation(MutationDetails, BioModel):
@@ -907,8 +900,10 @@ class InheritedMutation(MutationDetails, BioModel):
         uselist=True
     )
 
+    sig_code = association_proxy('clin_data', 'sig_code')
+
     def get_value(self, filter=lambda x: x):
-        return len(self.clin_data)
+        return len(filter(self.clin_data))
 
     def to_json(self, filter=lambda x: x):
         return {
@@ -918,15 +913,14 @@ class InheritedMutation(MutationDetails, BioModel):
             'Is in PubMed Central': bool(self.is_in_pubmed_central),
             'Clinical': [
                 d.to_json()
-                for d in self.clin_data
+                for d in filter(self.clin_data)
             ]
         }
 
-    @property
-    def summary(self):
+    def summary(self, filter=lambda x: x):
         return [
             d.disease_name
-            for d in self.clin_data
+            for d in filter(self.clin_data)
         ]
 
 
@@ -947,10 +941,14 @@ class ClinicalData(BioModel):
     }
 
     # CLNSIG: Variant Clinical Significance:
-    sig_code = db.Column(db.Text)
+    sig_code = db.Column(db.Text)   # TODO: make it int
 
     # CLNDBN: Variant disease name
     disease_name = db.Column(db.Text)
+
+    @property
+    def significance(self):
+        return self.significance_codes.get(self.sig_code, None)
 
     # CLNREVSTAT: ?
     # no_assertion - No assertion provided,
@@ -961,10 +959,6 @@ class ClinicalData(BioModel):
     # exp - Reviewed by expert panel,
     # guideline - Practice guideline
     rev_status = db.Column(db.Text)
-
-    @property
-    def significance(self):
-        return self.significance_codes.get(self.sig_code, None)
 
     def to_json(self, filter=lambda x: x):
         return {
@@ -989,15 +983,14 @@ class PopulationMutation(MutationDetails):
     def get_value(self, filter=lambda x: x):
         return self.maf_all
 
-    @property
-    def summary(self):
+    def summary(self, filter=lambda x: x):
         return self.get_value()
 
-    @property
+    @hybrid_property
     def affected_populations(self):
         return [
-            population_name
-            for field, population_name in self.populations.items()
+            field
+            for field in self.populations.keys()
             if getattr(self, field)
         ]
 
@@ -1055,6 +1048,12 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
             'MAF EUR': self.maf_eur,
             'MAF SAS': self.maf_sas,
         }
+
+    """
+    @hybrid_method
+    def affects(self, population_name):
+        return getattr(self, population_name) > 0
+    """
 
 
 class MIMPMutation(MutationDetails, BioModel):

@@ -7,7 +7,6 @@ from website.views._global_filters import common_filters
 from website.views._commons import get_genomic_muts
 from website.views._commons import get_protein_muts
 from website.views._commons import represent_mutation
-from website.views._commons import get_source_field
 from operator import attrgetter
 
 
@@ -16,8 +15,7 @@ def represent_mutations(mutations, filter_manager):
     source_name = filter_manager.get_value('Mutation.sources')
 
     if source_name:
-        source_field_name = get_source_field(source_name)
-        get_source_data = attrgetter(source_field_name)
+        get_source_data = attrgetter(Mutation.source_fields[source_name])
 
     get_mimp_data = attrgetter('meta_MIMP')
 
