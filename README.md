@@ -20,8 +20,9 @@ The website is developed inside Python3-based virtual environment. To quickly re
 virtualenv -p python3 virtual_environment
 source virtual_environment/bin/activate
 cd website
-python3 -m pip install -r requirements.py
+python3 -m pip install -r requirements.txt
 ```
+In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given.
 
 As currently there is no new version of flask-sqlalchemy released since Oct 2015, but there are some crucial patches merged to the official repository, you will need to clone [flask_sqlalchemy directory](https://github.com/mitsuhiko/flask-sqlalchemy/tree/master/flask_sqlalchemy) into `website` directory.
 
@@ -172,8 +173,20 @@ To login to root account (created with `db_create.py` script) visit `/login/` pa
 
 For proper compilation of some requirements, additional software will be needed on Debian-based servers. The required packages are:
 ```
-build-essential python3 libmysqlclient-dev python3-dev python-dev
+build-essential python3 libmysqlclient-dev python3-dev python-dev git
 ```
+
+Alternative commands to create virtual environment (workaround for Debian not having some essentsial python3 packages installed): 
+```bash
+python3 -m venv --without-pip virtual_environment
+source virtual_environment/bin/activate
+curl https://bootstrap.pypa.io/get-pip.py | python3
+deactivate
+source virtual_environment/bin/activate
+cd website
+python3 -m pip install -r requirements.txt
+```
+
 
 ## Acknowledgments
 
