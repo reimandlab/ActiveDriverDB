@@ -1189,7 +1189,10 @@ class PageMenuEntry(MenuEntry):
     id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
 
     page_id = db.Column(db.Integer, db.ForeignKey('page.id'))
-    page = db.relationship('Page')
+    page = db.relationship(
+            'Page',
+            backref=db.backref('page_menu_entries', cascade='all, delete-orphan')
+    )
 
     title = association_proxy('page', 'title')
     url = association_proxy('page', 'url')
