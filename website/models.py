@@ -655,7 +655,9 @@ class Mutation(BioModel):
 
         This method works very similarly to is_ptm_distal property.
         """
-        sites = filter_manager.apply(Protein.query.get(self.protein_id).sites)
+        sites = Protein.query.get(self.protein_id).sites
+        if filter_manager:
+            sites = filter_manager.apply(sites)
         return self.is_close_to_some_site(7, 7, sites)
 
     @hybrid_property

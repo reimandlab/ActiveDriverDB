@@ -107,12 +107,16 @@ def parse_vcf(vcf_file, results, without_mutations, badly_formatted):
             if items:
                 if len(alts) > 1:
                     parsed_line += ' (' + alt + ')'
-                results.append(
-                    {
+
+                if parsed_line in results:
+                    results[parsed_line]['count'] += 1
+                    assert results[parsed_line]['results'] == items
+                else:
+                    results[parsed_line] = {
                         'user_input': parsed_line,
-                        'results': items
+                        'results': items,
+                        'count': 1
                     }
-                )
             else:
                 without_mutations.append(parsed_line)
 
@@ -138,11 +142,13 @@ def parse_text(textarea_query, results, without_mutations, badly_formatted):
             continue
 
         if items:
-            results.append(
-                {
-                    'user_input': line, 'results': items
+            if line in results:
+                results[line]['count'] += 1
+                assert results[line]['results'] == items
+            else:
+                results[line] = {
+                    'user_input': line, 'results': items, 'count': 1
                 }
-            )
         else:
             without_mutations.append(line)
 
@@ -152,7 +158,7 @@ def search_mutations(vcf_file, textarea_query):
     # TODO: we should prevent repeatitions (or count them)
     query = ''
 
-    results = []
+    results = {}
     without_mutations = []
 
     badly_formatted = []

@@ -15,17 +15,18 @@
     <th>Alt aa</th>
     <th>Position</th>
     <th>is PTM?</th>
+    <th>Count</th>
     <th>Impact</th>
     <th>Link</th>
   </tr>
   </thead>
-  {% for line in results %}
+  {% for name, result_obj in results.items() %}
     <tbody>
-    {% for result in line.results %}
+    {% for result in result_obj.results %}
       {% set mutation = result.mutation %}
       <tr>
         {% if loop.first %}
-          <td rowspan={{ loop.length }}>{{ line.user_input }}</td>
+          <td rowspan={{ loop.length }}>{{ result_obj.user_input }}</td>
           {% if result.type == 'proteomic' %}
           {# If the query was about one specific protein, it won't change #}
           <td rowspan={{ loop.length }}>
@@ -50,11 +51,12 @@
         <td>{{ result.ref }}</td>
         <td>{{ result.alt }}</td>
         <td>{{ result.pos }}</td>
-        <td>{{ mutation.is_ptm }}
+        <td>{{ mutation.is_ptm() }}
         {#
           This might take advantage of precomputed PTMs for genomic mutations
           result.is_ptm if (result.is_ptm != None) else mutation.is_ptm
         #}</td>
+        <td>{{ result_obj.count }}</td>
         {% set impact = mutation.impact_on_ptm() %}
         <td class="{{ impact or '' }}">
             {{ impact or '' }}
