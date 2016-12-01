@@ -75,7 +75,13 @@
             {% include 'export_buttons.html' %}
             {% include 'forms/filters_bar.html' %}
         </div>
-        <div id="network_plot" class="panel-body"></div>
+        <div class="panel-body">
+          <div id="network_spinner">
+            <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>
+          </div>
+          <div id="network_plot">
+          </div>
+        </div>
     </div>
 
     <input type="hidden" name="fallback" value="True">
@@ -85,6 +91,12 @@
 
 
 {% block footer_js %}
+  <script type="text/javascript">
+    $('#spinner').hide()
+    $('#network_spinner').show()
+  </script>
+
+
     {% assets "js_network_view" %}
 	<script type="text/javascript" src="{{ ASSET_URL }}"></script>
     {% endassets %}
@@ -103,7 +115,7 @@
         nodeURL: function(node){
             return '{{ url_for('ProteinView:show', refseq='') }}' + node.protein.refseq
         },
-        onload: function(){ $('#spinner').hide() }
+        onload: function(){ $('#network_spinner').hide() }
     })
 
     $('.zoom-in').on('click', Network.zoom_in)
@@ -125,5 +137,5 @@
     )
     {% endassets %}
 
-    </script>
+  </script>
 {% endblock %}
