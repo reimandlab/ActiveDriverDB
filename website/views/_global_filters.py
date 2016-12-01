@@ -10,9 +10,9 @@ from website.helpers.widgets import FilterWidget
 
 
 cancer_codes = [cancer.code for cancer in Cancer.query.all()]
-populations_1kg = The1000GenomesMutation.populations.values()
-populations_esp = ExomeSequencingMutation.populations.values()
-significances = ClinicalData.significance_codes.values()
+populations_1kg = The1000GenomesMutation.populations.keys()
+populations_esp = ExomeSequencingMutation.populations.keys()
+significances = ClinicalData.significance_codes.keys()
 
 
 def populations_labels(populations):
@@ -34,12 +34,23 @@ class SourceDependentFilter(Filter):
         return self.manager.get_value('Mutation.sources') == self.source
 
 
+def sources_to_sa_filter(f, t):
+    real_field_name = Mutation.source_fields[f.value]
+
+    field = getattr(t, real_field_name)
+    if field.property.uselist:
+        return field.any()
+    else:
+        return field.has()
+
+
 def common_filters(default_source='TCGA', source_nullable=False):
     return [
         Filter(
             Mutation, 'sources', comparators=['in'],
             choices=list(Mutation.source_fields.keys()),
             default=default_source, nullable=source_nullable,
+            as_sqlalchemy=sources_to_sa_filter
         ),
         Filter(
             Mutation, 'is_ptm', comparators=['eq'],
@@ -51,6 +62,7 @@ def common_filters(default_source='TCGA', source_nullable=False):
                 'phosphorylation', 'acetylation',
                 'ubiquitination', 'methylation'
             ],
+            as_sqlalchemy=True
         ),
         SourceDependentFilter(
             [Mutation, CancerMutation], 'cancer_code',
@@ -59,13 +71,14 @@ def common_filters(default_source='TCGA', source_nullable=False):
             default=cancer_codes, nullable=False,
             source='TCGA',
             multiple='any',
+            as_sqlalchemy=True
         ),
         SourceDependentFilter(
             Mutation, 'populations_1KG', comparators=['in'],
             choices=populations_1kg,
             default=populations_1kg, nullable=False,
             source='1KGenomes',
-            multiple='any',
+            multiple='any'
         ),
         SourceDependentFilter(
             Mutation, 'populations_ESP6500', comparators=['in'],
@@ -75,11 +88,11 @@ def common_filters(default_source='TCGA', source_nullable=False):
             multiple='any',
         ),
         SourceDependentFilter(
-            [Mutation, ClinicalData], 'significance', comparators=['in'],
+            [Mutation, ClinicalData], 'sig_code', comparators=['in'],
             choices=significances,
             default=significances, nullable=False,
             source='ClinVar',
-            multiple='any',
+            multiple='any'
         )
     ]
 
@@ -106,28 +119,25 @@ def create_widgets(filters_by_id):
                     cancer.name + ' (' + cancer.code + ')'
                     for cancer in Cancer.query.all()
                 ],
-                all_selected_label='All cancer types',
-                class_name='dataset-specific-widget'
+                all_selected_label='All cancer types'
             ),
             FilterWidget(
                 'Ethnicity', 'select_multiple',
                 filter=filters_by_id['Mutation.populations_1KG'],
                 labels=populations_labels(The1000GenomesMutation.populations),
-                all_selected_label='All ethnicities',
-                class_name='dataset-specific-widget'
+                all_selected_label='All ethnicities'
             ),
             FilterWidget(
                 'Ethnicity', 'select_multiple',
                 filter=filters_by_id['Mutation.populations_ESP6500'],
                 labels=populations_labels(ExomeSequencingMutation.populations),
-                all_selected_label='All ethnicities',
-                class_name='dataset-specific-widget'
+                all_selected_label='All ethnicities'
             ),
             FilterWidget(
                 'Clinical significance', 'select_multiple',
-                filter=filters_by_id['Mutation.significance'],
+                filter=filters_by_id['Mutation.sig_code'],
                 all_selected_label='All clinical significance classes',
-                class_name='dataset-specific-widget'
+                labels=ClinicalData.significance_codes.values()
             )
         ],
         'is_ptm': FilterWidget(

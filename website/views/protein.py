@@ -7,6 +7,7 @@ from flask_classful import FlaskView
 from models import Protein
 from models import Mutation
 from models import Domain
+from models import Site
 from website.helpers.tracks import Track
 from website.helpers.tracks import TrackElement
 from website.helpers.tracks import PositionTrack
@@ -17,7 +18,6 @@ from website.helpers.filters import FilterManager
 from website.views._global_filters import common_filters
 from website.views._global_filters import create_widgets
 from website.views._commons import represent_mutation
-from website.views._commons import get_source_field
 from operator import attrgetter
 from sqlalchemy import and_
 
@@ -26,8 +26,7 @@ def represent_needles(mutations, filter_manager):
 
     source_name = filter_manager.get_value('Mutation.sources')
 
-    source_field_name = get_source_field(source_name)
-    get_source_data = attrgetter(source_field_name)
+    get_source_data = attrgetter(Mutation.source_fields[source_name])
 
     get_mimp_data = attrgetter('meta_MIMP')
 
@@ -49,7 +48,7 @@ def represent_needles(mutations, filter_manager):
         if mimp:
             metadata['MIMP'] = mimp.to_json()
 
-        needle['summary'] = field.summary
+        needle['summary'] = field.summary(data_filter)
         needle['value'] = field.get_value(data_filter)
         needle['meta'] = metadata
         needle['category'] = mutation.impact_on_ptm(data_filter)
@@ -86,7 +85,12 @@ class ProteinView(FlaskView):
             TrackElement(*region) for region in protein.disorder_regions
         ]
 
-        raw_mutations = filter_manager.apply(protein.mutations)
+        source = filter_manager.get_value('Mutation.sources')
+
+        raw_mutations = filter_manager.sqlalchemy_query(
+            Mutation,
+            lambda q: and_(q, Mutation.protein_id == protein.id)
+        )
 
         tracks = [
             PositionTrack(protein.length, 25),
@@ -103,7 +107,6 @@ class ProteinView(FlaskView):
             MutationsTrack(raw_mutations)
         ]
 
-        source = filter_manager.get_value('Mutation.sources')
         if source in ('TCGA', 'ClinVar'):
             value_type = 'Count'
         else:
@@ -113,7 +116,7 @@ class ProteinView(FlaskView):
             raw_mutations, filter_manager
         )
 
-        filters_by_id = {f.id: f for f in filters}
+        filters_by_id = filter_manager.filters
 
         return template(
             'protein/index.html', protein=protein, tracks=tracks,
@@ -165,7 +168,10 @@ class ProteinView(FlaskView):
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
-        raw_mutations = filter_manager.apply(protein.mutations)
+        raw_mutations = filter_manager.sqlalchemy_query(
+            Mutation,
+            lambda q: and_(q, Mutation.protein_id == protein.id)
+        )
 
         parsed_mutations = represent_needles(
             raw_mutations,
@@ -187,7 +193,10 @@ class ProteinView(FlaskView):
         return jsonify(response)
 
     def _prepare_sites(self, protein, filter_manager):
-        sites = filter_manager.apply(protein.sites)
+        sites = filter_manager.sqlalchemy_query(
+            Site,
+            lambda q: and_(q, Site.protein_id == protein.id)
+        )
         return [
             {
                 'start': site.position - 7,

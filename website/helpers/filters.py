@@ -36,7 +36,7 @@ class Filter:
         self, targets, attribute, default=None, nullable=True,
         comparators='__all__', choices='__all__',
         default_comparator=None, multiple=False,
-        is_attribute_a_method=False
+        is_attribute_a_method=False, as_sqlalchemy=False, type=None
     ):
         if comparators != '__all__':
             if not default_comparator and len(comparators) == 1:
@@ -61,8 +61,91 @@ class Filter:
             self._verify_comparator(default_comparator)
         self._default_comparator = default_comparator
         self._comparator = None
+        self._as_sqlalchemy = as_sqlalchemy
+        self.type = type
         if default:
             assert default_comparator
+
+    @property
+    def has_sqlalchemy(self):
+        return self._as_sqlalchemy
+
+    def as_sqlalchemy(self, target):
+        from sqlalchemy.ext.associationproxy import AssociationProxy
+        from types import FunctionType, MethodType
+        from sqlalchemy import or_, and_
+
+        comparators = {
+            'ge': '__ge__',
+            'le': '__le__',
+            'gt': '__gt__',
+            'lt': '__lt__',
+            'eq': '__eq__',
+            'in': 'in_',
+            'ni': 'notin_',
+        }
+
+        join_operators = {
+            'all': and_,
+            'any': or_
+        }
+
+        if self.value is None:
+            return False
+
+        if type(self._as_sqlalchemy) is FunctionType:
+            return self._as_sqlalchemy(self, target)
+
+        path = self.attribute.split('.')
+
+        assert len(path) < 3     # we are unable to query deeper easily
+
+        field = getattr(target, path[0])
+
+        if type(field) is AssociationProxy:
+            if self.comparator == 'in':
+                func = getattr(field, 'contains')
+
+                comp_func = join_operators[self.multiple](
+                    *[
+                        func(sub_value)
+                        for sub_value in self.value
+                    ]
+                )
+                return comp_func
+
+        if len(path) == 2:
+            if self.comparator == 'in':
+                sub_attr = path[1]
+                func = getattr(field, 'any')
+
+                comp_func = join_operators[self.multiple](
+                    *[
+                        func(**{sub_attr: sub_value})
+                        for sub_value in self.value
+                    ]
+                )
+                return comp_func
+
+        #apply_to_attribute = True
+        #if self.comparator == 'in' and apply_to_attribute:
+        #    return join_operators[self.multiple](
+        #        *[
+        #            getattr(field, sub_value).__gt__(0)
+        #            for sub_value in self.value
+        #        ]
+        #    )
+
+        # if type(field) is MethodType:
+        #    return getattr(field, comparators[self.comparator])(target)
+
+        from sqlalchemy.sql.sqltypes import Text
+
+        if self.comparator == 'in' and type(field.property.columns[0].type) is Text:
+            return getattr(field, 'like')('%' + self.value + '%')
+
+
+        return getattr(field, comparators[self.comparator])(self.value)
 
     @property
     def id(self):
@@ -78,14 +161,14 @@ class Filter:
             )
         if not (
                 self.allowed_values == '__all__' or
-                value in self.allowed_values or
                 (
                     is_iterable_but_not_str(value) and
                     all(
                         sub_value in self.allowed_values
                         for sub_value in value
                     )
-                )
+                ) or
+                value in self.allowed_values
         ):
             raise ValidationError(
                 'Filter % recieved forbidden value: %s. Allowed: %s' %
@@ -115,6 +198,14 @@ class Filter:
             self._verify_comparator(comparator)
             self._comparator = comparator
         if value is not None:
+            if self.multiple and not is_iterable_but_not_str(value):
+                value = [value]
+            # cast to desired type
+            if self.type:
+                if self.multiple:
+                    value = [self.type(sub_value) for sub_value in value]
+                else:
+                    value = self.type(value)
             self._verify_value(value)
             self._value = value
 
@@ -123,28 +214,40 @@ class Filter:
             return self.possible_join_operators[self.multiple]
 
     def compare(self, value):
+
         comparator_function = self.possible_comparators[self.comparator]
         multiple_test = self.get_multiple_function()
 
-        return self._compare(value, comparator_function, multiple_test)
+        compare = self.get_compare_func(comparator_function, multiple_test)
 
-    def _compare(self, value, comparator_function, multiple_test):
+        return compare(value)
 
-        # tricky: check if operator is usable on given value.
-        # Detects when one tries to check if x in None or y > "tree".
-        # As all of those are incorrect false will be returned.
-        try:
-            comparator_function(value, value)
-        except TypeError:
-            return False
-
+    def get_compare_func(self, comparator_function, multiple_test):
         if multiple_test:
-            return multiple_test(
-                comparator_function(value, sub_value)
-                for sub_value in self.value
-            )
+            def compare(value):
+                # tricky: check if operator is usable on given value.
+                # Detects when one tries to check if x in None or y > "tree".
+                # As all of those are incorrect false will be returned.
+                try:
+                    comparator_function(value, value)
+                except TypeError:
+                    return lambda x: False
 
-        return comparator_function(value, self.value)
+                return multiple_test(
+                    comparator_function(value, sub_value)
+                    for sub_value in self.value
+                )
+            return compare
+
+        def compare(value):
+
+            try:
+                comparator_function(value, value)
+            except TypeError:
+                return lambda x: False
+            return comparator_function(value, self.value)
+
+        return compare
 
     def attr_getter(self):
         """Attrgetter that passes a value to an method-attribute if needed"""
@@ -181,22 +284,23 @@ class Filter:
             # the filter is turned off
             return -1
 
+        if not elements:
+            return []
+
         attr_get = self.attr_getter()
 
         comparator_function = self.possible_comparators[self.comparator]
         multiple_test = self.get_multiple_function()
 
-        compare = self._compare
+        compare = self.get_compare_func(comparator_function, multiple_test)
 
-        return [
+        return (
             elem
             for elem in elements
             if compare(
-                attr_get(elem),
-                comparator_function,
-                multiple_test
+                attr_get(elem)
             )
-        ]
+        )
 
     @property
     def is_active(self):
@@ -214,9 +318,7 @@ class Filter:
             return self._comparator
         return self._default_comparator
 
-    @property
-    def visible(self):
-        return True
+    visible = True
 
     def __repr__(self):
         return '<Filter {1} ({0}active) with value "{2}">'.format(
@@ -262,7 +364,41 @@ class FilterManager:
         """Return a list of inactive filters"""
         return [f for f in self.filters.values() if not f.is_active]
 
-    def apply(self, elements):
+    def sqlalchemy_query(self, target, custom_filter=None):
+        """There are two strategies of using filter manager:
+
+        + you can get results from database and walk through every element in the list, or
+        + you can build a query and move some job to the database. Not always it is possible though.
+        """
+        from sqlalchemy import and_
+
+        to_apply_manually = []
+        query_filters = []
+
+        for the_filter in self._get_active_by_target(target):
+
+            if the_filter.has_sqlalchemy:
+
+                as_sqlalchemy = the_filter.as_sqlalchemy(target)
+                if as_sqlalchemy is not False:
+                    query_filters.append(as_sqlalchemy)
+
+            else:
+                to_apply_manually.append(the_filter)
+
+        query_filters_sum = and_(*query_filters)
+
+        if custom_filter:
+            query_filters_sum = custom_filter(query_filters_sum)
+
+
+        query = target.query.filter(query_filters_sum)
+
+        elements = query.all()
+
+        return self.apply(elements, to_apply_manually)
+
+    def apply(self, elements, filters_subset=None):
         """Apply all appropriate filters to given list of elements.
 
         Only filters targeting the same model and beeing currently active will
@@ -275,9 +411,15 @@ class FilterManager:
             # investigate the type of targeted objects
             return []
 
-        for filter_ in self._get_active_by_target(target_type):
+        if filters_subset is not None:
+            filters = filters_subset
+        else:
+            filters = self._get_active_by_target(target_type)
+
+        for filter_ in filters:
             elements = filter_.apply(elements)
-        return elements
+
+        return list(elements)
 
     def _get_active_by_target(self, target_type):
         """Return filters which are active & target the same type of objects"""
@@ -404,20 +546,13 @@ class FilterManager:
         elif value == 'None':
             return None
 
-        try:
-            return int(value)
-        except (ValueError, TypeError):
-            pass
-
-        try:
-            return float(value)
-        except (ValueError, TypeError):
-            pass
-
         value = value.replace('+', ' ')
 
         if FilterManager.sub_value_separator in value:
-            return value.split(FilterManager.sub_value_separator)
+            return [
+                FilterManager._parse_value(v)
+                for v in value.split(FilterManager.sub_value_separator)
+            ]
 
         return value
 
@@ -425,7 +560,7 @@ class FilterManager:
     def _repr_value(value):
         """Return string representation of given value (of a filter)."""
         if is_iterable_but_not_str(value):
-            return FilterManager.sub_value_separator.join(value)
+            return FilterManager.sub_value_separator.join(map(str, value))
         return str(value)
 
     @property
