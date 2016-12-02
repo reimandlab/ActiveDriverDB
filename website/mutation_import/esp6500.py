@@ -1,7 +1,7 @@
 from models import ExomeSequencingMutation
 from import_mutations import MutationImporter
 from helpers.parsers import parse_tsv_file
-import gzip
+from helpers.parsers import gzip_open_text
 
 
 class Importer(MutationImporter):
@@ -38,7 +38,11 @@ class Importer(MutationImporter):
                     )
                 )
 
-        parse_tsv_file(path, esp_parser, self.header, file_opener=gzip.open)
+        parse_tsv_file(
+            path, esp_parser,
+            self.header,
+            file_opener=gzip_open_text
+        )
 
         return esp_mutations
 

@@ -4,6 +4,14 @@ import gzip
 from tqdm import tqdm
 
 
+def gzip_open_text(path, mode=None):
+    if not mode:
+        mode = 'rt'
+    else:
+        mode += 't'
+    return gzip.open(path, mode)
+
+
 def get_files(path, pattern):
     """Get all files from given `path` matching to given pattern
 

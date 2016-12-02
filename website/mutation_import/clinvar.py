@@ -4,9 +4,9 @@ from import_mutations import MutationImporter
 from import_mutations import make_metadata_ordered_dict
 from import_mutations import bulk_ORM_insert
 from helpers.parsers import parse_tsv_file
+from helpers.parsers import gzip_open_text
 from database import restart_autoincrement
 from database import db
-import gzip
 
 
 class Importer(MutationImporter):
@@ -117,7 +117,12 @@ class Importer(MutationImporter):
                         )
                     )
 
-        parse_tsv_file(path, clinvar_parser, self.header, file_opener=gzip.open)
+        parse_tsv_file(
+            path,
+            clinvar_parser,
+            self.header,
+            file_opener=gzip_open_text
+        )
 
         return clinvar_mutations, clinvar_data
 

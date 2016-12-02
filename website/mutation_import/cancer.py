@@ -6,19 +6,22 @@ from models import CancerMutation
 from import_mutations import MutationImporter
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import chunked_list
-import gzip
+from helpers.parsers import gzip_open_text
 
 
 class Importer(MutationImporter):
 
     model = CancerMutation
     default_path = 'data/mutations/TCGA_muts_annotated.txt.gz'
+    header = [
+        'Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
+        'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'V11'
+    ]
 
     def parse(self, path):
         mutations_counter = Counter()
 
         def cancer_parser(line):
-
             assert line[10].startswith('comments: ')
             cancer_name, sample, _ = line[10][10:].split(';')
 
@@ -36,7 +39,13 @@ class Importer(MutationImporter):
                     )
                 ] += 1
 
-        parse_tsv_file(path, cancer_parser, file_opener=gzip.open)
+        parse_tsv_file(
+            path,
+            cancer_parser,
+            file_header=self.header,
+            file_opener=gzip_open_text
+        )
+
         return mutations_counter
 
     def insert_details(self, mutations_counter):
