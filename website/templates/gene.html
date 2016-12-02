@@ -2,9 +2,20 @@
 
     {% block title %} {{ gene.name }} - {{ super() }} {% endblock %}
 
-    {% assets "css_gene" %}
-        <link rel="stylesheet" href="{{ ASSET_URL }}">
-    {% endassets %}
+    {% block head %}
+      {{ super() }}
+      {% assets "css_gene" %}
+          <link rel="stylesheet" href="{{ ASSET_URL }}">
+      {% endassets %}
+      <style type="text/css">
+        .show-alt.js-shown {
+          display: none!important
+        }
+        .alt-isoforms.js-hidden {
+          display: block
+        }
+      </style>
+    {% endblock %}
 
 {% block content %}
 
