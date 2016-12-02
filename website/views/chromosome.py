@@ -60,8 +60,6 @@ def represent_mutations(mutations, filter_manager):
         if mimp:
             metadata['MIMP'] = mimp.to_json()
 
-        needle['in_datasets'] = metadata
-
         closest_sites = mutation.find_closest_sites(
             site_filter=data_filter
         )
@@ -71,6 +69,8 @@ def represent_mutations(mutations, filter_manager):
         ]
 
         needle.move_to_end('sites')
+
+        needle['in_datasets'] = metadata
 
         response.append(needle)
 
