@@ -62,6 +62,7 @@ var Tracks = function ()
 
         if(needle_plot && !stop_callback)
         {
+            _setZoom(scale, true)
             needle_plot.setAAPosition(position, true)
         }
 
@@ -94,6 +95,7 @@ var Tracks = function ()
 
         if(needle_plot && !stop_callback)
         {
+            _setAAPosition(position, true)
             needle_plot.setZoom(scale, true)
         }
     }

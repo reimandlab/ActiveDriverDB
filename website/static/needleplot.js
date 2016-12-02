@@ -499,8 +499,8 @@ var NeedlePlot = function ()
 
     function _setZoomAndMove(new_scale, new_position, animate)
     {
+        _setPosition(new_position)
 		_setZoom(new_scale)
-		_setPosition(new_position)
 
         refresh(animate)
         dispatch.zoomAndMove(this)
