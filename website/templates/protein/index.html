@@ -113,65 +113,70 @@ External references:
 
 
 {% block footer_js %}
-    {% assets "js_protein_view" %}
-	<script type="text/javascript" src="{{ ASSET_URL }}"></script>
-    {% endassets %}
-    <script type="text/javascript">
-        nunjucks.configure('/static/js_templates', {autoescape: true})
-        var tracks = Tracks()
-        tracks.init({
-            box: document.getElementById('tracks-box')
-        })
-        var max_zoom = tracks.adjustMaxZoom()
-        var mutations = {{ mutations | json | safe }}
-        var sites = {{ sites | json | safe }}
-        {# An alternative form of getting data, not fully functional nor fast
-          var mutations = "{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.url_string) }}"
-          var sites = "{{ url_for('ProteinView:sites', refseq=protein.refseq, filters=filters.url_string) }}"
-        #}
-        var plot = document.getElementById('plot_area')
-        var params = {
-            use_log: {{ log_scale | lower }},
-            value_type: '{{ value_type }}',
-            max_zoom: max_zoom,
-            element: plot,
-            data: {
-              mutations: mutations,
-              sites: sites
-            },
-            sequenceLength: {{ protein.sequence | length }},
-            name: '{{ protein.gene.name }}',
-            legends:
-            {
-              x: null,
-              y: '{{ value_type }} of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
-            },
-            zoom_callback: tracks.setZoom,
-            position_callback: tracks.setAAPosition,
-            width: $('#tracks-box').width()
-        }
-        var mutation_table = MutationTable()
-        mutation_table.init($('#table'), mutations)
-        var needle_plot = NeedlePlot()
-        needle_plot.init(params)
-        tracks.setNeedlePlotInstance(needle_plot)
-        $(window).on('resize', function()
-            {
-                needle_plot.setSize(
-                    $('#tracks-box').width(),
-                    null,
-                    tracks.adjustMaxZoom()
-                )
-            }
-        )
+  {% assets "js_protein_view" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+  {% endassets %}
+  <script type="text/javascript">
 
-        {% assets "css_protein" %}
-        Export.init(
-            plot,
-            'protein_view:{{ protein.gene.name }}-{{ protein.refseq }}',
-            '{{ ASSET_URL }}'
-        )
-        {% endassets %}
-    </script>
-    {{ super() }}
+    nunjucks.configure('/static/js_templates', {autoescape: true})
+    var tracks = Tracks()
+    tracks.init({
+        box: document.getElementById('tracks-box')
+    })
+    var max_zoom = tracks.adjustMaxZoom()
+    var mutations = {{ mutations | json | safe }}
+    var sites = {{ sites | json | safe }}
+    {# An alternative form of getting data, not fully functional nor fast
+      var mutations = "{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.url_string) }}"
+      var sites = "{{ url_for('ProteinView:sites', refseq=protein.refseq, filters=filters.url_string) }}"
+    #}
+    var plot = document.getElementById('plot_area')
+    var params = {
+        use_log: {{ log_scale | lower }},
+        value_type: '{{ value_type }}',
+        max_zoom: max_zoom,
+        element: plot,
+        data: {
+          mutations: mutations,
+          sites: sites
+        },
+        sequenceLength: {{ protein.sequence | length }},
+        name: '{{ protein.gene.name }}',
+        legends:
+        {
+          x: null,
+          y: '{{ value_type }} of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
+        },
+        zoom_callback: tracks.setZoom,
+        position_callback: tracks.setAAPosition,
+        width: $('#tracks-box').width()
+    }
+    var needle_plot = NeedlePlot()
+    needle_plot.init(params)
+    tracks.setNeedlePlotInstance(needle_plot)
+    $(window).on('resize', function()
+        {
+            needle_plot.setSize(
+                $('#tracks-box').width(),
+                null,
+                tracks.adjustMaxZoom()
+            )
+        }
+    )
+
+    {% assets "css_protein" %}
+    Export.init(
+        plot,
+        'protein_view:{{ protein.gene.name }}-{{ protein.refseq }}',
+        '{{ ASSET_URL }}'
+    )
+    {% endassets %}
+
+  </script>
+
+  <script type="text/javascript">
+    var mutation_table = MutationTable()
+    mutation_table.init($('#table'), mutations)
+  </script>
+  {{ super() }}
 {% endblock %}
