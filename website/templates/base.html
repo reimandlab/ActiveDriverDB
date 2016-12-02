@@ -29,7 +29,7 @@
     {# elements with 'js-hidden' class will be hidden only if js is active #}
     var css = document.createElement('style')
     css.type = 'text/css'
-    css.innerHTML = '.js-hidden { display: none }'
+    css.innerHTML = '.js-hidden{display: none}.js-shown{display: block!important}'
     document.body.appendChild(css)
   </script>
   <div id="spinner">

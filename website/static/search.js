@@ -145,7 +145,7 @@ var ProteinForm = (function ()
 
     }
 
-    function hideAltIsoforms()
+    function ToggleAlternativeIsoforms()
     {
         $('.alt-isoforms').toggleClass('hidden', true)
         $('.show-alt').toggleClass('hidden', false)
@@ -155,13 +155,14 @@ var ProteinForm = (function ()
     {
         $(result_box).on('click', '.show-alt', function(event)
         {
-            $(this).siblings('.alt-isoforms').toggleClass('hidden')
-            $(this).hide()
+            $(this).siblings('.alt-isoforms').toggleClass('js-hidden')
+            $(this).toggleClass('js-shown')
         })
-        var observer = new MutationObserver(hideAltIsoforms)
-        var config = {childList: true}
-        observer.observe($(result_box).find('ul')[0], config)
-        hideAltIsoforms()
+
+        // "alt-isoforms" have also "js-hidden" class
+        // (so they will be hidden by default if js is enabled)
+        // similarly with "show-alt" (but reverse)
+
     }
 
     var publicSpace = {

@@ -39,9 +39,9 @@
     {% endif %}
     {% if gene.alternative_isoforms %}
         {% set alt_iso_cnt = gene.alternative_isoforms | length %}
-        <input type="button" class="hidden btn btn-default show-alt"
+        <input type="button" class="hidden btn btn-default show-alt js-shown"
          value="Show {{ alt_iso_cnt }} isoform{{ 's' if alt_iso_cnt > 1 }} more">
-        <div class="alt-isoforms">
+        <div class="alt-isoforms js-hidden">
         {% for isoform in gene.alternative_isoforms %}
             {{ isoform_result(isoform) }}
         {% endfor %}
