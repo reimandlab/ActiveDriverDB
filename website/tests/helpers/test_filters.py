@@ -71,7 +71,7 @@ def test_multiselect_filter():
     )
 
     # test the default value
-    assert len(tested_filter.apply(test_objects)) == 4
+    assert len(list(tested_filter.apply(test_objects))) == 4
 
     with pytest.raises(filters.ValidationError):
         tested_filter.update('e')
@@ -79,4 +79,4 @@ def test_multiselect_filter():
 
     for value, length in test_values:
         tested_filter.update(value)
-        assert len(tested_filter.apply(test_objects)) == length
+        assert len(list(tested_filter.apply(test_objects))) == length
