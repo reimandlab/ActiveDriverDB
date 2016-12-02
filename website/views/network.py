@@ -27,27 +27,31 @@ class Target:
     __name__ = 'JavaScript'
 
 
-class NetworkView(FlaskView):
-    """View for local network of proteins"""
+class NetworkViewFilters(FilterManager):
 
-    def _make_filters(self):
-        filters = common_filters()
+    def __init__(self, **kwargs):
+
+        filters = common_filters(**kwargs)
 
         # TODO: use filter manager only for true filters,
         # make an "option manager" for options.
-        filter_manager = FilterManager(
-            [
-                Filter(
-                    Target(), 'show_sites',
-                    comparators=['eq'], default=True
-                ),
-                Filter(
-                    Target(), 'clone_by_site',
-                    comparators=['eq'], default=True
-                ),
-            ] + filters
-        )
-        return filters, filter_manager
+        filters += [
+            Filter(
+                Target(), 'show_sites',
+                comparators=['eq'], default=True
+            ),
+            Filter(
+                Target(), 'clone_by_site',
+                comparators=['eq'], default=True
+            )
+        ]
+
+        super().__init__(filters)
+        self.update_from_request(request)
+
+
+class NetworkView(FlaskView):
+    """View for local network of proteins"""
 
     def _create_option_widgets(self, filter_manager):
 
@@ -63,7 +67,19 @@ class NetworkView(FlaskView):
         ]
 
     def before_request(self, name, *args, **kwargs):
-        pass
+        filter_manager = NetworkViewFilters()
+
+        if request.args.get('fallback'):
+
+            method_endpoint = self.__class__.__name__ + ':' + name
+            url = url_for(method_endpoint, *args, **kwargs)
+
+            filters = filter_manager.url_string
+            # filters might be empty if
+            # (e.g. if all are pointing to default values)
+            if filters:
+                url += '?filters=' + filters
+            return redirect(url)
 
     def index(self):
         """Show SearchView as deafault page"""
@@ -72,15 +88,13 @@ class NetworkView(FlaskView):
     def show(self, refseq):
         """Show a protein network visualisation"""
 
-        filters, filter_manager = self._make_filters()
-        filters_by_id = {f.id: f for f in filters}
-        filter_manager.update_from_request(request)
+        filter_manager = NetworkViewFilters()
+        filters_by_id = filter_manager.filters
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-        #data = self._prepare_network_repr(protein, filter_manager)
 
         return template(
-            'network.html', protein=protein, #data=data,
+            'network.html', protein=protein,
             filters=filter_manager,
             option_widgets=self._create_option_widgets(filter_manager),
             widgets=create_widgets(filters_by_id),
@@ -212,8 +226,7 @@ class NetworkView(FlaskView):
 
     def representation(self, refseq):
 
-        filters, filter_manager = self._make_filters()
-        filter_manager.update_from_request(request)
+        filter_manager = NetworkViewFilters()
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
         data = self._prepare_network_repr(protein, filter_manager)

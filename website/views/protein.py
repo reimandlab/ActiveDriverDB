@@ -73,11 +73,16 @@ class ProteinView(FlaskView):
         filter_manager = ProteinViewFilters()
 
         if request.args.get('fallback'):
-            return redirect(
-                url_for(self.__class__.__name__ + ':' + name, *args, **kwargs) +
-                '?filters=' +
-                filter_manager.url_string
-            )
+
+            method_endpoint = self.__class__.__name__ + ':' + name
+            url = url_for(method_endpoint, *args, **kwargs)
+
+            filters = filter_manager.url_string
+            # filters might be empty if
+            # (e.g. if all are pointing to default values)
+            if filters:
+                url += '?filters=' + filters
+            return redirect(url)
 
     def index(self):
         """Show SearchView as deafault page"""
