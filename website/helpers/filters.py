@@ -579,6 +579,7 @@ class FilterManager:
                     ])
                 )
                 for f in self.filters.values()
+                if f.is_active and f.value != f.default
             ]
         )
 

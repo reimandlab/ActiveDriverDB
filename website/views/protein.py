@@ -58,14 +58,26 @@ def represent_needles(mutations, filter_manager):
     return response
 
 
+class ProteinViewFilters(FilterManager):
+
+    def __init__(self, **kwargs):
+        filters = common_filters(**kwargs)
+        super().__init__(filters)
+        self.update_from_request(request)
+
+
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
-    def _make_filters(self):
-        filters = common_filters()
-        filter_manager = FilterManager(filters)
-        filter_manager.update_from_request(request)
-        return filters, filter_manager
+    def before_request(self, name, *args, **kwargs):
+        filter_manager = ProteinViewFilters()
+
+        if request.args.get('fallback'):
+            return redirect(
+                url_for(self.__class__.__name__ + ':' + name, *args, **kwargs) +
+                '?filters=' +
+                filter_manager.url_string
+            )
 
     def index(self):
         """Show SearchView as deafault page"""
@@ -77,7 +89,7 @@ class ProteinView(FlaskView):
         + needleplot
         + tracks (seuqence + data tracks)
         """
-        filters, filter_manager = self._make_filters()
+        filter_manager = ProteinViewFilters()
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
@@ -132,9 +144,10 @@ class ProteinView(FlaskView):
         from website.views.chromosome import represent_mutations
         from database import get_or_create
 
-        filters = common_filters(default_source=None, source_nullable=False)
-        filter_manager = FilterManager(filters)
-        filter_manager.update_from_request(request)
+        filter_manager = ProteinViewFilters(
+            default_source=None,
+            source_nullable=False
+        )
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
@@ -164,7 +177,7 @@ class ProteinView(FlaskView):
         """List of mutations suitable for needleplot library"""
 
         if not filter_manager:
-            _, filter_manager = self._make_filters()
+            filter_manager = ProteinViewFilters()
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
@@ -184,7 +197,7 @@ class ProteinView(FlaskView):
         """List of sites suitable for needleplot library"""
 
         if not filter_manager:
-            _, filter_manager = self._make_filters()
+            filter_manager = ProteinViewFilters()
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
