@@ -65,7 +65,7 @@ def count_lines(file_object):
     return count
 
 
-def parse_tsv_file(filename, parser, file_header=None):
+def parse_tsv_file(filename, parser, file_header=None, file_opener=open):
     """Utility function wraping tsv (tab-separated values) file parser.
 
     It checks if the file header is the same as given (if provided).
@@ -73,7 +73,7 @@ def parse_tsv_file(filename, parser, file_header=None):
 
     Progress bar is embeded.
     """
-    with open(filename) as f:
+    with file_opener(filename) as f:
         data_lines_count = count_lines(f)
         if file_header:
             header = f.readline().rstrip().split('\t')
@@ -84,7 +84,7 @@ def parse_tsv_file(filename, parser, file_header=None):
             parser(line)
 
 
-def parse_text_file(filename, parser, file_header=None):
+def parse_text_file(filename, parser, file_header=None, file_opener=open):
     """Utility function wraping raw text file parser.
 
     It checks if the file header is the same as given (if provided).
@@ -92,7 +92,7 @@ def parse_text_file(filename, parser, file_header=None):
 
     Progress bar is embeded.
     """
-    with open(filename) as f:
+    with file_opener(filename) as f:
         data_lines_count = count_lines(f)
         if file_header:
             header = f.readline().rstrip()
@@ -103,14 +103,14 @@ def parse_text_file(filename, parser, file_header=None):
             parser(line)
 
 
-def parse_fasta_file(filename, parser):
+def parse_fasta_file(filename, parser, file_opener=open):
     """Utility function wraping fasta file parser.
 
     For each line parser will be called.
 
     Progress bar is embeded.
     """
-    with open(filename) as f:
+    with file_opener(filename) as f:
         for line in tqdm(f, total=count_lines(f), unit=' lines'):
             parser(line)
 
