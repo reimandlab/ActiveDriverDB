@@ -20,65 +20,67 @@
     <th>Link</th>
   </tr>
   </thead>
-  {% for name, result_obj in results.items() %}
-    <tbody>
-    {% for result in result_obj.results %}
-      {% set mutation = result.mutation %}
-      <tr>
-        {% if loop.first %}
-          <td rowspan={{ loop.length }}>{{ result_obj.user_input }}</td>
-          {% if result.type == 'proteomic' %}
-          {# If the query was about one specific protein, it won't change #}
-          <td rowspan={{ loop.length }}>
+  {% if results %}
+    {% for name, result_obj in results.items() %}
+      <tbody>
+      {% for result in result_obj.results %}
+        {% set mutation = result.mutation %}
+        <tr>
+          {% if loop.first %}
+            <td rowspan={{ loop.length }}>{{ result_obj.user_input }}</td>
+            {% if result.type == 'proteomic' %}
+            {# If the query was about one specific protein, it won't change #}
+            <td rowspan={{ loop.length }}>
+              <a href="{{ url_for('GeneView:show', gene_name=result.protein.gene.name)}}">
+                {{ result.protein.gene.name }}
+              </a>
+            </td>
+            {% endif %}
+          {% endif %}
+          {% if result.type != 'proteomic' %}
+          <td>
             <a href="{{ url_for('GeneView:show', gene_name=result.protein.gene.name)}}">
               {{ result.protein.gene.name }}
             </a>
           </td>
           {% endif %}
-        {% endif %}
-        {% if result.type != 'proteomic' %}
-        <td>
-          <a href="{{ url_for('GeneView:show', gene_name=result.protein.gene.name)}}">
-            {{ result.protein.gene.name }}
-          </a>
-        </td>
-        {% endif %}
-        <td>
-          <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq) }}">
-            {{ result.protein.refseq }}
-          </a>
-        </td>
-        <td>{{ result.ref }}</td>
-        <td>{{ result.alt }}</td>
-        <td>{{ result.pos }}</td>
-        <td>{{ mutation.is_ptm() }}
-        {#
-          This might take advantage of precomputed PTMs for genomic mutations
-          result.is_ptm if (result.is_ptm != None) else mutation.is_ptm
-        #}</td>
-        <td>{{ result_obj.count }}</td>
-        {% set impact = mutation.impact_on_ptm() %}
-        <td class="{{ impact or '' }}">
-            {{ impact or '' }}
-            {% if impact == 'network-rewiring' %}
-                - motif {{ mutation.meta_MIMP.effect }}
-            {% endif %}
-        </td>
-        <td>
-            {% if mutation.is_confirmed %}
-              {% for source in mutation.sources %}
-                <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq, filters='Mutation.sources:in:' + source) }}#{{ result.pos }}{{ result.alt }}">
-                mutation details ({{ source }}) →
-              </a><br>
-              {% endfor %}
-            {% else %}
-              no details
-            {% endif %}
-        </td>
-      </tr>
+          <td>
+            <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq) }}">
+              {{ result.protein.refseq }}
+            </a>
+          </td>
+          <td>{{ result.ref }}</td>
+          <td>{{ result.alt }}</td>
+          <td>{{ result.pos }}</td>
+          <td>{{ mutation.is_ptm() }}
+          {#
+            This might take advantage of precomputed PTMs for genomic mutations
+            result.is_ptm if (result.is_ptm != None) else mutation.is_ptm
+          #}</td>
+          <td>{{ result_obj.count }}</td>
+          {% set impact = mutation.impact_on_ptm() %}
+          <td class="{{ impact or '' }}">
+              {{ impact or '' }}
+              {% if impact == 'network-rewiring' %}
+                  - motif {{ mutation.meta_MIMP.effect }}
+              {% endif %}
+          </td>
+          <td>
+              {% if mutation.is_confirmed %}
+                {% for source in mutation.sources %}
+                  <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq, filters='Mutation.sources:in:' + source) }}#{{ result.pos }}{{ result.alt }}">
+                  mutation details ({{ source }}) →
+                </a><br>
+                {% endfor %}
+              {% else %}
+                no details
+              {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
     {% endfor %}
-    </tbody>
-  {% endfor %}
+  {% endif %}
   <tfoot>
   {% if without_mutations %}
     <tr>
