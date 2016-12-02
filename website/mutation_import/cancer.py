@@ -6,12 +6,13 @@ from models import CancerMutation
 from import_mutations import MutationImporter
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import chunked_list
+import gzip
 
 
 class Importer(MutationImporter):
 
     model = CancerMutation
-    default_path = 'data/mutations/TCGA_muts_annotated.txt'
+    default_path = 'data/mutations/TCGA_muts_annotated.txt.gz'
 
     def parse(self, path):
         mutations_counter = Counter()
@@ -35,7 +36,7 @@ class Importer(MutationImporter):
                     )
                 ] += 1
 
-        parse_tsv_file(path, cancer_parser)
+        parse_tsv_file(path, cancer_parser, file_opener=gzip.open)
         return mutations_counter
 
     def insert_details(self, mutations_counter):

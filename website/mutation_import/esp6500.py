@@ -1,12 +1,13 @@
 from models import ExomeSequencingMutation
 from import_mutations import MutationImporter
 from helpers.parsers import parse_tsv_file
+import gzip
 
 
 class Importer(MutationImporter):
 
     model = ExomeSequencingMutation
-    default_path = 'data/mutations/ESP6500_muts_annotated.txt'
+    default_path = 'data/mutations/ESP6500_muts_annotated.txt.gz'
     header = [
         'Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
         'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'V11',
@@ -37,7 +38,7 @@ class Importer(MutationImporter):
                     )
                 )
 
-        parse_tsv_file(path, esp_parser, self.header)
+        parse_tsv_file(path, esp_parser, self.header, file_opener=gzip.open)
 
         return esp_mutations
 

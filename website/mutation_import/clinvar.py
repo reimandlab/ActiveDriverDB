@@ -6,12 +6,13 @@ from import_mutations import bulk_ORM_insert
 from helpers.parsers import parse_tsv_file
 from database import restart_autoincrement
 from database import db
+import gzip
 
 
 class Importer(MutationImporter):
 
     model = InheritedMutation
-    default_path = 'data/mutations/clinvar_muts_annotated.txt'
+    default_path = 'data/mutations/clinvar_muts_annotated.txt.gz'
     header = [
         'Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
         'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'V11',
@@ -116,7 +117,7 @@ class Importer(MutationImporter):
                         )
                     )
 
-        parse_tsv_file(path, clinvar_parser, self.header)
+        parse_tsv_file(path, clinvar_parser, self.header, file_opener=gzip.open)
 
         return clinvar_mutations, clinvar_data
 
