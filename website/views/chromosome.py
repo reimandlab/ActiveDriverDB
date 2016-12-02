@@ -8,6 +8,7 @@ from website.views._commons import get_genomic_muts
 from website.views._commons import get_protein_muts
 from website.views._commons import represent_mutation
 from operator import attrgetter
+from collections import OrderedDict
 
 
 def represent_mutations(mutations, filter_manager):
@@ -25,15 +26,20 @@ def represent_mutations(mutations, filter_manager):
 
     for mutation in mutations:
 
-        needle = represent_mutation(mutation, data_filter)
-
-        closest_sites = mutation.find_closest_sites(
-            site_filter=data_filter
+        needle = represent_mutation(
+            mutation,
+            data_filter,
+            representation_type=OrderedDict
         )
-        needle['closest_sites'] = [
-            '%s %s' % (site.position, site.residue)
-            for site in closest_sites
-        ]
+
+        needle['protein'] = mutation.protein.refseq
+        needle['gene'] = mutation.protein.gene.name
+
+        # place protein refseq id on the beginning
+        needle.move_to_end('protein', last=False)
+        needle.move_to_end('gene', last=False)
+
+        needle['ptm_impact'] = mutation.impact_on_ptm(data_filter)
 
         if source_name:
             field = get_source_data(mutation)
@@ -55,8 +61,16 @@ def represent_mutations(mutations, filter_manager):
             metadata['MIMP'] = mimp.to_json()
 
         needle['in_datasets'] = metadata
-        needle['protein'] = mutation.protein.refseq
-        needle['ptm_impact'] = mutation.impact_on_ptm(data_filter)
+
+        closest_sites = mutation.find_closest_sites(
+            site_filter=data_filter
+        )
+        needle['closest_sites'] = [
+            '%s %s' % (site.position, site.residue)
+            for site in closest_sites
+        ]
+
+        needle.move_to_end('sites')
 
         response.append(needle)
 

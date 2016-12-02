@@ -116,27 +116,29 @@ def get_protein_muts(gene_name, mut):
     return items
 
 
-def represent_mutation(mutation, data_filter):
+def represent_mutation(mutation, data_filter, representation_type=dict):
 
     affected_sites = mutation.get_affected_ptm_sites(data_filter)
 
-    return {
-        'pos': mutation.position,
-        'alt': mutation.alt,
-        'ref': mutation.ref,
-        'sites': [
-            {
-                'data': site.to_json(),
-                'kinases': [
-                    kinase.to_json()
-                    for kinase in site.kinases
-                ],
-                'kinase_groups': [
-                    group.name
-                    for group in site.kinase_groups
-                ]
-            }
-            for site in affected_sites
-        ],
-        'cnt_ptm': len(affected_sites),
-    }
+    return representation_type(
+        (
+            ('pos', mutation.position),
+            ('alt', mutation.alt),
+            ('ref', mutation.ref),
+            ('cnt_ptm', len(affected_sites)),
+            ('sites', [
+                {
+                    'data': site.to_json(),
+                    'kinases': [
+                        kinase.to_json()
+                        for kinase in site.kinases
+                    ],
+                    'kinase_groups': [
+                        group.name
+                        for group in site.kinase_groups
+                    ]
+                }
+                for site in affected_sites
+            ])
+        )
+    )
