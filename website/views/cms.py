@@ -389,6 +389,13 @@ class ContentManagmentSystem(FlaskView):
                     'Page saved: ' + link_to_page(page),
                     'success'
                 )
+                if page.address != address:
+                    return redirect(
+                        url_for(
+                            'ContentManagmentSystem:edit_page',
+                            address=page.address
+                        )
+                    )
 
             except ValidationError as error:
                 flash(error.message, 'warning')
