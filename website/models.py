@@ -1097,6 +1097,43 @@ class CMSModel(Model):
     __bind_key__ = 'cms'
 
 
+class ShortURL(CMSModel):
+    """Model for URL shortening entries"""
+
+    address = db.Column(db.Text())
+
+    alphabet = (
+        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        '-._~:[]@!$&\'()*+,;=`.'
+    )
+
+    base = len(alphabet)
+
+    @property
+    def shorthand(self):
+        shorthand = ''
+        id_number = self.id - 1
+
+        remainder = id_number % self.base
+        id_number //= self.base
+        shorthand += self.alphabet[remainder]
+
+        while id_number:
+            remainder = id_number % self.base
+            id_number //= self.base
+            shorthand += self.alphabet[remainder]
+
+        return shorthand
+
+    @staticmethod
+    def shorthand_to_id(shorthand):
+        id_number = 0
+        for pos, letter in enumerate(shorthand):
+            weight = pow(ShortURL.base, pos)
+            id_number += weight * ShortURL.alphabet.index(letter)
+        return id_number + 1
+
+
 class User(CMSModel):
     """Model for use with Flask-Login"""
 

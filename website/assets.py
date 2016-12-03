@@ -28,6 +28,7 @@ bundles = {
         'needleplot.js',
         'tracks.js',
         'export.js',
+        'short_url.js',
         filters='rjsmin',
         output='min/proteinView.js'
     ),

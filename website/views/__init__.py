@@ -4,6 +4,7 @@ from website.views.protein import ProteinView
 from website.views.network import NetworkView
 from website.views.cms import ContentManagmentSystem
 from website.views.chromosome import ChromosomeView
+from website.views.short_url import ShortAddress
 
 
 views = [
@@ -12,5 +13,6 @@ views = [
     ProteinView,
     NetworkView,
     ContentManagmentSystem,
-    ChromosomeView
+    ChromosomeView,
+    ShortAddress
 ]

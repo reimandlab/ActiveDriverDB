@@ -1,0 +1,19 @@
+<div class="input-group">
+  <input
+    type="text"
+    class="form-control"
+    value="{{ url }}"
+    size="{{ url.length + 1 }}"
+    readonly
+  >
+  <span class="input-group-btn">
+    <button
+      class="btn btn-default copy-btn"
+      type="button"
+      data-clipboard-text="{{ url }}"
+    >
+      <span class="glyphicon glyphicon-copy" aria-hidden="true"></span>
+      Copy
+    </buton>
+  </span>
+</div>

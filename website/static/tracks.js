@@ -247,15 +247,14 @@ var Tracks = function ()
             _setZoom(1)
 
             // initialize all popovers on tracks
-            $(function () {
-                $('[data-toggle="popover"]').popover(
-                    {
-                        container: 'body',
-                        placement: 'top',
-                        trigger: 'hover'
-                    }
-                )
-            })
+
+            box.find('[data-toggle="popover"]').popover(
+                {
+                    container: 'body',
+                    placement: 'top',
+                    trigger: 'hover'
+                }
+            )
 
             $('.subtracks_collapsed').click(function(){
                 var track_name = $(this).data('track');

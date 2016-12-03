@@ -37,6 +37,10 @@
     <script type="text/javascript" src="/static/thirdparty/nunjucks-slim.min.js"></script>
     <script type="text/javascript" src="/static/js_templates/precompiled/protein.js"></script>
   {% endif %}
+
+  {# Clipboard #}
+  <script type="text/javascript"  src="//cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.13/clipboard.min.js"></script>
+
 {% endblock %}
 
 
@@ -63,6 +67,7 @@
             </a>
           </div>
           {% include 'export_buttons.html' %}
+          {% include 'short_url_button.html' %}
         </div>
         <div class="heading-right">
           {% include 'forms/filters_bar.html' %}
@@ -151,6 +156,10 @@ External references:
         position_callback: tracks.setAAPosition,
         width: $('#tracks-box').width()
     }
+    ShortURL().init(
+      "{{ url_for('ShortAddress:get_shorthand_for') }}",
+      "{{ url_for('ShortAddress:visit_shorthand', shorthand='<shorthand>', _external=True) }}"
+    )
     var needle_plot = NeedlePlot()
     needle_plot.init(params)
     tracks.setNeedlePlotInstance(needle_plot)
