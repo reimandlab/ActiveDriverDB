@@ -33,9 +33,17 @@ var ShortURL = function()
                     btn.data('shorthand', result)
                     var html = get_html(btn)
                     dropdown.html(html)
+                    activate_copy_button(dropdown)
                 }
             }(btn, dropdown)
         })
+    }
+
+    function activate_copy_button(dropdown)
+    {
+        var copy_btn = dropdown.find('.copy-btn')[0]
+        if(copy_btn)
+            new Clipboard(copy_btn)
     }
 
     function get_html(btn, dropdown){
@@ -69,10 +77,7 @@ var ShortURL = function()
                     var btn = $(this).find('.short-url-btn')
                     var dropdown = $(this).find('.dropdown-menu')
                     dropdown.html(get_html(btn, dropdown))
-
-                    var copy_btn = dropdown.find('.copy-btn')[0]
-                    if(copy_btn)
-                        new Clipboard(copy_btn)
+                    activate_copy_button(dropdown)
                 }
             )
             dropdown_wrapper.find('.dropdown-menu').on(
