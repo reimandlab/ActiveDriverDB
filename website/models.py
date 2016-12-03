@@ -1104,7 +1104,6 @@ class ShortURL(CMSModel):
 
     alphabet = (
         'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-        '-._~:[]@!$&\'()*+,;=`.'
     )
 
     base = len(alphabet)
