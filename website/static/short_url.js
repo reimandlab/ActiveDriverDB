@@ -45,6 +45,7 @@ var ShortURL = function()
         if(!shorthand)
         {
             var popover = btn.data('bs.popover')
+            popover.tip().addClass('short-url-popover')
             getShortURL(btn, popover)
             return 'Generating short URL, just for you... <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>'
         }
