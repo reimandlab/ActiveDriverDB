@@ -20,33 +20,31 @@ var ShortURL = function()
         return address
     }
 
-    function getShortURL(btn, popover)
+    function getShortURL(btn, dropdown)
     {
         $.ajax({
             url: config.endpoint_get,
             type: 'GET',
             data: {address: encodeURIComponent(getCurrentAddress())},
-            success: function(btn, popover)
+            success: function(btn, dropdown)
             {
                 return function(result)
                 {
                     btn.data('shorthand', result)
-                    popover.setContent()
+                    var html = get_html(btn)
+                    dropdown.html(html)
                 }
-            }(btn, popover)
+            }(btn, dropdown)
         })
     }
 
-    function get_popup_html(){
-        var btn = $(this)
+    function get_html(btn, dropdown){
 
         var shorthand = btn.data('shorthand')
 
         if(!shorthand)
         {
-            var popover = btn.data('bs.popover')
-            popover.tip().addClass('short-url-popover')
-            getShortURL(btn, popover)
+            getShortURL(btn, dropdown)
             return 'Generating short URL, just for you... <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>'
         }
 
@@ -64,19 +62,24 @@ var ShortURL = function()
             config.endpoint_get = decodeURIComponent(endpoint_get)
             config.endpoint_use = decodeURIComponent(endpoint_use)
 
-            $('.short-url-btn[data-toggle="popover"]').popover(
+            var dropdown_wrapper = $('.short-url-btn').parent()
+
+            dropdown_wrapper.on('show.bs.dropdown', function()
                 {
-                    container: 'body',
-                    placement: 'bottom',
-                    trigger: 'click',
-                    html: true,
-                    content: get_popup_html
-                }
-            ).on('show.bs.popover', function()
-                {
-                    new Clipboard('.copy-btn')
+                    var btn = $(this).find('.short-url-btn')
+                    var dropdown = $(this).find('.dropdown-menu')
+                    dropdown.html(get_html(btn, dropdown))
+
+                    var copy_btn = dropdown.find('.copy-btn')[0]
+                    if(copy_btn)
+                        new Clipboard(copy_btn)
                 }
             )
+            dropdown_wrapper.find('.dropdown-menu').on(
+                'click',
+                function(event){event.stopPropagation()}
+            )
+
         }
     }
 

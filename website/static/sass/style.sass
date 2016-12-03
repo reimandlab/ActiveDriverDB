@@ -113,8 +113,37 @@ $search-box-width: 225px
   -moz-animation: spin $time infinite $function
   -ms-animation: spin $time infinite $function
 
-.short-url-popover
-  max-width: 335px
+.short-url-dropdown
+  min-width: 335px
+  padding: 12px
 
   .form-control[readonly]
     background: #fff
+
+  h5
+    margin-top: 0
+
+.dropdown .dropdown-menu
+  display: block
+  overflow: hidden
+
+  opacity: 0
+  visibility: hidden
+
+  $time: 0.20s
+  -webkit-transition: all $time
+  -moz-transition: all $time
+  -ms-transition: all $time
+  -o-transition: all $time
+  transition: all $time
+
+.dropdown.open .dropdown-menu
+  opacity: 1
+  visibility: visible
+
+  $time: 0.30s
+  -webkit-transition: all $time
+  -moz-transition: all $time
+  -ms-transition: all $time
+  -o-transition: all $time
+  transition: all $time

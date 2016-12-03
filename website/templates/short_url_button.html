@@ -1,11 +1,7 @@
 
-<a
-  tabindex="0"
-  class="btn btn-default short-url-btn"
-  role="button"
-  data-toggle="popover"
-  data-trigger="focus"
-  title="Short URL"
->
-  <span class="glyphicon glyphicon-link" aria-hidden="true"></span>
-</a>
+<div class="btn-group dropdown" role="group">
+  <button class="btn btn-default dropdown-toggle short-url-btn" type="button" data-toggle="dropdown">
+    <span class="glyphicon glyphicon-link" aria-hidden="true"></span>
+  </button>
+  <div class="dropdown-menu short-url-dropdown"></div>
+</div>
