@@ -31,6 +31,10 @@
     <script type="text/javascript" src="/static/thirdparty/nunjucks-slim.min.js"></script>
     <script type="text/javascript" src="/static/js_templates/precompiled/network.js"></script>
   {% endif %}
+
+  {# Clipboard #}
+  <script type="text/javascript"  src="//cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.13/clipboard.min.js"></script>
+
 {% endblock %}
 
 
@@ -56,6 +60,7 @@
 
     <div class="panel panel-default network">
         <div class="panel-heading">
+          <div class="heading-left">
             <a href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string) }}"  role="button" class="btn btn-default" title="Show protein">
                 <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
                 Show protein sequence view
@@ -73,7 +78,11 @@
               </button>
             </div>
             {% include 'export_buttons.html' %}
+            {% include 'short_url_button.html' %}
+          </div>
+          <div class="heading-right">
             {% include 'forms/filters_bar.html' %}
+          </div>
         </div>
         <div class="panel-body">
           <div id="network_spinner">
@@ -127,6 +136,11 @@
       {
         $(this).closest('.panel').find('.panel-body').toggleClass('js-hidden')
       }
+    )
+
+    ShortURL().init(
+      "{{ url_for('ShortAddress:get_shorthand_for') }}",
+      "{{ url_for('ShortAddress:visit_shorthand', shorthand='<shorthand>', _external=True) }}"
     )
 
     {% assets "css_network" %}

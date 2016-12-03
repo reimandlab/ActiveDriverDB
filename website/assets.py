@@ -39,6 +39,7 @@ bundles = {
         'tooltip.js',
         'network.js',
         'export.js',
+        'short_url.js',
         filters='rjsmin',
         output='min/networkView.js'
     ),
