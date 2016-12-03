@@ -26,6 +26,18 @@ def reset_relational_db(**kwargs):
     print('Recreating', name, 'database completed.')
 
 
+def basic_auto_migrate_relational_db(**kwargs):
+
+    name = kwargs.get('bind', 'default')
+
+    print('Performing very simple automigration in', name, 'database...')
+    db.session.commit()
+    db.reflect()
+    db.session.commit()
+    db.create_all(**kwargs)
+    print('Automigration of ', name, 'database completed.')
+
+
 def reset_mappings_db():
     print('Removing mappigns database...')
     bdb.reset()
@@ -52,6 +64,15 @@ if __name__ == '__main__':
         '--recreate_cms',
         action='store_true',
         help='should Content Managment System database be (re)created'
+    )
+    parser.add_argument(
+        '-a',
+        '--auto_migrate',
+        action='store_true',
+        help=(
+            'should very basic auto migration on relational databases'
+            ' be performed'
+        )
     )
     parser.add_argument(
         '-l',
@@ -95,6 +116,11 @@ if __name__ == '__main__':
             )
 
     if not args.load_mutations and not args.remove_mutations:
+
+        if args.auto_migrate:
+            basic_auto_migrate_relational_db(bind='bio')
+            basic_auto_migrate_relational_db(bind='cms')
+
         if args.reload_biological:
             reset_relational_db(bind='bio')
             print('Importing data')
