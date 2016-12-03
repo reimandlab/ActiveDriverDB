@@ -24,7 +24,7 @@ python3 -m pip install -r requirements.txt
 ```
 In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given.
 
-As currently there is no new version of flask-sqlalchemy released since Oct 2015, but there are some crucial patches merged to the official repository, you will need to clone [flask_sqlalchemy directory](https://github.com/mitsuhiko/flask-sqlalchemy/tree/master/flask_sqlalchemy) into `website` directory.
+As currently there is no new version of flask-sqlalchemy released since Oct 2015, but there are some crucial patches merged to the official repository, you will need to clone [flask_sqlalchemy directory](https://github.com/mitsuhiko/flask-sqlalchemy/tree/master/flask_sqlalchemy) into `website` directory. There is an [open issue](https://github.com/mitsuhiko/flask-sqlalchemy/issues/436) with a request for a maintenance relaese.
 
 ### Database creation & configuration
 
@@ -187,7 +187,10 @@ cd website
 python3 -m pip install -r requirements.txt
 ```
 
+## Tests
+
+All tests are placed in [website/tests](/reimandlab/Visualisation-Framework-for-Genome-Mutations/tree/master/website/tests) directory. Please find all steps explained in `readme.md` file inside this subdirectory.
 
 ## Acknowledgments
 
-The project is developed with support from Google Summer Code.
+The project was developed with support from Google Summer Code.
