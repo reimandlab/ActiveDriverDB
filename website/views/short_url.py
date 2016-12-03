@@ -9,10 +9,19 @@ from models import ShortURL
 from urllib.parse import unquote
 from helpers.parsers import parse_text_file
 from Levenshtein import distance
+from os import path
 
 
 list_of_profanities = []
-parse_text_file('data/bad-words.txt', list_of_profanities.append)
+filename = path.join(
+    path.dirname(path.dirname(path.realpath(__file__))),
+    'data/bad-words.txt'
+)
+parse_text_file(
+    filename,
+    list_of_profanities.append,
+    file_opener=lambda name: open(name, encoding='utf-8')
+)
 
 
 def is_word_obscene(word):
