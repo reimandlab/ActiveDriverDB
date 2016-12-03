@@ -193,4 +193,4 @@ All tests are placed in [website/tests](/reimandlab/Visualisation-Framework-for-
 
 ## Acknowledgments
 
-The project is developed with support from Google Summer Code.
+The project was developed with support from Google Summer Code.
