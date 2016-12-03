@@ -88,7 +88,7 @@ var SearchBar = (function ()
         $.ajax({
             url: '/search/autocomplete_searchbar',
             type: 'GET',
-            data: { q: encodeURIComponent(query) },
+            data: {q: encodeURIComponent(query)},
             success: function(query)
             {
                 return function(result)
