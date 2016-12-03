@@ -1,7 +1,8 @@
 import app
 from models import ShortURL
 
-def test_encode decode():
+
+def test_encode_decode():
     base = ShortURL.base
     ids_to_test = (
         0, 1, 2, 9, 10, 11, 15, 89, 1000, 999, 998, 8765431234567,

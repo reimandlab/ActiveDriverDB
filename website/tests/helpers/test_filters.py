@@ -25,7 +25,7 @@ def test_select_filter():
     )
 
     # test the default value
-    assert len(tested_filter.apply(test_objects)) == 2
+    assert len(list(tested_filter.apply(test_objects))) == 2
 
     test_values = (
         ('b', 2),
@@ -35,7 +35,7 @@ def test_select_filter():
 
     for value, length in test_values:
         tested_filter.update(value)
-        assert len(tested_filter.apply(test_objects)) == length
+        assert len(list(tested_filter.apply(test_objects))) == length
 
     with pytest.raises(filters.ValidationError):
         tested_filter.update('e')
