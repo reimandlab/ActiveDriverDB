@@ -35,7 +35,7 @@ def basic_auto_migrate_relational_db(**kwargs):
     db.reflect()
     db.session.commit()
     db.create_all(**kwargs)
-    print('Automigration of ', name, 'database completed.')
+    print('Automigration of', name, 'database completed.')
 
 
 def reset_mappings_db():
