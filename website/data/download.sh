@@ -21,6 +21,8 @@ rm hsapiens.HP.NAME.gmt
 rm hsapiens.GO.NAME.gmt
 rm hsapiens.CORUM.NAME.gmt
 rm hsapiens.BIOGRID.NAME.gmt
+rm hsapiens.REAC.NAME.gmt
+rm hsapiens.TF.NAME.gmt
 
 #  All below are dropbox-dependent ===
 
@@ -35,11 +37,15 @@ cd mutations
 wget https://www.dropbox.com/s/b1c4yqgnznsafqv/TCGA_muts_annotated.txt.gz
 wget https://www.dropbox.com/s/zodasbvinx339tw/ESP6500_muts_annotated.txt.gz
 wget https://www.dropbox.com/s/du2qe1skxwmuep2/clinvar_muts_annotated.txt.gz
+
+mkdir -p G1000
+cd G1000
 wget https://www.dropbox.com/s/fidorbveacpo0yh/G1000.hg19_multianno_nsSNV.tgz
 
 echo 'unpacking...'
 tar -xvzf G1000.hg19_multianno_nsSNV.tgz
-
+rm G1000.hg19_multianno_nsSNV.tgz
+cd ..
 
 cd ..
 
@@ -60,3 +66,4 @@ wget https://www.dropbox.com/s/qtuqvucb8nzim51/ALL_PROTEIN_ANNOT.tgz
 
 echo 'unpacking...'
 tar -xvzf ALL_PROTEIN_ANNOT.tgz
+rm ALL_PROTEIN_ANNOT.tgz
