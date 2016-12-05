@@ -8,10 +8,10 @@ var SearchBar = (function ()
 
     function templateResult(result)
     {
-        var link = '<a href="/protein/show/' + result.refseq + '" class="list-group-item">'
+        var link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">'
 
-        if(result.count > 1)
-            link += '<span class="badge">' + result.count + ' isoforms</span>'
+        if(result.isoforms_count > 1)
+            link += '<span class="badge">' + result.isoforms_count + ' isoforms</span>'
 
         link += result.name + '</a>'
 

@@ -1,6 +1,7 @@
 import json
 from flask import render_template as template
 from flask import request
+from flask import jsonify
 from flask_classful import FlaskView
 from flask_classful import route
 from Levenshtein import distance
@@ -8,6 +9,7 @@ from models import Protein
 from models import Gene
 from website.views._commons import get_genomic_muts
 from website.views._commons import get_protein_muts
+from sqlalchemy import and_
 
 
 class GeneResult:
@@ -33,7 +35,10 @@ def search_proteins(phase, limit=False):
 
     # find by gene name
     name_filter = Gene.name.like(phase + '%')
-    orm_query = Gene.query.filter(name_filter)
+    orm_query = Gene.query.filter(and_(
+        name_filter,
+        Gene.preferred_isoform.has()
+    ))
     if limit:
         orm_query = orm_query.limit(limit)
     genes = {gene.name: GeneResult(gene) for gene in orm_query.all()}
@@ -178,11 +183,11 @@ def search_mutations(vcf_file, textarea_query):
 
 
 class SearchView(FlaskView):
-    """Enables searching in any of registered database models"""
+    """Enables searching in any of registered database models."""
 
     @route('/')
     def default(self):
-        """Render default search form prompting to search for a protein"""
+        """Render default search form prompting to search for a protein."""
         return self.index(target='proteins')
 
     @route('/<target>', methods=['POST', 'GET'])
@@ -228,39 +233,41 @@ class SearchView(FlaskView):
         )
 
     def form(self, target):
-        """Return an empty HTML form appropriate for given target"""
+        """Return an empty HTML form appropriate for given target."""
         return template('search/form.html', target=target)
 
     def autocomplete_proteins(self, limit=20):
-        """Autocompletion API for search for proteins"""
+        """Autocompletion API for search for proteins."""
         # TODO: implement on client side requests with limit higher limits
         # and return the information about available results (.count()?)
         query = request.args.get('q') or ''
 
         entries = search_proteins(query, limit)
+        # page = request.args.get('page', 0)
+        # Pagination(Pathway.query)
+        # just pass pagination html too?
 
-        response = [
-            {
-                'value': entry.name,
-                'html': template('search/gene_results.html', gene=entry)
-            }
-            for entry in entries
-        ]
+        response = {
+            'query': query,
+            'results': [
+                {
+                    'value': gene.name,
+                    'html': template('search/gene_results.html', gene=gene)
+                }
+                for gene in entries
+            ]
+        }
 
-        return json.dumps(response)
+        return jsonify(response)
 
     def autocomplete_searchbar(self, limit=6):
-        """Autocompletion API for search for proteins (untemplated)"""
+        """Autocompletion API for search for proteins (untemplated)."""
         query = request.args.get('q') or ''
 
         entries = search_proteins(query, limit)
 
         response = [
-            {
-                'name': gene.name,
-                'refseq': gene.preferred_isoform.refseq,
-                'count': len(gene.isoforms)
-            }
+            gene.to_json()
             for gene in entries
         ]
 

@@ -1,0 +1,10 @@
+<ul class="list-inline">
+  {% for gene in genes %}
+    <li>
+      {% if gene.isoforms_count %}
+        <a href="/gene/show/{{ gene.name }}">{{ gene.name }}</a>
+      {% else %}
+        {{ gene.name }}
+      {% endif %}
+  {% endfor %}
+</ul>

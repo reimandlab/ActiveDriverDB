@@ -5,6 +5,7 @@ from website.views.network import NetworkView
 from website.views.cms import ContentManagmentSystem
 from website.views.chromosome import ChromosomeView
 from website.views.short_url import ShortAddress
+from website.views.pathway import PathwayView
 
 
 views = [
@@ -14,5 +15,6 @@ views = [
     NetworkView,
     ContentManagmentSystem,
     ChromosomeView,
-    ShortAddress
+    ShortAddress,
+    PathwayView
 ]

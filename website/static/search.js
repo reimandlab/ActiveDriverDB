@@ -92,8 +92,13 @@ var ProteinForm = (function ()
             url: '/search/autocomplete_proteins',
             type: 'GET',
             data: { q: encodeURIComponent(query) },
-            success: function(rawResult) {
-                var results = JSON.parse(rawResult)
+            success: function(response) {
+
+                // do we still need this?
+                if(response.query !== recent_value)
+                    return
+
+                var results = response.results
                 // TODO add animation
 
                 waiting_indicator.addClass('hidden')
@@ -136,6 +141,7 @@ var ProteinForm = (function ()
                 search_button.show()
                 result_ul.innerHTML = ''
                 empty_indicator.removeClass('hidden')
+                waiting_indicator.addClass('hidden')
             }
         }
 

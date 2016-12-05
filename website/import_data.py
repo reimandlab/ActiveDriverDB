@@ -31,6 +31,7 @@ def import_data(restrict_mutations_to):
     kinase_protein_mappings = load_kinase_mapings()
     kinases, groups = load_sites(proteins)
     kinases, groups = load_kinase_classification(proteins, kinases, groups)
+    load_pathways(genes)
     print('Adding kinases to the session...')
     db.session.add_all(kinases.values())
     print('Adding groups to the session...')
@@ -48,6 +49,62 @@ def calculate_interactors(proteins):
     print('Precalculating interactors counts:')
     for protein in tqdm(proteins.values()):
         protein.interactors_count = protein._calc_interactors_count()
+
+
+def load_pathways(genes):
+    from models import Pathway
+    new_genes = []
+
+    def parser(data):
+        nonlocal new_genes
+        """Parse GTM file with pathhway descriptions.
+
+        Args:
+            data: a list of subsequent columns from a single line of GTM file
+
+                For example::
+
+                    ['CORUM:5419', 'HTR1A-GPR26 complex', 'GPR26', 'HTR1A']
+
+        """
+        gene_set_name = data[0]
+        # Entry description can by empty
+        entry_description = data[1].strip()
+
+        entry_gene_names = [
+            name.strip()
+            for name in data[2:]
+        ]
+
+        pathway_genes = []
+
+        for gene_name in entry_gene_names:
+            if gene_name.lower() in genes:
+                gene = genes[gene_name.lower()]
+            else:
+                gene = Gene(name=gene_name)
+                genes[gene_name.lower()] = gene
+                new_genes.append(gene)
+
+            pathway_genes.append(gene)
+
+        pathway = Pathway(
+            description=entry_description,
+            genes=pathway_genes
+        )
+
+        if gene_set_name.startswith('GO'):
+            pathway.gene_ontology = int(gene_set_name[3:])
+        elif gene_set_name.startswith('REAC'):
+            pathway.reactome = int(gene_set_name[5:])
+        else:
+            print('Unknown gene set name: "%s"' % gene_set_name)
+
+    filename = 'data/hsapiens.pathways.NAME.gmt'
+    parse_tsv_file(filename, parser)
+
+    db.session.add_all(new_genes)
+    print(len(new_genes), 'new genes created')
 
 
 def load_domains(proteins):
@@ -293,8 +350,8 @@ def select_preferred_isoforms(genes):
         else:
             name = gene.name
             assert not gene.isoforms
-            remove(gene)
-            print('Removed gene %s without isoforms' % name)
+            # remove(gene)
+            print('Gene %s has no isoforms' % name)
 
 
 def load_sequences(proteins):
@@ -358,7 +415,10 @@ def remove_wrong_proteins(proteins, soft=True):
             # remove object
             del proteins[protein.refseq]
 
-    select_preferred_isoforms({gene.name: gene for gene in Gene.query.all()})
+    select_preferred_isoforms({
+        gene.name.lower(): gene
+        for gene in Gene.query.all()
+    })
 
     print('Removed proteins of sequences:')
     print('\twith stop codon inside (excluding the last pos.):', stop_inside)
@@ -399,14 +459,14 @@ def create_proteins_and_genes():
 
         # load gene
         name = line[-4]
-        if name not in genes:
+        if name.lower() not in genes:
             gene_data = {'name': name}
             gene_data['chrom'] = line[2][3:]    # remove chr prefix
             gene_data['strand'] = 1 if '+' else 0
             gene = Gene(**gene_data)
-            genes[name] = gene
+            genes[name.lower()] = gene
         else:
-            gene = genes[name]
+            gene = genes[name.lower()]
 
         # load protein
         refseq = line[1]
@@ -483,9 +543,9 @@ def load_disorder(proteins):
 
 
 def get_preferred_gene_isoform(gene_name):
-    if gene_name in genes:
+    if gene_name.lower() in genes:
         # if there is a gene, it has a preferred isoform
-        return genes[gene_name].preferred_isoform
+        return genes[gene_name.lower()].preferred_isoform
 
 
 def load_kinase_mapings():

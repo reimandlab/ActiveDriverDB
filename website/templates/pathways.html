@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+    {% block title %} Pathways - {{ super() }} {% endblock %}
+
+    {% block head %}
+
+      {{ super() }}
+
+      {# Bootstrap-Table #}
+      <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
+      <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
+
+      {# Nunjucks templates #}
+      {% if is_debug_mode %}
+        <script type="text/javascript" src="/static/thirdparty/nunjucks.js"></script>
+      {% else %}
+        <script type="text/javascript" src="/static/thirdparty/nunjucks-slim.min.js"></script>
+        <script type="text/javascript" src="/static/js_templates/precompiled/pathway.js"></script>
+      {% endif %}
+
+    {% endblock %}
+
+{% block content %}
+
+<h3>Pathways</h3>
+
+<ol class="breadcrumb">
+  <li><a href="/">Home</a></li>
+  <li class="active">Pathways</li>
+</ol>
+
+<div>
+  <div id="toolbar">
+    {# put here some filters #}
+  </div>
+  <table
+    id="table"
+    data-toolbar="#toolbar"
+    data-search="true"
+    data-show-refresh="true"
+    data-show-toggle="true"
+    data-show-columns="true"
+    data-show-export="true"
+    data-detail-view="true"
+    data-detail-formatter="detailFormatter"
+    data-minimum-count-columns="2"
+    data-pagination="true"
+    data-id-field="id"
+    data-page-list="[10, 25, 50, 100, ALL]"
+    data-side-pagination="server"
+    data-url="{{ url_for('PathwayView:data') }}"
+  >
+  </table>
+</div>
+
+<script>
+
+  nunjucks.configure('/static/js_templates', {autoescape: true})
+
+  var $table = $('#table')
+  function initTable()
+  {
+    $table.bootstrapTable({
+      columns: [
+        [
+          {
+            title: 'Name',
+            field: 'description',
+            rowspan: 2,
+            align: 'center',
+            valign: 'middle',
+            sortable: true,
+          },
+          {
+            title: 'Item ID',
+            colspan: 2,
+            align: 'center',
+            valign: 'middle'
+          },
+          {
+            title: '# genes',
+            rowspan: 2,
+            //sortable: true,
+            valign: 'middle',
+            align: 'center',
+            field: 'gene_count',
+          },
+          {
+            title: 'Genes',
+            rowspan: 2,
+            //sortable: true,
+            valign: 'middle',
+            align: 'center',
+            field: 'genes',
+            formatter: genesFormatter
+          }
+        ],
+        [
+          {
+            field: 'gene_ontology',
+            title: 'Gene Ontology',
+            sortable: true,
+            align: 'center'
+          }, {
+            field: 'reactome',
+            title: 'Reactome',
+            sortable: true,
+            align: 'center'
+          }
+        ]
+      ]
+    })
+    setTimeout(function () {
+        $table.bootstrapTable('resetView')
+    }, 200)
+  }
+
+  function detailFormatter(index, row)
+  {
+      return nunjucks.render(
+          'pathway_details.njk',
+          {
+              pathway: row
+          }
+      )
+  }
+
+  function genesFormatter(value, row, index)
+  {
+    return nunjucks.render(
+        'pathways_gene_list.njk',
+        {
+            genes: value
+        }
+    )
+  }
+
+  $(function ()
+  {
+      initTable()
+  })
+</script>
+
+
+{% endblock %}

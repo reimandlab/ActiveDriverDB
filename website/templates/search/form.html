@@ -26,7 +26,7 @@
         {{ gene_results(result) }}
       {% endfor %}
       </ul>
-      <div class="empty {{ 'hidden' if results }}">
+      <div class="empty {{ 'hidden' if results or query }}">
         <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
         <p>Please type at least three characters to get the results.</p>
         <p>You can use a name of a protein (like BRCA1) or refseq identifier (like 000345 or NM_000345).</p>
@@ -36,13 +36,13 @@
         <span class="glyphicon glyphicon-refresh glyphicon-spin" aria-hidden="true"></span>
         <p>Retrieving results...</p>
       </div>
-      <div class="no-results hidden">
+      <div class="no-results {{ 'hidden' if results or not query}}">
         <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
         <p>No results found</p>
       </div>
     </div>
     <div class="buttons">
-      <button type="submit" class="btn btn-primary">
+      <button type="submit" class="btn btn-primary {{ 'js-hidden' if (query | length) > 4 }}">
         Search <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
       </button>
     </div>

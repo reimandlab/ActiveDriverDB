@@ -14,3 +14,7 @@ nunjucks-precompile short_url_popup.njk >> precompiled/protein.js
 # network view templates
 nunjucks-precompile node_tooltip.njk > precompiled/network.js
 nunjucks-precompile short_url_popup.njk >> precompiled/network.js
+
+# pathway view templates
+nunjucks-precompile pathways_gene_list.njk > precompiled/pathway.js
+nunjucks-precompile pathway_details.njk >> precompiled/pathway.js

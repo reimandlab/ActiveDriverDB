@@ -155,6 +155,47 @@ class Gene(BioModel):
             len(self.isoforms)
         )
 
+    def to_json(self):
+        return {
+            'name': self.name,
+            'preferred_isoform': (
+                self.preferred_isoform.refseq
+                if self.preferred_isoform
+                else None
+            ),
+            'isoforms_count': len(self.isoforms)
+        }
+
+
+class Pathway(BioModel):
+    description = db.Column(db.Text)
+
+    gene_ontology = db.Column(db.Integer)
+    reactome = db.Column(db.Integer)
+
+    genes = db.relationship(
+        'Gene',
+        secondary=make_association_table('pathway.id', 'gene.id'),
+        backref='pathways'
+    )
+
+    @hybrid_property
+    def gene_count(self):
+        return len(self.genes)
+
+    def to_json(self):
+        return {
+            'id': self.id,
+            'description': self.description,
+            'reactome': self.reactome,
+            'gene_ontology': self.gene_ontology,
+            'gene_count': self.gene_count,
+            'genes': [
+                gene.to_json()
+                for gene in self.genes
+            ]
+        }
+
 
 class Protein(BioModel):
     """Protein represents a single isoform of a product of given gene."""
