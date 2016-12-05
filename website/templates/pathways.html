@@ -58,6 +58,7 @@
   nunjucks.configure('/static/js_templates', {autoescape: true})
 
   var $table = $('#table')
+
   function initTable()
   {
     $table.bootstrapTable({
@@ -110,7 +111,15 @@
         ]
       ]
     })
-    setTimeout(function () {
+    $table.on('click-row.bs.table', function (e, row, $element)
+    {
+      $table.bootstrapTable(
+        'expandRow',
+        $element.data('index')
+      )
+    })
+    setTimeout(function ()
+    {
         $table.bootstrapTable('resetView')
     }, 200)
   }
