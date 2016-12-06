@@ -22,9 +22,16 @@ source virtual_environment/bin/activate
 cd website
 python3 -m pip install -r requirements.txt
 ```
-In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given. An additional requirement is `bsddb3` package, which is often easier to install system-wide with your package manager (on debian named `python3-bsddb3`).
+In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given. An additional requirement is `bsddb3` package, which is often easier to install system-wide with your package manager (on debian named `python3-bsddb3`). You may need to add a symbolic link to the package inside of your virtual environment.
 
-As currently there is no new version of flask-sqlalchemy released since Oct 2015, but there are some crucial patches merged to the official repository, you will need to clone [flask_sqlalchemy directory](https://github.com/mitsuhiko/flask-sqlalchemy/tree/master/flask_sqlalchemy) into `website` directory. There is an [open issue](https://github.com/mitsuhiko/flask-sqlalchemy/issues/436) with a request for a maintenance relaese.
+As currently there is no new version of flask-sqlalchemy released since Oct 2015, but there are some crucial patches merged to the official repository, you will need to clone [flask_sqlalchemy directory](https://github.com/mitsuhiko/flask-sqlalchemy/flask_sqlalchemy) into `website` directory:
+```bash
+git clone https://github.com/mitsuhiko/flask-sqlalchemy/
+mv flask-sqlalchemy/flask_sqlalchemy .
+rm -rf flask-sqlalchemy
+```
+
+There is an [open issue](https://github.com/mitsuhiko/flask-sqlalchemy/issues/436) with a request for a maintenance relaese.
 
 ### Database creation & configuration
 
@@ -173,7 +180,7 @@ python3 -m pip install -r requirements.txt
 
 ## Tests
 
-All tests are placed in [website/tests](/reimandlab/Visualisation-Framework-for-Genome-Mutations/tree/master/website/tests) directory. Please find all steps explained in `readme.md` file inside this subdirectory.
+All tests are placed in [website/tests](/website/tests) directory. Please find all steps explained in `readme.md` file inside this subdirectory.
 
 ## Acknowledgments
 
