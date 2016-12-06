@@ -1,11 +1,10 @@
 from flask import render_template as template
 from flask import abort
-from flask import request
-from flask import jsonify
 from flask_classful import FlaskView
-from models import Pathway
 from flask_classful import route
-# from flask_sqlalchemy import Pagination
+from models import Pathway
+from sqlalchemy import or_
+from website.helpers.views import make_ajax_table_view
 
 
 class PathwayView(FlaskView):
@@ -27,54 +26,20 @@ class PathwayView(FlaskView):
     def table(self):
         return template('pathways.html')
 
-    def data(self):
-        from sqlalchemy import asc
-        from sqlalchemy import desc
-        from sqlalchemy import or_
+    @staticmethod
+    def _search_filter(query):
+        if query.isnumeric():
+            return or_(
+                Pathway.gene_ontology.like(query + '%'),
+                Pathway.reactome.like(query + '%')
+            )
+        else:
+            return Pathway.description.like('%' + query + '%')
 
-        ordering_functions = {
-            'desc': desc,
-            'asc': asc
-        }
-
-        search = request.args.get('search', None)
-        sort = request.args.get('sort', 'description')
-        order = request.args.get('order', 'asc')
-        offset = request.args.get('offset', 0)
-        limit = request.args.get('limit', 10)
-
-        ordering_function = ordering_functions.get(
-            order,
-            lambda x: x
+    data = route('data')(
+        make_ajax_table_view(
+            Pathway,
+            search_filter=_search_filter,
+            sort='description'
         )
-
-        query = Pathway.query
-
-        if search:
-
-            if search.isnumeric():
-                search_filter = or_(
-                    Pathway.gene_ontology.like(search + '%'),
-                    Pathway.reactome.like(search + '%')
-                )
-            else:
-                search_filter = Pathway.description.like('%' + search + '%')
-
-            query = query.filter(search_filter)
-
-        sorted_field = getattr(Pathway, sort)
-
-        query = query.order_by(
-            ordering_function(sorted_field)
-        )
-
-        pathways = query.limit(limit).offset(offset).all()
-        count = query.count()
-
-        return jsonify({
-            'total': count,
-            'rows': [
-                pathway.to_json()
-                for pathway in pathways
-            ]
-        })
+    )
