@@ -173,7 +173,7 @@ python3 -m pip install -r requirements.txt
 
 ## Tests
 
-All tests are placed in [website/tests](/reimandlab/Visualisation-Framework-for-Genome-Mutations/tree/master/website/tests) directory. Please find all steps explained in `readme.md` file inside this subdirectory.
+All tests are placed in [website/tests](/website/tests) directory. Please find all steps explained in `readme.md` file inside this subdirectory.
 
 ## Acknowledgments
 
