@@ -304,7 +304,9 @@ class Filter:
 
     @property
     def is_active(self):
-        return bool(self.value) and self.visible
+        return self.visible and (
+            bool(self.value) or self.value != self.default
+        )
 
     @property
     def value(self):
