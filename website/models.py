@@ -215,6 +215,7 @@ class Protein(BioModel):
     """Protein represents a single isoform of a product of given gene."""
 
     gene_id = db.Column(db.Integer, db.ForeignKey('gene.id'))
+    gene_name = association_proxy('gene', 'name')
 
     # refseq id of mRNA sequence (always starts with 'NM_')
     # HGNC reserves up to 50 characters; 32 seems good enough but
@@ -273,6 +274,42 @@ class Protein(BioModel):
             self.length,
             self.gene.name
         )
+
+    @hybrid_property
+    def mutations_count(self):
+        return self.mutations.count()
+
+    @mutations_count.expression
+    def mutations_count(cls):
+        return (
+            select([func.count(Mutation.id)]).
+            where(Mutation.protein_id == cls.id).
+            label('mutations_count')
+        )
+
+    @hybrid_property
+    def sites_count(self):
+        return len(self.sites)
+
+    @sites_count.expression
+    def sites_count(cls):
+        return (
+            select([func.count(Site.id)]).
+            where(Site.protein_id == cls.id).
+            label('mutations_count')
+        )
+
+    def to_json(self):
+        return {
+            'gene_name': self.gene_name,
+            'refseq': self.refseq,
+            'sites_count': self.sites_count,
+            'mutations_count': self.mutations_count,
+            'ptm_muts': sum(
+                1 for s in self.mutations
+                if s.is_ptm()
+            )
+        }
 
     @cached_property
     def is_preferred_isoform(self):

@@ -4,6 +4,7 @@ from flask import redirect
 from flask import url_for
 from flask import render_template as template
 from flask_classful import FlaskView
+from flask_classful import route
 from models import Protein
 from models import Mutation
 from models import Domain
@@ -15,6 +16,7 @@ from website.helpers.tracks import SequenceTrack
 from website.helpers.tracks import MutationsTrack
 from website.helpers.tracks import DomainsTrack
 from website.helpers.filters import FilterManager
+from website.helpers.views import make_ajax_table_view
 from website.views._global_filters import common_filters
 from website.views._global_filters import create_widgets
 from website.views._commons import represent_mutation
@@ -87,6 +89,17 @@ class ProteinView(FlaskView):
     def index(self):
         """Show SearchView as deafault page"""
         return redirect(url_for('SearchView:index', target='proteins'))
+
+    def browse(self):
+        return template('protein/browse.html')
+
+    browse_data = route('browse_data')(
+        make_ajax_table_view(
+            Protein,
+            # search_filter=lambda q: Protein.gene_name.like(q + '%'),
+            sort='gene_name'
+        )
+    )
 
     def show(self, refseq):
         """Show a protein by:
