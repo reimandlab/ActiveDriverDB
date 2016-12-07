@@ -183,6 +183,20 @@ class Pathway(BioModel):
     def gene_count(self):
         return len(self.genes)
 
+    @gene_count.expression
+    def gene_count(cls):
+
+        from sqlalchemy.orm import aliased
+
+        pathway_aliased = aliased(Pathway)
+
+        return (
+            db.session.query(Gene).
+            join(pathway_aliased, Gene.pathways).
+            filter(pathway_aliased.id == cls.id).
+            statement.with_only_columns([func.count()]).order_by(None)
+        )
+
     def to_json(self):
         return {
             'id': self.id,
