@@ -578,7 +578,7 @@ var NeedlePlot = function ()
         needles.selectAll('text')
             .attr('font-size', head_size * 2 + 'px')
             .attr('dx', -head_size/2 + 'px')
-            .attr('dy', +head_size/2 + 0.3 + 'px')
+            .attr('dy', +head_size/2 + 'px')
     }
 
 	function posToX(pos)
