@@ -128,6 +128,13 @@ var NeedlePlot = function ()
 
     }
 
+    function is_color_dark(color)
+    {
+        var rgb = d3.rgb(color)
+        var yiq = ((rgb.r * 299) + (rgb.g * 587) + (rgb.b * 114)) / 1000
+	    return yiq < 128
+    }
+
     function scaleToNeedles()
     {
 		if (config.y_scale === 'auto')
@@ -275,6 +282,10 @@ var NeedlePlot = function ()
                 var key = d.pos + ':' + d.value
                 return head_groups[key].length
             })
+            .attr('fill', function(d){
+                var head_color = config.color_map[d.category]
+                return (is_color_dark(head_color) ? 'white' : 'black')
+            })
 
         head
             .filter(is_overlaying)
@@ -287,17 +298,24 @@ var NeedlePlot = function ()
                 var width_per_head = posToX(1)
                 var width = head_group.length * width_per_head
 
+                var shift = width_per_head / 2 - width / 2
+
                 for(var i = 0; i < head_group.length; i++)
                 {
                     var needle_id = head_group[i]
                     var head_id = 'h_' + needle_id
                     var head = d3.select('#' + head_id)
 
-                    var shift = - width / 2 + i * width_per_head + width_per_head / 2
-                    head.
-                        attr('transform', function(d) {
+
+                    head
+                        .transition()
+                        .ease('quad')
+                        .duration(config.animations_speed)
+                        .attr('transform', function(d) {
                             return transform_needle_head(d, shift)
                         })
+
+                    shift += width_per_head
                 }
             })
 
@@ -555,7 +573,7 @@ var NeedlePlot = function ()
         needles.selectAll('text')
             .attr('font-size', head_size * 2 + 'px')
             .attr('dx', -head_size/2 + 'px')
-            .attr('dy', +head_size/2 + 'px')
+            .attr('dy', +head_size/2 + 0.3 + 'px')
     }
 
 	function posToX(pos)
