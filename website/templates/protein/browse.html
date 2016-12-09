@@ -42,7 +42,7 @@
     data-show-columns="true"
     data-show-export="true"
     data-detail-view="true"
-    data-detail-formatter="detailFormatter"
+    {# data-detail-formatter="detailFormatter" #}
     data-minimum-count-columns="2"
     data-pagination="true"
     data-id-field="id"
@@ -66,18 +66,20 @@
       columns: [
         [
           {
-            title: 'Name',
+            title: 'Gene name',
             field: 'gene_name',
             align: 'center',
             valign: 'middle',
-            sortable: true
+            sortable: true,
+            formatter: geneFormatter
           },
           {
-            title: 'refseq',
+            title: 'Protein refseq',
             field: 'refseq',
             align: 'center',
             valign: 'middle',
-            sortable: true
+            sortable: true,
+            formatter: proteinFormatter
           },
           {
             title: '# mutations',
@@ -127,6 +129,16 @@
         }
     )
     */
+  }
+
+  function geneFormatter(value, row, index)
+  {
+    return '<a href="/gene/show/' + value + '">' + value + '</a>'
+  }
+
+  function proteinFormatter(value, row, index)
+  {
+    return '<a href="/protein/show/' + value + '">' + value + '</a>'
   }
 
   $(function ()
