@@ -33,7 +33,9 @@ rm -rf flask-sqlalchemy
 
 There is an [open issue](https://github.com/mitsuhiko/flask-sqlalchemy/issues/436) with a request for a maintenance relaese.
 
-### Database creation & configuration
+### Backend
+
+#### Database creation & configuration
 
 For full deployment two MySQL databases will be needed: one for biological data and one for CMS. You need to create them on your own, along with relevant database users and privileges. Afterwards, you can start writing your configuration by copying the exemplar configuration file:
 ```bash
@@ -46,7 +48,7 @@ python3 db_create.py
 If you see (at the very end): `Done, all tasks completed.` it indicates that everything is working properly.
 
 
-### Data import
+#### Data import
 
 All data files can be downloaded easily with `./download.sh` script from `website/data` directory.
 
@@ -72,8 +74,11 @@ python3 db_create.py -h
 
 **MySQL specific:** if you see a message `MySQL server has gone away`, try to `set global max_allowed_packet=1073741824;`
 
+### Frontend
+If you don't want to perform steps specified below for every single deployment, you can use `deploy.sh` script (after installing all dependecies listed in the steps below).
 
-### Stylesheet creation
+
+#### Stylesheet creation
 Stylesheet files are important part of this visualisation framework. To compile them, you will need to have [`sass` gem installed](http://sass-lang.com/install).
 To create all `*.css` files, run following command from `website` directory:
 
@@ -81,7 +86,7 @@ To create all `*.css` files, run following command from `website` directory:
 sass --update .:.
 ```
 
-### Precompiling Nunjucks templates
+#### Precompiling Nunjucks templates
 Nunjucks templating system is used for clint-side templating. It allows to move some repeatedly performed templating tasks to user's browser, which reduces transfer and speeds-up site loading. It uses jinja-nearly-compatible syntax.
 To keep this process efficient, templates should be precompiled. To do so, you will need to get full nunjucks installation, for example with `npm` (you should be able to install `npm` with your system's package manager):
 ```bash
@@ -95,8 +100,9 @@ cd website/static/js_templates
 ```
 And you are done. When `DEBUG = False`, precompiled templates will be loaded automatically.
 
+### Serving
 
-### Serving with Werkzeug
+#### Serving with Werkzeug
 
 To start the webserver simply type:
 ```bash
@@ -106,7 +112,7 @@ python3 run.py
 For adjusting the port or IP address, check `-h` switch of the `run.py` script
 (note: to run on port 80 sudo privileges may be required).
 
-### Serving with Apache2
+#### Serving with Apache2
 
 Deployment on Apache2 server is more powerful alternative to Werkzeug webserver.
 
