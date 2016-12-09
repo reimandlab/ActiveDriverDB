@@ -295,7 +295,7 @@ var NeedlePlot = function ()
                 var key = d.pos + ':' + d.value
                 var head_group = head_groups[key]
 
-                var width_per_head = posToX(1)
+                var width_per_head = posToX(1) * get_constant_scale()
                 var width = head_group.length * width_per_head
 
                 var shift = width_per_head / 2 - width / 2
@@ -537,6 +537,11 @@ var NeedlePlot = function ()
         return 'translate('  + [x_pos, axes.y.scale(d.value)] + ')scale(1, '+ scale +')'
     }
 
+    function get_constant_scale()
+    {
+        return config.max_zoom / scale
+    }
+
     function adjustContent(animate)
     {
         if(scale === config.max_zoom)
@@ -547,7 +552,7 @@ var NeedlePlot = function ()
         {
             changeTicksCount(10)
         }
-        var constant_scale = (config.max_zoom / scale)
+        var constant_scale = get_constant_scale()
 
         var canvas = canvasAnimated(animate)
 		canvas.select('.vertical.scalable').attr('transform', 'translate(' + position + ', 0)scale(' + scale + ', 1)')
