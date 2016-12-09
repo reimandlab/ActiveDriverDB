@@ -205,6 +205,105 @@ var NeedlePlot = function ()
             .attr('class', class_name)
     }
 
+    function create_needles(vis, needle_tooltip)
+    {
+        var needles = vis.selectAll('.needle')
+            .data(
+                config.data.mutations
+                    .sort(function(a,b){ return b.value - a.value })
+            )
+            .enter()
+            .append('g')
+            .attr('class', 'needle')
+            .call(needle_tooltip.bind)
+
+        needles
+            .append('line')
+                .attr('x1', 0)
+                .attr('x2', 0)
+
+
+        // numerate needles
+        var i = 0
+        needles.
+            each(function(mutation){ mutation.id = i++ })
+
+        // lets group needle heads occuring in the same place
+        var head_groups = {}
+
+        needles.
+            each(function(mutation){
+
+                var key = mutation.pos + ':' + mutation.value
+                if(key in head_groups)
+                {
+                    head_groups[key].push(mutation.id)
+                }
+                else
+                {
+                    head_groups[key] = [mutation.id]
+                }
+            })
+
+        // add a head of a needle
+        var head = needles
+            .append('g')
+            .attr('class', 'head')
+            .attr('id', function(d){ return 'h_' + d.id })
+
+        head.append('circle')
+            .attr('fill', function(d)
+                {
+                    return config.color_map[d.category]
+                }
+            )
+
+        // add count of overlaying heads to those
+        // which are overlaid / overlaying
+
+        function is_overlaying(d)
+        {
+            var key = d.pos + ':' + d.value
+            var head_group = head_groups[key]
+            return head_group.length > 1
+        }
+
+        head
+            .filter(is_overlaying)
+            .append('text')
+            .text(function(d){
+                var key = d.pos + ':' + d.value
+                return head_groups[key].length
+            })
+
+        head
+            .filter(is_overlaying)
+            .on('mouseover', function(d){
+
+                // make hover popup
+                var key = d.pos + ':' + d.value
+                var head_group = head_groups[key]
+
+                var width_per_head = posToX(1)
+                var width = head_group.length * width_per_head
+
+                for(var i = 0; i < head_group.length; i++)
+                {
+                    var needle_id = head_group[i]
+                    var head_id = 'h_' + needle_id
+                    var head = d3.select('#' + head_id)
+
+                    var shift = - width / 2 + i * width_per_head + width_per_head / 2
+                    head.
+                        attr('transform', function(d) {
+                            return transform_needle_head(d, shift)
+                        })
+                }
+            })
+
+        return needles
+    }
+
     function createPlot()
     {
         zoom = prepareZoom(config.min_zoom, config.max_zoom, zoomAndMove)
@@ -328,28 +427,7 @@ var NeedlePlot = function ()
             'needle'
         )
 
-        needles = vis.selectAll('.needle')
-            .data(
-                config.data.mutations
-                    .sort(function(a,b){ return b.value - a.value })
-            )
-            .enter()
-            .append('g')
-            .attr('class', 'needle')
-            .call(needle_tooltip.bind)
-
-        needles
-            .append('line')
-                .attr('x1', 0)
-                .attr('x2', 0)
-
-        needles
-            .append('circle')
-                .attr('fill', function(d)
-                    {
-                        return config.color_map[d.category]
-                    }
-                )
+        needles = create_needles(vis, needle_tooltip)
 
         var site_tooltip = Tooltip()
 
@@ -434,6 +512,13 @@ var NeedlePlot = function ()
         canvasAnimated(true).select('.x.axis').call(axes.x.obj)
     }
 
+    function transform_needle_head(d, x_pos)
+    {
+        if(!x_pos)
+            x_pos = 0
+        return 'translate('  + [x_pos, axes.y.scale(d.value)] + ')scale(1, '+ scale +')'
+    }
+
     function adjustContent(animate)
     {
         if(scale === config.max_zoom)
@@ -449,8 +534,8 @@ var NeedlePlot = function ()
         var canvas = canvasAnimated(animate)
 		canvas.select('.vertical.scalable').attr('transform', 'translate(' + position + ', 0)scale(' + scale + ', 1)')
 
-        needles.selectAll('circle')
-            .attr('transform', function(d){ return 'translate('  + [0, axes.y.scale(d.value)] + ')scale(1, '+ scale +') ' })
+        needles.selectAll('.head')
+            .attr('transform', transform_needle_head)
 
         sites.selectAll('path, rect')
             .attr('stroke-width', posToX(1) / 10 + 'px')
@@ -464,8 +549,13 @@ var NeedlePlot = function ()
                 }
             )
 
+        var head_size = posToX(1) / 2 * constant_scale
         needles.selectAll('circle')
-            .attr('r', posToX(1) / 2 * constant_scale + 'px')
+            .attr('r', head_size + 'px')
+        needles.selectAll('text')
+            .attr('font-size', head_size * 2 + 'px')
+            .attr('dx', -head_size/2 + 'px')
+            .attr('dy', +head_size/2 + 'px')
     }
 
 	function posToX(pos)
