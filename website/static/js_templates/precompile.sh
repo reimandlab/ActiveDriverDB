@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo 'Precompiling Nunjucks templates:'
+
 # make dir if does not exist
 mkdir -p precompiled
 
@@ -18,3 +20,5 @@ nunjucks-precompile short_url_popup.njk >> precompiled/network.js
 # pathway view templates
 nunjucks-precompile pathways_gene_list.njk > precompiled/pathway.js
 nunjucks-precompile pathway_details.njk >> precompiled/pathway.js
+
+echo 'Nunjucks templates precomipled.'
