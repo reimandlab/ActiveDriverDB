@@ -168,7 +168,10 @@ class Filter:
                         for sub_value in value
                     )
                 ) or
-                value in self.allowed_values
+                (
+                    not is_iterable_but_not_str(value) and
+                    value in self.allowed_values
+                )
         ):
             raise ValidationError(
                 'Filter % recieved forbidden value: %s. Allowed: %s' %
