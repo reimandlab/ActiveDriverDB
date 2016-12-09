@@ -1,4 +1,3 @@
-import app
 from models import ShortURL
 
 
