@@ -11,9 +11,11 @@ from website.helpers.widgets import FilterWidget
 
 
 cancer_codes = [cancer.code for cancer in Cancer.query.all()]
-populations_1kg = The1000GenomesMutation.populations.keys()
-populations_esp = ExomeSequencingMutation.populations.keys()
-significances = ClinicalData.significance_codes.keys()
+
+# Python 3.4: cast keys() to list
+populations_1kg = list(The1000GenomesMutation.populations.keys())
+populations_esp = list(ExomeSequencingMutation.populations.keys())
+significances = list(ClinicalData.significance_codes.keys())
 
 
 def populations_labels(populations):
