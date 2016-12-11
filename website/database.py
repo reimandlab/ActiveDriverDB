@@ -26,6 +26,11 @@ def get_or_create(model, **kwargs):
         return model(**kwargs), True
 
 
+def has_or_any(field, *args, **kwargs):
+    method = field.any if field.property.uselist else field.has
+    return method(*args, **kwargs)
+
+
 def get_highest_id(model):
     """Get the highest 'id' value from table corresponding to given model.
 

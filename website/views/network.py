@@ -68,18 +68,11 @@ class NetworkView(FlaskView):
 
     def before_request(self, name, *args, **kwargs):
         filter_manager = NetworkViewFilters()
+        endpoint = self.build_route_name(name)
 
-        if request.args.get('fallback'):
-
-            method_endpoint = self.__class__.__name__ + ':' + name
-            url = url_for(method_endpoint, *args, **kwargs)
-
-            filters = filter_manager.url_string
-            # filters might be empty if
-            # (e.g. if all are pointing to default values)
-            if filters:
-                url += '?filters=' + filters
-            return redirect(url)
+        return filter_manager.reformat_request_url(
+            request, endpoint, *args, **kwargs
+        )
 
     def index(self):
         """Show SearchView as deafault page"""

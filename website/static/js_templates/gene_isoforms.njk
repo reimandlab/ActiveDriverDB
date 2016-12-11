@@ -1,0 +1,16 @@
+<div>
+  {% if gene_isoforms.preferred %}
+    <h5>Preferred isoform:</h5>
+    {% set refseq = gene_isoforms.preferred.refseq %}
+    <a href="/protein/show/{{ refseq }}">{{ refseq }}</a>
+  {% endif %}
+  {% if gene_isoforms.alternative.length %}
+    <h5>Alternative isoforms:</h5>
+    <ul>
+    {% for isoform in gene_isoforms.alternative %}
+      {% set refseq = isoform.refseq %}
+      <li><a href="/protein/show/{{ refseq }}">{{ refseq }}</a>
+    {% endfor %}
+    </ul>
+  {% endif %}
+</div>

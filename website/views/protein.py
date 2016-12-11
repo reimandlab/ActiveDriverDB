@@ -16,7 +16,7 @@ from website.helpers.tracks import SequenceTrack
 from website.helpers.tracks import MutationsTrack
 from website.helpers.tracks import DomainsTrack
 from website.helpers.filters import FilterManager
-from website.helpers.views import make_ajax_table_view
+from website.helpers.views import AjaxTableView
 from website.views._global_filters import common_filters
 from website.views._global_filters import create_widgets
 from website.views._commons import represent_mutation
@@ -73,18 +73,11 @@ class ProteinView(FlaskView):
 
     def before_request(self, name, *args, **kwargs):
         filter_manager = ProteinViewFilters()
+        endpoint = self.build_route_name(name)
 
-        if request.args.get('fallback'):
-
-            method_endpoint = self.__class__.__name__ + ':' + name
-            url = url_for(method_endpoint, *args, **kwargs)
-
-            filters = filter_manager.url_string
-            # filters might be empty if
-            # (e.g. if all are pointing to default values)
-            if filters:
-                url += '?filters=' + filters
-            return redirect(url)
+        return filter_manager.reformat_request_url(
+            request, endpoint, *args, **kwargs
+        )
 
     def index(self):
         """Show SearchView as deafault page"""
@@ -94,9 +87,9 @@ class ProteinView(FlaskView):
         return template('protein/browse.html')
 
     browse_data = route('browse_data')(
-        make_ajax_table_view(
+        AjaxTableView.from_model(
             Protein,
-            # search_filter=lambda q: Protein.gene_name.like(q + '%'),
+            search_filter=lambda q: Protein.gene_name.like(q + '%'),
             sort='gene_name'
         )
     )

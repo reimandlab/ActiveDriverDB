@@ -32,6 +32,12 @@ bundles = {
         filters='rjsmin',
         output='min/proteinView.js'
     ),
+    'js_gene_view': Bundle(
+        'common.js',
+        'widgets.js',
+        filters='rjsmin',
+        output='min/geneView.js'
+    ),
     'js_network_view': Bundle(
         'common.js',
         'widgets.js',
@@ -66,6 +72,7 @@ bundles = {
     ),
     'css_gene': css_bundle(
         'gene',
+        'sass/widgets.css',
         'sass/gene.css'
     ),
     'css_print': css_bundle(
@@ -74,6 +81,7 @@ bundles = {
     ),
     'css_search': css_bundle(
         'search',
+        'sass/widgets.css',
         'sass/search.css'
     ),
     'css_page': css_bundle(

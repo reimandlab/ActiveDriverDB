@@ -5,6 +5,7 @@ from models import Site
 from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
 from models import ClinicalData
+from database import has_or_any
 from website.helpers.filters import Filter
 from website.helpers.widgets import FilterWidget
 
@@ -38,10 +39,7 @@ def sources_to_sa_filter(f, t):
     real_field_name = Mutation.source_fields[f.value]
 
     field = getattr(t, real_field_name)
-    if field.property.uselist:
-        return field.any()
-    else:
-        return field.has()
+    return has_or_any(field)
 
 
 def common_filters(default_source='TCGA', source_nullable=False):

@@ -662,10 +662,9 @@ class Mutation(BioModel):
         'affected_populations'
     )
 
-    #affects_1KG = association_proxy('meta_1KG', 'affects')
+    # affects_1KG = association_proxy('meta_1KG', 'affects')
     cancer_code = association_proxy('meta_cancer', 'cancer_code')
     sig_code = association_proxy('meta_inherited', 'sig_code')
-
 
     def get_source_name(self, column_name):
         return {v: k for k, v in self.source_fields.items()}.get(

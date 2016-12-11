@@ -23,51 +23,54 @@ var Widgets = (function ()
       }
 
       // initialize multiselect fields
-      box.find('.multiselect').multiselect({
-          onDropdownShow: function(event)
-          {
-              var target = $(event.target)
+      var to_multiselect = box.find('.multiselect')
 
-              var selected = target.find('li.active')
-
-              target.data('prevoiously_selected', selected)
-          },
-          onDropdownHide: function(event)
-          {
-              var target = $(event.target)
-
-              // selected counts also 'Select all' option
-              var selected = target.find('li.active')
-
-              // if there was not a change do not consider this action
-              if(checkEquality(selected, target.data('prevoiously_selected')))
+      if(to_multiselect.length)
+          to_multiselect.multiselect({
+              onDropdownShow: function(event)
               {
-                  return true
-              }
-              if (selected.length < 1)
-              {
-                  target.parent().popover({
-                      content: 'You should select at least one option',
-                      placement: 'top',
-                      trigger: 'manual'
-                  }).popover('show')
-                  return false
-              }
-              else {
-                  target.parent().popover('hide')
-                  update()
-              }
+                  var target = $(event.target)
 
-          },
-          onChange: function(option, checked)
-          {
-              if(checked)
-                  $(option).parent().parent().popover('hide')
-          },
-          includeSelectAllOption: true,
-          dropRight: true,
-          allSelectedText: $(this).data('all-selected-text')
-      })
+                  var selected = target.find('li.active')
+
+                  target.data('prevoiously_selected', selected)
+              },
+              onDropdownHide: function(event)
+              {
+                  var target = $(event.target)
+
+                  // selected counts also 'Select all' option
+                  var selected = target.find('li.active')
+
+                  // if there was not a change do not consider this action
+                  if(checkEquality(selected, target.data('prevoiously_selected')))
+                  {
+                      return true
+                  }
+                  if (selected.length < 1)
+                  {
+                      target.parent().popover({
+                          content: 'You should select at least one option',
+                          placement: 'top',
+                          trigger: 'manual'
+                      }).popover('show')
+                      return false
+                  }
+                  else {
+                      target.parent().popover('hide')
+                      update()
+                  }
+
+              },
+              onChange: function(option, checked)
+              {
+                  if(checked)
+                      $(option).parent().parent().popover('hide')
+              },
+              includeSelectAllOption: true,
+              dropRight: true,
+              allSelectedText: $(this).data('all-selected-text')
+          })
   }
 
 	var publicSpace = {

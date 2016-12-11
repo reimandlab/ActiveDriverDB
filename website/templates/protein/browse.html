@@ -64,46 +64,47 @@
   {
     $table.bootstrapTable({
       columns: [
-        [
-          {
-            title: 'Gene name',
-            field: 'gene_name',
-            align: 'center',
-            valign: 'middle',
-            sortable: true,
-            formatter: geneFormatter
-          },
-          {
-            title: 'Protein refseq',
-            field: 'refseq',
-            align: 'center',
-            valign: 'middle',
-            sortable: true,
-            formatter: proteinFormatter
-          },
-          {
-            title: '# mutations',
-            sortable: true,
-            valign: 'middle',
-            align: 'center',
-            field: 'mutations_count',
-          },
-          {
-            title: '# PTM mutations',
-            // sortable: true,
-            valign: 'middle',
-            align: 'center',
-            field: 'ptm_muts'
-          },
-          {
-            title: '# PTM sites',
-            sortable: true,
-            valign: 'middle',
-            align: 'center',
-            field: 'sites_count'
-          }
-        ]
-      ]
+        {
+          title: 'Gene name',
+          field: 'gene_name',
+          align: 'center',
+          valign: 'middle',
+          sortable: true,
+          formatter: geneFormatter
+        },
+        {
+          title: 'Protein refseq',
+          field: 'refseq',
+          align: 'center',
+          valign: 'middle',
+          sortable: true,
+          formatter: proteinFormatter
+        },
+        {
+          title: '# mutations',
+          sortable: true,
+          valign: 'middle',
+          align: 'center',
+          field: 'mutations_count',
+        },
+        {
+          title: '# PTM mutations',
+          valign: 'middle',
+          align: 'center',
+          field: 'ptm_muts'
+        },
+        {
+          title: '# PTM sites',
+          sortable: true,
+          valign: 'middle',
+          align: 'center',
+          field: 'sites_count'
+        }
+      ],
+      formatLoadingMessage: function ()
+      {
+        return 'Loading, please wait... <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>'
+      },
     })
     $table.on('click-row.bs.table', function (e, row, $element)
     {

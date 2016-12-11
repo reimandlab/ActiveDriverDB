@@ -4,7 +4,7 @@ from flask_classful import FlaskView
 from flask_classful import route
 from models import Pathway
 from sqlalchemy import or_
-from website.helpers.views import make_ajax_table_view
+from website.helpers.views import AjaxTableView
 
 
 class PathwayView(FlaskView):
@@ -37,7 +37,7 @@ class PathwayView(FlaskView):
             return Pathway.description.like('%' + query + '%')
 
     data = route('data')(
-        make_ajax_table_view(
+        AjaxTableView.from_model(
             Pathway,
             search_filter=_search_filter,
             sort='description'

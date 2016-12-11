@@ -21,4 +21,7 @@ nunjucks-precompile short_url_popup.njk >> precompiled/network.js
 nunjucks-precompile pathways_gene_list.njk > precompiled/pathway.js
 nunjucks-precompile pathway_details.njk >> precompiled/pathway.js
 
+# gene view templates
+nunjucks-precompile gene_isoforms.njk > precompiled/gene.js
+
 echo 'Nunjucks templates precomipled.'

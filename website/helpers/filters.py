@@ -5,6 +5,8 @@ from collections import namedtuple
 from collections import defaultdict
 from urllib.parse import unquote
 from collections import Iterable
+from sqlalchemy import and_
+from sqlalchemy import or_
 
 
 def is_iterable_but_not_str(obj):
@@ -73,7 +75,6 @@ class Filter:
     def as_sqlalchemy(self, target):
         from sqlalchemy.ext.associationproxy import AssociationProxy
         from types import FunctionType, MethodType
-        from sqlalchemy import or_, and_
 
         comparators = {
             'ge': '__ge__',
@@ -369,33 +370,40 @@ class FilterManager:
         """Return a list of inactive filters"""
         return [f for f in self.filters.values() if not f.is_active]
 
-    def sqlalchemy_query(self, target, custom_filter=None):
-        """There are two strategies of using filter manager:
-
-        + you can get results from database and walk through every element in the list, or
-        + you can build a query and move some job to the database. Not always it is possible though.
-        """
-        from sqlalchemy import and_
+    def prepare_filters(self, target=None):
 
         to_apply_manually = []
         query_filters = []
 
-        for the_filter in self._get_active_by_target(target):
+        for the_filter in self._get_active(target):
 
             if the_filter.has_sqlalchemy:
 
-                as_sqlalchemy = the_filter.as_sqlalchemy(target)
+                the_target = target if target else the_filter.targets[0]
+
+                as_sqlalchemy = the_filter.as_sqlalchemy(the_target)
                 if as_sqlalchemy is not False:
                     query_filters.append(as_sqlalchemy)
 
             else:
                 to_apply_manually.append(the_filter)
 
+        return query_filters, to_apply_manually
+
+    def sqlalchemy_query(self, target, custom_filter=None):
+        """There are two strategies of using filter manager:
+
+            - you can get results from database and walk through
+              every element in the list, or
+            - you can build a query and move some job to the database;
+              not always it is possible though.
+        """
+        query_filters, to_apply_manually = self.prepare_filters(target)
+
         query_filters_sum = and_(*query_filters)
 
         if custom_filter:
             query_filters_sum = custom_filter(query_filters_sum)
-
 
         query = target.query.filter(query_filters_sum)
 
@@ -419,19 +427,22 @@ class FilterManager:
         if filters_subset is not None:
             filters = filters_subset
         else:
-            filters = self._get_active_by_target(target_type)
+            filters = self._get_active(target_type)
 
         for filter_ in filters:
             elements = filter_.apply(elements)
 
         return list(elements)
 
-    def _get_active_by_target(self, target_type):
+    def _get_active(self, target=None):
         """Return filters which are active & target the same type of objects"""
         return [
             filter_
             for filter_ in self.filters.values()
-            if target_type in filter_.targets and filter_.is_active
+            if (
+                (not target or target in filter_.targets) and
+                filter_.is_active
+            )
         ]
 
     def get_value(self, filter_id):
@@ -592,3 +603,18 @@ class FilterManager:
         """Reset values of child filters to bring them into a neutral state."""
         for filter in self.filters.values():
             filter._value = None
+
+    def reformat_request_url(self, request, endpoint, *args, **kwargs):
+        from flask import url_for
+        from flask import redirect
+
+        if request.args.get('fallback'):
+
+            url = url_for(endpoint, *args, **kwargs)
+
+            filters = self.url_string
+            # filters might be empty if
+            # (e.g. if all are pointing to default values)
+            if filters:
+                url += '?filters=' + filters
+            return redirect(url)

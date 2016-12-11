@@ -1,9 +1,11 @@
 {% from 'forms/widgets.html' import render_widget %}
 
 <div class="btn-group filters-bar widgets-bar widgets" role="group">
-    <div class="btn-group">
-      {{ render_widget(widgets.is_ptm) }}
-    </div>
+    {% for widget in widgets %}
+      <div class="btn-group">
+        {{ render_widget(widget) }}
+      </div>
+    {% endfor %}
     <button class="btn btn-primary save js-hidden" type="submit" title="Update">
       <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
     </button>
