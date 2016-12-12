@@ -215,7 +215,8 @@ class SearchViewFilters(FilterManager):
         filters = [
             Filter(
                 Mutation, 'is_ptm', comparators=['eq'],
-                is_attribute_a_method=True
+                is_attribute_a_method=True,
+                default=True
             ),
             Filter(
                 Protein, 'has_ptm_mutations', comparators=['eq'],
