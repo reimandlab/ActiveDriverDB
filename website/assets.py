@@ -16,6 +16,8 @@ bundles = {
         output='min/searchbar.js'
     ),
     'js_search': Bundle(
+        'common.js',
+        'widgets.js',
         'search.js',
         filters='rjsmin',
         output='min/search.js'

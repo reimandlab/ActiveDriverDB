@@ -1,12 +1,12 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 
 {% macro target_button(target_name) %}
   <a
-    href="{{ url_for('SearchView:index', target=target_name) }}"
+    href="{{ url_for('SearchView:' + target_name, _external=True) }}"
     class="btn btn-default {{ target_name }} {{ 'active' if target==target_name }}"
   >
-      {{ target_name | title }}
+    {{ target_name | title }}
   </a>
 {% endmacro %}
 
@@ -38,24 +38,27 @@
   </div>
 
   <div id="form-area">
-    {% with target=target %}
-      {% include 'search/form.html' %}
-    {% endwith %}
+    {% if target == 'proteins' %}
+      {% include 'search/forms/proteins.html' %}
+    {% elif target == 'mutations' %}
+      {% include 'search/forms/mutations.html' %}
+    {% endif %}
   </div>
 
 {% endblock %}
 
 
 {% block footer_js %}
-    {% assets "js_search" %}
+  {% assets "js_search" %}
 	<script type="text/javascript" src="{{ ASSET_URL }}"></script>
-    {% endassets %}
-    <script type="text/javascript">
-        var manager_params = {
-            active_target: '{{ target}}',
-            form_area: $('#form-area'),
-        }
-        SearchManager.init(manager_params)
+  {% endassets %}
+  <script type="text/javascript">
+    var manager_params = {
+      active_target: '{{ target}}',
+      form_area: $('#form-area'),
+      url_base: '{{ url_for('SearchView:default') }}'
+    }
+    SearchManager.init(manager_params)
   </script>
   {{ super() }}
 {% endblock %}

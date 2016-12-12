@@ -89,4 +89,4 @@ var Widgets = (function ()
 }())
 
 
-Widgets.init($('.widgets'), $('#widget-form')[0])
+Widgets.init($('.widgets'), $('.widget-form')[0])

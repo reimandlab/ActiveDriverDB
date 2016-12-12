@@ -74,24 +74,38 @@ var ProteinForm = (function ()
     var result_ul
     var recent_value
     var search_button
+    var url_base
 
     function get_url()
     {
-        var href = 'proteins'
+        var href = url_base + 'proteins'
+        var params = get_url_params()
         if(recent_value !== undefined && recent_value !== '')
         {
-            href += '?proteins=' + recent_value
+            params.proteins = recent_value
+        }
+        else
+        {
+            delete params.proteins
+        }
+
+        var query_string = $.param(params)
+        if(query_string)
+        {
+            href += '?' + query_string
         }
         return href
     }
 
     function autocomplete(query)
     {
+        var params = get_url_params()
+        params.q = encodeURIComponent(query)
         result_ul.innerHTML = ''
         $.ajax({
             url: '/search/autocomplete_proteins',
             type: 'GET',
-            data: { q: encodeURIComponent(query) },
+            data: params,
             success: function(response) {
 
                 // do we still need this?
@@ -172,10 +186,11 @@ var ProteinForm = (function ()
     }
 
     var publicSpace = {
-        init: function(dom_element)
+        init: function(dom_element, _url_base)
         {
             element = dom_element
-            search_button = $(element).find('button[type="submit"]')
+            url_base = _url_base
+            search_button = $(element).find('button[type="submit"].search-button')
             var protein_search = $(element).find('#protein_search')
             // handle all edge cases like dragging the text into the input
             protein_search.on('change mouseup drop input', onChangeHandler)
@@ -215,6 +230,7 @@ var MutationForm = (function ()
     var element
     var textarea
     var placeholder_manager
+    var url_base
 
     function getPlaceholder()
     {
@@ -232,9 +248,10 @@ var MutationForm = (function ()
     }
 
     var publicSpace = {
-        init: function(dom_element)
+        init: function(dom_element, _url_base)
         {
             element = dom_element
+            url_base = _url_base
             textarea = element.find('textarea')
 
             placeholder_manager = multlinePlaceholderPolyfill()
@@ -253,7 +270,7 @@ var MutationForm = (function ()
         },
         get_url: function()
         {
-            return 'mutations'
+            return url_base + 'mutations'
         }
     }
 
@@ -300,7 +317,7 @@ var SearchManager = (function ()
             return
         }
         forms[name] = form_constructor[name]
-        forms[name].init(dom_form)
+        forms[name].init(dom_form, url_base)
     }
 
     function switchFromAnchor()
@@ -353,6 +370,7 @@ var SearchManager = (function ()
         {
             form_area = data.form_area
             target = data.active_target
+            url_base = decodeURIComponent(data.url_base)
             switches = $('.target-switch a')
 
             switches.on('click', switchFromAnchor)

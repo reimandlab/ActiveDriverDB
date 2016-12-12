@@ -74,6 +74,7 @@ class Filter:
 
     def as_sqlalchemy(self, target):
         from sqlalchemy.ext.associationproxy import AssociationProxy
+        from sqlalchemy.sql.annotation import AnnotatedSelect
         from types import FunctionType, MethodType
 
         comparators = {
@@ -92,7 +93,7 @@ class Filter:
         }
 
         if self.value is None:
-            return False
+            return None
 
         if type(self._as_sqlalchemy) is FunctionType:
             return self._as_sqlalchemy(self, target)
@@ -102,6 +103,10 @@ class Filter:
         assert len(path) < 3     # we are unable to query deeper easily
 
         field = getattr(target, path[0])
+
+        if type(field) is AnnotatedSelect:
+            if self.comparator == 'eq':
+                return field
 
         if type(field) is AssociationProxy:
             if self.comparator == 'in':
@@ -142,9 +147,11 @@ class Filter:
 
         from sqlalchemy.sql.sqltypes import Text
 
-        if self.comparator == 'in' and type(field.property.columns[0].type) is Text:
+        if (
+            self.comparator == 'in' and
+            type(field.property.columns[0].type) is Text
+        ):
             return getattr(field, 'like')('%' + self.value + '%')
-
 
         return getattr(field, comparators[self.comparator])(self.value)
 
@@ -281,7 +288,7 @@ class Filter:
         obj_value = attr_get(obj)
         return self.compare(obj_value)
 
-    def apply(self, elements):
+    def apply(self, elements, itemgetter=None):
         """Optimized equivalent to list(filter(my_filter.test, elements))"""
 
         if self.value is None:
@@ -292,6 +299,12 @@ class Filter:
             return []
 
         attr_get = self.attr_getter()
+        if itemgetter:
+            old_attr_get = attr_get
+
+            def attr_get(element):
+                element = itemgetter(element)
+                return old_attr_get(element)
 
         comparator_function = self.possible_comparators[self.comparator]
         multiple_test = self.get_multiple_function()
@@ -382,7 +395,7 @@ class FilterManager:
                 the_target = target if target else the_filter.targets[0]
 
                 as_sqlalchemy = the_filter.as_sqlalchemy(the_target)
-                if as_sqlalchemy is not False:
+                if as_sqlalchemy is not None:
                     query_filters.append(as_sqlalchemy)
 
             else:
@@ -411,14 +424,18 @@ class FilterManager:
 
         return self.apply(elements, to_apply_manually)
 
-    def apply(self, elements, filters_subset=None):
+    def apply(self, elements, filters_subset=None, itemgetter=None):
         """Apply all appropriate filters to given list of elements.
 
         Only filters targeting the same model and beeing currently active will
         be applied. The target model will be deduced from passed elements.
         """
         try:
-            target_type = type(elements[0])
+            tester = elements[0]
+            if itemgetter:
+                tester = itemgetter(tester)
+
+            target_type = type(tester)
         except IndexError:
             # the list was empty or was emptied before we were able to
             # investigate the type of targeted objects
@@ -430,18 +447,18 @@ class FilterManager:
             filters = self._get_active(target_type)
 
         for filter_ in filters:
-            elements = filter_.apply(elements)
+            elements = filter_.apply(elements, itemgetter)
 
         return list(elements)
 
     def _get_active(self, target=None):
         """Return filters which are active & target the same type of objects"""
         return [
-            filter_
-            for filter_ in self.filters.values()
+            the_filter
+            for the_filter in self.filters.values()
             if (
-                (not target or target in filter_.targets) and
-                filter_.is_active
+                (not target or target in the_filter.targets) and
+                the_filter.is_active
             )
         ]
 
@@ -471,8 +488,11 @@ class FilterManager:
             )
         return skipped
 
+    def update_from_post(self, request):
+        pass
+
     @staticmethod
-    def _parse_fallback_query(query):
+    def _parse_fallback_query(args):
         """Parse query in fallback format."""
 
         re_value = re.compile(r'filter\[([\w\.]+)\]')
@@ -480,13 +500,12 @@ class FilterManager:
 
         filters = defaultdict(lambda: defaultdict(list))
 
-        for entry in query.split('&'):
-            key, value = entry.split('=')
+        for key, value in args.items():
 
             match = re_value.fullmatch(key)
             if match:
                 name = match.group(1)
-                filters[name]['value'].append(value)
+                filters[name]['value'] = value
 
             match = re_cmp.fullmatch(key)
             if match:
@@ -518,14 +537,17 @@ class FilterManager:
         posting HTML form and modern format is designed to be used with AJAX
         requests, to create readable REST interfaces and for internal usage.
         """
-        if request.args.get('fallback'):
-
-            query = unquote(str(request.query_string, 'utf-8'))
-            filters_list = self._parse_fallback_query(query)
-
+        if request.method == 'GET':
+            args = request.args
         else:
-            string = request.args.get('filters', '')
-            filters_list = self._parse_string(string)
+            args = request.form
+
+        if args.get('fallback'):
+            filters_list = self._parse_fallback_query(dict(args))
+        else:
+            filters_list = self._parse_string(
+                args.get('filters', '')
+            )
 
         return [
             self.UpdateTuple(*filter_update)
@@ -613,8 +635,24 @@ class FilterManager:
             url = url_for(endpoint, *args, **kwargs)
 
             filters = self.url_string
+
+            args = dict(request.args)
             # filters might be empty if
             # (e.g. if all are pointing to default values)
             if filters:
-                url += '?filters=' + filters
+                args['filters'] = [filters]
+
+            for arg, value in args.items():
+                print(value)
+
+            query_string = '&'.join(
+                [
+                    arg + '=' + value[0]
+                    for arg, value in args.items()
+                    if not (arg.startswith('filter[') or arg == 'fallback')
+                ]
+            )
+            # add other arguments
+            if query_string:
+                url += '?' + query_string
             return redirect(url)

@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block title %} {{ protein.gene.name }} - {{ protein.refseq }} - protein view - {{ super() }} {% endblock %}
 
@@ -51,8 +51,8 @@
   <li class="active">{{ protein.refseq }}</li>
 </ol>
 
-<form method="get" id="widget-form">
-  {% include 'forms/filters_box.html' %}
+<form method="GET" class="widget-form">
+  {% include 'widgets/filters_box.html' %}
   <div class="panel panel-default panel-needleplot">
       <div class="panel-heading">
         <div class="heading-left">
@@ -62,12 +62,12 @@
                 Show interaction network view
             </a>
           </div>
-          {% include 'export_buttons.html' %}
-          {% include 'short_url_button.html' %}
+          {% include 'buttons/export.html' %}
+          {% include 'buttons/short_url.html' %}
         </div>
         <div class="heading-right">
           {% with widgets=[widgets.is_ptm] %}
-            {% include 'forms/filters_bar.html' %}
+            {% include 'widgets/filters_bar.html' %}
           {% endwith %}
         </div>
       </div>

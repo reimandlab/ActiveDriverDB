@@ -34,9 +34,9 @@
 
 <div>
   <div id="toolbar" class="gene-widgets">
-    <form method="get" id="widget-form">
       {% with widgets=[widgets.dataset, widgets.ptm_type] %}
-        {% include 'forms/filters_bar.html' %}
+        {% include 'widgets/filters_bar.html' %}
+        <form method="GET" class="widget-form">
       {% endwith %}
       <input type="hidden" name="fallback" value="True">
     </form>
@@ -72,22 +72,6 @@
   nunjucks.configure('/static/js_templates', {autoescape: true})
 
   var $table = $('#table')
-
-  function get_url_params()
-  {
-    // in future URLSearchParams would do the job
-    var params_string = window.location.search.substr(1)
-    var params_list = params_string.split('&')
-    var params = {}
-    for(var i = 0; i < params_list.length; i++)
-    {
-      var param = params_list[i].split('=')
-      var key = param[0]
-      var value = param[1]
-      params[key] = value
-    }
-    return params
-  }
 
   function queryParams(params)
   {

@@ -1,0 +1,55 @@
+{% from "search/results/gene.html" import gene_results with context %}
+
+<form
+  action="{{ url_for('SearchView:proteins') }}"
+  class="search-form widget-form"
+  method="GET"
+  id="proteins-form"
+>
+  <div class="options">
+    {% with widgets=[widgets.at_least_one_ptm] %}
+      {% include 'widgets/filters_bar.html' %}
+    {% endwith %}
+  </div>
+  <div class="inputs">
+    <input
+      type="text"
+      name="proteins"
+      class="form-control"
+      placeholder="TP53 or NM_000345"
+      id="protein_search"
+      {% if query %} value="{{ query }}" {% endif %}
+    >
+  </div>
+  <div class="results panel panel-default {{ 'hidden' if not results }}">
+    <ul>
+    {% for result in results %}
+      {{ gene_results(result) }}
+    {% endfor %}
+    </ul>
+    <div class="empty {{ 'hidden' if results or query }}">
+      <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+      <p>Please type at least three characters to get the results.</p>
+      <p>You can use a name of a protein (like BRCA1) or refseq identifier (like 000345 or NM_000345).</p>
+      <p class="addition">If you want search with just one or two characters, you can still use search button (below).</p>
+    </div>
+    <div class="waiting hidden">
+      <span class="glyphicon glyphicon-refresh glyphicon-spin" aria-hidden="true"></span>
+      <p>Retrieving results...</p>
+    </div>
+    <div class="no-results {{ 'hidden' if results or not query}}">
+      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+      <p>No results found</p>
+    </div>
+  </div>
+  <div class="buttons">
+    <button
+      type="submit"
+      class="btn btn-primary {{ 'js-hidden' if (query | length) > 4 }} search-button"
+    >
+      Search
+      <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+    </button>
+  </div>
+  <input type="hidden" name="fallback" value="True">
+</form>

@@ -54,3 +54,22 @@ function get_remote_if_needed(new_config, name, callback)
 		})
     }
 }
+
+
+function get_url_params()
+{
+    // in future URLSearchParams would do the job
+    var params_string = decodeURIComponent(window.location.search)
+    params_string = params_string.substr(1) // remove '?' character from the beginning
+    var params_list = params_string.split('&')
+    var params = {}
+    for(var i = 0; i < params_list.length; i++)
+    {
+      var param = params_list[i].split('=')
+      var key = param[0]
+      var value = param[1]
+      if(key)
+        params[key] = value
+    }
+    return params
+}

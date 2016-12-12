@@ -1,0 +1,48 @@
+<form
+  action="{{ url_for('SearchView:mutations') }}"
+  class="search-form"
+  method="POST"
+  id="mutations-form"
+  enctype="multipart/form-data"
+>
+  <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+  {# TODO: the example should return more representative results #}
+  {% set example='HTR3E I183823756M\nSTAT6 W737C\nchr12 57490358 C A\nTP53 R282W\nBRCA1 L432V' %}
+  <div class="options">
+    <a class="btn btn-default btn-file">
+      Select VCF file  <input type="file" name="vcf-file">
+    </a>
+    <a href="?mutations={{ example | urlencode }}" class="btn btn-default set-example">Load an example</a>
+    <button type="submit" class="btn btn-primary mut-search">
+      Search {{ 'again' if results }}
+      <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
+    </button>
+    {% with widgets=[widgets.is_ptm] %}
+      {% include 'widgets/filters_bar.html' %}
+    {% endwith %}
+  </div>
+  <div class="inputs" class="{{ 'hidden' if results }}">
+    {# The length of the textarea should change dynamically up to 30 rows - JS #}
+    {# The single-line placeholder will be substituted by multiline placeholder with JS in all browsers #}
+    <textarea
+      name="mutations"
+      class="form-control"
+      placeholder="chr1 12345678 A C"
+      data-full-placeholder="Type in genomic or protein mutations separated by new lines, in following format:\n{{ example }}\n(you can mix genomic and protein mutations as long as each is placed in a separate line)"
+      rows="6"
+    >
+      {%- if query -%}
+        {{ query }}
+      {%- endif -%}
+    </textarea>
+    <span class="help-block">
+      You can provide a VCF file and plain-text mutation lines above at once, so result for both will be shown on one page.
+    </span>
+  </div>
+  <div
+    class="results {{ 'hidden' if not results and not badly_formatted and not without_mutations }}"
+  >
+    {% include 'search/results/mutations.html' %}
+  </div>
+  <input type="hidden" name="fallback" value="True">
+</form>

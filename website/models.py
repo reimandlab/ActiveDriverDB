@@ -5,7 +5,10 @@ from database import db
 from sqlalchemy import and_
 from sqlalchemy import or_
 from sqlalchemy import func
-from sqlalchemy.sql import exists, select
+from sqlalchemy import distinct
+from sqlalchemy import case
+from sqlalchemy.sql import exists
+from sqlalchemy.sql import select
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -273,6 +276,34 @@ class Protein(BioModel):
             self.refseq,
             self.length,
             self.gene.name
+        )
+
+    @hybrid_property
+    def has_ptm_mutations(self):
+        # TODO
+        raise NotImplementedError
+
+    @has_ptm_mutations.expression
+    def has_ptm_mutations(cls):
+        return (
+            select([
+                case(
+                    [(
+                        exists()
+                        .where(and_(
+                            Site.protein_id == cls.id,
+                            Mutation.protein_id == cls.id,
+                            Site.position.between(
+                                Mutation.position - 7,
+                                Mutation.position + 7
+                            )
+                        )).correlate(cls),
+                        True
+                    )],
+                    else_=False,
+                ).label('has_ptm_mutations')
+            ])
+            .label('has_ptm_mutations_select')
         )
 
     @hybrid_property

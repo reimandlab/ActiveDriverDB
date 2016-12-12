@@ -87,7 +87,7 @@ class NetworkView(FlaskView):
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
         return template(
-            'network.html', protein=protein,
+            'network/show.html', protein=protein,
             filters=filter_manager,
             option_widgets=self._create_option_widgets(filter_manager),
             widgets=create_widgets(filters_by_id),

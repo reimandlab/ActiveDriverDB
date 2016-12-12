@@ -7,9 +7,13 @@ from flask_classful import route
 from Levenshtein import distance
 from models import Protein
 from models import Gene
+from models import Mutation
 from website.views._commons import get_genomic_muts
 from website.views._commons import get_protein_muts
 from sqlalchemy import and_
+from website.helpers.filters import FilterManager
+from website.helpers.filters import Filter
+from website.helpers.widgets import FilterWidget
 
 
 class GeneResult:
@@ -23,7 +27,7 @@ class GeneResult:
         return getattr(self.gene, key)
 
 
-def search_proteins(phase, limit=False):
+def search_proteins(phase, limit=False, filter_manager=None):
     """Search for a protein isoform or gene.
 
     Limit means maximum results to be
@@ -34,11 +38,27 @@ def search_proteins(phase, limit=False):
         return []
 
     # find by gene name
-    name_filter = Gene.name.like(phase + '%')
-    orm_query = Gene.query.filter(and_(
-        name_filter,
-        Gene.preferred_isoform.has()
-    ))
+    filters = [Gene.name.like(phase + '%')]
+    sql_filters = None
+
+    if filter_manager:
+        divided_filters = filter_manager.prepare_filters(Protein)
+        sql_filters, manual_filters = divided_filters
+        if manual_filters:
+            raise ValueError(
+                'From query can apply only use filters with'
+                ' sqlalchemy interface'
+            )
+
+    if sql_filters:
+        filters += sql_filters
+
+    orm_query = (
+        Gene.query
+        .join(Protein, Protein.id == Gene.preferred_isoform_id)
+        .filter(and_(*filters))
+    )
+
     if limit:
         orm_query = orm_query.limit(limit)
     genes = {gene.name: GeneResult(gene) for gene in orm_query.all()}
@@ -47,8 +67,10 @@ def search_proteins(phase, limit=False):
     if phase.isnumeric():
         phase = 'NM_' + phase
     if phase.startswith('NM_'):
-        refseq_filter = Protein.refseq.like(phase + '%')
-        isoforms = Protein.query.filter(refseq_filter).all()
+        filters = [Protein.refseq.like(phase + '%')]
+        if sql_filters:
+            filters += sql_filters
+        isoforms = Protein.query.filter(and_(*filters)).all()
 
         for isoform in isoforms:
             if limit and len(genes) > limit:
@@ -80,7 +102,7 @@ def search_proteins(phase, limit=False):
     )
 
 
-def parse_vcf(vcf_file, results, without_mutations, badly_formatted):
+def parse_vcf(vcf_file, results, without_mutations, badly_formatted, data_filter):
 
     query = ''
 
@@ -106,6 +128,8 @@ def parse_vcf(vcf_file, results, without_mutations, badly_formatted):
 
             items = get_genomic_muts(chrom, pos, ref, alt)
 
+            items = data_filter(items)
+
             chrom = 'chr' + chrom
             parsed_line = ' '.join((chrom, pos, ref, alt)) + '\n'
 
@@ -129,7 +153,9 @@ def parse_vcf(vcf_file, results, without_mutations, badly_formatted):
     return query
 
 
-def parse_text(textarea_query, results, without_mutations, badly_formatted):
+def parse_text(
+    textarea_query, results, without_mutations, badly_formatted, data_filter
+):
     for line in textarea_query.split('\n'):
         data = line.split()
         if len(data) == 4:
@@ -146,6 +172,8 @@ def parse_text(textarea_query, results, without_mutations, badly_formatted):
             badly_formatted.append(line)
             continue
 
+        items = data_filter(items)
+
         if items:
             if line in results:
                 results[line]['count'] += 1
@@ -158,9 +186,8 @@ def parse_text(textarea_query, results, without_mutations, badly_formatted):
             without_mutations.append(line)
 
 
-def search_mutations(vcf_file, textarea_query):
+def search_mutations(vcf_file, textarea_query, data_filter):
     # note: entries from both file and textarea will be merged
-    # TODO: we should prevent repeatitions (or count them)
     query = ''
 
     results = {}
@@ -170,49 +197,102 @@ def search_mutations(vcf_file, textarea_query):
 
     if vcf_file:
         query += parse_vcf(
-            vcf_file, results, without_mutations, badly_formatted
+            vcf_file, results, without_mutations, badly_formatted, data_filter
         )
 
     if textarea_query:
         query += textarea_query
         parse_text(
-            textarea_query, results, without_mutations, badly_formatted
+            textarea_query, results, without_mutations, badly_formatted, data_filter
         )
 
     return results, without_mutations, badly_formatted, query
 
 
+class SearchViewFilters(FilterManager):
+
+    def __init__(self, **kwargs):
+        filters = [
+            Filter(
+                Mutation, 'is_ptm', comparators=['eq'],
+                is_attribute_a_method=True
+            ),
+            Filter(
+                Protein, 'has_ptm_mutations', comparators=['eq'],
+                as_sqlalchemy=True
+            )
+        ]
+        super().__init__(filters)
+        self.update_from_request(request)
+
+
+def make_widgets(filter_manager):
+    return {
+        'is_ptm': FilterWidget(
+            'PTM mutations only', 'checkbox',
+            filter=filter_manager.filters['Mutation.is_ptm']
+        ),
+        'at_least_one_ptm': FilterWidget(
+            'Show only proteins with PTM mutations', 'checkbox',
+            filter=filter_manager.filters['Protein.has_ptm_mutations']
+        )
+    }
+
+
 class SearchView(FlaskView):
     """Enables searching in any of registered database models."""
+
+    def before_request(self, name, *args, **kwargs):
+        filter_manager = SearchViewFilters()
+        endpoint = self.build_route_name(name)
+
+        return filter_manager.reformat_request_url(
+            request, endpoint, *args, **kwargs
+        )
 
     @route('/')
     def default(self):
         """Render default search form prompting to search for a protein."""
-        return self.index(target='proteins')
+        return self.proteins()
 
-    @route('/<target>', methods=['POST', 'GET'])
-    def index(self, target):
+    def proteins(self):
+        """Render search form and results (if any) for proteins"""
+
+        filter_manager = SearchViewFilters()
+
+        query = request.args.get('proteins', '')
+
+        results = search_proteins(query, 20, filter_manager)
+
+        return template(
+            'search/index.html',
+            target='proteins',
+            results=results,
+            widgets=make_widgets(filter_manager),
+            query=query
+        )
+
+    @route('/mutations', methods=['POST', 'GET'])
+    def mutations(self):
         """Render search form and results (if any) for proteins or mutations"""
 
         without_mutations = []
         badly_formatted = []
 
-        if target == 'proteins':
-            # handle GET here
-            assert request.method == 'GET'
+        filter_manager = SearchViewFilters()
 
-            query = request.args.get(target) or ''
-
-            results = search_proteins(query, 20)
-
-        # if the target is 'mutations' but we did not received 'POST'
-        elif target == 'mutations' and request.method == 'POST':
-
-            textarea_query = request.form.get(target, False)
+        if request.method == 'POST':
+            from operator import itemgetter
+            textarea_query = request.form.get('mutations', False)
             vcf_file = request.files.get('vcf-file', False)
 
             results, without_mutations, badly_formatted, query = search_mutations(
-                vcf_file, textarea_query
+                vcf_file,
+                textarea_query,
+                lambda elements: filter_manager.apply(
+                    elements,
+                    itemgetter=itemgetter('mutation')
+                )
             )
 
             # TODO: redirect with an url containing session id, so user can
@@ -225,8 +305,9 @@ class SearchView(FlaskView):
 
         return template(
             'search/index.html',
-            target=target,
+            target='mutations',
             results=results,
+            widgets=make_widgets(filter_manager),
             without_mutations=without_mutations,
             query=query,
             badly_formatted=badly_formatted
@@ -234,15 +315,22 @@ class SearchView(FlaskView):
 
     def form(self, target):
         """Return an empty HTML form appropriate for given target."""
-        return template('search/form.html', target=target)
+        filter_manager = SearchViewFilters()
+        return template(
+            'search/forms/' + target + '.html',
+            target=target,
+            widgets=make_widgets(filter_manager)
+        )
 
     def autocomplete_proteins(self, limit=20):
         """Autocompletion API for search for proteins."""
+
+        filter_manager = SearchViewFilters()
         # TODO: implement on client side requests with limit higher limits
         # and return the information about available results (.count()?)
         query = request.args.get('q') or ''
 
-        entries = search_proteins(query, limit)
+        entries = search_proteins(query, limit, filter_manager)
         # page = request.args.get('page', 0)
         # Pagination(Pathway.query)
         # just pass pagination html too?
@@ -252,7 +340,7 @@ class SearchView(FlaskView):
             'results': [
                 {
                     'value': gene.name,
-                    'html': template('search/gene_results.html', gene=gene)
+                    'html': template('search/results/gene.html', gene=gene)
                 }
                 for gene in entries
             ]

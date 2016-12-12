@@ -97,7 +97,7 @@ class GeneView(FlaskView):
 
     def show(self, gene_name):
         gene = Gene.query.filter_by(name=gene_name).one()
-        return template('gene.html', gene=gene)
+        return template('gene/show.html', gene=gene)
 
     def before_request(self, name, *args, **kwargs):
         filter_manager = GeneViewFilters()

@@ -142,7 +142,7 @@ class ProteinView(FlaskView):
         filters_by_id = filter_manager.filters
 
         return template(
-            'protein/index.html', protein=protein, tracks=tracks,
+            'protein/show.html', protein=protein, tracks=tracks,
             filters=filter_manager,
             widgets=create_widgets(filters_by_id),
             value_type=value_type,
