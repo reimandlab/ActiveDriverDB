@@ -89,7 +89,11 @@ class ProteinView(FlaskView):
     browse_data = route('browse_data')(
         AjaxTableView.from_model(
             Protein,
-            search_filter=lambda q: Protein.gene_name.like(q + '%'),
+            search_filter=(
+                lambda q: Protein
+                .gene_name.remote_attr
+                .like(q + '%')
+            ),
             sort='gene_name'
         )
     )
