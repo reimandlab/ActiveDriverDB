@@ -50,6 +50,7 @@ wget https://www.dropbox.com/s/pm74k3qwxrqmu2q/all_mimp_annotations_p085.rsav
 echo 'Extracting MIMP mutations from .rsav file... (it will take a long time)'
 
 Rscript -e 'load("all_mimp_annotations_p085.rsav");write.table(all_mimp_annotations, file="all_mimp_annotations.tsv", row.names=F, quote=F, sep="\t");'
+rm all_mimp_annotations_p085.rsav
 
 mkdir -p G1000
 cd G1000
