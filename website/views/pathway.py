@@ -7,6 +7,16 @@ from sqlalchemy import or_
 from website.helpers.views import AjaxTableView
 
 
+def search_filter(query):
+    if query.isnumeric():
+        return or_(
+            Pathway.gene_ontology.like(query + '%'),
+            Pathway.reactome.like(query + '%')
+        )
+    else:
+        return Pathway.description.like('%' + query + '%')
+
+
 class PathwayView(FlaskView):
 
     @route('/pathway/go/<int:gene_ontology_id>/')
@@ -21,25 +31,15 @@ class PathwayView(FlaskView):
             raise abort(404)
         pathway = Pathway.query.filter_by(**filter_by).one()
 
-        return template('pathway.html', pathway=pathway)
+        return template('pathway/show.html', pathway=pathway)
 
     def table(self):
-        return template('pathways.html')
-
-    @staticmethod
-    def _search_filter(query):
-        if query.isnumeric():
-            return or_(
-                Pathway.gene_ontology.like(query + '%'),
-                Pathway.reactome.like(query + '%')
-            )
-        else:
-            return Pathway.description.like('%' + query + '%')
+        return template('pathway/browse.html')
 
     data = route('data')(
         AjaxTableView.from_model(
             Pathway,
-            search_filter=_search_filter,
+            search_filter=search_filter,
             sort='description'
         )
     )
