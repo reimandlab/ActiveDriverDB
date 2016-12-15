@@ -1,9 +1,12 @@
+import csv
+from collections import OrderedDict
 from tqdm import tqdm
 from database import db
 from database import get_or_create
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
+from helpers.parsers import count_lines
 from models import Domain
 from models import Gene
 from models import InterproDomain
@@ -12,9 +15,17 @@ from models import Kinase
 from models import KinaseGroup
 from models import Protein
 from models import Site
+from models import GeneList
+from models import CancerGeneListEntry
 from import_mutations import load_mutations
 from import_mutations import import_mappings
 from app import app
+
+IMPORTERS = OrderedDict()
+
+
+def importer(func):
+    IMPORTERS[func.__name__] = func
 
 
 def import_data(restrict_mutations_to):
@@ -43,6 +54,36 @@ def import_data(restrict_mutations_to):
     db.session.commit()
     with app.app_context():
         load_mutations(proteins, restrict_mutations_to)
+
+
+@importer
+def load_active_driver_gene_lists():
+    tcga_gene_list = GeneList(name='TCGA')
+    with open(
+        'data/Supplementary_table_4__ActiveDriver_genes_p0.01.csv',
+        newline=''
+    ) as csv_file:
+        count = count_lines(csv_file)
+        csv_reader = csv.reader(csv_file)
+        header = next(csv_reader)
+        assert header == [
+            "", "gene", "p", "fdr", "n_pSNVs", "cancer_type", "is_cancer_gene"
+        ]
+        list_entries = []
+        for row in tqdm(csv_reader, total=count - 1):
+            # select only records with 'PAN' in "cancer_type" column
+            if row[5] != 'PAN':
+                continue
+            gene, created = get_or_create(Gene, name=row[1])
+            entry = CancerGeneListEntry(
+                gene=gene,
+                p=float(row[2]),
+                fdr=float(row[3]),
+                is_cancer_gene=bool(row[-1])
+            )
+            list_entries.append(entry)
+        tcga_gene_list.entries = list_entries
+    return [tcga_gene_list]
 
 
 def calculate_interactors(proteins):
