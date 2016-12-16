@@ -243,9 +243,11 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    args.func(args)
-
-    print('Done, all tasks completed.')
+    try:
+        args.func(args)
+        print('Done, all tasks completed.')
+    except AttributeError:
+        print('Scripts loaded successfuly, no tasks specified.')
 
 else:
     print('This script should be run from command line')
