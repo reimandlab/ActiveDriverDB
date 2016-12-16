@@ -73,7 +73,10 @@ def count_lines(file_object):
     return count
 
 
-def parse_tsv_file(filename, parser, file_header=None, file_opener=open):
+def parse_tsv_file(
+    filename, parser, file_header=None,
+    file_opener=open, separator='\t'
+):
     """Utility function wraping tsv (tab-separated values) file parser.
 
     It checks if the file header is the same as given (if provided).
@@ -81,14 +84,15 @@ def parse_tsv_file(filename, parser, file_header=None, file_opener=open):
 
     Progress bar is embeded.
     """
+    split = str.split(separator)
     with file_opener(filename) as f:
         data_lines_count = count_lines(f)
         if file_header:
-            header = f.readline().rstrip().split('\t')
+            header = split(f.readline().rstrip())
             data_lines_count -= 1
             assert header == file_header
         for line in tqdm(f, total=data_lines_count, unit=' lines'):
-            line = line.rstrip().split('\t')
+            line = split(line.rstrip())
             parser(line)
 
 

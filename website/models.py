@@ -55,6 +55,41 @@ def make_association_table(fk1, fk2):
     )
 
 
+class GeneListEntry(BioModel):
+    type = db.Column(db.String(32))
+    gene_list_id = db.Column(db.Integer, db.ForeignKey('genelist.id'))
+
+    p = db.Column(db.Float)
+    fdr = db.Column(db.Float)
+
+    gene_id = db.Column(db.Integer, db.ForeignKey('gene.id'))
+    gene = db.relationship('Gene')
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'entry',
+        'polymorphic_on': type
+    }
+
+
+class CancerGeneListEntry(GeneListEntry):
+    id = db.Column(
+        db.Integer,
+        db.ForeignKey('genelistentry.id'),
+        primary_key=True
+    )
+
+    is_cancer_gene = db.Column(db.Boolean())
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'cancer_entry',
+    }
+
+
+class GeneList(BioModel):
+    name = db.Column(db.String(256), nullable=False, unique=True, index=True)
+    entries = db.relationship('GeneListEntry')
+
+
 class Kinase(BioModel):
     """Kinase represents an entity interacting with some site.
 

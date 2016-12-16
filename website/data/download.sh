@@ -32,6 +32,19 @@ rm hsapiens.BIOGRID.NAME.gmt
 rm hsapiens.REAC.NAME.gmt
 rm hsapiens.TF.NAME.gmt
 
+# Fetch supplementary table 4 from
+# "The mutational landscape of phosphorylation signaling in cancer" publication
+# http://www.nature.com/articles/srep02651#supplementary-information
+# as discussed in github.com/reimandlab/Visualisation-Framework-for-Genome-Mutations/issues/93
+mkdir -p tmp
+cd tmp
+wget http://www.nature.com/article-assets/npg/srep/2013/131002/srep02651/extref/srep02651-s2.zip
+unzip srep02651-s2.zip
+mv Supplementary_table_4* ..
+rm Supplementary_table_*
+rm srep02651-s2.zip
+cd ..
+
 #  All below are dropbox-dependent ===
 
 wget https://www.dropbox.com/s/wdxnyvf7lkbihnp/biomart_protein_domains_20072016.txt
@@ -81,3 +94,7 @@ wget https://www.dropbox.com/s/qtuqvucb8nzim51/ALL_PROTEIN_ANNOT.tgz
 echo 'unpacking...'
 tar -xvzf ALL_PROTEIN_ANNOT.tgz
 rm ALL_PROTEIN_ANNOT.tgz
+
+
+# remove temporary dir
+rm -r tmp
