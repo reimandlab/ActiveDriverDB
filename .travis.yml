@@ -3,15 +3,13 @@ python:
   - "3.4"
   - "3.5"
 
-before_isntall:
-  - cd website
+before_isntall: cd website
 
 install:
   - pip install -r requirements.txt
   - pip install -r tests/requirements.txt
 
-before_script:
-  - cd website
+before_script: cd website
 
 script:
   - python3 -m pytest -k 'not data_dependent'
