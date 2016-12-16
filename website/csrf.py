@@ -1,11 +1,11 @@
 from flask import abort
 from flask import request
 from flask import session
-from app import app
+from flask import current_app
 from security import generate_csrf_token
 
 
-@app.before_request
+@current_app.before_request
 def csrf_protect():
     """Require CSRF authentication of requests sent with POST method."""
 

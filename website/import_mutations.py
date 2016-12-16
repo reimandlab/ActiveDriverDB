@@ -12,7 +12,7 @@ from models import Mutation
 from models import Protein
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import SQLAlchemyError
-from app import app
+from flask import current_app
 
 
 def get_proteins():
@@ -33,7 +33,7 @@ def bulk_ORM_insert(model, keys, data):
 
 
 def bulk_raw_insert(table, keys, data, bind=None):
-    engine = db.get_engine(app, bind)
+    engine = db.get_engine(current_app, bind)   # TODO make helper in db
     for chunk in chunked_list(data):
         engine.execute(
             table.insert(),

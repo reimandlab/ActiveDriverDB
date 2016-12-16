@@ -14,7 +14,7 @@ from models import Protein
 from models import Site
 from import_mutations import load_mutations
 from import_mutations import import_mappings
-from app import app
+from flask import current_app
 
 
 def import_data(restrict_mutations_to):
@@ -41,7 +41,7 @@ def import_data(restrict_mutations_to):
     remove_wrong_proteins(proteins)
     calculate_interactors(proteins)
     db.session.commit()
-    with app.app_context():
+    with current_app.app_context():
         load_mutations(proteins, restrict_mutations_to)
 
 

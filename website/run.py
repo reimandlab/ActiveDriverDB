@@ -3,7 +3,8 @@
 if __name__ == "__main__":
 
     import argparse
-    from app import app
+    from app import create_app
+    app = create_app()
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-i',

@@ -217,7 +217,7 @@ class Pathway(BioModel):
 class Protein(BioModel):
     """Protein represents a single isoform of a product of given gene."""
 
-    gene_id = db.Column(db.Integer, db.ForeignKey('gene.id'))
+    gene_id = db.Column(db.Integer, db.ForeignKey('gene.id', use_alter=True))
     gene_name = association_proxy('gene', 'name')
 
     # refseq id of mRNA sequence (always starts with 'NM_')
@@ -1232,6 +1232,9 @@ class ShortURL(CMSModel):
 
     @property
     def shorthand(self):
+        if self.id <= 0:
+            raise ValueError('ShortURL id has to be greater than 0')
+
         shorthand = ''
         id_number = self.id - 1
 

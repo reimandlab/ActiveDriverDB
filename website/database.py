@@ -56,8 +56,8 @@ def get_highest_id(model):
 
 def restart_autoincrement(model):
     """Restarts autoincrement counter"""
-    from app import app
-    engine = db.get_engine(app, model.__bind_key__)
+    from flask import current_app
+    engine = db.get_engine(current_app, model.__bind_key__)
     db.session.close()
     engine.execute(
         'ALTER TABLE ' + model.__tablename__ + ' AUTO_INCREMENT = 1;'
@@ -69,8 +69,8 @@ def get_autoincrement(model):
 
     It is database-engine dependent, might not work well with some drivers.
     """
-    from app import app
-    engine = db.get_engine(app, model.__bind_key__)
+    from flask import current_app
+    engine = db.get_engine(current_app, model.__bind_key__)
     return engine.execute(
         'SELECT `AUTO_INCREMENT`' +
         ' FROM INFORMATION_SCHEMA.TABLES' +

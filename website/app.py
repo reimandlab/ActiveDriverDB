@@ -5,58 +5,77 @@ from database import db
 from assets import bundles
 
 
-app = Flask(__name__)
-app.config.from_pyfile('config.py')
-
-db.app = app
-db.init_app(app)
-db.create_all(bind='__all__')
-
-"""
-Configure Login Manager
-"""
 login_manager = LoginManager()
-login_manager.init_app(app)
 
 
-"""
-Register assets
-"""
-assets = Environment(app)
+def create_app(config_filename='config.py', config_override={}):
+    """Factory function for flask application.
 
-for name, bundle in bundles.items():
-    assets.register(name, bundle)
+    Args:
+        config_filename: path to python config file
+    """
+    app = Flask(__name__)
 
+    if config_filename:
+        app.config.from_pyfile(config_filename)
 
-"""
-Import viwes
-"""
+    for key, value in config_override.items():
+        app.config[key] = value
 
-# allow acces to this app from views through module
-import sys
-sys.path.insert(0, '..')
+    db.app = app
+    db.init_app(app)
+    db.create_all(bind='__all__')
 
-from website.views import views
+    #
+    # Configure Login Manager
+    #
+    login_manager.init_app(app)
 
-for view in views:
-    view.register(app)
+    #
+    # Register assets
+    #
+    assets = Environment(app)
 
-"""
-Register functions for Jinja
-"""
+    for name, bundle in bundles.items():
+        assets.register(name, bundle)
 
-from website.views.cms import substitute_variables
-from website.views.cms import ContentManagmentSystem
-import csrf
-import json
+    #
+    # Import viwes
+    #
 
-app.jinja_env.trim_blocks = True
-app.jinja_env.lstrip_blocks = True
+    # allow acces to this app from views through module
+    import sys
+    sys.path.insert(0, '..')
 
-app.jinja_env.globals['system_menu'] = ContentManagmentSystem._system_menu
-app.jinja_env.globals['system_setting'] = ContentManagmentSystem._system_setting
-app.jinja_env.globals['csrf_token'] = csrf.new_csrf_token
-app.jinja_env.globals['is_debug_mode'] = app.debug
+    from website.views import views
 
-app.jinja_env.filters['json'] = json.dumps
-app.jinja_env.filters['substitute_allowed_variables'] = substitute_variables
+    for view in views:
+        view.register(app)
+
+    #
+    # Register functions for Jinja
+    #
+
+    from website.views.cms import substitute_variables
+    from website.views.cms import ContentManagmentSystem
+    import json
+
+    # csrf adds hooks in before_request to validate tokens, needs app context
+    with app.app_context():
+        import csrf
+
+    app.jinja_env.trim_blocks = True
+    app.jinja_env.lstrip_blocks = True
+
+    jinja_globals = app.jinja_env.globals
+    jinja_filters = app.jinja_env.filters
+
+    jinja_globals['system_menu'] = ContentManagmentSystem._system_menu
+    jinja_globals['system_setting'] = ContentManagmentSystem._system_setting
+    jinja_globals['csrf_token'] = csrf.new_csrf_token
+    jinja_globals['is_debug_mode'] = app.debug
+
+    jinja_filters['json'] = json.dumps
+    jinja_filters['substitute_allowed_variables'] = substitute_variables
+
+    return app
