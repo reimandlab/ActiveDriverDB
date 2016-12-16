@@ -9,9 +9,6 @@ addons:
     packages:
     - python3-bsddb3
 
-virtualenv:
-  system_site_packages: true
-
 before_install: cd website
 
 install:
