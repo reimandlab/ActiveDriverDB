@@ -28,6 +28,7 @@ IMPORTERS = OrderedDict()
 
 def importer(func):
     IMPORTERS[func.__name__] = func
+    return func
 
 
 def import_data(restrict_mutations_to):
@@ -58,6 +59,7 @@ def import_data(restrict_mutations_to):
         load_mutations(proteins, restrict_mutations_to)
 
 
+@importer
 def load_bad_words(filename='data/bad-words.txt'):
 
     list_of_profanities = []
