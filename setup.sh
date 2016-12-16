@@ -13,3 +13,8 @@ git clone https://github.com/mitsuhiko/flask-sqlalchemy/
 mv flask-sqlalchemy/flask_sqlalchemy .
 rm -rf flask-sqlalchemy
 cd ..
+
+# Use examplar configuration for the beginning
+cd website
+cp config_example.py config.py
+cd ..
