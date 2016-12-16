@@ -8,6 +8,8 @@ sudo make install
 cd ../..
 
 # Get recent version of flask-sqlalchemy
+cd website
 git clone https://github.com/mitsuhiko/flask-sqlalchemy/
 mv flask-sqlalchemy/flask_sqlalchemy .
 rm -rf flask-sqlalchemy
+cd ..
