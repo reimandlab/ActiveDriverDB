@@ -5,10 +5,9 @@ python:
   - 3.4
   - 3.5
 
-before_install: cd website
-
 install:
   - bash setup.sh
+  - cd website
   - pip install -r requirements.txt
   - pip install -r tests/requirements.txt
 
