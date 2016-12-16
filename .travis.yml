@@ -9,8 +9,6 @@ install:
   - pip install -r requirements.txt
   - pip install -r tests/requirements.txt
 
-before_script: cd website
-
 script:
   - python3 -m pytest -k 'not data_dependent'
   - python3 -m pytest --cov=. -k 'not data_dependent'
