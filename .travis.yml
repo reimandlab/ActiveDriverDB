@@ -3,7 +3,7 @@ python:
   - "3.4"
   - "3.5"
 
-before_isntall: cd website
+before_install: cd website
 
 install:
   - pip install -r requirements.txt
