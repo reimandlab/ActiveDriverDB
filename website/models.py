@@ -1219,6 +1219,12 @@ class CMSModel(Model):
     __bind_key__ = 'cms'
 
 
+class BadWord(CMSModel):
+    """Model for words which should be filtered out"""
+
+    word = db.Column(db.Text())
+
+
 class ShortURL(CMSModel):
     """Model for URL shortening entries"""
 

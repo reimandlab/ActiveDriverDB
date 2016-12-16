@@ -6,25 +6,19 @@ from flask_classful import route
 from database import db
 from database import get_or_create
 from models import ShortURL
+from models import BadWord
 from urllib.parse import unquote
-from helpers.parsers import parse_text_file
 from Levenshtein import distance
-from os import path
 
 
-list_of_profanities = []
-filename = path.join(
-    path.dirname(path.dirname(path.realpath(__file__))),
-    'data/bad-words.txt'
-)
-parse_text_file(
-    filename,
-    list_of_profanities.append,
-    file_opener=lambda name: open(name, encoding='utf-8')
-)
+list_of_profanities = [
+    bad_word.word
+    for bad_word in BadWord.query.all()
+]
 
 
 def is_word_obscene(word):
+
     similar_characters = (
         ('0', 'O'),
         ('2', 'Z'),

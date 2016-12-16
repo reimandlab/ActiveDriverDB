@@ -12,6 +12,7 @@ from models import Kinase
 from models import KinaseGroup
 from models import Protein
 from models import Site
+from models import BadWord
 from import_mutations import load_mutations
 from import_mutations import import_mappings
 from flask import current_app
@@ -43,6 +44,21 @@ def import_data(restrict_mutations_to):
     db.session.commit()
     with current_app.app_context():
         load_mutations(proteins, restrict_mutations_to)
+
+
+def load_bad_words(filename='data/bad-words.txt'):
+
+    list_of_profanities = []
+    parse_text_file(
+        filename,
+        list_of_profanities.append,
+        file_opener=lambda name: open(name, encoding='utf-8')
+    )
+    bad_words = [
+        BadWord(word=word)
+        for word in list_of_profanities
+    ]
+    return bad_words
 
 
 def calculate_interactors(proteins):
