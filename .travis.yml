@@ -1,18 +1,14 @@
+sudo: required
 dist: precise
 language: python
 python:
   - 3.4
   - 3.5
 
-addons:
-  apt:
-    packages:
-    - python3-bsddb3    # it assures that appropriate bsddb library will installed in the system
-                        # although bindings have to be installed in venvs independently with pip
-
 before_install: cd website
 
 install:
+  - bash setup.sh
   - pip install -r requirements.txt
   - pip install -r tests/requirements.txt
 
