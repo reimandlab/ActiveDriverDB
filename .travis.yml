@@ -3,6 +3,11 @@ python:
   - "3.4"
   - "3.5"
 
+ddons:
+  apt:
+    packages:
+    - python3-bsddb3
+
 before_install: cd website
 
 install:
