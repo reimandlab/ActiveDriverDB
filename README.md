@@ -1,5 +1,5 @@
 # Visualisation Framework for Genome Mutations
-[![Code Climate](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations/badges/gpa.svg)](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations)
+[![Code Climate](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations/badges/gpa.svg)](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations) [![Build Status](https://travis-ci.org/reimandlab/Visualisation-Framework-for-Genome-Mutations.svg?branch=master)](https://travis-ci.org/reimandlab/Visualisation-Framework-for-Genome-Mutations)
 
 The project aims to create an interactive visualisation framework for genome mutations in gene and protein networks. The idea is to display information from co-developed database in the form of different interactive "views". Thanks to the possibility of quickly switching between the views, the user will be able to grasp an analysed gene or protein with it's context and interactions from different angles. It will also provide advanced filtering and interactive loading with AJAX requests.
 
@@ -43,9 +43,9 @@ cp config_example.py config.py
 ```
 Carefully replace variables mentioned in comments in the file as some of those have critical importance on application's security. To check if the database is configured properly, run the following command:
 ```bash
-python3 db_create.py
+./manage.py
 ```
-If you see (at the very end): `Done, all tasks completed.` it indicates that everything is working properly.
+If you see (at the very end): `Scripts loaded successfuly, no tasks specified.` it indicates that everything is working properly.
 
 
 #### Data import
@@ -54,23 +54,25 @@ All data files can be downloaded easily with `./download.sh` script from `websit
 
 Before server start, data have to be imported. Safest way to do this is to run:
 ```bash
-python3 db_create.py --import_mappings --reload_biological --recreate_cms
+./manage.py load all
 ```
 
 albeit one might want to use Python's optimized mode (so import will be a lot faster, but it shouldn't be used with new, untested data since the assertions won't be checked in this mode):
 ```bash
-python3 -OO db_create.py --import_mappings --reload_biological --recreate_cms
+python3 -OO manage.py load all
 ```
 
 The given arguments instruct program to create and import data for: DNA -> protein mappings, biological relational database and Content Management System. During CMS creation you will be asked to set up login credentials for root user.
 
 **Warning:** after each migration affecting protein's identifiers it is crucial to reimport mappings: otherwise the mappings will point to wrong proteins!
 
-For further details use built-in help option:
+With `manage.py` script you can load or remove specific parts of the database and perform very simple automigration (for newly created models). For further details use built-in help option:
 
 ```bash
-python3 db_create.py -h
+./manage.py -h
 ```
+
+Note that the helps will adapt to specified subcommands (i.e. it will show more details for: `./manage.py load -h`, and even more for: `./manage.py load mutations -h`)
 
 **MySQL specific:** if you see a message `MySQL server has gone away`, try to `set global max_allowed_packet=1073741824;`
 
@@ -106,7 +108,7 @@ And you are done. When `DEBUG = False`, precompiled templates will be loaded aut
 
 To start the webserver simply type:
 ```bash
-python3 run.py
+./run.py
 ```
 
 For adjusting the port or IP address, check `-h` switch of the `run.py` script
@@ -164,7 +166,7 @@ exec python3 -OO "$@"
 
 ### Using Content Management System
 
-To login to root account (created with `db_create.py` script) visit `/login/` page on your server. It will allow you to create, edit and remove standalone pages.
+To login to root account (created with `manage.py` script) visit `/login/` page on your server. It will allow you to create, edit and remove standalone pages.
 
 ## Debian-based servers
 
