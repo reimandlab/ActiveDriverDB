@@ -5,6 +5,8 @@ from sqlalchemy import and_
 from sqlalchemy import desc
 from sqlalchemy.ext.associationproxy import AssociationProxy
 from sqlalchemy import func
+from sqlalchemy.exc import StatementError
+from website.database import db
 
 
 def fast_count(query):
@@ -158,9 +160,13 @@ class AjaxTableView:
                 query = query.filter(filters_coniunction)
                 count_query = count_query.filter(filters_coniunction)
 
-            count = count_query.count()
-            query = query.limit(args['limit']).offset(args['offset'])
-            elements = query.all()
+            try:
+                count = count_query.count()
+                query = query.limit(args['limit']).offset(args['offset'])
+                elements = query.all()
+            except StatementError:
+                db.session.rollback()
+                return jsonify({'message': 'query error'})
 
             rows = [
                 results_mapper(element)

@@ -134,7 +134,7 @@ class GeneView(FlaskView):
                 )
                 .select_from(Gene)
                 .join(Protein, Protein.id == Gene.preferred_isoform_id)
-                .group_by(Gene)
+                .group_by(Gene.name)
             ),
             sort='name'
         )

@@ -1,3 +1,11 @@
+for required_program in 'wget' 'unzip' 'Rscript' 'tar'
+do
+  hash $required_program 2>/dev/null || {
+    echo >&2 "$required_program is required but it is not installed. Aborting."
+    exit 1
+  }
+done
+
 # hierarchy tree
 wget ftp://ftp.ebi.ac.uk/pub/databases/interpro/ParentChildTreeFile.txt
 
@@ -50,6 +58,12 @@ cd mutations
 wget https://www.dropbox.com/s/b1c4yqgnznsafqv/TCGA_muts_annotated.txt.gz
 wget https://www.dropbox.com/s/zodasbvinx339tw/ESP6500_muts_annotated.txt.gz
 wget https://www.dropbox.com/s/du2qe1skxwmuep2/clinvar_muts_annotated.txt.gz
+wget https://www.dropbox.com/s/pm74k3qwxrqmu2q/all_mimp_annotations_p085.rsav
+
+echo 'Extracting MIMP mutations from .rsav file... (it will take a long time)'
+
+Rscript -e 'load("all_mimp_annotations_p085.rsav");write.table(all_mimp_annotations, file="all_mimp_annotations.tsv", row.names=F, quote=F, sep="\t");'
+rm all_mimp_annotations_p085.rsav
 
 mkdir -p G1000
 cd G1000
