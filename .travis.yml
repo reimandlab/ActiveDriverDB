@@ -1,12 +1,16 @@
+dist: precise
 language: python
 python:
-  - "3.4"
-  - "3.5"
+  - 3.4
+  - 3.5
 
-ddons:
+addons:
   apt:
     packages:
     - python3-bsddb3
+
+virtualenv:
+  system_site_packages: true
 
 before_install: cd website
 
