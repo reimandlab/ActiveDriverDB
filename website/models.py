@@ -5,7 +5,6 @@ from database import db
 from sqlalchemy import and_
 from sqlalchemy import or_
 from sqlalchemy import func
-from sqlalchemy import distinct
 from sqlalchemy import case
 from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
@@ -362,7 +361,7 @@ class Protein(BioModel):
         return (
             select([func.count(Site.id)]).
             where(Site.protein_id == cls.id).
-            label('mutations_count')
+            label('sites_count')
         )
 
     def to_json(self):
