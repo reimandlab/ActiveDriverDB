@@ -34,8 +34,12 @@ def reset_relational_db(**kwargs):
 
 
 def automigrate(args):
-    for database_bind in args.databases:
-        basic_auto_migrate_relational_db(bind=database_bind)
+    from app import create_app
+    app = create_app()
+    with app.app_context():
+        for database_bind in args.databases:
+            basic_auto_migrate_relational_db(bind=database_bind)
+    return True
 
 
 def basic_auto_migrate_relational_db(**kwargs):
