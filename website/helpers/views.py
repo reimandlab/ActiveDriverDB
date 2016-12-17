@@ -55,7 +55,10 @@ class AjaxTableView:
                 sorted_field = getattr(model, args['sort'])
 
                 if type(sorted_field) is AssociationProxy:
-                    remote_model = sorted_field.remote_attr.property.parent.class_
+                    remote_model = (
+                        sorted_field.remote_attr.property.
+                        parent.class_
+                    )
                     query = query.join(remote_model, sorted_field.local_attr)
                     sorted_field = sorted_field.remote_attr
 
@@ -166,6 +169,7 @@ class AjaxTableView:
                 elements = query.all()
             except StatementError:
                 db.session.rollback()
+                print('Statement Error detected!')
                 return jsonify({'message': 'query error'})
 
             rows = [

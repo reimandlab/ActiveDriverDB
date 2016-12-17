@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+    {% block title %} Gene list: {{ list_name }} - {{ super() }} {% endblock %}
+
+    {% block head %}
+
+      {{ super() }}
+
+      {# Bootstrap-Table #}
+      <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
+      <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
+
+      {# Nunjucks templates #}
+      {% if is_debug_mode %}
+        <script type="text/javascript" src="/static/thirdparty/nunjucks.js"></script>
+      {% else %}
+        <script type="text/javascript" src="/static/thirdparty/nunjucks-slim.min.js"></script>
+        <script type="text/javascript" src="/static/js_templates/precompiled/gene.js"></script>
+      {% endif %}
+      <style type="text/css">
+        .gene-widgets label{display: none}
+      </style>
+
+    {% endblock %}
+
+{% block content %}
+
+<h3>Gene list: {{ list_name }}</h3>
+
+<ol class="breadcrumb">
+  <li><a href="/">Home</a></li>
+  <li>Gene list</li>
+  <li class="active">{{ list_name }}</li>
+</ol>
+
+<div>
+  <div id="toolbar" class="gene-widgets">
+      {% with widgets=[widgets.dataset, widgets.ptm_type] %}
+        {% include 'widgets/filters_bar.html' %}
+        <form method="GET" class="widget-form">
+      {% endwith %}
+      <input type="hidden" name="fallback" value="True">
+    </form>
+  </div>
+  <table
+    id="table"
+    data-toolbar="#toolbar"
+    data-search="true"
+    data-show-refresh="true"
+    data-show-toggle="true"
+    data-show-columns="true"
+    data-show-export="true"
+    data-detail-view="true"
+    data-detail-formatter="detailFormatter"
+    data-minimum-count-columns="2"
+    data-pagination="true"
+    data-id-field="id"
+    data-page-size="25"
+    data-page-list="[10, 25, 50, 100, ALL]"
+    data-silent-sort="false"
+    data-side-pagination="server"
+    data-url="{{ url_for('GeneView:list_data', list_name=list_name) }}"
+    data-query-params="queryParams"
+  >
+  </table>
+</div>
+
+{% assets "js_gene_view" %}
+  <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+{% endassets %}
+<script>
+
+  nunjucks.configure('/static/js_templates', {autoescape: true})
+
+  var $table = $('#table')
+
+  function queryParams(params)
+  {
+    site_params = get_url_params()
+    params.filters = site_params.filters
+    return params
+  }
+
+  function initTable()
+  {
+    $table.bootstrapTable({
+      columns: [
+        [
+          {
+            title: 'Gene name',
+            field: 'name',
+            align: 'center',
+            valign: 'middle',
+            sortable: true,
+            formatter: geneFormatter
+          },
+          {
+            title: '# mutations',
+            sortable: true,
+            valign: 'middle',
+            align: 'center',
+            field: 'muts_cnt',
+          },
+          {
+            title: '# PTM mutations',
+            sortable: true,
+            valign: 'middle',
+            align: 'center',
+            field: 'ptm_muts_cnt'
+          },
+          {
+            title: '# PTM sites',
+            sortable: true,
+            valign: 'middle',
+            align: 'center',
+            field: 'ptm_sites_cnt'
+          },
+          {
+            title: 'FDR',
+            sortable: true,
+            valign: 'middle',
+            align: 'center',
+            field: 'fdr'
+          },
+          {
+            title: 'p-value',
+            sortable: true,
+            valign: 'middle',
+            align: 'center',
+            field: 'p'
+          }
+        ]
+      ],
+      formatLoadingMessage: function ()
+      {
+        return 'Loading, please wait... <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>'
+      },
+    })
+    $table.on('click-row.bs.table', function (e, row, $element)
+    {
+      $table.bootstrapTable(
+        'expandRow',
+        $element.data('index')
+      )
+    })
+    setTimeout(function ()
+    {
+        $table.bootstrapTable('resetView')
+    }, 200)
+  }
+
+  var isoforms_url = decodeURIComponent(
+    '{{ url_for('GeneView:isoforms', gene_name='<gene_name>') }}'
+  )
+
+  function detailFormatter(index, gene_row)
+  {
+    var url = isoforms_url.replace('<gene_name>', gene_row.name)
+
+    $.ajax({
+			url: url,
+			type: 'GET',
+			async: true,
+			success: function(data)
+			{
+        detail_row = $('tr[data-index=' + index + ']')
+        detail_row = detail_row.next('tr.detail-view')
+
+        if(detail_row)
+        {
+          html = nunjucks.render(
+              'gene_isoforms.njk',
+              {
+                  gene_isoforms: data
+              }
+          )
+          detail_row.children('td').html(html)
+        }
+			}
+		})
+    return 'Loading...'
+  }
+
+  function geneFormatter(value, row, index)
+  {
+    return '<a href="/gene/show/' + value + '">' + value + '</a>'
+  }
+
+  function proteinFormatter(value, row, index)
+  {
+    return '<a href="/protein/show/' + value + '">' + value + '</a>'
+  }
+
+  $(function ()
+  {
+      initTable()
+  })
+</script>
+
+
+{% endblock %}

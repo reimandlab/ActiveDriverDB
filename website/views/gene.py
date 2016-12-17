@@ -7,6 +7,8 @@ from models import Protein
 from models import Mutation
 from models import Gene
 from models import Site
+from models import GeneList
+from models import GeneListEntry
 from sqlalchemy import func
 from sqlalchemy import distinct
 from sqlalchemy import case
@@ -116,6 +118,64 @@ class GeneView(FlaskView):
                 for isoform in gene.alternative_isoforms
             ]
         })
+
+    def list(self, list_name):
+        filter_manager = GeneViewFilters()
+        widgets = make_widgets(filter_manager)
+        return template(
+            'gene/list.html', list_name=list_name,
+            widgets=widgets, filter_manager=filter_manager
+        )
+
+    def list_data(self, list_name):
+        gene_list = GeneList.query.filter_by(name=list_name).first_or_404()
+        ajax_view = AjaxTableView.from_query(
+            query=(
+                db.session.query(
+                    Gene.name,
+                    func.count(distinct(Mutation.id)).label('muts_cnt'),
+                    func.count(distinct(case(
+                        [
+                            (
+                                (
+                                    Site.position.between(
+                                        Mutation.position - 7,
+                                        Mutation.position + 7
+                                    )
+                                ),
+                                Mutation.id
+                            )
+                        ],
+                        else_=literal_column('NULL')
+                    ))).label('ptm_muts_cnt'),
+                    func.count(distinct(Site.id)).label('ptm_sites_cnt'),
+                    GeneListEntry.fdr,
+                    GeneListEntry.p
+                )
+                .select_from(Gene)
+                .join(GeneListEntry, GeneListEntry.gene_id == Gene.id)
+                .filter(GeneListEntry.gene_list_id == gene_list.id)
+                .join(Protein, Protein.id == Gene.preferred_isoform_id)
+                .outerjoin(Site, Site.protein_id == Protein.id)
+                .outerjoin(Mutation, Mutation.protein_id == Protein.id)
+                .group_by(Gene.id)
+            ),
+            results_mapper=lambda row: row._asdict(),
+            filters_class=GeneViewFilters,
+            search_filter=lambda q: Gene.name.like(q + '%'),
+            count_query=(
+                db.session.query(
+                    Gene.id
+                )
+                .select_from(Gene)
+                .join(Protein, Protein.id == Gene.preferred_isoform_id)
+                .join(GeneListEntry, GeneListEntry.gene_id == Gene.id)
+                .filter(GeneListEntry.gene_list_id == gene_list.id)
+                .group_by(Gene.name)
+            ),
+            sort='fdr'
+        )
+        return ajax_view(self)
 
     def browse(self):
         filter_manager = GeneViewFilters()
