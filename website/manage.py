@@ -35,12 +35,9 @@ def reset_relational_db(**kwargs):
     print('Recreating', name, 'database completed.')
 
 
-def automigrate(args, app=None):
-    if not app:
-        app = create_app()
-    with app.app_context():
-        for database_bind in args.databases:
-            basic_auto_migrate_relational_db(bind=database_bind)
+def automigrate(args):
+    for database_bind in args.databases:
+        basic_auto_migrate_relational_db(bind=database_bind)
     return True
 
 
@@ -158,12 +155,11 @@ class Mutations(CommandTarget):
 
     @command
     def load(args):
-        with import_data.app.app_context():
-            proteins = import_mutations.get_proteins()
-            mutations = import_mutations.load_mutations(
-                proteins,
-                args.mutation_sources
-            )
+        proteins = import_mutations.get_proteins()
+        mutations = import_mutations.load_mutations(
+            proteins,
+            args.mutation_sources
+        )
 
     @command
     def remove(args):
@@ -250,7 +246,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     try:
-        args.func(args)
+        app = create_app()
+        with app.app_context():
+            args.func(args)
         print('Done, all tasks completed.')
     except AttributeError:
         print('Scripts loaded successfuly, no tasks specified.')

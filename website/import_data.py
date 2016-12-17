@@ -76,33 +76,39 @@ def load_bad_words(filename='data/bad-words.txt'):
 
 
 @importer
-def load_active_driver_gene_lists():
-    tcga_gene_list = GeneList(name='TCGA')
-    with open(
-        'data/Supplementary_table_4__ActiveDriver_genes_p0.01.csv',
-        newline=''
-    ) as csv_file:
-        count = count_lines(csv_file)
-        csv_reader = csv.reader(csv_file)
-        header = next(csv_reader)
-        assert header == [
-            "", "gene", "p", "fdr", "n_pSNVs", "cancer_type", "is_cancer_gene"
-        ]
-        list_entries = []
-        for row in tqdm(csv_reader, total=count - 1):
-            # select only records with 'PAN' in "cancer_type" column
-            if row[5] != 'PAN':
-                continue
-            gene, created = get_or_create(Gene, name=row[1])
-            entry = CancerGeneListEntry(
-                gene=gene,
-                p=float(row[2]),
-                fdr=float(row[3]),
-                is_cancer_gene=bool(row[-1])
-            )
-            list_entries.append(entry)
-        tcga_gene_list.entries = list_entries
-    return [tcga_gene_list]
+def load_active_driver_gene_lists(lists=(
+    ('TCGA', 'data/Supplementary_table_4__ActiveDriver_genes_p0.01.csv'),
+)):
+    gene_lists = []
+    for name, filename in lists:
+        gene_list = GeneList(name=name)
+        with open(
+            filename,
+            newline=''
+        ) as csv_file:
+            count = count_lines(csv_file)
+            csv_reader = csv.reader(csv_file)
+            header = next(csv_reader)
+            assert header == [
+                "", "gene", "p", "fdr", "n_pSNVs",
+                "cancer_type", "is_cancer_gene"
+            ]
+            list_entries = []
+            for row in tqdm(csv_reader, total=count - 1):
+                # select only records with 'PAN' in "cancer_type" column
+                if row[5] != 'PAN':
+                    continue
+                gene, created = get_or_create(Gene, name=row[1])
+                entry = CancerGeneListEntry(
+                    gene=gene,
+                    p=float(row[2]),
+                    fdr=float(row[3]),
+                    is_cancer_gene=bool(row[-1])
+                )
+                list_entries.append(entry)
+            gene_list.entries = list_entries
+        gene_lists.append(gene_list)
+    return gene_lists
 
 
 def calculate_interactors(proteins):

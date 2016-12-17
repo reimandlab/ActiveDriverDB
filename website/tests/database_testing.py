@@ -20,7 +20,9 @@ class DatabaseTest(TestCase):
         }
 
     def create_app(self):
-        return create_app(config_override=self.config)
+        app = create_app(config_override=self.config)
+        self.app = app
+        return app
 
     def setUp(self):
 
