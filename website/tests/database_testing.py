@@ -3,7 +3,7 @@ from app import create_app
 from database import db
 
 
-class ModelTest(TestCase):
+class DatabaseTest(TestCase):
 
     SQLALCHEMY_BINDS = {
         'cms': 'sqlite://',
