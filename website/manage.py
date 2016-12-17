@@ -13,6 +13,8 @@ from helpers.commands import argument_parameters
 from helpers.commands import CommandTarget
 from helpers.commands import command
 from helpers.commands import create_command_subparsers
+from app import create_app
+
 
 database_binds = ('bio', 'cms')
 
@@ -33,9 +35,9 @@ def reset_relational_db(**kwargs):
     print('Recreating', name, 'database completed.')
 
 
-def automigrate(args):
-    from app import create_app
-    app = create_app()
+def automigrate(args, app=None):
+    if not app:
+        app = create_app()
     with app.app_context():
         for database_bind in args.databases:
             basic_auto_migrate_relational_db(bind=database_bind)
