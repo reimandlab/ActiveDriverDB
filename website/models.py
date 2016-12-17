@@ -58,8 +58,8 @@ class GeneListEntry(BioModel):
     type = db.Column(db.String(32))
     gene_list_id = db.Column(db.Integer, db.ForeignKey('genelist.id'))
 
-    p = db.Column(db.Float)
-    fdr = db.Column(db.Float)
+    p = db.Column(db.Float(precision=53))
+    fdr = db.Column(db.Float(precision=53))
 
     gene_id = db.Column(db.Integer, db.ForeignKey('gene.id'))
     gene = db.relationship('Gene')
