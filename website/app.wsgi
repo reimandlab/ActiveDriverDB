@@ -20,4 +20,5 @@ activate_this = venv_location + '/virtual_environment/bin/activate_this.py'
 execfile(activate_this)
 
 # import application to serve
-from app import app as application
+from app import create_app
+application = create_app()
