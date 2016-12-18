@@ -7,14 +7,18 @@ if __name__ == "__main__":
     app = create_app()
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i',
-                        '--host',
-                        default=app.config['DEFAULT_HOST'],
-                        help='Specify IP address or localhost.')
-    parser.add_argument('-p',
-                        '--port',
-                        default=app.config['DEFAULT_PORT'],
-                        type=int)
+    parser.add_argument(
+        '-i',
+        '--host',
+        default=app.config['DEFAULT_HOST'],
+        help='Specify IP address or localhost.'
+    )
+    parser.add_argument(
+        '-p',
+        '--port',
+        default=app.config['DEFAULT_PORT'],
+        type=int
+    )
 
     args = parser.parse_args()
 
