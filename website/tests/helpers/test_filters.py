@@ -8,6 +8,15 @@ class Model:
         self.value = value
 
 
+def test_filter():
+
+    with pytest.raises(filters.InitializationError):
+        filters.Filter(
+            Model, 'value', comparators=['this is not a comparator '],
+            choices=['a', 'b', 'c', 'd'],
+            default='a', nullable=False,
+        )
+
 def test_select_filter():
 
     test_objects = [

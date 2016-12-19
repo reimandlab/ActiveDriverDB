@@ -1,5 +1,16 @@
 
+
 class Widget:
+    """Widget class to be used in templates to create HTML inputs, selects etc.
+
+    Args:
+        data: list of choices for select or text for input/textarea
+        labels:
+            labels to be used by the template. There are some widgets which
+            does not accept or does not require labels (widget-specific)
+        target_name: corresponds to name attribute in HTML element
+
+    """
 
     def __init__(
         self, title, template, data, target_name,
@@ -9,9 +20,7 @@ class Widget:
         self.title = title
         self.target_name = target_name
         self.template = template
-        self.data = data    # list of choices, text for input or textarea
-        # labels to be exposed for a widget
-        # (some widgets does not accept or does not require labels) (?TODO)
+        self.data = data
         self._value = value
         self.labels = labels if labels else data
         self.disabled_label = disabled_label or 'disabled'
@@ -47,7 +56,7 @@ class FilterWidget(Widget):
         associated_comparator_widget=None, **kwargs
     ):
         self.filter = filter
-        data = filter.allowed_values
+        data = filter.choices
         target_name = 'filter[' + filter.id + ']'
         super().__init__(
             title, template, data, target_name, labels, disabled_label,

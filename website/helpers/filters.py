@@ -17,7 +17,28 @@ class ValidationError(Exception):
     pass
 
 
+class InitializationError(Exception):
+    pass
+
+
 class Filter:
+    """Generic class allowing to create lists/iterators of any iterable
+    objects that have compilant interface.
+
+    Args:
+        multiple:
+            specify what condition should be used when testing list-based
+            values. Possible values: 'any', 'all'.
+
+            Example: when filtering a list of PTM sites by type, one might
+            want to get all sites that are 'ubiquitination' and 'methylation'
+            sites simultaneously: multiple='all' should be used.
+            Another user would like to get sites that are either
+            'ubiquitination' or 'methylation' sites: multiple='any'
+            will be a good choice for that.
+        type:
+            type of the field used as a key when filtering models
+    """
 
     possible_comparators = {
         'ge': operator.ge,
@@ -34,28 +55,36 @@ class Filter:
         'any': any,
     }
 
+    def _check_comparators(self, comparators):
+        for comparator in comparators:
+            if comparator not in self.possible_comparators.keys():
+                raise InitializationError('Unknown comparator %s' % comparator)
+
     def __init__(
         self, targets, attribute, default=None, nullable=True,
-        comparators='__all__', choices='__all__',
+        comparators='__all__', choices=None,
         default_comparator=None, multiple=False,
         is_attribute_a_method=False, as_sqlalchemy=False, type=None
     ):
-        if comparators != '__all__':
-            if not default_comparator and len(comparators) == 1:
-                default_comparator = comparators[0]
-            for comparator in comparators:
-                assert comparator in self.possible_comparators.keys()
+        if comparators == '__all__':
+            comparators = self.possible_comparators.keys()
+
+        self._check_comparators(comparators)
+
+        if not default_comparator and len(comparators) == 1:
+            default_comparator = comparators[0]
+
         self.allowed_comparators = comparators
-        self.allowed_values = choices
-        if not is_iterable_but_not_str(targets):
-            targets = [targets]
-        self.targets = targets
+        self.choices = choices
+        self.targets = (
+            targets
+            if is_iterable_but_not_str(targets)
+            else [targets]
+        )
         self.is_attribute_a_method = is_attribute_a_method
-        self.primary_target = targets[0]
         self.default = default
         self.attribute = attribute
-        self.multiple = multiple    # specify behaviour for multiple-value
-        # filtering (either 'any' (or) or 'all' (and)).
+        self.multiple = multiple
         self.nullable = nullable
         self._value = None
         self.manager = None
@@ -65,8 +94,12 @@ class Filter:
         self._comparator = None
         self._as_sqlalchemy = as_sqlalchemy
         self.type = type
-        if default:
-            assert default_comparator
+
+        if default and not default_comparator:
+            raise InitializationError(
+                'When specyfing default value, the default comparator '
+                'is also required'
+            )
 
     @property
     def has_sqlalchemy(self):
@@ -156,6 +189,10 @@ class Filter:
         return getattr(field, comparators[self.comparator])(self.value)
 
     @property
+    def primary_target(self):
+        return self.targets[0]
+
+    @property
     def id(self):
         return self.primary_target.__name__ + '.' + self.attribute
 
@@ -167,34 +204,26 @@ class Filter:
             raise ValidationError(
                 'Filter %s is not nullable' % self.id
             )
-        if not (
-                self.allowed_values == '__all__' or
+        elif self.choices and not (
                 (
                     is_iterable_but_not_str(value) and
                     all(
-                        sub_value in self.allowed_values
+                        sub_value in self.choices
                         for sub_value in value
                     )
                 ) or
                 (
                     not is_iterable_but_not_str(value) and
-                    value in self.allowed_values
+                    value in self.choices
                 )
         ):
             raise ValidationError(
                 'Filter % recieved forbidden value: %s. Allowed: %s' %
-                (self.id, value, self.allowed_values)
+                (self.id, value, self.choices)
             )
 
     def _verify_comparator(self, comparator):
-        if not (
-                (
-                    self.allowed_comparators == '__all__' and
-                    comparator in self.possible_comparators.keys()
-                )
-                or
-                comparator in self.allowed_comparators
-        ):
+        if comparator not in self.allowed_comparators:
             raise ValidationError(
                 'Filter %s recieved forbidden comparator: %s. Allowed: %s' %
                 (self.id, comparator, self.allowed_comparators)
