@@ -666,6 +666,16 @@ class MIMPMetaManager(UserList):
 
         return '/'.join(effects)
 
+    @property
+    def sites(self):
+        return set(
+            (
+            site
+            for mimp in self.data
+            for site in mimp.sites
+            )
+        )
+
 
 class Mutation(BioModel):
     __table_args__ = (
@@ -900,13 +910,14 @@ class Mutation(BioModel):
     def impact_on_specific_ptm(self, site):
         if self.position == site.position:
             return 'direct'
-        if site in [mimp.site for mimp in self.meta_MIMP]:
+        elif self.meta_MIMP:
             return 'network-rewiring'
-        if abs(self.position - site.position) < 4:
+        elif abs(self.position - site.position) < 4:
             return 'proximal'
-        if abs(self.position - site.position) < 8:
+        elif abs(self.position - site.position) < 8:
             return 'distal'
-        return 'none'
+        else:
+            return 'none'
 
     def impact_on_ptm(self, site_filter=lambda x: x):
         """How intense might be an impact of the mutation on a PTM site.
@@ -915,22 +926,31 @@ class Mutation(BioModel):
         MIMP algorithm (so it applies only when 'network-rewiring' is returned)
         """
         sites = site_filter(Protein.query.get(self.protein_id).sites)
+
         if self.is_close_to_some_site(0, 0, sites):
             return 'direct'
-        if self.meta_MIMP:
+        elif any(site in sites for site in self.meta_MIMP.sites):
             return 'network-rewiring'
-        if self.is_close_to_some_site(3, 3, sites):
+        elif self.is_close_to_some_site(3, 3, sites):
             return 'proximal'
-        if self.is_close_to_some_site(7, 7, sites):
+        elif self.is_close_to_some_site(7, 7, sites):
             return 'distal'
         return 'none'
 
     def find_closest_sites(self, distance=7, site_filter=lambda x: x):
+        pos = self.position
+
         sites = {
             site.position: site
-            for site in site_filter(Protein.query.get(self.protein_id).sites)
+            for site in site_filter(
+                Site.query.filter(
+                    and_(
+                        Site.protein_id == self.protein_id,
+                        Site.position.between(pos - distance, pos + distance)
+                    )
+                ).all()
+            )
         }
-        pos = self.position
 
         found_sites = set()
 
