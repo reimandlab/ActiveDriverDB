@@ -670,9 +670,8 @@ class MIMPMetaManager(UserList):
     def sites(self):
         return set(
             (
-            site
-            for mimp in self.data
-            for site in mimp.sites
+                mimp.site
+                for mimp in self.data
             )
         )
 
