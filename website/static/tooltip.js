@@ -8,7 +8,6 @@ var Tooltip = function()
     var tooltip_content     // inner tooltip HTML container (place where content - result of templating - will be inserted)
 
     // configurable
-    var selection
     var viewport
 
     // pointer offsets
@@ -28,9 +27,11 @@ var Tooltip = function()
 
         if(old_callback)
         {
-            selection.on(type, function(e){
-                old_callback(e);
-                listener(e);
+            selection.on(type, function(e)
+            {
+                // passing `this` context when calling
+                old_callback.call(this, e)
+                listener.call(this, e)
             })
         }
         else
@@ -103,9 +104,8 @@ var Tooltip = function()
             if(stuck)
                 return
 
-            element = selection
-                .filter(function(el){ return checkEquality(el, d) })
-                .node()
+            // `d` provides data whereas `this` gives the DOM element
+            element = this
 
             tooltip.transition()
                 .duration(50)
@@ -128,7 +128,8 @@ var Tooltip = function()
         stick: function(d)
         {
             publicSpace.unstick()
-            publicSpace.show(d)
+            // call `show` method passing `this` context
+            publicSpace.show.call(this, d)
             tooltip.style('pointer-events', 'auto')
             stuck = true
             d3.event.stopPropagation()
@@ -159,10 +160,8 @@ var Tooltip = function()
             size = element.getBoundingClientRect()
             _move(size.left + pointerOffsetX, size.top + pointerOffsetY)
         },
-        bind: function(input_selection)
+        bind: function(selection)
         {
-            selection = input_selection
-
             addEventListener(selection, 'click', publicSpace.stick)
             addEventListener(selection, 'mouseover', publicSpace.show)
             addEventListener(selection, 'mousemove', publicSpace.moveToPointer)
