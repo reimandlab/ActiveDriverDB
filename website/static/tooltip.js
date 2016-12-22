@@ -91,13 +91,13 @@ var Tooltip = function()
                 a templating function; it will be called with data as the
                 only argument, in context of bound element.
             preprocess_data:
-                a function to be called before templating, bascially a hook to
+                a function to be called before templating, basically a hook to
                 modify data given to template function. It will be called with
-                data as the first argument and callback to template rendered
+                data as the first argument and callback to template renderer
                 as the second. Context of bound element will be provided.
             viewport:
                 DOM element to which the maximal size/position of tooltips
-                should restricted. If not given, default to body (so tooltips
+                should restricted. If not given, defaults to body (so tooltips
                 are always visible on the user's screen).
         */
         init: function(config)
