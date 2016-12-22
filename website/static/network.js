@@ -657,8 +657,9 @@ var Network = (function ()
 
 
             var tooltip = Tooltip()
-            tooltip.init(
-                function(node){
+            tooltip.init({
+                id: 'node',
+                template: function(node){
                     return nunjucks.render(
                         'node_tooltip.njk',
                         {
@@ -668,9 +669,8 @@ var Network = (function ()
                         }
                     )
                 },
-                'node',
-                svg.node()
-            )
+                viewport: svg.node()
+            })
 
             nodes = vis.selectAll('.node')
                 .data(nodes_data)

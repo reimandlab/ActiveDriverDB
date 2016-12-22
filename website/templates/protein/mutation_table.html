@@ -91,7 +91,13 @@
                   {%- for kinase in site.kinases -%}
                       {{ comma() }}
                       {% if kinase.protein -%}
-                          <a href="{{ url_for('ProteinView:show', refseq=kinase.protein.refseq) }}">{{ kinase.name }}</a>
+                          <span
+                              class="kinase"
+                              data-site="{{ site.data.position }}{{ site.data.residue }}"
+                              data-refseq="{{ kinase.protein.refseq }}"
+                          >
+                              {{ kinase.name }}
+                          </span>
                       {%- else -%}
                           {{ kinase.name }}
                       {%- endif -%}

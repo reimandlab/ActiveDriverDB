@@ -143,11 +143,9 @@
     var url = isoforms_url.replace('<gene_name>', gene_row.name)
 
     $.ajax({
-			url: url,
-			type: 'GET',
-			async: true,
-			success: function(data)
-			{
+      url: url,
+      success: function(data)
+      {
         detail_row = $('tr[data-index=' + index + ']')
         detail_row = detail_row.next('tr.detail-view')
 
@@ -161,8 +159,8 @@
           )
           detail_row.children('td').html(html)
         }
-			}
-		})
+      }
+    })
     return 'Loading...'
   }
 

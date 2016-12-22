@@ -364,15 +364,20 @@ class Protein(BioModel):
             label('sites_count')
         )
 
-    def to_json(self):
+    def to_json(self, data_filter=None):
+        if not data_filter:
+            data_filter = lambda x: x
+            muts_count = self.mutations_count
+        else:
+            muts_count = len(data_filter(self.mutations))
         return {
             'gene_name': self.gene_name,
             'refseq': self.refseq,
-            'sites_count': self.sites_count,
-            'mutations_count': self.mutations_count,
+            'sites_count': len(data_filter(self.sites)),
+            'muts_count': muts_count,
             'ptm_muts': sum(
-                1 for s in self.mutations
-                if s.is_ptm()
+                1 for m in data_filter(self.mutations)
+                if m.is_ptm()
             )
         }
 

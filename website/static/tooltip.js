@@ -3,12 +3,14 @@ var Tooltip = function()
     var body = d3.select('body').node()
 
     // internatls
-    var element     // currently shown element (or undefined)
-    var tooltip     // tooltip d3js selection object
-    var tooltip_content     // inner tooltip HTML container (place where content - result of templating - will be inserted)
+    var element          // currently shown element (or undefined)
+    var tooltip          // tooltip d3js selection object
+    var tooltip_content  // inner tooltip HTML container
+                         // (place where content - result of templating - will be inserted)
 
     // configurable
     var viewport
+    var data_url    // from where additional data for tooltip should be fetched
 
     // pointer offsets
     var pointerOffsetX = 0
@@ -40,6 +42,21 @@ var Tooltip = function()
         }
     }
 
+    var _render_local = function(d)
+    {
+        tooltip_content.html(
+            _template.call(element, d)
+        )
+    }
+
+    var _render_with_preprocess = function(d)
+    {
+        tooltip_content.html('Loading...')
+        preprocess_data.call(element, d, _render_local)
+    }
+
+    var render_template = _render_local
+
     var _template = function(d)
     {
         return d.title
@@ -65,7 +82,25 @@ var Tooltip = function()
     }
 
     var publicSpace = {
-        init: function(custom_template, id, custom_viewport)
+        /*
+        init accepts following config:
+            id:
+                REQUIRED
+                identifier for the tooltips to be used in events binding
+            template:
+                a templating function; it will be called with data as the
+                only argument, in context of bound element.
+            preprocess_data:
+                a function to be called before templating, bascially a hook to
+                modify data given to template function. It will be called with
+                data as the first argument and callback to template rendered
+                as the second. Context of bound element will be provided.
+            viewport:
+                DOM element to which the maximal size/position of tooltips
+                should restricted. If not given, default to body (so tooltips
+                are always visible on the user's screen).
+        */
+        init: function(config)
         {
             tooltip = d3.select('body')
                 .append('div')
@@ -81,12 +116,11 @@ var Tooltip = function()
                 .append('div')
                 .attr('class', 'popover-content')
 
-            if(custom_template !== undefined)
-            {
-                _template = custom_template
-            }
+            if(config.template)
+                _template = config.template
+
             d3.select('body')
-                .on('click.' + id, publicSpace.unstick)
+                .on('click.' + config.id, publicSpace.unstick)
 
             // create a close button
             wrapper.append('button')
@@ -94,36 +128,48 @@ var Tooltip = function()
                 .html('x')
                 .on('mouseup', publicSpace.unstick)
 
-            if(custom_viewport)
-                viewport = custom_viewport
+            if(config.viewport)
+                viewport = config.viewport
             else
                 viewport = body
+
+            if(config.preprocess_data)
+            {
+                preprocess_data = config.preprocess_data
+                render_template = _render_with_preprocess
+            }
         },
         show: function(d)
         {
             if(stuck)
                 return
 
-            // `d` provides data whereas `this` gives the DOM element
-            element = this
+            if(element != this)
+            {
+                // `d` provides data whereas `this` gives the DOM element
+                element = this
+                // rerender template only on if the element has changed
+                render_template(d)
+            }
+
+            publicSpace.moveToPointer()
 
             tooltip.transition()
                 .duration(50)
                 .style('opacity', 1)
-            tooltip_content.html(_template(d))
 
-            publicSpace.moveToPointer()
         },
-        hide: function(v)
+        hide: function(keep_element)
         {
             if(stuck)
                 return
 
-            element = null
-
             tooltip.transition()
                 .duration(200)
                 .style('opacity', 0)
+
+            if(!keep_element)
+                element = null
         },
         stick: function(d)
         {

@@ -19,6 +19,49 @@ var MutationTable = function ()
         return $('#' + mutation_id)
     }
 
+    function get_protein_details_url(refseq)
+    {
+        var href = '/protein/details/' + refseq
+        var params = get_url_params()
+
+        var query_string = $.param(params)
+        if(query_string)
+        {
+            href += '?' + query_string
+        }
+        return href
+    }
+
+    function initializeTooltips()
+    {
+        var kinase_tooltip = Tooltip()
+        kinase_tooltip.init({
+            id: 'kinase',
+            preprocess_data: function(d, render_template_cb){
+                context = this
+                $.ajax({
+                  url: get_protein_details_url(
+                      $(this).data('refseq')
+                  ),
+                  success: function(data){
+                      render_template_cb.call(context, data)
+                  }
+                })
+            },
+            template: function(kinase){
+                return nunjucks.render(
+                    'kinase_tooltip.njk',
+                    {
+                        kinase: kinase,
+                        site: $(this).data('site')
+                    }
+                )
+            }
+        })
+        var kinases = d3.selectAll('.kinase')
+            .call(kinase_tooltip.bind)
+    }
+
     var publicSpace = {
         init: function(table_element, mutations_list)
         {
@@ -39,6 +82,7 @@ var MutationTable = function ()
             {
                 publicSpace.expandRow(window.location.hash.substring(1))
             }
+            initializeTooltips()
         },
         expandRow: function(mutation_id)
         {

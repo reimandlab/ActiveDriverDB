@@ -432,8 +432,9 @@ var NeedlePlot = function ()
         }
 
         var needle_tooltip = Tooltip()
-        needle_tooltip.init(
-            function(mutation){
+        needle_tooltip.init({
+            id: 'needle',
+            template: function(mutation){
                 return nunjucks.render(
                     'needle_tooltip.njk',
                     {
@@ -441,21 +442,20 @@ var NeedlePlot = function ()
                         value_type: config.value_type
                     }
                 )
-            },
-            'needle'
-        )
+            }
+        })
 
         needles = create_needles(vis, needle_tooltip)
 
         var site_tooltip = Tooltip()
 
-        site_tooltip.init(
-            function(d){
+        site_tooltip.init({
+            id: 'site',
+            template: function(d){
                 return (d.start + 7) + ' ' + d.type
             },
-            'site',
-            config.element.parentNode
-        )
+            viewport: config.element.parentNode
+        })
 
         dispatch.on('zoomAndMove', function(){
             needle_tooltip.moveToElement()

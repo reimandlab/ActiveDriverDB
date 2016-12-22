@@ -98,6 +98,36 @@ class ProteinView(FlaskView):
         )
     )
 
+    def details(self, refseq):
+        filter_manager = ProteinViewFilters()
+
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+
+        raw_mutations = filter_manager.sqlalchemy_query(
+            Mutation,
+            lambda q: and_(q, Mutation.protein_id == protein.id)
+        )
+
+        source = filter_manager.get_value('Mutation.sources')
+
+        source_column = Mutation.source_fields[source]
+
+        json = protein.to_json(data_filter=filter_manager.apply)
+
+        meta = set()
+        for mutation in protein.mutations:
+            meta_column = getattr(mutation, source_column)
+            if not meta_column:
+                continue
+            meta.update(
+                meta_column
+                .summary(filter_manager.apply)
+            )
+
+        json['meta'] = list(meta)
+
+        return jsonify(json)
+
     def show(self, refseq):
         """Show a protein by:
 

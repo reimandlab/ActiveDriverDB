@@ -73,19 +73,19 @@ var Widgets = (function ()
           })
   }
 
-	var publicSpace = {
+    var publicSpace = {
 
-		init: function(widget_boxes, related_form)
-		{
+        init: function(widget_boxes, related_form)
+        {
             form = $(related_form)
             for(var i = 0; i < widget_boxes.length; i++)
             {
                 init_box(widget_boxes[i])
             }
-		}
-	}
+        }
+    }
 
-	return publicSpace
+    return publicSpace
 }())
 
 
