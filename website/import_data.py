@@ -31,7 +31,7 @@ def importer(func):
     return func
 
 
-def import_data(restrict_mutations_to):
+def import_all():
     global genes
     genes, proteins = create_proteins_and_genes()
     load_sequences(proteins)
@@ -56,7 +56,11 @@ def import_data(restrict_mutations_to):
     calculate_interactors(proteins)
     db.session.commit()
     with current_app.app_context():
-        load_mutations(proteins, restrict_mutations_to)
+        load_mutations(proteins)
+    for importer in IMPORTERS:
+        results = importer()
+        db.session.add_all(results)
+        db.session.commit()
 
 
 @importer

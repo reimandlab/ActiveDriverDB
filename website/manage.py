@@ -96,7 +96,7 @@ class ProteinRelated(CommandTarget):
 
     @command
     def load_all(args):
-        import_data.import_data()
+        import_data.import_all()
 
     @command
     def load(args):
