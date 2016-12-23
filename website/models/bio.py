@@ -1,7 +1,6 @@
 from collections import defaultdict
 from collections import OrderedDict
 from collections import UserList
-from database import db
 from sqlalchemy import and_
 from sqlalchemy import or_
 from sqlalchemy import func
@@ -13,20 +12,8 @@ from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.associationproxy import association_proxy
 from werkzeug.utils import cached_property
-import security
-
-
-class Model(db.Model):
-    """General abstract model"""
-    __abstract__ = True
-
-    @declared_attr
-    def __tablename__(cls):
-        return cls.__name__.lower()
-
-    @declared_attr
-    def id(cls):
-        return db.Column('id', db.Integer, primary_key=True)
+from database import db
+from models import Model
 
 
 class BioModel(Model):
@@ -825,14 +812,16 @@ class Mutation(BioModel):
 
         This method works very similarly to is_ptm_distal property.
         """
-        sites = Protein.query.get(self.protein_id).sites
+        sites = self.protein.sites
         if filter_manager:
             sites = filter_manager.apply(sites)
         return self.is_close_to_some_site(7, 7, sites)
 
     @hybrid_property
     def ref(self):
-        sequence = Protein.query.get(self.protein_id).sequence
+        sequence = self.protein.sequence
+        #print(sequence)
+        #print(self.protein.sequence)
         return sequence[self.position - 1]
 
     @hybrid_property
@@ -868,7 +857,7 @@ class Mutation(BioModel):
 
         when taking into account -7 to +7 spans of each PTM site.
         """
-        sites = site_filter(Protein.query.get(self.protein_id).sites)
+        sites = site_filter(self.protein.sites)
         pos = self.position
         a = 0
         b = len(sites)
@@ -929,7 +918,7 @@ class Mutation(BioModel):
         It describes impact on the closest PTM site or on a site choosen by
         MIMP algorithm (so it applies only when 'network-rewiring' is returned)
         """
-        sites = site_filter(Protein.query.get(self.protein_id).sites)
+        sites = site_filter(self.protein.sites)
 
         if self.is_close_to_some_site(0, 0, sites):
             return 'direct'
@@ -980,7 +969,7 @@ class Mutation(BioModel):
         that sites are sorted by position in the database.
         """
         if not sites:
-            sites = Protein.query.get(self.protein_id).sites
+            sites = self.protein.sites
         pos = self.position
         a = 0
         b = len(sites)
@@ -1266,193 +1255,3 @@ class MIMPMutation(MutationDetails, BioModel):
 
     def __repr__(self):
         return '<MIMPMutation %s>' % self.id
-
-
-class CMSModel(Model):
-    """Models descending from Model are supposed to hold settings and other data
-
-    to handled by 'Content Managment System', including Users and Page models.
-    """
-    __abstract__ = True
-    __bind_key__ = 'cms'
-
-
-class BadWord(CMSModel):
-    """Model for words which should be filtered out"""
-
-    word = db.Column(db.Text())
-
-
-class ShortURL(CMSModel):
-    """Model for URL shortening entries"""
-
-    address = db.Column(db.Text())
-
-    alphabet = (
-        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-    )
-
-    base = len(alphabet)
-
-    @property
-    def shorthand(self):
-        if self.id <= 0:
-            raise ValueError('ShortURL id has to be greater than 0')
-
-        shorthand = ''
-        id_number = self.id - 1
-
-        remainder = id_number % self.base
-        id_number //= self.base
-        shorthand += self.alphabet[remainder]
-
-        while id_number:
-            remainder = id_number % self.base
-            id_number //= self.base
-            shorthand += self.alphabet[remainder]
-
-        return shorthand
-
-    @staticmethod
-    def shorthand_to_id(shorthand):
-        id_number = 0
-        for pos, letter in enumerate(shorthand):
-            weight = pow(ShortURL.base, pos)
-            id_number += weight * ShortURL.alphabet.index(letter)
-        return id_number + 1
-
-
-class User(CMSModel):
-    """Model for use with Flask-Login"""
-
-    # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
-    email = db.Column(db.String(254), unique=True)
-    pass_hash = db.Column(db.Text())
-
-    def __init__(self, email, password):
-        self.email = email
-        self.pass_hash = security.generate_secret_hash(password)
-
-    @property
-    def is_authenticated(self):
-        return True
-
-    @property
-    def is_active(self):
-        return True
-
-    @property
-    def is_anonymous(self):
-        return False
-
-    def authenticate(self, password):
-        return security.verify_secret(password, str(self.pass_hash))
-
-    @cached_property
-    def username(self):
-        return self.email.split('@')[0].replace('.', ' ').title()
-
-    def __repr__(self):
-        return '<User {0} with id {1}>'.format(
-            self.email,
-            self.id
-        )
-
-    def get_id(self):
-        return self.id
-
-
-class Page(CMSModel):
-    """Model representing a single CMS page"""
-
-    address = db.Column(
-        db.String(256),
-        unique=True,
-        index=True,
-        nullable=False,
-        default='index'
-    )
-    title = db.Column(db.String(256))
-    content = db.Column(db.Text())
-
-    @property
-    def url(self):
-        """A URL-like identifier ready to be used in HTML <a> tag"""
-        return '/' + self.address + '/'
-
-    def __repr__(self):
-        return '<Page /{0} with id {1}>'.format(
-            self.address,
-            self.id
-        )
-
-
-class MenuEntry(CMSModel):
-    """Base for tables defining links in menu"""
-
-    position = db.Column(db.Float, default=0)
-    menu_id = db.Column(db.Integer, db.ForeignKey('menu.id'))
-    type = db.Column(db.String(32))
-
-    @property
-    def title(self):
-        """Name of the link"""
-        raise NotImplementedError
-
-    @property
-    def url(self):
-        """The href value of the link"""
-        raise NotImplementedError
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'entry',
-        'polymorphic_on': type
-    }
-
-
-class PageMenuEntry(MenuEntry):
-    id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
-
-    page_id = db.Column(db.Integer, db.ForeignKey('page.id'))
-    page = db.relationship(
-            'Page',
-            backref=db.backref('page_menu_entries', cascade='all, delete-orphan')
-    )
-
-    title = association_proxy('page', 'title')
-    url = association_proxy('page', 'url')
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'page_entry',
-    }
-
-
-class CustomMenuEntry(MenuEntry):
-    id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
-
-    title = db.Column(db.String(256))
-    url = db.Column(db.String(256))
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'custom_entry',
-    }
-
-
-class Menu(CMSModel):
-    """Model for groups of links used as menu"""
-
-    # name of the menu
-    name = db.Column(db.String(256), nullable=False, unique=True, index=True)
-
-    # list of all entries (links) in this menu
-    entries = db.relationship('MenuEntry')
-
-
-class Setting(CMSModel):
-
-    name = db.Column(db.String(256), nullable=False, unique=True, index=True)
-    value = db.Column(db.String(256))
-
-    @property
-    def int_value(self):
-        return int(self.value)
