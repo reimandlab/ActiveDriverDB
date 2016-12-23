@@ -1,4 +1,3 @@
-from collections import defaultdict
 from collections import OrderedDict
 from collections import UserList
 from sqlalchemy import and_
@@ -657,7 +656,7 @@ class MIMPMetaManager(UserList):
 class Mutation(BioModel):
     __table_args__ = (
         db.Index('mutation_index', 'alt', 'protein_id', 'position'),
-        # TODO: is constraint neccessary?
+        # TODO: is constraint necessary?
         # db.UniqueConstraint('alt', 'protein_id', 'position')
     )
 
