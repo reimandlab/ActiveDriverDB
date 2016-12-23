@@ -6,8 +6,8 @@
         {%- else -%}
         {%- for element in track.elements -%}
             <div style="left:{{ element.start - 1 }}ch;width:{{ element.length }}ch" {% if element.description -%}
-                data-toggle="popover"
                 title="{{ element.name }}"
+                class="has-tooltip"
                 data-content="{{ element.description }}"
               {%- endif -%}
               >{{ element.shown_name }}</div>

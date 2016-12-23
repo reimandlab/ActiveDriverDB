@@ -7,12 +7,13 @@ var Tracks = function ()
     var scrollArea, scalableArea, tracks
     var needle_plot
     var position = 0
+    var dispatch = d3.dispatch('zoomAndMove')
 
     var config = {
         animation: 'swing',
         animations_speed: 200,
         box: null,
-		min_zoom: 1,
+        min_zoom: 1,
         max_zoom: 10
     }
 
@@ -60,11 +61,12 @@ var Tracks = function ()
 
         scrollTo(position)
 
-        if(needle_plot && !stop_callback)
+        if(!stop_callback && needle_plot)
         {
             _setZoom(scale, true)
             needle_plot.setAAPosition(position, true)
         }
+        dispatch.zoomAndMove(this)
 
     }
 
@@ -78,26 +80,32 @@ var Tracks = function ()
     {
         first_scale_factor = get_scale_factor()
 
-		$({area_scale: scale})
-			.animate(
-				{area_scale: new_zoom},
-				{
-					duration: config.animations_speed,
-					step: function(now)
-					{
-						scalableArea.css('transform', 'scaleX(' +  first_scale_factor * now + ')')
-					}
-				}
-			)
+        $({area_scale: scale})
+            .animate(
+                {area_scale: new_zoom},
+                {
+                    duration: config.animations_speed,
+                    step: function(now)
+                    {
+                        scalableArea.css('transform', 'scaleX(' +  first_scale_factor * now + ')')
+                    }
+                }
+            )
 
         scale = new_zoom
         config.char_size = getCharSize(sequence)
 
-        if(needle_plot && !stop_callback)
+        if(!stop_callback && needle_plot)
         {
             _setAAPosition(position, true)
             needle_plot.setZoom(scale, true)
         }
+        dispatch.zoomAndMove(this)
+    }
+
+    function _zoomAndMove()
+    {
+
     }
 
     function zoomIn()
@@ -119,15 +127,15 @@ var Tracks = function ()
         _setAAPosition(new_pos_screen / config.char_size, false)
     }
 
-	function scrollLeft()
-	{
+    function scrollLeft()
+    {
         scroll(-1)
-	}
+    }
 
-	function scrollRight()
-	{
+    function scrollRight()
+    {
         scroll(+1)
-	}
+    }
 
     function getCharSize(sequence)
     {
@@ -152,15 +160,15 @@ var Tracks = function ()
         scrollArea.scrollLeft(Math.round(new_position * config.char_size))
     }
 
-	function scrollToCallback()
-	{
+    function scrollToCallback()
+    {
         var input = $(this).closest('.input-group').find('.scroll-to-input')
 
         // - 1: sequence is 1 based but position is 0 based
         var pos = $(input).val() - 1
 
         _setAAPosition(pos, false, true)
-	}
+    }
 
     function initButtons(buttons, func, context)
     {
@@ -194,10 +202,10 @@ var Tracks = function ()
         }
     }
 
-	var publicSpace = {
-		init: function(new_config)
-		{
-			configure(new_config)
+    var publicSpace = {
+        init: function(new_config)
+        {
+            configure(new_config)
 
             var box = $(config.box)
             tracks = box.find('.tracks')
@@ -247,23 +255,42 @@ var Tracks = function ()
             _setZoom(1)
 
             // initialize all popovers on tracks
+            var tooltip = Tooltip()
+            tooltip.init({
+                id: 'tracks',
+                template: function(data){
+                    var elem = $(this)
+                    var templated = (
+                        '<h5>' + elem.data('title') + '</h5>' +
+                        elem.data('content')
+                    )
+                    return templated
+                },
+                viewport: scrollArea.get(0)
+            })
 
-            box.find('[data-toggle="popover"]').popover(
-                {
-                    container: 'body',
-                    placement: 'top',
-                    trigger: 'hover'
-                }
-            )
+            var kinases = d3.selectAll('.has-tooltip')
+                .each(function(data){
+                    // if we add tooltips, let's remove original title tooltip
+                    // and reuse this data in the new tooltip
+                    $(this).data('title', this.title)
+                    this.title = ''
+                })
+                .call(tooltip.bind)
+
+            dispatch.on('zoomAndMove', function(){
+                tooltip.moveToElement()
+            })
 
             $('.subtracks_collapsed').click(function(){
                 var track_name = $(this).data('track');
                 $('.' + track_name + ' .collapsible').toggleClass('hidden')
             })
-		},
+        },
         setNeedlePlotInstance: function(instance)
         {
             needle_plot = instance
+            needle_plot
         },
         setZoom: _setZoom,
         setAAPosition: _setAAPosition,
@@ -274,7 +301,7 @@ var Tracks = function ()
             return config.max_zoom
         }
 
-	}
+    }
 
-	return publicSpace
+    return publicSpace
 }
