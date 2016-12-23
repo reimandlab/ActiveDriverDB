@@ -19,8 +19,8 @@ from models import Model
 class BioModel(Model):
     """Models descending from BioData are supposed to hold biology-related data
 
-    and will be stored in a 'bio' database, separated from visualisation
-    settings and other data handled by 'content managment system'.
+    and will be stored in a 'bio' database, separated from visualization
+    settings and other data handled by 'content management system'.
     """
     __abstract__ = True
     __bind_key__ = 'bio'
@@ -132,10 +132,10 @@ class KinaseGroup(BioModel):
 class Gene(BioModel):
     """Gene is uniquely identified although has multiple protein isoforms.
 
-    The isoforms are always located on the same chromsome, strand and are
+    The isoforms are always located on the same chromosome, strand and are
     a product of the same gene. The major function of this model is to group
     isoforms classified as belonging to the same gene and to verify
-    consistency of chromsomes and strands information across the database.
+    consistency of chromosomes and strands information across the database.
     """
     # HGNC symbols are allowed to be varchar(255) but 40 is still safe
     # as for storing symbols that are currently in use. Let's use 2 x 40.
@@ -378,22 +378,8 @@ class Protein(BioModel):
         return len(self.sequence)
 
     @cached_property
-    def mutations_grouped(self):
-        """mutations grouped by impact_on_ptm and position in the sequence"""
-        mutations_grouped = defaultdict(list)
-
-        for mutation in self.mutations:
-            key = (
-                mutation.position,
-                mutation.impact_on_ptm()
-            )
-            mutations_grouped[key].append(mutation)
-
-        return mutations_grouped
-
-    @cached_property
     def disorder_length(self):
-        """How many reidues are disordered."""
+        """How many residues are disordered."""
         return sum([int(residue) for residue in self.disorder_map])
 
     @cached_property
@@ -445,9 +431,9 @@ class Protein(BioModel):
         return kinase_groups
 
     def get_sites_from_range(self, left, right):
-        """Retrives sites from given range defined as <left, right>, inclusive.
+        """Retrieves sites from given range defined as <left, right>, inclusive.
 
-        Algoritm is based on bisection and an assumption,
+        Algorithm is based on bisection and an assumption,
         that sites are sorted by position in the database.
         """
         assert left < right
@@ -679,12 +665,12 @@ class Mutation(BioModel):
     alt = db.Column(db.String(1))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
-    # To speed up results retrival one can precompute value of
+    # To speed up results retrieval one can precompute value of
     # 'is_ptm' property. It does not carry meaningful information
     # for novel mutations until correctly precomputed (e.g. with
     # instruction: m.precomputed_is_ptm = m.is_ptm).
     # You can distinguish if it was precomputed: check if the value
-    # is different than None. Be careful with boolen evaluation!
+    # is different than None. Be careful with boolean evaluation!
     precomputed_is_ptm = db.Column(db.Boolean)
 
     meta_cancer = mutation_details_relationship(
@@ -749,7 +735,7 @@ class Mutation(BioModel):
     def sources_dict(self):
         """Return list of names of sources which mention this mutation
 
-        Names of sources are detemined by source_fields class property.
+        Names of sources are determined by source_fields class property.
         """
         sources = {}
         for source_name, associated_field in self.source_fields.items():
@@ -762,7 +748,7 @@ class Mutation(BioModel):
     def sources(self):
         """Return list of names of sources which mention this mutation
 
-        Names of sources are detemined by source_fields class property.
+        Names of sources are determined by source_fields class property.
         """
         sources = []
         for source_name, associated_field in self.source_fields.items():
@@ -815,13 +801,12 @@ class Mutation(BioModel):
         sites = self.protein.sites
         if filter_manager:
             sites = filter_manager.apply(sites)
+        print(self.is_close_to_some_site(7, 7, sites))
         return self.is_close_to_some_site(7, 7, sites)
 
     @hybrid_property
     def ref(self):
         sequence = self.protein.sequence
-        #print(sequence)
-        #print(self.protein.sequence)
         return sequence[self.position - 1]
 
     @hybrid_property
@@ -886,7 +871,7 @@ class Mutation(BioModel):
             except IndexError:
                 return []
 
-        # go to right from found site, check if there is more overlappig sites
+        # go to right from found site, check if there is more overlapping sites
         pivot = hit + 1
         while cond():
             sites_affected.append(sites[pivot])
@@ -915,7 +900,7 @@ class Mutation(BioModel):
     def impact_on_ptm(self, site_filter=lambda x: x):
         """How intense might be an impact of the mutation on a PTM site.
 
-        It describes impact on the closest PTM site or on a site choosen by
+        It describes impact on the closest PTM site or on a site chosen by
         MIMP algorithm (so it applies only when 'network-rewiring' is returned)
         """
         sites = site_filter(self.protein.sites)
@@ -965,10 +950,10 @@ class Mutation(BioModel):
         (site_pos - left, site_pos + right)
         site_pos is the position of a site
 
-        Algoritm is based on bisection and an assumption,
+        Algorithm is based on bisection and an assumption,
         that sites are sorted by position in the database.
         """
-        if not sites:
+        if sites is None:
             sites = self.protein.sites
         pos = self.position
         a = 0
@@ -1170,8 +1155,8 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
     """Metadata for ESP 6500 mutation
 
     MAF:
-        EA - european american
-        AA - african american
+        EA - European American
+        AA - African American
     """
     populations = OrderedDict(
         (
