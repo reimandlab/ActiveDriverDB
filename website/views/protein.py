@@ -80,7 +80,7 @@ class ProteinView(FlaskView):
         )
 
     def index(self):
-        """Show SearchView as deafault page"""
+        """Show SearchView as default page"""
         return redirect(url_for('SearchView:index', target='proteins'))
 
     def browse(self):
@@ -102,11 +102,6 @@ class ProteinView(FlaskView):
         filter_manager = ProteinViewFilters()
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-
-        raw_mutations = filter_manager.sqlalchemy_query(
-            Mutation,
-            lambda q: and_(q, Mutation.protein_id == protein.id)
-        )
 
         source = filter_manager.get_value('Mutation.sources')
 
@@ -132,7 +127,7 @@ class ProteinView(FlaskView):
         """Show a protein by:
 
         + needleplot
-        + tracks (seuqence + data tracks)
+        + tracks (sequence + data tracks)
         """
         filter_manager = ProteinViewFilters()
 
