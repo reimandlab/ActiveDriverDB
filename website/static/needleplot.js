@@ -507,6 +507,7 @@ var NeedlePlot = function ()
             aa_position = xToPos(position)
             config.position_callback(aa_position, true)
         }
+
 	}
 
 
@@ -612,8 +613,14 @@ var NeedlePlot = function ()
 
     function _setZoomAndMove(new_scale, new_position, animate)
     {
-        _setPosition(new_position)
-		_setZoom(new_scale)
+        _setPosition(new_position, true)
+        _setZoom(new_scale, true)
+
+        if(config.zoomAndMove_callback)
+        {
+            aa_position = xToPos(position)
+            config.zoomAndMove_callback(scale, aa_position, true)
+        }
 
         refresh(animate)
         dispatch.zoomAndMove(this)

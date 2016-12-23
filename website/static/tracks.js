@@ -101,11 +101,15 @@ var Tracks = function ()
             needle_plot.setZoom(scale, true)
         }
         dispatch.zoomAndMove(this)
+
     }
 
-    function _zoomAndMove()
+    function _setZoomAndMove(new_zoom, new_pos, stop_callback)
     {
+        _setZoom(new_zoom, false)
+        _setAAPosition(new_pos, false)
 
+        dispatch.zoomAndMove(this)
     }
 
     function zoomIn()
@@ -299,7 +303,8 @@ var Tracks = function ()
             // optimal max zoom is a zoom which allows to zoom in to a normal size of a character
             config.max_zoom = 1 / get_scale_factor()
             return config.max_zoom
-        }
+        },
+        setZoomAndMove: _setZoomAndMove
 
     }
 
