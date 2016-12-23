@@ -4,6 +4,11 @@ import gzip
 from tqdm import tqdm
 
 
+class ParsingError(Exception):
+    """Generic exception thrown by a parser."""
+    pass
+
+
 def gzip_open_text(path, mode=None):
     if not mode:
         mode = 'rt'
@@ -88,7 +93,8 @@ def parse_tsv_file(
         if file_header:
             header = f.readline().rstrip().split('\t')
             data_lines_count -= 1
-            assert header == file_header
+            if header != file_header:
+                raise ParsingError
         for line in tqdm(f, total=data_lines_count, unit=' lines'):
             line = line.rstrip().split('\t')
             parser(line)
@@ -107,7 +113,8 @@ def parse_text_file(filename, parser, file_header=None, file_opener=open):
         if file_header:
             header = f.readline().rstrip()
             data_lines_count -= 1
-            assert header == file_header
+            if header != file_header:
+                raise ParsingError
         for line in tqdm(f, total=data_lines_count, unit=' lines'):
             line = line.rstrip()
             parser(line)
