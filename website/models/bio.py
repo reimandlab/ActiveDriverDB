@@ -914,31 +914,23 @@ class Mutation(BioModel):
         return 'none'
 
     def find_closest_sites(self, distance=7, site_filter=lambda x: x):
+
         pos = self.position
 
-        sites = {
-            site.position: site
-            for site in site_filter(
-                Site.query.filter(
-                    and_(
-                        Site.protein_id == self.protein_id,
-                        Site.position.between(pos - distance, pos + distance)
-                    )
-                ).all()
+        sites = Site.query.filter(
+            and_(
+                Site.protein_id == self.protein_id,
+                Site.position.between(pos - distance, pos + distance)
             )
-        }
+        ).order_by(func.abs(Site.position - pos)).limit(2).all()
 
-        found_sites = set()
-
-        for i in range(distance + 1):
-            if pos + i in sites:
-                found_sites.add(sites[pos + i])
-            if pos - i in sites:
-                found_sites.add(sites[pos - i])
-            if found_sites:
-                break
-
-        return found_sites
+        if(
+            len(sites) == 2 and
+            abs(sites[0].position - pos) != abs(sites[1].position - pos)
+        ):
+            return sites[:1]
+        else:
+            return sites
 
     @hybrid_method
     def is_close_to_some_site(self, left, right, sites=None):
