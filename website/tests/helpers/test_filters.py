@@ -10,12 +10,38 @@ class Model:
 
 def test_filter():
 
+    # Test initialization
+
     with pytest.raises(filters.InitializationError):
         filters.Filter(
-            Model, 'value', comparators=['this is not a comparator '],
+            Model, 'value', comparators=['this is not a comparator'],
             choices=['a', 'b', 'c', 'd'],
             default='a', nullable=False,
         )
+
+    # Test is_active property
+
+    test_values = (
+        # if there is *any* value, the filter should be active
+        (False, True, True),
+        (False, False, True),
+        (True,  True, True),
+        (True,  False, True),
+        # if the value is None, filter is disabled
+        (None,  None, False),
+        # But if it has some value, it's not!
+        (None,  True, True),
+        (None,  False, True)
+    )
+
+    for default, value, should_be_active in test_values:
+        tested_filter = filters.Filter(
+            Model, 'value', comparators=['eq'],
+            default=default
+        )
+        tested_filter.update(value)
+        assert tested_filter.is_active == should_be_active
+
 
 def test_select_filter():
 

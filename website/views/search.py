@@ -213,10 +213,16 @@ class SearchViewFilters(FilterManager):
 
     def __init__(self, **kwargs):
         filters = [
+            # Why negation? Due to used widget: checkbox.
+            # It is not possible to distinguish between user not asking for
+            # all mutations (so sending nothing in post, since un-checking it
+            # will cause it to be skipped in the form) or user doing nothing
+            # (so expecting the default behavior - returning only PTM mutations)
+            # - also no information present in the form.
             Filter(
-                Mutation, 'is_ptm', comparators=['eq'],
+                Mutation, 'is_ptm', comparators=['ne'],
                 is_attribute_a_method=True,
-                default=True
+                default=False
             ),
             Filter(
                 Protein, 'has_ptm_mutations', comparators=['eq'],
@@ -230,7 +236,8 @@ class SearchViewFilters(FilterManager):
 def make_widgets(filter_manager):
     return {
         'is_ptm': FilterWidget(
-            'PTM mutations only', 'checkbox',
+            'Show all mutations (by default only PTM mutations will be shown)',
+            'checkbox',
             filter=filter_manager.filters['Mutation.is_ptm']
         ),
         'at_least_one_ptm': FilterWidget(

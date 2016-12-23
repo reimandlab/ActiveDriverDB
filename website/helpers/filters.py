@@ -3,7 +3,6 @@ import operator
 import re
 from collections import namedtuple
 from collections import defaultdict
-from urllib.parse import unquote
 from collections import Iterable
 from sqlalchemy import and_
 from sqlalchemy import or_
@@ -23,7 +22,7 @@ class InitializationError(Exception):
 
 class Filter:
     """Generic class allowing to create lists/iterators of any iterable
-    objects that have compilant interface.
+    objects that have compliant interface.
 
     Args:
         multiple:
@@ -46,6 +45,7 @@ class Filter:
         'gt': operator.gt,
         'lt': operator.lt,
         'eq': operator.eq,
+        'ne': operator.ne,
         'in': operator.contains,
         'ni': lambda x, y: operator.contains(y, x),
     }
@@ -97,7 +97,7 @@ class Filter:
 
         if default and not default_comparator:
             raise InitializationError(
-                'When specyfing default value, the default comparator '
+                'When specifying default value, the default comparator '
                 'is also required'
             )
 
@@ -108,7 +108,8 @@ class Filter:
     def as_sqlalchemy(self, target):
         from sqlalchemy.ext.associationproxy import AssociationProxy
         from sqlalchemy.sql.annotation import AnnotatedSelect
-        from types import FunctionType, MethodType
+        from types import FunctionType
+        #from types import MethodType
 
         comparators = {
             'ge': '__ge__',
@@ -218,14 +219,14 @@ class Filter:
                 )
         ):
             raise ValidationError(
-                'Filter % recieved forbidden value: %s. Allowed: %s' %
+                'Filter % received forbidden value: %s. Allowed: %s' %
                 (self.id, value, self.choices)
             )
 
     def _verify_comparator(self, comparator):
         if comparator not in self.allowed_comparators:
             raise ValidationError(
-                'Filter %s recieved forbidden comparator: %s. Allowed: %s' %
+                'Filter %s received forbidden comparator: %s. Allowed: %s' %
                 (self.id, comparator, self.allowed_comparators)
             )
 
@@ -351,7 +352,7 @@ class Filter:
     @property
     def is_active(self):
         return self.visible and (
-            bool(self.value) or self.value != self.default
+            self.value is not None or self.value != self.default
         )
 
     @property
@@ -393,7 +394,7 @@ class FilterManager:
     def __init__(self, filters):
         # let each filter know where to seek data about other filters
         # (so one filter can relay on state of other filters,
-        # eg. be active conditionaly, if another filter is set).
+        # eg. be active conditionally, if another filter is set).
 
         for filter in filters:
             filter.manager = self
@@ -456,9 +457,12 @@ class FilterManager:
     def apply(self, elements, filters_subset=None, itemgetter=None):
         """Apply all appropriate filters to given list of elements.
 
-        Only filters targeting the same model and beeing currently active will
+        Only filters targeting the same model and being currently active will
         be applied. The target model will be deduced from passed elements.
         """
+        print(elements, self.filters['Mutation.is_ptm'])
+
+
         try:
             tester = elements[0]
             if itemgetter:
@@ -500,7 +504,7 @@ class FilterManager:
 
         The query part of request will be looked upon to get filter's data, in
         one of two available formats: modern or fallback.
-        Updates for unrecongized filters will be returned as feedback.
+        Updates for unrecognized filters will be returned as feedback.
 
         For details see _parse_request() method in this class.
         """
@@ -515,10 +519,9 @@ class FilterManager:
                 self._parse_value(update.value),
                 self._parse_comparator(update.comparator),
             )
-        return skipped
+        print(self.filters)
 
-    def update_from_post(self, request):
-        pass
+        return skipped
 
     @staticmethod
     def _parse_fallback_query(args):
@@ -544,7 +547,7 @@ class FilterManager:
         filters_list = [
             [
                 name,
-                data.get('cmp', None),    # allow not specyfing comparator -
+                data.get('cmp', None),    # allow not specifying comparator -
                 # if so, we will use default comparator.
                 FilterManager._repr_value(data.get('value'))
             ]
@@ -555,7 +558,7 @@ class FilterManager:
     def _parse_request(self, request):
         """Extract and normalize filters' data from Flask's request object.
 
-        Two formats for specifing filters are available:
+        Two formats for specifying filters are available:
             modern request format:
                 Model.filters=is_ptm:eq:True;Model.frequency:gt:2
             fallback format:
@@ -670,9 +673,6 @@ class FilterManager:
             # (e.g. if all are pointing to default values)
             if filters:
                 args['filters'] = [filters]
-
-            for arg, value in args.items():
-                print(value)
 
             query_string = '&'.join(
                 [
