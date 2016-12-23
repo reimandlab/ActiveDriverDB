@@ -460,8 +460,6 @@ class FilterManager:
         Only filters targeting the same model and being currently active will
         be applied. The target model will be deduced from passed elements.
         """
-        print(elements, self.filters['Mutation.is_ptm'])
-
 
         try:
             tester = elements[0]
@@ -519,7 +517,6 @@ class FilterManager:
                 self._parse_value(update.value),
                 self._parse_comparator(update.comparator),
             )
-        print(self.filters)
 
         return skipped
 

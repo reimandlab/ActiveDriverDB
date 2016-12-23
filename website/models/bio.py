@@ -800,7 +800,6 @@ class Mutation(BioModel):
         sites = self.protein.sites
         if filter_manager:
             sites = filter_manager.apply(sites)
-        print(self.is_close_to_some_site(7, 7, sites))
         return self.is_close_to_some_site(7, 7, sites)
 
     @hybrid_property
