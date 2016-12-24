@@ -39,3 +39,18 @@ def test_decode_raw_mutation():
     )
     for raw_mutation_string, result in test_mutations:
         assert bioinf.decode_raw_mutation(raw_mutation_string) == result
+
+
+def test_get_human_chromosomes():
+    chromosomes = bioinf.get_human_chromosomes()
+
+    should_have = ['1',  '22',  'X',  'Y',  'MT']
+    should_not_have = ['0',  '23']
+
+    assert type(chromosomes) is set
+
+    for chr in should_have:
+        assert chr in chromosomes
+
+    for chr in should_not_have:
+        assert chr not in chromosomes

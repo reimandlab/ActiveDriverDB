@@ -20,7 +20,8 @@ def complement(seq):
 def get_human_chromosomes():
     """Return set of strings representing names of human chromosomes and MT.
 
-    1-22 (inclusive), X, Y and mitochondrial
+    1-22 (inclusive), X, Y and mitochondrial. Made as a function to enable easy
+    re-factorization of chromosomes from strings to models if needed in future.
     """
     return set([str(x) for x in range(1, 23)] + ['X', 'Y', 'MT'])
 
