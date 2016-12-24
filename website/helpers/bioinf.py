@@ -9,7 +9,7 @@ def complement(seq):
 
     Sequence can be given as a string of basic four characters (ATCG)
     representing nucleotides or of full set of IUPAC accepted symbols.
-    The sequence has to be witouth gaps or maskings & has to be upper case.
+    The sequence has to be without gaps or maskings & has to be upper case.
     """
     try:
         return ''.join([basic_mappings[n] for n in seq])
@@ -28,7 +28,7 @@ def get_human_chromosomes():
 def decode_mutation(mut):
     """Return tuple with: reference residue, position and alternative residue.
 
-    Also, if assertions are enabled checks correctnes of the mutation string.
+    Also, if assertions are enabled checks correctness of the mutation string.
 
     An example input string for this function is: p.R252H.
     No assertion about source of mutations is made: you can use c.C110T as well

@@ -28,3 +28,14 @@ def test_decode_mutation_wrong():
     for mutation in incorrect_mutations:
         with pytest.raises(AssertionError):
             bioinf.decode_mutation(mutation)
+
+
+def test_decode_raw_mutation():
+    test_mutations = (
+        ('G130A', ('G', 130, 'A')),
+        ('V44I', ('V', 44, 'I')),
+        ('C617T', ('C', 617, 'T')),
+        ('S206L', ('S', 206, 'L')),
+    )
+    for raw_mutation_string, result in test_mutations:
+        assert bioinf.decode_raw_mutation(raw_mutation_string) == result
