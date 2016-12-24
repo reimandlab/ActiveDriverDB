@@ -12,13 +12,14 @@ def test_complement():
         assert bioinf.complement(sequence) == complement
 
 
+test_mutations = (
+    ('c.G130A', ('G', 130, 'A')),
+    ('p.V44I', ('V', 44, 'I')),
+    ('c.C617T', ('C', 617, 'T')),
+    ('p.S206L', ('S', 206, 'L')),
+)
+
 def test_decode_mutation():
-    test_mutations = (
-        ('c.G130A', ('G', 130, 'A')),
-        ('p.V44I', ('V', 44, 'I')),
-        ('c.C617T', ('C', 617, 'T')),
-        ('p.S206L', ('S', 206, 'L')),
-    )
     for mutation_string, result in test_mutations:
         assert bioinf.decode_mutation(mutation_string) == result
 
@@ -31,13 +32,8 @@ def test_decode_mutation_wrong():
 
 
 def test_decode_raw_mutation():
-    test_mutations = (
-        ('G130A', ('G', 130, 'A')),
-        ('V44I', ('V', 44, 'I')),
-        ('C617T', ('C', 617, 'T')),
-        ('S206L', ('S', 206, 'L')),
-    )
-    for raw_mutation_string, result in test_mutations:
+    for mutation_string, result in test_mutations:
+        raw_mutation_string = mutation_string[2:]
         assert bioinf.decode_raw_mutation(raw_mutation_string) == result
 
 
