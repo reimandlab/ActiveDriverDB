@@ -6,7 +6,7 @@ from sqlalchemy import desc
 from sqlalchemy.ext.associationproxy import AssociationProxy
 from sqlalchemy import func
 from sqlalchemy.exc import StatementError
-from website.database import db
+from database import db
 
 
 def fast_count(query):

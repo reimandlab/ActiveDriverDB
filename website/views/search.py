@@ -8,12 +8,12 @@ from Levenshtein import distance
 from models import Protein
 from models import Gene
 from models import Mutation
-from website.views._commons import get_genomic_muts
-from website.views._commons import get_protein_muts
 from sqlalchemy import and_
-from website.helpers.filters import FilterManager
-from website.helpers.filters import Filter
-from website.helpers.widgets import FilterWidget
+from helpers.filters import FilterManager
+from helpers.filters import Filter
+from helpers.widgets import FilterWidget
+from ._commons import get_genomic_muts
+from ._commons import get_protein_muts
 
 
 class GeneResult:

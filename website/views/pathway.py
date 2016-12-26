@@ -4,7 +4,7 @@ from flask_classful import FlaskView
 from flask_classful import route
 from models import Pathway
 from sqlalchemy import or_
-from website.helpers.views import AjaxTableView
+from helpers.views import AjaxTableView
 
 
 def search_filter(query):

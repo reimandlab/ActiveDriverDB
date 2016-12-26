@@ -14,11 +14,11 @@ from sqlalchemy import distinct
 from sqlalchemy import case
 from sqlalchemy import literal_column
 from database import db
-from website.helpers.views import AjaxTableView
-from website.helpers.filters import FilterManager
-from website.helpers.filters import Filter
-from website.helpers.widgets import FilterWidget
-from website.views._global_filters import sources_to_sa_filter
+from helpers.views import AjaxTableView
+from helpers.filters import FilterManager
+from helpers.filters import Filter
+from helpers.widgets import FilterWidget
+from ._global_filters import sources_to_sa_filter
 
 
 class GeneViewFilters(FilterManager):
@@ -152,8 +152,9 @@ class GeneView(FlaskView):
                     GeneListEntry.fdr,
                     GeneListEntry.p
                 )
-                .select_from(Gene)
-                .join(GeneListEntry, GeneListEntry.gene_id == Gene.id)
+                .select_from(GeneListEntry)
+                .prefix_with("STRAIGHT_JOIN")
+                .join(Gene, GeneListEntry.gene_id == Gene.id)
                 .filter(GeneListEntry.gene_list_id == gene_list.id)
                 .join(Protein, Protein.id == Gene.preferred_isoform_id)
                 .outerjoin(Site, Site.protein_id == Protein.id)
@@ -167,9 +168,10 @@ class GeneView(FlaskView):
                 db.session.query(
                     Gene.id
                 )
-                .select_from(Gene)
+                .select_from(GeneListEntry)
+                .prefix_with("STRAIGHT_JOIN")
+                .join(Gene, GeneListEntry.gene_id == Gene.id)
                 .join(Protein, Protein.id == Gene.preferred_isoform_id)
-                .join(GeneListEntry, GeneListEntry.gene_id == Gene.id)
                 .filter(GeneListEntry.gene_list_id == gene_list.id)
                 .group_by(Gene.name)
             ),

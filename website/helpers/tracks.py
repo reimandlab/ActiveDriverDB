@@ -228,7 +228,7 @@ class MutationsTrack(Track):
             try:
                 while pos in grouped[depth]:
                     if grouped[depth][pos].alt == mutation.alt:
-                        # TODO: increace frequency count
+                        # TODO: increase frequency count
                         break
                     depth += 1
             except IndexError:

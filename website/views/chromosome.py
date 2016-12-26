@@ -2,11 +2,10 @@ from flask import request
 from flask_classful import FlaskView
 from flask import jsonify
 from models import Mutation
-from website.helpers.filters import FilterManager
-from website.views._global_filters import common_filters
-from website.views._commons import get_genomic_muts
-from website.views._commons import get_protein_muts
-from website.views._commons import represent_mutation
+from helpers.filters import FilterManager
+from ._global_filters import common_filters
+from ._commons import get_genomic_muts
+from ._commons import represent_mutation
 from operator import attrgetter
 from collections import OrderedDict
 

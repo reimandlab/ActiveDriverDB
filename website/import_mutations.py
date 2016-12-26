@@ -320,7 +320,7 @@ def determine_strand(ref, cdna_ref, alt, cdna_alt):
         return '-'
     else:
         raise Exception(
-            'Unbale to determine strand for: ' +
+            'Unable to determine strand for: ' +
             str([ref, cdna_ref, alt, cdna_alt])
         )
 

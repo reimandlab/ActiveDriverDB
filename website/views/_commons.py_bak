@@ -1,0 +1,334 @@
+from models import Protein
+from models import Mutation
+from database import bdb, bdb_refseq
+from database import make_snv_key
+from database import decode_csv
+from database import get_or_create
+from helpers.bioinf import decode_raw_mutation
+
+
+def impact_of_snv_without_csv(chrom, dna_pos, dna_ref, dna_alt):
+    """Infer what impact will given Single Nuclotide Variation (SNV) have,
+    assuming that it does not result in an Codinf Sequence Variation.
+
+    If a SNV does not change the corresponding, encoded by its codon aminoacid
+    into another one, then there are four options:
+      - requested SNV does not affect any coding sequence directly:
+        it might be placed outside of a coding sequence domain (CSD),
+      - it could affect a stop codon (so either it will be a "silent
+        substitution" or "stop lost" event),
+      - it could create a stop codon in place of an aminoacid in sequence
+        ("stop gained" event),
+      - it could be just a synonymous aminoacid mutation.
+    """
+
+
+    def changes_aa(shift=0, ref=dna_ref, alt=dna_alt):
+        """Returns True if specified nucleotides cause a Coding Sequence
+        Variation which is not related to stop gain/loss events.
+        True indicates that on given position there was given 'ref' nucleotide
+        and that given 'alt' nucletide does not cause 'stop gain' event.
+
+        False can indicate that mutation is outside of Coding Sequence Domain
+        or that the mutation is involved in stop gain/loss events or that
+        it is a synonymous mutation.
+        """
+
+        pos = str(int(dna_pos) + shift)
+        snv = make_snv_key(
+            chrom,
+            pos,
+            ref,
+            alt
+        )
+        return [
+            decode_csv(item)
+            for item in bdb[snv]
+        ]
+
+    # 1. has "stop codon gain" ocurred?
+    stop_gained_checkmap = {
+        # real_ref: real_alt: (test_alt, expected_aa_alt)
+        'C': {
+            'T': (
+                ('A', 'K'),
+                ('G', 'G')
+            ),
+            'A': (
+                ('T', 'L'),
+                ('G', 'W')
+            )
+        },
+        'T': {
+            'A': (
+                ('C', 'S'),
+                ('G', 'W')
+            )
+        },
+        'G': {
+            'T': (
+                ('A', 'KR'),
+            ),
+            'A': (
+                ('C', 'SC')
+            )
+        },
+        'A': {
+            'T': (
+                ('C', 'Q'),
+                ('G', 'G')
+            )
+        }
+    }
+
+    def test_expectation(expected, **kwargs):
+        items = changes_aa(**kwargs)
+        for item in items:
+            if item['alt'] == expected:
+                return True
+
+    gain_tests_by_real_alt = stop_gained_checkmap[dna_ref]
+    if dna_alt in gain_tests_by_real_alt:
+        gain_tests = gain_tests_by_real_alt[dna_alt]
+        for test_alt, expected_aa in gain_tests:
+            if test_expectation(expected, alt=test_alt):
+                return 'stop gained'
+
+    # the problematic positions 3rd base of UAA and UAG
+    if dna_ref in 'CT' and dna_alt in 'AG':
+        if test_expectation('S', ref='A', alt='C'):
+            return 'stop gained'
+
+
+    # How can I know if the codon was a stop codon?
+    # -4 should have an aminoacid and +4 shouldn't have one!
+
+    # How can I know if the new codon will represent stop?
+    # -4 and + 4 should have an aminoacid. Moreover it should have an aminoacid
+
+    # ok, basically:
+    # if -4 and +4 => 'synonymous' or 'stop gained'
+    # if -4 and not +4 => 'stop loss' or 'silent stop substitution'
+    # if not -4 and not +4 => 'not cds'
+    # if not -4 and +4 => 'start'
+
+    # I need to have a tricky algorithm which will read surroundings from
+
+    # this won't work until I'm sure it's not synonymous mutation!
+
+
+    assert dna_ref != dna_alt
+    assert not changes_aa()
+
+    def is_stop_codon_snv_silent():
+
+
+        """Assuming that there is a stop codon encompassing a nucleotide from
+        dna_pos, check if the current SNV would be a silent substitution or if
+        it would result in a "stop codon lost" event.
+        """
+        # There are three "standard" stop codons: TAG, TAA, TGA
+
+        assert dna_ref != dna_alt
+
+        # let's start with assuming we are on the first position in frame
+        # if we change T to anything, it is a certain loss of the stop codon
+        if dna_ref == 'T':
+            return False
+        # (now we can consider only positions two and three in the frame)
+        # if we change remaining A or G to anything else, it will cause a loss
+        elif dna_alt not in ['A', 'G']:
+            return False
+        # otherwise we kept T on the first position and A or G in second and
+        # third positions => it means we retained the stop codon. As it is a
+        # mutation (assert dna_ref != dna_alt), it is a silent mutation.
+        else:
+            return True
+
+    # To quickly check if before substitution there was a coding aminoacid
+    # in this place, we need to check:
+    # - if there was a 'C' in this place, then it was not a stop codon:
+    #   - if both substitutions to T and to G in this place return nothing,
+    #     then it was either outside of CDS ("not coding") or "synonymous";
+    #   - else it was in CDS ("stop gained")
+    # - else - what effect a substitution to C would have on this position:
+    #   - if change in aminoacid => it was not a stop AND it was coding. The
+    #     mutation can be "synonymous" or "stop gained"
+    #   - else => it was a stop codon, it is a synonymous mutation,
+    #     or it is placed outside of CDS:
+    #       Firstly, check if it just happen to be a synonymous mutation.
+    #       If it wasn't:
+    #       - if we go back by -4 nucleotides and find an aminoacid, then
+    #         it was a stop codon and we need to check effect of the new
+    #         codon (it will be "silent stop substitution" or "stop lost"):
+    #           - if the new codon is a stop codon => ("silent")
+    #           - else => ("stop lost")
+    #       - else: ("not coding")
+
+    if dna_ref == 'C':
+        if changes_aa(alt='T') or changes_aa(alt='G'):
+            return 'stop gained'
+        else:
+            return 'not coding'
+    else:
+        if changes_aa(alt='C'):
+            return 'stop gained'
+        # if it does not change aa it it was a stop codon
+        # or it is placed outside of CDS
+        else:
+            # is it in CDS?
+            if any([
+                changes_aa(shift=-4, ref=X, alt=Y)
+                for X in 'TCGA'  # I do not know the nucleotide => check all
+                for Y in 'TCGA'
+                if X != Y
+            ]):
+                # I now that it is in CSD, on an old stop codon. Is it silent?
+                if is_stop_codon_snv_silent():
+                    return 'silent stop'
+                else:
+                    return 'stop lost'
+            else:
+                return 'not coding'
+
+
+def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
+
+    snv = make_snv_key(chrom, dna_pos, dna_ref, dna_alt)
+
+    items = [
+        decode_csv(item)
+        for item in bdb[snv]
+    ]
+
+    # this could be speed up by: itemgetters, accumulative queries and so on
+
+    for item in items:
+
+        protein = Protein.query.get(item['protein_id'])
+        item['protein'] = protein
+
+        mutation, created = get_or_create(
+            Mutation,
+            protein=protein,
+            protein_id=protein.id,
+            position=item['pos'],
+            alt=item['alt']
+        )
+        item['mutation'] = mutation
+        item['type'] = 'genomic'
+
+    if not items:
+        impact = impact_of_snv_without_csv()
+        return [impact]
+
+    return items
+
+
+def get_affected_isoforms(gene_name, ref, pos, alt):
+    """Returns all isoforms where specified mutation might happen.
+
+    Explanation: shouldn't we look for refseq with gene name only?
+
+    Well, we have to look for all isoforms of given gene which
+    cover given mutation - so those with length Y: X <= Y, where
+    X is the position (pos) of analysed mutation.
+
+    There is on more constraint: some proteomic mutations cannot
+    be caused by a single genomic mutations: F => S cannot be a
+    result of a single SNV/SNP because neither UUU nor UUC could be
+    changed to AGU or AGC in a single step.
+
+    There are many such isoforms and simple lookup:
+        gene_name => preferred_isoform, or
+        gene_name => all_isoforms
+    is not enough to satisfy all conditions.
+
+    So what do we have here is (rougly) an equivalent to:
+
+        from models import Gene
+
+        # the function below should check if we don't have symbols
+        # that are not representing any of known amino acids.
+
+        is_mut_allowed(alt)
+
+        # function above and below were not implemented but lets
+        # assume that they throw a flow-changing exception
+
+        can_be_result_of_single_snv(ref, alt)
+
+        gene = Gene.query.filter_by(name=gene_name).one()
+        return [
+            isoform
+            for isoform in gene.isoforms
+            if (isoform.length >= pos and
+                isoform.sequence[pos - 1] == ref)
+        ]
+    """
+    hash_key = gene_name + ' ' + ref + str(pos) + alt
+    refseqs = bdb_refseq[hash_key]
+
+    return Protein.query.filter(Protein.refseq.in_(refseqs)).all()
+
+
+def get_protein_muts(gene_name, mut):
+    """Retrieve corresponding mutations from all isoforms
+
+    associated with given gene which are correct (i.e. they do not
+    lie outside the range of a protein isoform and have the same
+    reference residues). To speed up the lookup we use precomputed
+    berkleydb hashmap.
+    """
+    ref, pos, alt = decode_raw_mutation(mut)
+
+    items = []
+
+    for isoform in get_affected_isoforms(gene_name, ref, pos, alt):
+
+        mutation, created = get_or_create(
+            Mutation,
+            protein=isoform,
+            position=pos,
+            alt=alt
+        )
+
+        items.append(
+            {
+                'protein': isoform,
+                'ref': ref,
+                'alt': alt,
+                'pos': pos,
+                'mutation': mutation,
+                'type': 'proteomic'
+            }
+        )
+    return items
+
+
+def represent_mutation(mutation, data_filter, representation_type=dict):
+
+    affected_sites = mutation.get_affected_ptm_sites(data_filter)
+
+    return representation_type(
+        (
+            ('pos', mutation.position),
+            ('alt', mutation.alt),
+            ('ref', mutation.ref),
+            ('cnt_ptm', len(affected_sites)),
+            ('sites', [
+                {
+                    'data': site.to_json(),
+                    'kinases': [
+                        kinase.to_json()
+                        for kinase in site.kinases
+                    ],
+                    'kinase_groups': [
+                        group.name
+                        for group in site.kinase_groups
+                    ]
+                }
+                for site in affected_sites
+            ])
+        )
+    )

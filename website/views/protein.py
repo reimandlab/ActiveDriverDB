@@ -9,17 +9,17 @@ from models import Protein
 from models import Mutation
 from models import Domain
 from models import Site
-from website.helpers.tracks import Track
-from website.helpers.tracks import TrackElement
-from website.helpers.tracks import PositionTrack
-from website.helpers.tracks import SequenceTrack
-from website.helpers.tracks import MutationsTrack
-from website.helpers.tracks import DomainsTrack
-from website.helpers.filters import FilterManager
-from website.helpers.views import AjaxTableView
-from website.views._global_filters import common_filters
-from website.views._global_filters import create_widgets
-from website.views._commons import represent_mutation
+from helpers.tracks import Track
+from helpers.tracks import TrackElement
+from helpers.tracks import PositionTrack
+from helpers.tracks import SequenceTrack
+from helpers.tracks import MutationsTrack
+from helpers.tracks import DomainsTrack
+from helpers.filters import FilterManager
+from helpers.views import AjaxTableView
+from ._global_filters import common_filters
+from ._global_filters import create_widgets
+from ._commons import represent_mutation
 from operator import attrgetter
 from sqlalchemy import and_
 
@@ -181,7 +181,7 @@ class ProteinView(FlaskView):
         )
 
     def mutation(self, refseq, position, alt):
-        from website.views.chromosome import represent_mutations
+        from .chromosome import represent_mutations
         from database import get_or_create
 
         filter_manager = ProteinViewFilters(

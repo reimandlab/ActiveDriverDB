@@ -6,8 +6,8 @@ from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
 from models import ClinicalData
 from database import has_or_any
-from website.helpers.filters import Filter
-from website.helpers.widgets import FilterWidget
+from helpers.filters import Filter
+from helpers.widgets import FilterWidget
 
 
 cancer_codes = [cancer.code for cancer in Cancer.query.all()]

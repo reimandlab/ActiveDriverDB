@@ -6,11 +6,11 @@ from flask import jsonify
 from flask import render_template as template
 from flask_classful import FlaskView
 from models import Protein
-from website.helpers.filters import Filter
-from website.helpers.filters import FilterManager
-from website.helpers.widgets import FilterWidget
-from website.views._global_filters import common_filters
-from website.views._global_filters import create_widgets
+from helpers.filters import Filter
+from helpers.filters import FilterManager
+from helpers.widgets import FilterWidget
+from ._global_filters import common_filters
+from ._global_filters import create_widgets
 
 
 def get_nearby_sequence(site, protein, dst=3):
