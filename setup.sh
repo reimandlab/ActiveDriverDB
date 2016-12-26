@@ -18,3 +18,6 @@ cd ..
 cd website
 cp config_example.py config.py
 cd ..
+
+# install sass gem
+gem install sass

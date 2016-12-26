@@ -10,6 +10,7 @@ install:
   - cd website
   - pip install -r requirements.txt
   - pip install -r tests/requirements.txt
+  - sass --update .:.
 
 script:
   - python3 -m pytest -k 'not data_dependent'
