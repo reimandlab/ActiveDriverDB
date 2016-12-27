@@ -10,14 +10,6 @@ from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 
 
-cancer_codes = [cancer.code for cancer in Cancer.query.all()]
-
-# Python 3.4: cast keys() to list
-populations_1kg = list(The1000GenomesMutation.populations.keys())
-populations_esp = list(ExomeSequencingMutation.populations.keys())
-significances = list(ClinicalData.significance_codes.keys())
-
-
 def populations_labels(populations):
     return [
         population_name + ' (' + field_name[4:].upper() + ')'
@@ -45,6 +37,13 @@ def sources_to_sa_filter(f, t):
 
 
 def common_filters(default_source='TCGA', source_nullable=False):
+    cancer_codes = [cancer.code for cancer in Cancer.query.all()]
+
+    # Python 3.4: cast keys() to list
+    populations_1kg = list(The1000GenomesMutation.populations.values())
+    populations_esp = list(ExomeSequencingMutation.populations.values())
+    significances = list(ClinicalData.significance_codes.keys())
+
     return [
         Filter(
             Mutation, 'sources', comparators=['in'],

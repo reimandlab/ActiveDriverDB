@@ -110,13 +110,19 @@ class ProteinView(FlaskView):
         json = protein.to_json(data_filter=filter_manager.apply)
 
         meta = set()
-        for mutation in protein.mutations:
+
+        if source in ('1KGenomes', 'ESP6500'):
+            summary_getter = attrgetter('affected_populations')
+        else:
+            def summary_getter(meta_column):
+                return meta_column.summary()
+
+        for mutation in filter_manager.apply(protein.mutations):
             meta_column = getattr(mutation, source_column)
             if not meta_column:
                 continue
             meta.update(
-                meta_column
-                .summary(filter_manager.apply)
+                summary_getter(meta_column)
             )
 
         json['meta'] = list(meta)

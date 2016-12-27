@@ -1135,8 +1135,8 @@ class PopulationMutation(MutationDetails):
     @hybrid_property
     def affected_populations(self):
         return [
-            field
-            for field in self.populations.keys()
+            population_name
+            for field, population_name in self.populations.items()
             if getattr(self, field)
         ]
 
