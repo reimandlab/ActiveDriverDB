@@ -1,4 +1,4 @@
-.widget-panel, .panel-heading, .breadcrumb, .controls, .header
+.widget-panel, .breadcrumb, .controls, .header
   display: none
 
 .widget-panel.filters-panel
@@ -19,3 +19,11 @@
       text-align: left
       input
         display: none
+
+.panel-heading
+  .btn-group
+    display: none
+    &.filters-bar
+      display: block
+      .btn-group
+        display: block
