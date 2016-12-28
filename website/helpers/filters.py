@@ -238,17 +238,17 @@ class Filter:
         if comparator:
             self._verify_comparator(comparator)
             self._comparator = comparator
-        if value is not None:
-            if self.multiple and not is_iterable_but_not_str(value):
-                value = [value]
-            # cast to desired type
-            if self.type:
-                if self.multiple:
-                    value = [self.type(sub_value) for sub_value in value]
-                else:
-                    value = self.type(value)
-            self._verify_value(value)
-            self._value = value
+
+        if self.multiple and not is_iterable_but_not_str(value):
+            value = [value]
+        # cast to desired type
+        if self.type:
+            if self.multiple:
+                value = [self.type(sub_value) for sub_value in value]
+            else:
+                value = self.type(value)
+        self._verify_value(value)
+        self._value = value
 
     def get_multiple_function(self):
         if self.multiple and is_iterable_but_not_str(self.value):
@@ -350,7 +350,7 @@ class Filter:
         )
 
     @property
-    def is_active(self):
+    def is_active(self):    # TODO rename to 'is_applicable' or so
         return self.visible and (
             self.value is not None or self.value != self.default
         )
@@ -367,7 +367,7 @@ class Filter:
             return self._comparator
         return self._default_comparator
 
-    visible = True
+    visible = True      # TODO rename to 'active'
 
     def __repr__(self):
         return '<Filter {1} ({0}active) with value "{2}">'.format(
@@ -630,11 +630,15 @@ class FilterManager:
             return FilterManager.sub_value_separator.join(map(str, value))
         return str(value)
 
-    @property
-    def url_string(self):
+    def url_string(self, expanded=False):
         """String representation of filters from the set for use in URL address.
 
-        Produced string is ready to be included as a query argument in URL path
+        Produced string is ready to be included as a query argument in URL path.
+
+        Args:
+            expanded:
+                should all active filters be included
+                (also those with value set to default)
         """
         return self.filters_separator.join(
             [
@@ -646,7 +650,10 @@ class FilterManager:
                     ])
                 )
                 for f in self.filters.values()
-                if f.is_active and f.value != f.default
+                if f.is_active and (
+                    f.value != f.default
+                    or expanded
+                )
             ]
         )
 
@@ -663,7 +670,7 @@ class FilterManager:
 
             url = url_for(endpoint, *args, **kwargs)
 
-            filters = self.url_string
+            filters = self.url_string()
 
             args = dict(request.args)
             # filters might be empty if

@@ -115,3 +115,50 @@ def test_multiselect_filter():
     for value, length in test_values:
         tested_filter.update(value)
         assert len(list(tested_filter.apply(test_objects))) == length
+
+
+def test_url_string():
+
+    manager = filters.FilterManager(
+        [
+            filters.Filter(
+                Model, 'color', comparators=['eq'],
+                default='red'
+            ),
+            filters.Filter(
+                Model, 'shape', comparators=['eq']
+            )
+        ]
+    )
+
+    assert manager.url_string() == ''
+    assert manager.url_string(expanded=True) == 'Model.color:eq:red'
+
+    manager.filters['Model.shape'].update('rectangle')
+    assert manager.url_string() == 'Model.shape:eq:rectangle'
+
+    assert all(
+        sub in manager.url_string(expanded=True)
+        for sub in ('Model.color:eq:red', 'Model.shape:eq:rectangle')
+    )
+
+    manager.filters['Model.color'].update('blue')
+    assert all(
+        sub in manager.url_string()
+        for sub in ('Model.color:eq:blue', 'Model.shape:eq:rectangle')
+    )
+    assert manager.url_string() == manager.url_string(expanded=True)
+
+    manager.filters['Model.color'].update(None)
+    assert manager.url_string() == 'Model.shape:eq:rectangle'
+    assert all(
+        sub in manager.url_string(expanded=True)
+        for sub in ('Model.color:eq:red', 'Model.shape:eq:rectangle')
+    )
+
+    manager.filters['Model.color'].visible = False
+    assert manager.url_string(expanded=True) == 'Model.shape:eq:rectangle'
+
+    manager.filters['Model.shape'].update(None)
+    assert manager.url_string() == ''
+    assert manager.url_string() == manager.url_string(expanded=True)

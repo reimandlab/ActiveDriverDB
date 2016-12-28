@@ -56,7 +56,7 @@
     <div class="panel panel-default network">
         <div class="panel-heading">
           <div class="heading-left">
-            <a href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string) }}"  role="button" class="btn btn-default" title="Show protein">
+            <a href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string()) }}"  role="button" class="btn btn-default" title="Show protein">
                 <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
                 Show protein sequence view
             </a>
@@ -104,7 +104,7 @@
 
 
     {% assets "js_network_view" %}
-	<script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
     {% endassets %}
     <script type="text/javascript">
     nunjucks.configure('/static/js_templates', {autoescape: true})
@@ -115,7 +115,7 @@
         show_sites: {{ filters.get_value('JavaScript.show_sites') | lower }},
         clone_by_site: {{ filters.get_value('JavaScript.clone_by_site') | lower }},
         element: plot,
-        data: "{{ url_for('NetworkView:representation', refseq=protein.refseq, filters=filters.url_string) }}" {# {{ data | json | safe }} #},
+        data: "{{ url_for('NetworkView:representation', refseq=protein.refseq, filters=filters.url_string()) }}" {# {{ data | json | safe }} #},
         radius: 20,
         ratio: 0.5, /* remember to keep update with style of network */
         nodeURL: function(node){
@@ -143,7 +143,7 @@
     {% assets "css_network" %}
     Export.init(
         plot,
-        'network_view:{{ protein.gene.name }}-{{ protein.refseq }}',
+        'network_view:{{ protein.gene.name }}-{{ protein.refseq }}-{{ filters.url_string(expanded=True) }}',
         '{{ ASSET_URL }}'
     )
     {% endassets %}

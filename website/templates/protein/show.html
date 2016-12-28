@@ -57,7 +57,7 @@
       <div class="panel-heading">
         <div class="heading-left">
           <div class="btn-group" role="group">
-            <a href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string) }}" role="button" class="btn btn-default" title="Show network">
+            <a href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string()) }}" role="button" class="btn btn-default" title="Show network">
                 <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
                 Show interaction network view
             </a>
@@ -130,8 +130,8 @@ External references:
     var mutations = {{ mutations | json | safe }}
     var sites = {{ sites | json | safe }}
     {# An alternative form of getting data, not fully functional nor fast
-      var mutations = "{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.url_string) }}"
-      var sites = "{{ url_for('ProteinView:sites', refseq=protein.refseq, filters=filters.url_string) }}"
+      var mutations = "{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.url_string()) }}"
+      var sites = "{{ url_for('ProteinView:sites', refseq=protein.refseq, filters=filters.url_string()) }}"
     #}
     var plot = document.getElementById('plot_area')
     var params = {
@@ -175,7 +175,7 @@ External references:
     {% assets "css_protein" %}
     Export.init(
         plot,
-        'protein_view:{{ protein.gene.name }}-{{ protein.refseq }}',
+        'protein_view:{{ protein.gene.name }}-{{ protein.refseq }}-{{ filters.url_string(expanded=True) }}',
         '{{ ASSET_URL }}'
     )
     {% endassets %}
