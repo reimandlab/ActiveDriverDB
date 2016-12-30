@@ -1,0 +1,26 @@
+{% set references = protein.external_references %}
+
+<h5>External references</h5>
+
+<ul>
+  <li>RefSeq (mRNA): <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}">{{ protein.refseq }}</a>
+  {% if references.refseq_np %}
+  <li>RefSeq (protein): <a href="https://www.ncbi.nlm.nih.gov/protein/{{ references.refseq_np }}">{{ references.refseq_np }}</a>
+  {% endif %}
+  {% if references.uniprot_accession %}
+  <li>Uniprot: <a href="http://www.uniprot.org/uniprot/{{ references.uniprot_accession }}">{{ references.uniprot_accession }}</a>
+  <ul>
+  <li><a href="http://www.phosphosite.org/uniprotAccAction?id={{ references.uniprot_accession }}">Phosposite</a>
+  <li><a href="http://pfam.xfam.org/protein?acc={{ references.uniprot_accession }}">PFAM</a>
+  <li><a href="http://string-db.org/newstring_cgi/show_network_section.pl?identifier={{ references.uniprot_accession }}">STRING</a>
+  <li><a href="http://www.phospho3d.org/search.py?flag=3&query_string={{ references.uniprot_accession }}&redundancy=all">phospho3d</a>
+  <li><a href="http://www.reactome.org/content/query?cluster=true&q={{ references.uniprot_accession }}">Reactome</a>
+  <li><a href="http://www.rcsb.org/pdb/protein/{{references.uniprot_accession}}">PDB</a>
+  </ul>
+  {% endif %}
+  {% if references.ensembl_peptide %}
+  <li>Ensembl protein: <a href="http://www.ensembl.org/Homo_sapiens/Transcript/ProteinSummary?p={{ references.ensembl_peptide }}">references.ensembl_peptide</a>
+  {% endif %}
+</ul>
+
+<p>Identifiers mappings were retrieved from Ensembl with biomart API.</p>

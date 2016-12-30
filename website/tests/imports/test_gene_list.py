@@ -1,6 +1,6 @@
 from import_data import load_active_driver_gene_lists
 from database_testing import DatabaseTest
-from tempfile import NamedTemporaryFile
+from miscellaneous import make_named_temp_file
 
 
 raw_gene_list = """\
@@ -21,13 +21,11 @@ class TestImport(DatabaseTest):
 
     def test_gene_lists(self):
 
-        temp_file = NamedTemporaryFile(mode='w', delete=False)
-        temp_file.write(raw_gene_list)
-        temp_file.close()
+        filename = make_named_temp_file(raw_gene_list)
 
         with self.app.app_context():
             gene_lists = load_active_driver_gene_lists(lists=(
-                ('TCGA', temp_file.name),
+                ('TCGA', filename),
             ))
 
         # one gene list returned (TCGA)

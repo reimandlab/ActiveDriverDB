@@ -103,10 +103,8 @@ This is {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} 
   </div>
 </div>
 
-External references:
-<ul>
-    <li>RefSeq: <a href="http://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}">{{ protein.refseq }}</a>
-</ul>
+{% include 'protein/external_references.html' %}
+
 
 {% with mutations=mutations, table_id='table' %}
   {% include 'protein/mutation_table.html' %}

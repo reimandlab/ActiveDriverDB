@@ -115,6 +115,41 @@ def load_active_driver_gene_lists(lists=(
     return gene_lists
 
 
+@importer
+def load_external_references(filename='data/protein_mappings.tsv'):
+    from models import Protein
+    from models import ProteinReferences
+    from sqlalchemy.orm.exc import NoResultFound
+
+    references = {}
+
+    def parse(data):
+        refseq_nm = data[1]
+        if not refseq_nm or not refseq_nm.startswith('NM'):
+            return
+
+        try:
+            protein = Protein.query.filter_by(refseq=refseq_nm).one()
+        except NoResultFound:
+            return
+
+        if refseq_nm in references or protein.external_references:
+            print('Redundant reference found for: %s' % refseq_nm)
+            return
+
+        references[refseq_nm] = ProteinReferences(
+            uniprot_accession=data[0],
+            protein=protein,              # derived from data[1]
+            refseq_np=data[2],
+            ensembl_peptide=data[3]
+        )
+
+
+    parse_tsv_file(filename, parse)
+
+    return references.values()
+
+
 def calculate_interactors(proteins):
     print('Precalculating interactors counts:')
     for protein in tqdm(proteins.values()):

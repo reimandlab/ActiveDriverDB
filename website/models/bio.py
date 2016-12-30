@@ -234,11 +234,32 @@ class Pathway(BioModel):
         }
 
 
+class ProteinReferences(BioModel):
+    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
+    refseq_nm = association_proxy('protein', 'refseq')
+
+    # "UniProtKB accession numbers consist of 6 or 10 alphanumerical characters"
+    # http://www.uniprot.org/help/accession_numbers
+    uniprot_accession =  db.Column(db.String(10))
+
+    # refseq peptide
+    refseq_np = db.Column(db.String(32))
+
+    # ensembl peptide
+    ensembl_peptide = db.Column(db.String(32))
+
+
 class Protein(BioModel):
     """Protein represents a single isoform of a product of given gene."""
 
     gene_id = db.Column(db.Integer, db.ForeignKey('gene.id', use_alter=True))
     gene_name = association_proxy('gene', 'name')
+
+    external_references = db.relationship(
+        'ProteinReferences',
+        backref='protein',
+        uselist=False
+    )
 
     # refseq id of mRNA sequence (always starts with 'NM_')
     # HGNC reserves up to 50 characters; 32 seems good enough but
