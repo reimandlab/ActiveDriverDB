@@ -1,4 +1,3 @@
-import json
 from flask import request
 from flask import redirect
 from flask import url_for
@@ -99,14 +98,14 @@ class NetworkView(FlaskView):
 
         protein_mutations = filter_manager.sqlalchemy_query(
             Mutation,
-            lambda q: and_(q, Mutation.protein_id == protein.id)
+            lambda q: and_(q, Mutation.protein == protein)
         )
 
         sites = [
             site
             for site in filter_manager.sqlalchemy_query(
                 Site,
-                lambda q: and_(q, Site.protein_id == protein.id)
+                lambda q: and_(q, Site.protein == protein)
             )
             if site.kinases or site.kinase_groups
         ]
@@ -131,6 +130,7 @@ class NetworkView(FlaskView):
 
                 count = len(mutations)
 
+                # is this desired behaviour?
                 if count > 0:
                     kinases_counts[kinase] = count
 

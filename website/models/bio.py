@@ -463,6 +463,12 @@ class Site(BioModel):
     position = db.Column(db.Integer, index=True)
     residue = db.Column(db.String(1))
     pmid = db.Column(db.Text)
+    # type is expected to be a spaceless string, one of following:
+    #   phosphorylation acetylation ubiquitination methylation
+    # or comma separated list consisting of such strings. Another
+    # implementation which should be tested would use relationships
+    # to 'site_types' table and it might be faster to query specific
+    # sites when having this implemented that way.
     type = db.Column(db.Text)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     kinases = db.relationship(

@@ -16,7 +16,7 @@ test_gene_data = {
 }
 
 
-class TestPGeneView(ViewTest):
+class TestGeneView(ViewTest):
 
     def test_show(self):
 
