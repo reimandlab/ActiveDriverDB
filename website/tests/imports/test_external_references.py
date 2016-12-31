@@ -5,24 +5,24 @@ from database import db
 from miscellaneous import make_named_temp_file
 
 
-# this is output of `head protein_mappings.tsv`
+# this is output of `head protein_external_refereneces.tsv`
 raw_protein_mappings = """\
 	NM_012234	NP_036366	ENSP00000486012
 	NM_001291281	NP_001278210	ENSP00000487155
 			ENSP00000486069
-INPP5D	NM_005541	NP_005532	ENSP00000486669
-INPP5D	NM_001017915	NP_001017915	ENSP00000487191
-INPP5D			ENSP00000487535
-INPP5D			ENSP00000487335
-INPP5D			ENSP00000486018
-OBP2B	NM_014581	NP_055396	ENSP00000487521
-OBP2B			ENSP00000486815\
+Q92835	NM_005541	NP_005532	ENSP00000486669
+Q92835	NM_001017915	NP_001017915	ENSP00000487191
+			ENSP00000487535
+			ENSP00000487335
+			ENSP00000486018
+Q9NPH6	NM_014581	NP_055396	ENSP00000487521
+Q9NPH6			ENSP00000486815\
 """
 
 
 class TestImport(DatabaseTest):
 
-    def test_protein_mappings(self):
+    def test_protein_references(self):
 
         filename = make_named_temp_file(data=raw_protein_mappings)
 
@@ -55,7 +55,7 @@ class TestImport(DatabaseTest):
         assert protein.external_references.ensembl_peptide == 'ENSP00000486012'
 
         protein = proteins_we_have['NM_005541']
-        assert protein.external_references.uniprot_accession == 'INPP5D'
+        assert protein.external_references.uniprot_accession == 'Q92835'
 
         # check if protein without references stays clear
         with self.app.app_context():

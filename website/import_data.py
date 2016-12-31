@@ -116,7 +116,7 @@ def load_active_driver_gene_lists(lists=(
 
 
 @importer
-def load_external_references(filename='data/protein_mappings.tsv'):
+def load_external_references(filename='data/protein_external_references.tsv'):
     from models import Protein
     from models import ProteinReferences
     from sqlalchemy.orm.exc import NoResultFound

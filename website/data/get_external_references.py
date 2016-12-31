@@ -10,12 +10,15 @@ dataset = BiomartDataset(
 
 response = dataset.search({
     'attributes': [
-        'uniprot_genename',
+        # among available uniprot identifiers, the one from swissprot is the
+        # most reliable, as it provides accession of manually reviewed entries
+        # from curated database. Other options are: _sptrembl & _genname.
+        'uniprot_swissprot',
         'refseq_mrna',
         'refseq_peptide',
         'ensembl_peptide_id'
     ]
 })
 
-with open('protein_mappings.tsv', 'w') as f:
+with open('protein_external_references.tsv', 'w') as f:
     f.write(response.text)

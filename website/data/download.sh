@@ -12,9 +12,9 @@ wget ftp://ftp.ebi.ac.uk/pub/databases/interpro/ParentChildTreeFile.txt
 # entry list (all data)
 wget ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 
-# protein mappings (a.k.a external references)
+# protein mappings (external references)
 pip install biomart
-python get_protein_mappings.py
+python get_external_references.py
 
 # pathway list
 wget http://biit.cs.ut.ee/gprofiler/gmt/gprofiler_hsapiens.NAME.gmt.zip
