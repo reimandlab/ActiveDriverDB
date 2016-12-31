@@ -234,19 +234,27 @@ class Pathway(BioModel):
         }
 
 
+class EnsemblPeptide(BioModel):
+    reference_id = db.Column(
+        db.Integer,
+        db.ForeignKey('proteinreferences.id')
+    )
+    peptide_id = db.Column(db.String(32))
+
+
 class ProteinReferences(BioModel):
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     refseq_nm = association_proxy('protein', 'refseq')
 
     # "UniProtKB accession numbers consist of 6 or 10 alphanumerical characters"
     # http://www.uniprot.org/help/accession_numbers
-    uniprot_accession =  db.Column(db.String(10))
+    uniprot_accession = db.Column(db.String(10))
 
     # refseq peptide
     refseq_np = db.Column(db.String(32))
 
-    # ensembl peptide
-    ensembl_peptide = db.Column(db.String(32))
+    # ensembl peptides
+    ensembl_peptides = db.relationship('EnsemblPeptide',  backref='reference')
 
 
 class Protein(BioModel):

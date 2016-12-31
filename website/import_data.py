@@ -119,12 +119,13 @@ def load_active_driver_gene_lists(lists=(
 def load_external_references(filename='data/protein_external_references.tsv'):
     from models import Protein
     from models import ProteinReferences
+    from models import EnsemblPeptide
     from sqlalchemy.orm.exc import NoResultFound
 
     references = {}
 
     def parse(data):
-        refseq_nm = data[1]
+        refseq_nm = data[0]
         if not refseq_nm or not refseq_nm.startswith('NM'):
             return
 
@@ -138,11 +139,15 @@ def load_external_references(filename='data/protein_external_references.tsv'):
             return
 
         references[refseq_nm] = ProteinReferences(
-            uniprot_accession=data[0],
-            protein=protein,              # derived from data[1]
+            protein=protein,              # derived from data[0]
+            uniprot_accession=data[1],
             refseq_np=data[2],
-            ensembl_peptide=data[3]
         )
+
+        references[refseq_nm].ensembl_peptides=[
+            EnsemblPeptide(peptide_id=identifier, reference=references[refseq_nm])
+            for identifier in data[3].split(' ')
+        ]
 
 
     parse_tsv_file(filename, parse)

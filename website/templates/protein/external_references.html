@@ -18,8 +18,13 @@
   <li><a href="http://www.rcsb.org/pdb/protein/{{references.uniprot_accession}}">PDB</a>
   </ul>
   {% endif %}
-  {% if references.ensembl_peptide %}
-  <li>Ensembl protein: <a href="http://www.ensembl.org/Homo_sapiens/Transcript/ProteinSummary?p={{ references.ensembl_peptide }}">references.ensembl_peptide</a>
+  {% if references.ensembl_peptides %}
+  <li>Ensembl protein
+  <ul>
+  {% for ensembl_peptide in references.ensembl_peptides %}
+  <li><a href="http://www.ensembl.org/Homo_sapiens/Transcript/ProteinSummary?p={{ ensembl_peptide.peptide_id }}">{{ ensembl_peptide.peptide_id }}</a>
+  {% endfor %}
+  </ul>
   {% endif %}
 </ul>
 

@@ -5,18 +5,18 @@ from database import db
 from miscellaneous import make_named_temp_file
 
 
-# this is output of `head protein_external_refereneces.tsv`
+# this is output of `head protein_external_references.tsv -n 50 | tail -n 10`
 raw_protein_mappings = """\
-	NM_012234	NP_036366	ENSP00000486012
-	NM_001291281	NP_001278210	ENSP00000487155
-			ENSP00000486069
-Q92835	NM_005541	NP_005532	ENSP00000486669
-Q92835	NM_001017915	NP_001017915	ENSP00000487191
-			ENSP00000487535
-			ENSP00000487335
-			ENSP00000486018
-Q9NPH6	NM_014581	NP_055396	ENSP00000487521
-Q9NPH6			ENSP00000486815\
+NM_007100	P56385	NP_009031	ENSP00000306003
+NM_000335	Q14524	NP_000326	ENSP00000398266
+NM_001317946		NP_001304875	ENSP00000340883 ENSP00000486780
+NM_000337	Q92629	NP_000328	ENSP00000338343
+NM_007104	P62906	NP_009035	ENSP00000363018
+NM_000339	P55017	NP_000330	ENSP00000402152
+NM_000338	Q13621	NP_000329	ENSP00000370381
+NM_007109	Q9Y242	NP_009040	ENSP00000393875 ENSP00000383252 ENSP00000397160 ENSP00000399388 ENSP00000414980 ENSP00000401548 ENSP00000365433
+NM_007108	Q15370	NP_009039	ENSP00000386652
+NM_001012969	Q6DHV7	NP_001311296	ENSP00000374302\
 """
 
 
@@ -27,9 +27,9 @@ class TestImport(DatabaseTest):
         filename = make_named_temp_file(data=raw_protein_mappings)
 
         refseqs = [
-            'NM_012234',    # present in reference mappings
-            'NM_005541',    # present
-            'NM_014581',    # present
+            'NM_007100',    # present in reference mappings
+            'NM_000335',    # present
+            'NM_001317946',    # present
             'NM_0001'       # not present in reference mappings
         ]
 
@@ -48,14 +48,20 @@ class TestImport(DatabaseTest):
         # as we had three proteins in the db
         assert len(references) == 3
 
-        protein = proteins_we_have['NM_012234']
+        protein = proteins_we_have['NM_001317946']
 
         assert protein.external_references.uniprot_accession == ''
-        assert protein.external_references.refseq_np == 'NP_036366'
-        assert protein.external_references.ensembl_peptide == 'ENSP00000486012'
+        assert protein.external_references.refseq_np == 'NP_001304875'
+        ensempl_peptides = protein.external_references.ensembl_peptides
+        print(ensempl_peptides[0].peptide_id)
+        assert len(ensempl_peptides) == 2
+        assert (
+            set(enseml.peptide_id for enseml in ensempl_peptides) ==
+            set(('ENSP00000340883', 'ENSP00000486780'))
+        )
 
-        protein = proteins_we_have['NM_005541']
-        assert protein.external_references.uniprot_accession == 'Q92835'
+        protein = proteins_we_have['NM_000335']
+        assert protein.external_references.uniprot_accession == 'Q14524'
 
         # check if protein without references stays clear
         with self.app.app_context():
