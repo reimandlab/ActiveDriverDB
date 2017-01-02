@@ -921,7 +921,7 @@ class Mutation(BioModel):
     def impact_on_specific_ptm(self, site):
         if self.position == site.position:
             return 'direct'
-        elif self.meta_MIMP:
+        elif site in self.meta_MIMP.sites:
             return 'network-rewiring'
         elif abs(self.position - site.position) < 4:
             return 'proximal'
