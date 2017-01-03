@@ -522,6 +522,11 @@ class Site(BioModel):
             'residue': self.residue
         }
 
+    types = [
+        'phosphorylation', 'acetylation',
+        'ubiquitination', 'methylation'
+    ]
+
 
 class Cancer(BioModel):
     code = db.Column(db.String(16), unique=True)
@@ -738,6 +743,8 @@ class Mutation(BioModel):
             ('1KGenomes', 'meta_1KG'),
         )
     )
+
+    types = ('direct', 'network-rewiring', 'proximal', 'distal', 'none')
 
     populations_1KG = association_proxy(
         'meta_1KG',

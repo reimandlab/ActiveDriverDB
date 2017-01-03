@@ -103,8 +103,44 @@ This is {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} 
   </div>
 </div>
 
-{% include 'protein/external_references.html' %}
+<div class="panel panel-default color-legend">
+  <div class="panel-heading">
+    <h3 class="panel-title">Legend</h3>
+  </div>
+  <div class="panel-body">
+    <div class="legend">
+        <h4>Mutation impacts</h4>
+        {% for type in mutation_types %}
+          <div class="swatch">
+              <div class="impact {{ type }}">
+                <div class="color"></div>
+              </div>
+              <div class="name">{{ type }}</div>
+          </div>
+        {% endfor %}
+    </div>
+    <div class="legend">
+        <h4>Sites</h4>
+        {% for type in site_types %}
+          <div class="swatch">
+              <div class="site {{ type }}">
+                <div class="color"></div>
+              </div>
+              <div class="name">{{ type }}</div>
+          </div>
+        {% endfor %}
+    </div>
+    <div class="legend">
+        <h4>Others</h4>
+        <div class="swatch">
+          <div class="site-position"></div>
+          <div class="name">Exact position of a PTM site</div>
+        </div>
+    </div>
+  </div>
+</div>
 
+{% include 'protein/external_references.html' %}
 
 {% with mutations=mutations, table_id='table' %}
   {% include 'protein/mutation_table.html' %}
@@ -134,7 +170,6 @@ This is {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} 
     var plot = document.getElementById('plot_area')
     var params = {
         use_log: {{ log_scale | lower }},
-        value_type: '{{ value_type }}',
         max_zoom: max_zoom,
         element: plot,
         data: {
@@ -151,7 +186,27 @@ This is {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} 
         zoom_callback: tracks.setZoom,
         position_callback: tracks.setAAPosition,
         zoomAndMove_callback: tracks.setZoomAndMove,
-        width: $('#tracks-box').width()
+        width: $('#tracks-box').width(),
+        needle_tooltip: function(mutation){
+            return nunjucks.render(
+                'needle_tooltip.njk',
+                {
+                    mutation: mutation,
+                    value_type: '{{ value_type }}'
+                }
+            )
+        },
+        site_tooltip: function(d){
+            return (d.start + 7) + ' ' + d.type
+        },
+        mutations_color_map: {
+          'distal': 'yellow',
+          'network-rewiring': 'red',
+          'direct': 'darkred',
+          'proximal': 'orange',
+          'none': 'darkgray'
+        }
+
     }
     ShortURL().init(
       "{{ url_for('ShortAddress:get_shorthand_for') }}",

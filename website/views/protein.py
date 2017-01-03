@@ -184,6 +184,8 @@ class ProteinView(FlaskView):
             log_scale=(value_type == 'Frequency'),
             mutations=parsed_mutations,
             sites=self._prepare_sites(protein, filter_manager),
+            site_types=['multi_ptm'] + Site.types,
+            mutation_types=Mutation.types,
         )
 
     def mutation(self, refseq, position, alt):

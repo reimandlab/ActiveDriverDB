@@ -57,10 +57,7 @@ def common_filters(default_source='TCGA', source_nullable=False):
         ),
         Filter(
             Site, 'type', comparators=['in'],
-            choices=[
-                'phosphorylation', 'acetylation',
-                'ubiquitination', 'methylation'
-            ],
+            choices=Site.types,
             as_sqlalchemy=True
         ),
         SourceDependentFilter(

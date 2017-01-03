@@ -66,7 +66,6 @@ var NeedlePlot = function ()
 
     var config = {
         use_log: false, // should logaritmic (base 10) scale by used instead of linear?
-        value_type: 'Count', // count or frequency
         site_height: 10,
         animations_speed: 200,
         // 90 is width of description
@@ -86,13 +85,13 @@ var NeedlePlot = function ()
         ratio: 0.5,
         min_zoom: 1,
         max_zoom: 10,
-        color_map: {
-          'distal': 'yellow',
-          'network-rewiring': 'red',
-          'direct': 'darkred',
-          'proximal': 'orange',
-          'none': 'darkgray'
-        }
+        // colors of sites are determined by their's css class
+        mutations_color_map: {
+            // mutation_category: color
+        },
+        // templates for tooltips
+        needle_tooltip: null,
+        site_tooltip: null,
     }
 
     function _adjustPlotDimensions()
@@ -261,7 +260,7 @@ var NeedlePlot = function ()
         head.append('circle')
             .attr('fill', function(d)
                 {
-                    return config.color_map[d.category]
+                    return config.mutations_color_map[d.category]
                 }
             )
 
@@ -283,7 +282,7 @@ var NeedlePlot = function ()
                 return head_groups[key].length
             })
             .attr('fill', function(d){
-                var head_color = config.color_map[d.category]
+                var head_color = config.mutations_color_map[d.category]
                 return (is_color_dark(head_color) ? 'white' : 'black')
             })
 
@@ -434,15 +433,7 @@ var NeedlePlot = function ()
         var needle_tooltip = Tooltip()
         needle_tooltip.init({
             id: 'needle',
-            template: function(mutation){
-                return nunjucks.render(
-                    'needle_tooltip.njk',
-                    {
-                        mutation: mutation,
-                        value_type: config.value_type
-                    }
-                )
-            }
+            template: config.needle_tooltip
         })
 
         needles = create_needles(vis, needle_tooltip)
@@ -451,9 +442,7 @@ var NeedlePlot = function ()
 
         site_tooltip.init({
             id: 'site',
-            template: function(d){
-                return (d.start + 7) + ' ' + d.type
-            },
+            template: config.site_tooltip,
             viewport: config.element.parentNode
         })
 
