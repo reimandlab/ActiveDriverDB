@@ -131,7 +131,7 @@ def test_url_string():
         ]
     )
 
-    assert manager.url_string() == ''
+    assert manager.url_string() == None
     assert manager.url_string(expanded=True) == 'Model.color:eq:red'
 
     manager.filters['Model.shape'].update('rectangle')
@@ -160,5 +160,5 @@ def test_url_string():
     assert manager.url_string(expanded=True) == 'Model.shape:eq:rectangle'
 
     manager.filters['Model.shape'].update(None)
-    assert manager.url_string() == ''
+    assert manager.url_string() == None
     assert manager.url_string() == manager.url_string(expanded=True)

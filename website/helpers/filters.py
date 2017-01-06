@@ -655,7 +655,8 @@ class FilterManager:
     def url_string(self, expanded=False):
         """String representation of filters from the set for use in URL address.
 
-        Produced string is ready to be included as a query argument in URL path.
+        Produced string is ready to be included as a query argument in Flask's
+        `url_for` func. If no string has been produced, None will be returned.
 
         Args:
             expanded:
@@ -677,7 +678,9 @@ class FilterManager:
                     or expanded
                 )
             ]
-        )
+        ) or None   # if empty string has been built, return None to indicate
+        # that there is really nothing interesting (keeps address clean when
+        # result is being passed as a keyword arg to flask's url_for function)
 
     def reset(self):
         """Reset values of child filters to bring them into a neutral state."""
