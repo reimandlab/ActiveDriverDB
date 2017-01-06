@@ -97,14 +97,14 @@ class NetworkView(FlaskView):
         from sqlalchemy import and_
         from sqlalchemy import or_
 
-        protein_mutations = filter_manager.sqlalchemy_query(
+        protein_mutations = filter_manager.query_all(
             Mutation,
             lambda q: and_(q, Mutation.protein == protein)
         )
 
         sites = [
             site
-            for site in filter_manager.sqlalchemy_query(
+            for site in filter_manager.query_all(
                 Site,
                 lambda q: and_(
                     q,
@@ -130,12 +130,10 @@ class NetworkView(FlaskView):
         for kinase in kinases:
             if kinase.protein:
 
-                mutations = filter_manager.sqlalchemy_query(
+                count = filter_manager.query_count(
                     Mutation,
                     lambda q: and_(q, Mutation.protein == kinase.protein)
                 )
-
-                count = len(mutations)
 
                 # is this desired behaviour?
                 if count > 0:

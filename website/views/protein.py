@@ -145,7 +145,8 @@ class ProteinView(FlaskView):
 
         source = filter_manager.get_value('Mutation.sources')
 
-        raw_mutations = filter_manager.sqlalchemy_query(
+        # TODO temove protien.id
+        raw_mutations = filter_manager.query_all(
             Mutation,
             lambda q: and_(q, Mutation.protein_id == protein.id)
         )
@@ -229,7 +230,7 @@ class ProteinView(FlaskView):
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
-        raw_mutations = filter_manager.sqlalchemy_query(
+        raw_mutations = filter_manager.query_all(
             Mutation,
             lambda q: and_(q, Mutation.protein_id == protein.id)
         )
@@ -254,7 +255,7 @@ class ProteinView(FlaskView):
         return jsonify(response)
 
     def _prepare_sites(self, protein, filter_manager):
-        sites = filter_manager.sqlalchemy_query(
+        sites = filter_manager.query_all(
             Site,
             lambda q: and_(q, Site.protein_id == protein.id)
         )

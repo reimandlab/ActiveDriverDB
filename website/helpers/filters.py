@@ -433,7 +433,7 @@ class FilterManager:
 
         return query_filters, to_apply_manually
 
-    def sqlalchemy_query(self, target, custom_filter=None):
+    def build_query(self, target, custom_filter=None):
         """There are two strategies of using filter manager:
 
             - you can get results from database and walk through
@@ -450,9 +450,31 @@ class FilterManager:
 
         query = target.query.filter(query_filters_sum)
 
+        return query, to_apply_manually
+
+    def query_all(self, target, custom_filter=None):
+        """Retrieve all objects of type 'target' which
+        match critieria of currently active filters.
+        """
+
+        query, to_apply_manually = self.build_query(target, custom_filter)
+
         elements = query.all()
 
         return self.apply(elements, to_apply_manually)
+
+    def query_count(self, target, custom_filter=None):
+        """Retrieve count of all objects of type 'target' which
+        match critieria of currently active filters.
+        """
+
+        query, to_apply_manually = self.build_query(target, custom_filter)
+
+        if not to_apply_manually:
+            return query.with_entities(target.id).count()
+        else:
+            elements = query.all()
+            return len(self.apply(elements, to_apply_manually))
 
     def apply(self, elements, filters_subset=None, itemgetter=None):
         """Apply all appropriate filters to given list of elements.
