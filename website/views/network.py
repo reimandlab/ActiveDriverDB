@@ -95,6 +95,7 @@ class NetworkView(FlaskView):
     def _prepare_network_repr(self, protein, filter_manager, include_kinases_from_groups=False):
         from models import Mutation, Site
         from sqlalchemy import and_
+        from sqlalchemy import or_
 
         protein_mutations = filter_manager.sqlalchemy_query(
             Mutation,
@@ -105,9 +106,15 @@ class NetworkView(FlaskView):
             site
             for site in filter_manager.sqlalchemy_query(
                 Site,
-                lambda q: and_(q, Site.protein == protein)
+                lambda q: and_(
+                    q,
+                    Site.protein == protein,
+                    or_(
+                        Site.kinases.any(),
+                        Site.kinase_groups.any()
+                    )
+                )
             )
-            if site.kinases or site.kinase_groups
         ]
 
         kinases = set(
