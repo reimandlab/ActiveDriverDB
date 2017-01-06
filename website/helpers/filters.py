@@ -565,12 +565,12 @@ class FilterManager:
 
         filters_list = [
             [
-                name,
+                filter_name,
                 data.get('cmp', None),    # allow not specifying comparator -
                 # if so, we will use default comparator.
                 FilterManager._repr_value(data.get('value'))
             ]
-            for name, data in filters.items()
+            for filter_name, data in filters.items()
         ]
         return filters_list
 
