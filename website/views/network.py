@@ -49,6 +49,33 @@ class NetworkViewFilters(FilterManager):
         self.update_from_request(request)
 
 
+def divide_muts_by_sites(mutations, sites):
+    from collections import defaultdict
+    muts_by_site = defaultdict(list)
+
+    if not (sites and mutations):
+        return muts_by_site
+
+    sites.sort(key=lambda site: site.position)
+    mutations.sort(key=lambda mutation: mutation.position)
+
+    m = 0
+    for site in sites:
+        l = site.position - 7
+        p = site.position + 7
+        while mutations[m].position < l:
+            m += 1
+            if m == len(mutations):
+                return muts_by_site
+        ms = m
+        while mutations[ms].position <= p:
+            muts_by_site[site].append(mutations[ms])
+            ms += 1
+            if ms == len(mutations):
+                break
+    return muts_by_site
+
+
 class NetworkView(FlaskView):
     """View for local network of proteins"""
 
@@ -156,12 +183,7 @@ class NetworkView(FlaskView):
                 json_repr['protein']['mutations_count'] = count
             kinase_reprs.append(json_repr)
 
-        def get_site_mutations(site):
-            return [
-                mutation
-                for mutation in protein_mutations
-                if abs(mutation.position - site.position) < 7
-            ]
+        muts_by_site = divide_muts_by_sites(protein_mutations, sites)
 
         def most_significant_impact(impacts):
             desc = ['direct', 'network-rewiring', 'proximal', 'distal', 'none']
@@ -171,7 +193,7 @@ class NetworkView(FlaskView):
             return desc[-1]
 
         def prepare_site(site):
-            site_mutations = get_site_mutations(site)
+            site_mutations = muts_by_site[site]
             return {
                 'position': site.position,
                 'residue': site.residue,
