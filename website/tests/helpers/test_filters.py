@@ -76,6 +76,17 @@ def test_select_filter():
         tested_filter.update('e')
         tested_filter.apply(test_objects)
 
+    tested_filter = filters.Filter(
+        Model, 'value', comparators=['in'],
+        choices=['a', 'b'],
+        nullable=True,
+    )
+
+    tested_filter.update(None)
+    # the filter should indicate that it's turned off when updated with None
+    # and no default value is set
+    assert tested_filter.apply(test_objects) == -1
+
 
 def test_multiselect_filter():
 

@@ -206,6 +206,7 @@ class Filter:
                 'Filter %s is not nullable' % self.id
             )
         elif self.choices and not (
+                not value or
                 (
                     is_iterable_but_not_str(value) and
                     all(
