@@ -324,7 +324,7 @@ class Protein(BioModel):
         return '<Protein {0} with seq of {1} aa from {2} gene>'.format(
             self.refseq,
             self.length,
-            self.gene.name
+            self.gene.name if self.gene else '-'
         )
 
     @hybrid_property
@@ -511,7 +511,7 @@ class Site(BioModel):
 
     def __repr__(self):
         return '<Site of protein: {0}, at pos: {1}>'.format(
-            Protein.query.get(self.protein_id).refseq,
+            self.protein.refseq if self.protein else '-',
             self.position
         )
 
@@ -767,7 +767,7 @@ class Mutation(BioModel):
 
     def __repr__(self):
         return '<Mutation in {0}, at {1} aa, substitution to: {2}>'.format(
-            self.protein.refseq,
+            self.protein.refseq if self.protein else '-',
             self.position,
             self.alt
         )
