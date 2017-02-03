@@ -2,6 +2,7 @@ import json
 from flask import render_template as template
 from flask import request
 from flask import jsonify
+from flask import url_for
 from flask_classful import FlaskView
 from flask_classful import route
 from Levenshtein import distance
@@ -247,6 +248,29 @@ def make_widgets(filter_manager):
     }
 
 
+def save_as_dataset(name, data, password=None):
+    import pickle
+    import os
+    import base64
+    from tempfile import NamedTemporaryFile
+
+    os.makedirs('user_mutations', exist_ok=True)
+
+    encoded_name = str(base64.urlsafe_b64encode(bytes(name, 'utf-8')), 'utf-8')
+
+    db_file = NamedTemporaryFile(
+        dir='user_mutations',
+        prefix=encoded_name,
+        suffix='.db',
+        delete=False
+    )
+    pickle.dump(data, db_file, protocol=pickle.HIGHEST_PROTOCOL)
+
+    uri_code = os.path.basename(db_file.name)[:-3]
+
+    return uri_code
+
+
 class SearchView(FlaskView):
     """Enables searching in any of registered database models."""
 
@@ -280,6 +304,32 @@ class SearchView(FlaskView):
             query=query
         )
 
+    def stored_mutations(self, code):
+        import pickle
+        import os
+        from urllib.parse import unquote
+
+        filter_manager = SearchViewFilters()
+
+        filename = 'user_mutations/' + unquote(code) + '.db'
+        print(filename)
+
+        if os.path.exists(filename):
+            with open(filename, 'rb') as f:
+                results = pickle.load(f)
+        else:
+            return 'Nothing here :('
+
+        return template(
+            'search/index.html',
+            target='mutations',
+            results=results,
+            widgets=make_widgets(filter_manager),
+            without_mutations=[],
+            query='',
+            badly_formatted=[]
+        )
+
     @route('/mutations', methods=['POST', 'GET'])
     def mutations(self):
         """Render search form and results (if any) for proteins or mutations"""
@@ -303,10 +353,30 @@ class SearchView(FlaskView):
                 )
             )
 
-            # TODO: redirect with an url containing session id, so user can
-            # save line as a bookmark and return there later. We can create a
-            # hash on the input - md5 should be enough.
-            # redirect()
+            store_on_server = request.form.get('store_on_server', False)
+
+            if store_on_server:
+                from flask import flash
+                from urllib.parse import quote
+                name = request.form.get('dataset_name', 'Custom Dataset')
+                password = request.form.get('dataset_password', None)
+
+                uri = save_as_dataset(name, results, password)
+
+                uri = quote(uri)
+                print(uri)
+                url = url_for(
+                    'SearchView:stored_mutations',
+                    code=uri,
+                    _external=True
+                )
+
+                flash(
+                    'Your data have been saved on the server. '
+                    'You can access the results later using following URL: '
+                    '<a href="' + url + '">' + url + '</a>',
+                    'success'
+                )
         else:
             query = ''
             results = []

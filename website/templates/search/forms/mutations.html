@@ -21,6 +21,14 @@
       {% include 'widgets/filters_bar.html' %}
     {% endwith %}
   </div>
+  <label>
+    <input type="checkbox" name="store_on_server" onchange="$('.storage_details').toggleClass('hidden')">
+    Store these mutations on server (allows browsing them as a dataset later)
+  </label>
+  <div class="storage_details hidden">
+    Dataset name: <input type="text" name="dataset_name">
+    Dataset access password (optinal): <input type="password" name="dataset_password">
+  </div>
   <div class="inputs" class="{{ 'hidden' if results }}">
     {# The length of the textarea should change dynamically up to 30 rows - JS #}
     {# The single-line placeholder will be substituted by multiline placeholder with JS in all browsers #}
