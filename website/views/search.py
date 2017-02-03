@@ -1,4 +1,5 @@
 import json
+from flask import make_response
 from flask import render_template as template
 from flask import request
 from flask import jsonify
@@ -15,6 +16,7 @@ from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 from ._commons import get_genomic_muts
 from ._commons import get_protein_muts
+from database import db
 
 
 class GeneResult:
@@ -309,10 +311,11 @@ class SearchView(FlaskView):
         import os
         from urllib.parse import unquote
 
+        custom_datasets = request.cookies.get('custom_datasets', '').split('/')
+
         filter_manager = SearchViewFilters()
 
         filename = 'user_mutations/' + unquote(code) + '.db'
-        print(filename)
 
         if os.path.exists(filename):
             with open(filename, 'rb') as f:
@@ -320,7 +323,12 @@ class SearchView(FlaskView):
         else:
             return 'Nothing here :('
 
-        return template(
+        for name, result_obj in results.items():
+            for result in result_obj['results']:
+                db.session.add(result['protein'])
+                db.session.add(result['mutation'])
+
+        response = make_response(template(
             'search/index.html',
             target='mutations',
             results=results,
@@ -328,11 +336,15 @@ class SearchView(FlaskView):
             without_mutations=[],
             query='',
             badly_formatted=[]
-        )
+        ))
+        response.set_cookie('custom_datasets', value='/'.join(custom_datasets))
+        return response
 
     @route('/mutations', methods=['POST', 'GET'])
     def mutations(self):
         """Render search form and results (if any) for proteins or mutations"""
+
+        custom_datasets = request.cookies.get('custom_datasets', '').split('/')
 
         without_mutations = []
         badly_formatted = []
@@ -364,7 +376,8 @@ class SearchView(FlaskView):
                 uri = save_as_dataset(name, results, password)
 
                 uri = quote(uri)
-                print(uri)
+                custom_datasets.append(uri)
+
                 url = url_for(
                     'SearchView:stored_mutations',
                     code=uri,
@@ -381,7 +394,7 @@ class SearchView(FlaskView):
             query = ''
             results = []
 
-        return template(
+        response = make_response(template(
             'search/index.html',
             target='mutations',
             results=results,
@@ -389,7 +402,10 @@ class SearchView(FlaskView):
             without_mutations=without_mutations,
             query=query,
             badly_formatted=badly_formatted
-        )
+        ))
+        response.set_cookie('custom_datasets', value='/'.join(custom_datasets))
+
+        return response
 
     def form(self, target):
         """Return an empty HTML form appropriate for given target."""
