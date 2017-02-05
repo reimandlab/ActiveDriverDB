@@ -4,12 +4,16 @@ from flask import render_template as template
 from flask import request
 from flask import jsonify
 from flask import url_for
+from flask import flash
+from flask import current_app
 from flask_classful import FlaskView
 from flask_classful import route
+from flask_login import current_user
 from Levenshtein import distance
 from models import Protein
 from models import Gene
 from models import Mutation
+from models import UsersMutationsDataset
 from sqlalchemy import and_
 from helpers.filters import FilterManager
 from helpers.filters import Filter
@@ -250,29 +254,6 @@ def make_widgets(filter_manager):
     }
 
 
-def save_as_dataset(name, data, password=None):
-    import pickle
-    import os
-    import base64
-    from tempfile import NamedTemporaryFile
-
-    os.makedirs('user_mutations', exist_ok=True)
-
-    encoded_name = str(base64.urlsafe_b64encode(bytes(name, 'utf-8')), 'utf-8')
-
-    db_file = NamedTemporaryFile(
-        dir='user_mutations',
-        prefix=encoded_name,
-        suffix='.db',
-        delete=False
-    )
-    pickle.dump(data, db_file, protocol=pickle.HIGHEST_PROTOCOL)
-
-    uri_code = os.path.basename(db_file.name)[:-3]
-
-    return uri_code
-
-
 class SearchView(FlaskView):
     """Enables searching in any of registered database models."""
 
@@ -306,45 +287,31 @@ class SearchView(FlaskView):
             query=query
         )
 
-    def stored_mutations(self, code):
-        import pickle
-        import os
-        from urllib.parse import unquote
-
-        custom_datasets = request.cookies.get('custom_datasets', '').split('/')
+    def user_mutations(self, code):
 
         filter_manager = SearchViewFilters()
 
-        filename = 'user_mutations/' + unquote(code) + '.db'
+        dataset = UsersMutationsDataset.query.filter_by(
+            randomized_id=code
+        ).one()
 
-        if os.path.exists(filename):
-            with open(filename, 'rb') as f:
-                results = pickle.load(f)
-        else:
-            return 'Nothing here :('
-
-        for name, result_obj in results.items():
-            for result in result_obj['results']:
-                db.session.add(result['protein'])
-                db.session.add(result['mutation'])
+        if dataset.owner and dataset.owner.id != current_user.id:
+            current_app.login_manager.unauthorized()
 
         response = make_response(template(
             'search/index.html',
             target='mutations',
-            results=results,
+            results=dataset.data,
             widgets=make_widgets(filter_manager),
             without_mutations=[],
             query='',
             badly_formatted=[]
         ))
-        response.set_cookie('custom_datasets', value='/'.join(custom_datasets))
         return response
 
     @route('/mutations', methods=['POST', 'GET'])
     def mutations(self):
         """Render search form and results (if any) for proteins or mutations"""
-
-        custom_datasets = request.cookies.get('custom_datasets', '').split('/')
 
         without_mutations = []
         badly_formatted = []
@@ -368,24 +335,37 @@ class SearchView(FlaskView):
             store_on_server = request.form.get('store_on_server', False)
 
             if store_on_server:
-                from flask import flash
-                from urllib.parse import quote
                 name = request.form.get('dataset_name', 'Custom Dataset')
-                password = request.form.get('dataset_password', None)
 
-                uri = save_as_dataset(name, results, password)
+                if current_user.is_authenticated:
+                    user = current_user
+                else:
+                    user = None
+                    flash(
+                        'To browse uploaded mutations easily in the '
+                        'future, please register or log in with this form',
+                        'warning'
+                    )
 
-                uri = quote(uri)
-                custom_datasets.append(uri)
+                dataset = UsersMutationsDataset(
+                    name=name,
+                    data=results,
+                    owner=user
+                )
+
+                db.session.add(dataset)
+                db.session.commit()
+                dataset.assign_randomized_id()
+                db.session.commit()
 
                 url = url_for(
-                    'SearchView:stored_mutations',
-                    code=uri,
+                    'SearchView:user_mutations',
+                    code=dataset.randomized_id,
                     _external=True
                 )
 
                 flash(
-                    'Your data have been saved on the server. '
+                    'Your mutations have been saved on the server. '
                     'You can access the results later using following URL: '
                     '<a href="' + url + '">' + url + '</a>',
                     'success'
@@ -403,7 +383,6 @@ class SearchView(FlaskView):
             query=query,
             badly_formatted=badly_formatted
         ))
-        response.set_cookie('custom_datasets', value='/'.join(custom_datasets))
 
         return response
 

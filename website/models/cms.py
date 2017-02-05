@@ -3,6 +3,7 @@ from werkzeug.utils import cached_property
 from database import db
 from models import Model
 import security
+import uuid
 
 
 class CMSModel(Model):
@@ -65,6 +66,7 @@ class User(CMSModel):
     # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
     email = db.Column(db.String(254), unique=True)
     pass_hash = db.Column(db.Text())
+    datasets = db.relationship('UsersMutationsDataset', backref='owner')
 
     def __init__(self, email, password):
         self.email = email
@@ -153,7 +155,10 @@ class PageMenuEntry(MenuEntry):
     page_id = db.Column(db.Integer, db.ForeignKey('page.id'))
     page = db.relationship(
             'Page',
-            backref=db.backref('page_menu_entries', cascade='all, delete-orphan')
+            backref=db.backref(
+                'page_menu_entries',
+                cascade='all, delete-orphan'
+            )
     )
 
     title = association_proxy('page', 'title')
@@ -193,3 +198,27 @@ class Setting(CMSModel):
     @property
     def int_value(self):
         return int(self.value)
+
+
+class UsersMutationsDataset(CMSModel):
+
+    data = db.Column(db.PickleType())
+    name = db.Column(db.String(256))
+    randomized_id = db.Column(db.String(256), unique=True, index=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    def bind_to_session(self):
+        for name, result_obj in self.data.items():
+            for result in result_obj['results']:
+                db.session.add(result['protein'])
+                db.session.add(result['mutation'])
+
+    def assign_randomized_id(self):
+        """Creates a unique ID with some random element.
+
+        This method has to be called AFTER an id assigment by the database.
+        Use of randomized ids prevents malicious software
+        from iteration over all entries.
+        """
+        random_str = str(uuid.uuid4()).split('-')[0]
+        self.randomized_id = '%s-%s' % (self.id, random_str)
