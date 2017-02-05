@@ -137,9 +137,8 @@ class SnvToCsvMapping(CommandTarget):
     @command
     def load(args):
         print('Importing mappings')
-        with import_data.app.app_context():
-            proteins = import_mutations.get_proteins()
-            import_data.import_mappings(proteins)
+        proteins = import_mutations.get_proteins()
+        import_data.import_mappings(proteins)
 
     @command
     def remove(args):
@@ -163,8 +162,7 @@ class Mutations(CommandTarget):
 
     @command
     def remove(args):
-        with import_data.app.app_context():
-            import_mutations.remove_mutations(args.mutation_sources)
+        import_mutations.remove_mutations(args.mutation_sources)
 
     @argument
     def sources():
