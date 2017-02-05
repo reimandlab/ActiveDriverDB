@@ -92,16 +92,18 @@ def search_proteins(phase, limit=False, filter_manager=None):
             else:
                 genes[gene.name] = GeneResult(gene, restrict_to_isoform=isoform)
 
-        sort_key = lambda gene: min(
-            [
-                distance(isoform.refseq, phase)
-                for isoform in gene.isoforms
-            ]
-        )
+        def sort_key(gene):
+            return min(
+                [
+                    distance(isoform.refseq, phase)
+                    for isoform in gene.isoforms
+                ]
+            )
 
     else:
         # if the phrase is not numeric
-        sort_key = lambda gene: distance(gene.name, phase)
+        def sort_key(gene):
+            return distance(gene.name, phase)
 
     return sorted(
         genes.values(),
@@ -109,111 +111,106 @@ def search_proteins(phase, limit=False, filter_manager=None):
     )
 
 
-def parse_vcf(vcf_file, results, without_mutations, badly_formatted, data_filter):
+class MutationSearch:
 
     query = ''
-
-    for line in vcf_file:
-        line = line.decode('latin1')
-        if line.startswith('#'):
-            continue
-        data = line.split()
-
-        if len(data) < 5:
-            if not line:    # if we reached end of the file
-                break
-            badly_formatted.append(line)
-            continue
-
-        chrom, pos, var_id, ref, alts = data[:5]
-
-        if chrom.startswith('chr'):
-            chrom = chrom[3:]
-
-        alts = alts.split(',')
-        for alt in alts:
-
-            items = get_genomic_muts(chrom, pos, ref, alt)
-
-            items = data_filter(items)
-
-            chrom = 'chr' + chrom
-            parsed_line = ' '.join((chrom, pos, ref, alt)) + '\n'
-
-            if items:
-                if len(alts) > 1:
-                    parsed_line += ' (' + alt + ')'
-
-                if parsed_line in results:
-                    results[parsed_line]['count'] += 1
-                    assert results[parsed_line]['results'] == items
-                else:
-                    results[parsed_line] = {
-                        'user_input': parsed_line,
-                        'results': items,
-                        'count': 1
-                    }
-            else:
-                without_mutations.append(parsed_line)
-
-            query += parsed_line
-    return query
-
-
-def parse_text(
-    textarea_query, results, without_mutations, badly_formatted, data_filter
-):
-    for line in textarea_query.split('\n'):
-        data = line.split()
-        if len(data) == 4:
-            chrom, pos, ref, alt = data
-            chrom = chrom[3:]
-
-            items = get_genomic_muts(chrom, pos, ref, alt)
-
-        elif len(data) == 2:
-            gene, mut = [x.upper() for x in data]
-
-            items = get_protein_muts(gene, mut)
-        else:
-            badly_formatted.append(line)
-            continue
-
-        items = data_filter(items)
-
-        if items:
-            if line in results:
-                results[line]['count'] += 1
-                assert results[line]['results'] == items
-            else:
-                results[line] = {
-                    'user_input': line, 'results': items, 'count': 1
-                }
-        else:
-            without_mutations.append(line)
-
-
-def search_mutations(vcf_file, textarea_query, data_filter):
-    # note: entries from both file and textarea will be merged
-    query = ''
-
     results = {}
     without_mutations = []
-
     badly_formatted = []
 
-    if vcf_file:
-        query += parse_vcf(
-            vcf_file, results, without_mutations, badly_formatted, data_filter
-        )
+    def __init__(self, vcf_file=None, textarea_query=None, data_filter=None):
+        # note: entries from both file and textarea will be merged
 
-    if textarea_query:
-        query += textarea_query
-        parse_text(
-            textarea_query, results, without_mutations, badly_formatted, data_filter
-        )
+        self.data_filter = data_filter
 
-    return results, without_mutations, badly_formatted, query
+        if vcf_file:
+            self.parse_vcf(vcf_file)
+
+        if textarea_query:
+            self.query += textarea_query
+            self.parse_text(textarea_query)
+
+    def parse_vcf(self, vcf_file):
+
+        results = self.results
+
+        for line in vcf_file:
+            line = line.decode('latin1')
+            if line.startswith('#'):
+                continue
+            data = line.split()
+
+            if len(data) < 5:
+                if not line:    # if we reached end of the file
+                    break
+                self.badly_formatted.append(line)
+                continue
+
+            chrom, pos, var_id, ref, alts = data[:5]
+
+            if chrom.startswith('chr'):
+                chrom = chrom[3:]
+
+            alts = alts.split(',')
+            for alt in alts:
+
+                items = get_genomic_muts(chrom, pos, ref, alt)
+
+                items = self.data_filter(items)
+
+                chrom = 'chr' + chrom
+                parsed_line = ' '.join((chrom, pos, ref, alt)) + '\n'
+
+                if items:
+                    if len(alts) > 1:
+                        parsed_line += ' (' + alt + ')'
+
+                    if parsed_line in results:
+                        results[parsed_line]['count'] += 1
+                        assert results[parsed_line]['results'] == items
+                    else:
+                        results[parsed_line] = {
+                            'user_input': parsed_line,
+                            'results': items,
+                            'count': 1
+                        }
+                else:
+                    self.without_mutations.append(parsed_line)
+
+                self.query += parsed_line
+
+    def parse_text(self, textarea_query):
+
+        results = self.results
+
+        for line in textarea_query.split('\n'):
+            data = line.split()
+            if len(data) == 4:
+                chrom, pos, ref, alt = data
+                chrom = chrom[3:]
+
+                items = get_genomic_muts(chrom, pos, ref, alt)
+
+            elif len(data) == 2:
+                gene, mut = [x.upper() for x in data]
+
+                items = get_protein_muts(gene, mut)
+            else:
+                self.badly_formatted.append(line)
+                continue
+
+            items = self.data_filter(items)
+
+            if items:
+                if line in results:
+                    results[line]['count'] += 1
+                    assert results[line]['results'] == items
+                else:
+                    results[line] = {
+                        'user_input': line, 'results': items, 'count': 1
+                    }
+            else:
+                self.without_mutations.append(line)
 
 
 class SearchViewFilters(FilterManager):
@@ -313,9 +310,6 @@ class SearchView(FlaskView):
     def mutations(self):
         """Render search form and results (if any) for proteins or mutations"""
 
-        without_mutations = []
-        badly_formatted = []
-
         filter_manager = SearchViewFilters()
 
         if request.method == 'POST':
@@ -323,7 +317,7 @@ class SearchView(FlaskView):
             textarea_query = request.form.get('mutations', False)
             vcf_file = request.files.get('vcf-file', False)
 
-            results, without_mutations, badly_formatted, query = search_mutations(
+            mutation_search = MutationSearch(
                 vcf_file,
                 textarea_query,
                 lambda elements: filter_manager.apply(
@@ -349,7 +343,7 @@ class SearchView(FlaskView):
 
                 dataset = UsersMutationsDataset(
                     name=name,
-                    data=results,
+                    data=mutation_search,
                     owner=user
                 )
 
@@ -371,17 +365,16 @@ class SearchView(FlaskView):
                     'success'
                 )
         else:
-            query = ''
-            results = []
+            mutation_search = MutationSearch()
 
         response = make_response(template(
             'search/index.html',
             target='mutations',
-            results=results,
+            results=mutation_search.results,
             widgets=make_widgets(filter_manager),
-            without_mutations=without_mutations,
-            query=query,
-            badly_formatted=badly_formatted
+            without_mutations=mutation_search.without_mutations,
+            query=mutation_search.query,
+            badly_formatted=mutation_search.badly_formatted
         ))
 
         return response
