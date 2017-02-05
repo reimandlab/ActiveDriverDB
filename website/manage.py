@@ -245,12 +245,13 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    try:
+
+    if hasattr(args, 'func'):
         app = create_app()
         with app.app_context():
             args.func(args)
         print('Done, all tasks completed.')
-    except AttributeError:
+    else:
         print('Scripts loaded successfuly, no tasks specified.')
 
 else:
