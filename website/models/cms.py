@@ -207,6 +207,15 @@ class UsersMutationsDataset(CMSModel):
     randomized_id = db.Column(db.String(256), unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+    @property
+    def mutations(self):
+        mutations = []
+        for result_obj in self.data.values():
+            for result in result_obj['results']:
+                db.session.add(result['mutation'])
+                mutations.append(result['mutation'])
+        return mutations
+
     def bind_to_session(self):
         for name, result_obj in self.data.items():
             for result in result_obj['results']:

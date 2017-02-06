@@ -36,7 +36,15 @@ def sources_to_sa_filter(f, t):
     return has_or_any(field)
 
 
-def common_filters(default_source='TCGA', source_nullable=False):
+class UserMutations:
+    pass
+
+
+def common_filters(
+    default_source='TCGA',
+    source_nullable=False,
+    custom_datasets_ids=[]
+):
     cancer_codes = [cancer.code for cancer in Cancer.query.all()]
 
     # Python 3.4: cast keys() to list
@@ -50,6 +58,11 @@ def common_filters(default_source='TCGA', source_nullable=False):
             choices=list(Mutation.source_fields.keys()),
             default=default_source, nullable=source_nullable,
             as_sqlalchemy=sources_to_sa_filter
+        ),
+        Filter(
+            UserMutations, 'sources', comparators=['in'],
+            choices=list(custom_datasets_ids),
+            default=None, nullable=True
         ),
         Filter(
             Mutation, 'is_ptm', comparators=['eq'],
@@ -93,7 +106,7 @@ def common_filters(default_source='TCGA', source_nullable=False):
     ]
 
 
-def create_widgets(filters_by_id):
+def create_widgets(filters_by_id, custom_datasets_names=None):
     """Widgets to be displayed on a bar above visualisation."""
     return {
         'dataset': FilterWidget(
@@ -106,6 +119,11 @@ def create_widgets(filters_by_id):
                 'Population (1000 Genomes)'
             ],
             class_name='dataset-widget'
+        ),
+        'custom_dataset': FilterWidget(
+            'Custom mutation dataset', 'select',
+            filter=filters_by_id['UserMutations.sources'],
+            labels=custom_datasets_names
         ),
         'dataset_specific': [
             FilterWidget(
