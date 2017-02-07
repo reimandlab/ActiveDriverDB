@@ -1,7 +1,7 @@
 from tempfile import NamedTemporaryFile
 
 
-def make_named_temp_file(data=None,  mode='w'):
+def make_named_temp_file(data=None, mode='w', opener=open):
     """Create temporary file and return path to it.
 
     Args:
@@ -10,8 +10,11 @@ def make_named_temp_file(data=None,  mode='w'):
     """
     temp_file = NamedTemporaryFile(mode=mode, delete=False)
 
-    if data:
-        temp_file.write(data)
     temp_file.close()
+    name = temp_file.name
 
-    return temp_file.name
+    if data:
+        with opener(name, mode) as f:
+            f.write(data)
+
+    return name

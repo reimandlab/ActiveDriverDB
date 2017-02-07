@@ -6,7 +6,8 @@ import import_data
 from database import db
 from models import Page
 from models import User
-import import_mutations
+from import_mutations import muts_import_manager
+from import_mutations import get_proteins
 from getpass import getpass
 from helpers.commands import argument
 from helpers.commands import argument_parameters
@@ -137,7 +138,7 @@ class SnvToCsvMapping(CommandTarget):
     @command
     def load(args):
         print('Importing mappings')
-        proteins = import_mutations.get_proteins()
+        proteins = get_proteins()
         import_data.import_mappings(proteins)
 
     @command
@@ -152,21 +153,32 @@ class Mutations(CommandTarget):
 
     description = 'should only mutations be {command}ed without db restart'
 
-    @command
-    def load(args):
-        proteins = import_mutations.get_proteins()
-        mutations = import_mutations.load_mutations(
-            proteins,
-            args.mutation_sources
+    @staticmethod
+    def action(name, args):
+        proteins = get_proteins()
+        muts_import_manager.perform(
+            name, proteins, args.sources
         )
 
     @command
+    def load(args):
+        Mutations.action('load', args)
+
+    @command
     def remove(args):
-        import_mutations.remove_mutations(args.mutation_sources)
+        Mutations.action('delete_all', args)
+
+    @command
+    def export(args):
+        Mutations.action('export', args)
+
+    @command
+    def update(args):
+        Mutations.action('update', args)
 
     @argument
     def sources():
-        mutation_importers = import_mutations.get_all_importers().keys()
+        mutation_importers = muts_import_manager.names
 
         return argument_parameters(
             '-s',
@@ -180,7 +192,7 @@ class Mutations(CommandTarget):
             ),
             choices=mutation_importers,
             metavar='',
-            default='__all__',
+            default=mutation_importers
         )
 
 
@@ -200,24 +212,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='sub-commands')
 
-    # LOAD SUBCOMMAND
-    load_parser = subparsers.add_parser(
-        'load',
-        help='load data from specified category'
-    )
+    data_subcommands = ['load', 'remove', 'export', 'update']
 
-    # REMOVE SUBCOMMAND
-    remove_parser = subparsers.add_parser(
-        'remove',
-        help='remove data from specified category'
-    )
-
-    command_parsers = {
-        'load': load_parser,
-        'remove': remove_parser
+    command_subparsers = {
+        subcommand: subparsers.add_parser(
+            subcommand,
+            help='{0} data from specified category'.format(subcommand)
+        )
+        for subcommand in data_subcommands
     }
 
-    create_command_subparsers(command_parsers)
+    create_command_subparsers(command_subparsers)
 
     # MIGRATE SUBCOMMAND
     migrate_parser = subparsers.add_parser(

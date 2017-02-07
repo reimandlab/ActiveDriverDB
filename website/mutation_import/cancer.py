@@ -7,6 +7,7 @@ from import_mutations import MutationImporter
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import chunked_list
 from helpers.parsers import gzip_open_text
+from sqlalchemy.orm.exc import NoResultFound
 
 
 class Importer(MutationImporter):
@@ -23,7 +24,7 @@ class Importer(MutationImporter):
 
         def cancer_parser(line):
             assert line[10].startswith('comments: ')
-            cancer_name, sample, _ = line[10][10:].split(';')
+            cancer_name, sample_name, _ = line[10][10:].split(';')
 
             cancer, created = get_or_create(Cancer, name=cancer_name)
 
@@ -36,6 +37,7 @@ class Importer(MutationImporter):
                     (
                         mutation_id,
                         cancer.id,
+                        sample_name
                     )
                 ] += 1
 
@@ -48,17 +50,38 @@ class Importer(MutationImporter):
 
         return mutations_counter
 
+    def create_init_kwargs(self, mutation, count):
+        return {
+            'mutation_id': mutation[0],
+            'cancer_id': mutation[1],
+            'sample_name': mutation[2],
+            'count': count
+        }
+
     def insert_details(self, mutations_counter):
         for chunk in chunked_list(mutations_counter.items()):
             db.session.bulk_insert_mappings(
                 self.model,
                 [
-                    {
-                        'mutation_id': mutation[0],
-                        'cancer_id': mutation[1],
-                        'count': count
-                    }
+                    self.create_init_kwargs(mutation, count)
                     for mutation, count in chunk
                 ]
             )
             db.session.flush()
+
+    def update_details(self, mutations_counter):
+        """Unfrotunately mutation_id does not maps 1-1 for CancerMutation, so
+        additional field for filter is required - hence use of cancer_id and
+        hence cancer_id will not be updated with this method."""
+        for mutation, count in mutations_counter.items():
+            kwargs = self.create_init_kwargs(mutation, count)
+            try:
+                mut = self.model.query.filter_by(
+                    mutation_id=mutation[0],
+                    cancer_id=mutation[1]
+                ).one()
+            except NoResultFound:
+                mut = self.model(**kwargs)
+
+            for key, value in kwargs.items():
+                setattr(mut, key, value)

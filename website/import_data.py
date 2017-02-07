@@ -18,7 +18,7 @@ from models import Site
 from models import BadWord
 from models import GeneList
 from models import CancerGeneListEntry
-from import_mutations import load_mutations
+from import_mutations import muts_import_manager
 from import_mutations import import_mappings
 from flask import current_app
 
@@ -56,7 +56,7 @@ def import_all():
     calculate_interactors(proteins)
     db.session.commit()
     with current_app.app_context():
-        load_mutations(proteins)
+        muts_import_manager.perform('load', proteins)
     for importer in IMPORTERS:
         results = importer()
         db.session.add_all(results)

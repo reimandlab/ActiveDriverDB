@@ -51,7 +51,7 @@ def get_highest_id(model):
         return get_autoincrement(model) - 1
     except OperationalError:
         # so if it has failed, let's try to find highest id the canonical way.
-        return db.session.query(func.max(model.id)).scalar()
+        return db.session.query(func.max(model.id)).scalar() or 0
 
 
 def restart_autoincrement(model):
