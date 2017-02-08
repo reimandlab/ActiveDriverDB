@@ -82,6 +82,7 @@ class Importer(MutationImporter):
                 ).one()
             except NoResultFound:
                 mut = self.model(**kwargs)
+                db.session.add(mut)
 
             for key, value in kwargs.items():
                 setattr(mut, key, value)

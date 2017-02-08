@@ -24,9 +24,12 @@ Chr	Start	End	Ref	Alt	Func.refGene	Gene.refGene	GeneDetail.refGene	ExonicFunc.re
 
 # assuming that there was mistyped sample name for first mutation,
 # here it is an updated file with one record: this one updated mutation
+# also a new mutation (the same pos, C>T) has been found to be important
+# and we want it to be added
 tcga_mutations_updated = """\
 Chr	Start	End	Ref	Alt	Func.refGene	Gene.refGene	GeneDetail.refGene	ExonicFunc.refGene	AAChange.refGene	V11
 1	156647053	156647053	C	G	exonic	NES	.	nonsynonymous SNV	NES:NM_006617:exon1:c.G4C:p.E2Q	comments: Bladder Urothelial Carcinoma;TCGA-BL-A0C8-01A-11D-A10S-09;NES
+1	156647053	156647053	C	T	exonic	NES	.	nonsynonymous SNV	NES:NM_006617:exon1:c.G4T:p.E2K	comments: Bladder Urothelial Carcinoma;TCGA-BL-A0C8-01A-11D-A10S-09;NES
 """
 
 class TestImport(DatabaseTest):
@@ -80,4 +83,20 @@ class TestImport(DatabaseTest):
             muts_import_manager.perform(
                 'update', proteins, ['cancer'], {'cancer': update_filename}
             )
+
+            # updated correctly?
             assert tcga_mutation.sample_name == 'TCGA-BL-A0C8-01A-11D-A10S-09'
+
+            # added correctly during update?
+            assert len(list(proteins['NM_006617'].mutations)) == 2
+            # select the new mutation:
+            new_mutation = None
+            for mutation in proteins['NM_006617'].mutations:
+                if mutation != tcga_mutation:
+                    new_mutation = mutation
+            assert new_mutation
+            # check correctness:
+            assert new_mutation.position == 2
+            assert new_mutation.alt == 'K'
+            new_tcga_mutation = first_row_mutation.meta_cancer[0]
+            assert new_tcga_mutation.sample_name == 'TCGA-BL-A0C8-01A-11D-A10S-09'
