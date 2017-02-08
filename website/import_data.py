@@ -490,7 +490,9 @@ def load_sequences(proteins):
 
 
 @exporter
-def sequences():
+def sequences_ac():
+    """Sequences as needed for Active Driver input.
+    Includes only data from primary (preferred) isoforms."""
     import os
 
     path = 'exported/preferred_isoforms_sequences.fa'
@@ -507,7 +509,9 @@ def sequences():
 
 
 @exporter
-def disorder():
+def disorder_ac():
+    """Disorder data as needed for Active Driver input.
+    Includes only data from primary (preferred) isoforms."""
     import os
 
     path = 'exported/preferred_isoforms_disorder.fa'
@@ -524,19 +528,26 @@ def disorder():
 
 
 @exporter
-def phosphosites():
+def sites_ac():
+    """Sites as needed for Active Driver input.
+    Includes only data from primary (preferred) isoforms."""
     import os
     header = ['gene', 'position', 'residue', 'kinase', 'pmid']
-    path = 'exported/phosphosites.tsv'
+    path = 'exported/sites.tsv'
     os.makedirs('exported', exist_ok=True)
 
     with open(path, 'w') as f:
-        f.writes('\t'.join(header) + '\n')
-        for gene in tqdm(Gene.query.all()):
-            if not gene.preferred_isoform:
+        f.write('\t'.join(header) + '\n')
+        for site in tqdm(Site.query.all()):
+            if not site.protein or not site.protein.is_preferred_isoform:
                 continue
-            f.write('>' + gene.name + '\n')
-            f.write(gene.preferred_isoform.disorder_map + '\n')
+            data = [
+                site.protein.gene.name, str(site.position), site.residue,
+                ','.join([k.name for k in site.kinases]),
+                site.pmid
+            ]
+
+            f.write('\t'.join(data) + '\n')
 
     return path
 
