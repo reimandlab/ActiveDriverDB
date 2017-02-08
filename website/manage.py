@@ -110,8 +110,33 @@ class ProteinRelated(CommandTarget):
             db.session.commit()
 
     @command
+    def export(args):
+        exporters = import_data.EXPORTERS
+        for name in args.exporters:
+            exporter = exporters[name]
+            out_file = exporter()
+            print('Exported %s to %s' % (name, out_file))
+
+    @command
     def remove(args):
         reset_relational_db(bind='bio')
+
+    @argument
+    def exporters():
+        data_exporters = import_data.EXPORTERS
+        return argument_parameters(
+            '-e',
+            '--exporters',
+            nargs='*',
+            help=(
+                'What should be exported?'
+                ' Available: ' + ', '.join(data_exporters) + '.'
+                ' By default everything will be exported.'
+            ),
+            choices=data_exporters,
+            metavar='',
+            default=data_exporters,
+        )
 
     @argument
     def importers():

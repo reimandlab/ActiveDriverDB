@@ -24,11 +24,18 @@ from flask import current_app
 
 
 IMPORTERS = OrderedDict()
+EXPORTERS = OrderedDict()
 
 
-def importer(func):
-    IMPORTERS[func.__name__] = func
-    return func
+def register_decorator(register):
+    def decorator(func):
+        register[func.__name__] = func
+        return func
+    return decorator
+
+
+importer = register_decorator(IMPORTERS)
+exporter = register_decorator(EXPORTERS)
 
 
 def import_all():
@@ -480,6 +487,58 @@ def load_sequences(proteins):
             proteins[refseq].sequence += line.rstrip()
 
     parse_fasta_file('data/all_RefGene_proteins.fa', parser)
+
+
+@exporter
+def sequences():
+    import os
+
+    path = 'exported/preferred_isoforms_sequences.fa'
+    os.makedirs('exported', exist_ok=True)
+
+    with open(path, 'w') as f:
+        for gene in tqdm(Gene.query.all()):
+            if not gene.preferred_isoform:
+                continue
+            f.write('>' + gene.name + '\n')
+            f.write(gene.preferred_isoform.sequence + '\n')
+
+    return path
+
+
+@exporter
+def disorder():
+    import os
+
+    path = 'exported/preferred_isoforms_disorder.fa'
+    os.makedirs('exported', exist_ok=True)
+
+    with open(path, 'w') as f:
+        for gene in tqdm(Gene.query.all()):
+            if not gene.preferred_isoform:
+                continue
+            f.write('>' + gene.name + '\n')
+            f.write(gene.preferred_isoform.disorder_map + '\n')
+
+    return path
+
+
+@exporter
+def phosphosites():
+    import os
+    header = ['gene', 'position', 'residue', 'kinase', 'pmid']
+    path = 'exported/phosphosites.tsv'
+    os.makedirs('exported', exist_ok=True)
+
+    with open(path, 'w') as f:
+        f.writes('\t'.join(header) + '\n')
+        for gene in tqdm(Gene.query.all()):
+            if not gene.preferred_isoform:
+                continue
+            f.write('>' + gene.name + '\n')
+            f.write(gene.preferred_isoform.disorder_map + '\n')
+
+    return path
 
 
 def remove(object, soft=False):

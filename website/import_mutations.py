@@ -268,6 +268,7 @@ class MutationImporter(ABC):
     def export(self, path=None):
         from datetime import datetime
         import os
+        from tqdm import tqdm
 
         export_time = datetime.utcnow()
 
@@ -290,16 +291,19 @@ class MutationImporter(ABC):
         with open(path, 'w') as f:
             f.write('\t'.join(header))
 
-            for mutation in self.model.query.all():
+            for mutation in tqdm(self.model.query.all()):
 
                 sample = (
-                    mutation.sample_name
+                    mutation.sample_name or ''
                     if self.model_name == 'CancerMutation'
                     else ''
                 )
 
                 m = mutation.mutation
-                data = [m.protein.gene.name, sample, m.position, m.alt, m.ref]
+
+                data = [
+                    m.protein.gene.name, sample, str(m.position), m.alt, m.ref
+                ]
 
                 f.write('\n' + '\t'.join(data))
 
