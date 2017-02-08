@@ -220,6 +220,15 @@ class Mutations(CommandTarget):
             default=mutation_importers
         )
 
+    @argument
+    def only_primary_isoforms():
+        return argument_parameters(
+            '-o',
+            '--only_primary_isoforms',
+            action='store_true',
+            help='Restrict export to primary isoforms',
+        )
+
 
 class All(CommandTarget):
 

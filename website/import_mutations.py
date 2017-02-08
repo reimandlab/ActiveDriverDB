@@ -265,7 +265,7 @@ class MutationImporter(ABC):
         self.restart_autoincrement()
         print('Removed %s entries of %s' % (count, self.model_name))
 
-    def export(self, path=None):
+    def export(self, path=None, primary_isoforms_only=False):
         from datetime import datetime
         import os
         from tqdm import tqdm
@@ -276,10 +276,13 @@ class MutationImporter(ABC):
             directory = os.path.join('exported', 'mutations')
             os.makedirs(directory, exist_ok=True)
 
-            name_template = '{model_name}-{date}.tsv'
+            name_template = '{model_name}{restrictions}-{date}.tsv'
 
             name = name_template.format(
                 model_name=self.model_name,
+                restrictions=(
+                    '-primary_isoforms_only' if primary_isoforms_only else ''
+                ),
                 date=export_time
             )
             path = os.path.join(directory, name)
@@ -293,16 +296,29 @@ class MutationImporter(ABC):
 
             for mutation in tqdm(self.model.query.all()):
 
-                sample = (
-                    mutation.sample_name or ''
-                    if self.model_name == 'CancerMutation'
-                    else ''
-                )
-
                 m = mutation.mutation
 
+                if primary_isoforms_only and not m.protein.is_preferred_isoform:
+                    continue
+
+                if self.model_name == 'CancerMutation':
+                    sample = mutation.sample_name or ''
+                    cancer = mutation.cancer.code
+                else:
+                    sample, cancer = '', ''
+
+                try:
+                    ref = m.ref
+                except IndexError:
+                    print(
+                        'Mutation: %s %s %s is exceeding the proteins sequence'
+                        % (m.protein.refseq, m.position, m.alt)
+                    )
+                    ref = ''
+
                 data = [
-                    m.protein.gene.name, sample, str(m.position), m.alt, m.ref
+                    m.protein.gene.name, cancer, sample,
+                    str(m.position), m.alt, ref
                 ]
 
                 f.write('\n' + '\t'.join(data))
