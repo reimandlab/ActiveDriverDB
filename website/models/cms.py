@@ -4,6 +4,7 @@ from database import db
 from models import Model
 import security
 import uuid
+from datetime import datetime
 
 
 class CMSModel(Model):
@@ -206,18 +207,21 @@ class UsersMutationsDataset(CMSModel):
     name = db.Column(db.String(256))
     randomized_id = db.Column(db.String(256), unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_on = db.Column(db.Date, default=datetime.utcnow)
 
     @property
     def mutations(self):
         mutations = []
-        for result_obj in self.data.values():
+        results = self.data.results
+        for result_obj in results.values():
             for result in result_obj['results']:
                 db.session.add(result['mutation'])
                 mutations.append(result['mutation'])
         return mutations
 
     def bind_to_session(self):
-        for name, result_obj in self.data.items():
+        results = self.data.results
+        for name, result_obj in results.items():
             for result in result_obj['results']:
                 db.session.add(result['protein'])
                 db.session.add(result['mutation'])

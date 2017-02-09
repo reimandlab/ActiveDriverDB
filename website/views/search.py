@@ -1,4 +1,5 @@
 import json
+from operator import itemgetter
 from flask import make_response
 from flask import render_template as template
 from flask import request
@@ -113,13 +114,23 @@ def search_proteins(phase, limit=False, filter_manager=None):
 
 class MutationSearch:
 
-    query = ''
-    results = {}
-    without_mutations = []
-    badly_formatted = []
-
-    def __init__(self, vcf_file=None, textarea_query=None, data_filter=None):
+    def __init__(self, vcf_file=None, textarea_query=None, filter_manager=None):
         # note: entries from both file and textarea will be merged
+
+        self.query = ''
+        self.results = {}
+        self.without_mutations = []
+        self.badly_formatted = []
+
+        if filter_manager:
+            def data_filter(elements):
+                return filter_manager.apply(
+                    elements,
+                    itemgetter=itemgetter('mutation')
+                )
+        else:
+            def data_filter(elements):
+                return elements
 
         self.data_filter = data_filter
 
@@ -129,6 +140,10 @@ class MutationSearch:
         if textarea_query:
             self.query += textarea_query
             self.parse_text(textarea_query)
+
+        # when parsing is complete, quickly forget where is such complex object
+        # like filter_manager so any instance of this class can be pickled.
+        self.data_filter = None
 
     def parse_vcf(self, vcf_file):
 
@@ -170,7 +185,6 @@ class MutationSearch:
                         assert results[parsed_line]['results'] == items
                     else:
                         results[parsed_line] = {
-                            'user_input': parsed_line,
                             'results': items,
                             'count': 1
                         }
@@ -207,7 +221,8 @@ class MutationSearch:
                     assert results[line]['results'] == items
                 else:
                     results[line] = {
-                        'user_input': line, 'results': items, 'count': 1
+                        'results': items,
+                        'count': 1
                     }
             else:
                 self.without_mutations.append(line)
@@ -298,11 +313,12 @@ class SearchView(FlaskView):
         response = make_response(template(
             'search/index.html',
             target='mutations',
-            results=dataset.data,
+            results=dataset.data.results,
             widgets=make_widgets(filter_manager),
-            without_mutations=[],
-            query='',
-            badly_formatted=[]
+            without_mutations=dataset.data.without_mutations,
+            query=dataset.data.query,
+            badly_formatted=dataset.data.badly_formatted,
+            dataset=dataset
         ))
         return response
 
@@ -313,17 +329,13 @@ class SearchView(FlaskView):
         filter_manager = SearchViewFilters()
 
         if request.method == 'POST':
-            from operator import itemgetter
             textarea_query = request.form.get('mutations', False)
             vcf_file = request.files.get('vcf-file', False)
 
             mutation_search = MutationSearch(
                 vcf_file,
                 textarea_query,
-                lambda elements: filter_manager.apply(
-                    elements,
-                    itemgetter=itemgetter('mutation')
-                )
+                filter_manager
             )
 
             store_on_server = request.form.get('store_on_server', False)

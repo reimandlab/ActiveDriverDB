@@ -5,6 +5,16 @@
   id="mutations-form"
   enctype="multipart/form-data"
 >
+  {% if dataset %}
+    <h3>Dataset: {{ dataset.name }}</h3>
+    <h4>Saved on {{ dataset.created_on }}
+      {% if dataset.owner %}
+        by {{ dataset.owner.username }}
+      {% else %}
+        anonimously
+      {% endif %}
+    </h4>
+  {% endif %}
   <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
   {# TODO: the example should return more representative results #}
   {% set example='HTR3E I183823756M\nSTAT6 W737C\nchr12 57490358 C A\nTP53 R282W\nBRCA1 L432V' %}
