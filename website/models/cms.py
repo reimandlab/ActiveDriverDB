@@ -271,7 +271,6 @@ class UsersMutationsDataset(CMSModel):
         results = self.data.results
         for result_obj in results.values():
             for result in result_obj['results']:
-                db.session.add(result['mutation'])
                 mutations.append(result['mutation'])
         return mutations
 
