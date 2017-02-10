@@ -10,5 +10,5 @@ class ManageTest(DatabaseTest):
         """Simple blackbox test for automigrate."""
         args = Namespace(databases=('bio', 'cms'))
         with current_app.app_context():
-            result = manage.automigrate(args)
+            result = manage.automigrate(args, current_app)
         assert result
