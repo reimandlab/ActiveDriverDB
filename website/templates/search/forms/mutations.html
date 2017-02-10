@@ -33,7 +33,13 @@
   </div>
   <label>
     <input type="checkbox" name="store_on_server" onchange="$('.storage_details').toggleClass('hidden')">
-    Store these mutations on server (allows browsing them as a dataset later)
+    Store these mutations on server*.
+    {% if current_user.is_authenticated %}
+      Saving dataset to {{ current_user.username }} account.
+    {% else %}
+      To be able to browse these mutations as a dataset later, please
+      <a href="{{ url_for('ContentManagmentSystem:login') }}">login first</a>.
+    {% endif %}
   </label>
   <div class="storage_details hidden">
     Dataset name: <input type="text" name="dataset_name">
@@ -63,6 +69,9 @@
     class="results {{ 'hidden' if not results and not badly_formatted and not without_mutations }}"
   >
     {% include 'search/results/mutations.html' %}
+  </div>
+  <div id="footnote">
+    * Mutations will be stored for 7 days. Ticking this box allows you to return to the results later easily.
   </div>
   <input type="hidden" name="fallback" value="True">
 </form>

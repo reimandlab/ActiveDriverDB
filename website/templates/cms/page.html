@@ -21,7 +21,7 @@
 {% endblock %}
 
 {% block user_menu %}
-  {% if page %}
+  {% if page and current_user.is_admin %}
     <a href="{{ url_for('ContentManagmentSystem:edit_page', address=page.address) }}" class="btn btn-warning">
 	  <span class="glyphicon glyphicon-pencil"></span>
 	  Edit this page

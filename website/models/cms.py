@@ -5,6 +5,8 @@ from models import Model
 import security
 import uuid
 from datetime import datetime
+from datetime import timedelta
+from exceptions import ValidationError
 
 
 class CMSModel(Model):
@@ -66,12 +68,56 @@ class User(CMSModel):
 
     # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
     email = db.Column(db.String(254), unique=True)
+    access_level = db.Column(db.Integer, default=0)
     pass_hash = db.Column(db.Text())
     datasets = db.relationship('UsersMutationsDataset', backref='owner')
 
-    def __init__(self, email, password):
+    def __init__(self, email, password, access_level=0):
+
+        if not self.is_mail_correct(email):
+            raise ValidationError('This email address seems to be incorrect')
+
+        if not self.is_password_strong(password):
+            raise ValidationError('The password is not strong enough')
+
         self.email = email
+        self.access_level = access_level
         self.pass_hash = security.generate_secret_hash(password)
+
+    @staticmethod
+    def is_mail_correct(email):
+
+        if len(email) > 254:
+            return False
+
+        if '@' not in email:
+            return False
+
+        local, domain = email.split('@')
+
+        # both parts required
+        if not (local and domain):
+            return False
+
+        # no consecutive dots allowed in domain
+        if '..' in domain:
+            return False
+
+        return True
+
+    @staticmethod
+    def is_password_strong(password):
+
+        # count of different characters used
+        if len(set(password)) <= 2:
+            return False
+
+        # overall length
+        return len(password) >= 5
+
+    @property
+    def is_admin(self):
+        return self.access_level == 10
 
     @property
     def is_authenticated(self):
@@ -207,7 +253,16 @@ class UsersMutationsDataset(CMSModel):
     name = db.Column(db.String(256))
     randomized_id = db.Column(db.String(256), unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_on = db.Column(db.Date, default=datetime.utcnow)
+    created_on = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def life_expectancy(self):
+        """How many time is left for this dataset before removal."""
+        return self.created_on - datetime.utcnow() + timedelta(days=7)
+
+    @property
+    def query_size(self):
+        return self.data.query.count('\n')
 
     @property
     def mutations(self):

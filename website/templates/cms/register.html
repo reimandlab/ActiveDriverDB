@@ -8,15 +8,14 @@
 {% endblock %}
 
 
-{% block title %} Login - {{ super() }} {% endblock %}
+{% block title %} Create account - {{ super() }} {% endblock %}
 
 
 {% block content %}
 
-  <h3>Login</h3>
+  <h3>New account</h3>
 
   <div>
-    <p>Don't have an account? <a href="{{ url_for('ContentManagmentSystem:sign_up') }}">Click here to create it now</a>.</p>
     <form method="POST" >
 	  <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 	  <div class="form-group">
@@ -29,10 +28,15 @@
 	  </div>
 	  <div class="checkbox">
 		<label>
-		  <input type="checkbox" name="remember_me"> Remember me
+          <input type="checkbox" name="consent"> I accept following personal data policy:
+          <ol>
+           <li>User's email address is stored and processed for identification and authorization purposes,
+           <li>Cookies are used to keep User logged in without use of inconviniently long URL addresses,
+           <li>Data uploaded by the User will be kept for 7 days and afterwards delated.
+          </ol>
 		</label>
 	  </div>
-	  <button type="submit" class="btn btn-success">Sign in</button>
+	  <button type="submit" class="btn btn-success">Create my account</button>
     </form>
   </div>
 {% endblock %}
