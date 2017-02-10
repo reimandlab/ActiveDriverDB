@@ -82,12 +82,39 @@ def make_metadata_ordered_dict(keys, metadata, get_from=None):
 
 
 class BaseMutationsImporter:
+    """Imports 'cores of mutations' - data used to build 'Mutation' instances
+    so columns common for different metadata like: 'position', 'alt' etc."""
+
+    def prepare(self):
+        # reset base_mutations
+        self.mutations = {}
+
+        # for bulk_inserts it's needed to generate identificators manually so
+        # here the highest id currently in use in the database is retrieved.
+        self.highest_base_id = self.get_highest_id()
 
     def get_highest_id(self):
         return get_highest_id(Mutation)
 
-    def flush(self, mutations):
-        for chunk in chunked_list(mutations.items()):
+    def get_or_make_mutation(self, pos, protein_id, alt, is_ptm):
+
+        key = (pos, protein_id, alt)
+        if key in self.mutations:
+            mutation_id = self.mutations[key][0]
+        else:
+            try:
+                mutation = Mutation.query.filter_by(
+                    position=pos, protein_id=protein_id, alt=alt
+                ).one()
+                mutation_id = mutation.id
+            except NoResultFound:
+                self.highest_base_id += 1
+                mutation_id = self.highest_base_id
+                self.mutations[key] = (mutation_id, is_ptm)
+        return mutation_id
+
+    def insert(self):
+        for chunk in chunked_list(self.mutations.items()):
             db.session.bulk_insert_mappings(
                 Mutation,
                 [
@@ -104,9 +131,6 @@ class BaseMutationsImporter:
             db.session.flush()
 
 
-base_importer = BaseMutationsImporter()
-
-
 class MutationImporter(ABC):
 
     default_path = None
@@ -118,6 +142,10 @@ class MutationImporter(ABC):
         self.proteins = proteins
         self.broken_seq = defaultdict(list)
 
+        # used to save 'cores of mutations': Mutation objects which have
+        # columns like 'position', 'alt', 'protein' and no other details.
+        self.base_importer = BaseMutationsImporter()
+
     @property
     def model_name(self):
         return self.model.__name__
@@ -126,23 +154,46 @@ class MutationImporter(ABC):
     def commit():
         db.session.commit()
 
-    def load(self, path=None):
-        self.base_mutations = {}
-        print('Loading %s:' % self.model_name)
+    def choose_path(self, path):
         if not path:
-            if not self.default_path:
-                raise Exception(
-                    'path is required when no default_path is set'
-                )
             path = self.default_path
+        if not path:
+            raise Exception('path is required when no default_path is set')
+        return path
 
-        self.highest_base_id = base_importer.get_highest_id()
+    def load(self, path=None, update=False):
+        """Load, parse and insert mutations from given path.
+
+        If update is True, old mutations will be updated and new added.
+        Essential difference when using update is that 'update' prevents
+        adding duplicates (i.e. checks if mutations already exists in the
+        database) but is very slow, whereas when 'update=False', the whole
+        process is very fast but not relaible for purpose of reimporting data
+        without removing old mutations in the first place.
+
+        Long stroy short: when importing mutations to clean/new database - use
+        update=False. For updates use update=True and expect long runtime."""
+        print('Loading %s:' % self.model_name)
+
+        path = self.choose_path(path)
+        self.base_importer.prepare()
+
+        # as long as 'parse' uses 'get_or_make_mutation' method, it will
+        # populate 'self.base_importer.mutations' with new tuples of data
+        # necessary to create rows corresponding to 'Mutation' instances.
         mutation_details = self.parse(path)
 
-        base_importer.flush(self.base_mutations)
-        self.insert_details(mutation_details)
+        # first insert new 'Mutation' data
+        self.base_importer.insert()
+
+        # then insert or update details about mutation (so self.model entries)
+        if update:
+            self.update_details(mutation_details)
+        else:
+            self.insert_details(mutation_details)
 
         self.commit()
+
         if self.broken_seq:
             print(
                 'Detected and skipped mutations with incorrectly mapped '
@@ -150,14 +201,37 @@ class MutationImporter(ABC):
                     len(self.broken_seq)
                 )
             )
+
         print('Loaded %s.' % self.model_name)
+
+    def update(self, path=None):
+        """Insert new and update old mutations. Same as load(update=True)."""
+        self.load(path, update=True)
 
     @abstractmethod
     def parse(self):
+        """Make use of self.preparse_mutations() and therefore populate
+        self.base_mutations with new Mutation instances and also return
+        a structure containing data to populate self.model (MutationDetails
+        descendants) as to be accepted by self.insert_details()."""
         pass
 
     @abstractmethod
-    def insert_details(self):
+    def insert_details(self, data):
+        """Create instances of self.model using provided data and add them to
+        session (flusing is allowed, commiting is highly not recommended).
+        Use of db.sesion methods like 'bulk_insert_mappings' is recommended."""
+        pass
+
+    # @abstractmethod
+    # TODO: make it abstract and add it to all importers, altogether with tests
+    def update_details(self, data):
+        """Similarly to insert_details, iterate over data which hold all
+        information needed to create self.model instances but instead of
+        performing bulk_inserts (and therefore being prone to creation
+        of duplicates) check if each mutation already is in the database and
+        if it exists - overwrite it with the new data."""
+        raise NotImplementedError
         pass
 
     def insert_list(self, data):
@@ -191,21 +265,68 @@ class MutationImporter(ABC):
         self.restart_autoincrement()
         print('Removed %s entries of %s' % (count, self.model_name))
 
-    def get_or_make_mutation(self, pos, protein_id, alt, is_ptm):
+    def export(self, path=None, primary_isoforms_only=False):
+        from datetime import datetime
+        import os
+        from tqdm import tqdm
 
-        key = (pos, protein_id, alt)
-        if key in self.base_mutations:
-            mutation_id = self.base_mutations[key][0]
-        else:
-            try:
-                mutation = Mutation.query.filter_by(
-                    position=pos, protein_id=protein_id, alt=alt
-                ).one()
-                mutation_id = mutation.id
-            except NoResultFound:
-                self.highest_base_id += 1
-                mutation_id = self.highest_base_id
-                self.base_mutations[key] = (mutation_id, is_ptm)
+        export_time = datetime.utcnow()
+
+        if not path:
+            directory = os.path.join('exported', 'mutations')
+            os.makedirs(directory, exist_ok=True)
+
+            name_template = '{model_name}{restrictions}-{date}.tsv'
+
+            name = name_template.format(
+                model_name=self.model_name,
+                restrictions=(
+                    '-primary_isoforms_only' if primary_isoforms_only else ''
+                ),
+                date=export_time
+            )
+            path = os.path.join(directory, name)
+
+        header = [
+            'gene', 'cancer_type', 'sample_id',
+            'position',  'wt_residue', 'mut_residue'
+        ]
+        with open(path, 'w') as f:
+            f.write('\t'.join(header))
+
+            for mutation in tqdm(self.model.query.all()):
+
+                m = mutation.mutation
+
+                if primary_isoforms_only and not m.protein.is_preferred_isoform:
+                    continue
+
+                if self.model_name == 'CancerMutation':
+                    sample = mutation.sample_name or ''
+                    cancer = mutation.cancer.code
+                else:
+                    sample, cancer = '', ''
+
+                try:
+                    ref = m.ref
+                except IndexError:
+                    print(
+                        'Mutation: %s %s %s is exceeding the proteins sequence'
+                        % (m.protein.refseq, m.position, m.alt)
+                    )
+                    ref = ''
+
+                data = [
+                    m.protein.gene.name, cancer, sample,
+                    str(m.position), m.alt, ref
+                ]
+
+                f.write('\n' + '\t'.join(data))
+
+    def get_or_make_mutation(self, pos, protein_id, alt, is_ptm):
+        mutation_id = self.base_importer.get_or_make_mutation(
+            pos, protein_id, alt, is_ptm
+        )
         return mutation_id
 
     def preparse_mutations(self, line):
@@ -251,61 +372,71 @@ class MutationImporter(ABC):
             yield mutation_id
 
 
-def get_all_importers():
-    import imp
-    import os
-    from helpers.parsers import get_files
-    importers = {}
+class MutationImportManager:
 
-    for raw_path in get_files('mutation_import', '*.py'):
-        module_name = os.path.basename(raw_path[:-3])
-        if module_name == '__init__':
-            continue
-        module = imp.load_source(module_name, raw_path)
-        importers[module_name] = module
+    def __init__(self, lookup_dir='mutation_import'):
+        self.importers = self._discover_importers(lookup_dir)
 
-    return importers
+    @staticmethod
+    def _discover_importers(lookup_dir):
+        import imp
+        from os.path import basename
+        from helpers.parsers import get_files
 
+        importers = {}
 
-def select_importers(restrict_to='__all__'):
-    importers = get_all_importers()
-    if restrict_to == '__all__':
+        for path in get_files(lookup_dir, '*.py'):
+            name = basename(path)[:-3]
+            if name == '__init__':
+                continue
+            importers[name] = imp.load_source(name, path)
+
         return importers
-    return {
-        name: importer
-        for name, importer in importers.items()
-        if name in restrict_to
-    }
+
+    def select(self, restrict_to):
+        if not restrict_to:
+            return self.importers
+        return {
+            name: self.importers[name]
+            for name in restrict_to
+        }
+
+    def explain_action(self, action, sources):
+        print('{action} mutations from: {sources} source{suffix}'.format(
+            action=action,
+            sources=(
+                ', '.join(sources)
+                if set(sources) != set(self.importers.keys())
+                else 'all'
+            ),
+            suffix='s' if len(sources) > 1 else ''
+        ))
+
+    def perform(self, action, proteins, sources='__all__', paths=None):
+        if sources == '__all__':
+            sources = self.names
+
+        self.explain_action(action, sources)
+
+        importers = self.select(sources)
+        path = None
+
+        for name, module in importers.items():
+            if paths:
+                path = paths[name]
+
+            importer = module.Importer(proteins)
+            method = getattr(importer, action)
+            method(path=path)
+
+        print('Mutations %sed' % action)
+
+    @property
+    def names(self):
+        return self.importers.keys()
 
 
-def explain_current_action(action, sources):
-    print('{action} mutations from: {sources} source{suffix}'.format(
-        action=action,
-        sources=', '.join(sources) if sources != '__all__' else 'all',
-        suffix='s' if len(sources) > 1 else ''
-    ))
-
-
-def load_mutations(proteins=None, sources='__all__'):
-    explain_current_action('Loading', sources)
-
-    importers = select_importers(restrict_to=sources)
-
-    for name, module in importers.items():
-        module.Importer(proteins).load()
-
-    print('Mutations loaded')
-
-
-def remove_mutations(sources='__all__'):
-    explain_current_action('Removing', sources)
-
-    importers = select_importers(restrict_to=sources)
-
-    for name, module in importers.items():
-        module.Importer().delete_all()
-
-    print('Mutations removed')
+muts_import_manager = MutationImportManager()
 
 
 def determine_strand(ref, cdna_ref, alt, cdna_alt):

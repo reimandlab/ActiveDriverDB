@@ -18,17 +18,24 @@ from models import Site
 from models import BadWord
 from models import GeneList
 from models import CancerGeneListEntry
-from import_mutations import load_mutations
+from import_mutations import muts_import_manager
 from import_mutations import import_mappings
 from flask import current_app
 
 
 IMPORTERS = OrderedDict()
+EXPORTERS = OrderedDict()
 
 
-def importer(func):
-    IMPORTERS[func.__name__] = func
-    return func
+def register_decorator(register):
+    def decorator(func):
+        register[func.__name__] = func
+        return func
+    return decorator
+
+
+importer = register_decorator(IMPORTERS)
+exporter = register_decorator(EXPORTERS)
 
 
 def import_all():
@@ -56,7 +63,7 @@ def import_all():
     calculate_interactors(proteins)
     db.session.commit()
     with current_app.app_context():
-        load_mutations(proteins)
+        muts_import_manager.perform('load', proteins)
     for importer in IMPORTERS:
         results = importer()
         db.session.add_all(results)
@@ -480,6 +487,69 @@ def load_sequences(proteins):
             proteins[refseq].sequence += line.rstrip()
 
     parse_fasta_file('data/all_RefGene_proteins.fa', parser)
+
+
+@exporter
+def sequences_ac():
+    """Sequences as needed for Active Driver input.
+    Includes only data from primary (preferred) isoforms."""
+    import os
+
+    path = 'exported/preferred_isoforms_sequences.fa'
+    os.makedirs('exported', exist_ok=True)
+
+    with open(path, 'w') as f:
+        for gene in tqdm(Gene.query.all()):
+            if not gene.preferred_isoform:
+                continue
+            f.write('>' + gene.name + '\n')
+            f.write(gene.preferred_isoform.sequence + '\n')
+
+    return path
+
+
+@exporter
+def disorder_ac():
+    """Disorder data as needed for Active Driver input.
+    Includes only data from primary (preferred) isoforms."""
+    import os
+
+    path = 'exported/preferred_isoforms_disorder.fa'
+    os.makedirs('exported', exist_ok=True)
+
+    with open(path, 'w') as f:
+        for gene in tqdm(Gene.query.all()):
+            if not gene.preferred_isoform:
+                continue
+            f.write('>' + gene.name + '\n')
+            f.write(gene.preferred_isoform.disorder_map + '\n')
+
+    return path
+
+
+@exporter
+def sites_ac():
+    """Sites as needed for Active Driver input.
+    Includes only data from primary (preferred) isoforms."""
+    import os
+    header = ['gene', 'position', 'residue', 'kinase', 'pmid']
+    path = 'exported/sites.tsv'
+    os.makedirs('exported', exist_ok=True)
+
+    with open(path, 'w') as f:
+        f.write('\t'.join(header) + '\n')
+        for site in tqdm(Site.query.all()):
+            if not site.protein or not site.protein.is_preferred_isoform:
+                continue
+            data = [
+                site.protein.gene.name, str(site.position), site.residue,
+                ','.join([k.name for k in site.kinases]),
+                site.pmid
+            ]
+
+            f.write('\t'.join(data) + '\n')
+
+    return path
 
 
 def remove(object, soft=False):

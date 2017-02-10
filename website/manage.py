@@ -6,7 +6,8 @@ import import_data
 from database import db
 from models import Page
 from models import User
-import import_mutations
+from import_mutations import muts_import_manager
+from import_mutations import get_proteins
 from getpass import getpass
 from helpers.commands import argument
 from helpers.commands import argument_parameters
@@ -43,16 +44,79 @@ def automigrate(args):
     return True
 
 
-def basic_auto_migrate_relational_db(**kwargs):
+def column_names(table):
+    return set((i.name for i in table.c))
 
-    name = kwargs.get('bind', 'default')
 
-    print('Performing very simple automigration in', name, 'database...')
+def basic_auto_migrate_relational_db(bind):
+    """Inspired with http://stackoverflow.com/questions/2103274/"""
+
+    from sqlalchemy import Table
+    from sqlalchemy import MetaData
+
+    print('Performing very simple automigration in', bind, 'database...')
     db.session.commit()
     db.reflect()
     db.session.commit()
-    db.create_all(**kwargs)
-    print('Automigration of', name, 'database completed.')
+    db.create_all(bind=bind)
+
+    app = create_app()
+
+    with app.app_context():
+        engine = db.get_engine(app, bind)
+        tables = db.get_tables_for_bind(bind=bind)
+        metadata = MetaData()
+        metadata.engine = engine
+
+        ddl = engine.dialect.ddl_compiler(engine.dialect, None)
+
+        for table in tables:
+
+            db_table = Table(
+                table.name, metadata, autoload=True, autoload_with=engine
+            )
+            db_columns = column_names(db_table)
+
+            columns = column_names(table)
+            new_columns = columns - db_columns
+            unused_columns = db_columns - columns
+
+            for column_name in new_columns:
+                column = getattr(table.c, column_name)
+                if column.constraints:
+                    print(
+                        'Column %s skipped due to existing constraints.'
+                        % column_name
+                    )
+                    continue
+                print('Creating column: %s' % column_name)
+
+                definition = ddl.get_column_specification(column)
+                sql = 'ALTER TABLE %s ADD %s' % (table.name, definition)
+                engine.execute(sql)
+
+            if unused_columns:
+                print(
+                    'Following columns in %s table are no longer used '
+                    'and can be safely removed:' % table.name
+                )
+                for column in unused_columns:
+                    answered = False
+                    while not answered:
+                        answer = input('%s: remove (y/n)? ' % column)
+                        if answer == 'y':
+                            sql = (
+                                'ALTER TABLE %s DROP %s'
+                                % (table.name, column)
+                            )
+                            engine.execute(sql)
+                            print('Removed column %s.' % column)
+                            answered = True
+                        elif answer == 'n':
+                            print('Keeping column %s.' % column)
+                            answered = True
+
+    print('Automigration of', bind, 'database completed.')
 
 
 class CMS(CommandTarget):
@@ -131,8 +195,33 @@ class ProteinRelated(CommandTarget):
             db.session.commit()
 
     @command
+    def export(args):
+        exporters = import_data.EXPORTERS
+        for name in args.exporters:
+            exporter = exporters[name]
+            out_file = exporter()
+            print('Exported %s to %s' % (name, out_file))
+
+    @command
     def remove(args):
         reset_relational_db(bind='bio')
+
+    @argument
+    def exporters():
+        data_exporters = import_data.EXPORTERS
+        return argument_parameters(
+            '-e',
+            '--exporters',
+            nargs='*',
+            help=(
+                'What should be exported?'
+                ' Available: ' + ', '.join(data_exporters) + '.'
+                ' By default everything will be exported.'
+            ),
+            choices=data_exporters,
+            metavar='',
+            default=data_exporters,
+        )
 
     @argument
     def importers():
@@ -159,13 +248,12 @@ class SnvToCsvMapping(CommandTarget):
     @command
     def load(args):
         print('Importing mappings')
-        with import_data.app.app_context():
-            proteins = import_mutations.get_proteins()
-            import_data.import_mappings(proteins)
+        proteins = get_proteins()
+        import_data.import_mappings(proteins)
 
     @command
     def remove(args):
-        print('Removing mappigns database...')
+        print('Removing mappings database...')
         bdb.reset()
         bdb_refseq.reset()
         print('Removing mapings database completed.')
@@ -175,22 +263,32 @@ class Mutations(CommandTarget):
 
     description = 'should only mutations be {command}ed without db restart'
 
-    @command
-    def load(args):
-        proteins = import_mutations.get_proteins()
-        mutations = import_mutations.load_mutations(
-            proteins,
-            args.mutation_sources
+    @staticmethod
+    def action(name, args):
+        proteins = get_proteins()
+        muts_import_manager.perform(
+            name, proteins, args.sources
         )
 
     @command
+    def load(args):
+        Mutations.action('load', args)
+
+    @command
     def remove(args):
-        with import_data.app.app_context():
-            import_mutations.remove_mutations(args.mutation_sources)
+        Mutations.action('delete_all', args)
+
+    @command
+    def export(args):
+        Mutations.action('export', args)
+
+    @command
+    def update(args):
+        Mutations.action('update', args)
 
     @argument
     def sources():
-        mutation_importers = import_mutations.get_all_importers().keys()
+        mutation_importers = muts_import_manager.names
 
         return argument_parameters(
             '-s',
@@ -204,7 +302,16 @@ class Mutations(CommandTarget):
             ),
             choices=mutation_importers,
             metavar='',
-            default='__all__',
+            default=mutation_importers
+        )
+
+    @argument
+    def only_primary_isoforms():
+        return argument_parameters(
+            '-o',
+            '--only_primary_isoforms',
+            action='store_true',
+            help='Restrict export to primary isoforms',
         )
 
 
@@ -224,24 +331,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='sub-commands')
 
-    # LOAD SUBCOMMAND
-    load_parser = subparsers.add_parser(
-        'load',
-        help='load data from specified category'
-    )
+    data_subcommands = ['load', 'remove', 'export', 'update']
 
-    # REMOVE SUBCOMMAND
-    remove_parser = subparsers.add_parser(
-        'remove',
-        help='remove data from specified category'
-    )
-
-    command_parsers = {
-        'load': load_parser,
-        'remove': remove_parser
+    command_subparsers = {
+        subcommand: subparsers.add_parser(
+            subcommand,
+            help='{0} data from specified category'.format(subcommand)
+        )
+        for subcommand in data_subcommands
     }
 
-    create_command_subparsers(command_parsers)
+    create_command_subparsers(command_subparsers)
 
     # MIGRATE SUBCOMMAND
     migrate_parser = subparsers.add_parser(
@@ -257,6 +357,7 @@ if __name__ == '__main__':
         '-d',
         '--databases',
         type=str,
+        nargs='*',
         choices=database_binds,
         default=database_binds,
         help=(
@@ -267,12 +368,13 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-    try:
+
+    if hasattr(args, 'func'):
         app = create_app()
         with app.app_context():
             args.func(args)
         print('Done, all tasks completed.')
-    except AttributeError:
+    else:
         print('Scripts loaded successfuly, no tasks specified.')
 
 else:
