@@ -21,3 +21,4 @@ DEFAULT_HOST = '0.0.0.0'    # use public IPs
 DEFAULT_PORT = 5000
 JSONIFY_PRETTYPRINT_REGULAR = False
 JSON_SORT_KEYS = False
+LOAD_STATS = True      # Counting of everything in the database for statistics might be very slow, just turn it of when debuging
