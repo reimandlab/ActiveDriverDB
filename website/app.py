@@ -47,10 +47,12 @@ def create_app(config_filename='config.py', config_override={}):
     import sys
     sys.path.insert(0, '..')
 
-    from website.views import views
+    with app.app_context():
 
-    for view in views:
-        view.register(app)
+        from website.views import views
+
+        for view in views:
+            view.register(app)
 
     #
     # Register functions for Jinja

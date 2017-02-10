@@ -40,7 +40,7 @@ def reset_relational_db(**kwargs):
 
 def automigrate(args, app=None):
     if not app:
-        app = create_app()
+        app = create_app(config_override={'LOAD_STATS': False})
     for database_bind in args.databases:
         basic_auto_migrate_relational_db(app, bind=database_bind)
     return True
