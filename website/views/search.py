@@ -114,7 +114,7 @@ def search_proteins(phase, limit=False, filter_manager=None):
 
 class MutationSearch:
 
-    def __init__(self, vcf_file=None, textarea_query=None, filter_manager=None):
+    def __init__(self, vcf_file=None, text_query=None, filter_manager=None):
         # note: entries from both file and textarea will be merged
 
         self.query = ''
@@ -137,9 +137,9 @@ class MutationSearch:
         if vcf_file:
             self.parse_vcf(vcf_file)
 
-        if textarea_query:
-            self.query += textarea_query
-            self.parse_text(textarea_query)
+        if text_query:
+            self.query += text_query
+            self.parse_text(text_query)
 
         # when parsing is complete, quickly forget where is such complex object
         # like filter_manager so any instance of this class can be pickled.
@@ -193,11 +193,11 @@ class MutationSearch:
 
                 self.query += parsed_line
 
-    def parse_text(self, textarea_query):
+    def parse_text(self, text_query):
 
         results = self.results
 
-        for line in textarea_query.split('\n'):
+        for line in text_query.split('\n'):
             data = line.split()
             if len(data) == 4:
                 chrom, pos, ref, alt = data

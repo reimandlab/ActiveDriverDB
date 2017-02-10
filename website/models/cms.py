@@ -262,7 +262,8 @@ class UsersMutationsDataset(CMSModel):
 
     @property
     def query_size(self):
-        return self.data.query.count('\n')
+        new_lines = self.data.query.count('\n')
+        return new_lines + 1 if new_lines else 0
 
     @property
     def mutations(self):
