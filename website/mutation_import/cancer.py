@@ -1,4 +1,6 @@
-from collections import Counter
+#from collections import Counter
+#from collections import namedtuple
+from collections import defaultdict
 from database import db
 from database import get_or_create
 from models import Cancer
@@ -20,7 +22,8 @@ class Importer(MutationImporter):
     ]
 
     def parse(self, path):
-        mutations_counter = Counter()
+
+        mutations = defaultdict(lambda: [0, set()])
 
         def cancer_parser(line):
             assert line[10].startswith('comments: ')
@@ -33,13 +36,10 @@ class Importer(MutationImporter):
 
             for mutation_id in self.preparse_mutations(line):
 
-                mutations_counter[
-                    (
-                        mutation_id,
-                        cancer.id,
-                        sample_name
-                    )
-                ] += 1
+                key = (mutation_id, cancer.id)
+
+                mutations[key][0] += 1
+                mutations[key][1].add(sample_name)
 
         parse_tsv_file(
             path,
@@ -48,33 +48,33 @@ class Importer(MutationImporter):
             file_opener=gzip_open_text
         )
 
-        return mutations_counter
+        return mutations
 
-    def create_init_kwargs(self, mutation, count):
+    def create_init_kwargs(self, mutation, data):
         return {
             'mutation_id': mutation[0],
             'cancer_id': mutation[1],
-            'sample_name': mutation[2],
-            'count': count
+            'samples': ','.join(data[1]),
+            'count': data[0]
         }
 
-    def insert_details(self, mutations_counter):
-        for chunk in chunked_list(mutations_counter.items()):
+    def insert_details(self, mutations):
+        for chunk in chunked_list(mutations.items()):
             db.session.bulk_insert_mappings(
                 self.model,
                 [
-                    self.create_init_kwargs(mutation, count)
-                    for mutation, count in chunk
+                    self.create_init_kwargs(mutation, data)
+                    for mutation, data in chunk
                 ]
             )
             db.session.flush()
 
-    def update_details(self, mutations_counter):
+    def update_details(self, mutations):
         """Unfrotunately mutation_id does not maps 1-1 for CancerMutation, so
         additional field for filter is required - hence use of cancer_id and
         hence cancer_id will not be updated with this method."""
-        for mutation, count in mutations_counter.items():
-            kwargs = self.create_init_kwargs(mutation, count)
+        for mutation, data in mutations.items():
+            kwargs = self.create_init_kwargs(mutation, data)
             try:
                 mut = self.model.query.filter_by(
                     mutation_id=mutation[0],

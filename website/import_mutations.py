@@ -198,16 +198,17 @@ class MutationImporter(ABC):
             report_file = 'broken_seq.log'
 
             with open(report_file, 'w') as f:
-                f.write(
-                    '\n'.join(
-                        '\t'.join([refseq] + data)
-                        for refseq, data in self.broken_seq.items()
+                for refseq, instances in self.broken_seq.items():
+                    f.write(
+                        '\n'.join(
+                            '\t'.join([refseq] + instance)
+                            for instance in instances
+                        )
                     )
-                )
 
             print(
                 'Detected and skipped mutations with incorrectly mapped '
-                'reference sequences in {:d} isoforms. These mutations have '
+                'reference sequences in {0:d} isoforms. These mutations have '
                 'been saved to {1} file.'.format(
                     len(self.broken_seq),
                     report_file
@@ -264,7 +265,7 @@ class MutationImporter(ABC):
         restart_autoincrement(self.model)
         db.session.commit()
 
-    def delete_all(self):
+    def remove(self, **kargs):
         """This function should stay untouched"""
         print('Removing %s:' % self.model_name)
         try:
@@ -372,7 +373,7 @@ class MutationImporter(ABC):
                 if ref != protein.sequence[pos - 1]:
                     raise ValueError
             except (ValueError, IndexError):
-                self.broken_seq[refseq].append((protein.id, alt, ref))
+                self.broken_seq[refseq].append([alt, ref])
                 continue
 
             affected_sites = protein.get_sites_from_range(pos - 7, pos + 7)
