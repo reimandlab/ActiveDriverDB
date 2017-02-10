@@ -150,7 +150,7 @@ class MutationSearch:
         results = self.results
 
         for line in vcf_file:
-            line = line.decode('latin1')
+            line = line.decode('latin1').strip()
             if line.startswith('#'):
                 continue
             data = line.split()
@@ -197,8 +197,8 @@ class MutationSearch:
 
         results = self.results
 
-        for line in text_query.split('\n'):
-            data = line.split()
+        for line in text_query.splitlines():
+            data = line.strip().split()
             if len(data) == 4:
                 chrom, pos, ref, alt = data
                 chrom = chrom[3:]
@@ -309,6 +309,8 @@ class SearchView(FlaskView):
 
         if dataset.owner and dataset.owner.id != current_user.id:
             current_app.login_manager.unauthorized()
+
+        dataset.bind_to_session()
 
         response = make_response(template(
             'search/index.html',
