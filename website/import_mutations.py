@@ -315,10 +315,10 @@ class MutationImporter(ABC):
                     continue
 
                 if self.model_name == 'CancerMutation':
-                    sample = mutation.sample_name or ''
+                    samples = mutation.samples.split(',') or ''
                     cancer = mutation.cancer.code
                 else:
-                    sample, cancer = '', ''
+                    samples, cancer = [''], ''
 
                 try:
                     ref = m.ref
@@ -329,12 +329,13 @@ class MutationImporter(ABC):
                     )
                     ref = ''
 
-                data = [
-                    m.protein.gene.name, cancer, sample,
-                    str(m.position), m.alt, ref
-                ]
+                for sample in samples:
+                    data = [
+                        m.protein.gene.name, cancer, sample,
+                        str(m.position), m.alt, ref
+                    ]
 
-                f.write('\n' + '\t'.join(data))
+                    f.write('\n' + '\t'.join(data))
 
     def get_or_make_mutation(self, pos, protein_id, alt, is_ptm):
         mutation_id = self.base_importer.get_or_make_mutation(
