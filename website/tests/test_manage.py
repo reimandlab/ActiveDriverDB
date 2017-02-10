@@ -6,6 +6,8 @@ from flask import current_app
 
 class ManageTest(DatabaseTest):
 
+    LOAD_STATS = False
+
     def test_automigrate(self):
         """Simple blackbox test for automigrate."""
         args = Namespace(databases=('bio', 'cms'))
