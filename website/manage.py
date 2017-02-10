@@ -42,16 +42,79 @@ def automigrate(args):
     return True
 
 
-def basic_auto_migrate_relational_db(**kwargs):
+def column_names(table):
+    return set((i.name for i in table.c))
 
-    name = kwargs.get('bind', 'default')
 
-    print('Performing very simple automigration in', name, 'database...')
+def basic_auto_migrate_relational_db(bind):
+    """Inspired with http://stackoverflow.com/questions/2103274/"""
+
+    from sqlalchemy import Table
+    from sqlalchemy import MetaData
+
+    print('Performing very simple automigration in', bind, 'database...')
     db.session.commit()
     db.reflect()
     db.session.commit()
-    db.create_all(**kwargs)
-    print('Automigration of', name, 'database completed.')
+    db.create_all(bind=bind)
+
+    app = create_app()
+
+    with app.app_context():
+        engine = db.get_engine(app, bind)
+        tables = db.get_tables_for_bind(bind=bind)
+        metadata = MetaData()
+        metadata.engine = engine
+
+        ddl = engine.dialect.ddl_compiler(engine.dialect, None)
+
+        for table in tables:
+
+            db_table = Table(
+                table.name, metadata, autoload=True, autoload_with=engine
+            )
+            db_columns = column_names(db_table)
+
+            columns = column_names(table)
+            new_columns = columns - db_columns
+            unused_columns = db_columns - columns
+
+            for column_name in new_columns:
+                column = getattr(table.c, column_name)
+                if column.constraints:
+                    print(
+                        'Column %s skipped due to existing constraints.'
+                        % column_name
+                    )
+                    continue
+                print('Creating column: %s' % column_name)
+
+                definition = ddl.get_column_specification(column)
+                sql = 'ALTER TABLE %s ADD %s' % (table.name, definition)
+                engine.execute(sql)
+
+            if unused_columns:
+                print(
+                    'Following columns in %s table are no longer used '
+                    'and can be safely removed:' % table.name
+                )
+                for column in unused_columns:
+                    answered = False
+                    while not answered:
+                        answer = input('%s: remove (y/n)? ' % column)
+                        if answer == 'y':
+                            sql = (
+                                'ALTER TABLE %s DROP %s'
+                                % (table.name, column)
+                            )
+                            engine.execute(sql)
+                            print('Removed column %s.' % column)
+                            answered = True
+                        elif answer == 'n':
+                            print('Keeping column %s.' % column)
+                            answered = True
+
+    print('Automigration of', bind, 'database completed.')
 
 
 class CMS(CommandTarget):
@@ -168,7 +231,7 @@ class SnvToCsvMapping(CommandTarget):
 
     @command
     def remove(args):
-        print('Removing mappigns database...')
+        print('Removing mappings database...')
         bdb.reset()
         bdb_refseq.reset()
         print('Removing mapings database completed.')
@@ -272,6 +335,7 @@ if __name__ == '__main__':
         '-d',
         '--databases',
         type=str,
+        nargs='*',
         choices=database_binds,
         default=database_binds,
         help=(
