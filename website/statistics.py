@@ -1,6 +1,7 @@
 from database import db
 import models
 from sqlalchemy import and_
+from flask import current_app
 
 
 MAPPINGS_COUNT = 73093771   # this is result of stats.count_mappings() -
@@ -121,6 +122,8 @@ class Statistics:
         return (ev + kv + cv + ck + ce + ek) - (cek + ekv + cev + ckv) + in_all
 
 
-stats = Statistics()
-
-STATISTICS = stats.get_all()
+if current_app.config['LOAD_STATS']:
+    stats = Statistics()
+    STATISTICS = stats.get_all()
+else:
+    STATISTICS = ''
