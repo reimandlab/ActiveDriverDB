@@ -32,6 +32,8 @@ class DatasetTest(ModelTest):
         dataset.assign_randomized_id()
         db.session.commit()
 
+        assert user.datasets == [dataset]
+
         public_id = dataset.randomized_id
 
         d = UsersMutationsDataset.query.filter_by(randomized_id=public_id).one()

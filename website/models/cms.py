@@ -93,10 +93,10 @@ class User(CMSModel):
         if '@' not in email:
             return False
 
-        local, domain = email.split('@')
-
         # both parts required
-        if not (local and domain):
+        try:
+            local, domain = email.split('@')
+        except ValueError:
             return False
 
         # no consecutive dots allowed in domain
