@@ -249,7 +249,7 @@ class Setting(CMSModel):
 
 class UsersMutationsDataset(CMSModel):
 
-    data = db.Column(db.PickleType())
+    data = db.Column(db.PickleType(protocol=4))
     name = db.Column(db.String(256))
     randomized_id = db.Column(db.String(256), unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
