@@ -38,9 +38,11 @@ def reset_relational_db(**kwargs):
     print('Recreating', name, 'database completed.')
 
 
-def automigrate(args):
+def automigrate(args, app=None):
+    if not app:
+        app = create_app()
     for database_bind in args.databases:
-        basic_auto_migrate_relational_db(bind=database_bind)
+        basic_auto_migrate_relational_db(app, bind=database_bind)
     return True
 
 
@@ -48,7 +50,7 @@ def column_names(table):
     return set((i.name for i in table.c))
 
 
-def basic_auto_migrate_relational_db(bind):
+def basic_auto_migrate_relational_db(app, bind):
     """Inspired with http://stackoverflow.com/questions/2103274/"""
 
     from sqlalchemy import Table
@@ -59,8 +61,6 @@ def basic_auto_migrate_relational_db(bind):
     db.reflect()
     db.session.commit()
     db.create_all(bind=bind)
-
-    app = create_app()
 
     with app.app_context():
         engine = db.get_engine(app, bind)
