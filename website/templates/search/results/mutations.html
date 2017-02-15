@@ -21,13 +21,13 @@
   </tr>
   </thead>
   {% if results %}
-    {% for name, result_obj in results.items() %}
+    {% for user_input, result_obj in results.items() %}
       <tbody>
       {% for result in result_obj.results %}
         {% set mutation = result.mutation %}
         <tr>
           {% if loop.first %}
-            <td rowspan={{ loop.length }}>{{ result_obj.user_input }}</td>
+            <td rowspan={{ loop.length }}>{{ user_input }}</td>
             {% if result.type == 'proteomic' %}
             {# If the query was about one specific protein, it won't change #}
             <td rowspan={{ loop.length }}>

@@ -15,6 +15,8 @@ from helpers.commands import CommandTarget
 from helpers.commands import command
 from helpers.commands import create_command_subparsers
 from app import create_app
+from exceptions import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 
 database_binds = ('bio', 'cms')
@@ -137,9 +139,29 @@ class CMS(CommandTarget):
         db.session.add(main_page)
         print('Index page created')
         print('Creating root user account')
-        email = input('Please type root email: ')
-        password = getpass('Please type root password: ')
-        root = User(email, password)
+
+        correct = False
+
+        while not correct:
+            try:
+                email = input('Please type root email: ')
+                password = getpass(
+                    'Please type root password (you will not see characters '
+                    'you type due to security reasons): '
+                )
+                root = User(email, password, access_level=10)
+                correct = True
+            except ValidationError as e:
+                print('Root credentials are incorrect: ', e.message)
+                print('Please, try to use something different or more secure:')
+            except IntegrityError:
+                db.session.rollback()
+                print(
+                    'IntegrityError: either a user with this email already '
+                    'exists or there is a serious problem with the database. '
+                    'Try to use a different email address'
+                )
+
         db.session.add(root)
         db.session.commit()
         print('Root user with email', email, 'created')

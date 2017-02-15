@@ -5,10 +5,12 @@ from flask import url_for
 from flask import render_template as template
 from flask_classful import FlaskView
 from flask_classful import route
+from flask_login import current_user
 from models import Protein
 from models import Mutation
 from models import Domain
 from models import Site
+from models import UsersMutationsDataset
 from helpers.tracks import Track
 from helpers.tracks import TrackElement
 from helpers.tracks import PositionTrack
@@ -71,8 +73,17 @@ class ProteinViewFilters(FilterManager):
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
+    def _get_users_datasets(self):
+        if current_user.is_authenticated:
+            return {d.randomized_id: d.name for d in current_user.datasets}
+        else:
+            return {}
+
     def before_request(self, name, *args, **kwargs):
-        filter_manager = ProteinViewFilters()
+        datasets = self._get_users_datasets()
+        filter_manager = ProteinViewFilters(
+            custom_datasets_ids=datasets.keys()
+        )
         endpoint = self.build_route_name(name)
 
         return filter_manager.reformat_request_url(
@@ -135,7 +146,10 @@ class ProteinView(FlaskView):
         + needleplot
         + tracks (sequence + data tracks)
         """
-        filter_manager = ProteinViewFilters()
+        datasets = self._get_users_datasets()
+        filter_manager = ProteinViewFilters(
+            custom_datasets_ids=datasets.keys()
+        )
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
@@ -143,13 +157,29 @@ class ProteinView(FlaskView):
             TrackElement(*region) for region in protein.disorder_regions
         ]
 
-        source = filter_manager.get_value('Mutation.sources')
+        custom_dataset = filter_manager.get_value('UserMutations.sources')
 
-        # TODO temove protien.id
-        raw_mutations = filter_manager.query_all(
-            Mutation,
-            lambda q: and_(q, Mutation.protein_id == protein.id)
-        )
+        if custom_dataset:
+            dataset = UsersMutationsDataset.query.filter_by(
+                randomized_id=custom_dataset
+            ).one()
+
+            raw_mutations = [
+                m for m in dataset.mutations
+                if m.protein == protein
+            ]
+
+            source = 'TCGA'
+            # TODO: it will work but it will be too slow. Possible solution:
+            # set source in all mutations before saving as dataset and then
+            # use normal filtering
+        else:
+            source = filter_manager.get_value('Mutation.sources')
+
+            raw_mutations = filter_manager.query_all(
+                Mutation,
+                lambda q: and_(q, Mutation.protein == protein)
+            )
 
         tracks = [
             PositionTrack(protein.length, 25),
@@ -180,7 +210,10 @@ class ProteinView(FlaskView):
         return template(
             'protein/show.html', protein=protein, tracks=tracks,
             filters=filter_manager,
-            widgets=create_widgets(filters_by_id),
+            widgets=create_widgets(
+                filters_by_id,
+                custom_datasets_names=datasets.values()
+            ),
             value_type=value_type,
             log_scale=(value_type == 'Frequency'),
             mutations=parsed_mutations,

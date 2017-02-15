@@ -1,11 +1,14 @@
+from functools import wraps
 from flask import flash
 from flask import render_template as template
 from flask import redirect
 from flask import request
 from flask import url_for
 from flask import Markup
+from flask import abort
 from flask_classful import FlaskView
 from flask_classful import route
+from flask_login import current_user
 from flask_login import login_user
 from flask_login import logout_user
 from flask_login import login_required
@@ -23,6 +26,8 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import IntegrityError
 from statistics import STATISTICS
+from exceptions import ValidationError
+
 
 BUILT_IN_SETTINGS = ['website_name']
 
@@ -32,16 +37,21 @@ USER_ACCESSIBLE_VARIABLES = {
     'stats': STATISTICS
 }
 
-
-class ValidationError(Exception):
-    pass
-
-    @property
-    def message(self):
-        return self.args[0]
-
-
 PAGE_COLUMNS = ('title', 'address', 'content')
+
+
+def admin_only(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for(
+                'ContentManagmentSystem:login',
+                next=request.url
+            ))
+        if not current_user.is_admin:
+            abort(401)
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @login_manager.user_loader
@@ -158,12 +168,12 @@ class ContentManagmentSystem(FlaskView):
         page = get_page(address)
         return self._template('page', page=page)
 
-    @login_required
+    @admin_only
     def list_pages(self):
         pages = Page.query.all()
         return self._template('admin/pages', entries=pages)
 
-    @login_required
+    @admin_only
     def list_menus(self):
         menus = Menu.query.all()
         pages = Page.query.all()
@@ -179,7 +189,7 @@ class ContentManagmentSystem(FlaskView):
             menu_slots=menu_slots
         )
 
-    @login_required
+    @admin_only
     def settings(self):
         settings = {
             setting.name: setting
@@ -195,7 +205,7 @@ class ContentManagmentSystem(FlaskView):
         )
 
     @route('/add_menu/', methods=['POST'])
-    @login_required
+    @admin_only
     def add_menu(self):
         try:
             name = request.form['name']
@@ -223,7 +233,7 @@ class ContentManagmentSystem(FlaskView):
         return redirect(url_for('ContentManagmentSystem:list_menus'))
 
     @route('/menu/<menu_id>/edit', methods=['POST'])
-    @login_required
+    @admin_only
     def edit_menu(self, menu_id):
         try:
             menu = Menu.query.get(menu_id)
@@ -240,7 +250,7 @@ class ContentManagmentSystem(FlaskView):
         return redirect(url_for('ContentManagmentSystem:list_menus'))
 
     @route('/settings/save/', methods=['POST'])
-    @login_required
+    @admin_only
     def save_settings(self):
         goto = request.form.get(
             'goto',
@@ -258,7 +268,7 @@ class ContentManagmentSystem(FlaskView):
         return redirect(goto)
 
     @route('/settings/set/<name>', methods=['POST'])
-    @login_required
+    @admin_only
     def set(self, name):
         value = request.form['value']
         goto = request.form.get(
@@ -273,7 +283,7 @@ class ContentManagmentSystem(FlaskView):
         db.session.commit()
         return redirect(goto)
 
-    @login_required
+    @admin_only
     def remove_menu(self, menu_id):
         menu = Menu.query.get(menu_id)
         if menu:
@@ -290,7 +300,7 @@ class ContentManagmentSystem(FlaskView):
         return redirect(url_for('ContentManagmentSystem:list_menus'))
 
     @route('/menu/<menu_id>/add_page_menu_entry', methods=['POST'])
-    @login_required
+    @admin_only
     def add_page_menu_entry(self, menu_id):
         try:
             page_id = request.form['page_id']
@@ -305,7 +315,7 @@ class ContentManagmentSystem(FlaskView):
         return redirect(url_for('ContentManagmentSystem:list_menus'))
 
     @route('/menu/<menu_id>/add_custom_menu_entry', methods=['POST'])
-    @login_required
+    @admin_only
     def add_custom_menu_entry(self, menu_id):
 
         menu = Menu.query.get(menu_id)
@@ -318,7 +328,7 @@ class ContentManagmentSystem(FlaskView):
 
         return redirect(url_for('ContentManagmentSystem:list_menus'))
 
-    @login_required
+    @admin_only
     def remove_menu_entry(self, menu_id, entry_id):
         menu = Menu.query.get(menu_id)
         entry = MenuEntry.query.get(entry_id)
@@ -328,7 +338,7 @@ class ContentManagmentSystem(FlaskView):
         return redirect(url_for('ContentManagmentSystem:list_menus'))
 
     @route('/add/', methods=['GET', 'POST'])
-    @login_required
+    @admin_only
     def add_page(self):
         if request.method == 'GET':
             return self._template(
@@ -373,7 +383,7 @@ class ContentManagmentSystem(FlaskView):
         )
 
     @route('/edit/<address>/', methods=['GET', 'POST'])
-    @login_required
+    @admin_only
     def edit_page(self, address):
         page = get_page(address, 'Edit')
         if request.method == 'POST' and page:
@@ -413,7 +423,7 @@ class ContentManagmentSystem(FlaskView):
                 page = page_new_data
         return self._template('admin/edit_page', page=page)
 
-    @login_required
+    @admin_only
     def remove_page(self, address):
         page = get_page(address, 'Remove')
         if page:
@@ -441,15 +451,69 @@ class ContentManagmentSystem(FlaskView):
         user = User.query.filter_by(email=email).first()
 
         if user is None:
-            flash('Invalid or unregistered email', 'error')
+            flash('Invalid or unregistered email', 'danger')
             return redirect(url_for('ContentManagmentSystem:login'))
 
         if user.authenticate(password):
             login_user(user, remember=remember_me)
-            return redirect(url_for('ContentManagmentSystem:list_pages'))
+            return redirect(url_for('ContentManagmentSystem:my_datasets'))
         else:
-            flash('Password is invalid', 'error')
+            flash('Password is invalid', 'danger')
             return redirect(url_for('ContentManagmentSystem:login'))
+
+    @route('/register/', methods=['GET', 'POST'])
+    def sign_up(self):
+        if request.method == 'GET':
+            return self._template('register')
+
+        consent = request.form.get('consent', False)
+
+        if not consent:
+            flash(
+                'Data policy consent is required to proceed.',
+                'danger'
+            )
+            return self._template('register')
+
+        email = request.form.get('email', '')
+        password = request.form.get('password', '')
+
+        try:
+            new_user = User(email, password, access_level=0)
+            db.session.add(new_user)
+            db.session.commit()
+            flash(
+                'Your account has been created successfuly! '
+                'Now you can login with the form below:',
+                'success'
+            )
+            return redirect(url_for('ContentManagmentSystem:login'))
+        except ValidationError as e:
+            flash(e.message, 'danger')
+            return self._template('register')
+        except IntegrityError:
+            db.session.rollback()
+
+        already_a_user = User.query.filter_by(email=email).count()
+
+        if already_a_user:
+            flash(
+                'This email is already used for an account. '
+                'If you do not remember your password, please contact us.',
+                'warning'
+            )
+        else:
+            flash(
+                'Something gone wrong when creating your account. '
+                'If the problem reoccurs please contact us.',
+                'danger'
+            )
+
+        return self._template('register')
+
+    @login_required
+    def my_datasets(self):
+        return self._template('datasets')
 
     def logout(self):
         logout_user()

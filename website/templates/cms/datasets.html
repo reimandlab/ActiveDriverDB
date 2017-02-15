@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+
+{% block head %}
+  {% assets "css_page" %}
+  <link href="{{ ASSET_URL }}" rel="stylesheet" />
+  {% endassets %}
+{% endblock %}
+
+
+{% block title %} My datasets - {{ super() }} {% endblock %}
+
+
+{% block content %}
+
+  <h3>My datasets</h3>
+
+  <div>
+    <table class="table">
+    <tr>
+      <th>Name</th>
+      <th>Created on</th>
+      <th>Days until removal</th>
+      <th>Queries</th>
+      <th>Results</th>
+    </tr>
+    {% for dataset in current_user.datasets %}
+      <tr>
+        <td>
+          <a href="{{ url_for('SearchView:user_mutations', code=dataset.randomized_id) }}">{{ dataset.name }}</a>
+        </td>
+        <td>{{ dataset.created_on }}</td>
+        <td>{{ dataset.life_expectancy }}</td>
+        <td>{{ dataset.query_size }}</td>
+        <td>{{ dataset.mutations | length }}</td>
+      </tr>
+    {% else %}
+      <tr>
+        <td colspan="4">
+          No datasets created yet.
+          <a href="{{ url_for('SearchView:mutations') }}">Click here to upload your first mutations dataset.</a>
+        </td>
+      </tr>
+    {% endfor %}
+    </table>
+  </div>
+{% endblock %}

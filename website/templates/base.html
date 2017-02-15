@@ -52,12 +52,18 @@
           <a class="navbar-brand" href="/">{{ website_name  }}</a>
         </div>
         <div id="navbar" class="navbar-collapse collapse">
+          {% if not current_user.is_authenticated %}
+          <div class="nav navbar-nav navbar-right navbar-form">
+            {% include 'search/searchbar.html' %}
+            <a href="{{ url_for('ContentManagmentSystem:login') }}" class="btn btn-warning">
+              <span class="glyphicon glyphicon-log-in"></span>
+              Login
+            </a>
+          </div>
+          {% endif %}
           <ul class="nav navbar-nav">
             {{ system_menu('top_menu').as_list }}
           </ul>
-          <div class="nav navbar-nav navbar-right navbar-form">
-            {% include 'search/searchbar.html' %}
-          </div>
         </div>
       </div>
     </nav>
@@ -65,7 +71,9 @@
     <div class="header">
         {% if current_user.is_authenticated %}
         <div class="user-menu">
+          Logged in as {{ current_user.username }}
           {% block user_menu %}
+          {% if current_user.is_admin %}
           <a href="{{ url_for('ContentManagmentSystem:list_pages') }}" class="btn btn-warning">
             <span class="glyphicon glyphicon-list-alt"></span>
             Pages
@@ -77,6 +85,11 @@
           <a href="{{ url_for('ContentManagmentSystem:settings') }}" class="btn btn-warning">
             <span class="glyphicon glyphicon-cog"></span>
             Settings
+          </a>
+          {% endif %}
+          <a href="{{ url_for('ContentManagmentSystem:my_datasets') }}" class="btn btn-warning">
+            <span class="glyphicon glyphicon-log-out"></span>
+            My datasets
           </a>
           <a href="{{ url_for('ContentManagmentSystem:logout') }}" class="btn btn-warning">
             <span class="glyphicon glyphicon-log-out"></span>

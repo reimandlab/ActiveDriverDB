@@ -5,6 +5,16 @@
   id="mutations-form"
   enctype="multipart/form-data"
 >
+  {% if dataset %}
+    <h3>Dataset: {{ dataset.name }}</h3>
+    <h4>Saved on {{ dataset.created_on }}
+      {% if dataset.owner %}
+        by {{ dataset.owner.username }}
+      {% else %}
+        anonimously
+      {% endif %}
+    </h4>
+  {% endif %}
   <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
   {# TODO: the example should return more representative results #}
   {% set example='HTR3E I183823756M\nSTAT6 W737C\nchr12 57490358 C A\nTP53 R282W\nBRCA1 L432V' %}
@@ -20,6 +30,22 @@
     {% with widgets=[widgets.is_ptm] %}
       {% include 'widgets/filters_bar.html' %}
     {% endwith %}
+  </div>
+  <label>
+    <input type="checkbox" name="store_on_server" onchange="$('.storage_details').toggleClass('hidden')">
+    Store these mutations on server*.
+    {% if current_user.is_authenticated %}
+      Saving dataset to {{ current_user.username }} account.
+    {% else %}
+      To be able to browse these mutations as a dataset later, please
+      <a href="{{ url_for('ContentManagmentSystem:login') }}">login first</a>.
+    {% endif %}
+  </label>
+  <div class="storage_details hidden">
+    Dataset name: <input type="text" name="dataset_name">
+    {#
+    Dataset access password (optinal): <input type="password" name="dataset_password">
+    #}
   </div>
   <div class="inputs" class="{{ 'hidden' if results }}">
     {# The length of the textarea should change dynamically up to 30 rows - JS #}
@@ -43,6 +69,9 @@
     class="results {{ 'hidden' if not results and not badly_formatted and not without_mutations }}"
   >
     {% include 'search/results/mutations.html' %}
+  </div>
+  <div id="footnote">
+    * Mutations will be stored for 7 days. Ticking this box allows you to return to the results later easily.
   </div>
   <input type="hidden" name="fallback" value="True">
 </form>

@@ -220,8 +220,8 @@ class Filter:
                 )
         ):
             raise ValidationError(
-                'Filter % received forbidden value: %s. Allowed: %s' %
-                (self.id, value, self.choices)
+                'Filter %s received forbidden value: %s. Allowed: %s. '
+                'Check types.' % (self.id, value, self.choices)
             )
 
     def _verify_comparator(self, comparator):

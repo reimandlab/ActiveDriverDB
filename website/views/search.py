@@ -1,19 +1,27 @@
 import json
+from operator import itemgetter
+from flask import make_response
 from flask import render_template as template
 from flask import request
 from flask import jsonify
+from flask import url_for
+from flask import flash
+from flask import current_app
 from flask_classful import FlaskView
 from flask_classful import route
+from flask_login import current_user
 from Levenshtein import distance
 from models import Protein
 from models import Gene
 from models import Mutation
+from models import UsersMutationsDataset
 from sqlalchemy import and_
 from helpers.filters import FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 from ._commons import get_genomic_muts
 from ._commons import get_protein_muts
+from database import db
 
 
 class GeneResult:
@@ -85,16 +93,18 @@ def search_proteins(phase, limit=False, filter_manager=None):
             else:
                 genes[gene.name] = GeneResult(gene, restrict_to_isoform=isoform)
 
-        sort_key = lambda gene: min(
-            [
-                distance(isoform.refseq, phase)
-                for isoform in gene.isoforms
-            ]
-        )
+        def sort_key(gene):
+            return min(
+                [
+                    distance(isoform.refseq, phase)
+                    for isoform in gene.isoforms
+                ]
+            )
 
     else:
         # if the phrase is not numeric
-        sort_key = lambda gene: distance(gene.name, phase)
+        def sort_key(gene):
+            return distance(gene.name, phase)
 
     return sorted(
         genes.values(),
@@ -102,111 +112,120 @@ def search_proteins(phase, limit=False, filter_manager=None):
     )
 
 
-def parse_vcf(vcf_file, results, without_mutations, badly_formatted, data_filter):
+class MutationSearch:
 
-    query = ''
+    def __init__(self, vcf_file=None, text_query=None, filter_manager=None):
+        # note: entries from both file and textarea will be merged
 
-    for line in vcf_file:
-        line = line.decode('latin1')
-        if line.startswith('#'):
-            continue
-        data = line.split()
+        self.query = ''
+        self.results = {}
+        self.without_mutations = []
+        self.badly_formatted = []
 
-        if len(data) < 5:
-            if not line:    # if we reached end of the file
-                break
-            badly_formatted.append(line)
-            continue
+        if filter_manager:
+            def data_filter(elements):
+                return filter_manager.apply(
+                    elements,
+                    itemgetter=itemgetter('mutation')
+                )
+        else:
+            def data_filter(elements):
+                return elements
 
-        chrom, pos, var_id, ref, alts = data[:5]
+        self.data_filter = data_filter
 
-        if chrom.startswith('chr'):
-            chrom = chrom[3:]
+        if vcf_file:
+            self.parse_vcf(vcf_file)
 
-        alts = alts.split(',')
-        for alt in alts:
+        if text_query:
+            self.query += text_query
+            self.parse_text(text_query)
 
-            items = get_genomic_muts(chrom, pos, ref, alt)
+        # when parsing is complete, quickly forget where is such complex object
+        # like filter_manager so any instance of this class can be pickled.
+        self.data_filter = None
 
-            items = data_filter(items)
+    def parse_vcf(self, vcf_file):
 
-            chrom = 'chr' + chrom
-            parsed_line = ' '.join((chrom, pos, ref, alt)) + '\n'
+        results = self.results
+
+        for line in vcf_file:
+            line = line.decode('latin1').strip()
+            if line.startswith('#'):
+                continue
+            data = line.split()
+
+            if len(data) < 5:
+                if not line:    # if we reached end of the file
+                    break
+                self.badly_formatted.append(line)
+                continue
+
+            chrom, pos, var_id, ref, alts = data[:5]
+
+            if chrom.startswith('chr'):
+                chrom = chrom[3:]
+
+            alts = alts.split(',')
+            for alt in alts:
+
+                items = get_genomic_muts(chrom, pos, ref, alt)
+
+                items = self.data_filter(items)
+
+                chrom = 'chr' + chrom
+                parsed_line = ' '.join((chrom, pos, ref, alt)) + '\n'
+
+                if items:
+                    if len(alts) > 1:
+                        parsed_line += ' (' + alt + ')'
+
+                    if parsed_line in results:
+                        results[parsed_line]['count'] += 1
+                        assert results[parsed_line]['results'] == items
+                    else:
+                        results[parsed_line] = {
+                            'results': items,
+                            'count': 1
+                        }
+                else:
+                    self.without_mutations.append(parsed_line)
+
+                self.query += parsed_line
+
+    def parse_text(self, text_query):
+
+        results = self.results
+
+        for line in text_query.splitlines():
+            data = line.strip().split()
+            if len(data) == 4:
+                chrom, pos, ref, alt = data
+                chrom = chrom[3:]
+
+                items = get_genomic_muts(chrom, pos, ref, alt)
+
+            elif len(data) == 2:
+                gene, mut = [x.upper() for x in data]
+
+                items = get_protein_muts(gene, mut)
+            else:
+                self.badly_formatted.append(line)
+                continue
+
+            items = self.data_filter(items)
 
             if items:
-                if len(alts) > 1:
-                    parsed_line += ' (' + alt + ')'
-
-                if parsed_line in results:
-                    results[parsed_line]['count'] += 1
-                    assert results[parsed_line]['results'] == items
+                if line in results:
+                    results[line]['count'] += 1
+                    assert results[line]['results'] == items
                 else:
-                    results[parsed_line] = {
-                        'user_input': parsed_line,
+                    results[line] = {
                         'results': items,
                         'count': 1
                     }
             else:
-                without_mutations.append(parsed_line)
-
-            query += parsed_line
-    return query
-
-
-def parse_text(
-    textarea_query, results, without_mutations, badly_formatted, data_filter
-):
-    for line in textarea_query.split('\n'):
-        data = line.split()
-        if len(data) == 4:
-            chrom, pos, ref, alt = data
-            chrom = chrom[3:]
-
-            items = get_genomic_muts(chrom, pos, ref, alt)
-
-        elif len(data) == 2:
-            gene, mut = [x.upper() for x in data]
-
-            items = get_protein_muts(gene, mut)
-        else:
-            badly_formatted.append(line)
-            continue
-
-        items = data_filter(items)
-
-        if items:
-            if line in results:
-                results[line]['count'] += 1
-                assert results[line]['results'] == items
-            else:
-                results[line] = {
-                    'user_input': line, 'results': items, 'count': 1
-                }
-        else:
-            without_mutations.append(line)
-
-
-def search_mutations(vcf_file, textarea_query, data_filter):
-    # note: entries from both file and textarea will be merged
-    query = ''
-
-    results = {}
-    without_mutations = []
-
-    badly_formatted = []
-
-    if vcf_file:
-        query += parse_vcf(
-            vcf_file, results, without_mutations, badly_formatted, data_filter
-        )
-
-    if textarea_query:
-        query += textarea_query
-        parse_text(
-            textarea_query, results, without_mutations, badly_formatted, data_filter
-        )
-
-    return results, without_mutations, badly_formatted, query
+                self.without_mutations.append(line)
 
 
 class SearchViewFilters(FilterManager):
@@ -280,46 +299,99 @@ class SearchView(FlaskView):
             query=query
         )
 
+    def user_mutations(self, code):
+
+        filter_manager = SearchViewFilters()
+
+        dataset = UsersMutationsDataset.query.filter_by(
+            randomized_id=code
+        ).one()
+
+        if dataset.owner and dataset.owner.id != current_user.id:
+            current_app.login_manager.unauthorized()
+
+        dataset.bind_to_session()
+
+        response = make_response(template(
+            'search/index.html',
+            target='mutations',
+            results=dataset.data.results,
+            widgets=make_widgets(filter_manager),
+            without_mutations=dataset.data.without_mutations,
+            query=dataset.data.query,
+            badly_formatted=dataset.data.badly_formatted,
+            dataset=dataset
+        ))
+        return response
+
     @route('/mutations', methods=['POST', 'GET'])
     def mutations(self):
         """Render search form and results (if any) for proteins or mutations"""
 
-        without_mutations = []
-        badly_formatted = []
-
         filter_manager = SearchViewFilters()
 
         if request.method == 'POST':
-            from operator import itemgetter
             textarea_query = request.form.get('mutations', False)
             vcf_file = request.files.get('vcf-file', False)
 
-            results, without_mutations, badly_formatted, query = search_mutations(
+            mutation_search = MutationSearch(
                 vcf_file,
                 textarea_query,
-                lambda elements: filter_manager.apply(
-                    elements,
-                    itemgetter=itemgetter('mutation')
-                )
+                filter_manager
             )
 
-            # TODO: redirect with an url containing session id, so user can
-            # save line as a bookmark and return there later. We can create a
-            # hash on the input - md5 should be enough.
-            # redirect()
-        else:
-            query = ''
-            results = []
+            store_on_server = request.form.get('store_on_server', False)
 
-        return template(
+            if store_on_server:
+                name = request.form.get('dataset_name', 'Custom Dataset')
+
+                if current_user.is_authenticated:
+                    user = current_user
+                else:
+                    user = None
+                    flash(
+                        'To browse uploaded mutations easily in the '
+                        'future, please register or log in with this form',
+                        'warning'
+                    )
+
+                dataset = UsersMutationsDataset(
+                    name=name,
+                    data=mutation_search,
+                    owner=user
+                )
+
+                db.session.add(dataset)
+                db.session.commit()
+                dataset.assign_randomized_id()
+                db.session.commit()
+
+                url = url_for(
+                    'SearchView:user_mutations',
+                    code=dataset.randomized_id,
+                    _external=True
+                )
+
+                flash(
+                    'Your mutations have been saved on the server. '
+                    'You can access the results later using following URL: '
+                    '<a href="' + url + '">' + url + '</a>',
+                    'success'
+                )
+        else:
+            mutation_search = MutationSearch()
+
+        response = make_response(template(
             'search/index.html',
             target='mutations',
-            results=results,
+            results=mutation_search.results,
             widgets=make_widgets(filter_manager),
-            without_mutations=without_mutations,
-            query=query,
-            badly_formatted=badly_formatted
-        )
+            without_mutations=mutation_search.without_mutations,
+            query=mutation_search.query,
+            badly_formatted=mutation_search.badly_formatted
+        ))
+
+        return response
 
     def form(self, target):
         """Return an empty HTML form appropriate for given target."""
