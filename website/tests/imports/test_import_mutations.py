@@ -78,14 +78,14 @@ class TestImport(DatabaseTest):
             assert first_row_mutation.alt == 'Q'
 
             tcga_mutation = first_row_mutation.meta_cancer[0]
-            assert tcga_mutation.sample_name == 'TCGA-BL-A0C8-01A-11D-A10S-08'
+            assert tcga_mutation.samples == 'TCGA-BL-A0C8-01A-11D-A10S-08'
 
             muts_import_manager.perform(
                 'update', proteins, ['cancer'], {'cancer': update_filename}
             )
 
             # updated correctly?
-            assert tcga_mutation.sample_name == 'TCGA-BL-A0C8-01A-11D-A10S-09'
+            assert tcga_mutation.samples == 'TCGA-BL-A0C8-01A-11D-A10S-09'
 
             # added correctly during update?
             assert len(list(proteins['NM_006617'].mutations)) == 2
@@ -99,4 +99,4 @@ class TestImport(DatabaseTest):
             assert new_mutation.position == 2
             assert new_mutation.alt == 'K'
             new_tcga_mutation = first_row_mutation.meta_cancer[0]
-            assert new_tcga_mutation.sample_name == 'TCGA-BL-A0C8-01A-11D-A10S-09'
+            assert new_tcga_mutation.samples == 'TCGA-BL-A0C8-01A-11D-A10S-09'

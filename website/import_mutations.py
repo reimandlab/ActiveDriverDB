@@ -199,12 +199,8 @@ class MutationImporter(ABC):
 
             with open(report_file, 'w') as f:
                 for refseq, instances in self.broken_seq.items():
-                    f.write(
-                        '\n'.join(
-                            '\t'.join([refseq] + instance)
-                            for instance in instances
-                        )
-                    )
+                    for instance in instances:
+                        f.write('\t'.join([refseq] + instance) + '\n')
 
             print(
                 'Detected and skipped mutations with incorrectly mapped '
@@ -371,10 +367,14 @@ class MutationImporter(ABC):
             ref, pos, alt = decode_mutation(mutation[4])
 
             try:
-                if ref != protein.sequence[pos - 1]:
+                ref_in_db = '-'
+                ref_in_db = protein.sequence[pos - 1]
+                if ref != ref_in_db:
                     raise ValueError
             except (ValueError, IndexError):
-                self.broken_seq[refseq].append([alt, ref])
+                self.broken_seq[refseq].append(
+                    [ref, ref_in_db, str(pos), alt]
+                )
                 continue
 
             affected_sites = protein.get_sites_from_range(pos - 7, pos + 7)
