@@ -297,9 +297,14 @@ class MutationImporter(ABC):
             path = os.path.join(directory, name)
 
         header = [
-            'gene', 'cancer_type', 'sample_id',
-            'position',  'wt_residue', 'mut_residue'
+            'gene', 'isoform', 'position',  'wt_residue', 'mut_residue'
         ]
+
+        if self.model_name == 'CancerMutation':
+            header += ['cancer_type', 'sample_id']
+        elif self.model_name == 'InheritedMutation':
+            header += ['disease']
+
         with open(path, 'w') as f:
             f.write('\t'.join(header))
 
@@ -311,10 +316,20 @@ class MutationImporter(ABC):
                     continue
 
                 if self.model_name == 'CancerMutation':
-                    samples = mutation.samples.split(',') or ''
                     cancer = mutation.cancer.code
+                    samples = mutation.samples.split(',')
+
+                    dataset_specific = [
+                        [cancer, sample]
+                        for sample in samples
+                    ]
+                elif self.model_name == 'InheritedMutation':
+                    dataset_specific = [
+                        [d.disease_name]
+                        for d in mutation.clin_data
+                    ]
                 else:
-                    samples, cancer = [''], ''
+                    dataset_specific = [[]]
 
                 try:
                     ref = m.ref
@@ -325,11 +340,11 @@ class MutationImporter(ABC):
                     )
                     ref = ''
 
-                for sample in samples:
+                for instance in dataset_specific:
                     data = [
-                        m.protein.gene.name, cancer, sample,
+                        m.protein.gene.name, m.protein.refseq,
                         str(m.position), m.alt, ref
-                    ]
+                    ] + instance
 
                     f.write('\n' + '\t'.join(data))
 
