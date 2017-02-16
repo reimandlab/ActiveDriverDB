@@ -375,9 +375,9 @@ class SearchView(FlaskView):
                 )
 
                 flash(
-                    'Your mutations have been saved on the server. '
-                    'You can access the results later using following URL: '
-                    '<a href="' + url + '">' + url + '</a>',
+                    'Your mutations have been saved on the server.'
+                    '<p>You can access the results later using following URL: '
+                    '<a href="' + url + '">' + url + '</a></p>',
                     'success'
                 )
         else:
