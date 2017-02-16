@@ -40,6 +40,8 @@ class Filter:
     """
 
     possible_comparators = {
+        'and': operator.and_,
+        'or': operator.or_,
         'ge': operator.ge,
         'le': operator.le,
         'gt': operator.gt,
