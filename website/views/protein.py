@@ -75,7 +75,7 @@ class ProteinView(FlaskView):
 
     def _get_users_datasets(self):
         if current_user.is_authenticated:
-            return {d.randomized_id: d.name for d in current_user.datasets}
+            return {d.uri: d.name for d in current_user.datasets}
         else:
             return {}
 
@@ -161,7 +161,7 @@ class ProteinView(FlaskView):
 
         if custom_dataset:
             dataset = UsersMutationsDataset.query.filter_by(
-                randomized_id=custom_dataset
+                uri=custom_dataset
             ).one()
 
             raw_mutations = [
