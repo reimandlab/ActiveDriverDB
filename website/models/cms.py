@@ -1,3 +1,5 @@
+import pickle
+import os
 from sqlalchemy.ext.associationproxy import association_proxy
 from werkzeug.utils import cached_property
 from database import db
@@ -248,12 +250,76 @@ class Setting(CMSModel):
 
 
 class UsersMutationsDataset(CMSModel):
+    mutations_dir = 'user_mutations'
 
-    data = db.Column(db.PickleType(protocol=4))
     name = db.Column(db.String(256))
-    randomized_id = db.Column(db.String(256), unique=True, index=True)
+    uri = db.Column(db.String(256), unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_on = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __init__(self, *args, **kwargs):
+        data = kwargs.pop('data')
+        super().__init__(*args, **kwargs)
+        self.data = data
+
+    @property
+    def data(self):
+        if not hasattr(self, '_data'):
+            self._data = self._load_from_file()
+            self.bind_to_session()
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._data = data
+        uri = self._save_to_file(data, self.uri)
+        self.uri = uri
+
+    def _save_to_file(self, data, uri=None):
+        """Saves data to a file indentified by uri argument.
+
+        If no uri is given, new unique file is created and new uri returned.
+        Returned uri is unique so it can serve as a kind of a randomized id to
+        prevent malicious software from iteration over all entries.
+        """
+        import base64
+        from tempfile import NamedTemporaryFile
+
+        os.makedirs('user_mutations', exist_ok=True)
+
+        encoded_name = str(
+            base64.urlsafe_b64encode(bytes(self.name, 'utf-8')),
+            'utf-8'
+        )
+
+        if uri:
+            file_name = uri + '.db'
+            path = os.path.join(self.mutations_dir, file_name)
+            db_file = open(path, 'wb')
+        else:
+            db_file = NamedTemporaryFile(
+                dir=self.mutations_dir,
+                prefix=encoded_name,
+                suffix='.db',
+                delete=False
+            )
+
+        pickle.dump(data, db_file, protocol=4)
+
+        uri_code = os.path.basename(db_file.name)[:-3]
+
+        return uri_code
+
+    def _load_from_file(self):
+        from urllib.parse import unquote
+
+        file_name = unquote(self.uri) + '.db'
+        path = os.path.join(self.mutations_dir, file_name)
+
+        if os.path.exists(path):
+            with open(path, 'rb') as f:
+                data = pickle.load(f)
+        return data
 
     @property
     def life_expectancy(self):
@@ -273,20 +339,3 @@ class UsersMutationsDataset(CMSModel):
             for result in result_obj['results']:
                 mutations.append(result['mutation'])
         return mutations
-
-    def bind_to_session(self):
-        results = self.data.results
-        for name, result_obj in results.items():
-            for result in result_obj['results']:
-                db.session.add(result['protein'])
-                db.session.add(result['mutation'])
-
-    def assign_randomized_id(self):
-        """Creates a unique ID with some random element.
-
-        This method has to be called AFTER an id assigment by the database.
-        Use of randomized ids prevents malicious software
-        from iteration over all entries.
-        """
-        random_str = str(uuid.uuid4()).split('-')[0]
-        self.randomized_id = '%s-%s' % (self.id, random_str)
