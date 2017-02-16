@@ -29,14 +29,11 @@ class DatasetTest(ModelTest):
         db.session.add(dataset)
         db.session.commit()
 
-        dataset.assign_randomized_id()
-        db.session.commit()
-
         assert user.datasets == [dataset]
 
-        public_id = dataset.randomized_id
+        public_id = dataset.uri
 
-        d = UsersMutationsDataset.query.filter_by(randomized_id=public_id).one()
+        d = UsersMutationsDataset.query.filter_by(uri=public_id).one()
 
         assert d == dataset
 
