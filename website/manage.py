@@ -266,8 +266,10 @@ class Mutations(CommandTarget):
     @staticmethod
     def action(name, args):
         proteins = get_proteins()
+        kwargs = vars(args)
+        kwargs.pop('func')
         muts_import_manager.perform(
-            name, proteins, args.sources
+            name, proteins, **kwargs
         )
 
     @command

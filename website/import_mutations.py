@@ -274,7 +274,7 @@ class MutationImporter(ABC):
         self.restart_autoincrement()
         print('Removed %s entries of %s' % (count, self.model_name))
 
-    def export(self, path=None, primary_isoforms_only=False):
+    def export(self, path=None, only_primary_isoforms=False):
         from datetime import datetime
         import os
         from tqdm import tqdm
@@ -290,7 +290,7 @@ class MutationImporter(ABC):
             name = name_template.format(
                 model_name=self.model_name,
                 restrictions=(
-                    '-primary_isoforms_only' if primary_isoforms_only else ''
+                    '-primary_isoforms_only' if only_primary_isoforms else ''
                 ),
                 date=export_time
             )
@@ -312,7 +312,7 @@ class MutationImporter(ABC):
 
                 m = mutation.mutation
 
-                if primary_isoforms_only and not m.protein.is_preferred_isoform:
+                if only_primary_isoforms and not m.protein.is_preferred_isoform:
                     continue
 
                 if self.model_name == 'CancerMutation':
@@ -443,7 +443,7 @@ class MutationImportManager:
             suffix='s' if len(sources) > 1 else ''
         ))
 
-    def perform(self, action, proteins, sources='__all__', paths=None):
+    def perform(self, action, proteins, sources='__all__', paths=None, **kwargs):
         if sources == '__all__':
             sources = self.names
 
@@ -458,7 +458,7 @@ class MutationImportManager:
 
             importer = module.Importer(proteins)
             method = getattr(importer, action)
-            method(path=path)
+            method(path=path, **kwargs)
 
         print('Mutations %sed' % action)
 
