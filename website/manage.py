@@ -370,7 +370,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if hasattr(args, 'func'):
-        app = create_app()
+        app = create_app(config_override={'LOAD_STATS': False})
         with app.app_context():
             args.func(args)
         print('Done, all tasks completed.')
