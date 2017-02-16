@@ -344,7 +344,7 @@ class MutationImporter(ABC):
                 for instance in dataset_specific:
                     data = [
                         m.protein.gene.name, m.protein.refseq,
-                        str(m.position), m.alt, ref
+                        str(m.position), ref, m.alt
                     ] + instance
 
                     f.write('\n' + '\t'.join(data))
