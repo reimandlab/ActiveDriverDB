@@ -344,5 +344,6 @@ class UsersMutationsDataset(CMSModel):
         results = self.data.results
         for name, result_obj in results.items():
             for result in result_obj['results']:
-                db.session.add(result['protein'])
-                db.session.add(result['mutation'])
+                if result['protein'] not in db.session:
+                    result['protein'] = db.session.merge(result['protein'])
+                    result['mutation'] = db.session.merge(result['mutation'])
