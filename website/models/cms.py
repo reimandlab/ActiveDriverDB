@@ -1,3 +1,5 @@
+import pickle
+import os
 from sqlalchemy.ext.associationproxy import association_proxy
 from werkzeug.utils import cached_property
 from database import db
@@ -248,12 +250,70 @@ class Setting(CMSModel):
 
 
 class UsersMutationsDataset(CMSModel):
+    mutations_dir = 'user_mutations'
 
-    data = db.Column(db.PickleType(protocol=4))
     name = db.Column(db.String(256))
-    randomized_id = db.Column(db.String(256), unique=True, index=True)
+    uri = db.Column(db.String(256), unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_on = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __init__(self, *args, **kwargs):
+        data = kwargs.pop('data')
+        super().__init__(*args, **kwargs)
+        self.data = data
+
+    @property
+    def data(self):
+        if not hasattr(self, '_data'):
+            self._data = self._load_from_file()
+            self.bind_to_session()
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._data = data
+        uri = self._save_to_file(data)
+        self.uri = uri
+
+    def _save_to_file(self, data, uri=None):
+        import base64
+        from tempfile import NamedTemporaryFile
+
+        os.makedirs('user_mutations', exist_ok=True)
+
+        encoded_name = str(
+            base64.urlsafe_b64encode(bytes(self.name, 'utf-8')),
+            'utf-8'
+        )
+
+        if uri:
+            file_name = uri + '.db'
+            path = os.path.join(self.mutations_dir, file_name)
+            db_file = open(path, 'wb')
+        else:
+            db_file = NamedTemporaryFile(
+                dir=self.mutations_dir,
+                prefix=encoded_name,
+                suffix='.db',
+                delete=False
+            )
+
+        pickle.dump(data, db_file, protocol=4)
+
+        uri_code = os.path.basename(db_file.name)[:-3]
+
+        return uri_code
+
+    def _load_from_file(self):
+        from urllib.parse import unquote
+
+        file_name = unquote(self.uri) + '.db'
+        path = os.path.join(self.mutations_dir, file_name)
+
+        if os.path.exists(path):
+            with open(path, 'rb') as f:
+                data = pickle.load(f)
+        return data
 
     @property
     def life_expectancy(self):

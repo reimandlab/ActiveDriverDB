@@ -27,7 +27,7 @@
     {% for dataset in current_user.datasets %}
       <tr>
         <td>
-          <a href="{{ url_for('SearchView:user_mutations', code=dataset.randomized_id) }}">{{ dataset.name }}</a>
+          <a href="{{ url_for('SearchView:user_mutations', uri=dataset.uri) }}">{{ dataset.name }}</a>
         </td>
         <td>{{ dataset.created_on }}</td>
         <td>{{ dataset.life_expectancy }}</td>

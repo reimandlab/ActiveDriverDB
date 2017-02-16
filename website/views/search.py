@@ -299,18 +299,17 @@ class SearchView(FlaskView):
             query=query
         )
 
-    def user_mutations(self, code):
+    @route('saved/<uri>')
+    def user_mutations(self, uri):
 
         filter_manager = SearchViewFilters()
 
         dataset = UsersMutationsDataset.query.filter_by(
-            randomized_id=code
+            uri=uri
         ).one()
 
         if dataset.owner and dataset.owner.id != current_user.id:
             current_app.login_manager.unauthorized()
-
-        dataset.bind_to_session()
 
         response = make_response(template(
             'search/index.html',
@@ -363,12 +362,10 @@ class SearchView(FlaskView):
 
                 db.session.add(dataset)
                 db.session.commit()
-                dataset.assign_randomized_id()
-                db.session.commit()
 
                 url = url_for(
                     'SearchView:user_mutations',
-                    code=dataset.randomized_id,
+                    uri=dataset.uri,
                     _external=True
                 )
 
