@@ -266,7 +266,7 @@ class UsersMutationsDataset(CMSModel):
     def data(self):
         if not hasattr(self, '_data'):
             self._data = self._load_from_file()
-            self.bind_to_session()
+            self._bind_to_session()
         return self._data
 
     @data.setter
@@ -339,3 +339,10 @@ class UsersMutationsDataset(CMSModel):
             for result in result_obj['results']:
                 mutations.append(result['mutation'])
         return mutations
+
+    def _bind_to_session(self):
+        results = self.data.results
+        for name, result_obj in results.items():
+            for result in result_obj['results']:
+                db.session.add(result['protein'])
+                db.session.add(result['mutation'])
