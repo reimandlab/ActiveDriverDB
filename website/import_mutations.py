@@ -195,7 +195,7 @@ class MutationImporter(ABC):
         self.commit()
 
         if self.broken_seq:
-            report_file = 'broken_seq.log'
+            report_file = 'broken_seq_' + self.model_name + '.log'
 
             with open(report_file, 'w') as f:
                 for refseq, instances in self.broken_seq.items():
@@ -317,7 +317,8 @@ class MutationImporter(ABC):
 
                 if self.model_name == 'CancerMutation':
                     cancer = mutation.cancer.code
-                    samples = mutation.samples.split(',')
+                    s = mutation.samples or ''
+                    samples = s.split(',')
 
                     dataset_specific = [
                         [cancer, sample]
