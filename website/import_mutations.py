@@ -195,10 +195,19 @@ class MutationImporter(ABC):
         self.commit()
 
         if self.broken_seq:
+            report_file = 'broken_seq.log'
+
+            with open(report_file, 'w') as f:
+                for refseq, instances in self.broken_seq.items():
+                    for instance in instances:
+                        f.write('\t'.join([refseq] + instance) + '\n')
+
             print(
                 'Detected and skipped mutations with incorrectly mapped '
-                'reference sequences in {:d} isoforms.'.format(
-                    len(self.broken_seq)
+                'reference sequences in {0:d} isoforms. These mutations have '
+                'been saved to {1} file.'.format(
+                    len(self.broken_seq),
+                    report_file
                 )
             )
 
@@ -252,7 +261,7 @@ class MutationImporter(ABC):
         restart_autoincrement(self.model)
         db.session.commit()
 
-    def delete_all(self):
+    def remove(self, **kargs):
         """This function should stay untouched"""
         print('Removing %s:' % self.model_name)
         try:
@@ -288,9 +297,14 @@ class MutationImporter(ABC):
             path = os.path.join(directory, name)
 
         header = [
-            'gene', 'cancer_type', 'sample_id',
-            'position',  'wt_residue', 'mut_residue'
+            'gene', 'isoform', 'position',  'wt_residue', 'mut_residue'
         ]
+
+        if self.model_name == 'CancerMutation':
+            header += ['cancer_type', 'sample_id']
+        elif self.model_name == 'InheritedMutation':
+            header += ['disease']
+
         with open(path, 'w') as f:
             f.write('\t'.join(header))
 
@@ -302,10 +316,20 @@ class MutationImporter(ABC):
                     continue
 
                 if self.model_name == 'CancerMutation':
-                    sample = mutation.sample_name or ''
                     cancer = mutation.cancer.code
+                    samples = mutation.samples.split(',')
+
+                    dataset_specific = [
+                        [cancer, sample]
+                        for sample in samples
+                    ]
+                elif self.model_name == 'InheritedMutation':
+                    dataset_specific = [
+                        [d.disease_name]
+                        for d in mutation.clin_data
+                    ]
                 else:
-                    sample, cancer = '', ''
+                    dataset_specific = [[]]
 
                 try:
                     ref = m.ref
@@ -316,12 +340,13 @@ class MutationImporter(ABC):
                     )
                     ref = ''
 
-                data = [
-                    m.protein.gene.name, cancer, sample,
-                    str(m.position), m.alt, ref
-                ]
+                for instance in dataset_specific:
+                    data = [
+                        m.protein.gene.name, m.protein.refseq,
+                        str(m.position), m.alt, ref
+                    ] + instance
 
-                f.write('\n' + '\t'.join(data))
+                    f.write('\n' + '\t'.join(data))
 
     def get_or_make_mutation(self, pos, protein_id, alt, is_ptm):
         mutation_id = self.base_importer.get_or_make_mutation(
@@ -357,9 +382,14 @@ class MutationImporter(ABC):
             ref, pos, alt = decode_mutation(mutation[4])
 
             try:
-                assert ref == protein.sequence[pos - 1]
-            except (AssertionError, IndexError):
-                self.broken_seq[refseq].append((protein.id, alt))
+                ref_in_db = '-'
+                ref_in_db = protein.sequence[pos - 1]
+                if ref != ref_in_db:
+                    raise ValueError
+            except (ValueError, IndexError):
+                self.broken_seq[refseq].append(
+                    [ref, ref_in_db, str(pos), alt]
+                )
                 continue
 
             affected_sites = protein.get_sites_from_range(pos - 7, pos + 7)

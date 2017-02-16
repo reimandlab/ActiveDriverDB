@@ -276,7 +276,7 @@ class Mutations(CommandTarget):
 
     @command
     def remove(args):
-        Mutations.action('delete_all', args)
+        Mutations.action('remove', args)
 
     @command
     def export(args):

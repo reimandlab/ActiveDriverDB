@@ -1040,7 +1040,7 @@ class MutationDetails:
 
 class CancerMutation(MutationDetails, BioModel):
     """Metadata for cancer mutations from ICGC data portal"""
-    sample_name = db.Column(db.String(64))
+    samples = db.Column(db.Text())
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
     cancer = db.relationship('Cancer')
 
