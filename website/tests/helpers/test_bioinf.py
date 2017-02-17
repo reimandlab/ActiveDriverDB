@@ -50,3 +50,19 @@ def test_get_human_chromosomes():
 
     for chr in should_not_have:
         assert chr not in chromosomes
+
+
+def test_determine_strand():
+
+    test_data = {
+        # (ref, cdna_ref, alt, cdna_alt): expected strand
+        ('a', 'A', 'c', 'C'): '+',
+        ('a', 'T', 'c', 'G'): '-',
+        ('T', 'A', 'G', 'C'): '-',
+        ('G', 'G', 'C', 'C'): '+'
+    }
+    for sequences, expected_result in test_data.items():
+        assert bioinf.determine_strand(*sequences) == expected_result
+
+    with pytest.raises(bioinf.DataInconsistencyError):
+        assert bioinf.determine_strand('a', 'C', 'c', 'G')

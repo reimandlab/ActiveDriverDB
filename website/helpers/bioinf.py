@@ -58,6 +58,8 @@ def decode_raw_mutation(mut):
 def determine_strand(ref, cdna_ref, alt, cdna_alt):
     """Determine DNA strand +/- on which a gene with given cDNA sequence lies.
 
+    Input requirements: cdna_ref/cdna_alt has to be uppercase.
+
     The function compares given ref/cdna_ref, alt/cnda_alt to deduce a strand.
 
     Returns a single character string:
@@ -65,12 +67,11 @@ def determine_strand(ref, cdna_ref, alt, cdna_alt):
         '-' for reverse strand.
     Raises DataInconsistencyError for sequences which do not match.
     """
-    if (cdna_ref.lower() == ref and cdna_alt.lower() == alt):
+    ref, alt = ref.upper(), alt.upper()
+
+    if (cdna_ref == ref and cdna_alt == alt):
         return '+'
-    elif (
-            complement(cdna_ref).lower() == ref and
-            complement(cdna_alt).lower() == alt
-    ):
+    elif (complement(cdna_ref) == ref and complement(cdna_alt) == alt):
         return '-'
     else:
         raise DataInconsistencyError(
