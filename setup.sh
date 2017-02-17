@@ -16,7 +16,7 @@ cd ..
 
 # Use examplar configuration for the beginning
 cd website
-cp config_example.py config.py
+cp example_config.py config.py
 cd ..
 
 # install sass gem
