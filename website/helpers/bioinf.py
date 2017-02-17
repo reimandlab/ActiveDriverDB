@@ -4,6 +4,10 @@ IUPAC_mappings = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'U': 'A', 'Y': 'R',
                   'V': 'B', 'D': 'H', 'H': 'D', 'N': 'N'}
 
 
+class DataInconsistencyError(Exception):
+    pass
+
+
 def complement(seq):
     """Get complement to given sequence.
 
@@ -49,3 +53,27 @@ def decode_raw_mutation(mut):
     """
     result = (mut[0], int(mut[1:-1]), mut[-1])
     return result
+
+
+def determine_strand(ref, cdna_ref, alt, cdna_alt):
+    """Determine DNA strand +/- on which a gene with given cDNA sequence lies.
+
+    The function compares given ref/cdna_ref, alt/cnda_alt to deduce a strand.
+
+    Returns a single character string:
+        '+' for forward strand,
+        '-' for reverse strand.
+    Raises DataInconsistencyError for sequences which do not match.
+    """
+    if (cdna_ref.lower() == ref and cdna_alt.lower() == alt):
+        return '+'
+    elif (
+            complement(cdna_ref).lower() == ref and
+            complement(cdna_alt).lower() == alt
+    ):
+        return '-'
+    else:
+        raise DataInconsistencyError(
+            'Unable to determine strand for: %s %s %s %s' %
+            (ref, cdna_ref, alt, cdna_alt)
+        )

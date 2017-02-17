@@ -116,4 +116,4 @@ class BerkleyHashSet:
     def reset(self):
         """Reset database completely by its removal and recreation."""
         self.drop()
-        self.open()
+        self.open(self.name)

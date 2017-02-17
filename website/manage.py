@@ -3,6 +3,7 @@ import argparse
 from database import bdb
 from database import bdb_refseq
 import import_data
+from import_mappings import import_mappings
 from database import db
 from models import Page
 from models import User
@@ -249,7 +250,7 @@ class SnvToCsvMapping(CommandTarget):
     def load(args):
         print('Importing mappings')
         proteins = get_proteins()
-        import_data.import_mappings(proteins)
+        import_mappings(proteins)
 
     @command
     def remove(args):

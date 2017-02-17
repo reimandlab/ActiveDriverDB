@@ -19,7 +19,6 @@ from models import BadWord
 from models import GeneList
 from models import CancerGeneListEntry
 from import_mutations import muts_import_manager
-from import_mutations import import_mappings
 from flask import current_app
 
 
