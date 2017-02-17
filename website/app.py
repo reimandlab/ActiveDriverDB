@@ -2,6 +2,8 @@ from flask import Flask
 from flask_assets import Environment
 from flask_login import LoginManager
 from database import db
+from database import bdb
+from database import bdb_refseq
 from assets import bundles
 
 
@@ -25,6 +27,9 @@ def create_app(config_filename='config.py', config_override={}):
     db.app = app
     db.init_app(app)
     db.create_all(bind='__all__')
+
+    bdb.open(app.config['BDB_DNA_TO_PROTEIN_PATH'])
+    bdb_refseq.open(app.config['BDB_GENE_TO_ISOFORM_PATH'])
 
     #
     # Configure Login Manager

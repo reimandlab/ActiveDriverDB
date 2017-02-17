@@ -1,16 +1,22 @@
 from flask_testing import TestCase
 from app import create_app
 from database import db
+from database import bdb
+from database import bdb_refseq
 from models import User
 
 
 class DatabaseTest(TestCase):
 
+    TESTING = True
+
     SQLALCHEMY_BINDS = {
         'cms': 'sqlite://',
         'bio': 'sqlite://'
     }
-    TESTING = True
+
+    BDB_DNA_TO_PROTEIN_PATH = '.test_databases/dtp.db'
+    BDB_GENE_TO_ISOFORM_PATH = '.test_databases/gti.db'
 
     @property
     def config(self):
@@ -50,3 +56,5 @@ class DatabaseTest(TestCase):
 
         db.session.remove()
         db.drop_all()
+        bdb.drop()
+        bdb_refseq.drop()

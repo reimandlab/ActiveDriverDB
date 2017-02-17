@@ -40,7 +40,7 @@ There is an [open issue](https://github.com/mitsuhiko/flask-sqlalchemy/issues/43
 
 For full deployment two MySQL databases will be needed: one for biological data and one for CMS. You need to create them on your own, along with relevant database users and privileges. Afterwards, you can start writing your configuration by copying the exemplar configuration file:
 ```bash
-cp config_example.py config.py
+cp example_config.py config.py
 ```
 Carefully replace variables mentioned in comments in the file as some of those have critical importance on application's security. To check if the database is configured properly, run the following command:
 ```bash
@@ -126,6 +126,9 @@ Following extract from configuration file might be useful help for writing you o
 
 ```apache
     DocumentRoot /some_path/website
+
+    # Prevent 'Timeout when reading response headers from daemon process'
+    WSGIApplicationGroup %{GLOBAL}
 
     WSGIDaemonProcess app user=some_username group=some_group threads=2
     WSGIScriptAlias / /some_path/website/app.wsgi
