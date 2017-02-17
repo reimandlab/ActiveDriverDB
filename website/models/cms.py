@@ -285,7 +285,7 @@ class UsersMutationsDataset(CMSModel):
         import base64
         from tempfile import NamedTemporaryFile
 
-        os.makedirs('user_mutations', exist_ok=True)
+        os.makedirs(self.mutations_dir, exist_ok=True)
 
         encoded_name = str(
             base64.urlsafe_b64encode(bytes(self.name, 'utf-8')),
