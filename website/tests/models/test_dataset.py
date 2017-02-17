@@ -11,23 +11,29 @@ chr12 57490358 C A\
 """
 
 
+def create_test_dataset(owner=None):
+    from views.search import MutationSearch
+
+    search = MutationSearch(text_query=test_query)
+
+    dataset = UsersMutationsDataset(
+        name='test',
+        data=search,
+        owner=owner
+    )
+
+    db.session.add(dataset)
+    db.session.commit()
+
+    return dataset
+
+
 class DatasetTest(ModelTest):
 
     def test_init(self):
-
-        from views.search import MutationSearch
-
-        search = MutationSearch(text_query=test_query)
         user = User('user@domain', 'password')
 
-        dataset = UsersMutationsDataset(
-            name='test',
-            data=search,
-            owner=user
-        )
-
-        db.session.add(dataset)
-        db.session.commit()
+        dataset = create_test_dataset(owner=user)
 
         assert user.datasets == [dataset]
 
