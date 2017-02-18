@@ -18,4 +18,5 @@ script:
 
 
 after_success:
-    coveralls --base_dir website
+    cd ..
+    coveralls --data_file website/.coverage --config_file=website/.coveragerc
