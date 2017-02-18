@@ -6,6 +6,7 @@ from database import db
 from database import get_highest_id
 from database import restart_autoincrement
 from helpers.bioinf import decode_mutation
+from helpers.bioinf import is_sequence_broken
 from helpers.parsers import chunked_list
 from models import Mutation
 from models import Protein
@@ -47,13 +48,13 @@ def bulk_raw_insert(table, keys, data, bind=None):
 def make_metadata_ordered_dict(keys, metadata, get_from=None):
     """Create an OrderedDict with given keys, and values
 
-    extracted from metadata list (or beeing None if not present
+    extracted from metadata list (or being None if not present
     in metadata list. If there is a need to choose values among
-    subfields (delimeted by ',') then get_from tells from which
+    subfields (delimited by ',') then get_from tells from which
     subfield the data should be used. This function will demand
     all keys existing in dictionary to be updated - if you want
     to loosen this requirement you can specify which fields are
-    not compulsary, and should be assign with None value (as to
+    not compulsory, and should be assign with None value (as to
     import flags from VCF file).
     """
     dict_to_fill = OrderedDict(
@@ -65,7 +66,7 @@ def make_metadata_ordered_dict(keys, metadata, get_from=None):
 
     for entry in metadata:
         try:
-            # given entry is an assigment
+            # given entry is an assignment
             key, value = entry.split('=')
             if get_from is not None and ',' in value:
                 value = float(value.split(',')[get_from])
@@ -196,10 +197,12 @@ class MutationImporter(ABC):
         if self.broken_seq:
             report_file = 'broken_seq_' + self.model_name + '.log'
 
+            headers = ['refseq', 'ref_in_seq', 'ref_in_mut', 'pos', 'alt']
             with open(report_file, 'w') as f:
+                f.write('\t'.join(headers) + '\n')
                 for refseq, instances in self.broken_seq.items():
                     for instance in instances:
-                        f.write('\t'.join([refseq] + instance) + '\n')
+                        f.write('\t'.join(instance) + '\n')
 
             print(
                 'Detected and skipped mutations with incorrectly mapped '
@@ -227,8 +230,8 @@ class MutationImporter(ABC):
     @abstractmethod
     def insert_details(self, data):
         """Create instances of self.model using provided data and add them to
-        session (flusing is allowed, commiting is highly not recommended).
-        Use of db.sesion methods like 'bulk_insert_mappings' is recommended."""
+        session (flushing is allowed, committing is highly not recommended).
+        Use of db.session methods like 'bulk_insert_mappings' is recommended."""
         pass
 
     # @abstractmethod
@@ -250,7 +253,7 @@ class MutationImporter(ABC):
         bulk_ORM_insert(self.model, self.insert_keys, data)
 
     def raw_delete_all(self):
-        """In sublcasses you can overwrite this function
+        """In subclasses you can overwrite this function
 
         in order implement advanced removal behaviour"""
         count = self.model.query.delete()
@@ -357,10 +360,10 @@ class MutationImporter(ABC):
     def preparse_mutations(self, line):
         """Preparse mutations from a line of Annovar annotation file.
 
-        Given line should be already splited by correct separator (usually
-        tabubator sign). The mutations will be extracted from 10th field.
+        Given line should be already splitted by correct separator (usually
+        tabulator character). The mutations will be extracted from 10th field.
         The function gets first semicolon separated impact-list, and splits
-        the list by commas. The redundancy of semicolon separated imapct-lists
+        the list by commas. The redundancy of semicolon separated impact-lists
         is guaranteed in the data by check_semicolon_separated_data_redundancy
         test from `test_data.py` script.
 
@@ -381,15 +384,10 @@ class MutationImporter(ABC):
 
             ref, pos, alt = decode_mutation(mutation[4])
 
-            try:
-                ref_in_db = '-'
-                ref_in_db = protein.sequence[pos - 1]
-                if ref != ref_in_db:
-                    raise ValueError
-            except (ValueError, IndexError):
-                self.broken_seq[refseq].append(
-                    [ref, ref_in_db, str(pos), alt]
-                )
+            broken_sequence_tuple = is_sequence_broken(protein, pos, ref)
+
+            if broken_sequence_tuple:
+                self.broken_seq[refseq].append(broken_sequence_tuple)
                 continue
 
             affected_sites = protein.get_sites_from_range(pos - 7, pos + 7)

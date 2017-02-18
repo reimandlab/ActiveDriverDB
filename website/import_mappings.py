@@ -4,6 +4,7 @@ from database import bdb_refseq
 from database import make_snv_key
 from database import encode_csv
 from helpers.bioinf import decode_mutation
+from helpers.bioinf import is_sequence_broken
 from helpers.parsers import read_from_gz_files
 from helpers.bioinf import get_human_chromosomes
 from helpers.bioinf import determine_strand
@@ -70,10 +71,10 @@ def import_mappings(
 
             assert aa_pos == (int(cdna_pos) - 1) // 3 + 1
 
-            try:
-                assert aa_ref == protein.sequence[aa_pos - 1]
-            except (AssertionError, IndexError):
-                broken_seq[refseq].append((protein.id, aa_alt))
+            broken_sequence_tuple = is_sequence_broken(protein, aa_pos, aa_ref, aa_alt)
+
+            if broken_sequence_tuple:
+                broken_seq[refseq].append(broken_sequence_tuple)
                 continue
 
             sites = protein.get_sites_from_range(aa_pos - 7, aa_pos + 7)

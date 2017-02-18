@@ -1,5 +1,6 @@
 import pytest
 import helpers.bioinf as bioinf
+from collections import namedtuple
 
 
 def test_complement():
@@ -66,3 +67,15 @@ def test_determine_strand():
 
     with pytest.raises(bioinf.DataInconsistencyError):
         assert bioinf.determine_strand('a', 'C', 'c', 'G')
+
+
+def test_is_sequence_broken():
+
+    Protein = namedtuple('Protein', 'refseq, sequence')
+    p = Protein(refseq='NM_0001', sequence='MEAVPKKKKKK')
+
+    not_broken_tuple = bioinf.is_sequence_broken(p, 1, 'M', 'A')
+    assert not not_broken_tuple
+
+    broken_tuple = bioinf.is_sequence_broken(p, 2, 'M', 'A')
+    assert broken_tuple == ('NM_0001', 'E', 'M', '2', 'A')
