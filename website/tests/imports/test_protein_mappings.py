@@ -1,6 +1,6 @@
 import gzip
 from os import path
-from import_mappings import import_mappings
+from imports.mappings import import_mappings
 from database_testing import DatabaseTest
 from models import Protein
 from models import Gene

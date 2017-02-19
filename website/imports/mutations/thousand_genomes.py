@@ -1,6 +1,6 @@
 from models import The1000GenomesMutation
-from import_mutations import MutationImporter
-from import_mutations import make_metadata_ordered_dict
+from imports.mutations import MutationImporter
+from imports.mutations import make_metadata_ordered_dict
 from helpers.parsers import read_from_gz_files
 
 

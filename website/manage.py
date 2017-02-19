@@ -2,13 +2,15 @@
 import argparse
 from database import bdb
 from database import bdb_refseq
-import import_data
-from import_mappings import import_mappings
+from imports import import_all
+from imports.protein_data import IMPORTERS
+from imports.protein_data import EXPORTERS
+from imports.mappings import import_mappings
 from database import db
 from models import Page
 from models import User
-from import_mutations import muts_import_manager
-from import_mutations import get_proteins
+from imports.mutations import MutationImportManager
+from imports.mutations import get_proteins
 from getpass import getpass
 from helpers.commands import argument
 from helpers.commands import argument_parameters
@@ -20,6 +22,7 @@ from exceptions import ValidationError
 from sqlalchemy.exc import IntegrityError
 
 
+muts_import_manager = MutationImportManager()
 database_binds = ('bio', 'cms')
 
 
@@ -183,11 +186,11 @@ class ProteinRelated(CommandTarget):
 
     @command
     def load_all(args):
-        import_data.import_all()
+        import_all()
 
     @command
     def load(args):
-        data_importers = import_data.IMPORTERS
+        data_importers = IMPORTERS
         for importer_name in args.importers:
             importer = data_importers[importer_name]
             print('Running {name}:'.format(name=importer_name))
@@ -197,7 +200,7 @@ class ProteinRelated(CommandTarget):
 
     @command
     def export(args):
-        exporters = import_data.EXPORTERS
+        exporters = EXPORTERS
         for name in args.exporters:
             exporter = exporters[name]
             out_file = exporter()
@@ -209,7 +212,7 @@ class ProteinRelated(CommandTarget):
 
     @argument
     def exporters():
-        data_exporters = import_data.EXPORTERS
+        data_exporters = EXPORTERS
         return argument_parameters(
             '-e',
             '--exporters',
@@ -226,7 +229,7 @@ class ProteinRelated(CommandTarget):
 
     @argument
     def importers():
-        data_importers = import_data.IMPORTERS
+        data_importers = IMPORTERS
         return argument_parameters(
             '-i',
             '--importers',

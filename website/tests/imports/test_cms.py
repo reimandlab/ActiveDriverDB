@@ -1,4 +1,4 @@
-from import_data import load_bad_words
+from imports.protein_data import load_bad_words     # TODO Move this out of imports.protein_data
 
 
 def test_cms(tmpdir):

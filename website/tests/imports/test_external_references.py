@@ -1,4 +1,4 @@
-from import_data import load_external_references
+from imports.protein_data import load_external_references
 from database_testing import DatabaseTest
 from models import Protein
 from database import db

@@ -1,5 +1,5 @@
 import gzip
-from import_mutations import muts_import_manager
+from imports.mutations import MutationImportManager
 from database_testing import DatabaseTest
 from models import Protein
 from models import CancerMutation
@@ -7,8 +7,10 @@ from database import db
 from miscellaneous import make_named_temp_file
 
 
-# this is output of `zcat data/mutations/TCGA_muts_annotated.txt.gz | head`
+muts_import_manager = MutationImportManager()
 
+
+# this is output of `zcat data/mutations/TCGA_muts_annotated.txt.gz | head`
 tcga_mutations = """\
 Chr	Start	End	Ref	Alt	Func.refGene	Gene.refGene	GeneDetail.refGene	ExonicFunc.refGene	AAChange.refGene	V11
 1	156647053	156647053	C	G	exonic	NES	.	nonsynonymous SNV	NES:NM_006617:exon1:c.G4C:p.E2Q	comments: Bladder Urothelial Carcinoma;TCGA-BL-A0C8-01A-11D-A10S-08;NES

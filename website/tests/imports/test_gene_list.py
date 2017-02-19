@@ -1,4 +1,4 @@
-from import_data import load_active_driver_gene_lists
+from imports.protein_data import load_active_driver_gene_lists
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
 

@@ -1,5 +1,5 @@
 from models import ExomeSequencingMutation
-from import_mutations import MutationImporter
+from imports.mutations import MutationImporter
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import gzip_open_text
 

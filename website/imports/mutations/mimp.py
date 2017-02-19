@@ -1,5 +1,5 @@
 from models import MIMPMutation
-from import_mutations import MutationImporter
+from imports.mutations import MutationImporter
 from helpers.bioinf import decode_raw_mutation
 from helpers.parsers import parse_tsv_file
 

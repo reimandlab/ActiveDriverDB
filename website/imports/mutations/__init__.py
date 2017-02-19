@@ -89,7 +89,7 @@ class BaseMutationsImporter:
         # reset base_mutations
         self.mutations = {}
 
-        # for bulk_inserts it's needed to generate identificators manually so
+        # for bulk_inserts it's needed to generate identifiers manually so
         # here the highest id currently in use in the database is retrieved.
         self.highest_base_id = self.get_highest_id()
 
@@ -168,10 +168,10 @@ class MutationImporter(ABC):
         Essential difference when using update is that 'update' prevents
         adding duplicates (i.e. checks if mutations already exists in the
         database) but is very slow, whereas when 'update=False', the whole
-        process is very fast but not relaible for purpose of reimporting data
+        process is very fast but not reliable for purpose of reimporting data
         without removing old mutations in the first place.
 
-        Long stroy short: when importing mutations to clean/new database - use
+        Long story short: when importing mutations to clean/new database - use
         update=False. For updates use update=True and expect long runtime."""
         print('Loading %s:' % self.model_name)
 
@@ -402,7 +402,7 @@ class MutationImporter(ABC):
 
 class MutationImportManager:
 
-    def __init__(self, lookup_dir='mutation_import'):
+    def __init__(self, lookup_dir='imports/mutations'):
         self.importers = self._discover_importers(lookup_dir)
 
     @staticmethod
@@ -462,6 +462,3 @@ class MutationImportManager:
     @property
     def names(self):
         return self.importers.keys()
-
-
-muts_import_manager = MutationImportManager()
