@@ -15,10 +15,10 @@ from models import Kinase
 from models import KinaseGroup
 from models import Protein
 from models import Site
+from models import Pathway
 from models import BadWord
 from models import GeneList
 from models import CancerGeneListEntry
-from flask import current_app
 
 
 IMPORTERS = OrderedDict()
@@ -117,11 +117,10 @@ def load_external_references(filename='data/protein_external_references.tsv'):
             refseq_np=data[2],
         )
 
-        references[refseq_nm].ensembl_peptides=[
+        references[refseq_nm].ensembl_peptides = [
             EnsemblPeptide(peptide_id=identifier, reference=references[refseq_nm])
             for identifier in data[3].split(' ')
         ]
-
 
     parse_tsv_file(filename, parse)
 
@@ -134,13 +133,12 @@ def calculate_interactors(proteins):
         protein.interactors_count = protein._calc_interactors_count()
 
 
-def load_pathways(genes):
-    from models import Pathway
+def load_pathways(genes, path='data/hsapiens.pathways.NAME.gmt'):
     new_genes = []
 
     def parser(data):
         nonlocal new_genes
-        """Parse GTM file with pathhway descriptions.
+        """Parse GTM file with pathway descriptions.
 
         Args:
             data: a list of subsequent columns from a single line of GTM file
@@ -183,14 +181,13 @@ def load_pathways(genes):
         else:
             print('Unknown gene set name: "%s"' % gene_set_name)
 
-    filename = 'data/hsapiens.pathways.NAME.gmt'
-    parse_tsv_file(filename, parser)
+    parse_tsv_file(path, parser)
 
     db.session.add_all(new_genes)
     print(len(new_genes), 'new genes created')
 
 
-def load_domains(proteins):
+def load_domains(proteins, path='data/biomart_protein_domains_20072016.txt'):
 
     print('Loading domains:')
 
@@ -268,11 +265,11 @@ def load_domains(proteins):
         interpro = interpro_domains[accession]
 
         similar_domains = [
-            # select similar domain occurances with criteria being:
+            # select similar domain occurrences with criteria being:
             domain for domain in protein.domains
             # - the same interpro id
             if domain.interpro == interpro and
-            # - at least 75% of common coverage for shorter occurance of domain
+            # - at least 75% of common coverage for shorter occurrence of domain
             (
                 (min(domain.end, end) - max(domain.start, start))
                 / max(len(domain), end - start)
@@ -298,7 +295,7 @@ def load_domains(proteins):
                 end=end
             )
 
-    parse_tsv_file('data/biomart_protein_domains_20072016.txt', parser, header)
+    parse_tsv_file(path, parser, header)
 
     print(
         'Domains loaded,', skipped, 'proteins skipped.',
@@ -308,8 +305,7 @@ def load_domains(proteins):
     )
 
 
-def load_domains_hierarchy():
-
+def load_domains_hierarchy(path='data/ParentChildTreeFile.txt'):
     from re import compile
 
     print('Loading InterPro hierarchy:')
@@ -358,13 +354,13 @@ def load_domains_hierarchy():
         old_level = level
         parent = domain
 
-    parse_text_file('data/ParentChildTreeFile.txt', parser)
+    parse_text_file(path, parser)
 
     db.session.add_all(new_domains)
     print('Domains\' hierarchy built,', len(new_domains), 'new domains added.')
 
 
-def load_domains_types():
+def load_domains_types(path='data/interpro.xml.gz'):
     import xml.etree.ElementTree as ElementTree
     import gzip
 
@@ -372,7 +368,7 @@ def load_domains_types():
 
     domains = {d.accession: d for d in InterproDomain.query.all()}
 
-    with gzip.open('data/interpro.xml.gz') as interpro_file:
+    with gzip.open(path) as interpro_file:
         tree = ElementTree.parse(interpro_file)
 
     entries = tree.getroot().findall('interpro')
@@ -385,7 +381,7 @@ def load_domains_types():
         domain.type = entry.get('type')
 
 
-def load_cancers():
+def load_cancers(path='data/cancer_types.txt'):
     print('Loading cancer data:')
 
     def parser(line):
@@ -396,7 +392,7 @@ def load_cancers():
 
         cancer.code = code
 
-    parse_tsv_file('data/cancer_types.txt', parser)
+    parse_tsv_file(path, parser)
 
 
 def select_preferred_isoform(gene):
@@ -437,7 +433,7 @@ def select_preferred_isoforms(genes):
             print('Gene %s has no isoforms' % name)
 
 
-def load_sequences(proteins):
+def load_sequences(proteins, path='data/all_RefGene_proteins.fa'):
 
     print('Loading sequences:')
 
@@ -452,16 +448,15 @@ def load_sequences(proteins):
         else:
             proteins[refseq].sequence += line.rstrip()
 
-    parse_fasta_file('data/all_RefGene_proteins.fa', parser)
+    parse_fasta_file(path, parser)
 
 
 @exporter
-def sequences_ac():
+def sequences_ac(path='exported/preferred_isoforms_sequences.fa'):
     """Sequences as needed for Active Driver input.
     Includes only data from primary (preferred) isoforms."""
     import os
 
-    path = 'exported/preferred_isoforms_sequences.fa'
     os.makedirs('exported', exist_ok=True)
 
     with open(path, 'w') as f:
@@ -475,12 +470,11 @@ def sequences_ac():
 
 
 @exporter
-def disorder_ac():
+def disorder_ac(path='exported/preferred_isoforms_disorder.fa'):
     """Disorder data as needed for Active Driver input.
     Includes only data from primary (preferred) isoforms."""
     import os
 
-    path = 'exported/preferred_isoforms_disorder.fa'
     os.makedirs('exported', exist_ok=True)
 
     with open(path, 'w') as f:
@@ -494,12 +488,12 @@ def disorder_ac():
 
 
 @exporter
-def sites_ac():
+def sites_ac(path='exported/sites.tsv'):
     """Sites as needed for Active Driver input.
     Includes only data from primary (preferred) isoforms."""
     import os
     header = ['gene', 'position', 'residue', 'kinase', 'pmid']
-    path = 'exported/sites.tsv'
+
     os.makedirs('exported', exist_ok=True)
 
     with open(path, 'w') as f:
@@ -518,11 +512,11 @@ def sites_ac():
     return path
 
 
-def remove(object, soft=False):
+def remove(orm_object, soft=False):
     if soft:
-        return db.session.expunge(object)
+        return db.session.expunge(orm_object)
     else:
-        return db.session.delete(object)
+        return db.session.delete(orm_object)
 
 
 def remove_wrong_proteins(proteins, soft=True):
@@ -574,7 +568,7 @@ def remove_wrong_proteins(proteins, soft=True):
     return removed
 
 
-def create_proteins_and_genes():
+def create_proteins_and_genes(path='data/protein_data.tsv'):
 
     print('Creating proteins and genes:')
 
@@ -606,9 +600,11 @@ def create_proteins_and_genes():
         # load gene
         name = line[-4]
         if name.lower() not in genes:
-            gene_data = {'name': name}
-            gene_data['chrom'] = line[2][3:]    # remove chr prefix
-            gene_data['strand'] = 1 if '+' else 0
+            gene_data = {
+                'name': name,
+                'chrom': line[2][3:],    # remove chr prefix
+                'strand': 1 if '+' else 0
+            }
             gene = Gene(**gene_data)
             genes[name.lower()] = gene
         else:
@@ -655,7 +651,7 @@ def create_proteins_and_genes():
 
         proteins[refseq] = Protein(**protein_data)
 
-    parse_tsv_file('data/protein_data.tsv', parser, header)
+    parse_tsv_file(path, parser, header)
 
     print('Adding proteins to the session...')
     db.session.add_all(proteins.values())
@@ -666,7 +662,7 @@ def create_proteins_and_genes():
     return genes, proteins
 
 
-def load_disorder(proteins):
+def load_disorder(proteins, path='data/all_RefGene_disorder.fa'):
     # library(seqinr)
     # load("all_RefGene_disorder.fa.rsav")
     # write.fasta(sequences=as.list(fa1_disorder), names=names(fa1_disorder),
@@ -682,7 +678,7 @@ def load_disorder(proteins):
         else:
             proteins[name].disorder_map += line.rstrip()
 
-    parse_fasta_file('data/all_RefGene_disorder.fa', parser)
+    parse_fasta_file(path, parser)
 
     for protein in proteins.values():
         assert len(protein.sequence) == protein.length
@@ -694,7 +690,7 @@ def get_preferred_gene_isoform(gene_name):
         return genes[gene_name.lower()].preferred_isoform
 
 
-def load_kinase_mapings():
+def load_kinase_mappings():
     """Read kinase -> protein name mappings into dict"""
     kinase_protein_map = {}
 
@@ -713,7 +709,7 @@ def get_protein_by_kinase_name(name):
     return get_preferred_gene_isoform(name)
 
 
-def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
+def make_site_kinases(kinases, kinase_groups, kinases_list):
     site_kinases, site_groups = [], []
 
     for name in kinases_list:
@@ -734,7 +730,7 @@ def make_site_kinases(proteins, kinases, kinase_groups, kinases_list):
     return site_kinases, site_groups
 
 
-def load_sites(proteins):
+def load_sites(proteins, path='data/site_table.tsv'):
     # Use following R code to reproduce `site_table.tsv` file:
     # load("PTM_site_table.rsav")
     # write.table(site_table, file="site_table.tsv",
@@ -751,7 +747,6 @@ def load_sites(proteins):
 
         refseq, position, residue, kinases_str, pmid, mod_type = line
         site_kinases, site_groups = make_site_kinases(
-            proteins,
             kinases,
             kinase_groups,
             filter(bool, kinases_str.split(','))
@@ -766,12 +761,12 @@ def load_sites(proteins):
             type=mod_type
         )
 
-    parse_tsv_file('data/site_table.tsv', parser, header)
+    parse_tsv_file(path, parser, header)
 
     return kinases, kinase_groups
 
 
-def load_kinase_classification(proteins, kinases, groups):
+def load_kinase_classification(kinases, groups, path='data/regphos_kinome_scraped_clean.txt'):
 
     print('Loading protein kinase groups:')
 
@@ -782,7 +777,7 @@ def load_kinase_classification(proteins, kinases, groups):
 
     def parser(line):
 
-        # not that the subfamily is often abesnt
+        # not that the subfamily is often absent
         group, family, subfamily = line[2:5]
 
         # the 'gene.clean' [6] fits better to the names
@@ -809,6 +804,6 @@ def load_kinase_classification(proteins, kinases, groups):
 
         groups[family].kinases.append(kinases[kinase_name])
 
-    parse_tsv_file('data/regphos_kinome_scraped_clean.txt', parser, header)
+    parse_tsv_file(path, parser, header)
 
     return kinases, groups

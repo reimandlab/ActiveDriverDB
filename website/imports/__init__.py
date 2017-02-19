@@ -1,5 +1,6 @@
 from .protein_data import *
 from .mutations import MutationImportManager
+from flask import current_app
 
 
 def import_all():
@@ -14,9 +15,9 @@ def import_all():
     load_domains_types()
     load_cancers()
     global kinase_protein_mappings
-    kinase_protein_mappings = load_kinase_mapings()
+    kinase_protein_mappings = load_kinase_mappings()
     kinases, groups = load_sites(proteins)
-    kinases, groups = load_kinase_classification(proteins, kinases, groups)
+    kinases, groups = load_kinase_classification(kinases, groups)
     load_pathways(genes)
     print('Adding kinases to the session...')
     db.session.add_all(kinases.values())
