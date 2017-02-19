@@ -93,7 +93,7 @@ class Importer(MutationImporter):
 
             for mutation_id in self.preparse_mutations(line):
 
-                # Python 3.5 makes it easy: **values (but is not avaialable)
+                # Python 3.5 makes it easy: **values (but is not available)
                 clinvar_mutations.append(
                     (
                         mutation_id,

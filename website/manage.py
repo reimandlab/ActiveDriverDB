@@ -4,7 +4,7 @@ from database import bdb
 from database import bdb_refseq
 from imports import import_all
 from imports.protein_data import IMPORTERS
-from imports.protein_data import EXPORTERS
+from exports.protein_data import EXPORTERS
 from imports.mappings import import_mappings
 from database import db
 from models import Page
@@ -125,7 +125,7 @@ def basic_auto_migrate_relational_db(app, bind):
 
 class CMS(CommandTarget):
 
-    description = 'should Content Managment System database be {command}ed'
+    description = 'should Content Management System database be {command}ed'
 
     @command
     def load(args):
@@ -381,7 +381,7 @@ if __name__ == '__main__':
             args.func(args)
         print('Done, all tasks completed.')
     else:
-        print('Scripts loaded successfuly, no tasks specified.')
+        print('Scripts loaded successfully, no tasks specified.')
 
 else:
     print('This script should be run from command line')

@@ -1,8 +1,15 @@
 from types import FunctionType
 
 
+def register_decorator(register):
+    def decorator(func):
+        register[func.__name__] = func
+        return func
+    return decorator
+
+
 def argument_parameters(*args, **kwargs):
-    return (args, kwargs)
+    return args, kwargs
 
 
 def static(func):

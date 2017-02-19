@@ -19,21 +19,11 @@ from models import Pathway
 from models import BadWord
 from models import GeneList
 from models import CancerGeneListEntry
+from helpers.commands import register_decorator
 
 
 IMPORTERS = OrderedDict()
-EXPORTERS = OrderedDict()
-
-
-def register_decorator(register):
-    def decorator(func):
-        register[func.__name__] = func
-        return func
-    return decorator
-
-
 importer = register_decorator(IMPORTERS)
-exporter = register_decorator(EXPORTERS)
 
 
 @importer
@@ -449,67 +439,6 @@ def load_sequences(proteins, path='data/all_RefGene_proteins.fa'):
             proteins[refseq].sequence += line.rstrip()
 
     parse_fasta_file(path, parser)
-
-
-@exporter
-def sequences_ac(path='exported/preferred_isoforms_sequences.fa'):
-    """Sequences as needed for Active Driver input.
-    Includes only data from primary (preferred) isoforms."""
-    import os
-
-    os.makedirs('exported', exist_ok=True)
-
-    with open(path, 'w') as f:
-        for gene in tqdm(Gene.query.all()):
-            if not gene.preferred_isoform:
-                continue
-            f.write('>' + gene.name + '\n')
-            f.write(gene.preferred_isoform.sequence + '\n')
-
-    return path
-
-
-@exporter
-def disorder_ac(path='exported/preferred_isoforms_disorder.fa'):
-    """Disorder data as needed for Active Driver input.
-    Includes only data from primary (preferred) isoforms."""
-    import os
-
-    os.makedirs('exported', exist_ok=True)
-
-    with open(path, 'w') as f:
-        for gene in tqdm(Gene.query.all()):
-            if not gene.preferred_isoform:
-                continue
-            f.write('>' + gene.name + '\n')
-            f.write(gene.preferred_isoform.disorder_map + '\n')
-
-    return path
-
-
-@exporter
-def sites_ac(path='exported/sites.tsv'):
-    """Sites as needed for Active Driver input.
-    Includes only data from primary (preferred) isoforms."""
-    import os
-    header = ['gene', 'position', 'residue', 'kinase', 'pmid']
-
-    os.makedirs('exported', exist_ok=True)
-
-    with open(path, 'w') as f:
-        f.write('\t'.join(header) + '\n')
-        for site in tqdm(Site.query.all()):
-            if not site.protein or not site.protein.is_preferred_isoform:
-                continue
-            data = [
-                site.protein.gene.name, str(site.position), site.residue,
-                ','.join([k.name for k in site.kinases]),
-                site.pmid
-            ]
-
-            f.write('\t'.join(data) + '\n')
-
-    return path
 
 
 def remove(orm_object, soft=False):
