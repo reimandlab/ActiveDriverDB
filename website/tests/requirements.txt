@@ -1,4 +1,4 @@
 flask_testing
 pytest
 pytest-cov
-python-coveralls
+python-coveralls==2.8.0

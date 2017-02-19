@@ -2,3 +2,4 @@
 omit =
     flask_sqlalchemy/*
     tests/*
+    *.html
