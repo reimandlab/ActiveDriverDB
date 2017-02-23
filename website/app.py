@@ -6,7 +6,6 @@ from database import bdb
 from database import bdb_refseq
 from assets import bundles
 
-
 login_manager = LoginManager()
 
 
@@ -14,9 +13,17 @@ def create_app(config_filename='config.py', config_override={}):
     """Factory function for flask application.
 
     Args:
-        config_filename: path to python config file
+        config_filename:
+            path to python config file
+        config_override:
+            a dict with settings to use to override config from file;
+            useful for writing very specific tests.
     """
     app = Flask(__name__)
+
+    #
+    # Configuration handling
+    #
 
     if config_filename:
         app.config.from_pyfile(config_filename)
@@ -24,6 +31,28 @@ def create_app(config_filename='config.py', config_override={}):
     for key, value in config_override.items():
         app.config[key] = value
 
+    #
+    # Error logging
+    #
+    if not app.debug:
+        import os
+        import logging
+        from logging.handlers import RotatingFileHandler
+
+        os.makedirs('logs', exist_ok=True)
+
+        file_handler = RotatingFileHandler(
+            'logs/app.log',
+            maxBytes=10*1024*1024,
+            backupCount=5
+        )
+        file_handler.setLevel(logging.WARNING)
+        root_logger = logging.getLogger()
+        root_logger.addHandler(file_handler)
+
+    #
+    # Database creation
+    #
     db.app = app
     db.init_app(app)
     db.create_all(bind='__all__')
@@ -45,10 +74,10 @@ def create_app(config_filename='config.py', config_override={}):
         assets.register(name, bundle)
 
     #
-    # Import viwes
+    # Import views
     #
 
-    # allow acces to this app from views through module
+    # allow access to this app from views through module
     import sys
     sys.path.insert(0, '..')
 
