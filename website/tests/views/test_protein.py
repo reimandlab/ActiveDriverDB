@@ -1,29 +1,31 @@
 from view_testing import ViewTest
 from models import Protein
+from models import Gene
 from models import Mutation
 from models import Cancer
 from models import CancerMutation
-from models import Gene
 from models import InheritedMutation
 from models import ClinicalData
 from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
+from models import Site
 from database import db
 import json
 
 
-test_protein_data = {
-    'refseq': 'NM_000123',
-    'gene': Gene(name='SomeGene'),
-    'sequence': 'MART'
-}
+def test_protein_data():
+    return {
+        'refseq': 'NM_000123',
+        'gene': Gene(name='SomeGene'),
+        'sequence': 'MART'
+    }
 
 
 class TestProteinView(ViewTest):
 
     def test_show(self):
 
-        p = Protein(**test_protein_data)
+        p = Protein(**test_protein_data())
         db.session.add(p)
 
         response = self.client.get('/protein/show/NM_000123')
@@ -33,9 +35,36 @@ class TestProteinView(ViewTest):
         assert b'NM_000123' in response.data
         assert b'MART' in response.data
 
+    def test_sites(self):
+
+        p = Protein(**test_protein_data())
+
+        sites = [
+            Site(position=3, residue='R', type='phosphorylation'),
+            Site(position=4, residue='T', type='methylation')
+        ]
+        db.session.add(p)
+        p.sites = sites
+
+        response = self.client.get('/protein/sites/NM_000123')
+
+        assert response.status_code == 200
+        assert response.content_type == 'application/json'
+
+        json_response = json.loads(response.data.decode())
+        assert len(json_response) == 2
+
+        phospo_site_repr = None
+
+        for site_repr in json_response:
+            if site_repr['type'] == 'phosphorylation':
+                phospo_site_repr = site_repr
+
+        assert phospo_site_repr
+
     def test_details(self):
 
-        p = Protein(**test_protein_data)
+        p = Protein(**test_protein_data())
 
         p.mutations = [
             Mutation(

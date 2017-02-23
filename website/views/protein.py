@@ -283,14 +283,14 @@ class ProteinView(FlaskView):
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
-        response = self._prepare_sites(protein)
+        response = self._prepare_sites(protein, filter_manager)
 
         return jsonify(response)
 
     def _prepare_sites(self, protein, filter_manager):
         sites = filter_manager.query_all(
             Site,
-            lambda q: and_(q, Site.protein_id == protein.id)
+            lambda q: and_(q, Site.protein == protein)
         )
         return [
             {
