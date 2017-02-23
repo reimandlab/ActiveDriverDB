@@ -101,8 +101,8 @@ class NetworkView(FlaskView):
         )
 
     def index(self):
-        """Show SearchView as deafault page"""
-        return redirect(url_for('SearchView:index', target='proteins'))
+        """Show SearchView as default page"""
+        return redirect(url_for('SearchView:default', target='proteins'))
 
     def show(self, refseq):
         """Show a protein network visualisation"""

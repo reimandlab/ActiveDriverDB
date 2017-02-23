@@ -92,7 +92,7 @@ class ProteinView(FlaskView):
 
     def index(self):
         """Show SearchView as default page"""
-        return redirect(url_for('SearchView:index', target='proteins'))
+        return redirect(url_for('SearchView:default', target='proteins'))
 
     def browse(self):
         return template('protein/browse.html')
