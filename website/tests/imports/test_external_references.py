@@ -52,12 +52,12 @@ class TestImport(DatabaseTest):
 
         assert protein.external_references.uniprot_accession == ''
         assert protein.external_references.refseq_np == 'NP_001304875'
-        ensempl_peptides = protein.external_references.ensembl_peptides
-        print(ensempl_peptides[0].peptide_id)
-        assert len(ensempl_peptides) == 2
+        ensembl_peptides = protein.external_references.ensembl_peptides
+
+        assert len(ensembl_peptides) == 2
         assert (
-            set(enseml.peptide_id for enseml in ensempl_peptides) ==
-            set(('ENSP00000340883', 'ENSP00000486780'))
+            set(ensembl.peptide_id for ensembl in ensembl_peptides) ==
+            {'ENSP00000340883', 'ENSP00000486780'}
         )
 
         protein = proteins_we_have['NM_000335']
@@ -72,4 +72,4 @@ class TestImport(DatabaseTest):
             # to be re-added to session after its termination)
             db.session.add(protein)
 
-            assert protein.external_references == None
+            assert protein.external_references is None

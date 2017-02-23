@@ -1,36 +1,30 @@
-from .protein_data import *
+from .protein_data import IMPORTERS
+from .protein_data import get_proteins
 from .mutations import MutationImportManager
-from flask import current_app
+from database import db
+# from flask import current_app
 
 
 def import_all():
+    print('Preparing to whole database import...')
+
     muts_import_manager = MutationImportManager()
-    global genes
-    genes, proteins = create_proteins_and_genes()
-    load_sequences(proteins)
-    select_preferred_isoforms(genes)
-    load_disorder(proteins)
-    load_domains(proteins)
-    load_domains_hierarchy()
-    load_domains_types()
-    load_cancers()
-    global kinase_protein_mappings
-    kinase_protein_mappings = load_kinase_mappings()
-    kinases, groups = load_sites(proteins)
-    kinases, groups = load_kinase_classification(kinases, groups)
-    load_pathways(genes)
-    print('Adding kinases to the session...')
-    db.session.add_all(kinases.values())
-    print('Adding groups to the session...')
-    db.session.add_all(groups.values())
-    del kinases
-    del groups
-    remove_wrong_proteins(proteins)
-    calculate_interactors(proteins)
-    db.session.commit()
-    with current_app.app_context():
-        muts_import_manager.perform('load', proteins)
-    for importer in IMPORTERS:
+
+    for importer_name, importer in IMPORTERS:
+        print('Running %s...' % importer_name)
         results = importer()
+        print('Adding %s to the session...' % importer_name)
         db.session.add_all(results)
+        print('Committing changes...')
         db.session.commit()
+        print('Success: %s done!')
+
+    print('Preparing to whole database import')
+
+    proteins = get_proteins()
+
+    print('Importing mutations...')
+    muts_import_manager.perform('load', proteins)
+
+    db.session.commit()
+    print('Done! Full database import complete!')

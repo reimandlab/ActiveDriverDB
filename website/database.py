@@ -10,6 +10,14 @@ bdb = BerkleyHashSet()
 bdb_refseq = BerkleyHashSet()
 
 
+def remove(orm_object, soft=False):
+    """If soft, expunge given object from session, otherwise delete it."""
+    if soft:
+        return db.session.expunge(orm_object)
+    else:
+        return db.session.delete(orm_object)
+
+
 def get_or_create(model, **kwargs):
     """Return a tuple: (object, was_created) for given parameters.
 

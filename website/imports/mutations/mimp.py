@@ -65,7 +65,7 @@ class Importer(MutationImporter):
             if len(affected_sites) != 1:
                 print('MIMP site does not match to the database:')
                 if affected_sites:
-                    print('too many (' + len(affected_sites) + ') sites found')
+                    print('too many (%s) sites found' % len(affected_sites))
                 else:
                     print('given site not found')
                 print(protein, refseq, ref, pos, alt, mutation_id, psite_pos)
