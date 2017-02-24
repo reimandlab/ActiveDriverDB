@@ -60,9 +60,14 @@ def create_key_model_dict(model, key, lowercase=False):
 
 @importer
 def proteins_and_genes(path='data/protein_data.tsv'):
-    # TODO docstring;
-    # TODO what to do if proteins/genes already are in the db?
-    # TODO where does the tsv file comes from?
+    """Create proteins and genes based on data in a given file.
+
+    If protein/gene already exists it will be skipped.
+
+    Returns:
+        list of created (new) proteins
+    """
+    # TODO where does the tsv file come from?
     print('Creating proteins and genes:')
 
     genes = create_key_model_dict(Gene, 'name', lowercase=True)

@@ -1,6 +1,7 @@
 from imports.protein_data import cancers as load_cancers
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
+from database import db
 
 
 cancers_list = """\
@@ -25,3 +26,6 @@ class TestImport(DatabaseTest):
 
         assert cancer.name == 'Bladder Urothelial Carcinoma'
         assert cancer.code == 'BLCA'
+
+        db.session.add_all(cancers)
+        assert True
