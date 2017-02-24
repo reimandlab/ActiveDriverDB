@@ -23,12 +23,14 @@ from helpers.commands import register_decorator
 from operator import attrgetter
 
 
-def get_proteins(cached_proteins={}):
+def get_proteins(cached_proteins={}, reload_cache=False):
     """Fetch all proteins from database as refseq => protein object mapping.
 
     By default proteins will be cached at first call and until cached_proteins
     is set explicitly to a (new, empty) dict() in subsequent calls, the
     cached results from the first time will be returned."""
+    if reload_cache:
+        cached_proteins.clear()
     if not cached_proteins:
         for protein in Protein.query.all():
             cached_proteins[protein.refseq] = protein
@@ -190,6 +192,7 @@ def sequences(path='data/all_RefGene_proteins.fa'):
 
     print('%s sequences overwritten' % overwritten)
     print('%s new sequences saved' % new_count)
+
 
 def select_preferred_isoform(gene):
     max_length = 0
