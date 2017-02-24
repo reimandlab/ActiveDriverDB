@@ -42,13 +42,15 @@ importer = register_decorator(IMPORTERS)
 
 def create_key_model_dict(model, key, lowercase=False):
     """Create 'entry.key: entry' dict mappings for all entries of given model."""
-    get_key = attrgetter(key)
+    key_getter = attrgetter(key)
 
     if lowercase:
         make_lowercase = str.lower
 
         def get_key(m):
-            return make_lowercase(get_key(m))
+            return make_lowercase(key_getter(m))
+    else:
+        get_key = key_getter
 
     return {
         get_key(m): m
@@ -63,7 +65,9 @@ def proteins_and_genes(path='data/protein_data.tsv'):
     # TODO where does the tsv file comes from?
     print('Creating proteins and genes:')
 
-    genes = {}
+    genes = create_key_model_dict(Gene, 'name', lowercase=True)
+    known_proteins = get_proteins()
+
     proteins = {}
 
     coordinates_to_save = [
@@ -103,6 +107,10 @@ def proteins_and_genes(path='data/protein_data.tsv'):
 
         # load protein
         refseq = line[1]
+
+        # if protein is already in database no action is required
+        if refseq in known_proteins:
+            return
 
         # do not allow duplicates
         if refseq in proteins:
@@ -156,19 +164,27 @@ def sequences(path='data/all_RefGene_proteins.fa'):
 
     print('Loading sequences:')
 
+    overwritten = 0
+    new_count = 0
     refseq = None
 
     def parser(line):
-        nonlocal refseq
+        nonlocal refseq, overwritten, new_count
         if line.startswith('>'):
             refseq = line[1:].rstrip()
             assert refseq in proteins
-            assert proteins[refseq].sequence == ''
+            if proteins[refseq].sequence:
+                proteins[refseq].sequence = ''
+                overwritten += 1
+            else:
+                new_count += 1
         else:
             proteins[refseq].sequence += line.rstrip()
 
     parse_fasta_file(path, parser)
 
+    print('%s sequences overwritten' % overwritten)
+    print('%s new sequences saved' % new_count)
 
 def select_preferred_isoform(gene):
     max_length = 0
@@ -243,7 +259,9 @@ def domains(path='data/biomart_protein_domains_20072016.txt'):
 
     print('Loading domains:')
 
-    interpro_domains = dict()
+    interpro_domains = create_key_model_dict(InterproDomain, 'accession')
+    new_domains = []
+
     skipped = 0
     wrong_length = 0
     not_matching_chrom = []
@@ -340,12 +358,13 @@ def domains(path='data/biomart_protein_domains_20072016.txt'):
             domain.end = max(domain.end, end)
         else:
 
-            Domain(
+            domain = Domain(
                 interpro=interpro,
                 protein=protein,
                 start=start,
                 end=end
             )
+            new_domains.append(domain)
 
     parse_tsv_file(path, parser, header)
 
@@ -355,6 +374,7 @@ def domains(path='data/biomart_protein_domains_20072016.txt'):
         'Domains skipped due to not matching chromosomes:',
         len(not_matching_chrom)
     )
+    return new_domains
 
 
 @importer
@@ -394,7 +414,7 @@ def domains_hierarchy(path='data/ParentChildTreeFile.txt'):
 
         if domain.description != description:
             print(
-                'InteproDomain descriptions differs between database and',
+                'InterproDomain descriptions differs between database and',
                 'hierarchy file: "{0}" vs "{1}" for: {2}'.format(
                     domain.description,
                     description,
@@ -420,7 +440,7 @@ def domains_types(path='data/interpro.xml.gz'):
 
     print('Loading extended InterPro annotations:')
 
-    domains = {d.accession: d for d in InterproDomain.query.all()}
+    domains = create_key_model_dict(InterproDomain, 'accession')
 
     with gzip.open(path) as interpro_file:
         tree = ElementTree.parse(interpro_file)
@@ -460,9 +480,14 @@ def get_preferred_gene_isoform(gene_name):
     If there is a gene, it has a preferred isoform. Implemented as
     database query to avoid keeping all genes in memory - should be
     still feasible as there are not so many genes as proteins."""
+    from sqlalchemy.orm.exc import NoResultFound
 
     # TODO consider same trick as for proteins: cache in mutable func arg
-    gene = Gene.query.filter(Gene.name.ilike(gene_name)).one()
+
+    try:
+        gene = Gene.query.filter(Gene.name.ilike(gene_name)).one()
+    except NoResultFound:
+        return None
     return gene.preferred_isoform
 
 
@@ -485,6 +510,13 @@ def kinase_mappings(path='data/curated_kinase_IDs.txt'):
     def parser(line):
         kinase_name, gene_name = line
         protein = get_preferred_gene_isoform(gene_name)
+
+        if not protein:
+            print(
+                'No isoform for %s kinase mapped to %s gene!' %
+                (kinase_name, gene_name)
+            )
+            return
 
         if kinase_name in known_kinases:
             kinase = known_kinases[kinase_name]

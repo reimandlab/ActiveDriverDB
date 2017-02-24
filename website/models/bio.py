@@ -541,7 +541,7 @@ class Cancer(BioModel):
 
 class InterproDomain(BioModel):
     # Interpro ID
-    accession = db.Column(db.Text)
+    accession = db.Column(db.String(64), unique=True)
 
     # Interpro Short Description
     short_description = db.Column(db.Text)

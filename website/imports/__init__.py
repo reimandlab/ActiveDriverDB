@@ -10,14 +10,16 @@ def import_all():
 
     muts_import_manager = MutationImportManager()
 
-    for importer_name, importer in IMPORTERS:
+    for importer_name, importer in IMPORTERS.items():
         print('Running %s...' % importer_name)
         results = importer()
-        print('Adding %s to the session...' % importer_name)
-        db.session.add_all(results)
+        if results:
+            print('Got %s results.' % len(results))
+            print('Adding %s to the session...' % importer_name)
+            db.session.add_all(results)
         print('Committing changes...')
         db.session.commit()
-        print('Success: %s done!')
+        print('Success: %s done!' % importer_name)
 
     print('Preparing to whole database import')
 
