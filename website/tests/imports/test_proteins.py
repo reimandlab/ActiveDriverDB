@@ -2,6 +2,8 @@ from imports.protein_data import proteins_and_genes
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
 from database import db
+from models import Protein
+from models import Gene
 
 
 # head data/protein_data.tsv -n 5
@@ -32,7 +34,15 @@ class TestImport(DatabaseTest):
 
         assert len(new_proteins) == 4
         db.session.add_all(new_proteins)
-        assert True
+
+        p = Protein.query.filter_by(refseq='NM_002749').one()
+        g = Gene.query.filter_by(name='MAPK7').one()
+
+        assert p.gene == g
+        assert p.tx_start == 19281773
+        assert p.tx_end == 19286857
+        assert p.cds_start == 19282213
+        assert p.cds_end == 19286544
 
         second_filename = make_named_temp_file(update_data)
 
@@ -41,4 +51,6 @@ class TestImport(DatabaseTest):
 
         assert len(new_proteins) == 1
         db.session.add_all(new_proteins)
-        assert True
+
+        protein = list(new_proteins)[0]
+        assert protein.refseq == 'NM_182962'
