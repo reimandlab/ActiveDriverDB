@@ -18,7 +18,7 @@ from models import Site
 from models import Pathway
 from models import BadWord
 from models import GeneList
-from models import CancerGeneListEntry
+from models import GeneListEntry
 from helpers.commands import register_decorator
 from operator import attrgetter
 
@@ -290,14 +290,6 @@ def domains(path='data/biomart_protein_domains_20072016.txt'):
             protein = proteins[line[6]]  # by refseq
         except KeyError:
             skipped += 1
-            # commented out (too much to write to screen)
-            """
-            print(
-                'Skipping domains for protein',
-                line[6],
-                '(no such a record in dataset)'
-            )
-            """
             return
 
         # If there is no data about the domains, skip this record
@@ -752,39 +744,48 @@ def calculate_interactors():
 
 
 @importer
-def active_driver_gene_lists(lists=(
-    ('TCGA', 'data/Supplementary_table_4__ActiveDriver_genes_p0.01.csv'),
-)):
+def active_driver_gene_lists(
+        lists=(
+            ('TCGA', 'data/ActiveDriver1_result_pvalue_less_0.01_CancerMutation-2017-02-16.txt'),
+            ('ClinVar', 'data/ActiveDriver1_result_pvalue_less_0.01_InheritedMutation-2017-02-16.txt')
+        ),
+        fdr_cutoff=0.01
+):
     gene_lists = []
-    for name, filename in lists:
+    for name, path in lists:
         gene_list = GeneList(name=name)
 
-        with open(filename, newline='') as csv_file:
+        header = ['gene', 'p', 'fdr']
 
-            count = count_lines(csv_file)
-            csv_reader = csv.reader(csv_file)
+        to_high_fdr_count = 0
+        list_entries = []
 
-            header = next(csv_reader)
-            assert header == [
-                '', 'gene', 'p', 'fdr', 'n_pSNVs',
-                'cancer_type', 'is_cancer_gene'
-            ]
+        def parser(line):
+            gene_name, p_value, fdr = line
+            p_value = float(p_value)
+            fdr = float(fdr)
 
-            list_entries = []
-            for row in tqdm(csv_reader, total=count - 1):
-                # select only records with 'PAN' in 'cancer_type' column
-                if row[5] != 'PAN':
-                    continue
-                gene, created = get_or_create(Gene, name=row[1])
-                entry = CancerGeneListEntry(
-                    gene=gene,
-                    p=float(row[2]),
-                    fdr=float(row[3]),
-                    is_cancer_gene=bool(row[-1])
-                )
-                list_entries.append(entry)
+            nonlocal to_high_fdr_count
+
+            if fdr >= fdr_cutoff:
+                to_high_fdr_count += 1
+                return
+
+            gene, created = get_or_create(Gene, name=gene_name)
+
+            entry = GeneListEntry(
+                gene=gene,
+                p=p_value,
+                fdr=fdr
+            )
+            list_entries.append(entry)
+
             gene_list.entries = list_entries
+
+        parse_tsv_file(path, parser, header)
+
         gene_lists.append(gene_list)
+
     return gene_lists
 
 
