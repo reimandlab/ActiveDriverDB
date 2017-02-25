@@ -41,7 +41,6 @@ def make_association_table(fk1, fk2):
 
 
 class GeneListEntry(BioModel):
-    type = db.Column(db.String(32))
     gene_list_id = db.Column(db.Integer, db.ForeignKey('genelist.id'))
 
     p = db.Column(db.Float(precision=53))
@@ -50,29 +49,10 @@ class GeneListEntry(BioModel):
     gene_id = db.Column(db.Integer, db.ForeignKey('gene.id'))
     gene = db.relationship('Gene')
 
-    __mapper_args__ = {
-        'polymorphic_identity': 'entry',
-        'polymorphic_on': type
-    }
-
-
-class CancerGeneListEntry(GeneListEntry):
-    id = db.Column(
-        db.Integer,
-        db.ForeignKey('genelistentry.id'),
-        primary_key=True
-    )
-
-    is_cancer_gene = db.Column(db.Boolean())
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'cancer_entry',
-    }
-
 
 class GeneList(BioModel):
     name = db.Column(db.String(256), nullable=False, unique=True, index=True)
-    entries = db.relationship('GeneListEntry')
+    entries = db.relationship(GeneListEntry)
 
 
 class Kinase(BioModel):
@@ -541,7 +521,7 @@ class Cancer(BioModel):
 
 class InterproDomain(BioModel):
     # Interpro ID
-    accession = db.Column(db.Text)
+    accession = db.Column(db.String(64), unique=True)
 
     # Interpro Short Description
     short_description = db.Column(db.Text)
@@ -704,6 +684,7 @@ class Mutation(BioModel):
     alt = db.Column(db.String(1))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
+    # TODO: there is an error of false negatives for edge muts probably
     # To speed up results retrieval one can precompute value of
     # 'is_ptm' property. It does not carry meaningful information
     # for novel mutations until correctly precomputed (e.g. with

@@ -235,9 +235,12 @@ class ProteinRelated(CommandTarget):
             '--importers',
             nargs='*',
             help=(
-                'Which importers should be used?'
-                ' Available importers are: ' + ', '.join(data_importers) + '.'
-                ' By default all data importers will be used.'
+                'What should be imported?'
+                ' Available choices are: ' +
+                ', '.join(data_importers) + '.'
+                ' By default all data will be imported.'
+                ' The order of imports matters; preferable order'
+                ' is the same as order of choices listed above.'
             ),
             choices=data_importers,
             metavar='',
@@ -304,7 +307,7 @@ class Mutations(CommandTarget):
                 'Which mutations should be loaded or removed?'
                 ' Available sources are: ' +
                 ', '.join(mutation_importers) + '.'
-                ' By default all mutations will be used.'
+                ' By default all sources will be used.'
             ),
             choices=mutation_importers,
             metavar='',

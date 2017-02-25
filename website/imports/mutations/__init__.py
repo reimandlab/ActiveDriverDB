@@ -9,15 +9,10 @@ from helpers.bioinf import decode_mutation
 from helpers.bioinf import is_sequence_broken
 from helpers.parsers import chunked_list
 from models import Mutation
-from models import Protein
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import SQLAlchemyError
 from flask import current_app
-
-
-def get_proteins():
-    """Fetch all proteins from database as refseq => protein object mapping."""
-    return {protein.refseq: protein for protein in Protein.query.all()}
+from imports.protein_data import get_proteins
 
 
 def bulk_ORM_insert(model, keys, data):
@@ -135,6 +130,7 @@ class MutationImporter(ABC):
 
     default_path = None
     insert_keys = None
+    model = None
 
     def __init__(self, proteins=None):
         if not proteins:
@@ -220,7 +216,7 @@ class MutationImporter(ABC):
         self.load(path, update=True)
 
     @abstractmethod
-    def parse(self):
+    def parse(self, path):
         """Make use of self.preparse_mutations() and therefore populate
         self.base_mutations with new Mutation instances and also return
         a structure containing data to populate self.model (MutationDetails
@@ -263,7 +259,7 @@ class MutationImporter(ABC):
         restart_autoincrement(self.model)
         db.session.commit()
 
-    def remove(self, **kargs):
+    def remove(self, **kwargs):
         """This function should stay untouched"""
         print('Removing %s:' % self.model_name)
         try:
