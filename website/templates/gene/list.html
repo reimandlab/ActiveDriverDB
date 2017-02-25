@@ -29,12 +29,13 @@
 
 <ol class="breadcrumb">
   <li><a href="/">Home</a></li>
-  <li>Gene list</li>
+  <li><a href="{{ url_for('GeneView:lists') }}">Gene lists</a></li>
   <li class="active">{{ list_name }}</li>
 </ol>
 
 <div>
   <div id="toolbar" class="gene-widgets">
+    <form method="GET" class="widget-form">
       {% with widgets=[widgets.dataset, widgets.ptm_type] %}
         {% include 'widgets/filters_bar.html' %}
         <form method="GET" class="widget-form">

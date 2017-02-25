@@ -34,6 +34,7 @@
 
 <div>
   <div id="toolbar" class="gene-widgets">
+    <form method="GET" class="widget-form">
       {% with widgets=[widgets.dataset, widgets.ptm_type] %}
         {% include 'widgets/filters_bar.html' %}
         <form method="GET" class="widget-form">

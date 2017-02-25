@@ -20,6 +20,92 @@ from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 from ._global_filters import sources_to_sa_filter
 
+from sqlalchemy import and_
+import sqlalchemy
+
+
+def select_filters(filters, models):
+    """Selects filters which are applicable to at least one of given models."""
+    selected = set()
+    tables = [model.__table__ for model in models]
+
+    table_containing_types = [
+        sqlalchemy.sql.schema.Column,
+        sqlalchemy.sql.annotation.AnnotatedColumn
+    ]
+
+    for filter_ in filters:
+        stack = list(filter_.get_children())
+        for entity in stack:
+            if type(entity) in table_containing_types:
+                if entity.table in tables:
+                    selected.add(filter_)
+            if isinstance(entity, sqlalchemy.sql.selectable.Selectable):
+                stack.extend(entity.get_children())
+    return selected
+
+
+def prepare_subqueries(sql_filters):
+    """Return three sub-queries suitable for use in protein queries which are:
+        - mutations count (muts_cnt),
+        - PTM mutations count (ptm_muts_cnt),
+        - sites count (ptm_sites_cnt)
+
+    Returned sub-queries are labelled as shown in parentheses above.
+    """
+    muts = (
+        db.session.query(func.count(Mutation))
+        .filter(Mutation.protein_id == Protein.id)
+        .filter(and_(*select_filters(sql_filters, [Mutation])))
+    ).label('muts_cnt')
+
+    if sql_filters:
+        ptm_muts = (
+            db.session.query(
+                func.count(distinct(case(
+                    [
+                        (
+                            (
+                                Site.position.between(
+                                    Mutation.position - 7,
+                                    Mutation.position + 7
+                                )
+                            ),
+                            Mutation.id
+                        )
+                    ],
+                    else_=literal_column('NULL')
+                )))
+            )
+            .filter(and_(
+                Mutation.protein_id == Protein.id,
+                Site.protein_id == Protein.id,
+                Mutation.precomputed_is_ptm
+            ))
+            .join(Site, Site.protein_id == Mutation.protein_id)
+            .filter(and_(*select_filters(sql_filters, [Site, Mutation])))
+        )
+    else:
+        ptm_muts = (
+            db.session.query(func.count(Mutation))
+            .filter(and_(
+                Mutation.protein_id == Protein.id,
+                Mutation.precomputed_is_ptm
+            ))
+            .filter(and_(*select_filters(sql_filters, [Mutation])))
+        )
+    ptm_muts = ptm_muts.label('ptm_muts_cnt')
+
+    sites = (
+        db.session.query(func.count(Site))
+            .filter(
+            Site.protein_id == Protein.id,
+            )
+            .filter(and_(*select_filters(sql_filters, [Site])))
+    ).label('ptm_sites_cnt')
+
+    return muts, ptm_muts, sites
+
 
 class GeneViewFilters(FilterManager):
 
@@ -33,10 +119,7 @@ class GeneViewFilters(FilterManager):
             ),
             Filter(
                 Site, 'type', comparators=['in'],
-                choices=[
-                    'phosphorylation', 'acetylation',
-                    'ubiquitination', 'methylation'
-                ],
+                choices=Site.types,
                 as_sqlalchemy=True
             )
         ]
@@ -65,31 +148,19 @@ def make_widgets(filter_manager):
     }
 
 
-def ajax_query():
+def ajax_query(sql_filters):
+
+    muts, ptm_muts, sites = prepare_subqueries(sql_filters)
+
     query = (
         db.session.query(
             Gene.name,
-            func.count(distinct(Mutation.id)).label('muts_cnt'),
-            func.count(distinct(case(
-                [
-                    (
-                        (
-                            Site.position.between(
-                                Mutation.position - 7,
-                                Mutation.position + 7
-                            )
-                        ),
-                        Mutation.id
-                    )
-                ],
-                else_=literal_column('NULL')
-            ))).label('ptm_muts_cnt'),
-            func.count(distinct(Site.id)).label('ptm_sites_cnt')
+            muts,
+            ptm_muts,
+            sites
         )
         .select_from(Gene)
         .join(Protein, Protein.id == Gene.preferred_isoform_id)
-        .outerjoin(Site, Site.protein_id == Protein.id)
-        .outerjoin(Mutation, Mutation.protein_id == Protein.id)
         .group_by(Gene.id)
     )
     return query
@@ -127,53 +198,47 @@ class GeneView(FlaskView):
             widgets=widgets, filter_manager=filter_manager
         )
 
+    def lists(self):
+        lists = GeneList.query.all()
+        return template('gene/lists.html', lists=lists)
+
     def list_data(self, list_name):
         gene_list = GeneList.query.filter_by(name=list_name).first_or_404()
-        ajax_view = AjaxTableView.from_query(
-            query=(
+
+        def query_constructor(sql_filters):
+            # TODO: create "PurportedMutation" for MIMP data, skip MIMP mutations somehow.
+
+            muts, ptm_muts, sites = prepare_subqueries(sql_filters)
+
+            return (
                 db.session.query(
                     Gene.name,
-                    func.count(distinct(Mutation.id)).label('muts_cnt'),
-                    func.count(distinct(case(
-                        [
-                            (
-                                (
-                                    Site.position.between(
-                                        Mutation.position - 7,
-                                        Mutation.position + 7
-                                    )
-                                ),
-                                Mutation.id
-                            )
-                        ],
-                        else_=literal_column('NULL')
-                    ))).label('ptm_muts_cnt'),
-                    func.count(distinct(Site.id)).label('ptm_sites_cnt'),
+                    muts,
+                    ptm_muts,
+                    sites,
                     GeneListEntry.fdr,
                     GeneListEntry.p
                 )
                 .select_from(GeneListEntry)
-                .prefix_with("STRAIGHT_JOIN")
-                .join(Gene, GeneListEntry.gene_id == Gene.id)
                 .filter(GeneListEntry.gene_list_id == gene_list.id)
+                .join(Gene, Gene.id == GeneListEntry.gene_id)
                 .join(Protein, Protein.id == Gene.preferred_isoform_id)
-                .outerjoin(Site, Site.protein_id == Protein.id)
-                .outerjoin(Mutation, Mutation.protein_id == Protein.id)
                 .group_by(Gene.id)
-            ),
+            )
+
+        ajax_view = AjaxTableView.from_query(
+            query_constructor=query_constructor,
             results_mapper=lambda row: row._asdict(),
             filters_class=GeneViewFilters,
             search_filter=lambda q: Gene.name.like(q + '%'),
             count_query=(
                 db.session.query(
-                    Gene.id
+                    GeneListEntry.id
                 )
                 .select_from(GeneListEntry)
-                .prefix_with("STRAIGHT_JOIN")
                 .join(Gene, GeneListEntry.gene_id == Gene.id)
                 .join(Protein, Protein.id == Gene.preferred_isoform_id)
                 .filter(GeneListEntry.gene_list_id == gene_list.id)
-                .group_by(Gene.name)
             ),
             sort='fdr'
         )
@@ -186,17 +251,15 @@ class GeneView(FlaskView):
 
     browse_data = route('browse_data')(
         AjaxTableView.from_query(
-            query=ajax_query(),
+            query_constructor=ajax_query,
             results_mapper=lambda row: row._asdict(),
             filters_class=GeneViewFilters,
             search_filter=lambda q: Gene.name.like(q + '%'),
             count_query=(
-                db.session.query(
-                    Gene.id
-                )
+                db.session.query(Gene.id)
                 .select_from(Gene)
                 .join(Protein, Protein.id == Gene.preferred_isoform_id)
-                .group_by(Gene.name)
+                .group_by(Gene.id)
             ),
             sort='name'
         )

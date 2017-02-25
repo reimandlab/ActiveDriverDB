@@ -75,8 +75,8 @@ class AjaxTableView:
                 filters.append(search_filter(args['search']))
 
             if filters:
-                filters_coniunction = and_(*filters)
-                query = query.filter(filters_coniunction)
+                filters_conjunction = and_(*filters)
+                query = query.filter(filters_conjunction)
 
             count = fast_count(query)
             query = query.limit(args['limit']).offset(args['offset'])
@@ -100,7 +100,8 @@ class AjaxTableView:
     def from_query(
         query=None, count_query=None,
         results_mapper=None, filters_class=None,
-        search_filter=None, preset_filter=None, **kwargs
+        search_filter=None, preset_filter=None,
+        query_constructor=None, **kwargs
     ):
 
         args = {
@@ -126,14 +127,6 @@ class AjaxTableView:
                 lambda x: x
             )
 
-            query = predefined_query
-
-            if args['sort']:
-
-                query = query.order_by(
-                    ordering_function(args['sort'])
-                )
-
             filters = []
 
             if preset_filter:
@@ -142,33 +135,48 @@ class AjaxTableView:
             if args['search'] and search_filter:
                 filters.append(search_filter(args['search']))
 
-            if not predefined_count_query:
-                count_query = query
-            else:
-                count_query = predefined_count_query
-
             if filters_class:
                 filters_manager = filters_class()
                 divided_filters = filters_manager.prepare_filters()
                 sql_filters, manual_filters = divided_filters
                 if manual_filters:
                     raise ValueError(
-                        'From query can apply only use filters with'
+                        'From query can only apply filters implementing'
                         ' sqlalchemy interface'
                     )
-                filters += sql_filters
+            else:
+                sql_filters = []
+
+            if query_constructor:
+                query = query_constructor(sql_filters)
+            else:
+                query = predefined_query
+                if filters_class:
+                    filters += sql_filters
+
+            if args['sort']:
+
+                query = query.order_by(
+                    ordering_function(args['sort'])
+                )
+
+            if not predefined_count_query:
+                count_query = query
+            else:
+                count_query = predefined_count_query
 
             if filters:
-                filters_coniunction = and_(*filters)
-                query = query.filter(filters_coniunction)
-                count_query = count_query.filter(filters_coniunction)
+                filters_conjunction = and_(*filters)
+                query = query.filter(filters_conjunction)
+                count_query = count_query.filter(filters_conjunction)
 
             try:
                 count = count_query.count()
                 query = query.limit(args['limit']).offset(args['offset'])
                 elements = query.all()
-            except StatementError:
+            except StatementError as e:
                 db.session.rollback()
+                print(e)
                 print('Statement Error detected!')
                 return jsonify({'message': 'query error'})
 
