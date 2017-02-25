@@ -96,7 +96,7 @@ class Kinase(BioModel):
     @property
     def mutations(self):
         if not self.protein:
-            return []
+            return tuple()
         return self.protein.mutations.all()
 
     def to_json(self):
@@ -473,14 +473,14 @@ class Protein(BioModel):
                 start = i
                 break
         else:
-            return []
+            return tuple()
 
         for i, site in enumerate(reversed(sites)):
             if site.position <= right:
                 end = -i
                 break
         else:
-            return []
+            return tuple()
 
         return sites[start:end]
 
@@ -830,6 +830,14 @@ class Mutation(BioModel):
             if key.startswith('meta_') and value
         }
 
+    @property
+    def sites(self):
+        #try:
+        return self.protein.sites
+        #except AttributeError:
+        #    # we do not have protein to judge
+        #    return tuple()
+
     @hybrid_method
     def is_ptm(self, filter_manager=None):
         """Mutation is PTM related if it may affect PTM site.
@@ -839,7 +847,7 @@ class Mutation(BioModel):
 
         This method works very similarly to is_ptm_distal property.
         """
-        sites = self.protein.sites
+        sites = self.sites
         if filter_manager:
             sites = filter_manager.apply(sites)
         return self.is_close_to_some_site(7, 7, sites)
@@ -882,7 +890,7 @@ class Mutation(BioModel):
 
         when taking into account -7 to +7 spans of each PTM site.
         """
-        sites = site_filter(self.protein.sites)
+        sites = site_filter(self.sites)
         pos = self.position
         a = 0
         b = len(sites)
@@ -902,14 +910,14 @@ class Mutation(BioModel):
             else:
                 b = pivot
         else:
-            return []
+            return tuple()
 
         def cond():
             try:
                 site_pos = sites[pivot].position
                 return site_pos - 7 <= pos and pos <= site_pos + 7
             except IndexError:
-                return []
+                return tuple()
 
         # go to right from found site, check if there is more overlapping sites
         pivot = hit + 1
@@ -943,7 +951,7 @@ class Mutation(BioModel):
         It describes impact on the closest PTM site or on a site chosen by
         MIMP algorithm (so it applies only when 'network-rewiring' is returned)
         """
-        sites = site_filter(self.protein.sites)
+        sites = site_filter(self.sites)
 
         if self.is_close_to_some_site(0, 0, sites):
             return 'direct'
@@ -986,7 +994,7 @@ class Mutation(BioModel):
         that sites are sorted by position in the database.
         """
         if sites is None:
-            sites = self.protein.sites
+            sites = self.sites
         pos = self.position
         a = 0
         b = len(sites)
@@ -1036,6 +1044,24 @@ class MutationDetails:
     def summary(self, filter=lambda x: x):
         """Return short JSON serializable representation of the mutation"""
         raise NotImplementedError
+
+
+class UserUploadedMutation(MutationDetails, BioModel):
+
+    count = db.Column(db.Integer, default=0)
+    query = db.Column(db.Text)
+
+    def get_value(self, filter=lambda x: x):
+        return self.count
+
+    def to_json(self, filter=lambda x: x):
+        return {
+            'Query': self.query,
+            'Value': self.count
+        }
+
+    def summary(self, filter=lambda x: x):
+        return self.query
 
 
 class CancerMutation(MutationDetails, BioModel):
