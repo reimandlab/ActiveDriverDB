@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %} Gene lists - {{ super() }} {% endblock %}
+
+{% block content %}
+
+  <h3>Gene lists</h3>
+
+  <ol class="breadcrumb">
+    <li><a href="/">Home</a></li>
+    <li>Gene lists</li>
+  </ol>
+
+  <div>
+    <p>
+      You can browse genes and statistics for their primary isoforms by following lists,
+      generated with ActiveDriver software:
+    </p>
+
+    <table class="table">
+      <tr>
+        <th>Name</th>
+        <th>Genes count</th>
+      </tr>
+      {% for list in lists %}
+        <tr>
+          <td>
+            <a href="{{ url_for('GeneView:list', list_name=list.name) }}">{{ list.name }}</a>
+          </td>
+          <td>
+            {{ list.entries | length }}
+          </td>
+        </tr>
+      {% endfor %}
+
+    </table>
+    <p>Alternatively, you can browse a <a href="{{ url_for('GeneView:browse') }}">list of all genes</a>.</p>
+  </div>
+
+{% endblock %}

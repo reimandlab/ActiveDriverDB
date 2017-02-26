@@ -98,10 +98,10 @@ def prepare_subqueries(sql_filters):
 
     sites = (
         db.session.query(func.count(Site.id))
-            .filter(
+        .filter(
             Site.protein_id == Protein.id,
-            )
-            .filter(and_(*select_filters(sql_filters, [Site])))
+        )
+        .filter(and_(*select_filters(sql_filters, [Site])))
     ).label('ptm_sites_cnt')
 
     return muts, ptm_muts, sites
