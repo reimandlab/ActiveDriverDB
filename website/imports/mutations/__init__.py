@@ -108,10 +108,10 @@ class BaseMutationsImporter:
                 self.mutations[key] = (mutation_id, is_ptm)
         return mutation_id
 
-    def insert(self):
+    def insert(self, mutation_model=Mutation):
         for chunk in chunked_list(self.mutations.items()):
             db.session.bulk_insert_mappings(
-                Mutation,
+                mutation_model,
                 [
                     {
                         'id': data[0],
@@ -131,6 +131,7 @@ class MutationImporter(ABC):
     default_path = None
     insert_keys = None
     model = None
+    base_mutation_model = Mutation
 
     def __init__(self, proteins=None):
         if not proteins:
@@ -180,7 +181,7 @@ class MutationImporter(ABC):
         mutation_details = self.parse(path)
 
         # first insert new 'Mutation' data
-        self.base_importer.insert()
+        self.base_importer.insert(mutation_model=self.base_mutation_model)
 
         # then insert or update details about mutation (so self.model entries)
         if update:

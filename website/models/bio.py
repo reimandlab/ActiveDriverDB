@@ -578,10 +578,10 @@ class Domain(BioModel):
         )
 
 
-def mutation_details_relationship(class_name, use_list=False, **kwargs):
+def mutation_details_relationship(class_name, use_list=False, backref='mutation', **kwargs):
     return db.relationship(
         class_name,
-        backref='mutation',
+        backref=backref,
         uselist=use_list,
         **kwargs
     )
@@ -671,6 +671,20 @@ class MIMPMetaManager(UserList):
                 for mimp in self.data
             )
         )
+
+
+class PotentialMutation(BioModel):
+
+    position = db.Column(db.Integer)
+    alt = db.Column(db.String(1))
+    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
+
+    meta_MIMP = mutation_details_relationship(
+        'MIMPMutation',
+        use_list=True,
+        backref='potential_mutation',
+        collection_class=MIMPMetaManager
+    )
 
 
 class Mutation(BioModel):
@@ -1227,6 +1241,12 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
 
 class MIMPMutation(MutationDetails, BioModel):
     """Metadata for MIMP mutation"""
+
+    potential_mutation_id = db.Column(
+        db.Integer,
+        db.ForeignKey('potentialmutation.id')
+    )
+
     site_id = db.Column(db.Integer, db.ForeignKey('site.id'))
     site = db.relationship('Site')
 

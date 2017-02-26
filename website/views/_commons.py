@@ -3,8 +3,24 @@ from models import Mutation
 from database import bdb, bdb_refseq
 from database import make_snv_key
 from database import decode_csv
-from database import get_or_create
 from helpers.bioinf import decode_raw_mutation
+from sqlalchemy.orm.exc import NoResultFound
+from models import PotentialMutation
+
+
+def get_or_create_mutation(**kwargs):
+    try:
+        return Mutation.query.filter_by(**kwargs).one()
+    except NoResultFound:
+        try:
+            # check if maybe we already have MIMP predictions for this mutation
+            potential = PotentialMutation.query.filter_by(**kwargs).one()
+            mutation = Mutation(**kwargs)
+            # copy known data about this mutation
+            mutation.meta_MIMP = potential.meta_MIMP
+
+        except NoResultFound:
+            return Mutation(**kwargs)
 
 
 def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
@@ -23,15 +39,14 @@ def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
         protein = Protein.query.get(item['protein_id'])
         item['protein'] = protein
 
-        mutation, created = get_or_create(
-            Mutation,
+        mutation = get_or_create_mutation(
             protein=protein,
-            protein_id=protein.id,
             position=item['pos'],
             alt=item['alt']
         )
         item['mutation'] = mutation
         item['type'] = 'genomic'
+
     return items
 
 
@@ -54,7 +69,7 @@ def get_affected_isoforms(gene_name, ref, pos, alt):
         gene_name => all_isoforms
     is not enough to satisfy all conditions.
 
-    So what do we have here is (rougly) an equivalent to:
+    So what do we have here is (roughly) an equivalent to:
 
         from models import Gene
 
@@ -96,8 +111,7 @@ def get_protein_muts(gene_name, mut):
 
     for isoform in get_affected_isoforms(gene_name, ref, pos, alt):
 
-        mutation, created = get_or_create(
-            Mutation,
+        mutation, created = get_or_create_mutation(
             protein=isoform,
             position=pos,
             alt=alt

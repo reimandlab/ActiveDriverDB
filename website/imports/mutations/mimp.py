@@ -1,4 +1,5 @@
 from models import MIMPMutation
+from models import PotentialMutation
 from imports.mutations import MutationImporter
 from helpers.bioinf import decode_raw_mutation
 from helpers.parsers import parse_tsv_file
@@ -10,6 +11,7 @@ class Importer(MutationImporter):
     # row.names=F, quote=F, sep='\t')
 
     model = MIMPMutation
+    base_mutation_model = PotentialMutation
     default_path = 'data/mutations/all_mimp_annotations.tsv'
     header = [
         'gene', 'mut', 'psite_pos', 'mut_dist', 'wt', 'mt', 'score_wt',
@@ -27,10 +29,8 @@ class Importer(MutationImporter):
 
     def parse(self, path):
         mimps = []
-        sites = []
 
         def parser(line):
-            nonlocal mimps, sites
 
             refseq = line[0]
             mut = line[1]

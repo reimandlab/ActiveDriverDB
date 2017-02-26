@@ -35,12 +35,12 @@ class GeneResult:
         return getattr(self.gene, key)
 
 
-def search_proteins(phase, limit=False, filter_manager=None):
+def search_proteins(phase, limit=None, filter_manager=None):
     """Search for a protein isoform or gene.
 
-    Limit means maximum results to be
-    returned and will be applied to genes (so in the results there may be 10
-    genes and 100 isoforms if the limit is equal to 10.
+    Limit means maximum results to be returned and will
+    be applied to genes (so in the results there may be 10
+    genes and 100 isoforms if the limit is equal to 10).
     """
     if not phase:
         return []
@@ -69,6 +69,7 @@ def search_proteins(phase, limit=False, filter_manager=None):
 
     if limit:
         orm_query = orm_query.limit(limit)
+
     genes = {gene.name: GeneResult(gene) for gene in orm_query.all()}
 
     # looking up both by name and refseq is costly - perform it wisely
