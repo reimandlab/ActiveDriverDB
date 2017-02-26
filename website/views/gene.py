@@ -59,7 +59,9 @@ def prepare_subqueries(sql_filters):
         .filter(and_(*select_filters(sql_filters, [Mutation])))
     ).label('muts_cnt')
 
-    if sql_filters:
+    any_site_filters = select_filters(sql_filters, [Site])
+
+    if any_site_filters:
         ptm_muts = (
             db.session.query(
                 func.count(distinct(case(
