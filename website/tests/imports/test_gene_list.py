@@ -1,6 +1,7 @@
 from imports.protein_data import active_driver_gene_lists as load_active_driver_gene_lists
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
+from database import db
 
 # merged:
 # head ActiveDriver1_result_pvalue_less_0.01_CancerMutation-2017-02-16.txt -n 4
@@ -19,7 +20,7 @@ TMEM131	0.000424693241746104	0.0102312462784289
 KRT75	0.000429521905278659	0.0103267111299355
 ALDH2	0.000431112122924959	0.0103440886637427
 ADGRL1	0.000433144270973498	0.0103710604881763
-LRMP	0.000433975612880499	0.0103710604881763 \
+LRMP	0.000433975612880499	0.0103710604881763\
 """
 
 
@@ -52,3 +53,13 @@ class TestImport(DatabaseTest):
 
         assert 'TMEM131' not in genes
         assert 'PNPT1' in genes
+
+        db.session.add_all(gene_lists)
+
+        with self.app.app_context():
+            gene_lists = load_active_driver_gene_lists(lists=(
+                ('TCGA', filename),
+            ))
+
+        # no duplicate lists should be created
+        assert not gene_lists

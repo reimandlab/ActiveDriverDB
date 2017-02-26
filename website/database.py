@@ -27,7 +27,7 @@ def get_or_create(model, **kwargs):
     object. If there are more than one objects matching, a native SQLAlchemy
     exception will be raised.
 
-    It's analagous with Django ORM function of the same name.
+    It's analogous with Django ORM function of the same name.
     """
     try:
         return model.query.filter_by(**kwargs).one(), False
