@@ -54,7 +54,7 @@ def prepare_subqueries(sql_filters):
     Returned sub-queries are labelled as shown in parentheses above.
     """
     muts = (
-        db.session.query(func.count(Mutation))
+        db.session.query(func.count(Mutation.id))
         .filter(Mutation.protein_id == Protein.id)
         .filter(and_(*select_filters(sql_filters, [Mutation])))
     ).label('muts_cnt')
@@ -87,7 +87,7 @@ def prepare_subqueries(sql_filters):
         )
     else:
         ptm_muts = (
-            db.session.query(func.count(Mutation))
+            db.session.query(func.count(Mutation.id))
             .filter(and_(
                 Mutation.protein_id == Protein.id,
                 Mutation.precomputed_is_ptm
@@ -97,7 +97,7 @@ def prepare_subqueries(sql_filters):
     ptm_muts = ptm_muts.label('ptm_muts_cnt')
 
     sites = (
-        db.session.query(func.count(Site))
+        db.session.query(func.count(Site.id))
             .filter(
             Site.protein_id == Protein.id,
             )
