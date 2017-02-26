@@ -635,10 +635,10 @@ def sites(path='data/site_table.tsv'):
 @importer
 def kinase_classification(path='data/regphos_kinome_scraped_clean.txt'):
 
-    known_kinases = create_key_model_dict(Kinase, 'name')
-    known_groups = create_key_model_dict(KinaseGroup, 'name')
+    known_kinases = create_key_model_dict(Kinase, 'name', True)
+    known_groups = create_key_model_dict(KinaseGroup, 'name', True)
 
-    new_kinases_and_groups = []
+    new_groups = []
 
     print('Loading protein kinase groups:')
 
@@ -662,27 +662,26 @@ def kinase_classification(path='data/regphos_kinome_scraped_clean.txt'):
         clean = family + '_' + subfamily if subfamily else family
         assert line[8] == clean
 
-        if kinase_name not in known_kinases:
+        if kinase_name.lower() not in known_kinases:
             kinase = Kinase(
                 name=kinase_name,
                 protein=get_preferred_gene_isoform(kinase_name)
             )
-            known_kinases[kinase_name] = kinase
-            new_kinases_and_groups.append(kinase)
+            known_kinases[kinase_name.lower()] = kinase
 
         # the 'family' corresponds to 'group' in the all other files
-        if family not in known_groups:
+        if family.lower() not in known_groups:
             group = KinaseGroup(
-                name=kinase_name
+                name=family
             )
-            known_groups[family] = group
-            new_kinases_and_groups.append(group)
+            known_groups[family.lower()] = group
+            new_groups.append(group)
 
-        known_groups[family].kinases.append(known_kinases[kinase_name])
+        known_groups[family.lower()].kinases.append(known_kinases[kinase_name.lower()])
 
     parse_tsv_file(path, parser, header)
 
-    return new_kinases_and_groups
+    return new_groups
 
 
 @importer
@@ -751,8 +750,20 @@ def active_driver_gene_lists(
         ),
         fdr_cutoff=0.01
 ):
+    current_gene_lists = [
+        existing_list.name
+        for existing_list in GeneList.query.all()
+    ]
     gene_lists = []
+
     for name, path in lists:
+        if name in current_gene_lists:
+            print(
+                'Skipping gene list %s: already present in database' %
+                name
+            )
+            continue
+
         gene_list = GeneList(name=name)
 
         header = ['gene', 'p', 'fdr']
