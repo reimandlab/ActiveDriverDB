@@ -5,20 +5,24 @@ from flask import current_app
 
 
 MAPPINGS_COUNT = 73093771   # this is result of stats.count_mappings() -
-# due to long execution time it was precomputed once and hardocded here
+# due to long execution time it was precomputed once and hardcoded here
 
 
 class Statistics:
 
-    def count(self, model):
+    @staticmethod
+    def count(model):
         return model.query.count()
 
-    def all_confirmed_mutations(self):
+    @staticmethod
+    def all_confirmed_mutations():
         return models.Mutation.query.filter_by(
             is_confirmed=True
         ).count()
 
     def get_all(self):
+        all_confirmed = self.count(models.Mutation)
+
         return {
             'proteins': self.count(models.Protein),
             'genes': self.count(models.Gene),
@@ -26,8 +30,8 @@ class Statistics:
             'kinase_groups': self.count(models.KinaseGroup),
             'mutations': {
                 # both confirmed and MIMP mutations
-                'all': self.count(models.Mutation),
-                'all_confirmed': self.all_confirmed_mutations(),
+                'all': all_confirmed + self.count(models.PotentialMutation),
+                'all_confirmed': all_confirmed,
                 'clinvar': self.count(models.InheritedMutation),
                 'esp': self.count(models.ExomeSequencingMutation),
                 'cancer': db.session.query(models.Mutation).filter(
@@ -38,7 +42,7 @@ class Statistics:
                 'thousand_genomes': self.count(models.The1000GenomesMutation),
                 'mimp': self.count(models.MIMPMutation),
                 # 'from_many_sources' is very expensive, and it might be better
-                # to disable when not necessary (it will be useful for debuging
+                # to disable when not necessary (it will be useful for debugging
                 # purposes - so we can check if mutations count is correct)
                 # 'from_more_than_one_source': self.from_many_sources(),
                 'confirmed_in_ptm_sites': self.count_muts_in_sites(),
@@ -54,11 +58,13 @@ class Statistics:
             ),
         }
 
-    def count_mappings(self):
+    @staticmethod
+    def count_mappings():
         from database import bdb
         return len(bdb)
 
-    def count_muts_in_sites(self):
+    @staticmethod
+    def count_muts_in_sites():
         return models.Mutation.query.filter_by(
             is_confirmed=True,
             is_ptm_distal=True
@@ -72,7 +78,8 @@ class Statistics:
             )
         ).count()
 
-    def get_filter_by_sources(self, sources):
+    @staticmethod
+    def get_filter_by_sources(sources):
 
         Mutation = models.Mutation
 
