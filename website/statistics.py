@@ -12,13 +12,8 @@ class Statistics:
 
     @staticmethod
     def count(model):
+        """Count instances of given model in database"""
         return model.query.count()
-
-    @staticmethod
-    def all_confirmed_mutations():
-        return models.Mutation.query.filter_by(
-            is_confirmed=True
-        ).count()
 
     def get_all(self):
         all_confirmed = self.count(models.Mutation)
@@ -66,7 +61,6 @@ class Statistics:
     @staticmethod
     def count_muts_in_sites():
         return models.Mutation.query.filter_by(
-            is_confirmed=True,
             is_ptm_distal=True
         ).count()
 
