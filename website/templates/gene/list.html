@@ -96,6 +96,20 @@
             formatter: geneFormatter
           },
           {
+            title: 'Protein View',
+            field: 'refseq',
+            align: 'center',
+            valign: 'middle',
+            formatter: proteinFormatter
+          },
+          {
+            title: 'Network View',
+            field: 'refseq',
+            align: 'center',
+            valign: 'middle',
+            formatter: networkFormatter
+          },
+          {
             title: '# mutations',
             sortable: true,
             valign: 'middle',
@@ -121,14 +135,8 @@
             sortable: true,
             valign: 'middle',
             align: 'center',
-            field: 'fdr'
-          },
-          {
-            title: 'p-value',
-            sortable: true,
-            valign: 'middle',
-            align: 'center',
-            field: 'p'
+            field: 'fdr',
+            formatter: fdrFormatter
           }
         ]
       ],
@@ -187,9 +195,19 @@
     return '<a href="/gene/show/' + value + '">' + value + '</a>'
   }
 
+  function fdrFormatter(value, row, index)
+  {
+    return value.toPrecision(2)
+  }
+
   function proteinFormatter(value, row, index)
   {
-    return '<a href="/protein/show/' + value + '">' + value + '</a>'
+    return '<a href="/protein/show/' + value + '">protein view</a>'
+  }
+
+  function networkFormatter(value, row, index)
+  {
+    return '<a href="/network/show/' + value + '">network view</a>'
   }
 
   $(function ()

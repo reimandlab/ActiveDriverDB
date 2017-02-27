@@ -225,11 +225,11 @@ class GeneView(FlaskView):
             return (
                 db.session.query(
                     Gene.name,
+                    Protein.refseq,
                     muts,
                     ptm_muts,
                     sites,
-                    GeneListEntry.fdr,
-                    GeneListEntry.p
+                    GeneListEntry.fdr
                 )
                 .select_from(GeneListEntry)
                 .filter(GeneListEntry.gene_list_id == gene_list.id)
