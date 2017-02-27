@@ -92,8 +92,7 @@
             field: 'name',
             align: 'center',
             valign: 'middle',
-            sortable: true,
-            formatter: geneFormatter
+            sortable: true
           },
           {
             title: 'Protein View',
@@ -180,7 +179,8 @@
           html = nunjucks.render(
               'gene_isoforms.njk',
               {
-                  gene_isoforms: data
+                  gene_isoforms: data,
+                  gene_name: gene_row.name
               }
           )
           detail_row.children('td').html(html)
@@ -188,11 +188,6 @@
 			}
 		})
     return 'Loading...'
-  }
-
-  function geneFormatter(value, row, index)
-  {
-    return '<a href="/gene/show/' + value + '">' + value + '</a>'
   }
 
   function fdrFormatter(value, row, index)
