@@ -360,18 +360,24 @@ class Protein(BioModel):
         )
 
     def to_json(self, data_filter=None):
+
+        mutations = Mutation.query.filter_by(
+            protein=self, is_confirmed=True
+        ).all()
+
         if not data_filter:
             data_filter = lambda x: x
-            muts_count = self.mutations_count
+            muts_count = len(mutations)
         else:
-            muts_count = len(data_filter(self.mutations))
+            muts_count = len(data_filter(mutations))
+
         return {
             'gene_name': self.gene_name,
             'refseq': self.refseq,
             'sites_count': len(data_filter(self.sites)),
             'muts_count': muts_count,
             'ptm_muts': sum(
-                1 for m in data_filter(self.mutations)
+                1 for m in data_filter(mutations)
                 if m.is_ptm()
             )
         }
