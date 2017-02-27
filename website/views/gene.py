@@ -53,13 +53,15 @@ def prepare_subqueries(sql_filters):
 
     Returned sub-queries are labelled as shown in parentheses above.
     """
+
+    any_site_filters = select_filters(sql_filters, [Site])
+    any_muts_filters = select_filters(sql_filters, [Mutation])
+
     muts = (
         db.session.query(func.count(Mutation.id))
         .filter(Mutation.protein_id == Protein.id)
-        .filter(and_(*select_filters(sql_filters, [Mutation])))
-    ).label('muts_cnt')
-
-    any_site_filters = select_filters(sql_filters, [Site])
+        .filter(and_(*any_muts_filters))
+    )
 
     if any_site_filters:
         ptm_muts = (
@@ -94,8 +96,16 @@ def prepare_subqueries(sql_filters):
                 Mutation.protein_id == Protein.id,
                 Mutation.precomputed_is_ptm
             ))
-            .filter(and_(*select_filters(sql_filters, [Mutation])))
+            .filter(and_(*any_muts_filters))
         )
+
+    # if no specific dataset is chosen
+    # (so if we do not have guarantee that the muts chosen are confirmed)
+    if not any_muts_filters:
+        muts = muts.filter(Mutation.is_confirmed == True)
+        ptm_muts = ptm_muts.filter(Mutation.is_confirmed == True)
+
+    muts = muts.label('muts_cnt')
     ptm_muts = ptm_muts.label('ptm_muts_cnt')
 
     sites = (
