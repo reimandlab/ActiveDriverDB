@@ -359,11 +359,14 @@ class Protein(BioModel):
             label('sites_count')
         )
 
-    def to_json(self, data_filter=None):
-
-        mutations = Mutation.query.filter_by(
+    @hybrid_property
+    def confirmed_mutations(self):
+        return Mutation.query.filter_by(
             protein=self, is_confirmed=True
         ).all()
+
+    def to_json(self, data_filter=None):
+        mutations = self.confirmed_mutations
 
         if not data_filter:
             data_filter = lambda x: x

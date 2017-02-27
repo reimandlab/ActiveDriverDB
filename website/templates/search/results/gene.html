@@ -15,7 +15,7 @@
     <a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">
         Protein sequence
         ({{ isoform.sites | length }} PTM sites,
-         {{ isoform.mutations.count() }} mutations)
+         {{ isoform.confirmed_mutations | length }} mutations)
     </a>
     {# Note: fetching interactors may be slow sometimes, although very useful #}
     {% set interactors = isoform.interactors_count %}
