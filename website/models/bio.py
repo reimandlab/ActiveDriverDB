@@ -60,7 +60,7 @@ class Kinase(BioModel):
 
     The protein linked to a kinase is chosen as the `preferred_isoform` of a
     gene having the same name as given kinase (since we do not have specific
-    refseq identificator for a single kinase).
+    refseq identifiers for a single kinase).
     Not every kinase has an associated protein.
     """
     name = db.Column(db.String(80), unique=True, index=True)

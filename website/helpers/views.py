@@ -129,7 +129,7 @@ class AjaxTableView:
 
             filters = []
 
-            if preset_filter:
+            if preset_filter is not None:
                 filters.append(preset_filter)
 
             if args['search'] and search_filter:
