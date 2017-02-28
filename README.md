@@ -25,14 +25,12 @@ python3 -m pip install -r requirements.txt
 ```
 In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given. An additional requirement is `bsddb3` package, which is often easier to install system-wide with your package manager (on debian named `python3-bsddb3`). You may need to add a symbolic link to the package inside of your virtual environment.
 
-As currently there is no new version of flask-sqlalchemy released since Oct 2015, but there are some crucial patches merged to the official repository, you will need to clone [flask_sqlalchemy directory](https://github.com/mitsuhiko/flask-sqlalchemy/flask_sqlalchemy) into `website` directory:
+Recently released version of flask-sqlalchemy (2.2, Feb 2017) fixed some important issues but introduced a regression bug [#470](https://github.com/mitsuhiko/flask-sqlalchemy/issues/470) which forces use of forked, patched version until it is fixed. To get patched version, you will need to clone [flask_sqlalchemy directory](https://github.com/krassowski/flask-sqlalchemy/flask_sqlalchemy) into `website` directory:
 ```bash
-git clone https://github.com/mitsuhiko/flask-sqlalchemy/
+git clone https://github.com/krassowski/flask-sqlalchemy/
 mv flask-sqlalchemy/flask_sqlalchemy .
 rm -rf flask-sqlalchemy
 ```
-
-There is an [open issue](https://github.com/mitsuhiko/flask-sqlalchemy/issues/436) with a request for a maintenance relaese.
 
 ### Backend
 

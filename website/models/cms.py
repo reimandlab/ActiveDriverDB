@@ -5,7 +5,6 @@ from werkzeug.utils import cached_property
 from database import db
 from models import Model
 import security
-import uuid
 from datetime import datetime
 from datetime import timedelta
 from exceptions import ValidationError
