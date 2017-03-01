@@ -29,13 +29,13 @@ class GeneResult:
     def __init__(self, gene, restrict_to_isoform=None):
         self.gene = gene
         if restrict_to_isoform:
-            self.preffered_isoform = restrict_to_isoform
+            self.preferred_isoform = restrict_to_isoform
 
     def __getattr__(self, key):
         return getattr(self.gene, key)
 
 
-def search_proteins(phase, limit=False, filter_manager=None):
+def search_proteins(phase, limit=None, filter_manager=None):
     """Search for a protein isoform or gene.
 
     Limit means maximum results to be

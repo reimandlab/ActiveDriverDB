@@ -275,7 +275,7 @@ class UsersMutationsDataset(CMSModel):
         self.uri = uri
 
     def _save_to_file(self, data, uri=None):
-        """Saves data to a file indentified by uri argument.
+        """Saves data to a file identified by uri argument.
 
         If no uri is given, new unique file is created and new uri returned.
         Returned uri is unique so it can serve as a kind of a randomized id to
