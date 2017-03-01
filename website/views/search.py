@@ -26,10 +26,10 @@ from database import db
 
 class GeneResult:
 
-    def __init__(self, gene, restrict_to_isoform=None):
+    def __init__(self, gene, matched_isoforms=None):
         self.gene = gene
-        if restrict_to_isoform:
-            self.preferred_isoform = restrict_to_isoform
+        if matched_isoforms:
+            self.promoted_isoform = matched_isoforms
 
     def __getattr__(self, key):
         return getattr(self.gene, key)
@@ -69,16 +69,30 @@ def search_proteins(phase, limit=None, filter_manager=None):
 
     if limit:
         orm_query = orm_query.limit(limit)
+
     genes = {gene.name: GeneResult(gene) for gene in orm_query.all()}
 
     # looking up both by name and refseq is costly - perform it wisely
     if phase.isnumeric():
         phase = 'NM_' + phase
     if phase.startswith('NM_'):
+
         filters = [Protein.refseq.like(phase + '%')]
+
         if sql_filters:
             filters += sql_filters
-        isoforms = Protein.query.filter(and_(*filters)).all()
+
+        query = Protein.query.filter(and_(*filters))
+
+        if limit:
+            # we want to display up to 'limit' genes;
+            # still it would be good to restrict isoforms
+            # query in such way then even when getting
+            # results where all isoforms match the same
+            # gene it still provides more than one gene
+            query = query.limit(limit * 20)
+
+        isoforms = query.all()
 
         for isoform in isoforms:
             if limit and len(genes) > limit:
@@ -86,18 +100,18 @@ def search_proteins(phase, limit=None, filter_manager=None):
 
             gene = isoform.gene
 
+            # add isoform to promoted (matched) isoforms of the gene
             if gene.name in genes:
-                # add isoform to gene if
-                if isoform not in genes[gene.name].isoforms:
-                    genes[gene.name].isoforms.append(isoform)
+                if isoform not in genes[gene.name].matched_isoforms:
+                    genes[gene.name].matched_isoforms.add(isoform)
             else:
-                genes[gene.name] = GeneResult(gene, restrict_to_isoform=isoform)
+                genes[gene.name] = GeneResult(gene, matched_isoforms={isoform})
 
         def sort_key(gene):
             return min(
                 [
                     distance(isoform.refseq, phase)
-                    for isoform in gene.isoforms
+                    for isoform in gene.matched_isoforms
                 ]
             )
 
