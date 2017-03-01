@@ -28,8 +28,9 @@ class GeneResult:
 
     def __init__(self, gene, matched_isoforms=None):
         self.gene = gene
-        if matched_isoforms:
-            self.promoted_isoform = matched_isoforms
+        if not matched_isoforms:
+            matched_isoforms = []
+        self.matched_isoforms = matched_isoforms
 
     def __getattr__(self, key):
         return getattr(self.gene, key)
@@ -82,7 +83,7 @@ def search_proteins(phase, limit=None, filter_manager=None):
         if sql_filters:
             filters += sql_filters
 
-        query = Protein.query.filter(and_(*filters))
+        query = Protein.query.filter(and_(*filters))\
 
         if limit:
             # we want to display up to 'limit' genes;

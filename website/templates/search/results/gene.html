@@ -1,13 +1,18 @@
-{% macro isoform_result(isoform) %}
+{% macro isoform_result(isoform, indicate_preferred=False) %}
 <div class="isoform">
-  <h5 class="refseq">{{ isoform.refseq }}</h5>
+  <h5 class="refseq">
+    {{ isoform.refseq }}
+    {% if indicate_preferred and isoform.is_preferred_isoform %}
+      (preferred isoform)
+    {% endif %}
+  </h5>
   <div class="isoform-data">
       <div class="datum">Protein: {{ isoform.length }} residues</div>
       {% if isoform.cds_start and isoform.cds_end %}
-      <div class="datum">CDS: {{ isoform.cds_start }}-{{ isoform.cds_end }}</div>
+      <div class="datum">CDS: {{ '{:,}'.format(isoform.cds_start) }}-{{ '{:,}'.format(isoform.cds_end) }}</div>
       {% endif %}
       {% if isoform.tx_start and isoform.tx_end %}
-      <div class="datum">Transcription: {{ isoform.tx_start }}-{{ isoform.tx_end }}</div>
+      <div class="datum">Transcription: {{ '{:,}'.format(isoform.tx_start) }}-{{ '{:,}'.format(isoform.tx_end) }}</div>
       {% endif %}
   </div>
   <div class="shortcuts">
@@ -31,30 +36,32 @@
 
 {% macro gene_results(gene) %}
   <div class="result">
-    <h4 class="gene"><a href="{{ url_for('ProteinView:show', refseq=gene.promoted_isoform.refseq) }}">{{ gene.name }}</a></h4>
+    <h4 class="gene"><a href="{{ url_for('ProteinView:show', refseq=gene.preferred_isoform.refseq) }}">{{ gene.name }}</a></h4>
     <div class="chrom">{{ gene.chrom }}</div>
     <div class="strand">{{ '+' if gene.strand else '-' }}</div>
+
     {% if gene.matched_isoforms %}
-      Isoforms matching to query:
+      <h6>Isoforms matching to query</h6>
       {% for isoform in gene.matched_isoforms %}
-        {{ isoform_result(isoform) }}
+        {{ isoform_result(isoform, indicate_preferred=True) }}
       {% endfor %}
     {% endif %}
 
-    {% if gene.preferred_isoform or gene.isoform %}
-      Preferred isoform:
-      {{ isoform_result(gene.preferred_isoform or gene.isoform) }}
+    {% if gene.preferred_isoform and gene.preferred_isoform not in gene.matched_isoforms %}
+      <h6>Preferred isoform</h6>
+      {{ isoform_result(gene.preferred_isoform) }}
     {% endif %}
-    {# TODO: remove altready used isforms? #}
+
     {% if gene.alternative_isoforms %}
-        {% set alt_iso_cnt = gene.alternative_isoforms | length %}
-        <input type="button" class="hidden btn btn-default show-alt js-shown"
-         value="Show {{ alt_iso_cnt }} isoform{{ 's' if alt_iso_cnt > 1 }} more">
-        <div class="alt-isoforms js-hidden">
+      {% set alt_iso_cnt = gene.alternative_isoforms | length %}
+      <input type="button" class="hidden btn btn-default show-alt js-shown"
+       value="Show {{ alt_iso_cnt }} isoform{{ 's' if alt_iso_cnt > 1 }} more">
+      <div class="alt-isoforms js-hidden">
+        <h6>Alternative isoforms</h6>
         {% for isoform in gene.alternative_isoforms %}
-            {{ isoform_result(isoform) }}
+          {{ isoform_result(isoform) }}
         {% endfor %}
-        </div>
+      </div>
     {% endif %}
   </div>
 {% endmacro %}
