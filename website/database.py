@@ -90,8 +90,19 @@ def get_autoincrement(model):
 
 def make_snv_key(chrom, pos, ref, alt):
     """Makes a key for given `snv` (Single Nucleotide Variation)
+    to be used as a key in hashmap in snv -> csv mappings.
 
-    to be used as a key in hashmap in snv -> csv mappings
+    Args:
+        chrom:
+            str representing one of human chromosomes
+            (like '1', '22', 'X'), e.g. one of returned
+            by `helpers.bioinf.get_human_chromosomes`
+        pos:
+            int representing position of variation
+        ref:
+            char representing reference nucleotide
+        alt:
+            char representing alternative nucleotide
     """
     return ':'.join(
         (chrom, '%x' % int(pos))
@@ -119,7 +130,7 @@ def encode_csv(strand, ref, alt, pos, exon, protein_id, is_ptm):
     """Encode a Coding Sequence Variants into a single, short string.
 
     ref and alt are aminoacids, but pos is a position of mutation in cDNA, so
-    aminoacid positions can be derived simply appling: (int(pos) - 1) // 3 + 1
+    aminoacid positions can be derived simply applying: (int(pos) - 1) // 3 + 1
     """
     return strand + ref + alt + ('1' if is_ptm else '0') + ':'.join((
         '%x' % int(pos), exon, '%x' % protein_id))

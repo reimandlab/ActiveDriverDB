@@ -429,7 +429,7 @@ class Protein(BioModel):
         kinases = set()
         # first of all we need kinases to be a foreign key to proteins
         for site in self.sites:
-            kinases.update((site.kinases))
+            kinases.update(site.kinases)
         return kinases
 
     @kinases.expression
@@ -444,7 +444,7 @@ class Protein(BioModel):
         """Get all kinase_groups associated with this protein"""
         kinase_groups = set()
         for site in self.sites:
-            kinase_groups.update((site.kinase_groups))
+            kinase_groups.update(site.kinase_groups)
         return kinase_groups
 
     def get_sites_from_range(self, left, right):
@@ -720,10 +720,10 @@ class Mutation(BioModel):
 
     # one mutation can affect multiple sites and
     # one site can be affected by multiple mutations
-    sites = db.relationship(
-        'Site',
-        secondary=mutation_site_association
-    )
+    # sites = db.relationship(
+    #     'Site',
+    #     secondary=mutation_site_association
+    # )
 
     # mapping: source name -> column name
     source_fields = OrderedDict(

@@ -175,7 +175,6 @@ class MutationSearch:
             return False
 
         if query_line in self.results:
-            print(self.results[query_line], items)
             for item in self.results[query_line]:
                 item['mutation'].meta_user.count += 1
         else:

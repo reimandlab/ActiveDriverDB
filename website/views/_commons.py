@@ -17,7 +17,6 @@ def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
     ]
 
     # this could be speed up by: itemgetters, accumulative queries and so on
-
     for item in items:
 
         protein = Protein.query.get(item['protein_id'])

@@ -4,8 +4,6 @@ from database import db
 from models import Gene
 from models import Protein
 
-test_query = "chr18 19282310 T C"
-
 
 class TestSearchView(ViewTest):
 
@@ -54,7 +52,33 @@ class TestSearchView(ViewTest):
             data=data
         )
 
+    def test_search(self):
+        test_query = "chr18 19282310 T C"
+
+        from database import bdb
+        from database import make_snv_key
+        from database import encode_csv
+        from models import Site
+        from models import Mutation
+
+        s = Site(position=13, type='methylation')
+        p = Protein(refseq='NM_007', id=7, sites=[s])
+        m = Mutation(protein=p, position=13, alt='V')
+
+        db.session.add(p)
+        db.session.add(m)
+
+        # (those are fake data)
+        csv = encode_csv('+', 'A', 'V', 13*3, 'EX1', p.id, True)
+        bdb[make_snv_key('18', 19282310, 'T', 'C')].add(csv)
+
+        response = self.search_mutations(mutations=test_query)
+
+        assert response.status_code == 200
+        assert b'NM_007' in response.data
+
     def test_save_search(self):
+        test_query = "chr18 19282310 T C"
 
         self.login('user@domain.org', 'password', create=True)
 
