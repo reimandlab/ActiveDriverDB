@@ -710,6 +710,7 @@ class Mutation(BioModel):
     meta_inherited = mutation_details_relationship('InheritedMutation')
     meta_ESP6500 = mutation_details_relationship('ExomeSequencingMutation')
     meta_1KG = mutation_details_relationship('The1000GenomesMutation')
+    meta_user = mutation_details_relationship('UserUploadedMutation')
 
     meta_MIMP = mutation_details_relationship(
         'MIMPMutation',
@@ -731,6 +732,7 @@ class Mutation(BioModel):
             ('ClinVar', 'meta_inherited'),
             ('ESP6500', 'meta_ESP6500'),
             ('1KGenomes', 'meta_1KG'),
+            ('user', 'meta_user')
         )
     )
 
@@ -745,15 +747,14 @@ class Mutation(BioModel):
         'affected_populations'
     )
 
-    # affects_1KG = association_proxy('meta_1KG', 'affects')
     cancer_code = association_proxy('meta_cancer', 'cancer_code')
     sig_code = association_proxy('meta_inherited', 'sig_code')
 
-    def get_source_name(self, column_name):
-        return {v: k for k, v in self.source_fields.items()}.get(
-            column_name,
-            'other'
-        )
+    # def get_source_name(self, column_name):
+    #     return {v: k for k, v in self.source_fields.items()}.get(
+    #         column_name,
+    #         'other'
+    #     )
 
     def __repr__(self):
         return '<Mutation in {0}, at {1} aa, substitution to: {2}>'.format(
@@ -812,21 +813,17 @@ class Mutation(BioModel):
             )
         )
 
-    @cached_property
-    def all_metadata(self):
-        return {
-            self.get_source_name(key): value.to_json()
-            for key, value in self.__dict__.items()
-            if key.startswith('meta_') and value
-        }
+    # @cached_property
+    # def all_metadata(self):
+    #     return {
+    #         self.get_source_name(key): value.to_json()
+    #         for key, value in self.__dict__.items()
+    #         if key.startswith('meta_') and value
+    #     }
 
     @property
     def sites(self):
-        #try:
         return self.protein.sites
-        #except AttributeError:
-        #    # we do not have protein to judge
-        #    return tuple()
 
     @hybrid_method
     def is_ptm(self, filter_manager=None):
@@ -954,7 +951,7 @@ class Mutation(BioModel):
         return 'none'
 
     def find_closest_sites(self, distance=7, site_filter=lambda x: x):
-
+        # TODO: implement site type filter
         pos = self.position
 
         sites = Site.query.filter(

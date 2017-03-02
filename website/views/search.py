@@ -15,6 +15,7 @@ from models import Protein
 from models import Gene
 from models import Mutation
 from models import UsersMutationsDataset
+from models import UserUploadedMutation
 from sqlalchemy import and_
 from helpers.filters import FilterManager
 from helpers.filters import Filter
@@ -39,9 +40,9 @@ class GeneResult:
 def search_proteins(phase, limit=None, filter_manager=None):
     """Search for a protein isoform or gene.
 
-    Limit means maximum results to be
-    returned and will be applied to genes (so in the results there may be 10
-    genes and 100 isoforms if the limit is equal to 10.
+    Args:
+        'limit': number of genes to be returned (for limit=10 there
+                 may be 100 -or more- isoforms and 10 genes returned)
     """
     if not phase:
         return []
@@ -64,7 +65,8 @@ def search_proteins(phase, limit=None, filter_manager=None):
 
     orm_query = (
         Gene.query
-        .join(Protein, Protein.id == Gene.preferred_isoform_id)
+        # join with proteins so PTM filter can be applied
+        .join(Protein, Gene.preferred_isoform)
         .filter(and_(*filters))
     )
 
@@ -76,14 +78,14 @@ def search_proteins(phase, limit=None, filter_manager=None):
     # looking up both by name and refseq is costly - perform it wisely
     if phase.isnumeric():
         phase = 'NM_' + phase
-    if phase.startswith('NM_'):
+    if phase.startswith('NM_') or phase.startswith('nm_'):
 
         filters = [Protein.refseq.like(phase + '%')]
 
         if sql_filters:
             filters += sql_filters
 
-        query = Protein.query.filter(and_(*filters))\
+        query = Protein.query.filter(and_(*filters))
 
         if limit:
             # we want to display up to 'limit' genes;
@@ -136,6 +138,7 @@ class MutationSearch:
         self.results = {}
         self.without_mutations = []
         self.badly_formatted = []
+        self.hidden_results_cnt = 0
 
         if filter_manager:
             def data_filter(elements):
@@ -160,9 +163,32 @@ class MutationSearch:
         # like filter_manager so any instance of this class can be pickled.
         self.data_filter = None
 
-    def parse_vcf(self, vcf_file):
+    def add_mutation_items(self, items, query_line):
+        if not items:
+            self.without_mutations.append(query_line)
+            return False
 
-        results = self.results
+        items = self.data_filter(items)
+
+        if not items:
+            self.hidden_results_cnt += 1
+            return False
+
+        if query_line in self.results:
+            print(self.results[query_line], items)
+            for item in self.results[query_line]:
+                item['mutation'].meta_user.count += 1
+        else:
+            for item in items:
+                item['mutation'].meta_user = UserUploadedMutation(
+                    count=1,
+                    query=query_line
+                )
+            self.results[query_line] = items
+
+        self.query += query_line
+
+    def parse_vcf(self, vcf_file):
 
         for line in vcf_file:
             line = line.decode('latin1').strip()
@@ -186,31 +212,15 @@ class MutationSearch:
 
                 items = get_genomic_muts(chrom, pos, ref, alt)
 
-                items = self.data_filter(items)
-
                 chrom = 'chr' + chrom
                 parsed_line = ' '.join((chrom, pos, ref, alt)) + '\n'
 
-                if items:
-                    if len(alts) > 1:
-                        parsed_line += ' (' + alt + ')'
+                if len(alts) > 1:
+                    parsed_line += ' (' + alt + ')'
 
-                    if parsed_line in results:
-                        results[parsed_line]['count'] += 1
-                        assert results[parsed_line]['results'] == items
-                    else:
-                        results[parsed_line] = {
-                            'results': items,
-                            'count': 1
-                        }
-                else:
-                    self.without_mutations.append(parsed_line)
-
-                self.query += parsed_line
+                self.add_mutation_items(items, parsed_line)
 
     def parse_text(self, text_query):
-
-        results = self.results
 
         for line in text_query.splitlines():
             data = line.strip().split()
@@ -228,19 +238,7 @@ class MutationSearch:
                 self.badly_formatted.append(line)
                 continue
 
-            items = self.data_filter(items)
-
-            if items:
-                if line in results:
-                    results[line]['count'] += 1
-                    assert results[line]['results'] == items
-                else:
-                    results[line] = {
-                        'results': items,
-                        'count': 1
-                    }
-            else:
-                self.without_mutations.append(line)
+            self.add_mutation_items(items, line)
 
 
 class SearchViewFilters(FilterManager):
@@ -401,6 +399,7 @@ class SearchView(FlaskView):
         response = make_response(template(
             'search/index.html',
             target='mutations',
+            hidden_results_cnt=mutation_search.hidden_results_cnt,
             results=mutation_search.results,
             widgets=make_widgets(filter_manager),
             without_mutations=mutation_search.without_mutations,

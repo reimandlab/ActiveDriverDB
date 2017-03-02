@@ -21,9 +21,9 @@
   </tr>
   </thead>
   {% if results %}
-    {% for user_input, result_obj in results.items() %}
+    {% for user_input, result_items in results.items() %}
       <tbody>
-      {% for result in result_obj.results %}
+      {% for result in result_items %}
         {% set mutation = result.mutation %}
         <tr>
           {% if loop.first %}
@@ -57,7 +57,7 @@
             This might take advantage of precomputed PTMs for genomic mutations
             result.is_ptm if (result.is_ptm != None) else mutation.is_ptm
           #}</td>
-          <td>{{ result_obj.count }}</td>
+          <td>{{ mutation.meta_user.count }}</td>
           {% set impact = mutation.impact_on_ptm() %}
           <td class="{{ impact or '' }}">
               {{ impact or '' }}
@@ -93,6 +93,13 @@
         <p>Some protein mutations are not possible to be caused by a Single Nucleotide Variation. Those are currently not shown in the table above.</p>
 
         <p>This might also indicate that given reference allele is not corresponding to given position or that there is a shift by one in your numeration.</p>
+      </td>
+    </tr>
+  {% endif %}
+  {% if hidden_results_cnt %}
+    <tr>
+      <td colspan={{ columns_count }}>
+        {{ hidden_results_cnt }} {{ 'results' if hidden_results_cnt > 1 else 'result' }} hidden due to chosen filters.
       </td>
     </tr>
   {% endif %}

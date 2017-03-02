@@ -334,16 +334,16 @@ class UsersMutationsDataset(CMSModel):
     def mutations(self):
         mutations = []
         results = self.data.results
-        for result_obj in results.values():
-            for result in result_obj['results']:
+        for results in results.values():
+            for result in results:
                 mutations.append(result['mutation'])
         return mutations
 
     def _bind_to_session(self):
         results = self.data.results
         proteins = {}
-        for name, result_obj in results.items():
-            for result in result_obj['results']:
+        for name, results in results.items():
+            for result in results:
                 protein = result['protein']
                 if protein.refseq not in proteins:
                     proteins[protein.refseq] = db.session.merge(result['protein'])

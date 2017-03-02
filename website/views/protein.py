@@ -164,22 +164,15 @@ class ProteinView(FlaskView):
                 uri=custom_dataset
             ).one()
 
-            raw_mutations = [
-                m for m in dataset.mutations
-                if m.protein == protein
-            ]
-
-            source = 'TCGA'
-            # TODO: it will work but it will be too slow. Possible solution:
-            # set source in all mutations before saving as dataset and then
-            # use normal filtering
+            source = 'user'
+            filter_manager.filters['Mutation.sources']._value = 'user'
         else:
             source = filter_manager.get_value('Mutation.sources')
 
-            raw_mutations = filter_manager.query_all(
-                Mutation,
-                lambda q: and_(q, Mutation.protein == protein)
-            )
+        raw_mutations = filter_manager.query_all(
+            Mutation,
+            lambda q: and_(q, Mutation.protein == protein)
+        )
 
         tracks = [
             PositionTrack(protein.length, 25),
@@ -196,7 +189,7 @@ class ProteinView(FlaskView):
             MutationsTrack(raw_mutations)
         ]
 
-        if source in ('TCGA', 'ClinVar'):
+        if source in ('TCGA', 'ClinVar', 'user'):
             value_type = 'Count'
         else:
             value_type = 'Frequency'

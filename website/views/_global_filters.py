@@ -29,10 +29,14 @@ class SourceDependentFilter(Filter):
         return self.manager.get_value('Mutation.sources') == self.source
 
 
-def sources_to_sa_filter(f, t):
-    real_field_name = Mutation.source_fields[f.value]
+def sources_to_sa_filter(filter, target):
+    """TODO: refactor name to: source_filter_to_sa"""
+    return source_to_sa_filter(filter.value, target)
 
-    field = getattr(t, real_field_name)
+
+def source_to_sa_filter(source_name, target=Mutation):
+    field_name = Mutation.source_fields[source_name]
+    field = getattr(target, field_name)
     return has_or_any(field)
 
 
