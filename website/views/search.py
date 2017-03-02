@@ -164,6 +164,7 @@ class MutationSearch:
         self.data_filter = None
 
     def add_mutation_items(self, items, query_line):
+
         if not items:
             self.without_mutations.append(query_line)
             return False
@@ -184,8 +185,6 @@ class MutationSearch:
                     query=query_line
                 )
             self.results[query_line] = items
-
-        self.query += query_line
 
     def parse_vcf(self, vcf_file):
 
@@ -214,10 +213,11 @@ class MutationSearch:
                 chrom = 'chr' + chrom
                 parsed_line = ' '.join((chrom, pos, ref, alt)) + '\n'
 
-                if len(alts) > 1:
-                    parsed_line += ' (' + alt + ')'
-
                 self.add_mutation_items(items, parsed_line)
+
+                # we don't have queries in our format for vcf files:
+                # those need to be built this way
+                self.query += query_line
 
     def parse_text(self, text_query):
 
