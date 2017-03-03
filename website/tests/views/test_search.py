@@ -7,21 +7,6 @@ from models import Gene
 from models import Protein
 
 
-def create_test_mutations(refseq, site_pos, mut_pos):
-    """Returns tuple: mutation, protein"""
-
-    from models import Site
-    from models import Mutation
-
-    s = Site(position=site_pos, type='methylation')
-    p = Protein(refseq=refseq, id=7, sites=[s])
-    m = Mutation(protein=p, position=mut_pos, alt='V')
-
-    db.session.add(p)
-    db.session.add(m)
-
-    return m, p
-
 # base on example from specification in version 4.3:
 # http://samtools.github.io/hts-specs/VCFv4.3.pdf
 VCF_FILE_CONTENT = b"""\
@@ -100,7 +85,16 @@ class TestSearchView(ViewTest):
         )
 
     def test_search_mutations(self):
-        m, p = create_test_mutations('NM_007', 13, 13)
+        from models import Site
+        from models import Mutation
+
+        s = Site(position=13, type='methylation')
+        p = Protein(refseq='NM_007', id=7, sites=[s])
+
+        m_in_site = Mutation(protein=p, position=13, alt='V')
+        m_out_site = Mutation(protein=p, position=50, alt='K')
+
+        db.session.add(p)
 
         # points to the same location as first record in VCF_FILE_CONTENT
         test_query = 'chr20 14370 G A'
@@ -116,11 +110,31 @@ class TestSearchView(ViewTest):
         # to some (mocked) protein mutation
         bdb[make_snv_key('20', 14370, 'G', 'A')].add(csv)
 
+        #
+        # basic test - is appropriate mutation in results?
+        #
         response = self.search_mutations(mutations=test_query)
 
         assert response.status_code == 200
-        assert b'NM_007' in response.data
 
+        # this mutation is exactly at a PTM site and should be included in results
+        assert b'<td>%s</td>' % bytes(m_in_site.alt, 'utf-8') in response.data
+        # this mutation lies outside of a PTM site - be default should be filtered out
+        assert b'<td>%s</td>' % bytes(m_out_site.alt, 'utf-8') not in response.data
+
+        #
+        # count test - is mutation for this query annotated as shown twice?
+        #
+        response = self.search_mutations(
+            mutations='{0}\n{0}'.format(test_query)
+        )
+
+        assert response.status_code == 200
+        assert b'<td>2</td>' in response.data
+
+        #
+        # VCF file test
+        #
         response = self.client.post(
             '/search/mutations',
             content_type='multipart/form-data',
