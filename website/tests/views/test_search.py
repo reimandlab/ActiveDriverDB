@@ -6,6 +6,7 @@ from database import db
 from models import Gene
 from models import Protein
 from models import UsersMutationsDataset
+import json
 
 
 # base on example from specification in version 4.3:
@@ -38,17 +39,32 @@ VCF_FILE_CONTENT = b"""\
 """
 
 
+def mock_proteins_and_genes(count):
+    for i in range(count):
+        g = Gene(name='Gene_%s' % i)
+        p = Protein(refseq='NM_000%s' % i, gene=g)
+        g.preferred_isoform = p
+        db.session.add(g)
+
+
 class TestSearchView(ViewTest):
+
+    def test_searchbar(self):
+        mock_proteins_and_genes(15)
+
+        response = self.client.get(
+            'search/autocomplete_searchbar?q=%s' % 'Gene',
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        json_response = json.loads(response.data.decode())
+        assert json_response[0]['name'].startswith('Gene')
 
     def test_search_proteins(self):
         from views.search import search_proteins
 
         # create 15 genes and proteins
-        for i in range(15):
-            g = Gene(name='Gene_%s' % i)
-            p = Protein(refseq='NM_000%s' % i, gene=g)
-            g.preferred_isoform = p
-            db.session.add(g)
+        mock_proteins_and_genes(15)
 
         assert not search_proteins('TP53')
 
@@ -70,10 +86,14 @@ class TestSearchView(ViewTest):
 
         assert not search_proteins('9999', 1)
 
-        #
-        # test actual view
-        #
-        response = self.client.get('/search/proteins?proteins=Gene_2', follow_redirects=True)
+    def test_search_proteins_view(self):
+
+        mock_proteins_and_genes(15)
+
+        response = self.client.get(
+            '/search/proteins?proteins=Gene_2',
+            follow_redirects=True
+        )
 
         assert response.status_code == 200
         assert b'Gene_2' in response.data
