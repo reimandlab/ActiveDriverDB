@@ -5,6 +5,7 @@ from view_testing import ViewTest
 from database import db
 from models import Gene
 from models import Protein
+from models import UsersMutationsDataset
 
 
 # base on example from specification in version 4.3:
@@ -161,6 +162,13 @@ class TestSearchView(ViewTest):
 
         # if user saved a dataset, it should be listed in his datasets
         browse_response = self.client.get('/my_datasets/')
+        assert browse_response.status_code == 200
+        assert b'Test Dataset' in browse_response.data
+
+        # and it should be accessible directly
+        dataset = UsersMutationsDataset.query.filter_by(name='Test Dataset').one()
+        browse_response = self.client.get('search/saved/%s' % dataset.uri)
+        assert browse_response.status_code == 200
         assert b'Test Dataset' in browse_response.data
 
         self.logout()
