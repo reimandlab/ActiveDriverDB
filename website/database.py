@@ -48,7 +48,7 @@ def get_highest_id(model):
     case is better because we will get reliable value for empty tables!
 
     If you do not want to relay on database-side autoincrement it might be
-    usefull but not 100% reliable - you still need to worry about concurency.
+    useful but not 100% reliable - you still need to worry about concurrency.
 
     For _some_ neat cases it's the same as `model.query.count()` but if at
     least one record was manually removed the latter loses accuracy.
@@ -56,7 +56,7 @@ def get_highest_id(model):
     try:
         # let's try to fetch the autoincrement value. Since not all databases
         # will agree that we can do this and sometimes they might be fussy
-        # when it comes to syntax, we assume it might fail. Severly.
+        # when it comes to syntax, we assume it might fail. Severely.
         return get_autoincrement(model) - 1
     except OperationalError:
         # so if it has failed, let's try to find highest id the canonical way.

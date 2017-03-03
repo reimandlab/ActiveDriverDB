@@ -217,7 +217,7 @@ class MutationSearch:
 
                 # we don't have queries in our format for vcf files:
                 # those need to be built this way
-                self.query += query_line
+                self.query += parsed_line
 
     def parse_text(self, text_query):
 
