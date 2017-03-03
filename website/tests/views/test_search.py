@@ -119,9 +119,9 @@ class TestSearchView(ViewTest):
         assert response.status_code == 200
 
         # this mutation is exactly at a PTM site and should be included in results
-        assert b'<td>%s</td>' % bytes(m_in_site.alt, 'utf-8') in response.data
+        assert '<td>{0}</td>'.format(m_in_site.alt).encode() in response.data
         # this mutation lies outside of a PTM site - be default should be filtered out
-        assert b'<td>%s</td>' % bytes(m_out_site.alt, 'utf-8') not in response.data
+        assert '<td>{0}</td>'.format(m_out_site.alt).encode() not in response.data
 
         #
         # count test - is mutation for this query annotated as shown twice?
