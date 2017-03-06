@@ -45,6 +45,7 @@ class Statistics:
                 'confirmed_with_mimp': self.count_muts_with_mimp(),
             },
             'sites': self.count(models.Site),
+            'pathways': self.count(models.Pathway),
             'cancer': self.count(models.Cancer),
             # "number of mutation annotations
             # (all DNA>protein table + MIMP annotations)"
