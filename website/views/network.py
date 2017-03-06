@@ -162,9 +162,8 @@ class NetworkView(FlaskView):
                     lambda q: and_(q, Mutation.protein == kinase.protein)
                 )
 
-                # is this desired behaviour?
-                if count > 0:
-                    kinases_counts[kinase] = count
+                # related discussion: #72
+                kinases_counts[kinase] = count
 
         kinases = set(kinases_counts.keys())
 
