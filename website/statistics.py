@@ -5,7 +5,7 @@ from flask import current_app
 
 
 MAPPINGS_COUNT = 73093771   # this is result of stats.count_mappings() -
-# due to long execution time it was precomputed once and hardocded here
+# due to long execution time it was precomputed once and hardcoded here
 
 
 class Statistics:
@@ -38,7 +38,7 @@ class Statistics:
                 'thousand_genomes': self.count(models.The1000GenomesMutation),
                 'mimp': self.count(models.MIMPMutation),
                 # 'from_many_sources' is very expensive, and it might be better
-                # to disable when not necessary (it will be useful for debuging
+                # to disable when not necessary (it will be useful for debugging
                 # purposes - so we can check if mutations count is correct)
                 # 'from_more_than_one_source': self.from_many_sources(),
                 'confirmed_in_ptm_sites': self.count_muts_in_sites(),
@@ -105,6 +105,9 @@ class Statistics:
         ).count()
 
     def from_many_sources(self):
+        """Counts mutations that have annotations in more
+        than one source (eg. in both: TCGA and ClinVar).
+        """
 
         in_all = self.count_by_source(['clinvar', 'esp', '1kg', 'cancer'])
 
