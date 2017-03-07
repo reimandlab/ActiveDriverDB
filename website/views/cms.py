@@ -54,11 +54,6 @@ def admin_only(f):
     return decorated_function
 
 
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
-
-
 def html_link(address, content):
     return '<a href="/{0}">{1}</a>'.format(address, content)
 

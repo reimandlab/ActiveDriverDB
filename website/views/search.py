@@ -325,7 +325,7 @@ class SearchView(FlaskView):
             uri=uri
         ).one()
 
-        if dataset.owner and dataset.owner.id != current_user.id:
+        if dataset.owner and dataset.owner != current_user:
             current_app.login_manager.unauthorized()
 
         response = make_response(template(

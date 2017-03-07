@@ -64,6 +64,19 @@ class ShortURL(CMSModel):
         return id_number + 1
 
 
+class AnonymousUser:
+
+    is_anonymous = True
+    is_active = False
+    is_authenticated = False
+
+    def datasets_names_by_uri(self):
+        return {}
+
+    def get_id(self):
+        return None
+
+
 class User(CMSModel):
     """Model for use with Flask-Login"""
 
@@ -84,6 +97,13 @@ class User(CMSModel):
         self.email = email
         self.access_level = access_level
         self.pass_hash = security.generate_secret_hash(password)
+
+    @classmethod
+    def user_loader(cls, user_id):
+        return cls.query.get(int(user_id))
+
+    def datasets_names_by_uri(self):
+        return {d.uri: d.name for d in self.datasets}
 
     @staticmethod
     def is_mail_correct(email):

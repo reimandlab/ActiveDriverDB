@@ -193,6 +193,16 @@ class TestSearchView(ViewTest):
 
         self.logout()
 
+        # forbidden from outside
+        browse_response = self.client.get('search/saved/%s' % dataset.uri)
+        assert browse_response.status_code == 401
+
+        # forbidden for strangers
+        self.login('onther_user@domain.org', 'password', create=True)
+        browse_response = self.client.get('search/saved/%s' % dataset.uri)
+        assert browse_response.status_code == 401
+        self.logout()
+
         # it's still allowed to save data on server without logging in,
         # but then user will not be able to browse these as datasets.
         unauthorized_save_response = self.search_mutations(

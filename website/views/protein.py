@@ -73,16 +73,11 @@ class ProteinViewFilters(FilterManager):
 class ProteinView(FlaskView):
     """Single protein view: includes needleplot and sequence"""
 
-    def _get_users_datasets(self):
-        if current_user.is_authenticated:
-            return {d.uri: d.name for d in current_user.datasets}
-        else:
-            return {}
-
     def before_request(self, name, *args, **kwargs):
-        datasets = self._get_users_datasets()
+        user_datasets = current_user.datasets_names_by_uri()
+
         filter_manager = ProteinViewFilters(
-            custom_datasets_ids=datasets.keys()
+            custom_datasets_ids=user_datasets.keys()
         )
         endpoint = self.build_route_name(name)
 
@@ -146,9 +141,10 @@ class ProteinView(FlaskView):
         + needleplot
         + tracks (sequence + data tracks)
         """
-        datasets = self._get_users_datasets()
+        user_datasets = current_user.datasets_names_by_uri()
+
         filter_manager = ProteinViewFilters(
-            custom_datasets_ids=datasets.keys()
+            custom_datasets_ids=user_datasets.keys()
         )
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
@@ -158,20 +154,25 @@ class ProteinView(FlaskView):
         ]
 
         custom_dataset = filter_manager.get_value('UserMutations.sources')
+        source = filter_manager.get_value('Mutation.sources')
 
-        if custom_dataset:
+        mutation_filters = [Mutation.protein == protein]
+
+        if custom_dataset or source == 'user':
             dataset = UsersMutationsDataset.query.filter_by(
                 uri=custom_dataset
             ).one()
 
             source = 'user'
             filter_manager.filters['Mutation.sources']._value = 'user'
-        else:
-            source = filter_manager.get_value('Mutation.sources')
+
+            mutation_filters.append(
+                Mutation.id.in_([m.id for m in dataset.mutations])
+            )
 
         raw_mutations = filter_manager.query_all(
             Mutation,
-            lambda q: and_(q, Mutation.protein == protein)
+            lambda q: and_(q, and_(*mutation_filters))
         )
 
         tracks = [
@@ -205,7 +206,7 @@ class ProteinView(FlaskView):
             filters=filter_manager,
             widgets=create_widgets(
                 filters_by_id,
-                custom_datasets_names=datasets.values()
+                custom_datasets_names=user_datasets.values()
             ),
             value_type=value_type,
             log_scale=(value_type == 'Frequency'),

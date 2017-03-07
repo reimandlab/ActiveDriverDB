@@ -63,6 +63,12 @@ def create_app(config_filename='config.py', config_override={}):
     #
     # Configure Login Manager
     #
+    from models import User
+    from models import AnonymousUser
+
+    login_manager.anonymous_user = AnonymousUser
+    login_manager.user_loader(User.user_loader)
+
     login_manager.init_app(app)
 
     #
