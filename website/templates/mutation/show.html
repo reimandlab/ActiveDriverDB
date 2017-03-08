@@ -8,6 +8,10 @@
     <link rel="stylesheet" href="{{ ASSET_URL }}">
   {% endassets %}
 
+  {# D3.js #}
+  {# <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script> #}
+  <script src="/static/thirdparty/d3.v3.min.js" charset="utf-8"></script>
+
   {# Nunjucks templates #}
   {% if is_debug_mode %}
     <script type="text/javascript" src="/static/thirdparty/nunjucks.js"></script>
@@ -49,19 +53,43 @@
         </div>
         <div class="panel-body">
 
-          <ul class="list-unstyled">
-            <li>Isoform: {{ protein.refseq }}
-            <li>Position: {{ mutation.position }}
-            <li>Ref: {{ mutation.ref }}
-            <li>Mutation: {{ mutation.alt }}
-            <li>Kinases: {% include 'mutation/kinases.html' %} {# TODO: include kinase tooltip #}
-            <li>PTMs affected: {{ mutation.sites | length }}
-          </ul>
-
+          <div class="container-fluid">
+            <div class="row">
+              <div class="col-md-4">Isoform:</div>
+              <div class="col-md-8">{{ protein.refseq }}</div>
+            </div>
+            <div class="row">
+              <div class="col-md-4">Position:</div>
+              <div class="col-md-8">{{ mutation.position }}</div>
+            </div>
+            <div class="row">
+              <div class="col-md-4">Ref:</div>
+              <div class="col-md-8">{{ mutation.ref }}</div>
+            </div>
+            <div class="row">
+              <div class="col-md-4">Mutation:</div>
+              <div class="col-md-8">{{ mutation.alt }}</div>
+            </div>
+            <div class="row">
+              <div class="col-md-4">PTM impact:</div>
+              <div class="col-md-8">{{ mutation.impact_on_ptm() }}</div>
+            </div>
+            <div class="row">
+              <div class="col-md-4">PTM affected:</div>
+              <div class="col-md-8">{{ mutation.sites | length }}</div>
+            </div>
+            <div class="row">
+              <div class="col-md-4">Kinases:</div>
+              <div class="col-md-8">{% include 'mutation/kinases.html' %} {# TODO: include kinase tooltip #}</div>
+            </div>
+          </div>
 
           {% if user_datasets %}
             This mutation appears in following of your datasets:
-            {{ user_datasets | selectattr('name') | join(', ') }}
+            {% for dataset in user_datasets %}
+              {% set dataset_mutation_details = dataset.get_mutation_details(protein, mutation.position, mutation.alt) %}
+              {{ dataset.name }} ({{ dataset_mutation_details.count }} times, from: {{ dataset_mutation_details.query }})
+            {% endfor %}
           {% endif %}
         </div>
       </div>
@@ -114,20 +142,33 @@
 
 
   {% for site in mutation.sites %}
-    <div class="panel panel-default mutation-summary">
+    <div class="panel panel-default site-summary">
       <div class="panel-heading">
-        <h3 class="panel-title">PTM Site</h3>
+        <h3 class="panel-title">PTM Site: {{ site.position }}{{ site.residue }}</h3>
       </div>
       <div class="panel-body">
-        {# Placeholder: #}
-        Position: {{ site.position }}<br>
-        Residue: {{ site.residue }}<br>
-        Type: {{ site.type }}
-        {#
-        <div id="{{ site.id }}" class="ptm-site">
-          Loading...
+        {% set impact = mutation.impact_on_specific_ptm(site) %}
+
+        {% if impact == 'mimp' %}
+          {% with mimp_meta=mutation.meta_MIMP.to_json() %}
+            {% include 'mimp.njk' %}
+          {% endwith %}
+        {% else %}
+          <h4>Impact:</h4>
+          {{ impact }}
+        {% endif %}
+
+        <h4>Affected site:</h4>
+        <div>
+          Position: {{ site.position }}
         </div>
-        #}
+        <div>
+          Residue: {{ site.residue }}
+        </div>
+        <div>
+          Type: {{ site.type }}
+        </div>
+
       </div>
     </div>
   {% endfor %}
@@ -143,6 +184,7 @@
 
   <script type="text/javascript">
     nunjucks.configure('/static/js_templates', {autoescape: true})
+    initializeKinaseTooltips()
 
     ShortURL().init(
         "{{ url_for('ShortAddress:get_shorthand_for') }}",

@@ -25,8 +25,9 @@ bundles = {
     'js_protein_view': Bundle(
         'common.js',
         'widgets.js',
-        'table.js',
         'tooltip.js',
+        'kinase_tooltip.js',
+        'table.js',
         'needleplot.js',
         'tracks.js',
         'export.js',
@@ -37,6 +38,7 @@ bundles = {
     'js_mutation_view': Bundle(
         'common.js',
         'tooltip.js',
+        'kinase_tooltip.js',
         'export.js',
         'short_url.js',
         filters='rjsmin',
@@ -86,7 +88,8 @@ bundles = {
         'sass/gene.css'
     ),
     'css_mutation': css_bundle(
-        'gene',
+        'mutation',
+        'sass/tooltip.css',
         'sass/mutation.css'
     ),
     'css_print': css_bundle(

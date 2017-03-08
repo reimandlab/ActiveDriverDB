@@ -98,6 +98,16 @@ def create_app(config_filename='config.py', config_override={}):
     # Register functions for Jinja
     #
 
+    import jinja2
+
+    template_loader = jinja2.ChoiceLoader([
+        app.jinja_loader,
+        jinja2.FileSystemLoader(
+            ['templates', 'static/js_templates']
+        ),
+    ])
+    app.jinja_loader = template_loader
+
     from website.views.cms import substitute_variables
     from website.views.cms import ContentManagmentSystem
     import json
