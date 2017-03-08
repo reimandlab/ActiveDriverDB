@@ -360,11 +360,11 @@ class UsersMutationsDataset(CMSModel):
                 mutations.append(result['mutation'])
         return mutations
 
-    def get_mutation_details(self, refseq, pos, alt):
+    def get_mutation_details(self, protein, pos, alt):
         for mutation in self.mutations:
             if (
-                mutation.protein.refseq == refseq and
-                mutation.pos == pos and
+                mutation.protein == protein and
+                mutation.position == pos and
                 mutation.alt == alt
             ):
                 return mutation.meta_user

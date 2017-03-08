@@ -88,7 +88,7 @@
             This mutation appears in following of your datasets:
             {% for dataset in user_datasets %}
               {% set dataset_mutation_details = dataset.get_mutation_details(protein, mutation.position, mutation.alt) %}
-              {{ dataset.name }} ({{ dataset_mutation_details.count }} times, from: {{ dataset_mutation_details.query }})
+              {{ dataset.name }} ({{ dataset_mutation_details.count }} time{{ 's' if dataset_mutation_details.count > 1 }}, from <code>{{ dataset_mutation_details.query }}</code> query)
             {% endfor %}
           {% endif %}
         </div>
