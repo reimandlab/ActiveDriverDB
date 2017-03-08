@@ -120,16 +120,16 @@
           </div>
           <h4>Minor Allele Frequency: <span class="source">(ESP6500)</span></h4>
           <div class="clinical-data">
-            {% if mutation.meta_esp6500 %}
-              {{ mutation.meta_esp6500.summary() }}
+            {% if mutation.meta_ESP6500 %}
+              {{ mutation.meta_ESP6500.summary() }}
             {% else %}
               <span class="empty">no data</span>
             {% endif %}
           </div>
           <h4>Minor Allele Frequency: <span class="source">(1000 Genomes)</span></h4>
           <div class="clinical-data">
-            {% if mutation.meta_1kg %}
-              {{ mutation.meta_1kg.summary() }}
+            {% if mutation.meta_1KG %}
+              {{ mutation.meta_1KG.summary() }}
             {% else %}
               <span class="empty">no data</span>
             {% endif %}
@@ -149,10 +149,11 @@
       <div class="panel-body">
         {% set impact = mutation.impact_on_specific_ptm(site) %}
 
-        {% if impact == 'mimp' %}
+        {% if impact == 'network-rewiring' %}
           {% with mimp_meta=mutation.meta_MIMP.to_json() %}
-            {% include 'mimp.njk' %}
+              {# {% include '/mimp.njk' %} #}
           {% endwith %}
+          MIMP mutation (Work In Progress)
         {% else %}
           <h4>Impact:</h4>
           {{ impact }}
