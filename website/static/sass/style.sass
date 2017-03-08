@@ -21,12 +21,27 @@ footer
   top: 10px
   left: 0
 
-.header
-  width: 100%
-  text-align: right
-  margin: 10px 0
+.minor-top-navigation
+  position: relative
+  .breadcrumb
+    padding: 14px
 
-.user-menu, .search-box
+.user-menu
+  position: absolute
+  top: 4px
+  right: 6px
+
+.welcome-user
+  display: inline-block
+  padding: 7px 13px
+  margin-bottom: 0
+  font-size: 14px
+  font-weight: 400
+  line-height: 1.42857143
+  position: relative
+  top: 2px
+
+.search-box
   float: right
 
 // when changing this, make sure that the longest gene name fits;
@@ -160,3 +175,4 @@ $search-box-width: 225px
     position: absolute
     right: 0px
     top: 0px
+
