@@ -77,10 +77,14 @@
           {{ isoform.length }}
         </td>
         <td>
-          {{ '{:,}'.format(isoform.cds_start) }}-{{ '{:,}'.format(isoform.cds_end) }}
+          {{ '{:,}'.format(isoform.cds_start) if isoform.cds_start else '?' }}
+          -
+          {{ '{:,}'.format(isoform.cds_end) if isoform.cds_end else '?' }}
         </td>
         <td>
-          {{ '{:,}'.format(isoform.tx_start) }}-{{ '{:,}'.format(isoform.tx_end) }}
+          {{ '{:,}'.format(isoform.tx_start) if isoform.tx_start else '?' }}
+          -
+          {{ '{:,}'.format(isoform.tx_end) if isoform.tx_end else '?' }}
         </td>
         <td>
           <a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">
