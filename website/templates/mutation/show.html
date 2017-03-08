@@ -40,23 +40,78 @@
     </div>
   </div>
 
-  <div class="panel panel-default mutation-summary">
-    <div class="panel-heading">
-      <h3 class="panel-title">Summary</h3>
-    </div>
-    <div class="panel-body">
+  <div class="row">
+    <div class="col-md-6">
 
-      <ul class="list-unstyled">
-        <li>Isoform: {{ protein.refseq }}
-        <li>Position: {{ mutation.position }}
-        <li>Ref: {{ mutation.ref }}
-        <li>Mutation: {{ mutation.alt }}
-        <li>Kinases: {% include 'mutation/kinases.html' %} {# TODO: include kinase tooltip #}
-        <li>PTMs affected: {{ mutation.sites | length }}
-      </ul>
+      <div class="panel panel-default mutation-summary">
+        <div class="panel-heading">
+          <h3 class="panel-title">Summary</h3>
+        </div>
+        <div class="panel-body">
+
+          <ul class="list-unstyled">
+            <li>Isoform: {{ protein.refseq }}
+            <li>Position: {{ mutation.position }}
+            <li>Ref: {{ mutation.ref }}
+            <li>Mutation: {{ mutation.alt }}
+            <li>Kinases: {% include 'mutation/kinases.html' %} {# TODO: include kinase tooltip #}
+            <li>PTMs affected: {{ mutation.sites | length }}
+          </ul>
+
+
+          {% if user_datasets %}
+            This mutation appears in following of your datasets:
+            {{ user_datasets | selectattr('name') | join(', ') }}
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+    <div class="col-md-6">
+
+      <div class="panel panel-default clinical-panel">
+        <div class="panel-heading">
+          <h3 class="panel-title">Clinical Information</h3>
+        </div>
+        <div class="panel-body">
+          <h4>Cancer types: <span class="source">(TCGA)</span></h4>
+          <div class="clinical-data">
+            {% if mutation.meta_cancer %}
+              {{ mutation.meta_cancer.summary() | join(', ') }}
+            {% else %}
+              <span class="empty">no data</span>
+            {% endif %}
+          </div>
+          <h4>Disease Annotations: <span class="source">(ClinVar)</span></h4>
+          <div class="clinical-data">
+            {% if mutation.meta_inherited %}
+              {{ mutation.meta_inherited.summary() | join(', ') }}
+            {% else %}
+              <span class="empty">no data</span>
+            {% endif %}
+          </div>
+          <h4>Minor Allele Frequency: <span class="source">(ESP6500)</span></h4>
+          <div class="clinical-data">
+            {% if mutation.meta_esp6500 %}
+              {{ mutation.meta_esp6500.summary() }}
+            {% else %}
+              <span class="empty">no data</span>
+            {% endif %}
+          </div>
+          <h4>Minor Allele Frequency: <span class="source">(1000 Genomes)</span></h4>
+          <div class="clinical-data">
+            {% if mutation.meta_1kg %}
+              {{ mutation.meta_1kg.summary() }}
+            {% else %}
+              <span class="empty">no data</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
 
     </div>
   </div>
+
 
   {% for site in mutation.sites %}
     <div class="panel panel-default mutation-summary">

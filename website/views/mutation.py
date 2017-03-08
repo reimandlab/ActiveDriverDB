@@ -40,14 +40,18 @@ class MutationView(FlaskView):
             if source != 'user':
                 datasets['Mutation.sources:in:' + source] = dataset
 
+        user_datasets = []
+
         for dataset in current_user.datasets:
             if mutation in dataset.mutations:
                 datasets['UserMutations.sources:in:' + dataset.uri] = dataset
+                user_datasets.append(dataset)
 
         return template(
             'mutation/show.html',
             mutation=mutation,
             protein=protein,
-            datasets=datasets
+            datasets=datasets,
+            user_datasets=user_datasets
         )
 
