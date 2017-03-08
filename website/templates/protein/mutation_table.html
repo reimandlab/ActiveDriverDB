@@ -20,17 +20,18 @@
     data-minimum-count-columns="2"
     data-show-export="true"
     data-detail-view="true"
-    data-sort-name="pos"
->
+    data-sort-name="pos">
     <thead>
         <tr>
+            <th data-sortable=true
+            >Mutation</th>
             <th data-field="pos"
                 data-sortable=true
-                title="Position of mutation in protein">Pos</th>
+                title="Position of mutation in protein">Position</th>
             <th data-sortable=true
-                title="Reference amino acid residue in protein">Ref</th>
+                title="Reference amino acid residue in protein">Ref aa</th>
             <th data-sortable=true
-            title="Mutated amino acid residue in protein">Mut</th>
+            title="Mutated amino acid residue in protein">Alt aa</th>
             <th data-sortable=true
                 data-visible={{ (source not in ('1KGenomes', 'ESP6500')) | string | lower }}
                 data-switchable=true>{{ value_type }}</th>
@@ -66,6 +67,11 @@
 		{% for mutation in mutations or '' %}
         {% set metadata = mutation.meta[source] %}
         <tr id="{{ mutation.pos }}{{ mutation.alt }}">
+            <td>
+              <a href="{{ url_for('MutationView:show', refseq=protein.refseq, position=mutation.pos, alt=mutation.alt) }}">
+                {{ protein.gene.name }} {{ mutation.ref }}{{ mutation.pos }}{{ mutation.alt }}
+              </a>
+            </td>
             <td>{{ mutation.pos }}</td>
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
@@ -79,31 +85,12 @@
             <td>{{ mutation.cnt_ptm }}</td>
             <td>
                 {% for site in mutation.sites %}
-                    {{ represent_dict(site.data, class='sub-cell') }}
+                  {{ site.position }}{{ site.residue }}
                 {% endfor %}
             </td>
             <td>
-                {% set comma = joiner(',') %}
-                {% for site in mutation.sites %}
-                  {% for group in site.kinase_groups %}
-                      {{ comma() }} {{ group }} group
-                  {%- endfor %}
-                  {%- for kinase in site.kinases -%}
-                      {{ comma() }}
-                      {% if kinase.protein -%}
-                          <span
-                              class="kinase"
-                              data-site="{{ site.data.position }}{{ site.data.residue }}"
-                              data-refseq="{{ kinase.protein.refseq }}"
-                          >
-                              {{ kinase.name }}
-                          </span>
-                      {%- else -%}
-                          {{ kinase.name }}
-                      {%- endif -%}
-                  {%- endfor -%}
-                {%- endfor -%}
-              </td>
+              {% include 'mutation/kinases.html' %}
+            </td>
             {% for column in metadata.values() %}
                 <td>
                     {% if column is sequence and column is not string %}

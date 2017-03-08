@@ -238,6 +238,8 @@ class ProteinView(FlaskView):
 
         raw_mutations = filter_manager.apply([mutation])
 
+        assert len(raw_mutations) == 1
+
         if not raw_mutations:
             return jsonify(
                 'There is a mutation, but it does not satisfy given filters'

@@ -34,6 +34,14 @@ bundles = {
         filters='rjsmin',
         output='min/proteinView.js'
     ),
+    'js_mutation_view': Bundle(
+        'common.js',
+        'tooltip.js',
+        'export.js',
+        'short_url.js',
+        filters='rjsmin',
+        output='min/mutationView.js'
+    ),
     'js_gene_view': Bundle(
         'common.js',
         'widgets.js',
@@ -76,6 +84,10 @@ bundles = {
         'gene',
         'sass/widgets.css',
         'sass/gene.css'
+    ),
+    'css_mutation': css_bundle(
+        'gene',
+        'sass/mutation.css'
     ),
     'css_print': css_bundle(
         'print',

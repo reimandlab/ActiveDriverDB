@@ -9,7 +9,7 @@ Mutation {{ value_type | lower }}: {{ mutation.value }}<br>
 Affected PTM site{{ 's' if mutation.sites | length > 1 }}:
 <ul>
     {% for site in mutation.sites %}
-        <li> {{ represent_site(site.data) }}
+        <li> {{ represent_site(site) }}
             {{ list_site_kinases(site, 'list-inline kinases') }}
     {% endfor %}
 </ul>

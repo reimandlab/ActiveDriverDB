@@ -69,6 +69,7 @@ class AnonymousUser:
     is_anonymous = True
     is_active = False
     is_authenticated = False
+    datasets = []
 
     def datasets_names_by_uri(self):
         return {}

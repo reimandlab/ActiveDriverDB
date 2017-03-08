@@ -13,7 +13,11 @@
           {{ kinase.name }}
       {%- endif -%}
       </li>
-    {%- endfor -%}{{ site.kinase_groups | join('<li>') }}</ul>
+    {%- endfor -%}
+    {%- for group in site.kinase_groups -%}
+        <li>{{ group.name }}
+    {%- endfor -%}
+    </ul>
   {% else %}
     {{ empty_indicator }}
   {% endif %}

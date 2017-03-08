@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %} {{ mutation.name }} - {{ super() }} {% endblock %}
+
+{% block head %}
+  {{ super() }}
+  {% assets "css_mutation" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+
+  {# Nunjucks templates #}
+  {% if is_debug_mode %}
+    <script type="text/javascript" src="/static/thirdparty/nunjucks.js"></script>
+  {% else %}
+    <script type="text/javascript" src="/static/thirdparty/nunjucks-slim.min.js"></script>
+    <script type="text/javascript" src="/static/js_templates/precompiled/protein.js"></script>
+  {% endif %}
+
+  {# Clipboard #}
+  <script type="text/javascript"  src="//cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.15/clipboard.min.js"></script>
+{% endblock %}
+
+{% block content %}
+  <ol class="breadcrumb">
+    <li><a href="/">Home</a></li>
+    <li><a href="{{ url_for('SearchView:mutations') }}">Mutations</a></li>
+    <li class="active">{{ mutation.name }}</li>
+  </ol>
+
+  <div class="header-panel">
+    <div class="entry-type">Mutation:</div>
+    <h3>{{ mutation.name }}</h3>
+
+    <div class="actions">
+      {% include 'buttons/in_context.html' %}
+      {#  {% include 'buttons/export.html' %} #}
+      {% include 'buttons/short_url.html' %}
+    </div>
+  </div>
+
+  <div class="panel panel-default mutation-summary">
+    <div class="panel-heading">
+      <h3 class="panel-title">Summary</h3>
+    </div>
+    <div class="panel-body">
+
+      <ul class="list-unstyled">
+        <li>Isoform: {{ protein.refseq }}
+        <li>Position: {{ mutation.position }}
+        <li>Ref: {{ mutation.ref }}
+        <li>Mutation: {{ mutation.alt }}
+        <li>Kinases: {% include 'mutation/kinases.html' %} {# TODO: include kinase tooltip #}
+        <li>PTMs affected: {{ mutation.sites | length }}
+      </ul>
+
+    </div>
+  </div>
+
+  {% for site in mutation.sites %}
+    <div class="panel panel-default mutation-summary">
+      <div class="panel-heading">
+        <h3 class="panel-title">PTM Site</h3>
+      </div>
+      <div class="panel-body">
+        {# Placeholder: #}
+        Position: {{ site.position }}<br>
+        Residue: {{ site.residue }}<br>
+        Type: {{ site.type }}
+        {#
+        <div id="{{ site.id }}" class="ptm-site">
+          Loading...
+        </div>
+        #}
+      </div>
+    </div>
+  {% endfor %}
+
+{% endblock %}
+
+
+{% block footer_js %}
+
+  {% assets "js_mutation_view" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+  {% endassets %}
+
+  <script type="text/javascript">
+    nunjucks.configure('/static/js_templates', {autoescape: true})
+
+    ShortURL().init(
+        "{{ url_for('ShortAddress:get_shorthand_for') }}",
+        "{{ url_for('ShortAddress:visit_shorthand', shorthand='<shorthand>', _external=True) }}"
+    )
+  </script>
+  {{ super() }}
+{% endblock %}

@@ -67,13 +67,11 @@
           </td>
           <td>
               {% if mutation.is_confirmed %}
-                {% for source in mutation.sources %}
-                  <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq, filters='Mutation.sources:in:' + source) }}#{{ result.pos }}{{ result.alt }}">
-                  mutation details ({{ source }}) →
-                </a><br>
-                {% endfor %}
+                <a href="{{ url_for('MutationView:show', refseq=result.protein.refseq, position=result.pos, alt=result.alt) }}">
+                  mutation details →
+                </a>
               {% else %}
-                no details
+                novel mutation
               {% endif %}
           </td>
         </tr>

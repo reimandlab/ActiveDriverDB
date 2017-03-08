@@ -119,6 +119,21 @@ def represent_mutation(mutation, data_filter, representation_type=dict):
 
     affected_sites = mutation.get_affected_ptm_sites(data_filter)
 
+    def repr_site(site):
+        d = {
+            'kinases': [
+                kinase.to_json()
+                for kinase in site.kinases
+                ],
+            'kinase_groups': [
+                {'name': group.name}
+                for group in site.kinase_groups
+                ],
+        }
+        for k, v in site.to_json().items():
+            d[k] = v
+        return d
+
     return representation_type(
         (
             ('pos', mutation.position),
@@ -126,17 +141,7 @@ def represent_mutation(mutation, data_filter, representation_type=dict):
             ('ref', mutation.ref),
             ('cnt_ptm', len(affected_sites)),
             ('sites', [
-                {
-                    'data': site.to_json(),
-                    'kinases': [
-                        kinase.to_json()
-                        for kinase in site.kinases
-                    ],
-                    'kinase_groups': [
-                        group.name
-                        for group in site.kinase_groups
-                    ]
-                }
+                repr_site(site)
                 for site in affected_sites
             ])
         )

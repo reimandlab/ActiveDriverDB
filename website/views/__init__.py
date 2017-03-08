@@ -6,6 +6,7 @@ from .cms import ContentManagmentSystem
 from .chromosome import ChromosomeView
 from .short_url import ShortAddress
 from .pathway import PathwayView
+from .mutation import MutationView
 
 
 views = [
@@ -16,5 +17,6 @@ views = [
     ContentManagmentSystem,
     ChromosomeView,
     ShortAddress,
-    PathwayView
+    PathwayView,
+    MutationView
 ]

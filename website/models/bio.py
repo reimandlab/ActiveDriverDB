@@ -600,6 +600,7 @@ mutation_site_association = make_association_table('site.id', 'mutation.id')
 
 
 class CancerMetaManager(UserList):
+    name = 'TCGA'
 
     def to_json(self, filter=lambda x: x):
         cancer_occurances = [
@@ -725,16 +726,17 @@ class Mutation(BioModel):
     #     secondary=mutation_site_association
     # )
 
-    # mapping: source name -> column name
-    source_fields = OrderedDict(
-        (
-            ('TCGA', 'meta_cancer'),
-            ('ClinVar', 'meta_inherited'),
-            ('ESP6500', 'meta_ESP6500'),
-            ('1KGenomes', 'meta_1KG'),
-            ('user', 'meta_user')
-        )
+    source_field_names = (
+        'meta_cancer',
+        'meta_inherited',
+        'meta_ESP6500',
+        'meta_1KG',
+        'meta_user'
     )
+
+    # source fields are generated once, at the very bottom
+    # of this file; see create_source_fields()
+    source_fields = OrderedDict()
 
     types = ('direct', 'network-rewiring', 'proximal', 'distal', 'none')
 
@@ -789,28 +791,30 @@ class Mutation(BioModel):
         return sources
 
     @hybrid_property
+    def confirmed_fields(cls):
+        return [
+            getattr(cls, field_name)
+            for field_name in cls.source_field_names
+            if field_name != 'meta_user'
+        ]
+
+    @hybrid_property
     def is_confirmed(self):
         """Mutation is confirmed if there are metadata from one of four studies
 
         (or experiments). Presence of MIMP metadata does not imply
         if mutation has been ever studied experimentally before.
         """
-        return any([
-            getattr(self, field)
-            for field in self.source_fields.values()
-        ])
+        return any(self.confirmed_fields)
 
     @is_confirmed.expression
-    def is_confirmed(self):
+    def is_confirmed(cls):
         """SQL expression for is_confirmed"""
         return or_(
             relationship_field.any()
             if relationship_field.prop.uselist
             else relationship_field.has()
-            for relationship_field in map(
-                lambda field: getattr(self, field),
-                self.source_fields.values()
-            )
+            for relationship_field in cls.confirmed_fields
         )
 
     # @cached_property
@@ -823,7 +827,7 @@ class Mutation(BioModel):
 
     @property
     def sites(self):
-        return self.protein.sites
+        return self.get_affected_ptm_sites()
 
     @hybrid_method
     def is_ptm(self, filter_manager=None):
@@ -834,7 +838,7 @@ class Mutation(BioModel):
 
         This method works very similarly to is_ptm_distal property.
         """
-        sites = self.sites
+        sites = self.protein.sites
         if filter_manager:
             sites = filter_manager.apply(sites)
         return self.is_close_to_some_site(7, 7, sites)
@@ -877,7 +881,7 @@ class Mutation(BioModel):
 
         when taking into account -7 to +7 spans of each PTM site.
         """
-        sites = site_filter(self.sites)
+        sites = site_filter(self.protein.sites)
         pos = self.position
         a = 0
         b = len(sites)
@@ -938,7 +942,7 @@ class Mutation(BioModel):
         It describes impact on the closest PTM site or on a site chosen by
         MIMP algorithm (so it applies only when 'network-rewiring' is returned)
         """
-        sites = site_filter(self.sites)
+        sites = site_filter(self.protein.sites)
 
         if self.is_close_to_some_site(0, 0, sites):
             return 'direct'
@@ -981,7 +985,7 @@ class Mutation(BioModel):
         that sites are sorted by position in the database.
         """
         if sites is None:
-            sites = self.sites
+            sites = self.protein.sites
         pos = self.position
         a = 0
         b = len(sites)
@@ -1007,6 +1011,25 @@ class Mutation(BioModel):
             )
         )
         return db.session.query(q).scalar()
+
+    @property
+    def short_name(self):
+        return '%s%s%s' % (self.ref, self.position, self.alt)
+
+    @property
+    def name(self):
+        return '%s %s' % (self.protein.gene.name, self.short_name)
+
+
+def create_source_fields():
+    """Create mapping: source name -> column name"""
+    source_fields = OrderedDict()
+    for source_field in Mutation.source_field_names:
+
+        field = getattr(Mutation, source_field)
+        details_model = field.property.mapper.class_
+        source_fields[details_model.name] = source_field
+    return source_fields
 
 
 class MutationDetails:
@@ -1037,6 +1060,7 @@ class UserUploadedMutation(MutationDetails, BioModel):
 
     count = db.Column(db.Integer, default=0)
     query = db.Column(db.Text)
+    name = 'user'
 
     def get_value(self, filter=lambda x: x):
         return self.count
@@ -1056,6 +1080,7 @@ class CancerMutation(MutationDetails, BioModel):
     samples = db.Column(db.Text())
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
     cancer = db.relationship('Cancer')
+    name = 'TCGA'
 
     count = db.Column(db.Integer)
 
@@ -1079,6 +1104,7 @@ class InheritedMutation(MutationDetails, BioModel):
 
     Columns description come from source VCF file headers.
     """
+    name = 'ClinVar'
 
     # RS: dbSNP ID (i.e. rs number)
     db_snp_id = db.Column(db.Integer)
@@ -1203,6 +1229,7 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
         EA - European American
         AA - African American
     """
+    name = 'ESP6500'
     populations = OrderedDict(
         (
             ('maf_ea', 'European American'),
@@ -1223,6 +1250,7 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
 
 class The1000GenomesMutation(PopulationMutation, BioModel):
     """Metadata for 1 KG mutation"""
+    name = '1KGenomes'
     maf_eas = db.Column(db.Float)
     maf_amr = db.Column(db.Float)
     maf_afr = db.Column(db.Float)
@@ -1285,3 +1313,6 @@ class MIMPMutation(MutationDetails, BioModel):
 
     def __repr__(self):
         return '<MIMPMutation %s>' % self.id
+
+
+Mutation.source_fields = create_source_fields()
