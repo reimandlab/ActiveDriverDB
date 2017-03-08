@@ -1145,10 +1145,10 @@ class InheritedMutation(MutationDetails, BioModel):
         }
 
     def summary(self, filter=lambda x: x):
-        return [
+        return list(set(
             d.disease_name
             for d in filter(self.clin_data)
-        ]
+        ))
 
 
 class ClinicalData(BioModel):
