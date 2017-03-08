@@ -1,37 +1,39 @@
 {% extends "base.html" %}
 
-    {% block title %} Genes - {{ super() }} {% endblock %}
+{% block title %} Genes - {{ super() }} {% endblock %}
 
-    {% block head %}
+{% block head %}
 
-      {{ super() }}
+  {{ super() }}
 
-      {# Bootstrap-Table #}
-      <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
-      <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
+  {# Bootstrap-Table #}
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
 
-      {# Nunjucks templates #}
-      {% if is_debug_mode %}
-        <script type="text/javascript" src="/static/thirdparty/nunjucks.js"></script>
-      {% else %}
-        <script type="text/javascript" src="/static/thirdparty/nunjucks-slim.min.js"></script>
-        <script type="text/javascript" src="/static/js_templates/precompiled/gene.js"></script>
-      {% endif %}
-      <style type="text/css">
-        .gene-widgets label{display: none}
-      </style>
+  {# Nunjucks templates #}
+  {% if is_debug_mode %}
+    <script type="text/javascript" src="/static/thirdparty/nunjucks.js"></script>
+  {% else %}
+    <script type="text/javascript" src="/static/thirdparty/nunjucks-slim.min.js"></script>
+    <script type="text/javascript" src="/static/js_templates/precompiled/gene.js"></script>
+  {% endif %}
+  <style type="text/css">
+    .gene-widgets label{display: none}
+  </style>
 
-    {% endblock %}
+{% endblock %}
+
+
+{% block breadcrumb %}
+  {{ super() }}
+  <li><a href="{{ url_for('GeneView:lists') }}">Gene lists</a></li>
+  <li class="active">All genes</li>
+{% endblock %}
+
 
 {% block content %}
 
 <h3>Genes</h3>
-
-<ol class="breadcrumb">
-  <li><a href="/">Home</a></li>
-  <li><a href="{{ url_for('GeneView:lists') }}">Gene lists</a></li>
-  <li class="active">All genes</li>
-</ol>
 
 <div>
   <div id="toolbar" class="gene-widgets">

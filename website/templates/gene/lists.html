@@ -2,14 +2,16 @@
 
 {% block title %} Gene lists - {{ super() }} {% endblock %}
 
+
+{% block breadcrumb %}
+  {{ super() }}
+  <li class="active">Gene lists</li>
+{% endblock %}
+
+
 {% block content %}
 
   <h3>Gene lists</h3>
-
-  <ol class="breadcrumb">
-    <li><a href="/">Home</a></li>
-    <li>Gene lists</li>
-  </ol>
 
   <div>
     <p>

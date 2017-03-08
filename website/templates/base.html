@@ -67,7 +67,15 @@
       </div>
     </nav>
 
+
+    <ol class="breadcrumb">
+      {% block breadcrumb %}
+        <li><a href="/">Home</a></li>
+      {% endblock %}
+    </ol>
     <div class="header">
+
+
         {% if current_user.is_authenticated %}
         <div class="user-menu">
           Logged in as {{ current_user.username }}

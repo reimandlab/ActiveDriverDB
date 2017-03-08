@@ -40,30 +40,42 @@
 {% endblock %}
 
 
-{% block content %}
-
-<h3>{{ protein.gene.name }} - {{ protein.refseq }}</h3>
-
-<ol class="breadcrumb">
-  <li><a href="/">Home</a></li>
+{% block breadcrumb %}
+  {{ super() }}
   <li><a href="{{ url_for('ProteinView:index') }}">Proteins</a></li>
   <li><a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}">{{ protein.gene.name }}</a></li>
   <li class="active">{{ protein.refseq }}</li>
-</ol>
+{% endblock %}
+
+
+{% block content %}
+
+  <h3>{{ protein.gene.name }} - {{ protein.refseq }}</h3>
+
+  <div class="isoform-page-options">
+    <ul class="nav nav-tabs">
+      <li role="presentation" class="active">
+        <a href="#">
+          <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
+          Sequence View
+        </a>
+      <li role="presentation">
+        <a href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string()) }}">
+          <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
+          Network view
+        </a>
+    </ul>
+    <div class="actions">
+      {% include 'buttons/short_url.html' %}
+    </div>
+  </div>
 
 <form method="GET" class="widget-form">
   {% include 'widgets/filters_box.html' %}
   <div class="panel panel-default panel-needleplot">
       <div class="panel-heading">
         <div class="heading-left">
-          <div class="btn-group" role="group">
-            <a href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string()) }}" role="button" class="btn btn-default" title="Show network">
-                <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
-                Show interaction network view
-            </a>
-          </div>
           {% include 'buttons/export.html' %}
-          {% include 'buttons/short_url.html' %}
         </div>
         <div class="heading-right">
           {% with widgets=[widgets.is_ptm] %}

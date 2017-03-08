@@ -20,13 +20,15 @@
   <script type="text/javascript"  src="//cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.15/clipboard.min.js"></script>
 {% endblock %}
 
-{% block content %}
-  <ol class="breadcrumb">
-    <li><a href="/">Home</a></li>
-    <li><a href="{{ url_for('SearchView:mutations') }}">Mutations</a></li>
-    <li class="active">{{ mutation.name }}</li>
-  </ol>
 
+{% block breadcrumb %}
+  {{ super() }}
+  <li><a href="{{ url_for('SearchView:mutations') }}">Mutations</a></li>
+  <li class="active">{{ mutation.name }}</li>
+{% endblock %}
+
+
+{% block content %}
   <div class="header-panel">
     <div class="entry-type">Mutation:</div>
     <h3>{{ mutation.name }}</h3>

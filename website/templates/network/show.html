@@ -33,16 +33,35 @@
 {% endblock %}
 
 
+{% block breadcrumb %}
+  {{ super() }}
+  <li><a href="{{ url_for('ProteinView:index') }}">Proteins</a></li>
+  <li><a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}">{{ protein.gene.name }}</a></li>
+  <li class="active">{{ protein.refseq }}</li>
+{% endblock %}
+
+
 {% block content %}
 
-    <h3>{{ protein.gene.name }} - {{ protein.refseq }}</h3>
+<h3>{{ protein.gene.name }} - {{ protein.refseq }}</h3>
 
-    <ol class="breadcrumb">
-        <li><a href="/">Home</a></li>
-        <li><a href="/network">Network</a></li>
-        <li><a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}">{{ protein.gene.name }}</a></li>
-        <li class="active">{{ protein.refseq }}</li>
-    </ol>
+  <div class="isoform-page-options">
+    <ul class="nav nav-tabs">
+      <li role="presentation">
+        <a href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string()) }}">
+          <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
+          Sequence View
+        </a>
+      <li role="presentation" class="active">
+        <a href="#">
+          <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
+          Network view
+        </a>
+    </ul>
+    <div class="actions">
+      {% include 'buttons/short_url.html' %}
+    </div>
+  </div>
 
   <form method="GET" class="widget-form">
     {% include 'widgets/filters_box.html' %}
@@ -56,11 +75,6 @@
     <div class="panel panel-default network">
         <div class="panel-heading">
           <div class="heading-left">
-            <a href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string()) }}"  role="button" class="btn btn-default" title="Show protein">
-                <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
-                Show protein sequence view
-            </a>
-
             <div class="btn-group" role="group">
               <button type="button" class="btn btn-default zoom-in" title="Zoom in">
                   <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>

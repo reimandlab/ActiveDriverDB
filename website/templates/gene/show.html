@@ -1,34 +1,105 @@
 {% extends "base.html" %}
 
-    {% block title %} {{ gene.name }} - {{ super() }} {% endblock %}
+{% block title %} {{ gene.name }} - {{ super() }} {% endblock %}
 
-    {% block head %}
-      {{ super() }}
-      {% assets "css_gene" %}
-          <link rel="stylesheet" href="{{ ASSET_URL }}">
-      {% endassets %}
-      <style type="text/css">
-        .show-alt.js-shown {
-          display: none!important
-        }
-        .alt-isoforms.js-hidden {
-          display: block
-        }
-      </style>
-    {% endblock %}
+{% block head %}
+  {{ super() }}
+  {% assets "css_gene" %}
+      <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+
+  {# Bootstrap-Table #}
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
+  <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
+
+  {# Export extension for jQuery and Bootstrap-Table #}
+  <script src="/static/thirdparty/bootstrap-table/tableExport.js"></script>
+  <script src="/static/thirdparty/bootstrap-table/bootstrap-table-export.js"></script>
+{% endblock %}
+
+
+{% block breadcrumb %}
+  {{ super() }}
+  <li><a href="{{ url_for('GeneView:lists') }}">Proteins</a></li>
+  <li class="active">{{ gene.name }}</li>
+{% endblock %}
+
 
 {% block content %}
 
-<h3>{{ gene.name }}</h3>
+  <div class="header-panel">
+    <h3>All isoforms for {{ gene.name }}</h3>
+    <div class="gene-wide-info">
+      Chromosome: {{ gene.chrom }}
+    </div>
+    <div class="gene-wide-info">
+      Strand: {{ '+' if gene.strand else '-' }}
+    </div>
+  </div>
 
-<ol class="breadcrumb">
-  <li><a href="/">Home</a></li>
-  <li><a href="{{ url_for('GeneView:lists') }}">Genes</a></li>
-  <li class="active">{{ gene.name }}</li>
-</ol>
+  <div id="toolbar"></div>
 
-{% with gene=gene %}
-  {% include 'search/results/gene.html' %}
-{% endwith %}
+  <table
+    class="table"
+    data-toolbar="#toolbar"
+    data-toggle="table"
+    data-search="true"
+    data-show-columns="true"
+    data-minimum-count-columns="2"
+    data-show-export="true"
+    data-sort-name="refseq">
+    <thead>
+    <tr>
+      <th data-sortable=true data-field="refseq">
+        Refseq
+      </th>
+      <th data-sortable=true>
+        Protein residues
+      </th>
+      <th data-sortable=true>
+        CDS
+      </th>
+      <th data-sortable=true>
+        Transcription
+      </th>
+      <th data-sortable=true>
+        Views
+      </th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for isoform in gene.isoforms or '' %}
+      <tr class="{{ 'preferred' if  isoform.is_preferred_isoform }}">
+        <td>
+          {{ isoform.refseq }} {% if isoform.is_preferred_isoform %} <span class="preferred">Preferred</span> {% endif %}
+        </td>
+        <td>
+          {{ isoform.length }}
+        </td>
+        <td>
+          {{ '{:,}'.format(isoform.cds_start) }}-{{ '{:,}'.format(isoform.cds_end) }}
+        </td>
+        <td>
+          {{ '{:,}'.format(isoform.tx_start) }}-{{ '{:,}'.format(isoform.tx_end) }}
+        </td>
+        <td>
+          <a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">
+            Sequence View
+            ({{ isoform.sites | length }} PTM sites,
+            {{ isoform.confirmed_mutations | length }} mutations)
+          </a>
+          {# Note: fetching interactors may be slow sometimes, although very useful #}
+          {% set interactors = isoform.interactors_count %}
+          <a href="{{ url_for('NetworkView:show', refseq=isoform.refseq) }}" class="{{ 'inactive' if not interactors }}">
+            Network View
+            {% if interactors %}
+              ({{ interactors }} PTM enzymes)
+            {% endif %}
+          </a>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
 
 {% endblock %}
