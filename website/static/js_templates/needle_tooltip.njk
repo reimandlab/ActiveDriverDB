@@ -1,5 +1,6 @@
 {% from 'macros.njk' import represent_site %}
 {% from 'macros.njk' import list_site_kinases %}
+{% from 'mimp.njk' import as_list_items %}
 
 PTM mutation type: {{ mutation.category }}<br>
 Mutation {{ mutation.pos }} {{ mutation.ref }} → {{ mutation.alt }}<br>
@@ -32,8 +33,7 @@ Affected PTM site{{ 's' if mutation.sites | length > 1 }}:
             <li> {{ entry.Cancer }} ({{ entry.Value }})
         {% endfor %}
     {% elif source == 'MIMP' %}
-      {% set mimp_meta = metadata %}
-      {% include 'mimp.njk' %}
+      {{ as_list_items(metadata) }}
     {% else %}
         {% for column, value in metadata %}
             {% if column == 'Clinical' %}

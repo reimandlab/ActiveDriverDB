@@ -150,10 +150,39 @@
         {% set impact = mutation.impact_on_specific_ptm(site) %}
 
         {% if impact == 'network-rewiring' %}
-          {% with mimp_meta=mutation.meta_MIMP.to_json() %}
-              {# {% include '/mimp.njk' %} #}
-          {% endwith %}
-          MIMP mutation (Work In Progress)
+          {% from "mimp.njk" import best_prediction %}
+          {% from "mimp.njk" import weaker_predictions %}
+
+          {% set mimp_meta=mutation.meta_MIMP.to_json() %}
+
+          {% for effect in ['gain', 'loss'] %}
+            {% if mimp_meta[effect] | length %}
+            <div class="mimp-effect">
+              {% set annotations_with_effect = mimp_meta[effect] %}
+              {% set effect_count = annotations_with_effect | length %}
+              {% set best = annotations_with_effect | first %}
+              <h4>{{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }} of PTM site:</h4>
+              {{ best_prediction(best, effect) }}
+
+              {% from 'macros.njk' import represent_site %}
+              {% set mimp = best %}
+              <div>
+                Site: {{ represent_site(mimp.site) }}
+              </div>
+              <div>
+                Position in motif: {{ mimp.pos_in_motif }}
+              </div>
+
+              {% if effect_count > 1 %}
+                <div>
+                  {{ weaker_predictions(annotations_with_effect, effect_count) | safe }}
+                </div>
+              {% endif %}
+              {% include 'mimp_image.njk' %}
+            </div>
+            {% endif %}
+          {% endfor %}
+
         {% else %}
           <h4>Impact:</h4>
           {{ impact }}

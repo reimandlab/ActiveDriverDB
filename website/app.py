@@ -1,3 +1,4 @@
+import os
 from flask import Flask
 from flask_assets import Environment
 from flask_login import LoginManager
@@ -100,11 +101,11 @@ def create_app(config_filename='config.py', config_override={}):
 
     import jinja2
 
+    base_dir = os.path.dirname(os.path.realpath(__file__))
+
     template_loader = jinja2.ChoiceLoader([
         app.jinja_loader,
-        jinja2.FileSystemLoader(
-            ['templates', 'static/js_templates']
-        ),
+        jinja2.FileSystemLoader(os.path.join(base_dir, 'static/js_templates')),
     ])
     app.jinja_loader = template_loader
 

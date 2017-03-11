@@ -8,30 +8,41 @@
   </ul>
 {% endmacro %}
 
-{% for effect in ['gain', 'loss'] %}
-  {% if mimp_meta[effect] | length %}
-    {% set annotations_with_effect = mimp_meta[effect] %}
-    {% set effect_count = annotations_with_effect | length %}
-    {% set best = annotations_with_effect | first %}
-    <li> {{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }} of PTM site: {{ best.pwm }} (probability p={{ best.probability | round(3) }})
-    {{ represent_mimp(best) }}
-    {% if effect_count > 1 %}
-    <ul>
-      <li>
-        {% set plural = effect_count > 2 %}
-        There {{ 'are' if plural else 'is' }} {{ effect_count - 1 }} other predicted
-        {% if effect == 'gain' %}
-          {{ 'gains' if plural else 'gain' }}:
-        {% else %}
-          {{ 'losses' if plural else 'loss' }}:
-        {% endif %}
-        <ul class="minor_mimp_kinases">
-        {% for i in range(1, effect_count) %}
-          {% set mimp = annotations_with_effect[i] %}
-          <li> {{ mimp.pwm }} (p={{ mimp.probability | round(3) }})</li>
-        {% endfor %}
-        </ul>
-    </ul>
-    {% endif %}
+{% macro weaker_predictions(annotations_with_effect, effect_count, header) %}
+  {% if header %}<h4>{% endif %}
+  {% set plural = effect_count > 2 %}
+  There {{ 'are' if plural else 'is' }} {{ effect_count - 1 }} other predicted
+  {% if effect == 'gain' %}
+    {{ 'gains' if plural else 'gain' }}:
+  {% else %}
+    {{ 'losses' if plural else 'loss' }}:
   {% endif %}
-{% endfor %}
+  {% if header %}</h4>{% endif %}
+  <ul class="minor_mimp_kinases">
+  {% for i in range(1, effect_count) %}
+    {% set mimp = annotations_with_effect[i] %}
+    <li> {{ mimp.pwm }} (p={{ mimp.probability | round(3) }})</li>
+  {% endfor %}
+  </ul>
+{% endmacro %}
+
+{% macro best_prediction(best, effect) %}
+  {{ best.pwm }} (probability p={{ best.probability | round(3) }})
+{% endmacro %}
+
+{% macro as_list_items(mimp_meta) %}
+  {% for effect in ['gain', 'loss'] %}
+    {% if mimp_meta[effect] | length %}
+      {% set annotations_with_effect = mimp_meta[effect] %}
+      {% set effect_count = annotations_with_effect | length %}
+      {% set best = annotations_with_effect | first %}
+      <li> {{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }} of PTM site: {{ best_prediction(best, effect) }}
+      {{ represent_mimp(best) }}
+      {% if effect_count > 1 %}
+      <ul>
+        <li>{{ weaker_predictions(annotations_with_effect, effect_count) }}
+      </ul>
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}

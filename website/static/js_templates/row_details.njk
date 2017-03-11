@@ -1,11 +1,11 @@
 {% from 'macros.njk' import list_site_kinases %}
+{% from 'mimp.njk' import as_list_items %}
 
 Impact: {{ mutation.category }}<br>
 Number of affected sites: {{ mutation.cnt_ptm }}<br>
 
 {% if 'network-rewiring' in mutation.category %}
-  {% set mimp_meta = mutation.meta.MIMP %}
-  {% include 'mimp.njk' %}
+  {{ as_list_items(mutation.meta.MIMP) }}
 {% endif %}
 
 {% if mutation.sites | length > 0 %}
