@@ -79,7 +79,7 @@
 
   function queryParams(params)
   {
-    site_params = get_url_params()
+    var site_params = get_url_params()
     params.filters = site_params.filters
     return params
   }
@@ -199,12 +199,14 @@
 
   function proteinFormatter(value, row, index)
   {
-    return '<a href="/protein/show/' + value + '">protein view</a>'
+    var site_params = get_url_params()
+    return '<a href="/protein/show/' + value + '?filters=' + site_params.filters + '">protein view</a>'
   }
 
   function networkFormatter(value, row, index)
   {
-    return '<a href="/network/show/' + value + '">network view</a>'
+    var site_params = get_url_params()
+    return '<a href="/network/show/' + value + '?filters=' + site_params.filters + '">network view</a>'
   }
 
   $(function ()
