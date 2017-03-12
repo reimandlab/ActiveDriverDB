@@ -1190,7 +1190,7 @@ class ClinicalData(BioModel):
     def to_json(self, filter=lambda x: x):
         return {
             'Disease': self.disease_name,
-            'Significane': self.significance,
+            'Significance': self.significance,
             'Review status': self.rev_status
         }
 

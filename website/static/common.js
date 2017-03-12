@@ -1,10 +1,10 @@
-function update_object(modified_obj, modyfing_obj)
+function update_object(modified_obj, modifying_obj)
 {
-    for(var key in modyfing_obj)
+    for(var key in modifying_obj)
     {
-        if(modyfing_obj.hasOwnProperty(key))
+        if(modifying_obj.hasOwnProperty(key))
         {
-            modified_obj[key] = modyfing_obj[key]
+            modified_obj[key] = modifying_obj[key]
         }
     }
 }
@@ -23,7 +23,7 @@ function prepareZoom(min, max, callback)
     return d3.behavior.zoom()
        .scaleExtent([min, max])
        .on('zoom', callback)
-       // allows to differentiante between pan-related clicks and normal clicks
+       // allows to differentiate between pan-related clicks and normal clicks
        .on('zoomstart', function(){
            if(d3.event.sourceEvent) d3.event.sourceEvent.stopPropagation()
        })
