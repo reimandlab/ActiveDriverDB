@@ -71,8 +71,9 @@
               <div class="col-md-8">{{ mutation.alt }}</div>
             </div>
             <div class="row">
+              {% set impact = mutation.impact_on_ptm() %}
               <div class="col-md-4">PTM impact:</div>
-              <div class="col-md-8">{{ mutation.impact_on_ptm() }}</div>
+              <div class="col-md-8"><span class="{{ impact }}">{{ impact }}</span></div>
             </div>
             <div class="row">
               <div class="col-md-4">PTM affected:</div>
@@ -203,6 +204,19 @@
     </div>
   {% endfor %}
 
+  <div class="row">
+    <div class="col-md-8">
+      {# External references ? #}
+    </div>
+    <div class="col-md-4">
+      <div class="panel panel-default contact-us-box">
+        <div class="panel-body">
+          <p>If you have any questions or feedback about this&nbsp;mutation:</p>
+          <a href="/contact_us" class="btn btn-primary">Contact us</a>
+        </div>
+      </div>
+    </div>
+  </div>
 {% endblock %}
 
 
