@@ -36,7 +36,6 @@ def create_app(config_filename='config.py', config_override={}):
     # Error logging
     #
     if not app.debug:
-        import os
         import logging
         from logging.handlers import RotatingFileHandler
 
