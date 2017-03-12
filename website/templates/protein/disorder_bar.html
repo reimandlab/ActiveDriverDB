@@ -1,0 +1,7 @@
+{% set disorder_percent = protein.disorder_length / protein.length * 100 %}
+<div class="progress" title="{{ disorder_percent }}">
+  <div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="{{ disorder_percent }}"
+       aria-valuemin="0" aria-valuemax="100" style="width:{{ disorder_percent }}%">
+    {{ disorder_percent | round(2) }}% of sequence is predicted to be disordered
+  </div>
+</div>

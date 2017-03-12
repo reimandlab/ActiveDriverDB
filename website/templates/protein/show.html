@@ -70,7 +70,68 @@
     </div>
   </div>
 
-<form method="GET" class="widget-form">
+  <div class="panel panel-default panel-with-btn protein-summary">
+    <div class="panel-heading">
+      <div class="heading-left">
+        <h3 class="panel-title">Protein summary</h3>
+      </div>
+      <div class="heading-right">
+        This is {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
+        {% set other_isoforms_count = protein.gene.isoforms | length - 1 %}
+        {% if other_isoforms_count > 0 %}
+          <a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}" class="btn btn-default">View all {{ protein.gene.isoforms | length }} isoforms</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="row">
+        <div class="col-md-6">
+
+          <div class="gene-wide-data">
+            <dl class="dl-horizontal">
+              <div class="strand">
+                <dt>Strand</dt>
+                <dd>{{ '+' if protein.gene.strand else '-' }}</dd>
+              </div>
+              <div>
+                <dt>Chromosome</dt>
+                <dd>{{ protein.gene.chrom }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <dl class="dl-horizontal">
+            <dt>Protein</dt>
+            <dd>{{ protein.length }} residues</dd>
+            <dt>All mutations</dt>
+            <dd>{{ protein.confirmed_mutations | length }}</dd>
+          </dl>
+
+        </div>
+        <div class="col-md-6">
+
+          <dl class="dl-horizontal">
+            <dt>PTM sites</dt>
+            <dd>{{ protein.sites | length }}</dd>
+            {% if protein.cds_start and protein.cds_end %}
+              <dt>CDS</dt>
+              <dd>{{ '{:,}'.format(protein.cds_start) }} - {{ '{:,}'.format(protein.cds_end) }}</dd>
+            {% endif %}
+            {% if protein.tx_start and protein.tx_end %}
+              <dt>Transcription</dt>
+              <dd>{{ '{:,}'.format(protein.tx_start) }} - {{ '{:,}'.format(protein.tx_end) }}</dd>
+            {% endif %}
+          </dl>
+
+        </div>
+      </div>
+      {% include "protein/disorder_bar.html" %}
+    </div>
+  </div>
+
+
+
+  <form method="GET" class="widget-form">
   {% include 'widgets/filters_box.html' %}
   <div class="panel panel-default panel-needleplot">
       <div class="panel-heading">
@@ -97,21 +158,6 @@
         {% include 'protein/tracks.html' %}
       {% endwith %}
     </div>
-  </div>
-</div>
-
-
-This is {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
-{% set other_isoforms_count = protein.gene.isoforms | length - 1 %}
-{% if other_isoforms_count > 0 %}
-    There {{ 'is' if other_isoforms_count == 1 else 'are' }} <a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}">{{ other_isoforms_count }} isoform{{ 's' if other_isoforms_count > 1}} more</a> for this protein in the database.
-{% endif %}
-
-{% set disorder_percent = protein.disorder_length / protein.length * 100 %}
-<div class="progress" title="{{ disorder_percent }}">
-  <div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="{{ disorder_percent }}"
-  aria-valuemin="0" aria-valuemax="100" style="width:{{ disorder_percent }}%">
-    {{ disorder_percent | round(2) }}% of sequence is predicted to be disordered
   </div>
 </div>
 
