@@ -178,8 +178,49 @@ $search-box-width: 225px
     top: 0
 
 .panel-with-btn
+
   .panel-heading
+    height: 55px
     line-height: 34px
+
     .panel-title
       line-height: 34px
+
+h3
+  margin-top: 5px
+
+.external-references
+
+  .source-acknowledgement
+    font-style: italic
+    color: gray
+
+  .panel-body
+    padding: 5px 15px
+
+  ul
+    margin-bottom: 0
+
+    li::after, .refseq dd::after
+      content: '|'
+      color: #e0cbcb
+
+    li:last-child:after, .refseq dd:last-child::after
+      content: ''
+
+  dt, dd
+    padding: 10px 5px
+    display: inline-block
+
+  dl
+    margin-bottom: 0
+    border-bottom: 1px solid #e0cbcb
+
+  dl:last-of-type
+    border-bottom: 0
+
+  dt
+    font-weight: normal
+    &::after
+      content: ':'
 

@@ -125,13 +125,13 @@ def create_widgets(filters_by_id, custom_datasets_names=None):
             class_name='dataset-widget'
         ),
         'custom_dataset': FilterWidget(
-            'Custom mutation dataset', 'select',
+            'Custom mutation dataset', 'radio',
             filter=filters_by_id['UserMutations.sources'],
             labels=custom_datasets_names
         ),
         'dataset_specific': [
             FilterWidget(
-                'Cancer type', 'select_multiple',
+                'Cancer type', 'checkbox_multiple',
                 filter=filters_by_id['Mutation.cancer_code'],
                 labels=[
                     cancer.name + ' (' + cancer.code + ')'
@@ -140,19 +140,19 @@ def create_widgets(filters_by_id, custom_datasets_names=None):
                 all_selected_label='All cancer types'
             ),
             FilterWidget(
-                'Ethnicity', 'select_multiple',
+                'Ethnicity', 'checkbox_multiple',
                 filter=filters_by_id['Mutation.populations_1KG'],
                 labels=populations_labels(The1000GenomesMutation.populations),
                 all_selected_label='All ethnicities'
             ),
             FilterWidget(
-                'Ethnicity', 'select_multiple',
+                'Ethnicity', 'checkbox_multiple',
                 filter=filters_by_id['Mutation.populations_ESP6500'],
                 labels=populations_labels(ExomeSequencingMutation.populations),
                 all_selected_label='All ethnicities'
             ),
             FilterWidget(
-                'Clinical significance', 'select_multiple',
+                'Clinical significance', 'checkbox_multiple',
                 filter=filters_by_id['Mutation.sig_code'],
                 all_selected_label='All clinical significance classes',
                 labels=ClinicalData.significance_codes.values()

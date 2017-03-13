@@ -70,139 +70,158 @@
     </div>
   </div>
 
-  <div class="panel panel-default panel-with-btn protein-summary">
-    <div class="panel-heading">
-      <div class="heading-left">
-        <h3 class="panel-title">Protein summary</h3>
-      </div>
-      <div class="heading-right">
-        This is {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
-        {% set other_isoforms_count = protein.gene.isoforms | length - 1 %}
-        {% if other_isoforms_count > 0 %}
-          <a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}" class="btn btn-default">View all {{ protein.gene.isoforms | length }} isoforms</a>
-        {% endif %}
-      </div>
-    </div>
-    <div class="panel-body">
-      <div class="row">
-        <div class="col-md-6">
 
-          <div class="gene-wide-data">
-            <dl class="dl-horizontal">
-              <div class="strand">
-                <dt>Strand</dt>
-                <dd>{{ '+' if protein.gene.strand else '-' }}</dd>
+  <div class="row">
+    <div class="col-md-3">
+
+      {# Legend #}
+      <div class="panel panel-default color-legend">
+        <div class="panel-heading">
+          <h3 class="panel-title">Legend</h3>
+        </div>
+        <div class="panel-body">
+          <div class="legend">
+            <h4>Mutation impacts</h4>
+            {% for type in mutation_types %}
+              <div class="swatch">
+                <div class="impact {{ type }}">
+                  <div class="color"></div>
+                </div>
+                <div class="name">{{ type }}</div>
               </div>
-              <div>
-                <dt>Chromosome</dt>
-                <dd>{{ protein.gene.chrom }}</dd>
-              </div>
-            </dl>
+            {% endfor %}
           </div>
-
-          <dl class="dl-horizontal">
-            <dt>Protein</dt>
-            <dd>{{ protein.length }} residues</dd>
-            <dt>All mutations</dt>
-            <dd>{{ protein.confirmed_mutations | length }}</dd>
-          </dl>
-
-        </div>
-        <div class="col-md-6">
-
-          <dl class="dl-horizontal">
-            <dt>PTM sites</dt>
-            <dd>{{ protein.sites | length }}</dd>
-            {% if protein.cds_start and protein.cds_end %}
-              <dt>CDS</dt>
-              <dd>{{ '{:,}'.format(protein.cds_start) }} - {{ '{:,}'.format(protein.cds_end) }}</dd>
-            {% endif %}
-            {% if protein.tx_start and protein.tx_end %}
-              <dt>Transcription</dt>
-              <dd>{{ '{:,}'.format(protein.tx_start) }} - {{ '{:,}'.format(protein.tx_end) }}</dd>
-            {% endif %}
-          </dl>
-
+          <div class="legend">
+            <h4>Sites</h4>
+            {% for type in site_types %}
+              <div class="swatch">
+                <div class="site {{ type }}">
+                  <div class="color"></div>
+                </div>
+                <div class="name">{{ type }}</div>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="legend">
+            <h4>Others</h4>
+            <div class="swatch">
+              <div class="site-position"></div>
+              <div class="name">Exact position of a PTM site</div>
+            </div>
+          </div>
         </div>
       </div>
-      {% include "protein/disorder_bar.html" %}
-    </div>
-  </div>
 
+      {# Filters #}
+      <form method="GET" class="widget-form">
+        {% include 'widgets/filters_box.html' %}
+        <input type="hidden" name="fallback" value="True">
+      </form>
 
-
-  <form method="GET" class="widget-form">
-  {% include 'widgets/filters_box.html' %}
-  <div class="panel panel-default panel-needleplot">
-      <div class="panel-heading">
-        <div class="heading-left">
-          {% include 'buttons/export.html' %}
-        </div>
-        <div class="heading-right">
-          {% with widgets=[widgets.is_ptm] %}
-            {% include 'widgets/filters_bar.html' %}
-          {% endwith %}
-        </div>
-      </div>
-    <div class="panel-body">
-      <div id="plot_area"></div>
-    </div>
-  </div>
-  <input type="hidden" name="fallback" value="True">
-</form>
-
-<div class="panel panel-default panel-tracks">
-  <div class="panel-body">
-    <div id="tracks-box">
-      {% with tracks=tracks %}
-        {% include 'protein/tracks.html' %}
+      {# Contact us #}
+      {% with feature='protein', title=protein.refseq %}
+        {% include "contact_box.html" %}
       {% endwith %}
-    </div>
-  </div>
-</div>
 
-<div class="panel panel-default color-legend">
-  <div class="panel-heading">
-    <h3 class="panel-title">Legend</h3>
-  </div>
-  <div class="panel-body">
-    <div class="legend">
-        <h4>Mutation impacts</h4>
-        {% for type in mutation_types %}
-          <div class="swatch">
-              <div class="impact {{ type }}">
-                <div class="color"></div>
-              </div>
-              <div class="name">{{ type }}</div>
-          </div>
-        {% endfor %}
     </div>
-    <div class="legend">
-        <h4>Sites</h4>
-        {% for type in site_types %}
-          <div class="swatch">
-              <div class="site {{ type }}">
-                <div class="color"></div>
-              </div>
-              <div class="name">{{ type }}</div>
+    <div class="col-md-9">
+      {# Summary #}
+      <div class="panel panel-default panel-with-btn protein-summary">
+        <div class="panel-heading">
+          <div class="heading-left">
+            <h3 class="panel-title">Protein summary</h3>
           </div>
-        {% endfor %}
-    </div>
-    <div class="legend">
-        <h4>Others</h4>
-        <div class="swatch">
-          <div class="site-position"></div>
-          <div class="name">Exact position of a PTM site</div>
+          <div class="heading-right">
+            This is {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
+            {% set other_isoforms_count = protein.gene.isoforms | length - 1 %}
+            {% if other_isoforms_count > 0 %}
+              <a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}" class="btn btn-default">View all {{ protein.gene.isoforms | length }} isoforms</a>
+            {% endif %}
+          </div>
         </div>
+        <div class="panel-body">
+          <div class="row">
+            <div class="col-md-6">
+
+              <div class="gene-wide-data">
+                <dl class="dl-horizontal">
+                  <div class="strand">
+                    <dt>Strand</dt>
+                    <dd>{{ '+' if protein.gene.strand else '-' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Chromosome</dt>
+                    <dd>{{ protein.gene.chrom }}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <dl class="dl-horizontal">
+                <dt>Protein</dt>
+                <dd>{{ protein.length }} residues</dd>
+                <dt>All mutations</dt>
+                <dd>{{ protein.confirmed_mutations | length }}</dd>
+              </dl>
+
+            </div>
+            <div class="col-md-6">
+
+              <dl class="dl-horizontal">
+                <dt>PTM sites</dt>
+                <dd>{{ protein.sites | length }}</dd>
+                {% if protein.cds_start and protein.cds_end %}
+                  <dt>CDS</dt>
+                  <dd>{{ '{:,}'.format(protein.cds_start) }} - {{ '{:,}'.format(protein.cds_end) }}</dd>
+                {% endif %}
+                {% if protein.tx_start and protein.tx_end %}
+                  <dt>Transcription</dt>
+                  <dd>{{ '{:,}'.format(protein.tx_start) }} - {{ '{:,}'.format(protein.tx_end) }}</dd>
+                {% endif %}
+              </dl>
+
+            </div>
+          </div>
+          {% include "protein/disorder_bar.html" %}
+        </div>
+      </div>
+
+
+      {# Plot #}
+      <div class="panel panel-default panel-needleplot panel-with-btn">
+        <div class="panel-heading">
+          <div class="heading-left">
+            <h3 class="panel-title">Mutations Visualisation</h3>
+          </div>
+          <div class="heading-right">
+            {% include 'buttons/export.html' %}
+          </div>
+        </div>
+        <div class="panel-body">
+          <div id="plot_area"></div>
+        </div>
+      </div>
+
+      {# tracks #}
+      <div class="panel panel-default panel-tracks">
+        <div class="panel-body">
+          <div id="tracks-box">
+            {% with tracks=tracks %}
+              {% include 'protein/tracks.html' %}
+            {% endwith %}
+          </div>
+        </div>
+      </div>
+
+      {# table #}
+      {% with mutations=mutations, table_id='table' %}
+        {% include 'protein/mutation_table.html' %}
+      {% endwith %}
+
+      {# references #}
+      {% include 'protein/external_references.html' %}
+
     </div>
   </div>
-</div>
-
-{% include 'protein/external_references.html' %}
-
-{% with mutations=mutations, table_id='table' %}
-  {% include 'protein/mutation_table.html' %}
-{% endwith %}
 
 {% endblock %}
 

@@ -63,48 +63,118 @@
     </div>
   </div>
 
-  <form method="GET" class="widget-form">
-    {% include 'widgets/filters_box.html' %}
+  <div class="row">
+    <div class="col-md-3">
 
-    <div class="collapse-me" tabindex="-1">
-      {% with collapsed=True %}
-          {% include 'widgets/options.html' %}
-      {% endwith %}
-    </div>
-
-    <div class="panel panel-default network">
+      {# Legend #}
+      <div class="panel panel-default color-legend">
         <div class="panel-heading">
-          <div class="heading-left">
-            <div class="btn-group" role="group">
-              <button type="button" class="btn btn-default zoom-in" title="Zoom in">
-                  <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
-              </button>
-              <button type="button" class="btn btn-default zoom-fit" title="Fit to the window">
-                  <span class="glyphicon glyphicon-screenshot" aria-hidden="true"></span> Fit window
-              </button>
-              <button type="button" class="btn btn-default zoom-out" title="Zoom out">
-                  <span class="glyphicon glyphicon-zoom-out" aria-hidden="true"></span>
-              </button>
-            </div>
-            {% include 'buttons/export.html' %}
-          </div>
-          <div class="heading-right">
-            {% with widgets=[widgets.is_ptm] %}
-              {% include 'widgets/filters_bar.html' %}
-            {% endwith %}
-          </div>
+          <h3 class="panel-title">Legend</h3>
         </div>
         <div class="panel-body">
-          <div id="network_spinner">
-            <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>
-          </div>
-          <div id="network_plot">
-          </div>
-        </div>
-    </div>
 
-    <input type="hidden" name="fallback" value="True">
-  </form>
+          <div class="legend">
+            <h4>Protein</h4>
+            <div class="swatch">
+              <div class="protein">
+                <div class="color"></div>
+              </div>
+              <div class="name">Currently analysed protein</div>
+            </div>
+          </div>
+
+          <div class="legend">
+            <h4>Kinases</h4>
+            <div class="swatch">
+              <div class="kinase">
+                <div class="color"></div>
+              </div>
+              <div class="name">Kinase interacting with one of sites</div>
+            </div>
+            <div class="swatch">
+              <div class="kinase-gradient gradient">
+                <div class="left-edge edge">0</div>
+                <div class="color"></div>
+                <div class="right-edge edge">max</div>
+              </div>
+              <div class="name">
+                mutations occurring in this kinase
+              </div>
+            </div>
+          </div>
+
+          <div class="legend">
+            <h4>Sites</h4>
+            <div class="swatch">
+              <div class="site">
+                <div class="color"></div>
+              </div>
+              <div class="name">PTM Site</div>
+              <div class="name">color corresponds to type</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {# Filters #}
+      <form method="GET" class="widget-form">
+        {% include 'widgets/filters_box.html' %}
+
+        <div class="collapse-me" tabindex="-1">
+          {% with collapsed=True %}
+            {% include 'widgets/options.html' %}
+          {% endwith %}
+        </div>
+
+        <input type="hidden" name="fallback" value="True">
+      </form>
+
+      {# Contact us #}
+      {% with feature='protein', title=protein.refseq %}
+        {% include "contact_box.html" %}
+      {% endwith %}
+
+    </div>
+    <div class="col-md-9">
+
+      {# network #}
+      <div class="panel panel-default panel-with-btn network">
+          <div class="panel-heading">
+            <div class="heading-left">
+              <h3 class="panel-title">PTM Interaction Network Visualisation</h3>
+            </div>
+            <div class="heading-right">
+
+              <div class="btn-group zooming" role="group">
+                <button type="button" class="btn btn-default zoom-in" title="Zoom in">
+                  <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+                </button>
+                <button type="button" class="btn btn-default zoom-fit" title="Fit to the window">
+                  <span class="glyphicon glyphicon-screenshot" aria-hidden="true"></span> Fit window
+                </button>
+                <button type="button" class="btn btn-default zoom-out" title="Zoom out">
+                  <span class="glyphicon glyphicon-zoom-out" aria-hidden="true"></span>
+                </button>
+              </div>
+
+              {% include 'buttons/export.html' %}
+            </div>
+          </div>
+          <div class="panel-body">
+            <div id="network_spinner">
+              <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>
+            </div>
+            <div id="network_plot">
+            </div>
+          </div>
+      </div>
+
+      {# references #}
+      {% include 'protein/external_references.html' %}
+
+    </div>
+  </div>
 
 {% endblock %}
 

@@ -6,13 +6,18 @@
 
 
 {% block panel_title %}
-  Filters
+  Data Filters
 {% endblock %}
 
 
 {% block widgets %}
 
   <div class="dataset-widgets">
+
+    <div class="is-ptm">
+      {{ render_widget(widgets.is_ptm) }}
+    </div>
+
     <div class="dataset">
         {{ render_widget(widgets.dataset) }}
         {% if widgets.custom_dataset.labels %}
@@ -22,6 +27,7 @@
     <div class="dataset-specific">
         {{ widget_list(widgets.dataset_specific) }}
     </div>
+
   </div>
 
   <div class="other-widgets">

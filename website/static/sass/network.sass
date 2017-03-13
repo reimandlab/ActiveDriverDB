@@ -70,9 +70,6 @@ text
   stroke-dasharray: 2px
 
 .network
-  &.panel
-    margin-bottom: 0
-
   .panel-body
     padding: 0
     position: relative
@@ -91,3 +88,50 @@ text
   top: 33%
   width: 100%
   position: absolute
+
+
+@import "_color_legend.sass"
+
+.legend
+  width: 100%
+
+.swatch
+  .color
+    height: 35px
+    border: 2px solid grey
+
+  .protein
+    .color
+      border-radius: 50%
+      width: 50px
+      background: lightblue
+      border-color: blue
+
+  .kinase
+    .color
+      border-radius: 50%
+      width: 35px
+      background: lightblue
+
+  .site
+    .color
+      background: orange
+
+  div
+    display: block
+    margin: auto
+    text-align: center
+
+  .gradient
+    .color
+      width: 80px
+      height: 15px
+      border: 1px solid grey
+
+    .color, .edge
+      display: inline-block
+
+  .kinase-gradient
+    .color
+      background: linear-gradient(90deg, white, blue)
+

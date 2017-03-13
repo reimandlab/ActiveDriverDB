@@ -35,40 +35,14 @@ rect, path
     fill: rgb(8, 104, 172)
 
 @import "impacts"
-
-.color-legend
-  .panel-heading
-    height: auto
-
-  h4
-    margin-top: 0
-    font-size: 15px
-    font-weight: bold
-
-  .legend
-    padding: 2px
-    display: inline-block
-    vertical-align: top
-    margin-right: 25px
+@import "_color_legend.sass"
 
 .swatch
-  padding: 4px
-  div
-    display: inline-block
-
-  .color
-    width: 60px
-    height: 20px
-
   .impact
 
     .color
       border-radius: 50%
-      width: 20px
-
-  .name
-    margin-left: 4px
-    vertical-align: top
+      width: 10px
 
   .site-position
     width: 0
@@ -179,4 +153,16 @@ div.color
 
     .strand
       float: right
-      margin-right: 10%
+      margin-right: 20%
+
+      dd
+        margin-left: 70px
+      dt
+        width: 70px
+
+  .dl-horizontal
+    dd
+      margin-left: 125px
+    dt
+      width: 125px
+      text-align: left

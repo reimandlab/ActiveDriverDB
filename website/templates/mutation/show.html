@@ -209,12 +209,9 @@
       {# External references ? #}
     </div>
     <div class="col-md-4">
-      <div class="panel panel-default contact-us-box">
-        <div class="panel-body">
-          <p>If you have any questions or feedback about this&nbsp;mutation:</p>
-          <a href="/contact_us" class="btn btn-primary">Contact us</a>
-        </div>
-      </div>
+      {% with feature='mutation', title=mutation.name %}
+        {% include "contact_box.html" %}
+      {% endwith %}
     </div>
   </div>
 {% endblock %}

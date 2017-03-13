@@ -41,22 +41,39 @@
               {% endfor %}
             </select>
         {% elif widget.template == 'radio' %}
-          <div class="radio-group form-control">
+          <div>
               {% if widget.nullable %}
-                <label class="radio-inline {{ 'checked' if widget.value == None }}">
-                  <input type="radio" name="{{ widget.target_name }}" value="None" {{ 'checked' if widget.value == None }}>
-                  {{ widget.disabled_label }}
-                </label>
+                <div class="radio">
+                  <label {{ 'checked' if widget.value == None }}">
+                    <input type="radio" name="{{ widget.target_name }}" value="None" {{ 'checked' if widget.value == None }}>
+                    {{ widget.disabled_label }}
+                  </label>
+                </div>
               {% endif %}
               {% for value, label in widget.items %}
-                <label class="radio-inline {{ 'checked' if widget.value == value }}">
-                  <input type="radio" name="{{ widget.target_name }}" value="{{ value }}" {{ 'checked' if widget.value == value }}>
-                  {{ label }}
-                </label>
+                <div class="radio">
+                  <label {{ 'checked' if widget.value == value }}">
+                    <input type="radio" name="{{ widget.target_name }}" value="{{ value }}" {{ 'checked' if widget.value == value }}>
+                    {{ label }}
+                  </label>
+                </div>
               {% endfor %}
           </div>
         {% elif widget.template == 'checkbox' %}
-          <input type="checkbox" name="{{ widget.target_name }}" value="True" id="{{ widget.target_name }}" {{ 'checked' if widget.value }}>
+          <div class="checkbox">
+            <label>
+              <input type="checkbox" name="{{ widget.target_name }}" value="True" id="{{ widget.target_name }}" {{ 'checked' if widget.value }}>
+            </label>
+          </div>
+        {% elif widget.template == 'checkbox_multiple' %}
+          {% for value, label in widget.items %}
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" name="{{ widget.target_name }}" value="{{ value }}" id="{{ widget.target_name }}" {{ 'checked' if widget.value and value in widget.value }}>
+                {{ label }}
+              </label>
+            </div>
+          {% endfor %}
         {% elif widget.template == 'select_multiple' %}
           <select
             name="{{ widget.target_name }}"

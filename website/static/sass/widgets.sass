@@ -1,7 +1,5 @@
 @import "variables"
 
-$background: rgb(255, 255, 255)
-
 select.form-control.multiselect
   height: $button-height
 
@@ -41,20 +39,13 @@ select.form-control
     background: #fff
 
 .widget-panel
-  background: $background
   z-index: 1
 
   &:hover
     opacity: 1
 
-  h3
-    font-weight: bold
-
   .panel-body
     padding: 10px 15px
-
-  &>div
-    background: $background
 
   .save
     float: right
@@ -72,52 +63,17 @@ select.form-control
     display: none
 
 .widget
-  line-height: $button-height
-  height: $button-height
-  clear: both
 
   .name
     display: block
-    float: left
 
-  .value
-    float: right
-
-
-.dataset-widgets
-  display: table
-  width: 100%
-
-  .dataset, .dataset-specific
-    display: table-cell
-
-  .dataset-specific
-    width: 100px
-
-    label.name
-      display: none
-
-    ul
-      padding: 0
-
-  .widget
-    display: table
-    width: 100%
-
-  .name, .value
-    float: none
-    display: table-cell
-
-  .value
-    text-align: right
 
 .radio-group
   border: 0
   box-shadow: none
 
 .filters-panel
-  .panel-heading
-    display: none
+
   .panel-body
     padding-bottom: 0
 
@@ -148,9 +104,6 @@ select.form-control
 
 .heading-right
   float: right
-
-.panel-heading
-  height: 55px
 
 .collapse-me .panel-heading
   overflow: hidden
