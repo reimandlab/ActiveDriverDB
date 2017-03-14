@@ -1,31 +1,54 @@
 
 
 class Widget:
-    """Widget class to be used in templates to create HTML inputs, selects etc.
-
-    Args:
-        data: list of choices for select or text for input/textarea
-        labels:
-            labels to be used by the template. There are some widgets which
-            does not accept or does not require labels (widget-specific)
-        target_name: corresponds to name attribute in HTML element
-
-    """
+    """Widget class to be used in templates to create HTML inputs, selects etc."""
 
     def __init__(
         self, title, template, data, target_name,
         labels=None, disabled_label=None, value=None,
         all_selected_label=None, class_name=''
     ):
+        """
+        Args:
+            data: list of choices for select or text for input/textarea
+            labels:
+                labels to be used by the template. There are some widgets which
+                does not accept or does not require labels (widget-specific).
+
+                At most as many labels as elements in data can be provided
+                except for case where no data (choices) are provided.
+
+                If there are less labels than elements, the elements without
+                a label will be skipped during template generation
+            target_name: corresponds to name attribute in HTML element
+        """
         self.title = title
         self.target_name = target_name
         self.template = template
+        if not data:
+            data = []
         self.data = data
         self._value = value
+        if labels and data and len(labels) > len(data):
+            raise ValueError(
+                'Number of labels has to be lower '
+                'or equal the data elements count.'
+            )
         self.labels = labels if labels else data
         self.disabled_label = disabled_label or 'disabled'
         self.all_selected_label = all_selected_label
         self.class_name = class_name
+
+    @property
+    def label(self):
+        if len(self.labels) > 1:
+            raise Exception(
+                'Requested for a single label for a widget with multiple '
+                'labels %s' % self.title
+            )
+        if not self.labels:
+            return
+        return self.labels[0]
 
     @property
     def items(self):
@@ -94,7 +117,7 @@ class FilterComparatorWidget(Widget):
         'ni': 'inversed in'
     }
 
-    def __init__(self, title, template, filter, labels=None):
+    def __init__(self, title, template, filter):
         self.filter = filter
         data = filter.allowed_comparators
         labels = [

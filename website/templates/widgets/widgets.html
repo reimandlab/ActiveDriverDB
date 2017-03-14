@@ -63,6 +63,7 @@
           <div class="checkbox">
             <label>
               <input type="checkbox" name="{{ widget.target_name }}" value="True" id="{{ widget.target_name }}" {{ 'checked' if widget.value }}>
+              {{ widget.label }}
             </label>
           </div>
         {% elif widget.template == 'checkbox_multiple' %}
