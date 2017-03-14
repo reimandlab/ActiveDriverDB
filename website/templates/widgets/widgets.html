@@ -1,7 +1,9 @@
 {% macro widget_list(filters, title, class) %}
     {% set filters = filters | selectattr('visible') | list %}
     {% if filters %}
-        <h5>{{ title }}</h5>
+        {% if title %}
+          <h5>{{ title }}</h5>
+        {% endif %}
         <ul class="{{ class }}">
             {% for filter in filters %}
                <li>{{ render_widget(filter) }}
