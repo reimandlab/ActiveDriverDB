@@ -41,24 +41,24 @@
               {% endfor %}
             </select>
         {% elif widget.template == 'radio' %}
-          <div>
+          <ul class="list-unstyled">
               {% if widget.nullable %}
-                <div class="radio">
+                <li class="radio">
                   <label {{ 'checked' if widget.value == None }}">
                     <input type="radio" name="{{ widget.target_name }}" value="None" {{ 'checked' if widget.value == None }}>
                     {{ widget.disabled_label }}
                   </label>
-                </div>
+                </li>
               {% endif %}
               {% for value, label in widget.items %}
-                <div class="radio">
+                <li class="radio">
                   <label {{ 'checked' if widget.value == value }}">
                     <input type="radio" name="{{ widget.target_name }}" value="{{ value }}" {{ 'checked' if widget.value == value }}>
                     {{ label }}
                   </label>
-                </div>
+                </li>
               {% endfor %}
-          </div>
+          </ul>
         {% elif widget.template == 'checkbox' %}
           <div class="checkbox">
             <label>
@@ -67,14 +67,16 @@
             </label>
           </div>
         {% elif widget.template == 'checkbox_multiple' %}
-          {% for value, label in widget.items %}
-            <div class="checkbox">
-              <label>
-                <input type="checkbox" name="{{ widget.target_name }}" value="{{ value }}" id="{{ widget.target_name }}" {{ 'checked' if widget.value and value in widget.value }}>
-                {{ label }}
-              </label>
-            </div>
-          {% endfor %}
+          <ul class="list-unstyled">
+            {% for value, label in widget.items %}
+              <li class="checkbox">
+                <label>
+                  <input type="checkbox" name="{{ widget.target_name }}" value="{{ value }}" id="{{ widget.target_name }}" {{ 'checked' if widget.value and value in widget.value }}>
+                  {{ label }}
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
         {% elif widget.template == 'select_multiple' %}
           <select
             name="{{ widget.target_name }}"

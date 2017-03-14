@@ -106,3 +106,16 @@ function affix(element, bottom_element)
         }
     )
 }
+
+
+$('.list-expand').click(function(){
+    var elem = $(this)
+    var parent = $(elem.parent())
+    parent.toggleClass('list-collapsed')
+    if(elem.text() === 'more')
+        elem.text('less')
+    else
+        elem.text('more')
+    return false
+})
+

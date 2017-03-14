@@ -19,23 +19,24 @@
     </div>
 
     <div class="dataset">
-        {{ render_widget(widgets.dataset) }}
-        {% if widgets.custom_dataset.labels %}
-            {{ render_widget(widgets.custom_dataset) }}
-        {% endif %}
+      {{ render_widget(widgets.dataset) }}
+      {% if widgets.custom_dataset.labels %}
+          {{ render_widget(widgets.custom_dataset) }}
+      {% endif %}
     </div>
-    <div class="dataset-specific">
-        {{ widget_list(widgets.dataset_specific) }}
+    <div class="dataset-specific list-collapsed">
+      {{ widget_list(widgets.dataset_specific) }}
+      <a href="#" class="list-expand">more</a>
     </div>
 
   </div>
 
   <div class="other-widgets">
     <div class="ptm-type">
-        {{ render_widget(widgets.ptm_type) }}
+      {{ render_widget(widgets.ptm_type) }}
     </div>
     <div class="other">
-        {{ widget_list(widgets.other) }}
+      {{ widget_list(widgets.other) }}
     </div>
   </div>
 

@@ -162,6 +162,7 @@ def create_widgets(filters_by_id, custom_datasets_names=None):
             'PTM mutations only', 'checkbox',
             filter=filters_by_id['Mutation.is_ptm'],
             disabled_label='all mutations',
+            labels=['PTM mutations only']
         ),
         'ptm_type': FilterWidget(
             'Type of PTM site', 'radio',

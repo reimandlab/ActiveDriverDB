@@ -227,6 +227,32 @@ h3
 .color-legend
   margin-bottom: 0
 
+.list-collapsed
+  // hide all elements but first four
+  li:nth-of-type(1n+5)
+    display: none
+
+  // apply a fade-out gradient to the fourth element
+  // it not only shows that there are more elements
+  // to be shown but also prevents accidental clicking
+  // on the last element (instead on "more" link)
+  li:nth-of-type(4)
+    &::after
+      content: ''
+      background: linear-gradient(transparent, white)
+      position: absolute
+      top: 0
+      left: 0
+      width: 100%
+      height: 100%
+
+
+
+a.list-expand
+  text-align: right
+  width: 100%
+  display: inline-block
+
 #sticky_box
   // keep space from top edge when affixed & keep space from legend above when stuck
   padding-top: 20px
