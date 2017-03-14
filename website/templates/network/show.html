@@ -117,23 +117,27 @@
         </div>
       </div>
 
-      {# Filters #}
-      <form method="GET" class="widget-form">
-        {% include 'widgets/filters_box.html' %}
+      <div id="sticky_box">
 
-        <div class="collapse-me" tabindex="-1">
-          {% with collapsed=True %}
-            {% include 'widgets/options.html' %}
-          {% endwith %}
-        </div>
+        {# Filters #}
+        <form method="GET" class="widget-form">
+          {% include 'widgets/filters_box.html' %}
 
-        <input type="hidden" name="fallback" value="True">
-      </form>
+          <div class="collapse-me" tabindex="-1">
+            {% with collapsed=True %}
+              {% include 'widgets/options.html' %}
+            {% endwith %}
+          </div>
 
-      {# Contact us #}
-      {% with feature='protein', title=protein.refseq %}
-        {% include "contact_box.html" %}
-      {% endwith %}
+          <input type="hidden" name="fallback" value="True">
+        </form>
+
+        {# Contact us #}
+        {% with feature='protein', title=protein.refseq %}
+          {% include "contact_box.html" %}
+        {% endwith %}
+
+      </div>
 
     </div>
     <div class="col-md-9">
@@ -191,6 +195,8 @@
     {% endassets %}
     <script type="text/javascript">
     nunjucks.configure('/static/js_templates', {autoescape: true})
+
+    affix($('#sticky_box'), $('footer'))
 
     var plot = document.getElementById('network_plot')
 

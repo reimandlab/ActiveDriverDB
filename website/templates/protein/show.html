@@ -112,16 +112,20 @@
         </div>
       </div>
 
-      {# Filters #}
-      <form method="GET" class="widget-form">
-        {% include 'widgets/filters_box.html' %}
-        <input type="hidden" name="fallback" value="True">
-      </form>
+      <div id="sticky_box">
 
-      {# Contact us #}
-      {% with feature='protein', title=protein.refseq %}
-        {% include "contact_box.html" %}
-      {% endwith %}
+        {# Filters #}
+        <form method="GET" class="widget-form">
+          {% include 'widgets/filters_box.html' %}
+          <input type="hidden" name="fallback" value="True">
+        </form>
+
+        {# Contact us #}
+        {% with feature='protein', title=protein.refseq %}
+          {% include "contact_box.html" %}
+        {% endwith %}
+
+      </div>
 
     </div>
     <div class="col-md-9">
@@ -233,6 +237,9 @@
   <script type="text/javascript">
 
     nunjucks.configure('/static/js_templates', {autoescape: true})
+
+    affix($('#sticky_box'), $('footer'))
+
     var tracks = Tracks()
     tracks.init({
         box: document.getElementById('tracks-box')

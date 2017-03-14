@@ -201,12 +201,12 @@ h3
   ul
     margin-bottom: 0
 
-    li::after, .refseq dd::after
-      content: '|'
-      color: #e0cbcb
+  li::after, .refseq dd::after
+    content: '|'
+    color: #e0cbcb
 
-    li:last-child:after, .refseq dd:last-child::after
-      content: ''
+  li:last-child:after, .refseq dd:last-child::after
+    content: ''
 
   dt, dd
     padding: 10px 5px
@@ -224,3 +224,23 @@ h3
     &::after
       content: ':'
 
+.color-legend
+  margin-bottom: 0
+
+#sticky_box
+  // keep space from top edge when affixed & keep space from legend above when stuck
+  padding-top: 20px
+
+  &.affix
+    top: 0
+
+  &.affix-bottom
+    position: absolute
+
+// do not use affix on small screens
+@media (max-width: 992px)
+  #sticky_box
+    width: inherit!important
+
+    &.affix
+      position: relative

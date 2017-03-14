@@ -73,3 +73,36 @@ function get_url_params()
     }
     return params
 }
+
+
+function affix(element, bottom_element)
+{
+    // fix the width (so it's set in pixels)
+    element.css('position', 'static')
+    element.css('width', '')
+    element.width(element.width())
+
+    element.affix({
+        offset: {
+            top: function () {
+                return (this.top = element.offset().top)
+            },
+            bottom: function () {
+                return (this.bottom = bottom_element.outerHeight(true))
+            }
+        }
+    })
+
+    var parent = $(element.parent())
+    parent.css('min-height', '')
+    parent.css('min-height', parent.height())
+
+    element.css('position', '')
+
+    $(window).on(
+        'resize', function()
+        {
+            affix(element, bottom_element)
+        }
+    )
+}
