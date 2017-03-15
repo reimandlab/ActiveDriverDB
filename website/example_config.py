@@ -13,7 +13,7 @@ You should change the name of this file to `config.py`.
 # -Flask generic settings
 SECRET_KEY = 'replace_this'
 DEBUG = True
-# use public IP adresses
+# use public IP addresses
 DEFAULT_HOST = '0.0.0.0'
 DEFAULT_PORT = 5000
 JSONIFY_PRETTYPRINT_REGULAR = False
@@ -32,5 +32,6 @@ BDB_GENE_TO_ISOFORM_PATH = 'databases/berkley_hash_refseq.db'
 
 # -Application settings
 # counting everything in the database in order to prepare statistics might be
-# quite slow. It is helpful to turn stats generation off to speed up debuging.
+# quite slow. It is helpful to turn stats generation off to speed up debugging.
 LOAD_STATS = True
+CONTACT_LIST = ['some_maintainer@domain.org', 'other_maintainer@domain.org']

@@ -1,4 +1,7 @@
 from functools import wraps
+from types import FunctionType
+
+from flask import current_app
 from flask import flash
 from flask import render_template as template
 from flask import redirect
@@ -33,8 +36,19 @@ BUILT_IN_SETTINGS = ['website_name']
 
 MENU_SLOT_NAMES = ['footer_menu', 'top_menu', 'side_menu']
 
+
+def create_contact_form():
+    args = request.args
+    pass_args = ['feature', 'title']
+    return template(
+        'cms/contact_form.html',
+        **{key: args.get(key, '') for key in pass_args}
+    )
+
+
 USER_ACCESSIBLE_VARIABLES = {
-    'stats': STATISTICS
+    'stats': STATISTICS,
+    'contact_form': create_contact_form
 }
 
 PAGE_COLUMNS = ('title', 'address', 'content')
@@ -99,12 +113,15 @@ def replace_allowed_object(match_obj):
             element = element[accessor]
         else:
             return '&lt;unknown variable: {}&gt;'.format(object_name)
+        if type(element) is FunctionType:
+            element = element()
     return str(element)
 
 
 def substitute_variables(string):
     import re
     pattern = '\{\{ (.*?) \}\}'
+
     return re.sub(pattern, replace_allowed_object, string)
 
 
@@ -162,6 +179,52 @@ class ContentManagmentSystem(FlaskView):
     def page(self, address):
         page = get_page(address)
         return self._template('page', page=page)
+
+    @route('/send_message/', methods=['POST'])
+    def send_message(self):
+        go_to = request.form.get('after_success', '/')
+        redirection = redirect(go_to)
+
+        try:
+            name = request.form['name']
+            email = request.form['email']
+            subject = request.form['subject']
+            content = request.form['content']
+        except KeyError:
+            flash('Something gone wrong - not all fields are present!', 'danger')
+            return redirection
+
+        if not name or not content or not subject or not email:
+            flash('Please, fill in all fields', 'warning')
+            return redirection
+
+        if not User.is_mail_correct(email):
+            flash('Provided email address is not correct', 'warning')
+            return redirection
+
+        from flask_mail import Message
+        from app import mail
+
+        msg = Message(
+            subject=subject,
+            body=content,
+            sender='contact-bot@activedriverdb.org',
+            reply_to='{0} <{1}>'.format(name, email),
+            recipients=current_app.config['CONTACT_LIST'],
+        )
+
+        try:
+            mail.send(msg)
+            flash('Message sent!', 'success')
+        except ConnectionRefusedError:
+            flash(
+                'Could not sent the message. '
+                'Email server refuses connection. '
+                'We apologize for the inconvenience.',
+                'danger'
+            )
+
+        return redirection
 
     @admin_only
     def list_pages(self):
@@ -286,7 +349,7 @@ class ContentManagmentSystem(FlaskView):
             db.session.delete(menu)
             db.session.commit()
             flash(
-                'Successfuly removed menu "{0}" (id: {1})'.format(
+                'Successfully removed menu "{0}" (id: {1})'.format(
                     name,
                     menu_id
                 ),
@@ -426,7 +489,7 @@ class ContentManagmentSystem(FlaskView):
             db.session.delete(page)
             db.session.commit()
             flash(
-                'Successfuly removed page "{0}" (id: {1})'.format(
+                'Successfully removed page "{0}" (id: {1})'.format(
                     title,
                     page_id
                 ),
@@ -478,7 +541,7 @@ class ContentManagmentSystem(FlaskView):
             db.session.add(new_user)
             db.session.commit()
             flash(
-                'Your account has been created successfuly! '
+                'Your account has been created successfully! '
                 'Now you can login with the form below:',
                 'success'
             )

@@ -6,8 +6,10 @@ from database import db
 from database import bdb
 from database import bdb_refseq
 from assets import bundles
+from flask_mail import Mail
 
 login_manager = LoginManager()
+mail = Mail()
 
 
 def create_app(config_filename='config.py', config_override={}):
@@ -70,6 +72,11 @@ def create_app(config_filename='config.py', config_override={}):
     login_manager.user_loader(User.user_loader)
 
     login_manager.init_app(app)
+
+    #
+    # Configure mail service
+    #
+    mail.init_app(app)
 
     #
     # Register assets
