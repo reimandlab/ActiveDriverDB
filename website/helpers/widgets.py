@@ -1,3 +1,4 @@
+from helpers.filters import quote_if_needed, is_iterable_but_not_str
 
 
 class Widget:
@@ -52,7 +53,10 @@ class Widget:
 
     @property
     def items(self):
-        return zip(self.data, self.labels)
+        data = self.data
+        if data:
+            data = [quote_if_needed(d) for d in data]
+        return zip(data, self.labels)
 
     @property
     def nullable(self):
@@ -60,7 +64,9 @@ class Widget:
 
     @property
     def value(self):
-        return self._value
+        if is_iterable_but_not_str(self._value):
+            return [quote_if_needed(v) for v in self._value]
+        return quote_if_needed(self._value)
 
     @property
     def visible(self):
@@ -89,7 +95,8 @@ class FilterWidget(Widget):
 
     @property
     def value(self):
-        return self.filter.value
+        self._value = self.filter.value
+        return super().value
 
     @property
     def visible(self):

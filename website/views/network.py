@@ -28,9 +28,9 @@ class Target:
 
 class NetworkViewFilters(FilterManager):
 
-    def __init__(self, **kwargs):
+    def __init__(self, protein, **kwargs):
 
-        filters = common_filters(**kwargs)
+        filters = common_filters(protein, **kwargs)
 
         # TODO: use filter manager only for true filters,
         # make an "option manager" for options.
@@ -93,7 +93,8 @@ class NetworkView(FlaskView):
         ]
 
     def before_request(self, name, *args, **kwargs):
-        filter_manager = NetworkViewFilters()
+        protein = Protein.query.filter_by(refseq=kwargs['refseq']).first_or_404()
+        filter_manager = NetworkViewFilters(protein)
         endpoint = self.build_route_name(name)
 
         return filter_manager.reformat_request_url(
@@ -107,10 +108,10 @@ class NetworkView(FlaskView):
     def show(self, refseq):
         """Show a protein network visualisation"""
 
-        filter_manager = NetworkViewFilters()
-        filters_by_id = filter_manager.filters
-
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+
+        filter_manager = NetworkViewFilters(protein)
+        filters_by_id = filter_manager.filters
 
         return template(
             'network/show.html', protein=protein,
@@ -245,9 +246,10 @@ class NetworkView(FlaskView):
 
     def representation(self, refseq):
 
-        filter_manager = NetworkViewFilters()
-
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+
+        filter_manager = NetworkViewFilters(protein)
+
         data = self._prepare_network_repr(protein, filter_manager)
 
         return jsonify(data)

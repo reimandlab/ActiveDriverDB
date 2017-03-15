@@ -64,8 +64,8 @@ def represent_needles(mutations, filter_manager):
 
 class ProteinViewFilters(FilterManager):
 
-    def __init__(self, **kwargs):
-        filters = common_filters(**kwargs)
+    def __init__(self, protein, **kwargs):
+        filters = common_filters(protein, **kwargs)
         super().__init__(filters)
         self.update_from_request(request)
 
@@ -75,8 +75,10 @@ class ProteinView(FlaskView):
 
     def before_request(self, name, *args, **kwargs):
         user_datasets = current_user.datasets_names_by_uri()
+        protein = Protein.query.filter_by(refseq=kwargs['refseq']).first_or_404()
 
         filter_manager = ProteinViewFilters(
+            protein,
             custom_datasets_ids=user_datasets.keys()
         )
         endpoint = self.build_route_name(name)
@@ -105,9 +107,9 @@ class ProteinView(FlaskView):
     )
 
     def details(self, refseq):
-        filter_manager = ProteinViewFilters()
-
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+
+        filter_manager = ProteinViewFilters(protein)
 
         source = filter_manager.get_value('Mutation.sources')
 
@@ -143,11 +145,12 @@ class ProteinView(FlaskView):
         """
         user_datasets = current_user.datasets_names_by_uri()
 
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+
         filter_manager = ProteinViewFilters(
+            protein,
             custom_datasets_ids=user_datasets.keys()
         )
-
-        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
         disorder = [
             TrackElement(*region) for region in protein.disorder_regions
@@ -220,12 +223,13 @@ class ProteinView(FlaskView):
         from .chromosome import represent_mutations
         from database import get_or_create
 
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+
         filter_manager = ProteinViewFilters(
+            protein,
             default_source=None,
             source_nullable=False
         )
-
-        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
         mutation, _ = get_or_create(
             Mutation,
@@ -254,10 +258,10 @@ class ProteinView(FlaskView):
     def known_mutations(self, refseq, filter_manager=None):
         """List of mutations suitable for needleplot library"""
 
-        if not filter_manager:
-            filter_manager = ProteinViewFilters()
-
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+
+        if not filter_manager:
+            filter_manager = ProteinViewFilters(protein)
 
         raw_mutations = filter_manager.query_all(
             Mutation,
@@ -274,10 +278,10 @@ class ProteinView(FlaskView):
     def sites(self, refseq, filter_manager=None):
         """List of sites suitable for needleplot library"""
 
-        if not filter_manager:
-            filter_manager = ProteinViewFilters()
-
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+
+        if not filter_manager:
+            filter_manager = ProteinViewFilters(protein)
 
         response = self._prepare_sites(protein, filter_manager)
 

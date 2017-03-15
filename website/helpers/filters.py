@@ -20,6 +20,16 @@ class InitializationError(Exception):
     pass
 
 
+def quote_if_needed(value):
+    if type(value) is not str:
+        return value
+    q_char = FilterManager.quote_char
+    if FilterManager.sub_value_separator in value:
+        if not (value.startswith(q_char) and value.endswith(q_char)):
+            return q_char + value + q_char
+    return value
+
+
 class Filter:
     """Generic class allowing to create lists/iterators of any iterable
     objects that have compliant interface.
@@ -380,6 +390,24 @@ class Filter:
         )
 
 
+def split_with_quotation(value):
+    from csv import reader
+
+    for v in reader(
+        [value],
+        delimiter=FilterManager.sub_value_separator,
+        quotechar=FilterManager.quote_char
+    ):
+        return v
+
+
+def unqoute(value):
+    q_char = FilterManager.quote_char
+    if value.startswith(q_char) and value.endswith(q_char):
+        return value[1:-1]
+    return value
+
+
 class FilterManager:
     """Main class used to parse & apply filters' data specified by request.
 
@@ -390,6 +418,7 @@ class FilterManager:
     filters_separator = ';'
     field_separator = ':'
     sub_value_separator = ','
+    quote_char = '\''
 
     # a shorthand for structure to update filters
     UpdateTuple = namedtuple('UpdateTuple', ['id', 'comparator', 'value'])
@@ -457,7 +486,7 @@ class FilterManager:
 
     def query_all(self, target, custom_filter=None):
         """Retrieve all objects of type 'target' which
-        match critieria of currently active filters.
+        match criteria of currently active filters.
         """
 
         query, to_apply_manually = self.build_query(target, custom_filter)
@@ -468,7 +497,7 @@ class FilterManager:
 
     def query_count(self, target, custom_filter=None):
         """Retrieve count of all objects of type 'target' which
-        match critieria of currently active filters.
+        match criteria of currently active filters.
         """
 
         query, to_apply_manually = self.build_query(target, custom_filter)
@@ -549,8 +578,8 @@ class FilterManager:
     def _parse_fallback_query(args):
         """Parse query in fallback format."""
 
-        re_value = re.compile(r'filter\[([\w\.]+)\]')
-        re_cmp = re.compile(r'filter\[([\w\.]+)\]\[cmp\]')
+        re_value = re.compile(r'filter\[([\w.]+)\]')
+        re_cmp = re.compile(r'filter\[([\w.]+)\]\[cmp\]')
 
         filters = defaultdict(lambda: defaultdict(list))
 
@@ -628,8 +657,9 @@ class FilterManager:
         return comparator
 
     @staticmethod
-    def _parse_value(value):
-        """Safely parse value from string, without eval."""
+    def _parse_value(value, do_not_split=False):
+        """Safely parse value from string, without eval.
+        For sub-values quotations will be respected."""
 
         if value == 'True':
             return True
@@ -640,11 +670,12 @@ class FilterManager:
 
         value = value.replace('+', ' ')
 
-        if FilterManager.sub_value_separator in value:
-            return [
-                FilterManager._parse_value(v)
-                for v in value.split(FilterManager.sub_value_separator)
-            ]
+        splitted = split_with_quotation(value)
+
+        if not do_not_split and len(splitted) > 1:
+            return [FilterManager._parse_value(v, True) for v in splitted]
+
+        value = unqoute(value)
 
         return value
 
@@ -652,7 +683,10 @@ class FilterManager:
     def _repr_value(value):
         """Return string representation of given value (of a filter)."""
         if is_iterable_but_not_str(value):
-            return FilterManager.sub_value_separator.join(map(str, value))
+            return FilterManager.sub_value_separator.join([
+                quote_if_needed(str(v))
+                for v in value
+            ])
         return str(value)
 
     def url_string(self, expanded=False):

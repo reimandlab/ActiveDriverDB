@@ -1,15 +1,23 @@
-{% macro widget_list(filters, title, class) %}
-    {% set filters = filters | selectattr('visible') | list %}
-    {% if filters %}
-        {% if title %}
-          <h5>{{ title }}</h5>
-        {% endif %}
-        <ul class="{{ class }}">
-            {% for filter in filters %}
-               <li>{{ render_widget(filter) }}
-            {% endfor %}
-        </ul>
+{% macro widget_list(filters, title, class, collapse=False) %}
+  {% set filters = filters | selectattr('visible') | list %}
+
+  {% if filters %}
+    {% if title %}
+      <h5>{{ title }}</h5>
     {% endif %}
+    <div class="{{ class }}">
+      {% for filter in filters %}
+        {% set are_many = filter | attr('data') | list | length > 4 %}
+        <div class="{{ 'list-collapsed' if are_many }}">
+          {{ render_widget(filter) }}
+          {% if are_many %}
+            <a href="#" class="list-expand">more</a>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
 {% endmacro %}
 
 {% macro render_widget(widget) %}
@@ -55,7 +63,7 @@
               {% for value, label in widget.items %}
                 <li class="radio">
                   <label {{ 'checked' if widget.value == value }}">
-                    <input type="radio" name="{{ widget.target_name }}" value="{{ value }}" {{ 'checked' if widget.value == value }}>
+                    <input type="radio" name="{{ widget.target_name }}" value="{{ value | safe }}" {{ 'checked' if widget.value == value }}>
                     {{ label }}
                   </label>
                 </li>
@@ -73,7 +81,7 @@
             {% for value, label in widget.items %}
               <li class="checkbox">
                 <label>
-                  <input type="checkbox" name="{{ widget.target_name }}" value="{{ value }}" id="{{ widget.target_name }}" {{ 'checked' if widget.value and value in widget.value }}>
+                  <input type="checkbox" name="{{ widget.target_name }}" value="{{ value | safe}}" id="{{ widget.target_name }}" {{ 'checked' if widget.value and value in widget.value }}>
                   {{ label }}
                 </label>
               </li>

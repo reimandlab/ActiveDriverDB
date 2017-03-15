@@ -45,6 +45,7 @@ class UserMutations:
 
 
 def common_filters(
+    protein,
     default_source='TCGA',
     source_nullable=False,
     custom_datasets_ids=[]
@@ -55,6 +56,7 @@ def common_filters(
     populations_1kg = list(The1000GenomesMutation.populations.values())
     populations_esp = list(ExomeSequencingMutation.populations.values())
     significances = list(ClinicalData.significance_codes.keys())
+    disease_names = list(protein.disease_names)
 
     return [
         Filter(
@@ -104,6 +106,13 @@ def common_filters(
             [Mutation, ClinicalData], 'sig_code', comparators=['in'],
             choices=significances,
             default=significances, nullable=False,
+            source='ClinVar',
+            multiple='any'
+        ),
+        SourceDependentFilter(
+            [Mutation, ClinicalData], 'disease_name', comparators=['in'],
+            choices=disease_names,
+            default=disease_names, nullable=False,
             source='ClinVar',
             multiple='any'
         )
@@ -156,6 +165,11 @@ def create_widgets(filters_by_id, custom_datasets_names=None):
                 filter=filters_by_id['Mutation.sig_code'],
                 all_selected_label='All clinical significance classes',
                 labels=ClinicalData.significance_codes.values()
+            ),
+            FilterWidget(
+                'Disease name', 'checkbox_multiple',
+                filter=filters_by_id['Mutation.disease_name'],
+                all_selected_label='All clinical significance classes'
             )
         ],
         'is_ptm': FilterWidget(

@@ -473,6 +473,17 @@ class Protein(BioModel):
 
         return sites[start:end]
 
+    @property
+    def disease_names(self):
+        query = (
+            db.session.query(ClinicalData.disease_name).
+            distinct(ClinicalData.disease_name).
+            join(InheritedMutation).
+            join(Mutation).
+            filter(Mutation.protein == self)
+        )
+        return [row[0] for row in query.all()]
+
     def _calc_interactors_count(self):
         return len(self.kinases) + len(self.kinase_groups)
 
@@ -751,6 +762,7 @@ class Mutation(BioModel):
 
     cancer_code = association_proxy('meta_cancer', 'cancer_code')
     sig_code = association_proxy('meta_inherited', 'sig_code')
+    disease_name = association_proxy('meta_inherited', 'disease_name')
 
     # def get_source_name(self, column_name):
     #     return {v: k for k, v in self.source_fields.items()}.get(
@@ -1121,13 +1133,10 @@ class InheritedMutation(MutationDetails, BioModel):
     # PMC: Links exist to PubMed Central article
     is_in_pubmed_central = db.Column(db.Boolean)
 
-    clin_data = db.relationship(
-        'ClinicalData',
-        primaryjoin='foreign(InheritedMutation.id)==ClinicalData.inherited_id',
-        uselist=True
-    )
+    clin_data = db.relationship('ClinicalData', uselist=True)
 
     sig_code = association_proxy('clin_data', 'sig_code')
+    disease_name = association_proxy('clin_data', 'disease_name')
 
     def get_value(self, filter=lambda x: x):
         return len(filter(self.clin_data))

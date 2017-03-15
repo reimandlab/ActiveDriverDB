@@ -25,12 +25,8 @@
       {% endif %}
     </div>
 
-    {% set are_many = widgets.dataset_specific | selectattr('visible') | first | attr('data') | list | length > 4 %}
-    <div class="dataset-specific {{ 'list-collapsed' if are_many }}">
-      {{ widget_list(widgets.dataset_specific) }}
-      {% if are_many %}
-        <a href="#" class="list-expand">more</a>
-      {% endif %}
+    <div class="dataset-specific">
+      {{ widget_list(widgets.dataset_specific,  collapse=True) }}
     </div>
 
   </div>
