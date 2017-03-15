@@ -23,7 +23,9 @@
           class="form-control"
           id="subject"
           placeholder="e.g. Regarding protein TP53 - NM_000456"
-          value="Regarding {{ feature }} {{ title }}"
+          {% if feature or title %}
+          value="Regarding {{ feature | capitalize }}: {{ title }}"
+          {% endif %}
           name="subject"
         >
       </div>

@@ -133,7 +133,7 @@
         </form>
 
         {# Contact us #}
-        {% with feature='protein', title=protein.refseq %}
+        {% with feature='protein', title=protein.gene.name + ' - ' + protein.refseq %}
           {% include "contact_box.html" %}
         {% endwith %}
 

@@ -206,9 +206,9 @@ class ContentManagmentSystem(FlaskView):
         from app import mail
 
         msg = Message(
-            subject=subject,
+            subject='[ActiveDriverDB] ' + subject,
             body=content,
-            sender='contact-bot@activedriverdb.org',
+            sender='ActiveDriverDB <contact-bot@activedriverdb.org>',
             reply_to='{0} <{1}>'.format(name, email),
             recipients=current_app.config['CONTACT_LIST'],
         )

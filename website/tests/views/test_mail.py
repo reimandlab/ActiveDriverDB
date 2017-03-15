@@ -40,7 +40,7 @@ class TestMail(ViewTest):
             assert len(outbox) == 1
 
             sent_mail = outbox[0]
-            assert sent_mail.subject == data['subject']
+            assert data['subject'] in sent_mail.subject
             assert sent_mail.body == data['content']
             assert data['email'] in sent_mail.reply_to
 
