@@ -1,5 +1,5 @@
 {% set references = protein.external_references %}
-
+{% set target = 'target="_blank"' | safe %}
 
 <div class="panel panel-default external-references panel-with-btn">
   <div class="panel-heading">
@@ -17,12 +17,12 @@
     <dl class="refseq">
       <dt>RefSeq (mRNA)</dt>
       <dd>
-        <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}">{{ protein.refseq }}</a>
+        <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}" {{ target }}>{{ protein.refseq }}</a>
       </dd>
       {% if references.refseq_np %}
         <dt>RefSeq (protein)</dt>
         <dd>
-          <a href="https://www.ncbi.nlm.nih.gov/protein/{{ references.refseq_np }}">{{ references.refseq_np }}</a>
+          <a href="https://www.ncbi.nlm.nih.gov/protein/{{ references.refseq_np }}" {{ target }}>{{ references.refseq_np }}</a>
         </dd>
       {% endif %}
     </dl>
@@ -32,13 +32,13 @@
         <dt>Uniprot</dt>
         <dd>
           <ul class="list-inline">
-            <li><a href="http://www.uniprot.org/uniprot/{{ references.uniprot_accession }}">{{ references.uniprot_accession }}</a>
-            <li><a href="http://www.phosphosite.org/uniprotAccAction?id={{ references.uniprot_accession }}">Phosposite</a>
-            <li><a href="http://pfam.xfam.org/protein?acc={{ references.uniprot_accession }}">PFAM</a>
-            <li><a href="http://string-db.org/newstring_cgi/show_network_section.pl?identifier={{ references.uniprot_accession }}">STRING</a>
-            <li><a href="http://www.phospho3d.org/search.py?flag=3&query_string={{ references.uniprot_accession }}&redundancy=all">phospho3d</a>
-            <li><a href="http://www.reactome.org/content/query?cluster=true&q={{ references.uniprot_accession }}">Reactome</a>
-            <li><a href="http://www.rcsb.org/pdb/protein/{{references.uniprot_accession}}">PDB</a>
+            <li><a href="http://www.uniprot.org/uniprot/{{ references.uniprot_accession }}" {{ target }}>{{ references.uniprot_accession }}</a>
+            <li><a href="http://www.phosphosite.org/uniprotAccAction?id={{ references.uniprot_accession }}" {{ target }}>Phosposite</a>
+            <li><a href="http://pfam.xfam.org/protein?acc={{ references.uniprot_accession }}" {{ target }}>PFAM</a>
+            <li><a href="http://string-db.org/newstring_cgi/show_network_section.pl?identifier={{ references.uniprot_accession }}" {{ target }}>STRING</a>
+            <li><a href="http://www.phospho3d.org/search.py?flag=3&query_string={{ references.uniprot_accession }}&redundancy=all" {{ target }}>phospho3d</a>
+            <li><a href="http://www.reactome.org/content/query?cluster=true&q={{ references.uniprot_accession }}" {{ target }}>Reactome</a>
+            <li><a href="http://www.rcsb.org/pdb/protein/{{references.uniprot_accession}}" {{ target }}>PDB</a>
           </ul>
         </dd>
       </dl>
@@ -50,7 +50,7 @@
         <dd>
           <ul class="list-inline">
             {% for ensembl_peptide in references.ensembl_peptides %}
-              <li><a href="http://www.ensembl.org/Homo_sapiens/Transcript/ProteinSummary?p={{ ensembl_peptide.peptide_id }}">{{ ensembl_peptide.peptide_id }}</a>
+              <li><a href="http://www.ensembl.org/Homo_sapiens/Transcript/ProteinSummary?p={{ ensembl_peptide.peptide_id }}" {{ target }}>{{ ensembl_peptide.peptide_id }}</a>
             {% endfor %}
           </ul>
         </dd>
