@@ -21,11 +21,62 @@ def test_protein_data():
     }
 
 
+def create_test_mutations():
+    return [
+        Mutation(
+            position=1,
+            alt='K',
+            meta_cancer=[
+                CancerMutation(
+                    cancer=Cancer(name='Ovarian', code='OV'),
+                    count=1
+                ),
+                CancerMutation(
+                    cancer=Cancer(name='Breast', code='BRCA'),
+                    count=1
+                )
+            ]
+        ),
+        Mutation(
+            position=2,
+            alt='K',
+            meta_inherited=InheritedMutation(
+                clin_data=[
+                    ClinicalData(
+                        disease_name='Disease X',
+                        sig_code='1'
+                    ),
+                    ClinicalData(
+                        disease_name='Disease Y',
+                        sig_code='1'
+                    )
+                ]
+            )
+        ),
+        Mutation(
+            position=3,
+            alt='K',
+            meta_1KG=The1000GenomesMutation(
+                maf_afr=0.5,
+                maf_eur=0.2
+            )
+        ),
+        Mutation(
+            position=4,
+            alt='K',
+            meta_ESP6500=ExomeSequencingMutation(
+                maf_ea=0.5
+            )
+        )
+    ]
+
+
 class TestProteinView(ViewTest):
 
     def test_show(self):
 
         p = Protein(**test_protein_data())
+        p.mutations = create_test_mutations()
         db.session.add(p)
 
         response = self.client.get('/protein/show/NM_000123')
@@ -33,7 +84,22 @@ class TestProteinView(ViewTest):
         assert response.status_code == 200
         assert b'SomeGene' in response.data
         assert b'NM_000123' in response.data
+
+        response = self.client.get('/protein/representation_data/NM_000123')
+
+        assert response.status_code == 200
         assert b'MART' in response.data
+        assert response.content_type == 'application/json'
+
+        json_response = json.loads(response.data.decode())
+        assert json_response['tracks']
+        assert json_response['mutation_table']
+
+        # for default source (cancer) one mutation is expected
+        assert len(json_response['mutations']) == 1
+
+        # no sites were given
+        assert len(json_response['sites']) == 0
 
     def test_sites(self):
 
@@ -65,52 +131,7 @@ class TestProteinView(ViewTest):
     def test_details(self):
 
         p = Protein(**test_protein_data())
-
-        p.mutations = [
-            Mutation(
-                position=1,
-                alt='K',
-                meta_cancer=[
-                    CancerMutation(
-                        cancer=Cancer(name='Ovarian', code='OV')
-                    ),
-                    CancerMutation(
-                        cancer=Cancer(name='Breast', code='BRCA')
-                    )
-                ]
-            ),
-            Mutation(
-                position=2,
-                alt='K',
-                meta_inherited=InheritedMutation(
-                    clin_data=[
-                        ClinicalData(
-                            disease_name='Disease X',
-                            sig_code='1'
-                        ),
-                        ClinicalData(
-                            disease_name='Disease Y',
-                            sig_code='1'
-                        )
-                    ]
-                )
-            ),
-            Mutation(
-                position=3,
-                alt='K',
-                meta_1KG=The1000GenomesMutation(
-                    maf_afr=0.5,
-                    maf_eur=0.2
-                )
-            ),
-            Mutation(
-                position=4,
-                alt='K',
-                meta_ESP6500=ExomeSequencingMutation(
-                    maf_ea=0.5
-                )
-            )
-        ]
+        p.mutations = create_test_mutations()
 
         db.session.add(p)
 

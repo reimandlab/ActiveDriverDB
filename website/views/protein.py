@@ -62,12 +62,102 @@ def represent_needles(mutations, filter_manager):
     return response
 
 
+def prepare_tracks(protein, raw_mutations):
+
+    disorder = [
+        TrackElement(*region) for region in protein.disorder_regions
+    ]
+    tracks = [
+        PositionTrack(protein.length, 25),
+        SequenceTrack(protein),
+        Track('disorder', disorder),
+        DomainsTrack(
+            Domain.query.filter(
+                and_(
+                    Domain.protein == protein,
+                    Domain.interpro.has(type='Domain')
+                )
+            )
+        ),
+        MutationsTrack(raw_mutations)
+    ]
+    return tracks
+
+
+def get_raw_mutations(protein, filter_manager, source):
+
+    custom_dataset = filter_manager.get_value('UserMutations.sources')
+
+    mutation_filters = [Mutation.protein == protein]
+
+    if custom_dataset:
+        source = 'user'
+
+    if source == 'user':
+        dataset = UsersMutationsDataset.query.filter_by(
+            uri=custom_dataset
+        ).one()
+
+        filter_manager.filters['Mutation.sources']._value = 'user'
+
+        mutation_filters.append(
+            Mutation.id.in_([m.id for m in dataset.mutations])
+        )
+
+    raw_mutations = filter_manager.query_all(
+        Mutation,
+        lambda q: and_(q, and_(*mutation_filters))
+    )
+
+    return raw_mutations
+
+
+def prepare_representation_data(protein, filter_manager):
+    source = filter_manager.get_value('Mutation.sources')
+
+    raw_mutations = get_raw_mutations(protein, filter_manager, source)
+
+    tracks = prepare_tracks(protein, raw_mutations)
+
+    source_column_name = Mutation.source_fields[source]
+    source_model = Mutation.get_source_model(source_column_name)
+    value_type = source_model.value_type
+
+    parsed_mutations = represent_needles(
+        raw_mutations, filter_manager
+    )
+
+    needle_params = {
+        'value_type': value_type,
+        'log_scale': (value_type == 'frequency'),
+        'mutations': parsed_mutations,
+        'sites': prepare_sites(protein, filter_manager),
+        'tracks': tracks
+    }
+
+    return needle_params
+
+
 class ProteinViewFilters(FilterManager):
 
     def __init__(self, protein, **kwargs):
         filters = common_filters(protein, **kwargs)
         super().__init__(filters)
         self.update_from_request(request)
+
+
+def prepare_sites(protein, filter_manager):
+    sites = filter_manager.query_all(
+        Site,
+        lambda q: and_(q, Site.protein == protein)
+    )
+    return [
+        {
+            'start': site.position - 7,
+            'end': site.position + 7,
+            'type': str(site.type)
+        } for site in sites
+    ]
 
 
 class ProteinView(FlaskView):
@@ -137,86 +227,57 @@ class ProteinView(FlaskView):
 
         return jsonify(json)
 
+    def representation_data(self, refseq):
+
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+        user_datasets = current_user.datasets_names_by_uri()
+        filter_manager = ProteinViewFilters(
+            protein,
+            custom_datasets_ids=user_datasets.keys()
+        )
+
+        data = prepare_representation_data(protein, filter_manager)
+
+        data['mutation_table'] = template(
+            'protein/mutation_table.html',
+            mutations=data['mutations'],
+            filters=filter_manager,
+            protein=protein
+        )
+        data['tracks'] = template(
+            'protein/tracks.html',
+            tracks=data['tracks']
+        )
+
+        return jsonify(data)
+
     def show(self, refseq):
         """Show a protein by:
 
         + needleplot
         + tracks (sequence + data tracks)
         """
-        user_datasets = current_user.datasets_names_by_uri()
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-
+        user_datasets = current_user.datasets_names_by_uri()
         filter_manager = ProteinViewFilters(
             protein,
             custom_datasets_ids=user_datasets.keys()
         )
 
-        disorder = [
-            TrackElement(*region) for region in protein.disorder_regions
-        ]
-
-        custom_dataset = filter_manager.get_value('UserMutations.sources')
-        source = filter_manager.get_value('Mutation.sources')
-
-        mutation_filters = [Mutation.protein == protein]
-
-        if custom_dataset or source == 'user':
-            dataset = UsersMutationsDataset.query.filter_by(
-                uri=custom_dataset
-            ).one()
-
-            source = 'user'
-            filter_manager.filters['Mutation.sources']._value = 'user'
-
-            mutation_filters.append(
-                Mutation.id.in_([m.id for m in dataset.mutations])
-            )
-
-        raw_mutations = filter_manager.query_all(
-            Mutation,
-            lambda q: and_(q, and_(*mutation_filters))
-        )
-
-        tracks = [
-            PositionTrack(protein.length, 25),
-            SequenceTrack(protein),
-            Track('disorder', disorder),
-            DomainsTrack(
-                Domain.query.filter(
-                    and_(
-                        Domain.protein == protein,
-                        Domain.interpro.has(type='Domain')
-                    )
-                )
-            ),
-            MutationsTrack(raw_mutations)
-        ]
-
-        if source in ('TCGA', 'ClinVar', 'user'):
-            value_type = 'Count'
-        else:
-            value_type = 'Frequency'
-
-        parsed_mutations = represent_needles(
-            raw_mutations, filter_manager
-        )
-
-        filters_by_id = filter_manager.filters
+        # data = prepare_representation_data(protein, filter_manager)
 
         return template(
-            'protein/show.html', protein=protein, tracks=tracks,
+            'protein/show.html',
+            protein=protein,
             filters=filter_manager,
             widgets=create_widgets(
-                filters_by_id,
+                filter_manager.filters,
                 custom_datasets_names=user_datasets.values()
             ),
-            value_type=value_type,
-            log_scale=(value_type == 'Frequency'),
-            mutations=parsed_mutations,
-            sites=self._prepare_sites(protein, filter_manager),
             site_types=['multi_ptm'] + Site.types,
             mutation_types=Mutation.types,
+            # **data
         )
 
     def mutation(self, refseq, position, alt):
@@ -283,19 +344,6 @@ class ProteinView(FlaskView):
         if not filter_manager:
             filter_manager = ProteinViewFilters(protein)
 
-        response = self._prepare_sites(protein, filter_manager)
+        response = prepare_sites(protein, filter_manager)
 
         return jsonify(response)
-
-    def _prepare_sites(self, protein, filter_manager):
-        sites = filter_manager.query_all(
-            Site,
-            lambda q: and_(q, Site.protein == protein)
-        )
-        return [
-            {
-                'start': site.position - 7,
-                'end': site.position + 7,
-                'type': str(site.type)
-            } for site in sites
-        ]

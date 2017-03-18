@@ -65,7 +65,7 @@ var NeedlePlot = function ()
     }
 
     var config = {
-        use_log: false, // should logaritmic (base 10) scale by used instead of linear?
+        use_log: false, // should logarithmic (base 10) scale by used instead of linear?
         site_height: 10,
         animations_speed: 200,
         // 90 is width of description
@@ -117,7 +117,7 @@ var NeedlePlot = function ()
 
     function configure(new_config)
     {
-        // Automatical configuration update:
+        // Automatic configuration update:
         update_object(config, new_config)
 
         get_remote_if_needed(config, 'data')
@@ -234,7 +234,7 @@ var NeedlePlot = function ()
         needles.
             each(function(mutation){ mutation.id = i++ })
 
-        // lets group needle heads occuring in the same place
+        // lets group needle heads occurring in the same place
         var head_groups = {}
 
         needles.
@@ -475,6 +475,7 @@ var NeedlePlot = function ()
 
         _rescalePlot()
 
+        config.onload()
     }
 
 	function _setPosition(new_position, stop_callback)
@@ -493,7 +494,7 @@ var NeedlePlot = function ()
 
         if(!stop_callback && config.position_callback)
         {
-            aa_position = xToPos(position)
+            var aa_position = xToPos(position)
             config.position_callback(aa_position, true)
         }
 
@@ -502,6 +503,7 @@ var NeedlePlot = function ()
 
     function canvasAnimated(animate)
     {
+        var t;
         if(animate)
         {
 		    t = svg
@@ -607,7 +609,7 @@ var NeedlePlot = function ()
 
         if(config.zoomAndMove_callback)
         {
-            aa_position = xToPos(position)
+            var aa_position = xToPos(position)
             config.zoomAndMove_callback(scale, aa_position, true)
         }
 
@@ -627,7 +629,7 @@ var NeedlePlot = function ()
         {
             config.zoom_callback(scale, true)
         }
-        // if we are not issung a callback, that the function was called by callback,
+        // if we are not issuing a callback, that the function was called by callback,
         // then we want to assure that all related components are aware of zoom update
         else
         {

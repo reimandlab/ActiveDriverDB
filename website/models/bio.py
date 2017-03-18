@@ -558,7 +558,7 @@ class InterproDomain(BioModel):
     # What is the interpro domain above in hierarchy tree
     parent_id = db.Column(db.Integer, db.ForeignKey('interprodomain.id'))
 
-    # Relation with backref allowings easy tree traversal
+    # Relation with backref allowing easy tree traversal
     children = db.relationship(
         'InterproDomain',
         backref=db.backref('parent', remote_side='InterproDomain.id')
@@ -612,15 +612,16 @@ mutation_site_association = make_association_table('site.id', 'mutation.id')
 
 class CancerMetaManager(UserList):
     name = 'TCGA'
+    value_type = 'count'
 
     def to_json(self, filter=lambda x: x):
-        cancer_occurances = [
+        cancer_occurrences = [
             datum.to_json()
             for datum in
             filter(self.data)
         ]
 
-        return {'TCGA metadata': cancer_occurances}
+        return {'TCGA metadata': cancer_occurrences}
 
     def summary(self, filter=lambda x: x):
         return [
@@ -746,7 +747,7 @@ class Mutation(BioModel):
     )
 
     # source fields are generated once, at the very bottom
-    # of this file; see create_source_fields()
+    # of this file; see `create_source_fields`
     source_fields = OrderedDict()
 
     types = ('direct', 'network-rewiring', 'proximal', 'distal', 'none')
@@ -1032,16 +1033,31 @@ class Mutation(BioModel):
     def name(self):
         return '%s %s' % (self.protein.gene.name, self.short_name)
 
+    @classmethod
+    def get_source_model(cls, source_column_name):
+        """Given source column name (like meta_cancer) returns
+        model which represents given source / mutations details.
 
-def create_source_fields():
-    """Create mapping: source name -> column name"""
-    source_fields = OrderedDict()
-    for source_field in Mutation.source_field_names:
+        Example:
+            > get_source_model('meta_cancer')
+            > CancerMutation
+        """
+        field = getattr(cls, source_column_name)
+        return field.property.mapper.class_
 
-        field = getattr(Mutation, source_field)
-        details_model = field.property.mapper.class_
-        source_fields[details_model.name] = source_field
-    return source_fields
+    @classmethod
+    def create_source_fields(cls):
+        """Create mapping: readable source name -> column name
+        Source name is derived from (derived from MutationDetails.name).
+
+        Example:
+            OrderedDict([('TCGA', 'meta_cancer'), ('ClinVar', 'meta_inherited')])
+        """
+        source_fields = OrderedDict()
+        for source_field in cls.source_field_names:
+            details_model = cls.get_source_model(source_field)
+            source_fields[details_model.name] = source_field
+        return source_fields
 
 
 class MutationDetails:
@@ -1067,12 +1083,26 @@ class MutationDetails:
         """Return short JSON serializable representation of the mutation"""
         raise NotImplementedError
 
+    @property
+    def name(self):
+        """Name which will be shown to the user (e.g. in filters panel)"""
+        raise NotImplementedError
+
+    @property
+    def value_type(self):
+        """What is the value returned by 'get_value'.
+
+        Either 'count' or 'frequency'.
+        """
+        raise NotImplementedError
+
 
 class UserUploadedMutation(MutationDetails, BioModel):
 
     count = db.Column(db.Integer, default=0)
     query = db.Column(db.Text)
     name = 'user'
+    value_type = 'count'
 
     def get_value(self, filter=lambda x: x):
         return self.count
@@ -1093,6 +1123,7 @@ class CancerMutation(MutationDetails, BioModel):
     cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
     cancer = db.relationship('Cancer')
     name = 'TCGA'
+    value_type = 'count'
 
     count = db.Column(db.Integer)
 
@@ -1117,6 +1148,7 @@ class InheritedMutation(MutationDetails, BioModel):
     Columns description come from source VCF file headers.
     """
     name = 'ClinVar'
+    value_type = 'count'
 
     # RS: dbSNP ID (i.e. rs number)
     db_snp_id = db.Column(db.Integer)
@@ -1239,6 +1271,8 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
         AA - African American
     """
     name = 'ESP6500'
+    value_type = 'frequency'
+
     populations = OrderedDict(
         (
             ('maf_ea', 'European American'),
@@ -1260,6 +1294,8 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
 class The1000GenomesMutation(PopulationMutation, BioModel):
     """Metadata for 1 KG mutation"""
     name = '1KGenomes'
+    value_type = 'frequency'
+
     maf_eas = db.Column(db.Float)
     maf_amr = db.Column(db.Float)
     maf_afr = db.Column(db.Float)
@@ -1324,4 +1360,4 @@ class MIMPMutation(MutationDetails, BioModel):
         return '<MIMPMutation %s>' % self.id
 
 
-Mutation.source_fields = create_source_fields()
+Mutation.source_fields = Mutation.create_source_fields()

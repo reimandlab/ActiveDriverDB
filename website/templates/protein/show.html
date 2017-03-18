@@ -191,7 +191,7 @@
 
 
       {# Plot #}
-      <div class="panel panel-default panel-needleplot panel-with-btn">
+      <div class="panel panel-default panel-needleplot panel-with-btn visualisation">
         <div class="panel-heading">
           <div class="heading-left">
             <h3 class="panel-title">Mutations Visualisation</h3>
@@ -201,6 +201,9 @@
           </div>
         </div>
         <div class="panel-body">
+          <div id="protein_spinner" class="visualisation_spinner">
+            <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>
+          </div>
           <div id="plot_area"></div>
         </div>
       </div>
@@ -209,17 +212,20 @@
       <div class="panel panel-default panel-tracks">
         <div class="panel-body">
           <div id="tracks-box">
+            {#  To be loaded with JS #}
+            {#
             {% with tracks=tracks %}
               {% include 'protein/tracks.html' %}
             {% endwith %}
+            #}
           </div>
         </div>
       </div>
 
       {# table #}
-      {% with mutations=mutations, table_id='table' %}
-        {% include 'protein/mutation_table.html' %}
-      {% endwith %}
+      <div id="table-wrapper">
+        {# The table will be filled with HTML over AJAX request for mutations details #}
+      </div>
 
       {# references #}
       {% include 'protein/external_references.html' %}
@@ -240,65 +246,55 @@
 
     affix($('#sticky_box'), $('footer'))
 
-    var tracks = Tracks()
-    tracks.init({
-        box: document.getElementById('tracks-box')
-    })
-    var max_zoom = tracks.adjustMaxZoom()
-    var mutations = {{ mutations | json | safe }}
-    var sites = {{ sites | json | safe }}
-    {# An alternative form of getting data, not fully functional nor fast
-      var mutations = "{{ url_for('ProteinView:mutations', refseq=protein.refseq, filters=filters.url_string()) }}"
-      var sites = "{{ url_for('ProteinView:sites', refseq=protein.refseq, filters=filters.url_string()) }}"
-    #}
-    var plot = document.getElementById('plot_area')
-    var params = {
-        use_log: {{ log_scale | lower }},
-        max_zoom: max_zoom,
-        element: plot,
-        data: {
-          mutations: mutations,
-          sites: sites
-        },
-        sequenceLength: {{ protein.sequence | length }},
-        name: '{{ protein.gene.name }}',
-        legends:
-        {
-          x: null,
-          y: '{{ value_type }} of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
-        },
-        zoom_callback: tracks.setZoom,
-        position_callback: tracks.setAAPosition,
-        zoomAndMove_callback: tracks.setZoomAndMove,
-        width: $('#tracks-box').width(),
-        needle_tooltip: function(mutation){
-            return nunjucks.render(
-                'needle_tooltip.njk',
-                {
-                    mutation: mutation,
-                    value_type: '{{ value_type }}'
-                }
-            )
-        },
-        site_tooltip: function(d){
-            return (d.start + 7) + ' ' + d.type
-        },
-        mutations_color_map: {
-          'distal': 'yellow',
-          'network-rewiring': 'red',
-          'direct': 'darkred',
-          'proximal': 'orange',
-          'none': 'darkgray'
-        }
-
-    }
     ShortURL().init(
       "{{ url_for('ShortAddress:get_shorthand_for') }}",
       "{{ url_for('ShortAddress:visit_shorthand', shorthand='<shorthand>', _external=True) }}"
-    )
-    var needle_plot = NeedlePlot()
-    needle_plot.init(params)
-    tracks.setNeedlePlotInstance(needle_plot)
+    );
+
+    var tracks = Tracks();
+
+    var needle_plot = null;
+    var plot = document.getElementById('plot_area');
+
+    function init_plot(variable_config)
+    {
+        if (needle_plot)
+          delete needle_plot;
+
+        needle_plot = NeedlePlot();
+
+        var params = {
+            element: plot,
+            sequenceLength: {{ protein.sequence | length }},
+            name: '{{ protein.gene.name }}',
+            legends:
+                {
+                    x: null,
+                    y: '{{ value_type }} of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
+                },
+            zoom_callback: tracks.setZoom,
+            position_callback: tracks.setAAPosition,
+            zoomAndMove_callback: tracks.setZoomAndMove,
+            width: $('#tracks-box').width(),
+            site_tooltip: function(d){
+                return (d.start + 7) + ' ' + d.type
+            },
+            mutations_color_map: {
+                'distal': 'yellow',
+                'network-rewiring': 'red',
+                'direct': 'darkred',
+                'proximal': 'orange',
+                'none': 'darkgray'
+            },
+            onload: function(){ $('#protein_spinner').hide() }
+        };
+
+        update_object(params, variable_config);
+
+        needle_plot.init(params);
+        return needle_plot;
+    }
+
     $(window).on('resize', function()
         {
             needle_plot.setSize(
@@ -307,21 +303,82 @@
                 tracks.adjustMaxZoom()
             )
         }
-    )
+    );
+
+
+    var mutation_table = MutationTable();
+
+    var $table_wrapper = $('#table-wrapper');
+
+    function load_data(data)
+    {
+      $table_wrapper.html(data.mutation_table);
+      var $table = $('#table');
+
+      $('#tracks-box').html(data.tracks);
+
+      tracks.init({
+          box: document.getElementById('tracks-box')
+      });
+
+      var max_zoom = tracks.adjustMaxZoom();
+
+      $table.bootstrapTable();
+      mutation_table.init($table, data.mutations);
+
+      var variable_config = {
+        needle_tooltip: function(mutation) {
+          return nunjucks.render(
+          'needle_tooltip.njk',
+          {
+             mutation: mutation,
+             value_type: data.value_type
+          }
+          )
+        },
+        legends: {
+          x: null,
+          y: data.value_type + ' of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
+        },
+        use_log: data.log_scale,
+        data: {
+          mutations: data.mutations,
+          sites: data.sites
+        },
+        max_zoom: max_zoom
+      };
+
+      var needle_plot = init_plot(variable_config);
+
+      tracks.setNeedlePlotInstance(needle_plot);
+    }
+
+    function request_data(filters)
+    {
+        var representation_url = "{{ url_for('ProteinView:representation_data', refseq=protein.refseq) }}";
+
+        $.ajax({
+            url: representation_url,
+            type: 'GET',
+            data: {filters: encodeURIComponent(filters)},
+            success: load_data
+        })
+
+    }
+
+    request_data("{{ filters.url_string() or '' }}");
+
 
     {% assets "css_protein" %}
-    Export.init(
-        plot,
-        'protein_view:{{ protein.gene.name }}-{{ protein.refseq }}-{{ filters.url_string(expanded=True) }}',
-        '{{ ASSET_URL }}'
-    )
+        Export.init(
+            plot,
+            'protein_view:{{ protein.gene.name }}-{{ protein.refseq }}-{{ filters.url_string(expanded=True) }}',
+            '{{ ASSET_URL }}'
+        )
     {% endassets %}
-
   </script>
 
   <script type="text/javascript">
-    var mutation_table = MutationTable()
-    mutation_table.init($('#table'), mutations)
   </script>
   {{ super() }}
 {% endblock %}
