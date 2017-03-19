@@ -7,20 +7,9 @@ var Widgets = (function ()
         form.submit()
     }
 
-  function init_box(widget_box)
-  {
-
+    function init_box(widget_box)
+    {
       var box = $(widget_box)
-
-      form.find('.save').hide()
-
-      var widgets = box.find('.widget')
-      for(var j = 0; j < widgets.length; j++)
-      {
-          var widget = widgets[j]
-          var select = $(widget).find('select,input').not('.multiselect')
-          select.change(update)
-      }
 
       // initialize multiselect fields
       var to_multiselect = box.find('.multiselect')
@@ -33,7 +22,7 @@ var Widgets = (function ()
 
                   var selected = target.find('li.active')
 
-                  target.data('prevoiously_selected', selected)
+                  target.data('previously_selected', selected)
               },
               onDropdownHide: function(event)
               {
@@ -43,7 +32,7 @@ var Widgets = (function ()
                   var selected = target.find('li.active')
 
                   // if there was not a change do not consider this action
-                  if(checkEquality(selected, target.data('prevoiously_selected')))
+                  if(checkEquality(selected, target.data('previously_selected')))
                   {
                       return true
                   }
@@ -71,17 +60,34 @@ var Widgets = (function ()
               dropRight: true,
               allSelectedText: $(this).data('all-selected-text')
           })
-  }
+    }
 
     var publicSpace = {
 
-        init: function(widget_boxes, related_form)
+        init: function(widget_boxes, related_form, onupdate)
         {
             form = $(related_form)
+            if(onupdate)
+            {
+                update = function ()
+                {
+                    onupdate(form)
+                }
+            }
+
+            form.find('.save').hide()
+            form.on(
+                'change',
+                '.widgets .widget select:not(.multiselect),.widgets .widget input:not(.multiselect)',
+                update
+            )
+
+            /*
             for(var i = 0; i < widget_boxes.length; i++)
             {
                 init_box(widget_boxes[i])
             }
+            */
         }
     }
 
@@ -89,4 +95,3 @@ var Widgets = (function ()
 }())
 
 
-Widgets.init($('.widgets'), $('.widget-form')[0])

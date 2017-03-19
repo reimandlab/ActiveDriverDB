@@ -19,7 +19,7 @@ var Tracks = function ()
 
     function configure(new_config)
     {
-        // Automatical configuration update:
+        // Automatic configuration update:
         update_object(config, new_config)
     }
 
@@ -218,7 +218,7 @@ var Tracks = function ()
             scrollArea.on('scroll', function(event)
             {
                 var scroll = $(event.target).scrollLeft()
-                // is that a meaningful, nonprogramatic scroll?
+                // is that a meaningful, non-programmatic scroll?
                 if(scroll !== Math.round(position * config.char_size))
                 {
                     _setAAPosition(scroll / config.char_size)
@@ -294,7 +294,6 @@ var Tracks = function ()
         setNeedlePlotInstance: function(instance)
         {
             needle_plot = instance
-            needle_plot
         },
         setZoom: _setZoom,
         setAAPosition: _setAAPosition,

@@ -19,7 +19,7 @@ from helpers.tracks import MutationsTrack
 from helpers.tracks import DomainsTrack
 from helpers.filters import FilterManager
 from helpers.views import AjaxTableView
-from ._global_filters import common_filters
+from ._global_filters import common_filters, create_dataset_specific_widgets
 from ._global_filters import create_widgets
 from ._commons import represent_mutation
 from operator import attrgetter
@@ -242,12 +242,20 @@ class ProteinView(FlaskView):
             'protein/mutation_table.html',
             mutations=data['mutations'],
             filters=filter_manager,
-            protein=protein
+            protein=protein,
+            value_type=data['value_type']
         )
         data['tracks'] = template(
             'protein/tracks.html',
             tracks=data['tracks']
         )
+        data['dataset_specific_widgets'] = template(
+            'widgets/widget_list.html',
+            widgets=create_dataset_specific_widgets(filter_manager.filters),
+            collapse=True
+        )
+        data['checksum'] = request.args.get('checksum', '')
+        data['filters_string'] = filter_manager.url_string()
 
         return jsonify(data)
 

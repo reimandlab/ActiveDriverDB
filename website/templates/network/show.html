@@ -224,6 +224,8 @@
       }
     )
 
+    Widgets.init($('.widgets'), $('.widget-form')[0])
+
     ShortURL().init(
       "{{ url_for('ShortAddress:get_shorthand_for') }}",
       "{{ url_for('ShortAddress:visit_shorthand', shorthand='<shorthand>', _external=True) }}"

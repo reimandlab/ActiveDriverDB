@@ -119,6 +119,47 @@ def common_filters(
     ]
 
 
+# we do not expect cancers to change often
+cancers = Cancer.query.all()
+
+
+def create_dataset_specific_widgets(filters_by_id):
+    return [
+        FilterWidget(
+            'Cancer type', 'checkbox_multiple',
+            filter=filters_by_id['Mutation.cancer_code'],
+            labels=[
+                cancer.name + ' (' + cancer.code + ')'
+                for cancer in cancers
+            ],
+            all_selected_label='All cancer types'
+        ),
+        FilterWidget(
+            'Ethnicity', 'checkbox_multiple',
+            filter=filters_by_id['Mutation.populations_1KG'],
+            labels=populations_labels(The1000GenomesMutation.populations),
+            all_selected_label='All ethnicities'
+        ),
+        FilterWidget(
+            'Ethnicity', 'checkbox_multiple',
+            filter=filters_by_id['Mutation.populations_ESP6500'],
+            labels=populations_labels(ExomeSequencingMutation.populations),
+            all_selected_label='All ethnicities'
+        ),
+        FilterWidget(
+            'Clinical significance', 'checkbox_multiple',
+            filter=filters_by_id['Mutation.sig_code'],
+            all_selected_label='All clinical significance classes',
+            labels=ClinicalData.significance_codes.values()
+        ),
+        FilterWidget(
+            'Disease name', 'checkbox_multiple',
+            filter=filters_by_id['Mutation.disease_name'],
+            all_selected_label='All clinical significance classes'
+        )
+    ]
+
+
 def create_widgets(filters_by_id, custom_datasets_names=None):
     """Widgets to be displayed on a bar above visualisation."""
     return {
@@ -138,40 +179,7 @@ def create_widgets(filters_by_id, custom_datasets_names=None):
             filter=filters_by_id['UserMutations.sources'],
             labels=custom_datasets_names
         ),
-        'dataset_specific': [
-            FilterWidget(
-                'Cancer type', 'checkbox_multiple',
-                filter=filters_by_id['Mutation.cancer_code'],
-                labels=[
-                    cancer.name + ' (' + cancer.code + ')'
-                    for cancer in Cancer.query.all()
-                ],
-                all_selected_label='All cancer types'
-            ),
-            FilterWidget(
-                'Ethnicity', 'checkbox_multiple',
-                filter=filters_by_id['Mutation.populations_1KG'],
-                labels=populations_labels(The1000GenomesMutation.populations),
-                all_selected_label='All ethnicities'
-            ),
-            FilterWidget(
-                'Ethnicity', 'checkbox_multiple',
-                filter=filters_by_id['Mutation.populations_ESP6500'],
-                labels=populations_labels(ExomeSequencingMutation.populations),
-                all_selected_label='All ethnicities'
-            ),
-            FilterWidget(
-                'Clinical significance', 'checkbox_multiple',
-                filter=filters_by_id['Mutation.sig_code'],
-                all_selected_label='All clinical significance classes',
-                labels=ClinicalData.significance_codes.values()
-            ),
-            FilterWidget(
-                'Disease name', 'checkbox_multiple',
-                filter=filters_by_id['Mutation.disease_name'],
-                all_selected_label='All clinical significance classes'
-            )
-        ],
+        'dataset_specific': create_dataset_specific_widgets(filters_by_id),
         'is_ptm': FilterWidget(
             'PTM mutations only', 'checkbox',
             filter=filters_by_id['Mutation.is_ptm'],

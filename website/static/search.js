@@ -332,7 +332,7 @@ var SearchManager = (function ()
         return false
     }
 
-    function switchTarget(new_target, silient)
+    function switchTarget(new_target, silent)
     {
         var old_target = target
         target = new_target
@@ -359,7 +359,7 @@ var SearchManager = (function ()
         forms[target].show()
 
         // save the new address
-        if(!silient)
+        if(!silent)
         {
             history.pushState({target: old_target}, null, forms[target].get_url())
         }
@@ -377,10 +377,9 @@ var SearchManager = (function ()
             initialize_form('proteins')
             initialize_form('mutations')
 
-            var location = window.history.location || window.location
-
+            // handle change in history
             $(window).on('popstate', function(event) {
-                state = event.originalEvent.state
+                var state = event.originalEvent.state
                 switchTarget(state.target, true)
             })
 

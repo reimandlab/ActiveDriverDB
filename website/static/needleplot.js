@@ -5,6 +5,8 @@ var NeedlePlot = function ()
 	var position = 0
     var dispatch = d3.dispatch('zoomAndMove')
 
+    var paddings, needles, sites, site_boxes;
+
     var legend = {
         x:
         {
@@ -673,6 +675,12 @@ var NeedlePlot = function ()
 
             // refresh zoom and position with current values
             _setZoomAndMove(scale, position, true)
+        },
+        destroy: function()
+        {
+            svg.remove();
+            //var element = svg.node()
+            //element.parentNode.removeChild(element);
         }
     }
 

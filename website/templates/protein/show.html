@@ -14,6 +14,9 @@
   {# <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script> #}
   <script src="/static/thirdparty/d3.v3.min.js" charset="utf-8"></script>
 
+  {# MD5 hash generation #}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.7.0/js/md5.min.js"></script>
+
   {# Bootstrap-Table #}
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
   <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
@@ -22,9 +25,14 @@
   <script src="/static/thirdparty/bootstrap-table/tableExport.js"></script>
   <script src="/static/thirdparty/bootstrap-table/bootstrap-table-export.js"></script>
 
+  {# History API for old browsers: https://github.com/devote/HTML5-History-API #}
+  <script src="/static/thirdparty/history.ielte7.min.js"></script>
+
   {# Bootstrap multiselect #}
+  {#
   <script type="text/javascript" src="/static/thirdparty/bootstrap-multiselect/bootstrap-multiselect.js"></script>
   <link rel="stylesheet" href="/static/thirdparty/bootstrap-multiselect/bootstrap-multiselect.css" type="text/css"/>
+  #}
 
   {# Nunjucks templates #}
   {% if is_debug_mode %}
@@ -255,23 +263,16 @@
 
     var needle_plot = null;
     var plot = document.getElementById('plot_area');
+    var form = $($('.widget-form')[0]);
 
     function init_plot(variable_config)
     {
-        if (needle_plot)
-          delete needle_plot;
-
         needle_plot = NeedlePlot();
 
         var params = {
             element: plot,
             sequenceLength: {{ protein.sequence | length }},
             name: '{{ protein.gene.name }}',
-            legends:
-                {
-                    x: null,
-                    y: '{{ value_type }} of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
-                },
             zoom_callback: tracks.setZoom,
             position_callback: tracks.setAAPosition,
             zoomAndMove_callback: tracks.setZoomAndMove,
@@ -312,62 +313,165 @@
 
     function load_data(data)
     {
-      $table_wrapper.html(data.mutation_table);
-      var $table = $('#table');
+        var from_future = history.state && history.state.params.indexOf('=' + data.checksum) !== -1;
+        if (md5(form.serialize()) != data.checksum && !from_future)
+        {
+            console.log('Skipping not actual response');
+            return
+        }
 
-      $('#tracks-box').html(data.tracks);
+        $table_wrapper.html(data.mutation_table);
+        var $table = $('#table');
 
-      tracks.init({
-          box: document.getElementById('tracks-box')
-      });
+        $('#tracks-box').html(data.tracks);
 
-      var max_zoom = tracks.adjustMaxZoom();
+        tracks.init({
+            box: document.getElementById('tracks-box')
+        });
 
-      $table.bootstrapTable();
-      mutation_table.init($table, data.mutations);
+        var max_zoom = tracks.adjustMaxZoom();
 
-      var variable_config = {
-        needle_tooltip: function(mutation) {
-          return nunjucks.render(
-          'needle_tooltip.njk',
-          {
-             mutation: mutation,
-             value_type: data.value_type
-          }
-          )
-        },
-        legends: {
-          x: null,
-          y: data.value_type + ' of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
-        },
-        use_log: data.log_scale,
-        data: {
-          mutations: data.mutations,
-          sites: data.sites
-        },
-        max_zoom: max_zoom
-      };
+        $table.bootstrapTable();
+        mutation_table.init($table, data.mutations);
 
-      var needle_plot = init_plot(variable_config);
+        var variable_config = {
+          needle_tooltip: function(mutation) {
+            return nunjucks.render(
+            'needle_tooltip.njk',
+            {
+               mutation: mutation,
+               value_type: data.value_type
+            }
+            )
+          },
+          legends: {
+            x: null,
+            y: data.value_type + ' of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
+          },
+          use_log: data.log_scale,
+          data: {
+            mutations: data.mutations,
+            sites: data.sites
+          },
+          max_zoom: max_zoom
+        };
 
-      tracks.setNeedlePlotInstance(needle_plot);
+        var needle_plot = init_plot(variable_config);
+
+        tracks.setNeedlePlotInstance(needle_plot);
+
+        var dataset_widgets = $('.dataset-specific');
+        var html = $.parseHTML(data.dataset_specific_widgets);
+
+        function serialize(form_fragment)
+        {
+            return form_fragment.find('input,select').serialize()
+        }
+
+        if(from_future)
+        {
+            form.html(history.state.form);
+            dataset_widgets = $('.dataset-specific');
+        }
+
+        if(serialize(dataset_widgets) != serialize($(html)))
+        {
+            dataset_widgets.html(html)
+        }
+
+        var params = ''
+        if(data.filters_string)
+            params += 'filters=' + data.filters_string
+        history.replaceState(history.state, null, parameterized_url(params))
     }
 
-    function request_data(filters)
+    function parameterized_url(params)
+    {
+        var location = window.location.href;
+        var splitted = location.split('#');
+        var hash = splitted.length > 0 ? splitted[1] : '';
+        location = splitted[0].split('?')[0];
+
+        if (params)
+            location += '?' + params;
+        if (hash)
+            location += '#';
+        return location;
+    }
+
+    var old_params = get_form_params(form);
+
+    function request_data(params, do_not_save)
     {
         var representation_url = "{{ url_for('ProteinView:representation_data', refseq=protein.refseq) }}";
+
+        if (old_params != params && !do_not_save)
+          history.pushState({params: old_params, form: form.html()}, null, parameterized_url(params));
+        else
+          history.replaceState({params: old_params, form: form.html()}, null, parameterized_url(params));
 
         $.ajax({
             url: representation_url,
             type: 'GET',
-            data: {filters: encodeURIComponent(filters)},
+            data: params,
             success: load_data
         })
 
     }
 
-    request_data("{{ filters.url_string() or '' }}");
+    // handle change in history
+    $(window).on('popstate', function(event) {
+        var state = event.originalEvent.state;
+        loading()
+        request_data(state.params, true)
+    })
 
+    function get_form_params(form)
+    {
+
+        var params = form.serialize();
+        var checksum = md5(params);
+
+        if(params)
+            params += '&';
+        else
+            params += '?';
+
+        params += 'checksum=' + checksum;
+        return params
+    }
+
+    function loading()
+    {
+
+        if (needle_plot)
+            needle_plot.destroy();
+
+        $('#protein_spinner').show();
+    }
+
+    function onupdate(sending_form)
+    {
+        if(sending_form[0] != form[0])
+        {
+            console.log('Error: unknown sender form')
+            return
+        }
+
+        loading()
+
+        var params = get_form_params(form);
+
+        request_data(params);
+
+        // TODO: guzik "all" który nie będzie wysyłał a tylko odznaczał?????
+        // TODO: adres URL
+        // TODO clear
+    }
+
+    Widgets.init($('.widgets'), form[0], onupdate)
+
+    onupdate(form);
 
     {% assets "css_protein" %}
         Export.init(
