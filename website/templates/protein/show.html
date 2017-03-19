@@ -298,11 +298,14 @@
 
     $(window).on('resize', function()
         {
-            needle_plot.setSize(
-                $('#tracks-box').width(),
-                null,
-                tracks.adjustMaxZoom()
-            )
+            if(needle_plot)
+            {
+                needle_plot.setSize(
+                    $('#tracks-box').width(),
+                    null,
+                    tracks.adjustMaxZoom()
+                )
+            }
         }
     );
 
@@ -331,7 +334,6 @@
 
         var max_zoom = tracks.adjustMaxZoom();
 
-        $table.bootstrapTable();
         mutation_table.init($table, data.mutations);
 
         var variable_config = {
@@ -395,7 +397,7 @@
         if (params)
             location += '?' + params;
         if (hash)
-            location += '#';
+            location += '#' + hash;
         return location;
     }
 
@@ -422,8 +424,16 @@
     // handle change in history
     $(window).on('popstate', function(event) {
         var state = event.originalEvent.state;
-        loading()
-        request_data(state.params, true)
+        if(state)
+        {
+            loading()
+            request_data(state.params, true)
+        }
+        if(window.location.hash)
+        {
+            var mutation_id = window.location.hash.substring(1);
+            mutation_table.showMutation(mutation_id)
+        }
     })
 
     function get_form_params(form)
@@ -447,6 +457,11 @@
         if (needle_plot)
             needle_plot.destroy();
 
+        // alternatively use some class for table
+        var table = $('#table');
+        if(table)
+            table.bootstrapTable('showLoading');
+
         $('#protein_spinner').show();
     }
 
@@ -464,9 +479,8 @@
 
         request_data(params);
 
-        // TODO: guzik "all" który nie będzie wysyłał a tylko odznaczał?????
-        // TODO: adres URL
-        // TODO clear
+        // TODO "all" button
+        // TODO "clear" button
     }
 
     Widgets.init($('.widgets'), form[0], onupdate)

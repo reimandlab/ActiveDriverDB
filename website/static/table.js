@@ -27,6 +27,35 @@ var MutationTable = function ()
         initializeKinaseTooltips()
     }
 
+    function showMutation(mutation_id)
+    {
+        var data = element.bootstrapTable('getData', false);
+        var index = null;
+        for(var i = 0; i < data.length; i++)
+        {
+            if (data[i]._id === mutation_id)
+            {
+                index = i;
+                break;
+            }
+        }
+        if(index !== null)
+        {
+            var options = element.bootstrapTable('getOptions');
+            var page = Math.floor(index / options.pageSize) + 1;
+            element.bootstrapTable('selectPage', page);
+            var row = getMutationRow(mutation_id);
+
+            if(row)
+            {
+                publicSpace.expandRow(mutation_id);
+                $('html, body').animate({
+                    scrollTop: row.offset().top
+                }, 2500);
+            }
+        }
+    }
+
     var publicSpace = {
         init: function(table_element, mutations_list)
         {
@@ -45,7 +74,8 @@ var MutationTable = function ()
             })
             if(window.location.hash)
             {
-                publicSpace.expandRow(window.location.hash.substring(1))
+                var mutation_id = window.location.hash.substring(1);
+                showMutation(mutation_id)
             }
             initializeTooltips()
         },
@@ -55,7 +85,8 @@ var MutationTable = function ()
                 'expandRow',
                 getMutationRow(mutation_id).data('index')
             )
-        }
+        },
+        showMutation: showMutation
     }
 
     return publicSpace
