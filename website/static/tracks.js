@@ -1,13 +1,15 @@
 var Tracks = function ()
 {
 
-    var minFontSize = 0.1
-    var maxFontSize = 20
+    //var minFontSize = 0.1
+    //var maxFontSize = 20
     var scale = 1.0
     var scrollArea, scalableArea, tracks
     var needle_plot
     var position = 0
     var dispatch = d3.dispatch('zoomAndMove')
+    var first_scale_factor
+    var sequence_elements, baseCharSize
 
     var config = {
         animation: 'swing',
@@ -15,7 +17,7 @@ var Tracks = function ()
         box: null,
         min_zoom: 1,
         max_zoom: 10
-    }
+    };
 
     function configure(new_config)
     {
@@ -44,8 +46,8 @@ var Tracks = function ()
 
     function get_scale_factor()
     {
-        content_width = scalableArea.get(0).scrollWidth
-        width = scalableArea.width()
+        var content_width = scalableArea.get(0).scrollWidth;
+        var width = scalableArea.width();
 
         return width / content_width
     }
@@ -72,14 +74,12 @@ var Tracks = function ()
 
     function _getZoom()
     {
-        first_scale_factor = get_scale_factor()
         return first_scale_factor * scale
     }
 
     function _setZoom(new_zoom, stop_callback)
     {
-        first_scale_factor = get_scale_factor()
-
+        s_area_elem = scalableArea.get(0)
         $({area_scale: scale})
             .animate(
                 {area_scale: new_zoom},
@@ -87,13 +87,13 @@ var Tracks = function ()
                     duration: config.animations_speed,
                     step: function(now)
                     {
-                        scalableArea.css('transform', 'scaleX(' +  first_scale_factor * now + ')')
+                        s_area_elem.style.transform = 'scaleX(' +  first_scale_factor * now + ')'
                     }
                 }
             )
 
         scale = new_zoom
-        config.char_size = getCharSize(sequence)
+        config.char_size = getCharSize()
 
         if(!stop_callback && needle_plot)
         {
@@ -141,21 +141,23 @@ var Tracks = function ()
         scroll(+1)
     }
 
-    function getCharSize(sequence)
+    function computeBaseCharSize()
     {
-        var elements = sequence.children('.elements')
-        elements.wrapInner('<span></span>')
-        var span = elements.children('span')
-        var charSize = span.innerWidth() / config.sequenceLength
-        span.contents().unwrap()
-        return charSize * _getZoom()
+        sequence_elements.wrapInner('<span></span>');
+        var span = sequence_elements.children('span');
+        var charSize = span.innerWidth() / config.sequenceLength;
+        span.contents().unwrap();
+        return charSize;
+    }
+
+    function getCharSize()
+    {
+        return baseCharSize * _getZoom();
     }
 
     function getSequenceLength()
     {
-        var sequence = tracks.find('.sequence')
-        var elements = sequence.children('.elements')
-        var seq = $.trim(elements.text())
+        var seq = $.trim(sequence_elements.text())
         return seq.length
     }
 
@@ -227,9 +229,10 @@ var Tracks = function ()
             scalableArea = tracks.find('.scalable')
 
             sequence = tracks.find('.sequence')
+            sequence_elements = sequence.children('.elements')
 
             config.sequenceLength = getSequenceLength()
-            config.char_size = getCharSize(sequence)
+            config.char_size = getCharSize()
 
             var buttons = box.find('.scroll-left')
             initButtons(buttons, scrollLeft, scrollArea)
@@ -256,6 +259,8 @@ var Tracks = function ()
             {
                 $(controls[j]).show()
             }
+            publicSpace.refreshScaleFactor()
+
             _setZoom(1)
 
             // initialize all popovers on tracks
@@ -300,10 +305,15 @@ var Tracks = function ()
         adjustMaxZoom: function()
         {
             // optimal max zoom is a zoom which allows to zoom in to a normal size of a character
-            config.max_zoom = 1 / get_scale_factor()
+            config.max_zoom = 1 / first_scale_factor
             return config.max_zoom
         },
-        setZoomAndMove: _setZoomAndMove
+        setZoomAndMove: _setZoomAndMove,
+        refreshScaleFactor: function()
+        {
+            first_scale_factor = get_scale_factor()
+            baseCharSize = computeBaseCharSize()
+        }
 
     }
 

@@ -2,7 +2,7 @@ var Tooltip = function()
 {
     var body = d3.select('body').node()
 
-    // internatls
+    // internals
     var element          // currently shown element (or undefined)
     var tooltip          // tooltip d3js selection object
     var tooltip_content  // inner tooltip HTML container
@@ -18,6 +18,7 @@ var Tooltip = function()
 
     // state
     var stuck = false
+    var visible = false
 
     function addEventListener(selection, type, listener)
     {
@@ -148,7 +149,7 @@ var Tooltip = function()
             {
                 // `d` provides data whereas `this` gives the DOM element
                 element = this
-                // rerender template only on if the element has changed
+                // re-render template only on if the element has changed
                 render_template(d)
             }
 
@@ -158,10 +159,11 @@ var Tooltip = function()
                 .duration(50)
                 .style('opacity', 1)
 
+            visible = true
         },
         hide: function(keep_element)
         {
-            if(stuck)
+            if(stuck || !visible)
                 return
 
             tooltip.transition()
@@ -170,6 +172,8 @@ var Tooltip = function()
 
             if(!keep_element)
                 element = null
+
+            visible = false
         },
         stick: function(d)
         {
@@ -188,7 +192,7 @@ var Tooltip = function()
         },
         moveToPointer: function()
         {
-            if(stuck)
+            if(stuck || !visible)
                 return
 
             size = element.getBoundingClientRect()
@@ -200,7 +204,7 @@ var Tooltip = function()
         },
         moveToElement: function()
         {
-            if(!element)
+            if(!element || !visible)
                 return
 
             size = element.getBoundingClientRect()

@@ -298,6 +298,7 @@
 
     $(window).on('resize', function()
         {
+            tracks.refreshScaleFactor()
             if(needle_plot)
             {
                 needle_plot.setSize(
