@@ -1,10 +1,7 @@
 var Tracks = function ()
 {
-
-    //var minFontSize = 0.1
-    //var maxFontSize = 20
     var scale = 1.0
-    var scrollArea, scalableArea, tracks
+    var scrollArea, scalableArea, scalableElem, tracks
     var needle_plot
     var position = 0
     var dispatch = d3.dispatch('zoomAndMove')
@@ -28,7 +25,7 @@ var Tracks = function ()
     function zoom(direction)
     {
         // scale down slower toward 0
-        new_zoom = scale + direction * scale / 15
+        var new_zoom = scale + direction * scale / 15;
 
         if(new_zoom > config.max_zoom)
         {
@@ -79,15 +76,15 @@ var Tracks = function ()
 
     function _setZoom(new_zoom, stop_callback)
     {
-        s_area_elem = scalableArea.get(0)
-        $({area_scale: scale})
+        var styles = scalableElem.style;
+        $({scale: scale})
             .animate(
-                {area_scale: new_zoom},
+                {scale: new_zoom},
                 {
                     duration: config.animations_speed,
                     step: function(now)
                     {
-                        s_area_elem.style.transform = 'scaleX(' +  first_scale_factor * now + ')'
+                        styles.transform = 'scaleX(' +  first_scale_factor * now + ')'
                     }
                 }
             )
@@ -227,6 +224,7 @@ var Tracks = function ()
                 }
             })
             scalableArea = tracks.find('.scalable')
+            scalableElem = scalableArea.get(0)
 
             sequence = tracks.find('.sequence')
             sequence_elements = sequence.children('.elements')
