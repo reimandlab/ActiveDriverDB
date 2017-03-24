@@ -255,7 +255,7 @@ class ProteinView(FlaskView):
             collapse=True
         )
         data['checksum'] = request.args.get('checksum', '')
-        data['filters_string'] = filter_manager.url_string()
+        data['filters_string'] = filter_manager.url_string() or ''
 
         return jsonify(data)
 
