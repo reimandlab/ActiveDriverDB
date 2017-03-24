@@ -1,6 +1,6 @@
 var ShortURL = function()
 {
-    // values in the default config are dummy - just to ilustrate the concept
+    // values in the default config are dummy - just to illustrate the concept
     var config = {
         endpoint_get: '/get_shorthand_for_url_provided_in_get/',
         endpoint_use: '/use_shorthand/<shorthand>'
@@ -85,6 +85,14 @@ var ShortURL = function()
                 function(event){event.stopPropagation()}
             )
 
+        },
+        reset: function()
+        {
+            var btn = $('.short-url-btn');
+            btn.data('shorthand', '');
+
+            var dropdown = btn.parent().find('.dropdown.open .dropdown-toggle')
+            dropdown.dropdown('toggle');
         }
     }
 

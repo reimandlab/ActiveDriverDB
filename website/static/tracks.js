@@ -7,6 +7,7 @@ var Tracks = function ()
     var dispatch = d3.dispatch('zoomAndMove')
     var first_scale_factor
     var sequence_elements, baseCharSize
+    var is_ready = false
 
     var config = {
         animation: 'swing',
@@ -43,7 +44,7 @@ var Tracks = function ()
 
     function get_scale_factor()
     {
-        var content_width = scalableArea.get(0).scrollWidth;
+        var content_width = scalableElem.scrollWidth;
         var width = scalableArea.width();
 
         return width / content_width
@@ -293,6 +294,8 @@ var Tracks = function ()
                 var track_name = $(this).data('track');
                 $('.' + track_name + ' .collapsible').toggleClass('hidden')
             })
+
+            is_ready = true;
         },
         setNeedlePlotInstance: function(instance)
         {
@@ -309,8 +312,12 @@ var Tracks = function ()
         setZoomAndMove: _setZoomAndMove,
         refreshScaleFactor: function()
         {
-            first_scale_factor = get_scale_factor()
-            baseCharSize = computeBaseCharSize()
+            first_scale_factor = get_scale_factor();
+            baseCharSize = computeBaseCharSize();
+        },
+        isReady: function()
+        {
+            return is_ready;
         }
 
     }

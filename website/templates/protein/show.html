@@ -68,7 +68,11 @@
           Sequence View
         </a>
       <li role="presentation">
-        <a href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string()) }}">
+        <a
+          href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string()) }}"
+          class="variable-url"
+          data-url-pattern="{{ url_for('NetworkView:show', refseq=protein.refseq, filters='<filters>') | safe }}"
+        >
           <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
           Network view
         </a>
@@ -250,17 +254,19 @@
   {% endassets %}
   <script type="text/javascript">
 
-    nunjucks.configure('/static/js_templates', {autoescape: true})
+    nunjucks.configure('/static/js_templates', {autoescape: true});
 
-    affix($('#sticky_box'), $('footer'))
+    affix($('#sticky_box'), $('footer'));
 
-    ShortURL().init(
+    short_url = ShortURL();
+    short_url.init(
       "{{ url_for('ShortAddress:get_shorthand_for') }}",
       "{{ url_for('ShortAddress:visit_shorthand', shorthand='<shorthand>', _external=True) }}"
     );
 
     var tracks = Tracks();
 
+    var tracks_box = $('#tracks-box');
     var needle_plot = null;
     var plot = document.getElementById('plot_area');
     var form = $($('.widget-form')[0]);
@@ -276,7 +282,7 @@
             zoom_callback: tracks.setZoom,
             position_callback: tracks.setAAPosition,
             zoomAndMove_callback: tracks.setZoomAndMove,
-            width: $('#tracks-box').width(),
+            width: tracks_box.width(),
             site_tooltip: function(d){
                 return (d.start + 7) + ' ' + d.type
             },
@@ -298,11 +304,12 @@
 
     $(window).on('resize', function()
         {
-            tracks.refreshScaleFactor()
+            if (tracks.isReady())
+                tracks.refreshScaleFactor();
             if(needle_plot)
             {
                 needle_plot.setSize(
-                    $('#tracks-box').width(),
+                    tracks_box.width(),
                     null,
                     tracks.adjustMaxZoom()
                 )
@@ -314,9 +321,11 @@
     var mutation_table = MutationTable();
 
     var $table_wrapper = $('#table-wrapper');
+    var $variable_links = $('.variable-url');
 
     function load_data(data)
     {
+        short_url.reset()
         var from_future = history.state && history.state.params.indexOf('=' + data.checksum) !== -1;
         if (md5(form.serialize()) != data.checksum && !from_future)
         {
@@ -327,10 +336,10 @@
         $table_wrapper.html(data.mutation_table);
         var $table = $('#table');
 
-        $('#tracks-box').html(data.tracks);
+        tracks_box.html(data.tracks);
 
         tracks.init({
-            box: document.getElementById('tracks-box')
+            box: tracks_box.get(0)
         });
 
         var max_zoom = tracks.adjustMaxZoom();
@@ -382,9 +391,19 @@
             dataset_widgets.html(html)
         }
 
-        var params = ''
+        var params = '';
         if(data.filters_string)
-            params += 'filters=' + data.filters_string
+            params += 'filters=' + data.filters_string;
+
+        $variable_links.each(
+            function()
+            {
+                var $a = $(this);
+                var pattern = decodeURIComponent($a.data('url-pattern'));
+                var new_href = pattern.replace('<filters>', data.filters_string);
+                $a.attr('href', new_href);
+            }
+        );
         history.replaceState(history.state, null, parameterized_url(params))
     }
 
