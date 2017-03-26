@@ -125,3 +125,20 @@ function print(string)
     console.log(string)
 }
 
+/**
+ * Simple substitution formatting tool - not such powerful as nunjucks.renderString but very light.
+ * [As slim version of nunjucks is used on production, renderString is not available.]
+ * See: {@link https://github.com/mozilla/nunjucks/issues/163}.
+ * @param {string} template
+ * @param {Object} variables
+ * @returns {string}
+ */
+function format(template, variables)
+{
+    for(var variable in variables)
+    {
+        template = template.replace('{{ ' + variable + ' }}', variables[variable]);
+    }
+    return template;
+}
+

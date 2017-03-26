@@ -92,14 +92,15 @@ class TestProteinView(ViewTest):
         assert response.content_type == 'application/json'
 
         json_response = json.loads(response.data.decode())
-        assert json_response['tracks']
-        assert json_response['mutation_table']
+        representation = json_response['representation']
+        assert representation['tracks']
+        assert representation['mutation_table']
 
         # for default source (cancer) one mutation is expected
-        assert len(json_response['mutations']) == 1
+        assert len(representation['mutations']) == 1
 
         # no sites were given
-        assert len(json_response['sites']) == 0
+        assert len(representation['sites']) == 0
 
     def test_sites(self):
 

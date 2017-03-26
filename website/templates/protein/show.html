@@ -356,7 +356,7 @@
         short_url.reset();
 
         Export.update_title(
-            nunjucks.renderString(
+            format(
                 export_title_pattern,
                 {
                     gene: '{{ protein.gene.name }}',
