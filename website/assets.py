@@ -24,7 +24,7 @@ bundles = {
     ),
     'js_protein_view': Bundle(
         'common.js',
-        'widgets.js',
+        'filters.js',
         'tooltip.js',
         'kinase_tooltip.js',
         'table.js',

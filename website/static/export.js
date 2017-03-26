@@ -30,6 +30,10 @@ var Export = (function ()
             $('.export_print').click(publicSpace.export_print)
 
         },
+        update_title: function(title)
+        {
+            file_name = title
+        },
         export_svg: function()
         {
             if(style_url && styles === undefined)

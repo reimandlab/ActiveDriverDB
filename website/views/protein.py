@@ -249,15 +249,22 @@ class ProteinView(FlaskView):
             'protein/tracks.html',
             tracks=data['tracks']
         )
-        data['dataset_specific_widgets'] = template(
-            'widgets/widget_list.html',
-            widgets=create_dataset_specific_widgets(filter_manager.filters),
-            collapse=True
-        )
-        data['checksum'] = request.args.get('checksum', '')
-        data['filters_string'] = filter_manager.url_string() or ''
 
-        return jsonify(data)
+        response = {
+            'representation': data,
+            'filters': {
+                'query': filter_manager.url_string() or '',
+                'expanded_query': filter_manager.url_string(expanded=True) or '',
+                'checksum': request.args.get('checksum', ''),
+                'dataset_specific_widgets': template(
+                    'widgets/widget_list.html',
+                    widgets=create_dataset_specific_widgets(filter_manager.filters),
+                    collapse=True
+                )
+            }
+        }
+
+        return jsonify(response)
 
     def show(self, refseq):
         """Show a protein by:

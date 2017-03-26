@@ -55,6 +55,6 @@ Affected PTM site{{ 's' if mutation.sites | length > 1 }}:
 
 {% set row_id = mutation.pos + mutation.alt %}
 
-<a href="#{{ row_id }}" onclick="mutation_table.expandRow('{{ row_id }}')">
+<a href="#{{ row_id }}" onclick="mutation_table.showMutation('{{ row_id }}')">
     show in table
 </a>

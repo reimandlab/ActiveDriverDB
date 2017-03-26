@@ -127,7 +127,7 @@
       <div id="sticky_box">
 
         {# Filters #}
-        <form method="GET" class="widget-form">
+        <form method="GET" class="widget-form" id="filters_form">
           {% include 'widgets/filters_box.html' %}
           <input type="hidden" name="fallback" value="True">
         </form>
@@ -269,7 +269,7 @@
     var tracks_box = $('#tracks-box');
     var needle_plot = null;
     var plot = document.getElementById('plot_area');
-    var form = $($('.widget-form')[0]);
+    var spinner = $('#protein_spinner');
 
     function init_plot(variable_config)
     {
@@ -293,7 +293,7 @@
                 'proximal': 'orange',
                 'none': 'darkgray'
             },
-            onload: function(){ $('#protein_spinner').hide() }
+            onload: function(){ spinner.hide() }
         };
 
         update_object(params, variable_config);
@@ -317,24 +317,57 @@
         }
     );
 
-
     var mutation_table = MutationTable();
 
     var $table_wrapper = $('#table-wrapper');
     var $variable_links = $('.variable-url');
 
-    function load_data(data)
+    {% raw %}
+    var export_title_pattern = 'protein_view:{{ gene }}-{{ refseq }}-{{ expanded_filters }}';
+    {% endraw %}
+
+    {% assets "css_protein" %}
+        Export.init(
+            plot,
+            'protein_view:{{ protein.gene.name }}-{{ protein.refseq }}-{{ filters.url_string(expanded=True) }}',
+            '{{ ASSET_URL }}'
+        );
+    {% endassets %}
+
+    /**
+     * Representation of ProteinView as defined in ProteinView:representation_data().
+     * @typedef {RepresentationData} ProteinViewData
+     * @property {string} filters_expanded
+     * @property {html} mutation_table
+     * @property {html} tracks
+     * @property {Object} mutations
+     * @property {Object} sites
+     * @property {string} value_type
+     * @property {boolean} log_scale
+     */
+
+    /**
+     * Callback for AsyncFiltersHandler loading representation from server response.
+     * @param {ProteinViewData} data
+     * @param {FiltersData} filters_data
+     */
+    function load_data(data, filters_data)
     {
-        short_url.reset()
-        var from_future = history.state && history.state.params.indexOf('=' + data.checksum) !== -1;
-        if (md5(form.serialize()) != data.checksum && !from_future)
-        {
-            console.log('Skipping not actual response');
-            return
-        }
+        short_url.reset();
+
+        Export.update_title(
+            nunjucks.renderString(
+                export_title_pattern,
+                {
+                    gene: '{{ protein.gene.name }}',
+                    refseq: '{{ protein.refseq }}',
+                    expanded_filters: filters_data.expanded_query
+                }
+            )
+        );
 
         $table_wrapper.html(data.mutation_table);
-        var $table = $('#table');
+        var $table = $('#mutation_table');
 
         tracks_box.html(data.tracks);
 
@@ -347,53 +380,30 @@
         mutation_table.init($table, data.mutations);
 
         var variable_config = {
-          needle_tooltip: function(mutation) {
-            return nunjucks.render(
-            'needle_tooltip.njk',
-            {
-               mutation: mutation,
-               value_type: data.value_type
-            }
-            )
-          },
-          legends: {
-            x: null,
-            y: data.value_type + ' of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
-          },
-          use_log: data.log_scale,
-          data: {
-            mutations: data.mutations,
-            sites: data.sites
-          },
-          max_zoom: max_zoom
+            needle_tooltip: function(mutation) {
+                return nunjucks.render(
+                    'needle_tooltip.njk',
+                    {
+                        mutation: mutation,
+                        value_type: data.value_type
+                    }
+                )
+            },
+            legends: {
+                x: null,
+                y: data.value_type + ' of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
+            },
+            use_log: data.log_scale,
+            data: {
+                mutations: data.mutations,
+                sites: data.sites
+            },
+            max_zoom: max_zoom
         };
 
         var needle_plot = init_plot(variable_config);
 
         tracks.setNeedlePlotInstance(needle_plot);
-
-        var dataset_widgets = $('.dataset-specific');
-        var html = $.parseHTML(data.dataset_specific_widgets);
-
-        function serialize(form_fragment)
-        {
-            return form_fragment.find('input,select').serialize()
-        }
-
-        if(from_future)
-        {
-            form.html(history.state.form);
-            dataset_widgets = $('.dataset-specific');
-        }
-
-        if(serialize(dataset_widgets) != serialize($(html)))
-        {
-            dataset_widgets.html(html)
-        }
-
-        var params = '';
-        if(data.filters_string)
-            params += 'filters=' + data.filters_string;
 
         $variable_links.each(
             function()
@@ -401,7 +411,7 @@
                 var $a = $(this);
 
                 var pattern = decodeURIComponent($a.data('url-pattern'));
-                var new_href = pattern.replace('<filters>', data.filters_string);
+                var new_href = pattern.replace('<filters>', filters_data.query);
 
                 // clean up the url from unused parameters
                 new_href = new_href.replace(/(&|\?)(.*?)=(&|$)/, '');
@@ -409,116 +419,47 @@
                 $a.attr('href', new_href);
             }
         );
-        history.replaceState(history.state, null, parameterized_url(params))
     }
 
-    function parameterized_url(params)
-    {
-        var location = window.location.href;
-        var splitted = location.split('#');
-        var hash = splitted.length > 0 ? splitted[1] : '';
-        location = splitted[0].split('?')[0];
+    var filters_handler = AsyncFiltersHandler();
 
-        if (params)
-            location += '?' + params;
-        if (hash)
-            location += '#' + hash;
-        return location;
-    }
+    filters_handler.init({
+        form: $('#filters_form'),
+        data_handler: load_data,
+        representation_url: "{{ url_for('ProteinView:representation_data', refseq=protein.refseq) }}",
+        on_loading_start: function (){
+            if (needle_plot)
+                needle_plot.destroy();
+            $table_wrapper.addClass('loading');
+            spinner.show();
+        },
+        on_loading_end: function(){
+            $table_wrapper.removeClass('loading');
+            // spinner will be hidden after needle_plot initialization
+        }
+    });
 
-    var old_params = get_form_params(form);
+    // force on_update event to load initial representation
+    filters_handler.on_update(true);
 
-    function request_data(params, do_not_save)
-    {
-        var representation_url = "{{ url_for('ProteinView:representation_data', refseq=protein.refseq) }}";
-
-        if (old_params != params && !do_not_save)
-          history.pushState({params: old_params, form: form.html()}, null, parameterized_url(params));
-        else
-          history.replaceState({params: old_params, form: form.html()}, null, parameterized_url(params));
-
-        $.ajax({
-            url: representation_url,
-            type: 'GET',
-            data: params,
-            success: load_data
-        })
-
-    }
+    var state_handlers = {
+        filters: filters_handler
+    };
 
     // handle change in history
     $(window).on('popstate', function(event) {
         var state = event.originalEvent.state;
         if(state)
         {
-            loading()
-            request_data(state.params, true)
+            var handler = state_handlers[state.handler];
+            handler.apply(state.filters_query, true, true)
         }
         if(window.location.hash)
         {
             var mutation_id = window.location.hash.substring(1);
             mutation_table.showMutation(mutation_id)
         }
-    })
-
-    function get_form_params(form)
-    {
-
-        var params = form.serialize();
-        var checksum = md5(params);
-
-        if(params)
-            params += '&';
-        else
-            params += '?';
-
-        params += 'checksum=' + checksum;
-        return params
-    }
-
-    function loading()
-    {
-
-        if (needle_plot)
-            needle_plot.destroy();
-
-        // alternatively use some class for table
-        var table = $('#table');
-        if(table)
-            table.bootstrapTable('showLoading');
-
-        $('#protein_spinner').show();
-    }
-
-    function onupdate(sending_form)
-    {
-        if(sending_form[0] != form[0])
-        {
-            console.log('Error: unknown sender form')
-            return
-        }
-
-        loading()
-
-        var params = get_form_params(form);
-
-        request_data(params);
-
-        // TODO "all" button
-        // TODO "clear" button
-    }
-
-    Widgets.init($('.widgets'), form[0], onupdate)
-
-    onupdate(form);
-
-    {% assets "css_protein" %}
-        Export.init(
-            plot,
-            'protein_view:{{ protein.gene.name }}-{{ protein.refseq }}-{{ filters.url_string(expanded=True) }}',
-            '{{ ASSET_URL }}'
-        )
-    {% endassets %}
+    });
   </script>
 
   <script type="text/javascript">
