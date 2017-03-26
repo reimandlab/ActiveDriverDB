@@ -194,8 +194,6 @@ var AsyncFiltersHandler = function()
             history_action = history.replaceState;
         }
 
-        print(filters_query)
-        print(make_query_url(filters_query))
         var state = {filters_query: filters_query, form: form.html(), handler: 'filters'};
         history_action(state, '', make_query_url(filters_query));
 
