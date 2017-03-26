@@ -87,7 +87,14 @@ select.form-control
   box-shadow: none
 
 .filters-panel
-  // position: sticky is not enough supported so I used bootstrap affix, se HTML code
+  // position: sticky is not enough supported so I used bootstrap affix, see HTML code
+  position: relative
+
+  .clear
+    float: right
+    position: absolute
+    top: 2px
+    right: 10px
 
   .panel-body
     padding-bottom: 0

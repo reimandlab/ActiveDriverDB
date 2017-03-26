@@ -625,7 +625,9 @@ class FilterManager:
         else:
             args = request.form
 
-        if args.get('fallback'):
+        if args.get('clear_filters'):
+            filters_list = self._parse_fallback_query({})
+        elif args.get('fallback'):
             filters_list = self._parse_fallback_query(dict(args))
         else:
             filters_list = self._parse_string(
