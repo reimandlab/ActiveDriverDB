@@ -1,0 +1,8 @@
+<select name="{{ widget.target_name }}" id="{{ widget.target_name }}" class="form-control">
+    {% if widget.nullable %}
+        <option value="None" {{ 'selected' if widget.value == None }}>{{ widget.disabled_label }}</option>
+    {% endif %}
+    {% for value, label in widget.items %}
+        <option value="{{ value }}" {{ 'selected' if widget.value == value }}>{{ label }}</option>
+    {% endfor %}
+</select>

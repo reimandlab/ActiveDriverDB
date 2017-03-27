@@ -117,6 +117,7 @@ def create_app(config_filename='config.py', config_override={}):
 
     from website.views.cms import substitute_variables
     from website.views.cms import ContentManagmentSystem
+    from jinja2_pluralize import pluralize
     import json
 
     # csrf adds hooks in before_request to validate tokens, needs app context
@@ -136,5 +137,6 @@ def create_app(config_filename='config.py', config_override={}):
 
     jinja_filters['json'] = json.dumps
     jinja_filters['substitute_allowed_variables'] = substitute_variables
+    jinja_filters['pluralize'] = pluralize
 
     return app

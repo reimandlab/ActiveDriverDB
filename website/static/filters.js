@@ -26,9 +26,6 @@
  * @typedef {Object} RepresentationData
  */
 
-// TODO "all" button
-// TODO "clear" button
-
 
 var AsyncFiltersHandler = function()
 {
@@ -89,6 +86,11 @@ var AsyncFiltersHandler = function()
     /** Callback to update event which will be bound to the form. */
     function on_update(do_not_save)
     {
+        // do not apply filters till all widget blockades are released
+        if(form.find('.block').length !== 0) {
+            return false
+        }
+
         var filters_query = serialize_form(form);
 
         apply(filters_query, do_not_save);
@@ -228,7 +230,7 @@ var AsyncFiltersHandler = function()
             form = config.form;
             form.on(
                 'change',
-                'select, input',
+                'select, input:not(.programmatic)',
                 function() { on_update() }
             );
             old_filters_query = serialize_form(form);

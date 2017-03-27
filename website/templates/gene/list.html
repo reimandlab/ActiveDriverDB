@@ -37,10 +37,9 @@
 
 <div>
   <div id="toolbar" class="gene-widgets">
-    <form method="GET" class="widget-form">
+    <form method="GET" class="widget-form" id="toolbar_form">
       {% with widgets=[widgets.dataset, widgets.ptm_type] %}
-        {% include 'widgets/filters_bar.html' %}
-        <form method="GET" class="widget-form">
+        {% include 'filters/bar.html' %}
       {% endwith %}
       <input type="hidden" name="fallback" value="True">
     </form>
@@ -75,12 +74,12 @@
 
   nunjucks.configure('/static/js_templates', {autoescape: true})
 
-  var $table = $('#table')
+  var $table = $('#table');
 
   function queryParams(params)
   {
-    var site_params = get_url_params()
-    params.filters = site_params.filters
+    var site_params = get_url_params();
+    params.filters = site_params.filters;
     return params
   }
 
@@ -115,7 +114,7 @@
             sortable: true,
             valign: 'middle',
             align: 'center',
-            field: 'muts_cnt',
+            field: 'muts_cnt'
           },
           {
             title: '# PTM mutations',
@@ -144,15 +143,15 @@
       formatLoadingMessage: function ()
       {
         return 'Loading, please wait... <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>'
-      },
-    })
+      }
+    });
     $table.on('click-row.bs.table', function (e, row, $element)
     {
       $table.bootstrapTable(
         'expandRow',
         $element.data('index')
       )
-    })
+    });
     setTimeout(function ()
     {
         $table.bootstrapTable('resetView')
@@ -161,11 +160,11 @@
 
   var isoforms_url = decodeURIComponent(
     '{{ url_for('GeneView:isoforms', gene_name='<gene_name>') }}'
-  )
+  );
 
   function detailFormatter(index, gene_row)
   {
-    var url = isoforms_url.replace('<gene_name>', gene_row.name)
+    var url = isoforms_url.replace('<gene_name>', gene_row.name);
 
     $.ajax({
 			url: url,
@@ -173,18 +172,18 @@
 			async: true,
 			success: function(data)
 			{
-        detail_row = $('tr[data-index=' + index + ']')
+        var detail_row = $('tr[data-index=' + index + ']')
         detail_row = detail_row.next('tr.detail-view')
 
         if(detail_row)
         {
-          html = nunjucks.render(
+          var html = nunjucks.render(
               'gene_isoforms.njk',
               {
                   gene_isoforms: data,
                   gene_name: gene_row.name
               }
-          )
+          );
           detail_row.children('td').html(html)
         }
 			}
@@ -199,22 +198,22 @@
 
   function proteinFormatter(value, row, index)
   {
-    var site_params = get_url_params()
+    var site_params = get_url_params();
     return '<a href="/protein/show/' + value + '?filters=' + site_params.filters + '">protein view</a>'
   }
 
   function networkFormatter(value, row, index)
   {
-    var site_params = get_url_params()
+    var site_params = get_url_params();
     return '<a href="/network/show/' + value + '?filters=' + site_params.filters + '">network view</a>'
   }
 
   $(function ()
   {
       initTable()
-  })
+  });
 
-  Widgets.init($('.widgets'), $('.widget-form')[0])
+  Widgets.init($('#toolbar_form'));
 
 </script>
 

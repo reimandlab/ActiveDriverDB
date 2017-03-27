@@ -1,0 +1,4 @@
+<select name="{{ widget.target_name }}" id="{{ widget.target_name }}" class="form-control">
+    <option value="True" {{ 'selected' if widget.value == True }}>Yes</option>
+    <option value="False" {{ 'selected' if not widget.value }}>No</option>
+</select>

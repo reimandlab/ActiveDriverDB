@@ -1,0 +1,5 @@
+<select name="{{ widget.target_name }}" id="{{ widget.target_name }}" class="form-control">
+    <option value="None">{{ widget.disabled_label }}</option>
+    <option value="True" {{ 'selected' if widget.value == True }}>only</option>
+    <option value="False" {{ 'selected' if widget.value == False }}>without</option>
+</select>

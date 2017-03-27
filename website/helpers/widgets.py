@@ -59,6 +59,11 @@ class Widget:
         return zip(data, self.labels)
 
     @property
+    def all_active(self):
+        """Are all items active?"""
+        return all((quote_if_needed(d) in self.value for d in self.data))
+
+    @property
     def nullable(self):
         return True
 

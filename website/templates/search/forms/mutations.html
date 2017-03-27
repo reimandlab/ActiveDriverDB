@@ -11,7 +11,7 @@
       {% if dataset.owner %}
         by {{ dataset.owner.username }}
       {% else %}
-        anonimously
+        anonymously
       {% endif %}
     </h4>
   {% endif %}
@@ -28,7 +28,7 @@
       <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
     </button>
     {% with widgets=[widgets.is_ptm] %}
-      {% include 'widgets/filters_bar.html' %}
+      {% include 'filters/bar.html' %}
     {% endwith %}
   </div>
   <label>

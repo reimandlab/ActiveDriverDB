@@ -25,87 +25,12 @@
     {% if widget.comparator_widget %}
         {{ render_widget(widget.comparator_widget) }}
     {% endif %}
-    <div class="widget {{ widget.class_name }}">
+    <div class="widget {{ widget.class_name }} {{ widget.template }}">
         <label class="name" for="{{ widget.target_name }}">
             {{ widget.title }}
         </label>
         <div class="value">
-        {% if widget.template == 'binary' %}
-            <select name="{{ widget.target_name }}" id="{{ widget.target_name }}" class="form-control">
-                <option value="True" {{ 'selected' if widget.value == True }}>Yes</option>
-                <option value="False" {{ 'selected' if not widget.value }}>No</option>
-            </select>
-        {% elif widget.template == 'with_without' %}
-            <select name="{{ widget.target_name }}" id="{{ widget.target_name }}" class="form-control">
-                <option value="None">{{ widget.disabled_label }}</option>
-                <option value="True" {{ 'selected' if widget.value == True }}>only</option>
-                <option value="False" {{ 'selected' if widget.value == False }}>without</option>
-            </select>
-        {% elif widget.template == 'select' %}
-          <select name="{{ widget.target_name }}" id="{{ widget.target_name }}" class="form-control">
-              {% if widget.nullable %}
-                <option value="None" {{ 'selected' if widget.value == None }}>{{ widget.disabled_label }}</option>
-              {% endif %}
-              {% for value, label in widget.items %}
-                <option value="{{ value }}" {{ 'selected' if widget.value == value }}>{{ label }}</option>
-              {% endfor %}
-            </select>
-        {% elif widget.template == 'radio' %}
-          <ul class="list-unstyled">
-              {% if widget.nullable %}
-                <li class="radio">
-                  <label {{ 'checked' if widget.value == None }}">
-                    <input type="radio" name="{{ widget.target_name }}" value="None" {{ 'checked' if widget.value == None }}>
-                    {{ widget.disabled_label }}
-                  </label>
-                </li>
-              {% endif %}
-              {% for value, label in widget.items %}
-                <li class="radio">
-                  <label {{ 'checked' if widget.value == value }}">
-                    <input type="radio" name="{{ widget.target_name }}" value="{{ value | safe }}" {{ 'checked' if widget.value == value }}>
-                    {{ label }}
-                  </label>
-                </li>
-              {% endfor %}
-          </ul>
-        {% elif widget.template == 'checkbox' %}
-          <div class="checkbox">
-            <label>
-              <input type="checkbox" name="{{ widget.target_name }}" value="True" id="{{ widget.target_name }}" {{ 'checked' if widget.value }}>
-              {{ widget.label }}
-            </label>
-          </div>
-        {% elif widget.template == 'checkbox_multiple' %}
-          <ul class="list-unstyled">
-            {% for value, label in widget.items %}
-              <li class="checkbox">
-                <label>
-                  <input type="checkbox" name="{{ widget.target_name }}" value="{{ value | safe}}" id="{{ widget.target_name }}" {{ 'checked' if widget.value and value in widget.value }}>
-                  {{ label }}
-                </label>
-              </li>
-            {% endfor %}
-          </ul>
-        {% elif widget.template == 'select_multiple' %}
-          <select
-            name="{{ widget.target_name }}"
-            id="{{ widget.target_name }}"
-            class="form-control multiselect"
-            multiple="multiple"
-            data-all-selected-text="{{ widget.all_selected_label }}"
-            {{ 'required' if not widget.nullable }}
-          >
-              {% if widget.nullable %}
-                <option value="None" {{ 'selected' if widget.value == None }}>{{ widget.disabled_label }}</option>
-              {% endif %}
-              {% for value, label in widget.items %}
-                <option value="{{ value }}" {{ 'selected' if widget.value and  value in widget.value }}>{{ label }}</option>
-              {% endfor %}
-            </select>
-        {% else %}
-            Unimplemented widget template: '{{ widget.template }}'
-        {% endif %}
+            {% include 'widgets/' + widget.template + '.html' %}
         </div>
     </div>
     {% endif %}
