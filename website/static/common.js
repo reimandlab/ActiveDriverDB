@@ -78,9 +78,10 @@ function get_url_params()
 function affix(element, bottom_element)
 {
     // fix the width (so it's set in pixels)
-    element.css('position', 'static')
-    element.css('width', '')
-    element.width(element.width())
+    element.css('position', 'static');
+    element.css('width', '');
+    element.width(element.width());
+    element.css('position', '');
 
     element.affix({
         offset: {
@@ -93,11 +94,17 @@ function affix(element, bottom_element)
         }
     })
 
-    var parent = $(element.parent())
-    parent.css('min-height', '')
-    parent.css('min-height', parent.height())
+    var parent = $(element.parent());
 
-    element.css('position', '')
+    function update_min_height()
+    {
+        element.css('position', 'static');
+        parent.css('min-height', '');
+        parent.css('min-height', parent.height())
+        element.css('position', '');
+    }
+    update_min_height();
+    element.on('PotentialAffixChange', update_min_height);
 
     $(window).on(
         'resize', function()
@@ -116,6 +123,7 @@ $('body').on('click', '.list-expand', function(){
         elem.text('less')
     else
         elem.text('more')
+    parent.trigger('PotentialAffixChange');
     return false
 })
 

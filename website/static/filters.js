@@ -134,6 +134,7 @@ var AsyncFiltersHandler = function()
         if(from_future)
         {
             form.html(history.state.form);
+            form.trigger('PotentialAffixChange');
         }
 
         var dataset_widgets = $('.dataset-specific');
@@ -141,7 +142,8 @@ var AsyncFiltersHandler = function()
         // do not replace if it's not needed - so expanded lists stay expanded
         if(serialize_fragment(dataset_widgets) !== serialize_fragment($(html)))
         {
-            dataset_widgets.html(html)
+            dataset_widgets.html(html);
+            dataset_widgets.trigger('PotentialAffixChange');
         }
     }
 
