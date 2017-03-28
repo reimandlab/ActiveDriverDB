@@ -56,7 +56,7 @@ def common_filters(
     populations_1kg = list(The1000GenomesMutation.populations.values())
     populations_esp = list(ExomeSequencingMutation.populations.values())
     significances = list(ClinicalData.significance_codes.keys())
-    disease_names = list(protein.disease_names)
+    disease_names = list(protein.disease_names) if protein else []
 
     return [
         Filter(

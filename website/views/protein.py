@@ -165,7 +165,8 @@ class ProteinView(FlaskView):
 
     def before_request(self, name, *args, **kwargs):
         user_datasets = current_user.datasets_names_by_uri()
-        protein = Protein.query.filter_by(refseq=kwargs['refseq']).first_or_404()
+        refseq = kwargs.get('refseq', None)
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404() if refseq else None
 
         filter_manager = ProteinViewFilters(
             protein,

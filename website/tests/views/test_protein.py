@@ -102,6 +102,14 @@ class TestProteinView(ViewTest):
         # no sites were given
         assert len(representation['sites']) == 0
 
+    def test_browse(self):
+        p = Protein(**test_protein_data())
+        db.session.add(p)
+
+        response = self.client.get('/protein/browse', follow_redirects=True)
+
+        assert response.status_code == 200
+
     def test_sites(self):
 
         p = Protein(**test_protein_data())
