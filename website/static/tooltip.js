@@ -10,6 +10,7 @@ var Tooltip = function()
 
     // configurable
     var viewport
+    var preprocess_data
     var data_url    // from where additional data for tooltip should be fetched
 
     // pointer offsets
@@ -19,6 +20,7 @@ var Tooltip = function()
     // state
     var stuck = false
     var visible = false
+
 
     function addEventListener(selection, type, listener)
     {
@@ -82,25 +84,26 @@ var Tooltip = function()
             .style('top', scrollTop + top + 'px')
     }
 
+
+    /**
+     * Configuration object for Tooltip.
+     * @typedef {Object} Config
+     * @property {string} id - REQUIRED identifier for the tooltips to be used in events binding
+     * @property {function} template - will be called with data as the only argument, in context of bound element
+     * @property {function} preprocess_data - will be called before templating,
+     * basically a hook to modify data given to template function.
+     * It will be called with data as the first argument and
+     * callback to template renderer as the second.
+     * Context of bound element will be provided.
+     * @property {HTMLElement} viewport - element to which the maximal size/position of tooltips
+     should restricted. If not given, defaults to body (so tooltips
+     are always visible on the user's screen).
+     */
+
     var publicSpace = {
-        /*
-        init accepts following config:
-            id:
-                REQUIRED
-                identifier for the tooltips to be used in events binding
-            template:
-                a templating function; it will be called with data as the
-                only argument, in context of bound element.
-            preprocess_data:
-                a function to be called before templating, basically a hook to
-                modify data given to template function. It will be called with
-                data as the first argument and callback to template renderer
-                as the second. Context of bound element will be provided.
-            viewport:
-                DOM element to which the maximal size/position of tooltips
-                should restricted. If not given, defaults to body (so tooltips
-                are always visible on the user's screen).
-        */
+        /** Initialize tooltip class
+         * @param {Config} config
+         */
         init: function(config)
         {
             tooltip = d3.select('body')
@@ -195,7 +198,7 @@ var Tooltip = function()
             if(stuck || !visible)
                 return
 
-            size = element.getBoundingClientRect()
+            var size = element.getBoundingClientRect()
             pointerOffsetX = d3.event.clientX - size.left
             pointerOffsetY = d3.event.clientY - size.top
 
@@ -207,7 +210,7 @@ var Tooltip = function()
             if(!element || !visible)
                 return
 
-            size = element.getBoundingClientRect()
+            var size = element.getBoundingClientRect()
             _move(size.left + pointerOffsetX, size.top + pointerOffsetY)
         },
         bind: function(selection)

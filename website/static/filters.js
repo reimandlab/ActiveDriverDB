@@ -150,7 +150,7 @@ var AsyncFiltersHandler = function()
     /**
      * Update an HTML <a> link, substituting '{{ filters }}' with given
      * filters string and cleaning up resultant URL from unused parameters.
-     * @param {HTML} element - <a> element to be updated; has to contain appropriate 'data-url-pattern'
+     * @param {HTMLElement} element - <a> element to be updated; has to contain appropriate 'data-url-pattern'
      * @param {string} filters_string - query string to be used
      */
     function update_link(element, filters_string)

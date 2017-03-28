@@ -33,7 +33,7 @@ var Network = function ()
     var force
     var links
 
-    var zooom
+    var zoom
 
     var edges = []
     var orbits
@@ -122,7 +122,7 @@ var Network = function ()
     {
         kinases_set = kinases_set ? kinases_set : kinases
 
-        matching_kinases = []
+        var matching_kinases = []
 
         for(var i = 0; i < kinases_set.length; i++)
         {
@@ -137,17 +137,19 @@ var Network = function ()
         return matching_kinases
     }
 
+    /*
     function getKinaseByName(name)
     {
         return getKinasesByName([name])[0]
     }
+    */
 
     function getKinasesInGroups()
     {
         var names = []
         for(var i = 0; i < kinase_groups.length; i++)
         {
-            group = kinase_groups[i]
+            var group = kinase_groups[i]
             Array.prototype.push.apply(names, group.kinases)
         }
         return names
@@ -165,23 +167,12 @@ var Network = function ()
         )
     }
 
-    function removeEdge(source, target, weight)
-    {
-        return edges.pop(
-            {
-                source: source,
-                target: target,
-                weight: weight
-            }
-        )
-    }
-
     function prepareSites(raw_sites, index_shift)
     {
         // If kinase occurs both in a group and bounds to
         // the central protein, duplicate it's node. How?
         // 1. duplicate the data
-        // 2. make the notion in the data and just add two cicrcles
+        // 2. make the notion in the data and just add two circles
         // And currently it is implemented by data duplication
 
         sites = []
@@ -238,7 +229,7 @@ var Network = function ()
         // If kinase occurs both in a group and bounds to
         // the central protein, duplicate it's node. How?
         // 1. duplicate the data
-        // 2. make the notion in the data and just add two cicrcles
+        // 2. make the notion in the data and just add two circles
         // And currently it is implemented by data duplication
 
         kinases = []
@@ -286,7 +277,6 @@ var Network = function ()
 
     function prepareKinaseGroups(index_shift)
     {
-        var kinases_in_groups = getKinasesInGroups()
         for(var i = 0; i < kinase_groups.length; i++)
         {
             var group = kinase_groups[i]
@@ -323,7 +313,7 @@ var Network = function ()
 
     function linkDistance(edge)
     {
-        // if a node wnats to overwrite other bahaviours, let him
+        // if a node wants to overwrite other behaviours, let him
         if(edge.source.link_distance)
         {
             return edge.source.link_distance
@@ -388,7 +378,7 @@ var Network = function ()
     {
         animation_speed = (typeof animation_speed === 'undefined') ? 750 : animation_speed
 
-        area = radius * 2 * 1.2
+        var area = radius * 2 * 1.2
 
         var scale = Math.min(config.width / area, config.height / area)
         var translate = [config.width / 2 - node.x * scale, config.height / 2 - node.y * scale]
@@ -400,7 +390,7 @@ var Network = function ()
 
     function charge(node)
     {
-        // we could disable charge for collapsed nodes completly and instead
+        // we could disable charge for collapsed nodes completely and instead
         // stick these nodes to theirs groups, but this might be inefficient
         return node.collapsed ? -1 : -100
     }
@@ -526,11 +516,11 @@ var Network = function ()
         prepareKinaseGroups(nodes_data.length)
         Array.prototype.push.apply(nodes_data, kinase_groups)
 
-        var elements = kinases.concat(kinase_groups)
+        kinases.concat(kinase_groups)
 
         if(config.show_sites)
         {
-            cloned_kinases = prepareSites(data.sites, nodes_data.length)
+            var cloned_kinases = prepareSites(data.sites, nodes_data.length)
             Array.prototype.push.apply(nodes_data, sites)
             Array.prototype.push.apply(nodes_data, cloned_kinases)
         }
@@ -577,19 +567,19 @@ var Network = function ()
                 if(!site.x)
                     site.x = 0.0001
 
-                tg_alpha = site.y / site.x
-                alpha = Math.atan(tg_alpha)
+                var tg_alpha = site.y / site.x
+                var alpha = Math.atan(tg_alpha)
 
                 // give 1/2 of angle space per interactor
-                var angles_per_actor = 1 * Math.PI / 180
+                var angles_per_actor = Math.PI / 180
 
                 // set starting angle for first interactor
                 var angle = alpha - (site.interactors.length - 1) / 2 * angles_per_actor
 
                 for(var k = 0; k < site.interactors.length; k++)
                 {
-                    x = Math.cos(angle) * link_distance
-                    y = Math.sin(angle) * link_distance
+                    var x = Math.cos(angle) * link_distance
+                    var y = Math.sin(angle) * link_distance
                     var interactor = site.interactors[k]
                     interactor.x = site.x + x
                     interactor.y = site.y + y
@@ -823,7 +813,7 @@ var Network = function ()
             links
                 .filter(kinase_site_with_loss)
                 .classed('loss-prediction', true)
-                // the link will be scaled lineary to the number of mimp loss
+                // the link will be scaled linearly to the number of mimp loss
                 // predictions. ItThis number will be always >= 1 (because we
                 // are working on such filtered subset of links)
                 .style('stroke-width', function(d){
@@ -869,7 +859,7 @@ var Network = function ()
         },
         destroy: function()
         {
-            svg.remove();
+            svg.remove()
         }
     }
 
