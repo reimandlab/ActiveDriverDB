@@ -15,9 +15,11 @@
   {# <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script> #}
   <script src="/static/thirdparty/d3.v3.min.js" charset="utf-8"></script>
 
-  {# Bootstrap multiselect #}
-  <script type="text/javascript" src="/static/thirdparty/bootstrap-multiselect/bootstrap-multiselect.js"></script>
-  <link rel="stylesheet" href="/static/thirdparty/bootstrap-multiselect/bootstrap-multiselect.css" type="text/css"/>
+  {# MD5 hash generation #}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.7.0/js/md5.min.js"></script>
+
+  {# History API for old browsers: https://github.com/devote/HTML5-History-API #}
+  <script src="/static/thirdparty/history.ielte7.min.js"></script>
 
   {# Nunjucks templates #}
   {% if is_debug_mode %}
@@ -48,7 +50,11 @@
   <div class="isoform-page-options">
     <ul class="nav nav-tabs">
       <li role="presentation">
-        <a href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string()) }}">
+        <a
+           href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string()) }}"
+           class="variable-url"
+           data-url-pattern="{{ url_for('ProteinView:show', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
+        >
           <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
           Sequence View
         </a>
@@ -202,37 +208,47 @@
     affix($('#sticky_box'), $('footer'));
 
     var plot = document.getElementById('network_plot');
+    var network;
 
-    Network.init({
-        show_sites: {{ filters.get_value('JavaScript.show_sites') | lower }},
-        clone_by_site: {{ filters.get_value('JavaScript.clone_by_site') | lower }},
-        element: plot,
-        data: "{{ url_for('NetworkView:representation', refseq=protein.refseq, filters=filters.url_string()) }}",
-        radius: 20,
-        ratio: 0.5, /* remember to keep update with style of network */
-        nodeURL: function(node){
-            return '{{ url_for('ProteinView:show', refseq='') }}' + node.protein.refseq
-        },
-        onload: function(){ network_spinner.hide() }
-    });
+    function init_network(variable_config)
+    {
+        network = Network();
 
-    $('.zoom-in').click(Network.zoom_in);
-    $('.zoom-out').click(Network.zoom_out);
-    $('.zoom-fit').click(function(){Network.zoom_fit()});
+        var config = {
+            element: plot,
+            radius: 20,
+            ratio: 0.5, /* remember to keep update with style of network */
+            nodeURL: function(node){
+                return '{{ url_for('ProteinView:show', refseq='') }}' + node.protein.refseq
+            },
+            onload: function(){ network_spinner.hide() }
+        };
+
+        update_object(config, variable_config);
+
+        network.init(config);
+
+        $('.zoom-in').click(network.zoom_in);
+        $('.zoom-out').click(network.zoom_out);
+        $('.zoom-fit').click(function(){network.zoom_fit()});
+    }
 
     var collapse_it = $('.collapse-me');
     collapse_it.find('.panel-heading').click(function()
       {
-        $(this).closest('.panel').find('.panel-body').toggleClass('js-hidden')
+        $(this).closest('.panel').find('.panel-body').toggleClass('js-hidden').trigger('PotentialAffixChange');
       }
     );
 
-    Widgets.init($('#filters_form'));
-
-    ShortURL().init(
+    var short_url = ShortURL();
+    short_url.init(
         "{{ url_for('ShortAddress:get_shorthand_for') }}",
         "{{ url_for('ShortAddress:visit_shorthand', shorthand='<shorthand>', _external=True) }}"
     );
+
+    {% raw %}
+    var export_title_pattern = 'network_view:{{ gene }}-{{ refseq }}-{{ expanded_filters }}';
+    {% endraw %}
 
     {% assets "css_network" %}
     Export.init(
@@ -242,5 +258,79 @@
     );
     {% endassets %}
 
+
+    /**
+     * Representation of NetworkView as defined in NetworkView:representation().
+     * @typedef {RepresentationData} NetworkViewData
+     * @property {Object} network
+     * @property {boolean} clone_by_site
+     * @property {boolean} show_sites
+     */
+
+    /**
+     * Callback for AsyncFiltersHandler loading representation from server response.
+     * @param {NetworkViewData} data
+     * @param {FiltersData} filters_data
+     */
+    function load_data(data, filters_data)
+    {
+
+        short_url.reset();
+
+        Export.update_title(
+            format(
+                export_title_pattern,
+                {
+                    gene: '{{ protein.gene.name }}',
+                    refseq: '{{ protein.refseq }}',
+                    expanded_filters: filters_data.expanded_query
+                }
+            )
+        );
+
+        init_network({
+            data: data.network,
+            show_sites: data.show_sites,
+            clone_by_site: data.clone_by_site
+        })
+    }
+
+    Widgets.init($('#filters_form'), function(){});
+
+    var filters_handler = AsyncFiltersHandler();
+
+    filters_handler.init({
+        form: $('#filters_form'),
+        data_handler: load_data,
+        representation_url: "{{ url_for('NetworkView:representation', refseq=protein.refseq) }}",
+        on_loading_start: function (){
+            if (network)
+                network.destroy();
+            network_spinner.show();
+        },
+        on_loading_end: function(){
+            // spinner will be hidden after network initialization
+            Widgets.init($('#filters_form'), function(){});
+        },
+        links_to_update: $('.variable-url')
+    });
+
+    // force on_update event to load initial representation
+    filters_handler.on_update(true);
+
+    var state_handlers = {
+        filters: filters_handler
+    };
+
+    // handle change in history
+    $(window).on('popstate', function(event) {
+        var state = event.originalEvent.state;
+        if(state)
+        {
+            var handler = state_handlers[state.handler];
+            handler.apply(state.filters_query, true, true)
+        }
+    });
   </script>
+    {{ super() }}
 {% endblock %}

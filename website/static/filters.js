@@ -148,6 +148,25 @@ var AsyncFiltersHandler = function()
     }
 
     /**
+     * Update an HTML <a> link, substituting '{{ filters }}' with given
+     * filters string and cleaning up resultant URL from unused parameters.
+     * @param {HTML} element - <a> element to be updated; has to contain appropriate 'data-url-pattern'
+     * @param {string} filters_string - query string to be used
+     */
+    function update_link(element, filters_string)
+    {
+        var $a = $(element);
+
+        var pattern = decodeURIComponent($a.data('url-pattern')).replace(/\+/g, ' ');
+        var new_href = format(pattern, {filters: filters_string});
+
+        // clean up the url from unused parameters
+        new_href = new_href.replace(/(&|\?)(.*?)=(&|$)/, '');
+
+        $a.attr('href', new_href);
+    }
+
+    /**
      * Handle response from.
      * @param {ServerResponse} data - server response defining current state
      * @param {boolean} from_future - Was the update called on "popstate" History API event?
@@ -170,6 +189,13 @@ var AsyncFiltersHandler = function()
         if(filters_data.query)
         {
             filters_query += 'filters=' + filters_data.query;
+        }
+
+        if(config.links_to_update)
+        {
+            config.links_to_update.each(function(){
+                update_link(this, filters_data.query)
+            });
         }
 
         config.on_loading_end();
@@ -219,6 +245,7 @@ var AsyncFiltersHandler = function()
      * @property {function} on_loading_start
      * @property {function} on_loading_end
      * @property {string} representation_url
+     * @property {jQuery} links_to_update
      */
 
     return {

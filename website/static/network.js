@@ -17,7 +17,7 @@ function clone(object)
     return JSON.parse(JSON.stringify(object))
 }
 
-var Network = (function ()
+var Network = function ()
 {
     // data variables
     var kinases
@@ -112,8 +112,8 @@ var Network = (function ()
 
     function configure(new_config, callback)
     {
-        // Automatical configuration update:
-        update_object(config, new_config)
+        // Automatic configuration update:
+        update_object(config, new_config);
 
         get_remote_if_needed(config, 'data', callback)
     }
@@ -866,8 +866,12 @@ var Network = (function ()
         zoom_fit: function(animation_speed){
             var radius = get_max_radius()
             focusOn(central_node, radius, animation_speed)
+        },
+        destroy: function()
+        {
+            svg.remove();
         }
     }
 
     return publicSpace
-}())
+}

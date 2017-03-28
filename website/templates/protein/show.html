@@ -71,7 +71,7 @@
         <a
           href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string()) }}"
           class="variable-url"
-          data-url-pattern="{{ url_for('NetworkView:show', refseq=protein.refseq, filters='<filters>') | safe }}"
+          data-url-pattern="{{ url_for('NetworkView:show', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
         >
           <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
           Network view
@@ -273,7 +273,7 @@
 
     function init_plot(variable_config)
     {
-        needle_plot = NeedlePlot();
+        var needle_plot = NeedlePlot();
 
         var params = {
             element: plot,
@@ -320,7 +320,6 @@
     var mutation_table = MutationTable();
 
     var $table_wrapper = $('#table-wrapper');
-    var $variable_links = $('.variable-url');
 
     {% raw %}
     var export_title_pattern = 'protein_view:{{ gene }}-{{ refseq }}-{{ expanded_filters }}';
@@ -337,7 +336,6 @@
     /**
      * Representation of ProteinView as defined in ProteinView:representation_data().
      * @typedef {RepresentationData} ProteinViewData
-     * @property {string} filters_expanded
      * @property {html} mutation_table
      * @property {html} tracks
      * @property {Object} mutations
@@ -401,24 +399,9 @@
             max_zoom: max_zoom
         };
 
-        var needle_plot = init_plot(variable_config);
+        needle_plot = init_plot(variable_config);
 
         tracks.setNeedlePlotInstance(needle_plot);
-
-        $variable_links.each(
-            function()
-            {
-                var $a = $(this);
-
-                var pattern = decodeURIComponent($a.data('url-pattern'));
-                var new_href = pattern.replace('<filters>', filters_data.query);
-
-                // clean up the url from unused parameters
-                new_href = new_href.replace(/(&|\?)(.*?)=(&|$)/, '');
-
-                $a.attr('href', new_href);
-            }
-        );
     }
 
     Widgets.init($('#filters_form'), function(){});
@@ -439,7 +422,8 @@
             $table_wrapper.removeClass('loading');
             // spinner will be hidden after needle_plot initialization
             Widgets.init($('#filters_form'), function(){});
-        }
+        },
+        links_to_update: $('.variable-url')
     });
 
     // force on_update event to load initial representation
@@ -464,9 +448,6 @@
         }
     });
 
-  </script>
-
-  <script type="text/javascript">
   </script>
   {{ super() }}
 {% endblock %}

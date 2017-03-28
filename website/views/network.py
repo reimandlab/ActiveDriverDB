@@ -8,7 +8,7 @@ from models import Protein
 from helpers.filters import Filter
 from helpers.filters import FilterManager
 from helpers.widgets import FilterWidget
-from ._global_filters import common_filters
+from ._global_filters import common_filters, filters_data_view
 from ._global_filters import create_widgets
 
 
@@ -252,4 +252,13 @@ class NetworkView(FlaskView):
 
         data = self._prepare_network_repr(protein, filter_manager)
 
-        return jsonify(data)
+        response = {
+            'representation': {
+                'network': data,
+                'clone_by_site': filter_manager.get_value('JavaScript.clone_by_site'),
+                'show_sites': filter_manager.get_value('JavaScript.show_sites'),
+            },
+            'filters': filters_data_view(filter_manager)
+        }
+
+        return jsonify(response)

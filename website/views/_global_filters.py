@@ -10,6 +10,21 @@ from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 
 
+def filters_data_view(filter_manager):
+    from flask import request
+    from flask import render_template
+    return {
+        'query': filter_manager.url_string() or '',
+        'expanded_query': filter_manager.url_string(expanded=True) or '',
+        'checksum': request.args.get('checksum', ''),
+        'dataset_specific_widgets': render_template(
+            'widgets/widget_list.html',
+            widgets=create_dataset_specific_widgets(filter_manager.filters),
+            collapse=True
+        )
+    }
+
+
 def populations_labels(populations):
     return [
         population_name + ' (' + field_name[4:].upper() + ')'

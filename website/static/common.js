@@ -53,6 +53,10 @@ function get_remote_if_needed(new_config, name, callback)
 			}
 		})
     }
+    else
+    {
+        callback()
+    }
 }
 
 

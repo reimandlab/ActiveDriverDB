@@ -53,6 +53,7 @@ bundles = {
     ),
     'js_network_view': Bundle(
         'common.js',
+        'filters.js',
         'widgets.js',
         'orbits.js',
         'tooltip.js',
