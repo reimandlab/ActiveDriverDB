@@ -139,10 +139,8 @@ $('body').on('click', '.list-expand', function(){
 })
 
 /* Just for debug purposes */
-function print(string)
-{
-    console.log(string)
-}
+var print = console.log
+var p = console.log
 
 /**
  * Simple substitution formatting tool - not such powerful as nunjucks.renderString but very light.
