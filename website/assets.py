@@ -57,6 +57,7 @@ bundles = {
         'widgets.js',
         'orbits.js',
         'tooltip.js',
+        'zoom.js',
         'network.js',
         'export.js',
         'short_url.js',

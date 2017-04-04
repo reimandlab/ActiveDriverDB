@@ -67,12 +67,14 @@ var Network = function ()
             name += '\n(' + protein.refseq + ')'
         }
 
+        var pos = zoom.viewport_to_canvas([(config.width - radius) / 2, (config.height - radius) / 2]);
+
         return {
             type: types.central,
             name: name,
             r: radius,
-            x: (config.width - radius) / 2,
-            y: (config.height - radius) / 2,
+            x: pos[0],
+            y: pos[1],
             fixed: true,
             protein: protein
         }
@@ -106,8 +108,8 @@ var Network = function ()
         }),
 
         // Zoom
-        min_zoom: 1/7,   // allow to zoom-out up to seven times
-        max_zoom: 2  // allow to zoom-in up to two times
+        min_zoom: 1/3.5,   // allow to zoom-out up to three and half times
+        max_zoom: 3  // allow to zoom-in up to three times
     }
 
     function configure(new_config, callback)
@@ -284,8 +286,9 @@ var Network = function ()
             group.type = types.group
             group.node_id = i + index_shift
 
-            group.x = Math.random() * config.width
-            group.y = Math.random() * config.height
+            var pos = zoom.viewport_to_canvas([config.width, config.height]);
+            group.x = Math.random() * pos[0]
+            group.y = Math.random() * pos[1]
 
             var group_kinases = getKinasesByName(group.kinases, kinases_grouped)
             assert(group_kinases.length <= group.kinases.length)
@@ -368,24 +371,10 @@ var Network = function ()
 
     }
 
-    function zoomAndMove()
-    {
-        vis.attr('transform', 'translate(' + d3.event.translate + ')scale(' + d3.event.scale + ')')
-        dispatch.networkmove(this)
-    }
-
     function focusOn(node, radius, animation_speed)
     {
-        animation_speed = (typeof animation_speed === 'undefined') ? 750 : animation_speed
-
-        var area = radius * 2 * 1.2
-
-        var scale = Math.min(config.width / area, config.height / area)
-        var translate = [config.width / 2 - node.x * scale, config.height / 2 - node.y * scale]
-
-        svg.transition()
-            .duration(animation_speed)
-            .call(zoom.translate(translate).scale(scale).event)
+        var area = radius * 2
+        zoom.center_on([node.x, node.y], area, animation_speed)
     }
 
     function charge(node)
@@ -422,8 +411,8 @@ var Network = function ()
                     node.y = central_node.y
                     node.link_distance = shift
                     focusOn(
-                        {x: central_node.x + shift / 2 , y: central_node.y},
-                        shift / 2
+                        {x: node.x, y: node.y},
+                        shift / 2.5
                     )
                 }
                 force.start()
@@ -468,7 +457,7 @@ var Network = function ()
     {
         if(config.responsive)
         {
-            var dimensions = svg.node().getBoundingClientRect()
+            var dimensions = $(svg.node()).parent().get(0).getBoundingClientRect()
             config.width = dimensions.width
             config.height = dimensions.height
             config.ratio = dimensions.height / dimensions.width
@@ -476,29 +465,7 @@ var Network = function ()
         else {
             config.height = config.height || config.width * config.ratio
         }
-        svg.attr('viewBox', '0 0 ' + config.width + ' ' + config.height)
-    }
-
-    function set_zoom(new_scale)
-    {
-        var old_scale = zoom.scale()
-        zoom.scale(new_scale)
-
-        // if we exceed limits, new_scale as provided won't be the same as the real, set scale, so here it is measured again
-        new_scale = zoom.scale()
-
-        var translate = zoom.translate()
-        var factor = (old_scale - new_scale)
-
-        zoom.translate(
-            [
-                translate[0] + factor * config.width / 2 ,
-                translate[1] + factor * config.height / 2
-            ]
-        )
-
-        vis.transition().ease('linear').duration(150)
-            .attr('transform', 'translate(' + zoom.translate() + ')scale(' + zoom.scale() + ')')
+        zoom.set_viewport_size(config.width, config.height)
     }
 
     function createNodes(data)
@@ -609,10 +576,17 @@ var Network = function ()
 
     function init()
     {
-            zoom = prepareZoom(config.min_zoom, config.max_zoom, zoomAndMove)
+        svg = prepareSVG(config.element)
 
-            svg = prepareSVG(config.element)
-                .call(zoom)
+        zoom = Zoom()
+        zoom.init({
+            element: svg,
+            min: config.min_zoom,
+            max: config.max_zoom,
+            viewport: svg.node().parentNode,
+            on_move: function(event) { dispatch.networkmove(event) }
+        })
+
 
             // we don't want to close tooltips after panning (which is set to emit
             // stopPropagation on start what allows us to detect end-of-panning events)
@@ -632,7 +606,7 @@ var Network = function ()
                 .gravity(0.05)
                 .distance(100)
                 .charge(charge)
-                .size([config.width, config.height])
+                .size(zoom.viewport_to_canvas([config.width, config.height]))
                 .nodes(nodes_data)
                 .links(edges)
                 .linkDistance(linkDistance)
@@ -659,7 +633,7 @@ var Network = function ()
                         }
                     )
                 },
-                viewport: svg.node()
+                viewport: svg.node().parentElement
             })
 
             nodes = vis.selectAll('.node')
@@ -848,10 +822,10 @@ var Network = function ()
 
         },
         zoom_in: function(){
-            set_zoom(zoom.scale() * 1.25)
+            zoom.set_zoom(zoom.get_zoom() * 1.25)
         },
         zoom_out: function(){
-            set_zoom(zoom.scale() / 1.25)
+            zoom.set_zoom(zoom.get_zoom() / 1.25)
         },
         zoom_fit: function(animation_speed){
             var radius = get_max_radius()
