@@ -1,12 +1,12 @@
-# Visualisation Framework for Genome Mutations
+# ActiveDriverDB
 
-[![Build Status](https://travis-ci.org/reimandlab/Visualisation-Framework-for-Genome-Mutations.svg?branch=master)](https://travis-ci.org/reimandlab/Visualisation-Framework-for-Genome-Mutations) [![Code Climate](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations/badges/gpa.svg)](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations) [![Coverage Status](https://coveralls.io/repos/github/reimandlab/Visualisation-Framework-for-Genome-Mutations/badge.svg?branch=master)](https://coveralls.io/github/reimandlab/Visualisation-Framework-for-Genome-Mutations?branch=master)
+[![Build Status](https://travis-ci.org/reimandlab/ActiveDriverDB.svg?branch=master)](https://travis-ci.org/reimandlab/ActiveDriverDB) [![Code Climate](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations/badges/gpa.svg)](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations) [![Coverage Status](https://coveralls.io/repos/github/reimandlab/Visualisation-Framework-for-Genome-Mutations/badge.svg?branch=master)](https://coveralls.io/github/reimandlab/Visualisation-Framework-for-Genome-Mutations?branch=master)
 
 The project aims to create an interactive visualisation framework for genome mutations in gene and protein networks. The idea is to display information from co-developed database in the form of different interactive "views". Thanks to the possibility of quickly switching between the views, the user will be able to grasp an analysed gene or protein with it's context and interactions from different angles. It will also provide advanced filtering and interactive loading with AJAX requests.
 
 # Licence
 
-The application is Open Source and is licensed under the terms of [GNU Lesser General Public License](/reimandlab/Visualistion-Framework-for-Genome-Mutations/blob/master/GNU Lesser General Public License).
+The application is Open Source and is licensed under the terms of [GNU Lesser General Public License](/reimandlab/ActiveDriverDB/blob/master/GNU Lesser General Public License).
 
 # Development
 

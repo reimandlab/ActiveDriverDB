@@ -49,13 +49,20 @@ function get_remote_if_needed(new_config, name, callback)
 			success: function(data)
 			{
 				new_config[name] = data
-                callback()
+                if(callback)
+                {
+                    callback()
+                }
 			}
 		})
     }
     else
     {
-        callback()
+        if(callback)
+        {
+            callback()
+        }
+
     }
 }
 
