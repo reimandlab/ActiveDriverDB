@@ -43,22 +43,39 @@ class MutationTest(ModelTest):
         for mutation in mutations.values():
             assert mutation.impact_on_ptm(site_filter=site_filter) == 'none'
 
-    def test_find_closest_sites(self):
+    def test_sites(self):
 
-        mutations = {
-            0: Mutation(position=0),
-            1: Mutation(position=5),
-            2: Mutation(position=12)
-        }
+        mutations = [
+            Mutation(position=x)
+            for x in (0, 5, 12, 57)
+        ]
 
         protein = Protein(
-            refseq='NM_00001',
-            mutations=mutations.values(),
-            sites=[Site(position=10), Site(position=14),  Site(position=15)]
+            refseq='NM_00002',
+            mutations=mutations,
+            sites=[
+                Site(position=x)
+                for x in (10, 14, 15, 57)
+            ]
         )
 
         db.session.add(protein)
+        db.session.commit()
 
-        for sites_found_cnt, mutation in mutations.items():
+        # ==test_find_closest_sites==
+
+        # for mutation at position 0 there is no closest site;
+        # for mutation at position 5 there should be 1 closest site
+        expected_closest_sites = dict(zip(mutations, [0, 1, 2, 1]))
+
+        for mutation, expected_sites_cnt in expected_closest_sites.items():
             sites_found = mutation.find_closest_sites()
-            assert len(sites_found) == sites_found_cnt
+            assert len(sites_found) == expected_sites_cnt
+
+        # ==test_get_affected_ptm_sites==
+
+        expected_affected_sites = dict(zip(mutations, [0, 1, 3, 1]))
+
+        for mutation, expected_sites_cnt in expected_affected_sites.items():
+            sites_found = mutation.get_affected_ptm_sites()
+            assert len(sites_found) == expected_sites_cnt

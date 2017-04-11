@@ -4,6 +4,7 @@ from sqlalchemy import and_
 from sqlalchemy import or_
 from sqlalchemy import func
 from sqlalchemy import case
+from sqlalchemy.orm import validates
 from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
 from sqlalchemy.ext.declarative import declared_attr
@@ -12,6 +13,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.associationproxy import association_proxy
 from werkzeug.utils import cached_property
 from database import db
+from exceptions import ValidationError
 from models import Model
 
 
@@ -488,9 +490,29 @@ class Protein(BioModel):
         return len(self.kinases) + len(self.kinase_groups)
 
 
+def default_residue(context):
+    params = context.current_parameters
+
+    protein = params.get('protein')
+    protein_id = params.get('protein_id')
+
+    if not protein and protein_id:
+        protein = Protein.query.get(protein_id)
+
+    position = params.get('position')
+
+    if protein and position:
+        try:
+            return protein.sequence[position]
+        except IndexError:
+            print('Position of PTM possibly exceeds its protein')
+            return
+
+
 class Site(BioModel):
     position = db.Column(db.Integer, index=True)
-    residue = db.Column(db.String(1))
+
+    residue = db.Column(db.String(1), default=default_residue)
     pmid = db.Column(db.Text)
     # type is expected to be a spaceless string, one of following:
     #   phosphorylation acetylation ubiquitination methylation
@@ -508,6 +530,35 @@ class Site(BioModel):
         'KinaseGroup',
         secondary=make_association_table('site.id', 'kinasegroup.id')
     )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.validate_position()
+        self.validate_residue()
+
+    def validate_position(self):
+        position = self.position
+        if self.protein:
+            if position > self.protein.length or position < 0:
+                raise ValidationError(
+                    'Site is placed outside of protein sequence '
+                    '(position: {0}, protein length: {1})'.format(
+                        position, self.protein.length
+                    )
+                )
+
+    def validate_residue(self):
+        residue = self.residue
+        if residue and self.protein and self.position:
+            deduced_residue = self.protein.sequence[self.position]
+            if self.residue != deduced_residue:
+                raise ValidationError(
+                    'Site residue {0} does not match '
+                    'the one from protein sequence ({1})'.format(
+                        residue, deduced_residue
+                    )
+                )
 
     def __repr__(self):
         return '<Site of protein: {0}, at pos: {1}>'.format(
@@ -898,7 +949,7 @@ class Mutation(BioModel):
         pos = self.position
         a = 0
         b = len(sites)
-        sites_affected = []
+        sites_affected = set()
 
         hit = None
 
@@ -907,7 +958,7 @@ class Mutation(BioModel):
             site_pos = sites[pivot].position
             if site_pos - 7 <= pos and pos <= site_pos + 7:
                 hit = pivot
-                sites_affected.append(sites[pivot])
+                sites_affected.add(sites[pivot])
                 break
             if pos > site_pos:
                 a = pivot + 1
@@ -926,16 +977,16 @@ class Mutation(BioModel):
         # go to right from found site, check if there is more overlapping sites
         pivot = hit + 1
         while cond():
-            sites_affected.append(sites[pivot])
+            sites_affected.add(sites[pivot])
             pivot += 1
 
         # and then go to the left
         pivot = hit - 1
         while cond():
-            sites_affected.append(sites[pivot])
+            sites_affected.add(sites[pivot])
             pivot -= 1
 
-        return sites_affected
+        return list(sites_affected)
 
     def impact_on_specific_ptm(self, site):
         if self.position == site.position:

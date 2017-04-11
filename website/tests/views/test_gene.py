@@ -12,7 +12,6 @@ test_gene_data = {
             refseq='NM_000123',
             sequence='TRAN',
         ),
-
     ]
 }
 
