@@ -788,7 +788,7 @@ var Network = function ()
                 .filter(kinase_site_with_loss)
                 .classed('loss-prediction', true)
                 // the link will be scaled linearly to the number of mimp loss
-                // predictions. ItThis number will be always >= 1 (because we
+                // predictions. This number will be always >= 1 (because we
                 // are working on such filtered subset of links)
                 .style('stroke-width', function(d){
                     var count = 0

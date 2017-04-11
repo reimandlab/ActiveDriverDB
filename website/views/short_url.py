@@ -55,6 +55,14 @@ class ShortAddress(FlaskView):
 
     @route('/get_shorthand/')
     def get_shorthand_for(self):
+        """Get or create a shorthand for given address.
+
+        Query parameters:
+            address=<address you wish to have shorthand for>
+
+        Returns:
+            JSON response with a shorthand
+        """
 
         address = request.args.get('address')
         if not address:
