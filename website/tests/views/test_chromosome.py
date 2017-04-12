@@ -1,5 +1,3 @@
-import json
-
 from view_testing import ViewTest
 from models import Mutation
 from models import Protein
@@ -38,7 +36,7 @@ class TestChromosomeView(ViewTest):
         response = self.client.get(query_url)
 
         assert response.status_code == 200
-        assert json.loads(response.data.decode()) == [
+        assert response.json == [
             {
                 'alt': 'V',
                 'gene': 'SomeGene',

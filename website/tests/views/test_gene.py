@@ -1,4 +1,3 @@
-import json
 from view_testing import ViewTest
 from models import Protein, GeneList
 from models import Gene
@@ -58,15 +57,14 @@ class TestGeneView(ViewTest):
         # check the dynamic data
         response = self.client.get('/gene/list_data/TCGA?order=asc')
         assert response.status_code == 200
-        json_response = json.loads(response.data.decode())
 
         gene_list = GeneList.query.filter_by(name='TCGA').one()
 
         # all results retrieved
-        assert json_response['total'] == len(gene_list.entries)
+        assert response.json['total'] == len(gene_list.entries)
 
         # properly sorted by fdr
-        fdrs = [row['fdr'] for row in json_response['rows']]
+        fdrs = [row['fdr'] for row in response.json['rows']]
         assert fdrs == sorted(fdrs)
 
     def test_browse(self):
@@ -88,5 +86,4 @@ class TestGeneView(ViewTest):
         response = self.client.get('/gene/browse_data/')
         assert response.status_code == 200
 
-        json_response = json.loads(response.data.decode())
-        assert json_response['total'] == len(genes)
+        assert response.json['total'] == len(genes)

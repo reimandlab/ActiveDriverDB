@@ -10,7 +10,6 @@ from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
 from models import Site
 from database import db
-import json
 
 
 def test_protein_data():
@@ -91,8 +90,7 @@ class TestProteinView(ViewTest):
         assert b'MART' in response.data
         assert response.content_type == 'application/json'
 
-        json_response = json.loads(response.data.decode())
-        representation = json_response['representation']
+        representation = response.json['representation']
         assert representation['tracks']
         assert representation['mutation_table']
 
@@ -126,12 +124,11 @@ class TestProteinView(ViewTest):
         assert response.status_code == 200
         assert response.content_type == 'application/json'
 
-        json_response = json.loads(response.data.decode())
-        assert len(json_response) == 2
+        assert len(response.json) == 2
 
         phospo_site_repr = None
 
-        for site_repr in json_response:
+        for site_repr in response.json:
             if site_repr['type'] == 'phosphorylation':
                 phospo_site_repr = site_repr
 
@@ -157,7 +154,7 @@ class TestProteinView(ViewTest):
             )
             assert response.status_code == 200
             assert response.content_type == 'application/json'
-            json_response = json.loads(response.data.decode())
+            json_response = response.json
             assert json_response['refseq'] == 'NM_000123'
             assert set(json_response['meta']) == set(expected_meta)
             assert json_response['muts_count'] == 1
