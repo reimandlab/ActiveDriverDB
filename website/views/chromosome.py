@@ -78,8 +78,9 @@ def represent_mutations(mutations, filter_manager):
 
 class ChromosomeView(FlaskView):
 
-    def _make_filters(self):
-        filters = common_filters(default_source=None, source_nullable=False)
+    @staticmethod
+    def _make_filters():
+        filters = common_filters(None, default_source=None, source_nullable=False)
         filter_manager = FilterManager(filters)
         filter_manager.update_from_request(request)
         return filters, filter_manager
@@ -105,4 +106,5 @@ class ChromosomeView(FlaskView):
         return jsonify(parsed_mutations)
 
     def mutations(self, start, end):
+        # TODO
         pass

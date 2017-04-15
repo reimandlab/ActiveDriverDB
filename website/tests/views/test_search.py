@@ -6,7 +6,6 @@ from database import db
 from models import Gene
 from models import Protein
 from models import UsersMutationsDataset
-import json
 
 
 # base on example from specification in version 4.3:
@@ -57,8 +56,7 @@ class TestSearchView(ViewTest):
             follow_redirects=True
         )
         assert response.status_code == 200
-        json_response = json.loads(response.data.decode())
-        assert json_response[0]['name'].startswith('Gene')
+        assert response.json[0]['name'].startswith('Gene')
 
     def test_search_proteins(self):
         from views.search import search_proteins
