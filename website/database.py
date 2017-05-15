@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.sql.expression import func
@@ -134,3 +135,9 @@ def encode_csv(strand, ref, alt, pos, exon, protein_id, is_ptm):
     """
     return strand + ref + alt + ('1' if is_ptm else '0') + ':'.join((
         '%x' % int(pos), exon, '%x' % protein_id))
+
+
+def fast_count(query):
+    return query.session.execute(
+        query.statement.with_only_columns([func.count()]).order_by(None)
+    ).scalar()

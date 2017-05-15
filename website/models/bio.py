@@ -524,11 +524,13 @@ class Site(BioModel):
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     kinases = db.relationship(
         'Kinase',
-        secondary=make_association_table('site.id', 'kinase.id')
+        secondary=make_association_table('site.id', 'kinase.id'),
+        backref='sites'
     )
     kinase_groups = db.relationship(
         'KinaseGroup',
-        secondary=make_association_table('site.id', 'kinasegroup.id')
+        secondary=make_association_table('site.id', 'kinasegroup.id'),
+        backref='sites'
     )
 
     def __init__(self, *args, **kwargs):
