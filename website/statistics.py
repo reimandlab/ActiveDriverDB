@@ -1,6 +1,8 @@
 from database import db
+from database import fast_count
 import models
 from sqlalchemy import and_
+from sqlalchemy import or_
 from flask import current_app
 
 
@@ -19,6 +21,7 @@ class Statistics:
         ).count()
 
     def get_all(self):
+        interactions, kinases_covered, groups_covered, proteins_covered = self.count_interactions()
         return {
             'proteins': self.count(models.Protein),
             'genes': self.count(models.Gene),
@@ -53,13 +56,38 @@ class Statistics:
                 self.count(models.MIMPMutation) +
                 MAPPINGS_COUNT   # self.count_mappings()
             ),
+            'interactions': interactions,
+            'kinases_covered': kinases_covered
         }
 
-    def count_mappings(self):
+    @staticmethod
+    def count_interactions():
+
+        kinases_covered = fast_count(db.session.query(models.Kinase).filter(models.Kinase.sites.any()))
+        kinase_groups_covered = fast_count(db.session.query(models.KinaseGroup).filter(models.KinaseGroup.sites.any()))
+        proteins_covered = len(
+            db.session.query(models.Site.protein_id)
+                .filter(or_(
+                    models.Site.kinases.any(),
+                    models.Site.kinase_groups.any()
+                ))
+                .distinct().
+                all()
+            )
+        all_interactions = (
+            fast_count(db.session.query(models.Site).join(models.Kinase, models.Site.kinases)) +
+            fast_count(db.session.query(models.Site).join(models.KinaseGroup, models.Site.kinase_groups))
+        )
+
+        return all_interactions, kinases_covered, kinase_groups_covered, proteins_covered
+
+    @staticmethod
+    def count_mappings():
         from database import bdb
         return len(bdb)
 
-    def count_muts_in_sites(self):
+    @staticmethod
+    def count_muts_in_sites():
         return models.Mutation.query.filter_by(
             is_confirmed=True,
             is_ptm_distal=True

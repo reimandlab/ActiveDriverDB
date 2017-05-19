@@ -31,10 +31,13 @@ def reset_relational_db(**kwargs):
     name = kwargs.get('bind', 'default')
 
     print('Removing', name, 'database...')
+    engine = db.get_engine(app, name)
+    engine.execute('SET FOREIGN_KEY_CHECKS=0;')
     db.session.commit()
     db.reflect()
     db.session.commit()
     db.drop_all(**kwargs)
+    engine.execute('SET FOREIGN_KEY_CHECKS=1;')
     print('Removing', name, 'database completed.')
 
     print('Recreating', name, 'database...')

@@ -70,3 +70,44 @@ class StatisticsTest(DatabaseTest):
         in_many_sources = statistics.from_many_sources()
 
         assert in_many_sources == 1
+
+    def test_interactions(self):
+
+        from models import Protein, Site, Kinase, KinaseGroup
+
+        p1 = Protein(
+            sites=[
+                Site(),
+                Site(kinases=[Kinase()], kinase_groups=[KinaseGroup()])
+            ]
+        )
+        db.session.add(p1)
+        p2 = Protein(
+            sites=[Site(kinases=[Kinase()])]
+        )
+        db.session.add(p2)
+
+        u_all_interactions = 0
+        u_kinases_covered = set()
+        u_kinase_groups_covered = set()
+        u_proteins_covered = set()
+        for protein in models.Protein.query.all():
+            for site in protein.sites:
+                kinases = site.kinases
+                kinase_groups = site.kinase_groups
+                u_all_interactions += len(kinases) + len(kinase_groups)
+                u_kinases_covered.update(kinases)
+                u_kinase_groups_covered.update(kinase_groups)
+
+                if kinases or kinase_groups:
+                    u_proteins_covered.add(protein)
+
+        from statistics import Statistics
+        statistics = Statistics()
+        interactions = statistics.count_interactions()
+        all_interactions, kinases_covered, kinase_groups_covered, proteins_covered = interactions
+
+        assert all_interactions == u_all_interactions
+        assert kinases_covered == len(u_kinases_covered)
+        assert kinase_groups_covered == len(u_kinase_groups_covered)
+        assert proteins_covered == len(u_proteins_covered)

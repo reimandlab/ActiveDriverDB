@@ -1,18 +1,11 @@
-from flask import request
 from flask import jsonify
-from sqlalchemy import asc
+from flask import request
 from sqlalchemy import and_
+from sqlalchemy import asc
 from sqlalchemy import desc
-from sqlalchemy.ext.associationproxy import AssociationProxy
-from sqlalchemy import func
 from sqlalchemy.exc import StatementError
-from database import db
-
-
-def fast_count(query):
-    return query.session.execute(
-        query.statement.with_only_columns([func.count()]).order_by(None)
-    ).scalar()
+from sqlalchemy.ext.associationproxy import AssociationProxy
+from database import db, fast_count
 
 
 ordering_functions = {
