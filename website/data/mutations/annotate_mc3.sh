@@ -23,7 +23,7 @@ zcat $file | tail -n +2 | cut -f 5,6,7,11,47 > mc3.avinput
 # reannotate all mutations on GRCh37/hg19
 ./annovar/table_annovar.pl mc3.avinput humandb/ -buildver hg19 -out mc3_annotated -remove -protocol refGene -operation g -nastring .
 # add barcodes as comments; keep only those which are nonsynonymous SNVs
-paste <(cat mc3_annotated.hg19_multianno.txt) <(zcat $file  | cut -f 16 | sed '/^Tumor_Sample_Barcode/! s/^/comments: ;/') | awk -F '\t' '$9 ~ /nonsynonymous SNV/' > mc3_muts_annotated.tsv
+paste <(cat mc3_annotated.hg19_multianno.txt) <(zcat $file  | cut -f 16) | awk -F '\t' '$9 ~ /nonsynonymous SNV/' | gzip > mc3_muts_annotated.tsv.gz
 
 rm mc3.avinput
 
