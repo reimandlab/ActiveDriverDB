@@ -55,13 +55,14 @@ echo 'Downloading mutations:'
 mkdir -p mutations
 cd mutations
 
-echo "Please, enter your synapse credentials to download MC3 dataset"
-read -p "Login: " synapse_login
-read -s -p "Password: " synapse_password
-synapse login -u $synapse_login -p $synapse_password
-synapse get syn7824274
-echo "MC3 mutations dataset downloaded"
+#echo "Please, enter your synapse credentials to download MC3 dataset"
+#read -p "Login: " synapse_login
+#read -s -p "Password: " synapse_password
+#synapse login -u $synapse_login -p $synapse_password
+#synapse get syn7824274
+#echo "MC3 mutations dataset downloaded"
 
+wget https://www.dropbox.com/s/lhou9rnwl6lwuwj/mc3.v0.2.8.PUBLIC.maf.gz
 wget https://www.dropbox.com/s/b1c4yqgnznsafqv/TCGA_muts_annotated.txt.gz
 wget https://www.dropbox.com/s/zodasbvinx339tw/ESP6500_muts_annotated.txt.gz
 wget https://www.dropbox.com/s/du2qe1skxwmuep2/clinvar_muts_annotated.txt.gz

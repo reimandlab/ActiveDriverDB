@@ -14,6 +14,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from flask import current_app
 from imports.protein_data import get_proteins
 
+from models import InheritedMutation, CancerMutation
+
 
 def bulk_ORM_insert(model, keys, data):
     for chunk in chunked_list(data):
@@ -157,7 +159,7 @@ class MutationImporter(ABC):
             raise Exception('path is required when no default_path is set')
         return path
 
-    def load(self, path=None, update=False):
+    def load(self, path=None, update=False, **ignored_kwargs):
         """Load, parse and insert mutations from given path.
 
         If update is True, old mutations will be updated and new added.
@@ -298,9 +300,9 @@ class MutationImporter(ABC):
             'gene', 'isoform', 'position',  'wt_residue', 'mut_residue'
         ]
 
-        if self.model_name == 'CancerMutation':
+        if isinstance(self.model, CancerMutation):
             header += ['cancer_type', 'sample_id']
-        elif self.model_name == 'InheritedMutation':
+        elif isinstance(self.model, InheritedMutation):
             header += ['disease']
 
         with open(path, 'w') as f:
@@ -313,7 +315,7 @@ class MutationImporter(ABC):
                 if only_primary_isoforms and not m.protein.is_preferred_isoform:
                     continue
 
-                if self.model_name == 'CancerMutation':
+                if isinstance(self.model, CancerMutation):
                     cancer = mutation.cancer.code
                     s = mutation.samples or ''
                     samples = s.split(',')
@@ -322,7 +324,7 @@ class MutationImporter(ABC):
                         [cancer, sample]
                         for sample in samples
                     ]
-                elif self.model_name == 'InheritedMutation':
+                elif isinstance(self.model, InheritedMutation):
                     dataset_specific = [
                         [d.disease_name]
                         for d in mutation.clin_data
@@ -356,7 +358,7 @@ class MutationImporter(ABC):
     def preparse_mutations(self, line):
         """Preparse mutations from a line of Annovar annotation file.
 
-        Given line should be already splitted by correct separator (usually
+        Given line should be already slitted by correct separator (usually
         tabulator character). The mutations will be extracted from 10th field.
         The function gets first semicolon separated impact-list, and splits
         the list by commas. The redundancy of semicolon separated impact-lists

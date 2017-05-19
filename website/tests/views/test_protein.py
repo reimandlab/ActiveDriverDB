@@ -3,7 +3,7 @@ from models import Protein
 from models import Gene
 from models import Mutation
 from models import Cancer
-from models import CancerMutation
+from models import TCGAMutation
 from models import InheritedMutation
 from models import ClinicalData
 from models import The1000GenomesMutation
@@ -25,12 +25,12 @@ def create_test_mutations():
         Mutation(
             position=1,
             alt='K',
-            meta_cancer=[
-                CancerMutation(
+            meta_TCGA=[
+                TCGAMutation(
                     cancer=Cancer(name='Ovarian', code='OV'),
                     count=1
                 ),
-                CancerMutation(
+                TCGAMutation(
                     cancer=Cancer(name='Breast', code='BRCA'),
                     count=1
                 )
@@ -39,7 +39,7 @@ def create_test_mutations():
         Mutation(
             position=2,
             alt='K',
-            meta_inherited=InheritedMutation(
+            meta_ClinVar=InheritedMutation(
                 clin_data=[
                     ClinicalData(
                         disease_name='Disease X',
@@ -55,7 +55,7 @@ def create_test_mutations():
         Mutation(
             position=3,
             alt='K',
-            meta_1KG=The1000GenomesMutation(
+            meta_1KGenomes=The1000GenomesMutation(
                 maf_afr=0.5,
                 maf_eur=0.2
             )

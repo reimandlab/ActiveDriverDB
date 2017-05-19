@@ -2,7 +2,7 @@ from collections import defaultdict
 from database import db
 from database import get_or_create
 from models import Cancer
-from models import CancerMutation
+from models import TCGAMutation
 from imports.mutations import MutationImporter
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import chunked_list
@@ -12,20 +12,24 @@ from sqlalchemy.orm.exc import NoResultFound
 
 class Importer(MutationImporter):
 
-    model = CancerMutation
+    model = TCGAMutation
     default_path = 'data/mutations/TCGA_muts_annotated.txt.gz'
     header = [
         'Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
         'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'V11'
     ]
 
+    def decode_line(self, line):
+        assert line[10].startswith('comments: ')
+        cancer_name, sample_name, _ = line[10][10:].split(';')
+        return cancer_name, sample_name
+
     def parse(self, path):
 
         mutations = defaultdict(lambda: [0, set()])
 
         def cancer_parser(line):
-            assert line[10].startswith('comments: ')
-            cancer_name, sample_name, _ = line[10][10:].split(';')
+            cancer_name, sample_name = self.decode_line(line)
 
             cancer, created = get_or_create(Cancer, name=cancer_name)
 
@@ -68,7 +72,7 @@ class Importer(MutationImporter):
             db.session.flush()
 
     def update_details(self, mutations):
-        """Unfrotunately mutation_id does not maps 1-1 for CancerMutation, so
+        """Unfortunately mutation_id does not maps 1-1 for CancerMutation, so
         additional field for filter is required - hence use of cancer_id and
         hence cancer_id will not be updated with this method."""
         for mutation, data in mutations.items():

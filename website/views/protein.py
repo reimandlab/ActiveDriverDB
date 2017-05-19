@@ -119,8 +119,7 @@ def prepare_representation_data(protein, filter_manager):
 
     tracks = prepare_tracks(protein, raw_mutations)
 
-    source_column_name = Mutation.source_fields[source]
-    source_model = Mutation.get_source_model(source_column_name)
+    source_model = Mutation.get_source_model(source)
     value_type = source_model.value_type
 
     parsed_mutations = represent_needles(

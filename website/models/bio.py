@@ -10,7 +10,7 @@ from sqlalchemy.sql import select
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.associationproxy import association_proxy, AssociationProxy
 from werkzeug.utils import cached_property
 from database import db
 from exceptions import ValidationError
@@ -510,6 +510,7 @@ def default_residue(context):
 
 
 class Site(BioModel):
+    # Note: this position is 1-based
     position = db.Column(db.Integer, index=True)
 
     residue = db.Column(db.String(1), default=default_residue)
@@ -545,20 +546,24 @@ class Site(BioModel):
             if position > self.protein.length or position < 0:
                 raise ValidationError(
                     'Site is placed outside of protein sequence '
-                    '(position: {0}, protein length: {1})'.format(
-                        position, self.protein.length
+                    '(position: {0}, protein length: {1}) '
+                    'for {2} at position: {3}'.format(
+                        position, self.protein.length,
+                        self.protein.refseq, self.position
                     )
                 )
 
     def validate_residue(self):
         residue = self.residue
         if residue and self.protein and self.position:
-            deduced_residue = self.protein.sequence[self.position]
+            deduced_residue = self.protein.sequence[self.position - 1]
             if self.residue != deduced_residue:
                 raise ValidationError(
                     'Site residue {0} does not match '
-                    'the one from protein sequence ({1})'.format(
-                        residue, deduced_residue
+                    'the one from protein sequence ({1}) '
+                    'for {2} at position: {3}'.format(
+                        residue, deduced_residue,
+                        self.protein.refseq, self.position
                     )
                 )
 
@@ -651,48 +656,42 @@ class Domain(BioModel):
         )
 
 
-def mutation_details_relationship(class_name, use_list=False, **kwargs):
-    return db.relationship(
-        class_name,
-        backref='mutation',
-        uselist=use_list,
-        **kwargs
-    )
-
-
 mutation_site_association = make_association_table('site.id', 'mutation.id')
 
 
-class CancerMetaManager(UserList):
-    name = 'TCGA'
-    value_type = 'count'
+def create_cancer_meta_manager(meta_name):
 
-    def to_json(self, filter=lambda x: x):
-        cancer_occurrences = [
-            datum.to_json()
-            for datum in
-            filter(self.data)
-        ]
+    class CancerMetaManager(UserList):
+        name = meta_name
+        value_type = 'count'
 
-        return {'TCGA metadata': cancer_occurrences}
+        def to_json(self, filter=lambda x: x):
+            cancer_occurrences = [
+                datum.to_json()
+                for datum in
+                filter(self.data)
+            ]
 
-    def summary(self, filter=lambda x: x):
-        return [
-            datum.summary()
-            for datum in self.data
-            # one could use:
-            # datum.summary()
-            # for datum in filter(self.data)
-            # but I think that there is no need for that now
-        ]
+            return {meta_name + 'metadata': cancer_occurrences}
 
-    def get_value(self, filter=lambda x: x):
-        return sum(
-            (
-                data.get_value()
-                for data in filter(self.data)
+        def summary(self, filter=lambda x: x):
+            return [
+                datum.summary()
+                for datum in self.data
+                # one could use:
+                # datum.summary()
+                # for datum in filter(self.data)
+                # but I think that there is no need for that now
+            ]
+
+        def get_value(self, filter=lambda x: x):
+            return sum(
+                (
+                    data.get_value()
+                    for data in filter(self.data)
+                )
             )
-        )
+    return CancerMetaManager
 
 
 class MIMPMetaManager(UserList):
@@ -748,373 +747,10 @@ class MIMPMetaManager(UserList):
         )
 
 
-class Mutation(BioModel):
-    __table_args__ = (
-        db.Index('mutation_index', 'alt', 'protein_id', 'position'),
-        # TODO: is constraint necessary?
-        # db.UniqueConstraint('alt', 'protein_id', 'position')
-    )
-
-    position = db.Column(db.Integer)
-    alt = db.Column(db.String(1))
-    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
-
-    # TODO: there is an error of false negatives for edge muts probably
-    # To speed up results retrieval one can precompute value of
-    # 'is_ptm' property. It does not carry meaningful information
-    # for novel mutations until correctly precomputed (e.g. with
-    # instruction: m.precomputed_is_ptm = m.is_ptm).
-    # You can distinguish if it was precomputed: check if the value
-    # is different than None. Be careful with boolean evaluation!
-    precomputed_is_ptm = db.Column(db.Boolean)
-
-    meta_cancer = mutation_details_relationship(
-        'CancerMutation',
-        use_list=True,
-        collection_class=CancerMetaManager
-    )
-    meta_inherited = mutation_details_relationship('InheritedMutation')
-    meta_ESP6500 = mutation_details_relationship('ExomeSequencingMutation')
-    meta_1KG = mutation_details_relationship('The1000GenomesMutation')
-    meta_user = mutation_details_relationship('UserUploadedMutation')
-
-    meta_MIMP = mutation_details_relationship(
-        'MIMPMutation',
-        use_list=True,
-        collection_class=MIMPMetaManager
-    )
-
-    # one mutation can affect multiple sites and
-    # one site can be affected by multiple mutations
-    # sites = db.relationship(
-    #     'Site',
-    #     secondary=mutation_site_association
-    # )
-
-    source_field_names = (
-        'meta_cancer',
-        'meta_inherited',
-        'meta_ESP6500',
-        'meta_1KG',
-        'meta_user'
-    )
-
-    # source fields are generated once, at the very bottom
-    # of this file; see `create_source_fields`
-    source_fields = OrderedDict()
-
-    types = ('direct', 'network-rewiring', 'proximal', 'distal', 'none')
-
-    populations_1KG = association_proxy(
-        'meta_1KG',
-        'affected_populations'
-    )
-    populations_ESP6500 = association_proxy(
-        'meta_ESP6500',
-        'affected_populations'
-    )
-
-    cancer_code = association_proxy('meta_cancer', 'cancer_code')
-    sig_code = association_proxy('meta_inherited', 'sig_code')
-    disease_name = association_proxy('meta_inherited', 'disease_name')
-
-    # def get_source_name(self, column_name):
-    #     return {v: k for k, v in self.source_fields.items()}.get(
-    #         column_name,
-    #         'other'
-    #     )
-
-    def __repr__(self):
-        return '<Mutation in {0}, at {1} aa, substitution to: {2}>'.format(
-            self.protein.refseq if self.protein else '-',
-            self.position,
-            self.alt
-        )
-
-    @hybrid_property
-    def sources_dict(self):
-        """Return list of names of sources which mention this mutation
-
-        Names of sources are determined by source_fields class property.
-        """
-        sources = {}
-        for source_name, associated_field in self.source_fields.items():
-            field_value = getattr(self, associated_field)
-            if field_value:
-                sources[source_name] = field_value
-        return sources
-
-    @hybrid_property
-    def sources(self):
-        """Return list of names of sources which mention this mutation
-
-        Names of sources are determined by source_fields class property.
-        """
-        sources = []
-        for source_name, associated_field in self.source_fields.items():
-            if getattr(self, associated_field):
-                sources.append(source_name)
-        return sources
-
-    @hybrid_property
-    def confirmed_fields(cls):
-        return [
-            getattr(cls, field_name)
-            for field_name in cls.source_field_names
-            if field_name != 'meta_user'
-        ]
-
-    @hybrid_property
-    def is_confirmed(self):
-        """Mutation is confirmed if there are metadata from one of four studies
-
-        (or experiments). Presence of MIMP metadata does not imply
-        if mutation has been ever studied experimentally before.
-        """
-        return any(self.confirmed_fields)
-
-    @is_confirmed.expression
-    def is_confirmed(cls):
-        """SQL expression for is_confirmed"""
-        return or_(
-            relationship_field.any()
-            if relationship_field.prop.uselist
-            else relationship_field.has()
-            for relationship_field in cls.confirmed_fields
-        )
-
-    # @cached_property
-    # def all_metadata(self):
-    #     return {
-    #         self.get_source_name(key): value.to_json()
-    #         for key, value in self.__dict__.items()
-    #         if key.startswith('meta_') and value
-    #     }
-
-    @property
-    def sites(self):
-        return self.get_affected_ptm_sites()
-
-    @hybrid_method
-    def is_ptm(self, filter_manager=None):
-        """Mutation is PTM related if it may affect PTM site.
-
-        Mutations flanking PTM site in a distance up to 7 residues
-        from a site (called here 'distal') will be included too.
-
-        This method works very similarly to is_ptm_distal property.
-        """
-        sites = self.protein.sites
-        if filter_manager:
-            sites = filter_manager.apply(sites)
-        return self.is_close_to_some_site(7, 7, sites)
-
-    @hybrid_property
-    def ref(self):
-        sequence = self.protein.sequence
-        return sequence[self.position - 1]
-
-    @hybrid_property
-    def is_ptm_direct(self):
-        """True if the mutation is on the same position as some PTM site."""
-        return self.is_close_to_some_site(0, 0)
-
-    @hybrid_property
-    def is_ptm_proximal(self):
-        """Check if the mutation is in close proximity of some PTM site.
-
-        Proximity is defined here as [pos - 3, pos + 3] span,
-        where pos is the position of a PTM site.
-        """
-        return self.is_close_to_some_site(3, 3)
-
-    @hybrid_property
-    def is_ptm_distal(self):
-        """Check if the mutation is distal flanking mutation of some PTM site.
-
-        Distal flank is defined here as [pos - 7, pos + 7] span,
-        where pos is the position of a PTM site.
-        """
-        # if we have precomputed True or False (i.e. it's known
-        # mutations - so we precomputed this) then return this
-        if self.precomputed_is_ptm is not None:
-            return self.precomputed_is_ptm
-        # otherwise it's a novel mutation - let's check proximity
-        return self.is_close_to_some_site(7, 7)
-
-    def get_affected_ptm_sites(self, site_filter=lambda x: x):
-        """Get PTM sites that might be affected by this mutation,
-
-        when taking into account -7 to +7 spans of each PTM site.
-        """
-        sites = site_filter(self.protein.sites)
-        pos = self.position
-        a = 0
-        b = len(sites)
-        sites_affected = set()
-
-        hit = None
-
-        while a != b:
-            pivot = (b - a) // 2 + a
-            site_pos = sites[pivot].position
-            if site_pos - 7 <= pos and pos <= site_pos + 7:
-                hit = pivot
-                sites_affected.add(sites[pivot])
-                break
-            if pos > site_pos:
-                a = pivot + 1
-            else:
-                b = pivot
-        else:
-            return tuple()
-
-        def cond():
-            try:
-                site_pos = sites[pivot].position
-                return site_pos - 7 <= pos and pos <= site_pos + 7
-            except IndexError:
-                return tuple()
-
-        # go to right from found site, check if there is more overlapping sites
-        pivot = hit + 1
-        while cond():
-            sites_affected.add(sites[pivot])
-            pivot += 1
-
-        # and then go to the left
-        pivot = hit - 1
-        while cond():
-            sites_affected.add(sites[pivot])
-            pivot -= 1
-
-        return list(sites_affected)
-
-    def impact_on_specific_ptm(self, site):
-        if self.position == site.position:
-            return 'direct'
-        elif site in self.meta_MIMP.sites:
-            return 'network-rewiring'
-        elif abs(self.position - site.position) < 4:
-            return 'proximal'
-        elif abs(self.position - site.position) < 8:
-            return 'distal'
-        else:
-            return 'none'
-
-    def impact_on_ptm(self, site_filter=lambda x: x):
-        """How intense might be an impact of the mutation on a PTM site.
-
-        It describes impact on the closest PTM site or on a site chosen by
-        MIMP algorithm (so it applies only when 'network-rewiring' is returned)
-        """
-        sites = site_filter(self.protein.sites)
-
-        if self.is_close_to_some_site(0, 0, sites):
-            return 'direct'
-        elif any(site in sites for site in self.meta_MIMP.sites):
-            return 'network-rewiring'
-        elif self.is_close_to_some_site(3, 3, sites):
-            return 'proximal'
-        elif self.is_close_to_some_site(7, 7, sites):
-            return 'distal'
-        return 'none'
-
-    def find_closest_sites(self, distance=7, site_filter=lambda x: x):
-        # TODO: implement site type filter
-        pos = self.position
-
-        sites = Site.query.filter(
-            and_(
-                Site.protein_id == self.protein_id,
-                Site.position.between(pos - distance, pos + distance)
-            )
-        ).order_by(func.abs(Site.position - pos)).limit(2).all()
-
-        if(
-            len(sites) == 2 and
-            abs(sites[0].position - pos) != abs(sites[1].position - pos)
-        ):
-            return sites[:1]
-        else:
-            return sites
-
-    @hybrid_method
-    def is_close_to_some_site(self, left, right, sites=None):
-        """Check if the mutation lies close to any of sites.
-
-        Arguments define span around each site to be checked:
-        (site_pos - left, site_pos + right)
-        site_pos is the position of a site
-
-        Algorithm is based on bisection and an assumption,
-        that sites are sorted by position in the database.
-        """
-        if sites is None:
-            sites = self.protein.sites
-        pos = self.position
-        a = 0
-        b = len(sites)
-        while a != b:
-            p = (b - a) // 2 + a
-            site_pos = sites[p].position
-            if site_pos - left <= pos and pos <= site_pos + right:
-                return True
-            if pos > site_pos:
-                a = p + 1
-            else:
-                b = p
-        return False
-
-    @is_close_to_some_site.expression
-    def is_close_to_some_site(self, left, right):
-        """SQL expression for is_close_to_some_site"""
-        position = self.position
-        q = exists().where(
-            and_(
-                Site.protein_id == self.protein_id,
-                Site.position.between(position - left, position + right)
-            )
-        )
-        return db.session.query(q).scalar()
-
-    @property
-    def short_name(self):
-        return '%s%s%s' % (self.ref, self.position, self.alt)
-
-    @property
-    def name(self):
-        return '%s %s' % (self.protein.gene.name, self.short_name)
-
-    @classmethod
-    def get_source_model(cls, source_column_name):
-        """Given source column name (like meta_cancer) returns
-        model which represents given source / mutations details.
-
-        Example:
-            > get_source_model('meta_cancer')
-            > CancerMutation
-        """
-        field = getattr(cls, source_column_name)
-        return field.property.mapper.class_
-
-    @classmethod
-    def create_source_fields(cls):
-        """Create mapping: readable source name -> column name
-        Source name is derived from (derived from MutationDetails.name).
-
-        Example:
-            OrderedDict([('TCGA', 'meta_cancer'), ('ClinVar', 'meta_inherited')])
-        """
-        source_fields = OrderedDict()
-        for source_field in cls.source_field_names:
-            details_model = cls.get_source_model(source_field)
-            source_fields[details_model.name] = source_field
-        return source_fields
-
-
 class MutationDetails:
     """Base for tables defining detailed metadata for specific mutations"""
+
+    details_manager = None
 
     @declared_attr
     def mutation_id(cls):
@@ -1142,6 +778,11 @@ class MutationDetails:
         raise NotImplementedError
 
     @property
+    def name(self):
+        """Internal name which has to remain unchanged, used in relationships"""
+        raise NotImplementedError
+
+    @property
     def value_type(self):
         """What is the value returned by 'get_value'.
 
@@ -1152,10 +793,12 @@ class MutationDetails:
 
 class UserUploadedMutation(MutationDetails, BioModel):
 
+    name = 'user'
+
+    value_type = 'count'
+
     count = db.Column(db.Integer, default=0)
     query = db.Column(db.Text)
-    name = 'user'
-    value_type = 'count'
 
     def get_value(self, filter=lambda x: x):
         return self.count
@@ -1170,20 +813,24 @@ class UserUploadedMutation(MutationDetails, BioModel):
         return self.query
 
 
-class CancerMutation(MutationDetails, BioModel):
-    """Metadata for cancer mutations from ICGC data portal"""
-    samples = db.Column(db.Text())
-    cancer_id = db.Column(db.Integer, db.ForeignKey('cancer.id'))
-    cancer = db.relationship('Cancer')
-    name = 'TCGA'
-    value_type = 'count'
+class CancerMutation(MutationDetails):
 
+    samples = db.Column(db.Text())
+    value_type = 'count'
     count = db.Column(db.Integer)
+
+    @declared_attr
+    def cancer_id(self):
+        return db.Column(db.Integer, db.ForeignKey('cancer.id'))
+
+    @declared_attr
+    def cancer(self):
+        return db.relationship('Cancer')
 
     def get_value(self, filter=lambda x: x):
         return self.count
 
-    def to_json(self):
+    def to_json(self, filter=None):
         return {
             'Cancer': self.cancer.name,
             'Value': self.count
@@ -1192,7 +839,20 @@ class CancerMutation(MutationDetails, BioModel):
     def summary(self, filter=lambda x: x):
         return self.cancer_code
 
-    cancer_code = association_proxy('cancer', 'code')
+
+class MC3Mutation(CancerMutation, BioModel):
+    """Metadata for cancer mutations from ICGC data portal"""
+    name = 'MC3'
+    details_manager = create_cancer_meta_manager('MC3')
+    mc3_cancer_code = association_proxy('cancer', 'code')
+    cancer_code = mc3_cancer_code
+
+
+class TCGAMutation(CancerMutation, BioModel):
+    name = 'TCGA'
+    details_manager = create_cancer_meta_manager('TCGA')
+    tcga_cancer_code = association_proxy('cancer', 'code')
+    cancer_code = tcga_cancer_code
 
 
 class InheritedMutation(MutationDetails, BioModel):
@@ -1347,6 +1007,7 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
 class The1000GenomesMutation(PopulationMutation, BioModel):
     """Metadata for 1 KG mutation"""
     name = '1KGenomes'
+
     value_type = 'frequency'
 
     maf_eas = db.Column(db.Float)
@@ -1385,6 +1046,11 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
 
 class MIMPMutation(MutationDetails, BioModel):
     """Metadata for MIMP mutation"""
+
+    name = 'MIMP'
+
+    details_manager = MIMPMetaManager
+
     site_id = db.Column(db.Integer, db.ForeignKey('site.id'))
     site = db.relationship('Site')
 
@@ -1413,4 +1079,344 @@ class MIMPMutation(MutationDetails, BioModel):
         return '<MIMPMutation %s>' % self.id
 
 
-Mutation.source_fields = Mutation.create_source_fields()
+def details_proxy(target_class, key):
+    return association_proxy('meta_' + target_class.name, key)
+
+
+def mutation_details_relationship(model, use_list=False, **kwargs):
+    return db.relationship(
+        model,
+        backref='mutation',
+        uselist=use_list,
+        **kwargs
+    )
+
+
+def managed_mutation_details_relationship(model):
+    return mutation_details_relationship(
+        model,
+        use_list=True,
+        collection_class=model.details_manager
+    )
+
+
+class Mutation(BioModel):
+    __table_args__ = (
+        db.Index('mutation_index', 'alt', 'protein_id', 'position'),
+        # TODO: is constraint necessary?
+        # db.UniqueConstraint('alt', 'protein_id', 'position')
+    )
+
+    position = db.Column(db.Integer)
+    alt = db.Column(db.String(1))
+    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
+
+    # TODO: there is an error of false negatives for edge muts probably
+    # To speed up results retrieval one can precompute value of
+    # 'is_ptm' property. It does not carry meaningful information
+    # for novel mutations until correctly precomputed (e.g. with
+    # instruction: m.precomputed_is_ptm = m.is_ptm).
+    # You can distinguish if it was precomputed: check if the value
+    # is different than None. Be careful with boolean evaluation!
+    precomputed_is_ptm = db.Column(db.Boolean)
+
+    types = ('direct', 'network-rewiring', 'proximal', 'distal', 'none')
+
+    source_specific_data = {
+        TCGAMutation,
+        MC3Mutation,
+        InheritedMutation,
+        ExomeSequencingMutation,
+        The1000GenomesMutation,
+        UserUploadedMutation,
+        MIMPMutation
+    }
+
+    source_data_relationships = {
+        'meta_' + model.name: (
+            managed_mutation_details_relationship(model)
+            if model.details_manager else
+            mutation_details_relationship(model)
+        )
+        for model in source_specific_data
+    }
+
+    vars().update(source_data_relationships)
+
+    @classmethod
+    def get_source_model(cls, name):
+        for model in cls.source_specific_data:
+            if model.name == name:
+                return model
+
+    @classmethod
+    def get_relationship(cls, mutation_class, class_relation_map={}):
+        if not class_relation_map:
+            for model in cls.source_specific_data:
+                class_relation_map[model] = getattr(cls, 'meta_' + model.name)
+        return class_relation_map[mutation_class]
+
+    source_fields = OrderedDict(
+        (model.name, 'meta_' + model.name)
+        for model in source_specific_data
+        if model != MIMPMutation
+    )
+
+    populations_1KG = details_proxy(The1000GenomesMutation, 'affected_populations')
+    populations_ESP6500 = details_proxy(ExomeSequencingMutation, 'affected_populations')
+    tcga_cancer_code = details_proxy(TCGAMutation, 'tcga_cancer_code')
+    mc3_cancer_code = details_proxy(MC3Mutation, 'mc3_cancer_code')
+    sig_code = details_proxy(InheritedMutation, 'sig_code')
+    disease_name = details_proxy(InheritedMutation, 'disease_name')
+
+    def __repr__(self):
+        return '<Mutation in {0}, at {1} aa, substitution to: {2}>'.format(
+            self.protein.refseq if self.protein else '-',
+            self.position,
+            self.alt
+        )
+
+    @hybrid_property
+    def sources_dict(self):
+        """Return list of names of sources which mention this mutation
+
+        Names of sources are determined by source_fields class property.
+        """
+        sources = {}
+        for source_name, associated_field in self.source_fields.items():
+            field_value = getattr(self, associated_field)
+            if field_value:
+                sources[source_name] = field_value
+        return sources
+
+    @hybrid_property
+    def sources(self):
+        """Return list of names of sources which mention this mutation
+
+        Names of sources are determined by source_fields class property.
+        """
+        sources = []
+        for source_name, associated_field in self.source_fields.items():
+            if getattr(self, associated_field):
+                sources.append(source_name)
+        return sources
+
+    @hybrid_property
+    def confirmed_fields(cls):
+        return [
+            getattr(cls, field_name)
+            for field_name in cls.source_fields.values()
+            if field_name != 'meta_user'
+        ]
+
+    @hybrid_property
+    def is_confirmed(self):
+        """Mutation is confirmed if there are metadata from one of four studies
+
+        (or experiments). Presence of MIMP metadata does not imply
+        if mutation has been ever studied experimentally before.
+        """
+        return any(self.confirmed_fields)
+
+    @is_confirmed.expression
+    def is_confirmed(cls):
+        """SQL expression for is_confirmed"""
+        return or_(
+            relationship_field.any()
+            if relationship_field.prop.uselist
+            else relationship_field.has()
+            for relationship_field in cls.confirmed_fields
+        )
+
+    @property
+    def sites(self):
+        return self.get_affected_ptm_sites()
+
+    @hybrid_method
+    def is_ptm(self, filter_manager=None):
+        """Mutation is PTM related if it may affect PTM site.
+
+        Mutations flanking PTM site in a distance up to 7 residues
+        from a site (called here 'distal') will be included too.
+
+        This method works very similarly to is_ptm_distal property.
+        """
+        sites = self.protein.sites
+        if filter_manager:
+            sites = filter_manager.apply(sites)
+        return self.is_close_to_some_site(7, 7, sites)
+
+    @hybrid_property
+    def ref(self):
+        sequence = self.protein.sequence
+        return sequence[self.position - 1]
+
+    @hybrid_property
+    def is_ptm_direct(self):
+        """True if the mutation is on the same position as some PTM site."""
+        return self.is_close_to_some_site(0, 0)
+
+    @hybrid_property
+    def is_ptm_proximal(self):
+        """Check if the mutation is in close proximity of some PTM site.
+
+        Proximity is defined here as [pos - 3, pos + 3] span,
+        where pos is the position of a PTM site.
+        """
+        return self.is_close_to_some_site(3, 3)
+
+    @hybrid_property
+    def is_ptm_distal(self):
+        """Check if the mutation is distal flanking mutation of some PTM site.
+
+        Distal flank is defined here as [pos - 7, pos + 7] span,
+        where pos is the position of a PTM site.
+        """
+        # if we have precomputed True or False (i.e. it's known
+        # mutations - so we precomputed this) then return this
+        if self.precomputed_is_ptm is not None:
+            return self.precomputed_is_ptm
+        # otherwise it's a novel mutation - let's check proximity
+        return self.is_close_to_some_site(7, 7)
+
+    def get_affected_ptm_sites(self, site_filter=lambda x: x):
+        """Get PTM sites that might be affected by this mutation,
+
+        when taking into account -7 to +7 spans of each PTM site.
+        """
+        sites = site_filter(self.protein.sites)
+        pos = self.position
+        a = 0
+        b = len(sites)
+        sites_affected = set()
+
+        while a != b:
+            pivot = (b - a) // 2 + a
+            site_pos = sites[pivot].position
+            if site_pos - 7 <= pos <= site_pos + 7:
+                hit = pivot
+                sites_affected.add(sites[pivot])
+                break
+            if pos > site_pos:
+                a = pivot + 1
+            else:
+                b = pivot
+        else:
+            return tuple()
+
+        def cond():
+            try:
+                site_pos = sites[pivot].position
+                return site_pos - 7 <= pos <= site_pos + 7
+            except IndexError:
+                return tuple()
+
+        # go to right from found site, check if there is more overlapping sites
+        pivot = hit + 1
+        while cond():
+            sites_affected.add(sites[pivot])
+            pivot += 1
+
+        # and then go to the left
+        pivot = hit - 1
+        while cond():
+            sites_affected.add(sites[pivot])
+            pivot -= 1
+
+        return list(sites_affected)
+
+    def impact_on_specific_ptm(self, site):
+        if self.position == site.position:
+            return 'direct'
+        elif site in self.meta_MIMP.sites:
+            return 'network-rewiring'
+        elif abs(self.position - site.position) < 4:
+            return 'proximal'
+        elif abs(self.position - site.position) < 8:
+            return 'distal'
+        else:
+            return 'none'
+
+    def impact_on_ptm(self, site_filter=lambda x: x):
+        """How intense might be an impact of the mutation on a PTM site.
+
+        It describes impact on the closest PTM site or on a site chosen by
+        MIMP algorithm (so it applies only when 'network-rewiring' is returned)
+        """
+        sites = site_filter(self.protein.sites)
+
+        if self.is_close_to_some_site(0, 0, sites):
+            return 'direct'
+        elif any(site in sites for site in self.meta_MIMP.sites):
+            return 'network-rewiring'
+        elif self.is_close_to_some_site(3, 3, sites):
+            return 'proximal'
+        elif self.is_close_to_some_site(7, 7, sites):
+            return 'distal'
+        return 'none'
+
+    def find_closest_sites(self, distance=7, site_filter=lambda x: x):
+        # TODO: implement site type filter
+        pos = self.position
+
+        sites = Site.query.filter(
+            and_(
+                Site.protein_id == self.protein_id,
+                Site.position.between(pos - distance, pos + distance)
+            )
+        ).order_by(func.abs(Site.position - pos)).limit(2).all()
+
+        if(
+                        len(sites) == 2 and
+                        abs(sites[0].position - pos) != abs(sites[1].position - pos)
+        ):
+            return sites[:1]
+        else:
+            return sites
+
+    @hybrid_method
+    def is_close_to_some_site(self, left, right, sites=None):
+        """Check if the mutation lies close to any of sites.
+
+        Arguments define span around each site to be checked:
+        (site_pos - left, site_pos + right)
+        site_pos is the position of a site
+
+        Algorithm is based on bisection and an assumption,
+        that sites are sorted by position in the database.
+        """
+        if sites is None:
+            sites = self.protein.sites
+        pos = self.position
+        a = 0
+        b = len(sites)
+        while a != b:
+            p = (b - a) // 2 + a
+            site_pos = sites[p].position
+            if site_pos - left <= pos <= site_pos + right:
+                return True
+            if pos > site_pos:
+                a = p + 1
+            else:
+                b = p
+        return False
+
+    @is_close_to_some_site.expression
+    def is_close_to_some_site(self, left, right):
+        """SQL expression for is_close_to_some_site"""
+        position = self.position
+        q = exists().where(
+            and_(
+                Site.protein_id == self.protein_id,
+                Site.position.between(position - left, position + right)
+            )
+        )
+        return db.session.query(q).scalar()
+
+    @property
+    def short_name(self):
+        return '%s%s%s' % (self.ref, self.position, self.alt)
+
+    @property
+    def name(self):
+        return '%s %s' % (self.protein.gene.name, self.short_name)

@@ -4,7 +4,7 @@ from models import Gene
 from models import Site
 from models import Kinase
 from models import Mutation
-from models import CancerMutation
+from models import TCGAMutation
 from models import Cancer
 from database import db
 
@@ -49,7 +49,7 @@ class TestNetworkView(ViewTest):
         mutation = Mutation(
             position=1,
             alt='T',
-            meta_cancer=[CancerMutation(
+            meta_TCGA=[TCGAMutation(
                 cancer=Cancer(name='Ovarian', code='OV')
             )]
         )

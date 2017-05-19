@@ -34,11 +34,14 @@ class StatisticsTest(DatabaseTest):
     def test_mutations_count(self):
 
         mutation_models = {
-            'mimp': models.MIMPMutation,
-            'thousand_genomes': models.The1000GenomesMutation,
-            'cancer': models.CancerMutation,
-            'esp': models.ExomeSequencingMutation,
-            'clinvar': models.InheritedMutation
+            model.name: model
+            for model in [
+                models.MIMPMutation,
+                models.The1000GenomesMutation,
+                models.TCGAMutation,
+                models.ExomeSequencingMutation,
+                models.InheritedMutation
+            ]
         }
 
         for name, model in mutation_models.items():
@@ -61,7 +64,7 @@ class StatisticsTest(DatabaseTest):
         # create one mutation which is present in multiple sources
         m = models.Mutation()
         metadata_1 = models.InheritedMutation(mutation=m)
-        metadata_2 = models.CancerMutation(mutation=m)
+        metadata_2 = models.TCGAMutation(mutation=m)
         db.session.add_all([metadata_1, metadata_2])
 
         from statistics import Statistics

@@ -2,7 +2,7 @@ import gzip
 from imports.mutations import MutationImportManager
 from database_testing import DatabaseTest
 from models import Protein
-from models import CancerMutation
+from models import TCGAMutation
 from database import db
 from miscellaneous import make_named_temp_file
 
@@ -65,25 +65,26 @@ class TestImport(DatabaseTest):
         }
 
         with self.app.app_context():
+            source_name = 'tcga'
             # let's pretend that we already have some proteins in our db
             db.session.add_all(proteins.values())
 
             muts_import_manager.perform(
-                'load', proteins, ['cancer'], {'cancer': muts_filename}
+                'load', proteins, [source_name], {source_name: muts_filename}
             )
 
-            cancer_mutations = CancerMutation.query.all()
+            cancer_mutations = TCGAMutation.query.all()
             assert len(cancer_mutations) == 5
 
             first_row_mutation = proteins['NM_006617'].mutations[0]
             assert first_row_mutation.position == 2
             assert first_row_mutation.alt == 'Q'
 
-            tcga_mutation = first_row_mutation.meta_cancer[0]
+            tcga_mutation = first_row_mutation.meta_TCGA[0]
             assert tcga_mutation.samples == 'TCGA-BL-A0C8-01A-11D-A10S-08'
 
             muts_import_manager.perform(
-                'update', proteins, ['cancer'], {'cancer': update_filename}
+                'update', proteins, [source_name], {source_name: update_filename}
             )
 
             # updated correctly?
@@ -100,5 +101,26 @@ class TestImport(DatabaseTest):
             # check correctness:
             assert new_mutation.position == 2
             assert new_mutation.alt == 'K'
-            new_tcga_mutation = first_row_mutation.meta_cancer[0]
+            new_tcga_mutation = first_row_mutation.meta_TCGA[0]
             assert new_tcga_mutation.samples == 'TCGA-BL-A0C8-01A-11D-A10S-09'
+
+
+tss_cancer_map_text = """\
+A1	Breast invasive carcinoma
+A2	Breast invasive carcinoma
+A3	Kidney renal cell carcinoma
+"""
+
+
+def test_tss_cancer_map():
+    from imports.mutations.mc3 import load_tss_cancer_map
+
+    tss_filename = make_named_temp_file(
+        data=tss_cancer_map_text
+    )
+
+    tss_map = load_tss_cancer_map(tss_filename)
+
+    assert type(tss_map) is dict
+    assert tss_map['A1'] == 'Breast invasive carcinoma'
+    assert tss_map['A3'] == 'Kidney renal cell carcinoma'

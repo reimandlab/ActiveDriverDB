@@ -1,4 +1,3 @@
-import csv
 from collections import OrderedDict
 from tqdm import tqdm
 from database import db
@@ -6,7 +5,6 @@ from database import get_or_create
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
-from helpers.parsers import count_lines
 from models import Domain
 from models import Gene
 from models import InterproDomain
@@ -616,7 +614,7 @@ def sites(path='data/site_table.tsv'):
         )
 
         site = Site(
-            position=position,
+            position=int(position),
             residue=residue,
             pmid=pmid,
             protein=proteins[refseq],

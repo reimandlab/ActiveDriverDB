@@ -1,4 +1,5 @@
-from models import CancerMutation
+from models import MC3Mutation
+from models import TCGAMutation
 from models import Cancer
 from models import Mutation
 from models import Site
@@ -8,6 +9,7 @@ from models import ClinicalData
 from database import has_or_any
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
+
 
 
 def filters_data_view(filter_manager):
@@ -95,7 +97,16 @@ def common_filters(
             as_sqlalchemy=True
         ),
         SourceDependentFilter(
-            [Mutation, CancerMutation], 'cancer_code',
+            [Mutation, MC3Mutation], 'mc3_cancer_code',
+            comparators=['in'],
+            choices=cancer_codes,
+            default=cancer_codes, nullable=False,
+            source='MC3',
+            multiple='any',
+            as_sqlalchemy=True
+        ),
+        SourceDependentFilter(
+            [Mutation, TCGAMutation], 'tcga_cancer_code',
             comparators=['in'],
             choices=cancer_codes,
             default=cancer_codes, nullable=False,
@@ -142,7 +153,16 @@ def create_dataset_specific_widgets(filters_by_id):
     return [
         FilterWidget(
             'Cancer type', 'checkbox_multiple',
-            filter=filters_by_id['Mutation.cancer_code'],
+            filter=filters_by_id['Mutation.tcga_cancer_code'],
+            labels=[
+                cancer.name + ' (' + cancer.code + ')'
+                for cancer in cancers
+            ],
+            all_selected_label='All cancer types'
+        ),
+        FilterWidget(
+            'Cancer type', 'checkbox_multiple',
+            filter=filters_by_id['Mutation.mc3_cancer_code'],
             labels=[
                 cancer.name + ' (' + cancer.code + ')'
                 for cancer in cancers

@@ -105,16 +105,24 @@
         <div class="panel-body">
           <h4>Cancer types: <span class="source">(TCGA)</span></h4>
           <div class="clinical-data">
-            {% if mutation.meta_cancer %}
-              {{ mutation.meta_cancer.summary() | join(', ') }}
+            {% if mutation.meta_TCGA %}
+              {{ mutation.meta_TCGA.summary() | join(', ') }}
+            {% else %}
+              <span class="empty">no data</span>
+            {% endif %}
+          </div>
+          <h4>Cancer types: <span class="source">(MC3)</span></h4>
+          <div class="clinical-data">
+            {% if mutation.meta_MC3 %}
+              {{ mutation.meta_MC3.summary() | join(', ') }}
             {% else %}
               <span class="empty">no data</span>
             {% endif %}
           </div>
           <h4>Disease Annotations: <span class="source">(ClinVar)</span></h4>
           <div class="clinical-data">
-            {% if mutation.meta_inherited %}
-              {{ mutation.meta_inherited.summary() | join(', ') }}
+            {% if mutation.meta_ClinVar %}
+              {{ mutation.meta_ClinVar.summary() | join(', ') }}
             {% else %}
               <span class="empty">no data</span>
             {% endif %}
@@ -129,8 +137,8 @@
           </div>
           <h4>Minor Allele Frequency: <span class="source">(1000 Genomes)</span></h4>
           <div class="clinical-data">
-            {% if mutation.meta_1KG %}
-              {{ mutation.meta_1KG.summary() }}
+            {% if mutation.meta_1KGenomes %}
+              {{ mutation.meta_1KGenomes.summary() }}
             {% else %}
               <span class="empty">no data</span>
             {% endif %}

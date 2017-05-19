@@ -96,7 +96,7 @@ def parse_tsv_file(
             if header != file_header:
                 raise ParsingError(
                     'Given file header does not match to expected: '
-                    'given: %s, expected: %s' % (file_header, header)
+                    'expected: %s, found: %s' % (file_header, header)
                 )
         for line in tqdm(f, total=data_lines_count, unit=' lines'):
             line = line.rstrip().split('\t')

@@ -19,8 +19,8 @@ from helpers.commands import command
 from helpers.commands import create_command_subparsers
 from app import create_app
 from exceptions import ValidationError
-from sqlalchemy.exc import IntegrityError
-
+from sqlalchemy import MetaData
+from sqlalchemy.exc import IntegrityError, OperationalError
 
 muts_import_manager = MutationImportManager()
 database_binds = ('bio', 'cms')
@@ -36,7 +36,10 @@ def reset_relational_db(**kwargs):
     db.session.commit()
     db.reflect()
     db.session.commit()
-    db.drop_all(**kwargs)
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    for table in reversed(meta.sorted_tables):
+        engine.execute(table.delete())
     engine.execute('SET FOREIGN_KEY_CHECKS=1;')
     print('Removing', name, 'database completed.')
 
@@ -198,8 +201,9 @@ class ProteinRelated(CommandTarget):
             importer = data_importers[importer_name]
             print('Running {name}:'.format(name=importer_name))
             results = importer()
-            db.session.add_all(results)
-            db.session.commit()
+            if results:
+                db.session.add_all(results)
+                db.session.commit()
 
     @command
     def export(args):
@@ -382,7 +386,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if hasattr(args, 'func'):
-        app = create_app(config_override={'LOAD_STATS': False})
+        try:
+            app = create_app(config_override={'LOAD_STATS': False})
+        except OperationalError as e:
+            if e.orig.args[0] == 1071:
+                print('Please run: ')
+                print('ALTER DATABASE `db_bio` CHARACTER SET utf8;')
+                print('ALTER DATABASE `db_cms` CHARACTER SET utf8;')
+                print('to be able to continue.')
+            else:
+                raise
+
         with app.app_context():
             args.func(args)
         print('Done, all tasks completed.')

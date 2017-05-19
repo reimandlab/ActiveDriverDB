@@ -14,12 +14,12 @@ class SiteTest(ModelTest):
         p = Protein(refseq='NM_007', id=1, sequence='ABCD')
         db.session.add(p)
 
-        # matching residue
-        assert Site(position=1, type='methylation', residue='B', protein=p)
+        # matching residue (note: for sites, positions are 1-based)
+        assert Site(position=2, type='methylation', residue='B', protein=p)
 
         # mismatched residue
         with pytest.raises(ValidationError):
-            Site(position=2, type='methylation', residue='B', protein=p)
+            Site(position=3, type='methylation', residue='B', protein=p)
 
         # no residue and position in range
         assert Site(position=2, protein=p)
