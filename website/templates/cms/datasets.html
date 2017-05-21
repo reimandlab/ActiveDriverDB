@@ -24,7 +24,7 @@
       <th>Queries</th>
       <th>Results</th>
     </tr>
-    {% for dataset in current_user.datasets %}
+    {% for dataset in datasets %}
       <tr>
         <td>
           <a href="{{ url_for('SearchView:user_mutations', uri=dataset.uri) }}">{{ dataset.name }}</a>

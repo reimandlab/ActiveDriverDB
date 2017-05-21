@@ -571,7 +571,13 @@ class ContentManagmentSystem(FlaskView):
 
     @login_required
     def my_datasets(self):
-        return self._template('datasets')
+        from datetime import timedelta
+        datasets = [
+            dataset
+            for dataset in current_user.datasets
+            if dataset.life_expectancy > timedelta(0)
+        ]
+        return self._template('datasets', datasets=datasets)
 
     def logout(self):
         logout_user()
