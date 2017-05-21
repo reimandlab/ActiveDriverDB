@@ -11,7 +11,6 @@ from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 
 
-
 def filters_data_view(filter_manager):
     from flask import request
     from flask import render_template
@@ -67,13 +66,15 @@ def common_filters(
     source_nullable=False,
     custom_datasets_ids=[]
 ):
-    cancer_codes = [cancer.code for cancer in Cancer.query.all()]
+    # all_cancer_codes = [cancer.code for cancer in Cancer.query.all()]
+    cancer_codes_tcga = protein.cancer_codes(TCGAMutation) if protein else []
+    cancer_codes_mc3 = protein.cancer_codes(MC3Mutation) if protein else []
 
     # Python 3.4: cast keys() to list
     populations_1kg = list(The1000GenomesMutation.populations.values())
     populations_esp = list(ExomeSequencingMutation.populations.values())
     significances = list(ClinicalData.significance_codes.keys())
-    disease_names = list(protein.disease_names) if protein else []
+    disease_names = protein.disease_names if protein else []
 
     return [
         Filter(
@@ -99,8 +100,8 @@ def common_filters(
         SourceDependentFilter(
             [Mutation, MC3Mutation], 'mc3_cancer_code',
             comparators=['in'],
-            choices=cancer_codes,
-            default=cancer_codes, nullable=False,
+            choices=cancer_codes_mc3,
+            default=cancer_codes_mc3, nullable=False,
             source='MC3',
             multiple='any',
             as_sqlalchemy=True
@@ -108,8 +109,8 @@ def common_filters(
         SourceDependentFilter(
             [Mutation, TCGAMutation], 'tcga_cancer_code',
             comparators=['in'],
-            choices=cancer_codes,
-            default=cancer_codes, nullable=False,
+            choices=cancer_codes_tcga,
+            default=cancer_codes_tcga, nullable=False,
             source='TCGA',
             multiple='any',
             as_sqlalchemy=True
@@ -154,19 +155,19 @@ def create_dataset_specific_widgets(filters_by_id):
         FilterWidget(
             'Cancer type', 'checkbox_multiple',
             filter=filters_by_id['Mutation.tcga_cancer_code'],
-            labels=[
-                '%s (%s)' % (cancer.name, cancer.code)
+            labels={
+                cancer.code: '%s (%s)' % (cancer.name, cancer.code)
                 for cancer in cancers
-            ],
+            },
             all_selected_label='All cancer types'
         ),
         FilterWidget(
             'Cancer type', 'checkbox_multiple',
             filter=filters_by_id['Mutation.mc3_cancer_code'],
-            labels=[
-                '%s (%s)' % (cancer.name, cancer.code)
+            labels={
+                cancer.code: '%s (%s)' % (cancer.name, cancer.code)
                 for cancer in cancers
-            ],
+            },
             all_selected_label='All cancer types'
         ),
         FilterWidget(

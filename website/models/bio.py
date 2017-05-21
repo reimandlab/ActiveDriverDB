@@ -486,6 +486,16 @@ class Protein(BioModel):
         )
         return [row[0] for row in query.all()]
 
+    def cancer_codes(self, mutation_details_model):
+        query = (
+            db.session.query(Cancer.code).
+                distinct(Cancer.code).
+                join(mutation_details_model).
+                join(Mutation).
+                filter(Mutation.protein == self)
+        )
+        return [row[0] for row in query.all()]
+
     def _calc_interactors_count(self):
         return len(self.kinases) + len(self.kinase_groups)
 

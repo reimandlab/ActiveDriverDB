@@ -20,7 +20,11 @@ class Widget:
                 except for case where no data (choices) are provided.
 
                 If there are less labels than elements, the elements without
-                a label will be skipped during template generation
+                a label will be skipped during template generation.
+
+                If labels are provided as mapping (dictionary), the labels
+                will be mapped to correspond to given data (key=datum, value=label)
+
             target_name: corresponds to name attribute in HTML element
         """
         self.title = title
@@ -30,6 +34,10 @@ class Widget:
             data = []
         self.data = data
         self._value = value
+        if isinstance(labels, dict):
+            labels = [
+                labels[datum] for datum in data
+            ]
         if labels and data and len(labels) > len(data):
             raise ValueError(
                 'Number of labels has to be lower '
