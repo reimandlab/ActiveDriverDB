@@ -8,20 +8,17 @@
     <link rel="stylesheet" href="{{ ASSET_URL }}">
   {% endassets %}
 
-  {# D3.js #}
-  {# <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script> #}
-  <script src="/static/thirdparty/d3.v3.min.js" charset="utf-8"></script>
+  {{ dependency('d3.js') }}
 
   {# Nunjucks templates #}
   {% if is_debug_mode %}
-    <script type="text/javascript" src="/static/thirdparty/nunjucks.js"></script>
+    {{ dependency('nunjucks') }}
   {% else %}
-    <script type="text/javascript" src="/static/thirdparty/nunjucks-slim.min.js"></script>
+    {{ dependency('nunjucks_slim') }}
     <script type="text/javascript" src="/static/js_templates/precompiled/protein.js"></script>
   {% endif %}
 
-  {# Clipboard #}
-  <script type="text/javascript"  src="//cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.5.15/clipboard.min.js"></script>
+  {{ dependency('clipboard.js') }}
 {% endblock %}
 
 

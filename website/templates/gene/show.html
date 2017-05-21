@@ -8,13 +8,11 @@
       <link rel="stylesheet" href="{{ ASSET_URL }}">
   {% endassets %}
 
-  {# Bootstrap-Table #}
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
-  <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
+  {{ dependency('bootstrap_table') }}
+  {{ dependency('bootstrap_table_css') }}
 
-  {# Export extension for jQuery and Bootstrap-Table #}
-  <script src="/static/thirdparty/bootstrap-table/tableExport.js"></script>
-  <script src="/static/thirdparty/bootstrap-table/bootstrap-table-export.js"></script>
+  {{ dependency('table_export') }}
+  {{ dependency('bootstrap_table_export') }}
 {% endblock %}
 
 

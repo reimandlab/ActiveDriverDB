@@ -6,12 +6,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <link rel="stylesheet" href="/static/thirdparty/bootstrap/css/bootstrap.min.css">
+  {{ dependency('bootstrap_css') }}
 
   {# jQuery #}
-  <script src="/static/thirdparty/jquery-1.12.0.min.js"></script>
-  <script type="text/javascript" src="/static/thirdparty/bootstrap/js/bootstrap.min.js"></script>
-  {# <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script> #}
+  {{ dependency('jquery') }}
+  {{ dependency('bootstrap_js') }}
 
 
   {% assets "css_common" %}
@@ -20,9 +19,12 @@
   {% assets "css_print" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}" media="print">
   {% endassets %}
+
   <!--[if lt IE 9]>
-  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    {{ dependency('html5shiv') }}
   <![endif]-->
+  {{ dependency('history_api') }}
+
   <title>{% block title %}{{ website_name }}{% endblock %}</title>
   {% block head %}
   {% endblock %}

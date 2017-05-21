@@ -35,3 +35,4 @@ BDB_GENE_TO_ISOFORM_PATH = 'databases/berkley_hash_refseq.db'
 # quite slow. It is helpful to turn stats generation off to speed up debugging.
 LOAD_STATS = True
 CONTACT_LIST = ['some_maintainer@domain.org', 'other_maintainer@domain.org']
+USE_CONTENT_DELIVERY_NETWORK = True

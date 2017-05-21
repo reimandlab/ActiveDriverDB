@@ -4,13 +4,8 @@
 {% block head %}
   {{ super () }}
 
-  {# jQuery #}
-  <script src="/static/thirdparty/jquery-1.12.0.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-
-  {# Bootstrap-Table #}
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.css">
-  <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.10.1/bootstrap-table.min.js"></script>
+  {{ dependency('bootstrap_table') }}
+  {{ dependency('bootstrap_table_css') }}
 {% endblock %}
 
 

@@ -6,6 +6,7 @@ from database import db
 from database import bdb
 from database import bdb_refseq
 from assets import bundles
+from assets import DependencyManager
 from flask_mail import Mail
 
 login_manager = LoginManager()
@@ -130,6 +131,9 @@ def create_app(config_filename='config.py', config_override={}):
     jinja_globals = app.jinja_env.globals
     jinja_filters = app.jinja_env.filters
 
+    dependency_manager = DependencyManager(app)
+
+    jinja_globals['dependency'] = dependency_manager.get_dependency
     jinja_globals['system_menu'] = ContentManagmentSystem._system_menu
     jinja_globals['system_setting'] = ContentManagmentSystem._system_setting
     jinja_globals['csrf_token'] = csrf.new_csrf_token

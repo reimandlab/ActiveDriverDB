@@ -4,9 +4,11 @@
 {% block head %}
   {{ super () }}
 
-  {# TinyMCE #}
-  <script src="//cdn.tinymce.com/4/tinymce.min.js"></script>
-  {# <script src="/static/thirdparty/tinymce/tinymce.min.js"></script> #}
+  {{ dependency('tinymce') }}
+  {{ dependency('prism') }}
+  {{ dependency('prism_bash') }}
+  {{ dependency('prism_css') }}
+
   {% assets "js_cms_editor" %}
     <script src="{{ ASSET_URL }}"></script>
   {% endassets %}

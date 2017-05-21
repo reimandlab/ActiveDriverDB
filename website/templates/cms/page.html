@@ -5,9 +5,9 @@
   {% assets "css_page" %}
   <link href="{{ ASSET_URL }}" rel="stylesheet" />
   {% endassets %}
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/prism.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/components/prism-bash.min.js"></script>
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/prism/1.6.0/themes/prism.min.css">
+  {{ dependency('prism') }}
+  {{ dependency('prism_bash') }}
+  {{ dependency('prism_css') }}
 {% endblock %}
 
 

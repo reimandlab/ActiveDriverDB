@@ -3,9 +3,9 @@ tinymce.init({
     body_class: 'page-content',
     content_css : [
         '/static/min/page.css',
-        '/static/thirdparty/bootstrap/css/bootstrap.min.css'
+        'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'
     ],
-    height: 160,
+    height: 260,
     browser_spellcheck: true,
     plugins : 'anchor advlist autolink link image lists charmap print preview fullscreen table imagetools textcolor colorpicker searchreplace code codesample autoresize',
     toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | codesample',
