@@ -200,7 +200,7 @@ class MutationImporter(ABC):
                 f.write('\t'.join(headers) + '\n')
                 for refseq, instances in self.broken_seq.items():
                     for instance in instances:
-                        f.write('\t'.join(instance) + '\n')
+                        f.write('\t'.join(map(str, instance)) + '\n')
 
             print(
                 'Detected and skipped mutations with incorrectly mapped '
