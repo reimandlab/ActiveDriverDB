@@ -27,7 +27,7 @@ Affected PTM site{{ 's' if mutation.sites | length > 1 }}:
     {% endif %}
     <ul>
 
-    {% if source == 'TCGA' %}
+    {% if source == 'TCGA' or source == 'MC3' %}
         <li> TOTAL ({{ mutation.value }})
         {% for entry in metadata['TCGA metadata'] | sort(true, false, 'Value') %}
             <li> {{ entry.Cancer }} ({{ entry.Value }})

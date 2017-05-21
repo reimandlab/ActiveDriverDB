@@ -1122,7 +1122,8 @@ class Mutation(BioModel):
 
     types = ('direct', 'network-rewiring', 'proximal', 'distal', 'none')
 
-    source_specific_data = {
+    # order matters (for easier specification of labels for widgets)
+    source_specific_data = [
         TCGAMutation,
         MC3Mutation,
         InheritedMutation,
@@ -1130,7 +1131,7 @@ class Mutation(BioModel):
         The1000GenomesMutation,
         UserUploadedMutation,
         MIMPMutation
-    }
+    ]
 
     source_data_relationships = {
         'meta_' + model.name: (

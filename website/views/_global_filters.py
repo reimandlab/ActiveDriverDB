@@ -155,7 +155,7 @@ def create_dataset_specific_widgets(filters_by_id):
             'Cancer type', 'checkbox_multiple',
             filter=filters_by_id['Mutation.tcga_cancer_code'],
             labels=[
-                cancer.name + ' (' + cancer.code + ')'
+                '%s (%s)' % (cancer.name, cancer.code)
                 for cancer in cancers
             ],
             all_selected_label='All cancer types'
@@ -164,7 +164,7 @@ def create_dataset_specific_widgets(filters_by_id):
             'Cancer type', 'checkbox_multiple',
             filter=filters_by_id['Mutation.mc3_cancer_code'],
             labels=[
-                cancer.name + ' (' + cancer.code + ')'
+                '%s (%s)' % (cancer.name, cancer.code)
                 for cancer in cancers
             ],
             all_selected_label='All cancer types'
@@ -203,6 +203,7 @@ def create_widgets(filters_by_id, custom_datasets_names=None):
             filter=filters_by_id['Mutation.sources'],
             labels=[
                 'Cancer (TCGA)',
+                'Cancer (MC3)',
                 'Clinical (ClinVar)',
                 'Population (ESP 6500)',
                 'Population (1000 Genomes)'
