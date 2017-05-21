@@ -1,12 +1,37 @@
-BLCA	Bladder Urothelial Carcinoma	yellow
-BRCA	Breast invasive carcinoma	darkolivegreen2
-COAD	Colon adenocarcinoma	cornflowerblue
-READ	Rectum adenocarcinoma	cornflowerblue
-GBM	Glioblastoma multiforme	darkorchid1
-HNSC	Head and Neck squamous cell carcinoma	chartreuse
-KIRC	Kidney renal clear cell carcinoma	burlywood1
-LAML	Acute Myeloid Leukemia	orange
-LUAD	Lung adenocarcinoma	cyan3
-LUSC	Lung squamous cell carcinoma	aquamarine
-OV	Ovarian serous cystadenocarcinoma	pink
-UCEC	Uterine Corpus Endometrial Carcinoma	brown1
+LAML	Acute Myeloid Leukemia	None
+ACC	Adrenocortical carcinoma	None
+BLCA	Bladder Urothelial Carcinoma	None
+LGG	Brain Lower Grade Glioma	None
+BRCA	Breast invasive carcinoma	None
+CESC	Cervical squamous cell carcinoma and endocervical adenocarcinoma	None
+CHOL	Cholangiocarcinoma	None
+LCML	Chronic Myelogenous Leukemia	None
+COAD	Colon adenocarcinoma	None
+CNTL	Controls	None
+ESCA	Esophageal carcinoma	None
+FPPP	FFPE Pilot Phase II	None
+GBM	Glioblastoma multiforme	None
+HNSC	Head and Neck squamous cell carcinoma	None
+KICH	Kidney Chromophobe	None
+KIRC	Kidney renal clear cell carcinoma	None
+KIRP	Kidney renal papillary cell carcinoma	None
+LIHC	Liver hepatocellular carcinoma	None
+LUAD	Lung adenocarcinoma	None
+LUSC	Lung squamous cell carcinoma	None
+DLBC	Lymphoid Neoplasm Diffuse Large B-cell Lymphoma	None
+MESO	Mesothelioma	None
+MISC	Miscellaneous	None
+OV	Ovarian serous cystadenocarcinoma	None
+PAAD	Pancreatic adenocarcinoma	None
+PCPG	Pheochromocytoma and Paraganglioma	None
+PRAD	Prostate adenocarcinoma	None
+READ	Rectum adenocarcinoma	None
+SARC	Sarcoma	None
+SKCM	Skin Cutaneous Melanoma	None
+STAD	Stomach adenocarcinoma	None
+TGCT	Testicular Germ Cell Tumors	None
+THYM	Thymoma	None
+THCA	Thyroid carcinoma	None
+UCS	Uterine Carcinosarcoma	None
+UCEC	Uterine Corpus Endometrial Carcinoma	None
+UVM	Uveal Melanoma	None
