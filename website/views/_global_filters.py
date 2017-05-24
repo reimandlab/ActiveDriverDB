@@ -146,11 +146,9 @@ def common_filters(
     ]
 
 
-# we do not expect cancers to change often
-cancers = Cancer.query.all()
-
-
 def create_dataset_specific_widgets(filters_by_id):
+    cancers = Cancer.query.all()
+
     return [
         FilterWidget(
             'Cancer type', 'checkbox_multiple',
