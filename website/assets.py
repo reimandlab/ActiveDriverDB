@@ -138,16 +138,17 @@ class DependencyManager:
         from urllib.request import urlretrieve
         from os.path import dirname
         from os.path import exists
+        from os.path import realpath
         from os import makedirs
 
         path = 'static/thirdparty/' + '/'.join(resource.url.split('/')[3:])
-        if not exists(path):
-            dir_path = dirname(path)
+
+        real_path = dirname(realpath(__file__)) + '/' + path
+        if not exists(real_path):
+            dir_path = dirname(real_path)
             if dir_path:
-                print(dir_path)
                 makedirs(dir_path, exist_ok=True)
-            x = urlretrieve(resource.url, path)
-            print(x)
+            urlretrieve(resource.url, real_path)
 
         return self.build_markup(type(resource), '/' + path)
 
