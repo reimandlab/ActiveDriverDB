@@ -1,4 +1,5 @@
 from flask_assets import Bundle
+from abc import ABC, abstractmethod
 from flask import Markup
 
 
@@ -10,7 +11,7 @@ def css_bundle(name, *args):
     )
 
 
-class Resource:
+class Resource(ABC):
     """Represents a resource which could be fetched from a content
     delivery network (cdn) or from a local static directory."""
 
@@ -26,13 +27,36 @@ class Resource:
         self.integrity = integrity
         self.only_cdn = only_cdn
 
+    def build_markup(self, url=None, check_integrity=True):
+
+        markup = self.template.format(
+            url=url if url else self.url,
+            integrity=self.integrity_string if check_integrity else ''
+        )
+
+        return Markup(markup)
+
+    @property
+    def integrity_string(self):
+        if self.integrity:
+            return ' integrity="' + self.integrity + '" crossorigin="anonymous"'
+        return ''
+
+    @property
+    @abstractmethod
+    def template(self):
+        """Template for resource HTML markup, using {url} and {integrity} variables"""
+        pass
+
 
 class CSSResource(Resource):
-    pass
+
+    template = '<link rel="stylesheet" href="{url}"{integrity}>'
 
 
 class JSResource(Resource):
-    pass
+
+    template = '<script src="{url}"{integrity}></script>'
 
 
 class DependencyManager:
@@ -113,11 +137,6 @@ class DependencyManager:
         )
     }
 
-    tags_and_url_key_words = {
-        JSResource: 'script src',
-        CSSResource: 'link rel="stylesheet" href'
-    }
-
     def __init__(self, app):
         self.app = app
         self.use_cdn = self.app.config.get('USE_CONTENT_DELIVERY_NETWORK', True)
@@ -127,12 +146,9 @@ class DependencyManager:
         resource = self.third_party[name]
 
         if self.use_cdn or resource.only_cdn:
-            return self.build_cdn_markup(resource)
+            return resource.build_markup(check_integrity=True)
         else:
             return self.build_local_markup(resource)
-
-    def build_cdn_markup(self, resource):
-        return self.build_markup(type(resource), resource.url, resource.integrity)
 
     def build_local_markup(self, resource):
         from urllib.request import urlretrieve
@@ -141,35 +157,16 @@ class DependencyManager:
         from os.path import realpath
         from os import makedirs
 
-        path = 'static/thirdparty/' + '/'.join(resource.url.split('/')[3:])
+        path = '/static/thirdparty/' + '/'.join(resource.url.split('/')[3:])
 
-        real_path = dirname(realpath(__file__)) + '/' + path
+        real_path = dirname(realpath(__file__)) + path
         if not exists(real_path):
             dir_path = dirname(real_path)
             if dir_path:
                 makedirs(dir_path, exist_ok=True)
             urlretrieve(resource.url, real_path)
 
-        return self.build_markup(type(resource), '/' + path)
-
-    def build_markup(self, resource_type, url, integrity=None):
-        tag = self.tags_and_url_key_words[resource_type]
-
-        if integrity:
-            markup = '<{tag}="{url}" integrity="{integrity}" crossorigin="anonymous">'.format(
-                tag=tag,
-                url=url,
-                integrity=integrity
-            )
-        else:
-            markup = '<{tag}="{url}">'.format(
-                tag=tag,
-                url=url,
-            )
-        if resource_type is JSResource:
-            markup += '</script>'
-
-        return Markup(markup)
+        return resource.build_markup(path, check_integrity=False)
 
 
 bundles = {
