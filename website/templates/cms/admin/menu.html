@@ -11,7 +11,7 @@
 <p>
   <form
     class="input-group"
-    action="{{ url_for('ContentManagmentSystem:add_menu') }}"
+    action="{{ url_for('ContentManagementSystem:add_menu') }}"
     method="POST"
   >
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -28,7 +28,7 @@
 
 {% for menu in menus %}
 <form
-  action="{{ url_for('ContentManagmentSystem:edit_menu', menu_id=menu.id) }}"
+  action="{{ url_for('ContentManagementSystem:edit_menu', menu_id=menu.id) }}"
   method="POST"
 >
   <div class="panel panel-default menu-panel">
@@ -43,7 +43,7 @@
             <span class="glyphicon glyphicon-ok" aria-hidden="true"></span>
             Save changes
         </button>
-        <a href="{{ url_for('ContentManagmentSystem:remove_menu', menu_id=menu.id) }}" class="btn btn-danger">
+        <a href="{{ url_for('ContentManagementSystem:remove_menu', menu_id=menu.id) }}" class="btn btn-danger">
             <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
             Remove menu
         </a>
@@ -82,7 +82,7 @@
                   <input type="number" name="position[{{ entry.id }}]" value="{{ entry.position }}" class="form-control" required step="0.1">
                 </td>
                 <td class="text-center">
-                  <a href="{{ url_for('ContentManagmentSystem:remove_menu_entry', menu_id=menu.id, entry_id=entry.id) }}" title="Remove">
+                  <a href="{{ url_for('ContentManagementSystem:remove_menu_entry', menu_id=menu.id, entry_id=entry.id) }}" title="Remove">
                     <span class="glyphicon glyphicon-remove" aria-hidden="true" ></span>
                   </a>
                 </td>
@@ -110,7 +110,7 @@
           <div role="tabpanel" class="tab-pane active" id="page_{{ menu.id }}">
             <p>
             <form
-              action="{{ url_for('ContentManagmentSystem:add_page_menu_entry', menu_id=menu.id) }}"
+              action="{{ url_for('ContentManagementSystem:add_page_menu_entry', menu_id=menu.id) }}"
               method="POST"
             >
               <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -134,7 +134,7 @@
           </div>
           <div role="tabpanel" class="tab-pane" id="custom_{{ menu.id }}">
             <form
-              action="{{ url_for('ContentManagmentSystem:add_custom_menu_entry', menu_id=menu.id) }}"
+              action="{{ url_for('ContentManagementSystem:add_custom_menu_entry', menu_id=menu.id) }}"
               method="POST"
             >
               <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
@@ -167,7 +167,7 @@
 
 {% if menus %}
 <form
-  action="{{ url_for('ContentManagmentSystem:save_settings') }}"
+  action="{{ url_for('ContentManagementSystem:save_settings') }}"
   method=POST
 >
   <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">

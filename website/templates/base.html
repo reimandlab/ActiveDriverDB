@@ -76,30 +76,30 @@
           <span class="welcome-user">Welcome {{ current_user.username }}!</span>
           {% block user_menu %}
             {% if current_user.is_admin %}
-              <a href="{{ url_for('ContentManagmentSystem:list_pages') }}" class="btn btn-default">
+              <a href="{{ url_for('ContentManagementSystem:list_pages') }}" class="btn btn-default">
                 <span class="glyphicon glyphicon-list-alt"></span>
                 Pages
               </a>
-              <a href="{{ url_for('ContentManagmentSystem:list_menus') }}" class="btn btn-default">
+              <a href="{{ url_for('ContentManagementSystem:list_menus') }}" class="btn btn-default">
                 <span class="glyphicon glyphicon-list"></span>
                 Menus
               </a>
-              <a href="{{ url_for('ContentManagmentSystem:settings') }}" class="btn btn-default">
+              <a href="{{ url_for('ContentManagementSystem:settings') }}" class="btn btn-default">
                 <span class="glyphicon glyphicon-cog"></span>
                 Settings
               </a>
             {% endif %}
-            <a href="{{ url_for('ContentManagmentSystem:my_datasets') }}" class="btn btn-default">
+            <a href="{{ url_for('ContentManagementSystem:my_datasets') }}" class="btn btn-default">
               <span class="glyphicon glyphicon-log-out"></span>
               My datasets
             </a>
-            <a href="{{ url_for('ContentManagmentSystem:logout') }}" class="btn btn-default">
+            <a href="{{ url_for('ContentManagementSystem:logout') }}" class="btn btn-default">
               <span class="glyphicon glyphicon-log-out"></span>
               Logout
             </a>
           {% endblock %}
         {% else %}
-          <a href="{{ url_for('ContentManagmentSystem:login') }}" class="btn btn-default">
+          <a href="{{ url_for('ContentManagementSystem:login') }}" class="btn btn-default">
             <span class="glyphicon glyphicon-log-in"></span>
             Login
           </a>

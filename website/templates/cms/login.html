@@ -16,7 +16,7 @@
   <h3>Login</h3>
 
   <div>
-    <p>Don't have an account? <a href="{{ url_for('ContentManagmentSystem:sign_up') }}">Click here to create it now</a>.</p>
+    <p>Don't have an account? <a href="{{ url_for('ContentManagementSystem:sign_up') }}">Click here to create it now</a>.</p>
     <form method="POST" >
 	  <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 	  <div class="form-group">
