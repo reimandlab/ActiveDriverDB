@@ -784,7 +784,7 @@ class MutationDetails:
         raise NotImplementedError
 
     @property
-    def name(self):
+    def display_name(self):
         """Name which will be shown to the user (e.g. in filters panel)"""
         raise NotImplementedError
 
@@ -805,6 +805,7 @@ class MutationDetails:
 class UserUploadedMutation(MutationDetails, BioModel):
 
     name = 'user'
+    display_name = 'User\'s mutations'
 
     value_type = 'count'
 
@@ -854,6 +855,7 @@ class CancerMutation(MutationDetails):
 class MC3Mutation(CancerMutation, BioModel):
     """Metadata for cancer mutations from ICGC data portal"""
     name = 'MC3'
+    display_name = 'Cancer (TCGA PanCancerAtlas)'
     details_manager = create_cancer_meta_manager('MC3')
     mc3_cancer_code = association_proxy('cancer', 'code')
     cancer_code = mc3_cancer_code
@@ -861,6 +863,7 @@ class MC3Mutation(CancerMutation, BioModel):
 
 class TCGAMutation(CancerMutation, BioModel):
     name = 'TCGA'
+    display_name = 'Cancer (TCGA Pancan12)'
     details_manager = create_cancer_meta_manager('TCGA')
     tcga_cancer_code = association_proxy('cancer', 'code')
     cancer_code = tcga_cancer_code
@@ -872,6 +875,7 @@ class InheritedMutation(MutationDetails, BioModel):
     Columns description come from source VCF file headers.
     """
     name = 'ClinVar'
+    display_name = 'Clinical (ClinVar)'
     value_type = 'count'
 
     # RS: dbSNP ID (i.e. rs number)
@@ -995,6 +999,8 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
         AA - African American
     """
     name = 'ESP6500'
+    display_name = 'Population (ESP 6500)'
+
     value_type = 'frequency'
 
     populations = OrderedDict(
@@ -1018,6 +1024,7 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
 class The1000GenomesMutation(PopulationMutation, BioModel):
     """Metadata for 1 KG mutation"""
     name = '1KGenomes'
+    display_name = 'Population (1000 Genomes)'
 
     value_type = 'frequency'
 
@@ -1059,6 +1066,7 @@ class MIMPMutation(MutationDetails, BioModel):
     """Metadata for MIMP mutation"""
 
     name = 'MIMP'
+    display_name = 'MIMP'
 
     details_manager = MIMPMetaManager
 

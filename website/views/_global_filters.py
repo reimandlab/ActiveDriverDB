@@ -196,18 +196,21 @@ def create_dataset_specific_widgets(filters_by_id):
 
 def create_widgets(filters_by_id, custom_datasets_names=None):
     """Widgets to be displayed on a bar above visualisation."""
+
+    # map dataset display names to dataset names
+    dataset_labels = {
+        dataset.name: dataset.display_name
+        for dataset in Mutation.source_specific_data
+    }
+    # hide user's mutations in dataset choice
+    # (there is separate widget for that, shown only if there are any user's datasets)
+    dataset_labels['user'] = None
+
     return {
         'dataset': FilterWidget(
             'Mutation dataset', 'radio',
             filter=filters_by_id['Mutation.sources'],
-            labels={
-                'TCGA': 'Cancer (TCGA Pancan12)',
-                'MC3': 'Cancer (TCGA PanCancerAtlas)',
-                'ClinVar': 'Clinical (ClinVar)',
-                'ESP6500': 'Population (ESP 6500)',
-                '1KGenomes': 'Population (1000 Genomes)',
-                'user': None
-            },
+            labels=dataset_labels,
             class_name='dataset-widget'
         ),
         'custom_dataset': FilterWidget(

@@ -23,7 +23,8 @@ class Widget:
                 a label will be skipped during template generation.
 
                 If labels are provided as mapping (dictionary), the labels
-                will be mapped to correspond to given data (key=datum, value=label)
+                will be mapped to correspond to given data (key=datum, value=label),
+                until given value is None (then the corresponding entry will be hidden)
 
             target_name: corresponds to name attribute in HTML element
         """
@@ -37,6 +38,7 @@ class Widget:
         if isinstance(labels, dict):
             labels = [
                 labels[datum] for datum in data
+                if labels[datum] is not None
             ]
         if labels and data and len(labels) > len(data):
             raise ValueError(
