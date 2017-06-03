@@ -17,7 +17,7 @@
 <h3>Manage pages</h3>
 
 <div id="toolbar">
-  <a href="{{ url_for('ContentManagmentSystem:add_page') }}" class="btn btn-success">
+  <a href="{{ url_for('ContentManagementSystem:add_page') }}" class="btn btn-success">
     <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
     Add a new page
   </a>
@@ -43,19 +43,19 @@
 		{% for entry in entries or [] %}
         <tr>
             <td>
-              <a href="{{ url_for('ContentManagmentSystem:edit_page', address=entry.address) }}">
+              <a href="{{ url_for('ContentManagementSystem:edit_page', address=entry.address) }}">
                   <span class="glyphicon glyphicon-pencil" aria-hidden="true" title="Edit"></span>
                   {{ entry.title }}
               </a>
             </td>
             <td>
-                <a href="{{ url_for('ContentManagmentSystem:page', address=entry.address) }}">
+                <a href="{{ url_for('ContentManagementSystem:page', address=entry.address) }}">
                   <span class="glyphicon glyphicon-globe" aria-hidden="true" title="Visit the page"></span>
                   /{{ entry.address }}
               </a>
             </td>
             <td>
-              <a href="{{ url_for('ContentManagmentSystem:remove_page', address=entry.address) }}">
+              <a href="{{ url_for('ContentManagementSystem:remove_page', address=entry.address) }}">
                   <span class="glyphicon glyphicon-trash" aria-hidden="true" title="Remove"></span>
                   Remove
               </a>

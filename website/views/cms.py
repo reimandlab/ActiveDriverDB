@@ -59,7 +59,7 @@ def admin_only(f):
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
             return redirect(url_for(
-                'ContentManagmentSystem:login',
+                'ContentManagementSystem:login',
                 next=request.url
             ))
         if not current_user.is_admin:
@@ -134,7 +134,7 @@ def get_system_setting(name):
     return Setting.query.filter_by(name=name).first()
 
 
-class ContentManagmentSystem(FlaskView):
+class ContentManagementSystem(FlaskView):
 
     route_base = '/'
 
@@ -158,7 +158,7 @@ class ContentManagmentSystem(FlaskView):
                 'is_active': False,
                 'message': Markup('<!-- Menu "' + name + '" not found --!>')
             }
-        menu_code = ContentManagmentSystem._template('menu', menu=menu)
+        menu_code = ContentManagementSystem._template('menu', menu=menu)
         return {
             'is_active': True,
             'name': menu.name,
@@ -288,7 +288,7 @@ class ContentManagmentSystem(FlaskView):
                 'danger'
             )
 
-        return redirect(url_for('ContentManagmentSystem:list_menus'))
+        return redirect(url_for('ContentManagementSystem:list_menus'))
 
     @route('/menu/<menu_id>/edit', methods=['POST'])
     @admin_only
@@ -305,14 +305,14 @@ class ContentManagmentSystem(FlaskView):
             db.session.commit()
         except ValueError:
             flash('Wrong value for position', 'danger')
-        return redirect(url_for('ContentManagmentSystem:list_menus'))
+        return redirect(url_for('ContentManagementSystem:list_menus'))
 
     @route('/settings/save/', methods=['POST'])
     @admin_only
     def save_settings(self):
         goto = request.form.get(
             'goto',
-            url_for('ContentManagmentSystem:settings')
+            url_for('ContentManagementSystem:settings')
         )
         for name, value in request.form.items():
             if name.startswith('setting['):
@@ -331,7 +331,7 @@ class ContentManagmentSystem(FlaskView):
         value = request.form['value']
         goto = request.form.get(
             'goto',
-            url_for('ContentManagmentSystem:settings')
+            url_for('ContentManagementSystem:settings')
         )
         setting, is_created = get_or_create(Setting, name=name)
         if is_created:
@@ -355,7 +355,7 @@ class ContentManagmentSystem(FlaskView):
                 ),
                 'success'
             )
-        return redirect(url_for('ContentManagmentSystem:list_menus'))
+        return redirect(url_for('ContentManagementSystem:list_menus'))
 
     @route('/menu/<menu_id>/add_page_menu_entry', methods=['POST'])
     @admin_only
@@ -370,7 +370,7 @@ class ContentManagmentSystem(FlaskView):
         except IntegrityError:
             db.session.rollback()
             flash('Something went wrong :(', 'danger')
-        return redirect(url_for('ContentManagmentSystem:list_menus'))
+        return redirect(url_for('ContentManagementSystem:list_menus'))
 
     @route('/menu/<menu_id>/add_custom_menu_entry', methods=['POST'])
     @admin_only
@@ -384,7 +384,7 @@ class ContentManagmentSystem(FlaskView):
         menu.entries.append(entry)
         db.session.commit()
 
-        return redirect(url_for('ContentManagmentSystem:list_menus'))
+        return redirect(url_for('ContentManagementSystem:list_menus'))
 
     @admin_only
     def remove_menu_entry(self, menu_id, entry_id):
@@ -393,7 +393,7 @@ class ContentManagmentSystem(FlaskView):
         menu.entries.remove(entry)
         db.session.delete(entry)
         db.session.commit()
-        return redirect(url_for('ContentManagmentSystem:list_menus'))
+        return redirect(url_for('ContentManagementSystem:list_menus'))
 
     @route('/add/', methods=['GET', 'POST'])
     @admin_only
@@ -421,7 +421,7 @@ class ContentManagmentSystem(FlaskView):
                 'success'
             )
             return redirect(
-                url_for('ContentManagmentSystem:edit_page', address=address)
+                url_for('ContentManagementSystem:edit_page', address=address)
             )
 
         except ValidationError as error:
@@ -460,7 +460,7 @@ class ContentManagmentSystem(FlaskView):
                 if page.address != address:
                     return redirect(
                         url_for(
-                            'ContentManagmentSystem:edit_page',
+                            'ContentManagementSystem:edit_page',
                             address=page.address
                         )
                     )
@@ -495,7 +495,7 @@ class ContentManagmentSystem(FlaskView):
                 ),
                 'success'
             )
-        return redirect(url_for('ContentManagmentSystem:list_pages'))
+        return redirect(url_for('ContentManagementSystem:list_pages'))
 
     @route('/login/', methods=['GET', 'POST'])
     def login(self):
@@ -510,14 +510,14 @@ class ContentManagmentSystem(FlaskView):
 
         if user is None:
             flash('Invalid or unregistered email', 'danger')
-            return redirect(url_for('ContentManagmentSystem:login'))
+            return redirect(url_for('ContentManagementSystem:login'))
 
         if user.authenticate(password):
             login_user(user, remember=remember_me)
-            return redirect(url_for('ContentManagmentSystem:my_datasets'))
+            return redirect(url_for('ContentManagementSystem:my_datasets'))
         else:
             flash('Password is invalid', 'danger')
-            return redirect(url_for('ContentManagmentSystem:login'))
+            return redirect(url_for('ContentManagementSystem:login'))
 
     @route('/register/', methods=['GET', 'POST'])
     def sign_up(self):
@@ -545,7 +545,7 @@ class ContentManagmentSystem(FlaskView):
                 'Now you can login with the form below:',
                 'success'
             )
-            return redirect(url_for('ContentManagmentSystem:login'))
+            return redirect(url_for('ContentManagementSystem:login'))
         except ValidationError as e:
             flash(e.message, 'danger')
             return self._template('register')

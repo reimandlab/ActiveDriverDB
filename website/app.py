@@ -117,7 +117,7 @@ def create_app(config_filename='config.py', config_override={}):
     app.jinja_loader = template_loader
 
     from website.views.cms import substitute_variables
-    from website.views.cms import ContentManagmentSystem
+    from website.views.cms import ContentManagementSystem
     from jinja2_pluralize import pluralize
     import json
 
@@ -134,8 +134,8 @@ def create_app(config_filename='config.py', config_override={}):
     dependency_manager = DependencyManager(app)
 
     jinja_globals['dependency'] = dependency_manager.get_dependency
-    jinja_globals['system_menu'] = ContentManagmentSystem._system_menu
-    jinja_globals['system_setting'] = ContentManagmentSystem._system_setting
+    jinja_globals['system_menu'] = ContentManagementSystem._system_menu
+    jinja_globals['system_setting'] = ContentManagementSystem._system_setting
     jinja_globals['csrf_token'] = csrf.new_csrf_token
     jinja_globals['is_debug_mode'] = app.debug
 
