@@ -1141,7 +1141,7 @@ class Mutation(BioModel):
 
     types = ('direct', 'network-rewiring', 'proximal', 'distal', 'none')
 
-    # order matters (for easier specification of labels for widgets)
+    # order matters (widget's labels will show up in this order)
     source_specific_data = [
         # TCGAMutation,
         MC3Mutation,

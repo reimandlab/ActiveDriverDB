@@ -18,7 +18,7 @@ from helpers.views import AjaxTableView
 from helpers.filters import FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
-from ._global_filters import sources_to_sa_filter
+from ._global_filters import sources_to_sa_filter, create_dataset_labels
 
 from sqlalchemy import and_
 import sqlalchemy
@@ -144,12 +144,7 @@ def make_widgets(filter_manager):
         'dataset': FilterWidget(
             'Mutation dataset', 'select',
             filter=filter_manager.filters['Mutation.sources'],
-            labels=[
-                'Cancer (TCGA)',
-                'Clinical (ClinVar)',
-                'Population (ESP 6500)',
-                'Population (1000 Genomes)'
-            ],
+            labels=create_dataset_labels(),
             disabled_label='All datasets'
         ),
         'ptm_type': FilterWidget(

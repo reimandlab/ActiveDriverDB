@@ -65,7 +65,6 @@ def common_filters(
     source_nullable=False,
     custom_datasets_ids=[]
 ):
-    # all_cancer_codes = [cancer.code for cancer in Cancer.query.all()]
     cancer_codes_mc3 = protein.cancer_codes(MC3Mutation) if protein else []
 
     # Python 3.4: cast keys() to list
@@ -174,9 +173,7 @@ def create_dataset_specific_widgets(filters_by_id):
     ]
 
 
-def create_widgets(filters_by_id, custom_datasets_names=None):
-    """Widgets to be displayed on a bar above visualisation."""
-
+def create_dataset_labels():
     # map dataset display names to dataset names
     dataset_labels = {
         dataset.name: dataset.display_name
@@ -185,12 +182,17 @@ def create_widgets(filters_by_id, custom_datasets_names=None):
     # hide user's mutations in dataset choice
     # (there is separate widget for that, shown only if there are any user's datasets)
     dataset_labels['user'] = None
+    return dataset_labels
+
+
+def create_widgets(filters_by_id, custom_datasets_names=None):
+    """Widgets to be displayed on a bar above visualisation."""
 
     return {
         'dataset': FilterWidget(
             'Mutation dataset', 'radio',
             filter=filters_by_id['Mutation.sources'],
-            labels=dataset_labels,
+            labels=create_dataset_labels(),
             class_name='dataset-widget'
         ),
         'custom_dataset': FilterWidget(
