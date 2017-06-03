@@ -62,7 +62,7 @@ class UserMutations:
 
 def common_filters(
     protein,
-    default_source='TCGA',
+    default_source='MC3',
     source_nullable=False,
     custom_datasets_ids=[]
 ):
@@ -200,13 +200,14 @@ def create_widgets(filters_by_id, custom_datasets_names=None):
         'dataset': FilterWidget(
             'Mutation dataset', 'radio',
             filter=filters_by_id['Mutation.sources'],
-            labels=[
-                'Cancer (TCGA)',
-                'Cancer (MC3)',
-                'Clinical (ClinVar)',
-                'Population (ESP 6500)',
-                'Population (1000 Genomes)'
-            ],
+            labels={
+                'TCGA': 'Cancer (TCGA Pancan12)',
+                'MC3': 'Cancer (TCGA PanCancerAtlas)',
+                'ClinVar': 'Clinical (ClinVar)',
+                'ESP6500': 'Population (ESP 6500)',
+                '1KGenomes': 'Population (1000 Genomes)',
+                'user': None
+            },
             class_name='dataset-widget'
         ),
         'custom_dataset': FilterWidget(

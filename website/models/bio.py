@@ -492,7 +492,8 @@ class Protein(BioModel):
                 distinct(Cancer.code).
                 join(mutation_details_model).
                 join(Mutation).
-                filter(Mutation.protein == self)
+                filter(Mutation.protein == self).
+                order_by(Cancer.name)
         )
         return [row[0] for row in query.all()]
 
@@ -1134,7 +1135,7 @@ class Mutation(BioModel):
 
     # order matters (for easier specification of labels for widgets)
     source_specific_data = [
-        TCGAMutation,
+        # TCGAMutation,
         MC3Mutation,
         InheritedMutation,
         ExomeSequencingMutation,
