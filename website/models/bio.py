@@ -1184,7 +1184,6 @@ class Mutation(BioModel):
 
     populations_1KG = details_proxy(The1000GenomesMutation, 'affected_populations')
     populations_ESP6500 = details_proxy(ExomeSequencingMutation, 'affected_populations')
-    tcga_cancer_code = details_proxy(TCGAMutation, 'tcga_cancer_code')
     mc3_cancer_code = details_proxy(MC3Mutation, 'mc3_cancer_code')
     sig_code = details_proxy(InheritedMutation, 'sig_code')
     disease_name = details_proxy(InheritedMutation, 'disease_name')

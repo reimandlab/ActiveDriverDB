@@ -1,5 +1,4 @@
 from models import MC3Mutation
-from models import TCGAMutation
 from models import Cancer
 from models import Mutation
 from models import Site
@@ -67,7 +66,6 @@ def common_filters(
     custom_datasets_ids=[]
 ):
     # all_cancer_codes = [cancer.code for cancer in Cancer.query.all()]
-    cancer_codes_tcga = protein.cancer_codes(TCGAMutation) if protein else []
     cancer_codes_mc3 = protein.cancer_codes(MC3Mutation) if protein else []
 
     # Python 3.4: cast keys() to list
@@ -107,15 +105,6 @@ def common_filters(
             as_sqlalchemy=True
         ),
         SourceDependentFilter(
-            [Mutation, TCGAMutation], 'tcga_cancer_code',
-            comparators=['in'],
-            choices=cancer_codes_tcga,
-            default=cancer_codes_tcga, nullable=False,
-            source='TCGA',
-            multiple='any',
-            as_sqlalchemy=True
-        ),
-        SourceDependentFilter(
             Mutation, 'populations_1KG', comparators=['in'],
             choices=populations_1kg,
             default=populations_1kg, nullable=False,
@@ -150,15 +139,6 @@ def create_dataset_specific_widgets(filters_by_id):
     cancers = Cancer.query.all()
 
     return [
-        FilterWidget(
-            'Cancer type', 'checkbox_multiple',
-            filter=filters_by_id['Mutation.tcga_cancer_code'],
-            labels={
-                cancer.code: '%s (%s)' % (cancer.name, cancer.code)
-                for cancer in cancers
-            },
-            all_selected_label='All cancer types'
-        ),
         FilterWidget(
             'Cancer type', 'checkbox_multiple',
             filter=filters_by_id['Mutation.mc3_cancer_code'],

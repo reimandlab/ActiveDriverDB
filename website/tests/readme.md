@@ -9,7 +9,7 @@ To run tests with pytest, type:
 
 To checkout coverage, install pytest-cov and run:
 ```bash
-~/website$ python3 -m py.test --cov=.
+~/website$ python3 -m pytest --cov=.
 ```
 
 You can exclude third-party code integrated into you installation (if any exists) creating .coveragerc file with contents like:
@@ -24,7 +24,7 @@ omit =
 And then running:
 
 ```bash
-~/website$ python3 -m py.test --cov=. --cov-config .coveragerc
+~/website$ python3 -m pytest --cov=. --cov-config .coveragerc
 ```
 
 **Tools installation**

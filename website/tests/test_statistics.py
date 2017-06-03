@@ -38,7 +38,7 @@ class StatisticsTest(DatabaseTest):
             for model in [
                 models.MIMPMutation,
                 models.The1000GenomesMutation,
-                models.TCGAMutation,
+                models.MC3Mutation,
                 models.ExomeSequencingMutation,
                 models.InheritedMutation
             ]
@@ -64,7 +64,7 @@ class StatisticsTest(DatabaseTest):
         # create one mutation which is present in multiple sources
         m = models.Mutation()
         metadata_1 = models.InheritedMutation(mutation=m)
-        metadata_2 = models.TCGAMutation(mutation=m)
+        metadata_2 = models.MC3Mutation(mutation=m)
         db.session.add_all([metadata_1, metadata_2])
 
         from statistics import Statistics

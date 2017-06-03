@@ -3,7 +3,7 @@ from models import Protein
 from models import Gene
 from models import Mutation
 from models import Cancer
-from models import TCGAMutation
+from models import MC3Mutation
 from models import InheritedMutation
 from models import ClinicalData
 from models import The1000GenomesMutation
@@ -25,12 +25,12 @@ def create_test_mutations():
         Mutation(
             position=1,
             alt='K',
-            meta_TCGA=[
-                TCGAMutation(
+            meta_MC3=[
+                MC3Mutation(
                     cancer=Cancer(name='Ovarian', code='OV'),
                     count=1
                 ),
-                TCGAMutation(
+                MC3Mutation(
                     cancer=Cancer(name='Breast', code='BRCA'),
                     count=1
                 )
@@ -142,7 +142,7 @@ class TestProteinView(ViewTest):
         db.session.add(p)
 
         expected_source_meta = {
-            'TCGA': ['OV', 'BRCA'],
+            'MC3': ['OV', 'BRCA'],
             'ClinVar': ['Disease X', 'Disease Y'],
             '1KGenomes': ['African', 'European'],
             'ESP6500': ['European American']

@@ -159,8 +159,7 @@ class Statistics:
 
         for i in range(2, len(sources) - 1):
             sign = 1 if i % 2 == 0 else -1
-            for combination in combinations(sources, 2):
-                print(count)
+            for combination in combinations(sources, i):
                 count += sign * self.count_by_source(combination)
 
         return count

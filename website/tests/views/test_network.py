@@ -4,7 +4,7 @@ from models import Gene
 from models import Site
 from models import Kinase
 from models import Mutation
-from models import TCGAMutation
+from models import MC3Mutation
 from models import Cancer
 from database import db
 
@@ -43,13 +43,13 @@ class TestNetworkView(ViewTest):
         name = 'Kinase Y'
         refseq = 'NM_0009'
 
-        # having a mutation (from TCGA here as this is the default mutations'
+        # having a mutation (from MC3 here as this is the default mutations'
         # subset) is right now required if we want to have a kinase returned
         # in network representation, although this may not be desired; see #72
         mutation = Mutation(
             position=1,
             alt='T',
-            meta_TCGA=[TCGAMutation(
+            meta_MC3=[MC3Mutation(
                 cancer=Cancer(name='Ovarian', code='OV')
             )]
         )
