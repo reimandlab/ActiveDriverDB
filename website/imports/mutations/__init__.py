@@ -279,7 +279,6 @@ class MutationImporter(ABC):
         from datetime import datetime
         import os
         from tqdm import tqdm
-
         export_time = datetime.utcnow()
 
         if not path:
@@ -301,12 +300,12 @@ class MutationImporter(ABC):
             'gene', 'isoform', 'position',  'wt_residue', 'mut_residue'
         ]
 
-        if isinstance(self.model, CancerMutation):
+        if self.model_name in ('MC3Mutation', 'TCGAMutation'):
             header += ['cancer_type', 'sample_id']
-        elif isinstance(self.model, InheritedMutation):
+        elif self.model_name == 'InheritedMutation':
             header += ['disease']
 
-        with gzip.open(path, 'w') as f:
+        with gzip.open(path, 'wt') as f:
             f.write('\t'.join(header))
 
             for mutation in tqdm(self.model.query.all()):
@@ -316,7 +315,7 @@ class MutationImporter(ABC):
                 if only_primary_isoforms and not m.protein.is_preferred_isoform:
                     continue
 
-                if isinstance(self.model, CancerMutation):
+                if self.model_name in ('MC3Mutation', 'TCGAMutation'):
                     cancer = mutation.cancer.code
                     s = mutation.samples or ''
                     samples = s.split(',')
@@ -325,7 +324,7 @@ class MutationImporter(ABC):
                         [cancer, sample]
                         for sample in samples
                     ]
-                elif isinstance(self.model, InheritedMutation):
+                elif self.model_name == 'InheritedMutation':
                     dataset_specific = [
                         [d.disease_name]
                         for d in mutation.clin_data
