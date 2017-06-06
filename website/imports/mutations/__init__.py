@@ -308,7 +308,7 @@ class MutationImporter(ABC):
         with gzip.open(path, 'wt') as f:
             f.write('\t'.join(header))
 
-            for mutation in tqdm(self.model.query.all()):
+            for mutation in tqdm(self.model.query):
 
                 m = mutation.mutation
 
