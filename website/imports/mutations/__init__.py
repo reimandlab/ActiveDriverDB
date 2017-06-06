@@ -1,3 +1,4 @@
+import gzip
 from abc import ABC
 from abc import abstractmethod
 from collections import defaultdict
@@ -285,7 +286,7 @@ class MutationImporter(ABC):
             directory = os.path.join('exported', 'mutations')
             os.makedirs(directory, exist_ok=True)
 
-            name_template = '{model_name}{restrictions}-{date}.tsv'
+            name_template = '{model_name}{restrictions}-{date}.tsv.gz'
 
             name = name_template.format(
                 model_name=self.model_name,
@@ -305,7 +306,7 @@ class MutationImporter(ABC):
         elif isinstance(self.model, InheritedMutation):
             header += ['disease']
 
-        with open(path, 'w') as f:
+        with gzip.open(path, 'w') as f:
             f.write('\t'.join(header))
 
             for mutation in tqdm(self.model.query.all()):
