@@ -6,6 +6,7 @@ from collections import OrderedDict
 from database import db
 from database import get_highest_id
 from database import restart_autoincrement
+from database import fast_count
 from helpers.bioinf import decode_mutation
 from helpers.bioinf import is_sequence_broken
 from helpers.parsers import chunked_list
@@ -14,8 +15,6 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import SQLAlchemyError
 from flask import current_app
 from imports.protein_data import get_proteins
-
-from models import InheritedMutation, CancerMutation
 
 
 def bulk_ORM_insert(model, keys, data):
@@ -308,7 +307,7 @@ class MutationImporter(ABC):
         with gzip.open(path, 'wt') as f:
             f.write('\t'.join(header))
 
-            for mutation in tqdm(self.model.query):
+            for mutation in tqdm(self.model.query, total=fast_count(db.session.query(self.model))):
 
                 m = mutation.mutation
 
