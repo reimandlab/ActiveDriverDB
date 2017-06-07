@@ -3,7 +3,7 @@ from collections import OrderedDict
 from tqdm import tqdm
 
 from database import fast_count
-from models import Gene
+from models import Gene, Mutation, InheritedMutation, MC3Mutation, ExomeSequencingMutation, The1000GenomesMutation
 from models import Site
 from models import Protein
 from helpers.commands import register_decorator
@@ -108,3 +108,59 @@ def site_specific_network_of_kinases_and_targets(path='exported/site-specific_ne
                     f.write('\t'.join(map(str, data)) + '\n')
 
     return path
+
+
+def mutations_affecting_ptm_sites(sources, path='exported/mutations_affecting_ptm_sites.tsv'):
+
+    header = [
+        'gene',
+        'refseq',
+        'mutation position',
+        'mutation alt',
+        'mutation summary',
+        'site position',
+        'site residue'
+    ]
+
+    create_path_if_possible(path)
+
+    with open(path, 'w') as f:
+        f.write('\t'.join(header) + '\n')
+        for source in sources:
+            # mutation_details_model = Mutation.get_source_model(source)
+            mutation_details_model = source
+
+            for mut_details in tqdm(mutation_details_model.query, total=fast_count(mutation_details_model.query)):
+                mutation = mut_details.mutation
+                if mutation.is_ptm():
+                    for site in mutation.get_affected_ptm_sites():
+                        protein = mutation.protein
+                        summary = mut_details.summary()
+                        data = [
+                            protein.gene.name,
+                            protein.refseq,
+                            mutation.position,
+                            mutation.alt,
+                            ', '.join(summary) if type(summary) is list else summary,
+                            site.position,
+                            site.residue
+                        ]
+
+                        f.write('\t'.join(map(str, data)) + '\n')
+
+    return path
+
+
+@exporter
+def mc3_muts_affecting_ptm_sites(path='exported/mc3_mutations_affecting_ptm_sites.tsv'):
+    mutations_affecting_ptm_sites([MC3Mutation], path)
+
+
+@exporter
+def clinvar_muts_affecting_ptm_sites(path='exported/clinvar_mutations_affecting_ptm_sites.tsv'):
+    mutations_affecting_ptm_sites([InheritedMutation], path)
+
+
+@exporter
+def population_muts_affecting_ptm_sites(path='exported/population_mutations_affecting_ptm_sites.tsv'):
+    mutations_affecting_ptm_sites([ExomeSequencingMutation, The1000GenomesMutation], path)

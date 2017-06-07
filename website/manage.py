@@ -215,7 +215,7 @@ class ProteinRelated(CommandTarget):
         for i, name in enumerate(args.exporters):
             exporter = exporters[name]
             if args.export_paths:
-                kwargs = {'path': args.export_paths[i]}
+                kwargs['path'] = args.export_paths[i]
             out_file = exporter(**kwargs)
             print('Exported %s to %s' % (name, out_file))
 
