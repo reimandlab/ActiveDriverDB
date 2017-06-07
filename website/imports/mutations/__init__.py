@@ -280,6 +280,8 @@ class MutationImporter(ABC):
         from tqdm import tqdm
         export_time = datetime.utcnow()
 
+        tick = 0
+
         if not path:
             directory = os.path.join('exported', 'mutations')
             os.makedirs(directory, exist_ok=True)
@@ -308,6 +310,7 @@ class MutationImporter(ABC):
             f.write('\t'.join(header))
 
             for mutation in tqdm(self.model.query, total=fast_count(db.session.query(self.model))):
+                tick += 1
 
                 m = mutation.mutation
 
@@ -347,6 +350,13 @@ class MutationImporter(ABC):
                     ] + instance
 
                     f.write('\n' + '\t'.join(data))
+
+                    del data
+
+                del mutation
+                if tick % 1000 == 0:
+                    import gc
+                    gc.collect()
 
     def get_or_make_mutation(self, pos, protein_id, alt, is_ptm):
         mutation_id = self.base_importer.get_or_make_mutation(
