@@ -306,10 +306,20 @@ class MutationImporter(ABC):
         elif self.model_name == 'InheritedMutation':
             header += ['disease']
 
+        def yield_objects(base_query, step_size=1000):
+            done = False
+            step = 0
+            while not done:
+                obj = None
+                for obj in base_query.limit(step_size).offset(step * step_size):
+                    yield obj
+                step += 1
+                done = not obj
+
         with gzip.open(path, 'wt') as f:
             f.write('\t'.join(header))
 
-            for mutation in tqdm(self.model.query, total=fast_count(db.session.query(self.model))):
+            for mutation in tqdm(yield_objects(self.model.query), total=fast_count(db.session.query(self.model))):
                 tick += 1
 
                 m = mutation.mutation
@@ -354,7 +364,7 @@ class MutationImporter(ABC):
                     del data
 
                 del mutation
-                if tick % 1000 == 0:
+                if tick % 10000 == 0:
                     import gc
                     gc.collect()
 
