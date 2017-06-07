@@ -491,9 +491,7 @@ class FilterManager:
 
         query, to_apply_manually = self.build_query(target, custom_filter)
 
-        elements = query.all()
-
-        return self.apply(elements, to_apply_manually)
+        return self.apply(query, to_apply_manually)
 
     def query_count(self, target, custom_filter=None):
         """Retrieve count of all objects of type 'target' which
@@ -505,8 +503,7 @@ class FilterManager:
         if not to_apply_manually:
             return query.with_entities(target.id).count()
         else:
-            elements = query.all()
-            return len(self.apply(elements, to_apply_manually))
+            return len(self.apply(query, to_apply_manually))
 
     def apply(self, elements, filters_subset=None, itemgetter=None):
         """Apply all appropriate filters to given list of elements.
