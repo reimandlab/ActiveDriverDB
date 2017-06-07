@@ -135,15 +135,13 @@ def common_filters(
 
 
 def create_dataset_specific_widgets(filters_by_id):
-    cancers = Cancer.query.all()
-
     return [
         FilterWidget(
             'Cancer type', 'checkbox_multiple',
             filter=filters_by_id['Mutation.mc3_cancer_code'],
             labels={
                 cancer.code: '%s (%s)' % (cancer.name, cancer.code)
-                for cancer in cancers
+                for cancer in Cancer.query
             },
             all_selected_label='All cancer types'
         ),

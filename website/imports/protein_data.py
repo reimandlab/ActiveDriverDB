@@ -30,7 +30,7 @@ def get_proteins(cached_proteins={}, reload_cache=False):
     if reload_cache:
         cached_proteins.clear()
     if not cached_proteins:
-        for protein in Protein.query.all():
+        for protein in Protein.query:
             cached_proteins[protein.refseq] = protein
     return cached_proteins
 
@@ -54,7 +54,7 @@ def create_key_model_dict(model, key, lowercase=False):
 
     return {
         get_key(m): m
-        for m in model.query.all()
+        for m in model.query
     }
 
 

@@ -34,7 +34,7 @@ def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
     return items
 
 
-def get_affected_isoforms(gene_name, ref, pos, alt):
+def iterate_affected_isoforms(gene_name, ref, pos, alt):
     """Returns all isoforms where specified mutation might happen.
 
     Explanation: shouldn't we look for refseq with gene name only?
@@ -78,7 +78,7 @@ def get_affected_isoforms(gene_name, ref, pos, alt):
     hash_key = gene_name + ' ' + ref + str(pos) + alt
     refseqs = bdb_refseq[hash_key]
 
-    return Protein.query.filter(Protein.refseq.in_(refseqs)).all()
+    return Protein.query.filter(Protein.refseq.in_(refseqs))
 
 
 def get_protein_muts(gene_name, mut):
@@ -93,7 +93,7 @@ def get_protein_muts(gene_name, mut):
 
     items = []
 
-    for isoform in get_affected_isoforms(gene_name, ref, pos, alt):
+    for isoform in iterate_affected_isoforms(gene_name, ref, pos, alt):
 
         mutation, created = get_or_create(
             Mutation,

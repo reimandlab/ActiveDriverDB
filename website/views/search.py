@@ -73,7 +73,7 @@ def search_proteins(phase, limit=None, filter_manager=None):
     if limit:
         orm_query = orm_query.limit(limit)
 
-    genes = {gene.name: GeneResult(gene) for gene in orm_query.all()}
+    genes = {gene.name: GeneResult(gene) for gene in orm_query}
 
     # looking up both by name and refseq is costly - perform it wisely
     if phase.isnumeric():
@@ -95,9 +95,7 @@ def search_proteins(phase, limit=None, filter_manager=None):
             # gene it still provides more than one gene
             query = query.limit(limit * 20)
 
-        isoforms = query.all()
-
-        for isoform in isoforms:
+        for isoform in query:
             if limit and len(genes) > limit:
                 break
 

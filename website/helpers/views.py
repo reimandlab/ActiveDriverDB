@@ -73,13 +73,12 @@ class AjaxTableView:
 
             count = fast_count(query)
             query = query.limit(args['limit']).offset(args['offset'])
-            elements = query.all()
 
             rows = [
                 results_mapper(element)
                 if results_mapper
                 else element.to_json()
-                for element in elements
+                for element in query
             ]
 
             return jsonify({
@@ -166,7 +165,7 @@ class AjaxTableView:
             try:
                 count = count_query.count()
                 query = query.limit(args['limit']).offset(args['offset'])
-                elements = query.all()
+                elements = query
             except StatementError as e:
                 db.session.rollback()
                 print(e)

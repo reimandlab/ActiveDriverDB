@@ -13,7 +13,7 @@ from Levenshtein import distance
 
 list_of_profanities = [
     bad_word.word
-    for bad_word in BadWord.query.all()
+    for bad_word in BadWord.query
 ]
 
 

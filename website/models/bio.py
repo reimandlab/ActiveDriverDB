@@ -13,8 +13,10 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.associationproxy import association_proxy, AssociationProxy
 from werkzeug.utils import cached_property
 from database import db
+from database import fast_count
 from exceptions import ValidationError
 from models import Model
+
 
 
 class BioModel(Model):
@@ -365,24 +367,25 @@ class Protein(BioModel):
     def confirmed_mutations(self):
         return Mutation.query.filter_by(
             protein=self, is_confirmed=True
-        ).all()
+        )
+
+    @hybrid_property
+    def confirmed_mutations_count(self):
+        return fast_count(self.confirmed_mutations)
 
     def to_json(self, data_filter=None):
-        mutations = self.confirmed_mutations
-
         if not data_filter:
-            data_filter = lambda x: x
-            muts_count = len(mutations)
-        else:
-            muts_count = len(data_filter(mutations))
+            data_filter = lambda x: list(x)
+
+        filtered_mutations = data_filter(self.confirmed_mutations)
 
         return {
             'gene_name': self.gene_name,
             'refseq': self.refseq,
             'sites_count': len(data_filter(self.sites)),
-            'muts_count': muts_count,
+            'muts_count': len(filtered_mutations),
             'ptm_muts': sum(
-                1 for m in data_filter(mutations)
+                1 for m in filtered_mutations
                 if m.is_ptm()
             )
         }
@@ -484,7 +487,7 @@ class Protein(BioModel):
             join(Mutation).
             filter(Mutation.protein == self)
         )
-        return [row[0] for row in query.all()]
+        return [row[0] for row in query]
 
     def cancer_codes(self, mutation_details_model):
         query = (
@@ -495,7 +498,7 @@ class Protein(BioModel):
                 filter(Mutation.protein == self).
                 order_by(Cancer.name)
         )
-        return [row[0] for row in query.all()]
+        return [row[0] for row in query]
 
     def _calc_interactors_count(self):
         return len(self.kinases) + len(self.kinase_groups)
