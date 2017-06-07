@@ -153,14 +153,14 @@ def mutations_affecting_ptm_sites(sources, path='exported/mutations_affecting_pt
 
 @exporter
 def mc3_muts_affecting_ptm_sites(path='exported/mc3_mutations_affecting_ptm_sites.tsv'):
-    mutations_affecting_ptm_sites([MC3Mutation], path)
+    return mutations_affecting_ptm_sites([MC3Mutation], path)
 
 
 @exporter
 def clinvar_muts_affecting_ptm_sites(path='exported/clinvar_mutations_affecting_ptm_sites.tsv'):
-    mutations_affecting_ptm_sites([InheritedMutation], path)
+    return mutations_affecting_ptm_sites([InheritedMutation], path)
 
 
 @exporter
 def population_muts_affecting_ptm_sites(path='exported/population_mutations_affecting_ptm_sites.tsv'):
-    mutations_affecting_ptm_sites([ExomeSequencingMutation, The1000GenomesMutation], path)
+    return mutations_affecting_ptm_sites([ExomeSequencingMutation, The1000GenomesMutation], path)
