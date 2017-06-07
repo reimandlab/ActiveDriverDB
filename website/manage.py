@@ -208,9 +208,14 @@ class ProteinRelated(CommandTarget):
     @command
     def export(args):
         exporters = EXPORTERS
-        for name in args.exporters:
+        if args.export_paths and len(args.export_paths) != len(args.exporters):
+            print('Export paths should be given for every exported file, no less, no more.')
+            return
+        for i, name in enumerate(args.exporters):
             exporter = exporters[name]
-            out_file = exporter()
+            if args.export_paths:
+                kwargs = {'path': args.export_paths[i]}
+            out_file = exporter(**kwargs)
             print('Exported %s to %s' % (name, out_file))
 
     @command
@@ -252,6 +257,15 @@ class ProteinRelated(CommandTarget):
             choices=data_importers,
             metavar='',
             default=data_importers,
+        )
+
+    @argument
+    def export_paths():
+        return argument_parameters(
+            '--export_paths',
+            nartgs='*',
+            metavar='',
+            help='A path(s) for export file(s)',
         )
 
 

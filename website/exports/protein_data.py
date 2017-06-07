@@ -1,8 +1,11 @@
 import os
 from collections import OrderedDict
 from tqdm import tqdm
+
+from database import fast_count
 from models import Gene
 from models import Site
+from models import Protein
 from helpers.commands import register_decorator
 
 
@@ -73,3 +76,35 @@ def sites_ac(path='exported/sites.tsv'):
 
     return path
 
+
+@exporter
+def site_specific_network_of_kinases_and_targets(path='exported/site-specific_network_of_kinases_and_targets.tsv'):
+    header = [
+        'kinase symbol',
+        'target symbol',
+        'kinase refseq',
+        'target refseq',
+        'target sequence position',
+        'target amino acid'
+    ]
+
+    create_path_if_possible(path)
+
+    with open(path, 'w') as f:
+        f.write('\t'.join(header) + '\n')
+        for protein in tqdm(Protein.query, total=fast_count(Protein.query)):
+            for site in protein.sites:
+                for kinase in site.kinases:
+
+                    data = [
+                        kinase.name,
+                        protein.gene.name,
+                        kinase.protein.refseq if kinase.protein else '',
+                        protein.refseq,
+                        site.position,
+                        site.residue
+                    ]
+
+                    f.write('\t'.join(map(str, data)) + '\n')
+
+    return path
