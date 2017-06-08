@@ -1,20 +1,22 @@
 import gzip
 from abc import ABC
 from abc import abstractmethod
-from collections import defaultdict
 from collections import OrderedDict
-from database import db
+from collections import defaultdict
+
+from flask import current_app
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm.exc import NoResultFound
+
+from database import db, yield_objects
+from database import fast_count
 from database import get_highest_id
 from database import restart_autoincrement
-from database import fast_count
 from helpers.bioinf import decode_mutation
 from helpers.bioinf import is_sequence_broken
 from helpers.parsers import chunked_list
-from models import Mutation
-from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.exc import SQLAlchemyError
-from flask import current_app
 from imports.protein_data import get_proteins
+from models import Mutation
 
 
 def bulk_ORM_insert(model, keys, data):
@@ -305,16 +307,6 @@ class MutationImporter(ABC):
             header += ['cancer_type', 'sample_id']
         elif self.model_name == 'InheritedMutation':
             header += ['disease']
-
-        def yield_objects(base_query, step_size=1000):
-            done = False
-            step = 0
-            while not done:
-                obj = None
-                for obj in base_query.limit(step_size).offset(step * step_size):
-                    yield obj
-                step += 1
-                done = not obj
 
         with gzip.open(path, 'wt') as f:
             f.write('\t'.join(header))

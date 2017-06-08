@@ -141,3 +141,14 @@ def fast_count(query):
     return query.session.execute(
         query.statement.with_only_columns([func.count()]).order_by(None)
     ).scalar()
+
+
+def yield_objects(base_query, step_size=1000):
+    done = False
+    step = 0
+    while not done:
+        obj = None
+        for obj in base_query.limit(step_size).offset(step * step_size):
+            yield obj
+        step += 1
+        done = not obj

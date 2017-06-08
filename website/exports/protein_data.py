@@ -1,9 +1,10 @@
 import os
 from collections import OrderedDict
+
 from tqdm import tqdm
 
-from database import fast_count
-from models import Gene, Mutation, InheritedMutation, MC3Mutation, ExomeSequencingMutation, The1000GenomesMutation
+from database import fast_count, yield_objects
+from models import Gene, InheritedMutation, MC3Mutation, ExomeSequencingMutation, The1000GenomesMutation
 from models import Site
 from models import Protein
 from helpers.commands import register_decorator
@@ -130,7 +131,7 @@ def mutations_affecting_ptm_sites(sources, path='exported/mutations_affecting_pt
             # mutation_details_model = Mutation.get_source_model(source)
             mutation_details_model = source
 
-            for mut_details in tqdm(mutation_details_model.query, total=fast_count(mutation_details_model.query)):
+            for mut_details in tqdm(yield_objects(mutation_details_model.query), total=fast_count(mutation_details_model.query)):
                 mutation = mut_details.mutation
                 if mutation.is_ptm():
                     for site in mutation.get_affected_ptm_sites():
