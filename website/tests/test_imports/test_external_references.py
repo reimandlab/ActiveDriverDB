@@ -85,7 +85,10 @@ class TestImport(DatabaseTest):
         save_references(fake_references, ('entrez', 'ensembl'), path=filename)
 
         with open(filename) as f:
-            assert f.readlines() == [
-                'NM_001\t1\tENSG00001\n',
-                'NM_002\t2\tENSG00002'
-            ]
+            contents = f.readlines()
+            # order is not important when exporting reference data,
+            # but the structure (tabs, newlines) is.
+            assert contents in (
+                ['NM_001\t1\tENSG00001\n', 'NM_002\t2\tENSG00002'],
+                ['NM_002\t2\tENSG00002\n', 'NM_001\t1\tENSG00001']
+            )
