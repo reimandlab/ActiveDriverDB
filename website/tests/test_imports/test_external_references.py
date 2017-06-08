@@ -73,3 +73,19 @@ class TestImport(DatabaseTest):
             db.session.add(protein)
 
             assert protein.external_references is None
+
+    def test_reference_download(self):
+        from data.get_external_references import save_references
+
+        filename = make_named_temp_file()
+        fake_references = {
+            'NM_001': {'ensembl': 'ENSG00001', 'entrez': '1'},
+            'NM_002': {'ensembl': 'ENSG00002', 'entrez': '2'},
+        }
+        save_references(fake_references, ('entrez', 'ensembl'), path=filename)
+
+        with open(filename) as f:
+            assert f.readlines() == [
+                'NM_001\t1\tENSG00001\n',
+                'NM_002\t2\tENSG00002'
+            ]

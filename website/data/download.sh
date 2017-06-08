@@ -13,8 +13,13 @@ wget ftp://ftp.ebi.ac.uk/pub/databases/interpro/ParentChildTreeFile.txt
 wget ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 
 # protein mappings (external references)
-pip install biomart
-python get_external_references.py
+# pip3 install biomart
+git clone https://github.com/krassowski/biomart
+cd biomart
+python3 setup.py
+cd ..
+rm -r biomart
+python3 get_external_references.py
 
 # pathway list
 wget http://biit.cs.ut.ee/gprofiler/gmt/gprofiler_hsapiens.NAME.gmt.zip

@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+from collections import defaultdict
 from biomart import BiomartDataset
 
 
@@ -15,53 +16,49 @@ def get_references(*biomart_attr_names):
     return response.text.split('\n')
 
 
-tsv_references = get_references(
-    # among available uniprot identifiers, the one from swissprot is the
-    # most reliable, as it provides accession of manually reviewed entries
-    # from curated database. Other options are: _sptrembl & _genname.
-    'refseq_mrna',
-    'uniprot_swissprot',
-    'refseq_peptide',
-)
+def add_references(references, primary_id, identifiers_list):
+
+    for part_1 in range(0, len(identifiers_list), 2):
+        group = [primary_id] + identifiers_list[part_1:part_1 + 2]
+        tsv_references = get_references(*group)
+
+        for row in tsv_references:
+            data = row.split('\t')
+            # data[0] points to primary id
+            if data[0]:
+                references[data[0]].update(zip(group[1:], data[1:]))
 
 
-references = {}
+def save_references(references, identifiers_order, path='protein_external_references.tsv'):
+    with open(path, 'w') as f:
+        f.write('\n'.join(
+            refseq + '\t' + '\t'.join(
+                [others.get(key, '') for key in identifiers_order]
+            )
+            for refseq, others in references.items()
+        ))
 
 
-for row in tsv_references:
-    data = row.split('\t')
-    if data[0]:
-        references[data[0]] = data[1:]
+if __name__ == '__main__':
+    primary_id = 'refseq_mrna'
 
+    non_ensembl_ids_to_fetch = [
+        # among available uniprot identifiers, the one from swissprot is the
+        # most reliable, as it provides accession of manually reviewed entries
+        # from curated database. Other options are: _sptrembl & _genname.
+        'uniprotswissprot',
+        'refseq_peptide',
+        'entrezgene'
+    ]
+    ensembl_ids_to_fetch = [
+        'ensembl_peptide_id'    # ensembl peptite id cannot be retrieved together
+        # with refseq_peptite as it results in incorrect mappings (one ensembl id
+        # can point to multiple refseq_peptides and then biomart cannot tell
+        # from which refseq_mrna those peptides comes)
+    ]
+    all_references = defaultdict(dict)
 
-tsv_mrna_ensempl_peptide = get_references(
-    'refseq_mrna',
-    'ensembl_peptide_id'    # ensembl peptite id cannot be retrived together
-    # with refseq_peptite as it results in incorrect mappings (one ensembl id
-    # can point to multiple refseq_peptides and then biomart cannot tell
-    # from which refseq_mrna those peptides comes)
-)
+    add_references(all_references, primary_id, non_ensembl_ids_to_fetch)
+    add_references(all_references, primary_id, ensembl_ids_to_fetch)
 
-
-for row in tsv_mrna_ensempl_peptide:
-    data = row.split('\t')
-
-    refseq_nm = data[0]
-
-    if not refseq_nm:
-        continue
-    if refseq_nm not in references:
-        # previous references were empty, let's say this directly
-        references[refseq_nm] = ['', '']
-
-    # has some ensembl peptide been already appended?
-    if len(references[refseq_nm]) > 2:
-        references[refseq_nm][2] += ' ' + data[1]
-    else:
-        references[refseq_nm].append(data[1])
-
-with open('protein_external_references.tsv', 'w') as f:
-    f.write('\n'.join(
-        refseq + '\t' + '\t'.join(others)
-        for refseq, others in references.items()
-    ))
+    save_references(all_references, non_ensembl_ids_to_fetch + ensembl_ids_to_fetch)
