@@ -1,3 +1,6 @@
+from argparse import Namespace
+from collections import defaultdict
+
 from imports.protein_data import external_references as load_external_references
 from database_testing import DatabaseTest
 from models import Protein
@@ -76,6 +79,9 @@ class TestImport(DatabaseTest):
 
     def test_reference_download(self):
         from data.get_external_references import save_references
+        from data.get_external_references import get_references
+        from data.get_external_references import dataset
+        from data.get_external_references import add_references
 
         filename = make_named_temp_file()
         fake_references = {
@@ -92,3 +98,20 @@ class TestImport(DatabaseTest):
                 ['NM_001\t1\tENSG00001\n', 'NM_002\t2\tENSG00002'],
                 ['NM_002\t2\tENSG00002\n', 'NM_001\t1\tENSG00001']
             )
+
+        fake_search_results = 'NM_01\tENSG_01\nNM_02\tENSG_02'
+        dataset.search = lambda x: Namespace(text=fake_search_results)
+
+        assert get_references('refseq', 'ensembl') == [
+            'NM_01\tENSG_01',
+            'NM_02\tENSG_02'
+        ]
+
+        fake_search_results = 'NM_01\tENSG_01\t1\nNM_02\tENSG_02\t2'
+        dataset.search = lambda x: Namespace(text=fake_search_results)
+        references = defaultdict(dict)
+        add_references(references, 'refseq', ['ensembl', 'entrez'])
+
+        assert len(references) == 2
+        assert references['NM_01'] == {'ensembl': 'ENSG_01', 'entrez': '1'}
+        assert references['NM_02'] == {'ensembl': 'ENSG_02', 'entrez': '2'}
