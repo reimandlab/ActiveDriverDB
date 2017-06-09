@@ -109,7 +109,12 @@ class TestImport(DatabaseTest):
             'NM_02\tENSG_02'
         ]
 
-        fake_search_results = 'NM_01\tENSG_01\t1\nNM_02\tENSG_02\t2\nXX_03\tENSG_03\t3\nNM_004'
+        fake_search_results = (
+            'NM_01\tENSG_01\t1\n'
+            'NM_02\tENSG_02\t2\n'
+            'XX_03\tENSG_03\t3\n'
+            'NM_004'
+        )
         dataset.search = lambda x: Namespace(text=fake_search_results)
         references = defaultdict(dict)
         add_references(references, 'refseq', ['ensembl', 'entrez'], primary_id_prefix='NM_')
