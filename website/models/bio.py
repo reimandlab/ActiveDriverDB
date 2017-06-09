@@ -4,19 +4,17 @@ from sqlalchemy import and_
 from sqlalchemy import or_
 from sqlalchemy import func
 from sqlalchemy import case
-from sqlalchemy.orm import validates
 from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.ext.associationproxy import association_proxy, AssociationProxy
+from sqlalchemy.ext.associationproxy import association_proxy
 from werkzeug.utils import cached_property
 from database import db
 from database import fast_count
 from exceptions import ValidationError
 from models import Model
-
 
 
 class BioModel(Model):
@@ -239,6 +237,12 @@ class ProteinReferences(BioModel):
 
     # ensembl peptides
     ensembl_peptides = db.relationship('EnsemblPeptide',  backref='reference')
+
+    # "Records in Entrez Gene are assigned unique, stable and tracked integers as identifiers"
+    # ncbi.nlm.nih.gov/pmc/articles/PMC3013746, doi: 10.1093/nar/gkq1237
+    # as for Jun 8 2017, there are 18 151 636 genes in Entrez (ncbi.nlm.nih.gov/gene/statistics)
+    # an integer should suffice up to 2,147,483,647 genes.
+    entrez_id = db.Column(db.Integer)
 
 
 class Protein(BioModel):

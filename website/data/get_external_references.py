@@ -39,26 +39,30 @@ def save_references(references, identifiers_order, path='protein_external_refere
         ))
 
 
-if __name__ == '__main__':
-    primary_id = 'refseq_mrna'
+primary_id = 'refseq_mrna'
 
-    non_ensembl_ids_to_fetch = [
-        # among available uniprot identifiers, the one from swissprot is the
-        # most reliable, as it provides accession of manually reviewed entries
-        # from curated database. Other options are: _sptrembl & _genname.
-        'uniprotswissprot',
-        'refseq_peptide',
-        'entrezgene'
-    ]
-    ensembl_ids_to_fetch = [
-        'ensembl_peptide_id'    # ensembl peptite id cannot be retrieved together
-        # with refseq_peptite as it results in incorrect mappings (one ensembl id
-        # can point to multiple refseq_peptides and then biomart cannot tell
-        # from which refseq_mrna those peptides comes)
-    ]
+non_ensembl_ids_to_fetch = [
+    # among available uniprot identifiers, the one from swissprot is the
+    # most reliable, as it provides accession of manually reviewed entries
+    # from curated database. Other options are: _sptrembl & _genname.
+    'uniprotswissprot',
+    'refseq_peptide',
+    'entrezgene'
+]
+
+ensembl_ids_to_fetch = [
+    'ensembl_peptide_id'    # ensembl peptite id cannot be retrieved together
+    # with refseq_peptite as it results in incorrect mappings (one ensembl id
+    # can point to multiple refseq_peptides and then biomart cannot tell
+    # from which refseq_mrna those peptides comes)
+]
+
+identifiers_order = non_ensembl_ids_to_fetch + ensembl_ids_to_fetch
+
+if __name__ == '__main__':
     all_references = defaultdict(dict)
 
     add_references(all_references, primary_id, non_ensembl_ids_to_fetch)
     add_references(all_references, primary_id, ensembl_ids_to_fetch)
 
-    save_references(all_references, non_ensembl_ids_to_fetch + ensembl_ids_to_fetch)
+    save_references(all_references, identifiers_order)

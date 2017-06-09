@@ -804,10 +804,19 @@ def external_references(path='data/protein_external_references.tsv'):
     from models import ProteinReferences
     from models import EnsemblPeptide
     from sqlalchemy.orm.exc import NoResultFound
+    from data.get_external_references import identifiers_order
 
     references = {}
 
+    positions = {
+        # +1 as refseq_nm occupies first position
+        name: identifiers_order.index(name) + 1
+        # identifiers order contains all identifiers
+        for name in identifiers_order
+    }
+
     def parse(data):
+
         refseq_nm = data[0]
         if not refseq_nm or not refseq_nm.startswith('NM'):
             return
@@ -823,8 +832,9 @@ def external_references(path='data/protein_external_references.tsv'):
 
         references[refseq_nm] = ProteinReferences(
             protein=protein,              # derived from data[0]
-            uniprot_accession=data[1],
-            refseq_np=data[2],
+            uniprot_accession=data[positions['uniprotswissprot']],
+            refseq_np=data[positions['refseq_peptide']],
+            entrez_id=int(data[positions['entrezgene']])
         )
 
         references[refseq_nm].ensembl_peptides = [
@@ -832,7 +842,7 @@ def external_references(path='data/protein_external_references.tsv'):
                 peptide_id=identifier,
                 reference=references[refseq_nm]
             )
-            for identifier in data[3].split(' ')
+            for identifier in data[positions['ensembl_peptide_id']].split(' ')
         ]
 
     parse_tsv_file(path, parse)
