@@ -109,11 +109,13 @@ class TestImport(DatabaseTest):
             'NM_02\tENSG_02'
         ]
 
-        fake_search_results = 'NM_01\tENSG_01\t1\nNM_02\tENSG_02\t2'
+        fake_search_results = 'NM_01\tENSG_01\t1\nNM_02\tENSG_02\t2\nXX_03\tENSG_03\t3\nNM_004'
         dataset.search = lambda x: Namespace(text=fake_search_results)
         references = defaultdict(dict)
-        add_references(references, 'refseq', ['ensembl', 'entrez'])
+        add_references(references, 'refseq', ['ensembl', 'entrez'], primary_id_prefix='NM_')
 
+        # rows where primary ids are not prefixed with 'NM_' (third)
+        # and where there is essentially no data (fourth) should be skipped
         assert len(references) == 2
         assert references['NM_01'] == {'ensembl': 'ENSG_01', 'entrez': '1'}
         assert references['NM_02'] == {'ensembl': 'ENSG_02', 'entrez': '2'}

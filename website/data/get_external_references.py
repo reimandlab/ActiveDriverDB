@@ -16,17 +16,28 @@ def get_references(*biomart_attr_names):
     return response.text.split('\n')
 
 
-def add_references(references, primary_id, identifiers_list):
+def add_references(references, primary_id_name, identifiers_list, primary_id_prefix='NM_'):
 
     for part_1 in range(0, len(identifiers_list), 2):
-        group = [primary_id] + identifiers_list[part_1:part_1 + 2]
+        group = [primary_id_name] + identifiers_list[part_1:part_1 + 2]
         tsv_references = get_references(*group)
 
         for row in tsv_references:
             data = row.split('\t')
-            # data[0] points to primary id
-            if data[0]:
-                references[data[0]].update(zip(group[1:], data[1:]))
+
+            primary_id = data[0]
+
+            if not primary_id or len(data) == 1:
+                continue
+
+            if not primary_id.startswith(primary_id_prefix):
+                print(
+                    'Skipping result where primary id does not match:',
+                    primary_id_prefix
+                )
+                continue
+
+            references[data[0]].update(zip(group[1:], data[1:]))
 
 
 def save_references(references, identifiers_order, path='protein_external_references.tsv'):
