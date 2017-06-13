@@ -1,3 +1,4 @@
+import gzip
 from collections import OrderedDict
 from tqdm import tqdm
 from database import db
@@ -799,53 +800,87 @@ def active_driver_gene_lists(
 
 
 @importer
-def external_references(path='data/protein_external_references.tsv'):
+def external_references(path='data/HUMAN_9606_idmapping.dat.gz'):
     from models import Protein
     from models import ProteinReferences
     from models import EnsemblPeptide
     from sqlalchemy.orm.exc import NoResultFound
-    from data.get_external_references import identifiers_order
 
     references = {}
 
-    positions = {
-        # +1 as refseq_nm occupies first position
-        name: identifiers_order.index(name) + 1
-        # identifiers order contains all identifiers
-        for name in identifiers_order
+    def add_uniprot_accession(data):
+
+        uniprot, ref_type, value = data
+
+        if ref_type == 'RefSeq_NT':
+            # get protein
+            refseq_nm = value.split('.')[0]
+
+            if not refseq_nm or not refseq_nm.startswith('NM'):
+                return
+
+            try:
+                protein = Protein.query.filter_by(refseq=refseq_nm).one()
+            except NoResultFound:
+                return
+
+            if refseq_nm in references or protein.external_references:
+                print('Redundant reference found for: %s' % refseq_nm)
+                return
+
+            if '-' in uniprot:
+                uniprot = uniprot.split('-')[0]
+
+            reference, new = get_or_create(ProteinReferences, protein=protein)
+            reference.uniprot_accession = uniprot
+            references[uniprot] = reference
+
+            if new:
+                db.session.add(reference)
+
+    protein_references_to_collect = {
+        'RefSeq': 'refseq_np',
+        'GeneID': 'entrez_id'
+    }
+    ensembl_references_to_collect = {
+        'Ensembl_PRO': 'peptide_id'
     }
 
-    def parse(data):
+    def add_references_by_uniprot(data):
 
-        refseq_nm = data[0]
-        if not refseq_nm or not refseq_nm.startswith('NM'):
+        uniprot, ref_type, value = data
+
+        if '-' in uniprot:
+            uniprot = uniprot.split('-')[0]
+
+        if uniprot not in references:
             return
 
-        try:
-            protein = Protein.query.filter_by(refseq=refseq_nm).one()
-        except NoResultFound:
-            return
+        if ref_type in protein_references_to_collect:
 
-        if refseq_nm in references or protein.external_references:
-            print('Redundant reference found for: %s' % refseq_nm)
-            return
+            attr = protein_references_to_collect[ref_type]
 
-        references[refseq_nm] = ProteinReferences(
-            protein=protein,              # derived from data[0]
-            uniprot_accession=data[positions['uniprotswissprot']],
-            refseq_np=data[positions['refseq_peptide']],
-            entrez_id=int(data[positions['entrezgene']])
-        )
+            reference = references[uniprot]
 
-        references[refseq_nm].ensembl_peptides = [
-            EnsemblPeptide(
-                peptide_id=identifier,
-                reference=references[refseq_nm]
-            )
-            for identifier in data[positions['ensembl_peptide_id']].split(' ')
-        ]
+            value_without_version = value.split('.')[0]
 
-    parse_tsv_file(path, parse)
+            setattr(reference, attr, value_without_version)
+
+        if ref_type in ensembl_references_to_collect:
+
+            reference = references[uniprot]
+
+            attr = ensembl_references_to_collect[ref_type]
+
+            attrs = {'reference': reference, attr: value}
+
+            peptide, new = get_or_create(EnsemblPeptide, **attrs)
+
+            if new:
+                db.session.add(peptide)
+
+    parse_tsv_file(path, add_uniprot_accession, file_opener=gzip.open, mode='rt')
+    parse_tsv_file(path, add_references_by_uniprot, file_opener=gzip.open, mode='rt')
 
     return references.values()
 

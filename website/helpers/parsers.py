@@ -74,12 +74,12 @@ def buffered_readlines(file_handle, line_count=5000):
 def count_lines(file_object):
     """Returns number of lines in a given file."""
     count = sum(1 for line in file_object)
-    file_object.seek(0)   # return to the begining of the file
+    file_object.seek(0)   # return to the beginning of the file
     return count
 
 
 def parse_tsv_file(
-    filename, parser, file_header=None, file_opener=open
+    filename, parser, file_header=None, file_opener=open, mode='r'
 ):
     """Utility function wraping tsv (tab-separated values) file parser.
 
@@ -88,7 +88,7 @@ def parse_tsv_file(
 
     Progress bar is embeded.
     """
-    with file_opener(filename) as f:
+    with file_opener(filename, mode=mode) as f:
         data_lines_count = count_lines(f)
         if file_header:
             header = f.readline().rstrip().split('\t')

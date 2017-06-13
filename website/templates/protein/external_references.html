@@ -8,7 +8,7 @@
     </div>
     <div class="heading-right">
       <div class="source-acknowledgement">
-        Identifiers mappings were retrieved from Ensembl with biomart API.
+        Identifiers mappings were retrieved from Uniprot.
       </div>
     </div>
   </div>
@@ -42,9 +42,20 @@
           </ul>
         </dd>
       </dl>
-      {% endif %}
+    {% endif %}
 
-      {% if references.ensembl_peptides %}
+    {% if references.entrez_id %}
+      <dl class="entrez">
+        <dt>Entrez</dt>
+        <dd>
+          <ul class="list-inline">
+            <li><a href="https://www.ncbi.nlm.nih.gov/gene/{{references.entrez_id}}" {{ target }}>NCBI Gene</a>
+          </ul>
+        </dd>
+      </dl>
+    {% endif %}
+
+    {% if references.ensembl_peptides %}
       <dl>
         <dt>Ensembl protein</dt>
         <dd>
@@ -55,7 +66,7 @@
           </ul>
         </dd>
       </dl>
-      {% endif %}
+    {% endif %}
 
   </div>
 </div>
