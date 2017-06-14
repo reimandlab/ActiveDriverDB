@@ -243,6 +243,9 @@ class ProteinReferences(BioModel):
     # refseq peptide
     refseq_np = db.Column(db.String(32))
 
+    # refseq gene
+    refseq_ng = db.Column(db.String(32))
+
     # ensembl peptides
     ensembl_peptides = db.relationship('EnsemblPeptide',  backref='reference')
 

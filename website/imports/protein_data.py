@@ -800,7 +800,7 @@ def active_driver_gene_lists(
 
 
 @importer
-def external_references(path='data/HUMAN_9606_idmapping.dat.gz'):
+def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_path='data/LRG_RefSeqGene'):
     from models import Protein
     from models import ProteinReferences
     from models import EnsemblPeptide
@@ -829,7 +829,7 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz'):
                 uniprot, isoform = full_uniprot.split('-')
             except ValueError:
                 # only one isoform ?
-                print('No isoform specified for', full_uniprot, refseq_nm)
+                # print('No isoform specified for', full_uniprot, refseq_nm)
                 uniprot = full_uniprot
                 isoform = 1
 
@@ -840,10 +840,6 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz'):
             if new:
                 db.session.add(reference)
 
-    protein_references_to_collect = {
-        'RefSeq': 'refseq_np',
-        'GeneID': 'entrez_id'
-    }
     ensembl_references_to_collect = {
         'Ensembl_PRO': 'peptide_id'
     }
@@ -870,19 +866,6 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz'):
                 return
             relevant_references = uniprot_tied_references
 
-        if ref_type in protein_references_to_collect:
-
-            attr = protein_references_to_collect[ref_type]
-
-            value_without_version = value.split('.')[0]
-
-            for relevant_reference in relevant_references:
-                current_value = getattr(relevant_reference, attr, None)
-                if current_value is not None and current_value != value_without_version:
-                    print('Reference data mismatch', attr, relevant_references, relevant_reference, current_value, value_without_version)
-                else:
-                    setattr(relevant_reference, attr, value_without_version)
-
         if ref_type in ensembl_references_to_collect:
 
             attr = ensembl_references_to_collect[ref_type]
@@ -895,10 +878,39 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz'):
                 if new:
                     db.session.add(peptide)
 
+    def add_ncbi_mappings(data):
+        '9606    3329    HSPD1   NG_008915.1     NM_199440.1     NP_955472.1     reference standard'
+        taxonomy, entrez_id, gene_name, refseq_gene, lrg, refseq_nucleotide, t, refseq_peptide, p, category = data
+
+        refseq_nm = refseq_nucleotide.split('.')[0]
+
+        if not refseq_nm or not refseq_nm.startswith('NM'):
+            return
+
+        try:
+            protein = Protein.query.filter_by(refseq=refseq_nm).one()
+        except NoResultFound:
+            return
+
+        reference, new = get_or_create(ProteinReferences, protein=protein)
+
+        reference.refseq_np = refseq_peptide.split('.')[0]
+        reference.refseq_ng = refseq_gene.split('.')[0]
+        reference.entrez_id = int(entrez_id)
+
+        if new:
+            db.session.add(reference)
+
+        return
+
+    parse_tsv_file(refseq_path, add_ncbi_mappings, file_header=[
+        '#tax_id', 'GeneID', 'Symbol', 'RSG', 'LRG', 'RNA', 't', 'Protein', 'p', 'Category'
+    ])
+
     parse_tsv_file(path, add_uniprot_accession, file_opener=gzip.open, mode='rt')
     parse_tsv_file(path, add_references_by_uniprot, file_opener=gzip.open, mode='rt')
 
-    return references.values()
+    return [reference for reference_group in references.values() for reference in reference_group]
 
 
 @importer

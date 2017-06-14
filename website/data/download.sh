@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 for required_program in 'wget' 'unzip' 'Rscript' 'tar' 'synapse'
 do
   hash $required_program 2>/dev/null || {
@@ -13,6 +14,7 @@ wget ftp://ftp.ebi.ac.uk/pub/databases/interpro/ParentChildTreeFile.txt
 wget ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 
 # protein mappings (external references)
+wget ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/RefSeqGene/LRG_RefSeqGene
 wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping.dat.gz
 
 # pathway list
