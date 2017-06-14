@@ -1,12 +1,12 @@
 import gzip
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from tqdm import tqdm
 from database import db
 from database import get_or_create
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
-from models import Domain
+from models import Domain, UniprotEntry
 from models import Gene
 from models import InterproDomain
 from models import Cancer
@@ -800,13 +800,13 @@ def active_driver_gene_lists(
 
 
 @importer
-def external_references(path='data/HUMAN_9606_idmapping.dat.gz', throw=False):
+def external_references(path='data/HUMAN_9606_idmapping.dat.gz'):
     from models import Protein
     from models import ProteinReferences
     from models import EnsemblPeptide
     from sqlalchemy.orm.exc import NoResultFound
 
-    references = {}
+    references = defaultdict(list)
 
     def add_uniprot_accession(data):
 
@@ -833,18 +833,9 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', throw=False):
                 uniprot = full_uniprot
                 isoform = 1
 
-            if uniprot in references:
-                msg = 'Redundant reference found for: %s' % refseq_nm
-                if throw:
-                    raise ImportError(msg)
-                else:
-                    print(msg)
-                    return
-
             reference, new = get_or_create(ProteinReferences, protein=protein)
-            reference.uniprot_accession = uniprot
-            reference.uniprot_isoform = isoform
-            references[uniprot] = reference
+            reference.uniprot_entries.append(UniprotEntry(accession=uniprot, isoform=isoform))
+            references[uniprot].append(reference)
 
             if new:
                 db.session.add(reference)
@@ -863,13 +854,21 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', throw=False):
 
         if '-' in full_uniprot:
             uniprot, isoform = full_uniprot.split('-')
-            reference = references.get(uniprot, None)
-            if not reference or reference.uniprot_isoform != isoform:
+            uniprot_tied_references = references.get(uniprot, None)
+            if not uniprot_tied_references:
                 return
+
+            relevant_references = []
+            # select relevant references:
+            for reference in uniprot_tied_references:
+                if any(entry.isoform == isoform for entry in reference.uniprot_entries):
+                    relevant_references.append(reference)
+
         else:
-            reference = references.get(full_uniprot, None)
-            if not reference:
+            uniprot_tied_references = references.get(full_uniprot, None)
+            if not uniprot_tied_references:
                 return
+            relevant_references = uniprot_tied_references
 
         if ref_type in protein_references_to_collect:
 
@@ -877,18 +876,24 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', throw=False):
 
             value_without_version = value.split('.')[0]
 
-            setattr(reference, attr, value_without_version)
+            for relevant_reference in relevant_references:
+                current_value = getattr(relevant_reference, attr, None)
+                if current_value is not None and current_value != value_without_version:
+                    print('Reference data mismatch', attr, relevant_references, relevant_reference, current_value, value_without_version)
+                else:
+                    setattr(relevant_reference, attr, value_without_version)
 
         if ref_type in ensembl_references_to_collect:
 
             attr = ensembl_references_to_collect[ref_type]
 
-            attrs = {'reference': reference, attr: value}
+            for relevant_reference in relevant_references:
+                attrs = {'reference': relevant_reference, attr: value}
 
-            peptide, new = get_or_create(EnsemblPeptide, **attrs)
+                peptide, new = get_or_create(EnsemblPeptide, **attrs)
 
-            if new:
-                db.session.add(peptide)
+                if new:
+                    db.session.add(peptide)
 
     parse_tsv_file(path, add_uniprot_accession, file_opener=gzip.open, mode='rt')
     parse_tsv_file(path, add_references_by_uniprot, file_opener=gzip.open, mode='rt')

@@ -27,19 +27,22 @@
       {% endif %}
     </dl>
 
-    {% if references.uniprot_accession %}
+    {% if references.uniprot_entries %}
       <dl class="uniprot">
         <dt>Uniprot</dt>
         <dd>
-          <ul class="list-inline">
-            <li><a href="http://www.uniprot.org/uniprot/{{ references.uniprot_accession }}" {{ target }}>{{ references.uniprot_accession }}</a>
-            <li><a href="http://www.phosphosite.org/uniprotAccAction?id={{ references.uniprot_accession }}" {{ target }}>Phosposite</a>
-            <li><a href="http://pfam.xfam.org/protein?acc={{ references.uniprot_accession }}" {{ target }}>PFAM</a>
-            <li><a href="http://string-db.org/newstring_cgi/show_network_section.pl?identifier={{ references.uniprot_accession }}" {{ target }}>STRING</a>
-            <li><a href="http://www.phospho3d.org/search.py?flag=3&query_string={{ references.uniprot_accession }}&redundancy=all" {{ target }}>phospho3d</a>
-            <li><a href="http://www.reactome.org/content/query?cluster=true&q={{ references.uniprot_accession }}" {{ target }}>Reactome</a>
-            <li><a href="http://www.rcsb.org/pdb/protein/{{references.uniprot_accession}}" {{ target }}>PDB</a>
-          </ul>
+          {% for uniprot in references.uniprot_entries %}
+            <ul class="list-inline">
+              <li>Isoform: {{ uniprot.isoform }}
+              <li><a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ references.uniprot_accession }}</a>
+              <li><a href="http://www.phosphosite.org/uniprotAccAction?id={{ uniprot.accession }}" {{ target }}>Phosposite</a>
+              <li><a href="http://pfam.xfam.org/protein?acc={{ uniprot.accession }}" {{ target }}>PFAM</a>
+              <li><a href="http://string-db.org/newstring_cgi/show_network_section.pl?identifier={{ uniprot.accession }}" {{ target }}>STRING</a>
+              <li><a href="http://www.phospho3d.org/search.py?flag=3&query_string={{ uniprot.accession }}&redundancy=all" {{ target }}>phospho3d</a>
+              <li><a href="http://www.reactome.org/content/query?cluster=true&q={{ uniprot.accession }}" {{ target }}>Reactome</a>
+              <li><a href="http://www.rcsb.org/pdb/protein/{{uniprot.accession}}" {{ target }}>PDB</a>
+            </ul>
+          {% endfor %}
         </dd>
       </dl>
     {% endif %}

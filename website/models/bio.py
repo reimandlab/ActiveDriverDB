@@ -224,20 +224,29 @@ class EnsemblPeptide(BioModel):
     peptide_id = db.Column(db.String(32))
 
 
-class ProteinReferences(BioModel):
-    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
-    refseq_nm = association_proxy('protein', 'refseq')
+class UniprotEntry(BioModel):
+    reference_id = db.Column(
+        db.Integer,
+        db.ForeignKey('proteinreferences.id')
+    )
 
     # "UniProtKB accession numbers consist of 6 or 10 alphanumerical characters"
     # http://www.uniprot.org/help/accession_numbers
-    uniprot_accession = db.Column(db.String(10))
-    uniprot_isoform = db.Column(db.Integer)
+    accession = db.Column(db.String(10))
+    isoform = db.Column(db.Integer)
+
+
+class ProteinReferences(BioModel):
+    protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
+    refseq_nm = association_proxy('protein', 'refseq')
 
     # refseq peptide
     refseq_np = db.Column(db.String(32))
 
     # ensembl peptides
     ensembl_peptides = db.relationship('EnsemblPeptide',  backref='reference')
+
+    uniprot_entries = db.relationship(UniprotEntry, backref='reference')
 
     # "Records in Entrez Gene are assigned unique, stable and tracked integers as identifiers"
     # ncbi.nlm.nih.gov/pmc/articles/PMC3013746, doi: 10.1093/nar/gkq1237

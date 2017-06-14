@@ -88,7 +88,7 @@ class TestImport(DatabaseTest):
 
             protein = proteins_we_have['NM_011739']
 
-            assert protein.external_references.uniprot_accession == 'P68254'
+            assert protein.external_references.uniprot_entries[0].accession == 'P68254'
             assert protein.external_references.refseq_np == 'NP_035869'
             assert protein.external_references.entrez_id == '286863'
 
@@ -109,7 +109,3 @@ class TestImport(DatabaseTest):
             db.session.add(protein)
 
             assert protein.external_references is None
-
-            # check duplicate detection
-            with raises(ImportError):
-                references = load_external_references(filename_dups, throw=True)
