@@ -15,10 +15,20 @@
   <div class="panel-body">
 
     <dl class="refseq">
+      {% if references.entrez_id %}
+        <dt>Entrez</dt>
+        <dd>
+          <ul class="list-inline">
+            <li><a href="https://www.ncbi.nlm.nih.gov/gene/{{references.entrez_id}}" {{ target }}>NCBI Gene</a>
+          </ul>
+        </dd>
+      {% endif %}
+
       <dt>RefSeq mRNA</dt>
       <dd>
         <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}" {{ target }}>{{ protein.refseq }}</a>
       </dd>
+
       {% if references.refseq_np %}
         <dt>RefSeq protein</dt>
         <dd>
@@ -48,17 +58,6 @@
               <li><a href="http://www.rcsb.org/pdb/protein/{{uniprot.accession}}" {{ target }}>PDB</a>
             </ul>
           {% endfor %}
-        </dd>
-      </dl>
-    {% endif %}
-
-    {% if references.entrez_id %}
-      <dl class="entrez">
-        <dt>Entrez</dt>
-        <dd>
-          <ul class="list-inline">
-            <li><a href="https://www.ncbi.nlm.nih.gov/gene/{{references.entrez_id}}" {{ target }}>NCBI Gene</a>
-          </ul>
         </dd>
       </dl>
     {% endif %}
