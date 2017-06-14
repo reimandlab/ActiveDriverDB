@@ -15,14 +15,20 @@
   <div class="panel-body">
 
     <dl class="refseq">
-      <dt>RefSeq (mRNA)</dt>
+      <dt>RefSeq mRNA</dt>
       <dd>
         <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}" {{ target }}>{{ protein.refseq }}</a>
       </dd>
       {% if references.refseq_np %}
-        <dt>RefSeq (protein)</dt>
+        <dt>RefSeq protein</dt>
         <dd>
           <a href="https://www.ncbi.nlm.nih.gov/protein/{{ references.refseq_np }}" {{ target }}>{{ references.refseq_np }}</a>
+        </dd>
+      {% endif %}
+      {% if references.refseq_ng %}
+        <dt>RefSeq gene</dt>
+        <dd>
+          <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ references.refseq_ng }}" {{ target }}>{{ references.refseq_ng }}</a>
         </dd>
       {% endif %}
     </dl>
@@ -33,7 +39,7 @@
         <dd>
           {% for uniprot in references.uniprot_entries %}
             <ul class="list-inline">
-              <li>Isoform: {{ uniprot.isoform }}
+              <li>{{ uniprot.accession }} {% if uniprot.isoform != '1' %} isoform {{ uniprot.isoform }} {% endif %}
               <li><a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ references.uniprot_accession }}</a>
               <li><a href="http://www.phosphosite.org/uniprotAccAction?id={{ uniprot.accession }}" {{ target }}>Phosposite</a>
               <li><a href="http://pfam.xfam.org/protein?acc={{ uniprot.accession }}" {{ target }}>PFAM</a>
