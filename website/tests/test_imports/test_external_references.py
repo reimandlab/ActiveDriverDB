@@ -2,6 +2,8 @@ import gzip
 from argparse import Namespace
 from collections import defaultdict
 
+from pytest import raises
+
 from imports.protein_data import external_references as load_external_references
 from database_testing import DatabaseTest
 from models import Protein
@@ -46,12 +48,22 @@ Q5RFJ2	OrthoDB	EOG091G0VKY
 Q5RFJ2	TreeFam	TF102002\
 """
 
+duplicated_mappings = """\
+P68254-1	CCDS	CCDS25837.1
+P68254-1	RefSeq	NP_035869.1
+P68254-1	RefSeq_NT	NM_011739.3
+P68254-2	CCDS	CCDS25837.1
+P68254-2	RefSeq	NP_035869.1
+P68254-2	RefSeq_NT	NM_011739.3\
+"""
+
 
 class TestImport(DatabaseTest):
 
     def test_protein_references(self):
 
         filename = make_named_temp_file(data=idmapping_dat, opener=gzip.open, mode='wt')
+        filename_dups = make_named_temp_file(data=duplicated_mappings, opener=gzip.open, mode='wt')
 
         refseqs = [
             'NM_011739',    # present in reference mappings
@@ -88,8 +100,7 @@ class TestImport(DatabaseTest):
                 {'ENSMUSP00000106602', 'ENSMUSP00000100067'}
             )
 
-        # check if protein without references stays clear
-        with self.app.app_context():
+            # check if protein without references stays clear
             protein = proteins_we_have['NM_0001']
 
             # it's needed to re-add the protein cause ORM will emit a query
@@ -98,3 +109,7 @@ class TestImport(DatabaseTest):
             db.session.add(protein)
 
             assert protein.external_references is None
+
+            # check duplicate detection
+            with raises(ImportError):
+                references = load_external_references(filename_dups, throw=True)

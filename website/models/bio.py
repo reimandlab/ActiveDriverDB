@@ -231,6 +231,7 @@ class ProteinReferences(BioModel):
     # "UniProtKB accession numbers consist of 6 or 10 alphanumerical characters"
     # http://www.uniprot.org/help/accession_numbers
     uniprot_accession = db.Column(db.String(10))
+    uniprot_isoform = db.Column(db.Integer)
 
     # refseq peptide
     refseq_np = db.Column(db.String(32))

@@ -800,7 +800,7 @@ def active_driver_gene_lists(
 
 
 @importer
-def external_references(path='data/HUMAN_9606_idmapping.dat.gz'):
+def external_references(path='data/HUMAN_9606_idmapping.dat.gz', throw=False):
     from models import Protein
     from models import ProteinReferences
     from models import EnsemblPeptide
@@ -810,13 +810,14 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz'):
 
     def add_uniprot_accession(data):
 
-        uniprot, ref_type, value = data
+        # full uniprot includes isoform (if relevant)
+        full_uniprot, ref_type, value = data
 
         if ref_type == 'RefSeq_NT':
             # get protein
             refseq_nm = value.split('.')[0]
 
-            if not refseq_nm or not refseq_nm.startswith('NM'):
+            if not refseq_nm or not refseq_nm.startswith('NM') or not full_uniprot:
                 return
 
             try:
@@ -824,15 +825,25 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz'):
             except NoResultFound:
                 return
 
-            if refseq_nm in references or protein.external_references:
-                print('Redundant reference found for: %s' % refseq_nm)
-                return
+            try:
+                uniprot, isoform = full_uniprot.split('-')
+            except ValueError:
+                # only one isoform ?
+                print('No isoform specified for', full_uniprot, refseq_nm)
+                uniprot = full_uniprot
+                isoform = 1
 
-            if '-' in uniprot:
-                uniprot = uniprot.split('-')[0]
+            if uniprot in references:
+                msg = 'Redundant reference found for: %s' % refseq_nm
+                if throw:
+                    raise ImportError(msg)
+                else:
+                    print(msg)
+                    return
 
             reference, new = get_or_create(ProteinReferences, protein=protein)
             reference.uniprot_accession = uniprot
+            reference.uniprot_isoform = isoform
             references[uniprot] = reference
 
             if new:
@@ -848,27 +859,27 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz'):
 
     def add_references_by_uniprot(data):
 
-        uniprot, ref_type, value = data
+        full_uniprot, ref_type, value = data
 
-        if '-' in uniprot:
-            uniprot = uniprot.split('-')[0]
-
-        if uniprot not in references:
-            return
+        if '-' in full_uniprot:
+            uniprot, isoform = full_uniprot.split('-')
+            reference = references.get(uniprot, None)
+            if not reference or reference.uniprot_isoform != isoform:
+                return
+        else:
+            reference = references.get(full_uniprot, None)
+            if not reference:
+                return
 
         if ref_type in protein_references_to_collect:
 
             attr = protein_references_to_collect[ref_type]
-
-            reference = references[uniprot]
 
             value_without_version = value.split('.')[0]
 
             setattr(reference, attr, value_without_version)
 
         if ref_type in ensembl_references_to_collect:
-
-            reference = references[uniprot]
 
             attr = ensembl_references_to_collect[ref_type]
 
