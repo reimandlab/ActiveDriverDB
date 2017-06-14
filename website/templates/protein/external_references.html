@@ -39,8 +39,7 @@
         <dd>
           {% for uniprot in references.uniprot_entries %}
             <ul class="list-inline">
-              <li>{{ uniprot.accession }} {% if uniprot.isoform != '1' %} isoform {{ uniprot.isoform }} {% endif %}
-              <li><a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ references.uniprot_accession }}</a>
+              <li><a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ uniprot.accession }}{% if uniprot.isoform != 1 %} isoform {{ uniprot.isoform }} {% endif %}</a>
               <li><a href="http://www.phosphosite.org/uniprotAccAction?id={{ uniprot.accession }}" {{ target }}>Phosposite</a>
               <li><a href="http://pfam.xfam.org/protein?acc={{ uniprot.accession }}" {{ target }}>PFAM</a>
               <li><a href="http://string-db.org/newstring_cgi/show_network_section.pl?identifier={{ uniprot.accession }}" {{ target }}>STRING</a>
