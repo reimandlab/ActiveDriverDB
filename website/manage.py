@@ -208,14 +208,14 @@ class ProteinRelated(CommandTarget):
     @command
     def export(args):
         exporters = EXPORTERS
-        if args.export_paths and len(args.export_paths) != len(args.exporters):
+        if args.paths and len(args.paths) != len(args.exporters):
             print('Export paths should be given for every exported file, no less, no more.')
             return
         kwargs = {}
         for i, name in enumerate(args.exporters):
             exporter = exporters[name]
-            if args.export_paths:
-                kwargs['path'] = args.export_paths[i]
+            if args.paths:
+                kwargs['path'] = args.paths[i]
             out_file = exporter(**kwargs)
             print('Exported %s to %s' % (name, out_file))
 
@@ -223,7 +223,7 @@ class ProteinRelated(CommandTarget):
     def remove(args):
         reset_relational_db(bind='bio')
 
-    @argument
+    @export.argument
     def exporters():
         data_exporters = EXPORTERS
         return argument_parameters(
@@ -240,7 +240,7 @@ class ProteinRelated(CommandTarget):
             default=data_exporters,
         )
 
-    @argument
+    @load.argument
     def importers():
         data_importers = IMPORTERS
         return argument_parameters(
@@ -260,10 +260,10 @@ class ProteinRelated(CommandTarget):
             default=data_importers,
         )
 
-    @argument
-    def export_paths():
+    @export.argument
+    def paths():
         return argument_parameters(
-            '--export_paths',
+            '--paths',
             nargs='*',
             metavar='',
             help='A path(s) for export file(s)',

@@ -21,11 +21,21 @@ def static(func):
 def command(func):
     method = func
     method.is_command = True
+    func.argument = command_argument(method)
     return method
+
+
+def command_argument(command):
+    def argument_closure(func):
+        func.commands = [command]
+        func.is_argument = True
+        return func
+    return argument_closure
 
 
 def argument(func):
     func.is_argument = True
+    func.commands = 'all'
     return func
 
 
@@ -69,11 +79,17 @@ class CommandTarget(metaclass=Register):
         ]
 
     @classmethod
-    def get_arguments(cls):
+    def get_arguments(cls, command):
         return [
             value()
             for key, value in cls.get_methods()
-            if value and value.__dict__.get('is_argument', False)
+            if (
+                value and value.__dict__.get('is_argument', False) and
+                (
+                    (value.__dict__.get('commands') == 'all') or
+                    (command in value.__dict__.get('commands'))
+                )
+            )
         ]
 
     @classmethod
@@ -97,6 +113,6 @@ def create_command_subparsers(command_parsers):
                 command_func = getattr(handler, command)
                 subparser.set_defaults(func=command_func)
 
-                for arg_parameters in handler.get_arguments():
+                for arg_parameters in handler.get_arguments(command_func):
                     args, kwargs = arg_parameters
                     subparser.add_argument(*args, **kwargs)
