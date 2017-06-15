@@ -201,11 +201,11 @@ h3
   ul
     margin-bottom: 0
 
-  li::after, .refseq dd::after
+  li::after
     content: '|'
     color: #e0cbcb
 
-  li:last-child:after, .refseq dd:last-child::after
+  li:last-child:after
     content: ''
 
   dt, dd
@@ -223,6 +223,9 @@ h3
     font-weight: normal
     &::after
       content: ':'
+
+  .uniprot dt
+    vertical-align: top
 
 .color-legend
   margin-bottom: 0

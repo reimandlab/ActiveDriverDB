@@ -15,33 +15,28 @@
   <div class="panel-body">
 
     <dl class="refseq">
-      {% if references.entrez_id %}
-        <dt>Entrez</dt>
+        <dt>RefSeq</dt>
         <dd>
           <ul class="list-inline">
-            <li><a href="https://www.ncbi.nlm.nih.gov/gene/{{references.entrez_id}}" {{ target }}>NCBI Gene</a>
+            <li><a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}" {{ target }}>mRNA: {{ protein.refseq }}</a>
+            {% if references.refseq_np %}
+            <li><a href="https://www.ncbi.nlm.nih.gov/protein/{{ protein.refseq_np }}" {{ target }}>protein: {{ references.refseq_np }}</a>
+            {% endif %}
+            {% if references.refseq_ng %}
+            <li><a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq_ng }}" {{ target }}>gene: {{ references.refseq_ng }}</a>
+            {% endif %}
           </ul>
         </dd>
-      {% endif %}
-
-      <dt>RefSeq mRNA</dt>
-      <dd>
-        <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}" {{ target }}>{{ protein.refseq }}</a>
-      </dd>
-
-      {% if references.refseq_np %}
-        <dt>RefSeq protein</dt>
-        <dd>
-          <a href="https://www.ncbi.nlm.nih.gov/protein/{{ references.refseq_np }}" {{ target }}>{{ references.refseq_np }}</a>
-        </dd>
-      {% endif %}
-      {% if references.refseq_ng %}
-        <dt>RefSeq gene</dt>
-        <dd>
-          <a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ references.refseq_ng }}" {{ target }}>{{ references.refseq_ng }}</a>
-        </dd>
-      {% endif %}
     </dl>
+
+    {% if references.entrez_id %}
+    <dl>
+        <dt>Entrez Gene</dt>
+        <dd>
+          <a href="https://www.ncbi.nlm.nih.gov/gene/{{ references.entrez_id }}" {{ target }}>{{ references.entrez_id }}</a>
+        </dd>
+    </dl>
+    {% endif %}
 
     {% if references.uniprot_entries %}
       <dl class="uniprot">
