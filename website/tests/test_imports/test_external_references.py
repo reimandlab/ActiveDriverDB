@@ -12,6 +12,9 @@ from miscellaneous import make_named_temp_file
 
 
 idmapping_dat = """\
+P68251-1	RefSeq_NT	NM_011739.3
+P68251	UniProtKB-ID	P68251_MOUSE
+P68254	UniProtKB-ID	1433T_MOUSE
 P68254-1	CCDS	CCDS25837.1
 P68254-1	RefSeq	NP_035869.1
 P68254-1	RefSeq_NT	NM_011739.3
@@ -48,14 +51,6 @@ Q5RFJ2	OrthoDB	EOG091G0VKY
 Q5RFJ2	TreeFam	TF102002\
 """
 
-duplicated_mappings = """\
-P68254-1	CCDS	CCDS25837.1
-P68254-1	RefSeq	NP_035869.1
-P68254-1	RefSeq_NT	NM_011739.3
-P68254-2	CCDS	CCDS25837.1
-P68254-2	RefSeq	NP_035869.1
-P68254-2	RefSeq_NT	NM_011739.3\
-"""
 refseq_data = """\
 #tax_id	GeneID	Symbol	RSG	LRG	RNA	t	Protein	p	Category
 9606	29974	A1CF	NG_029916.1		NM_001198819.1		NP_001185748.1		reference standard
@@ -100,13 +95,19 @@ class TestImport(DatabaseTest):
 
             references = load_external_references(filename, refseq_filename)
 
-            # there are 2 references we would like to have extracted
-            # as we had three proteins in the db
-            assert len(references) == 2
+            # there are 3 references we would like to have extracted
+            assert len(references) == 3
 
             protein = proteins_we_have['NM_011739']
 
-            assert protein.external_references.uniprot_entries[0].accession == 'P68254'
+            assert len(protein.external_references.uniprot_entries) == 2
+            uniprot_entry = protein.external_references.uniprot_entries[1]
+            assert uniprot_entry.accession == 'P68254'
+            assert uniprot_entry.isoform == 1
+            assert uniprot_entry.reviewed is True
+
+            uniprot_entry = protein.external_references.uniprot_entries[0]
+            assert uniprot_entry.reviewed is False
             # assert protein.external_references.refseq_np == 'NP_035869'
             # assert protein.external_references.entrez_id == '286863'
 
@@ -117,6 +118,14 @@ class TestImport(DatabaseTest):
                 set(ensembl.peptide_id for ensembl in ensembl_peptides) ==
                 {'ENSMUSP00000106602', 'ENSMUSP00000100067'}
             )
+
+            protein = proteins_we_have['NM_001131572']
+
+            assert len(protein.external_references.uniprot_entries) == 1
+            uniprot_entry = protein.external_references.uniprot_entries[0]
+            assert uniprot_entry.accession == 'Q5RFJ2'
+            assert uniprot_entry.isoform == 1
+            assert uniprot_entry.reviewed is False
 
             # check if protein without references stays clear
             protein = proteins_we_have['NM_0001']

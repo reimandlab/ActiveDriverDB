@@ -201,16 +201,23 @@ h3
   ul
     margin-bottom: 0
 
-  li::after
+  li
+    padding: 0
+
+  li::before
     content: '|'
     color: #e0cbcb
+    padding: 0 6px
 
-  li:last-child:after
-    content: ''
+  li:first-child:before
+    display: none
 
   dt, dd
     padding: 10px 5px
     display: inline-block
+
+  dd .list-inline
+    margin-left: 0
 
   dl
     margin-bottom: 0
@@ -220,12 +227,38 @@ h3
     border-bottom: 0
 
   dt
+    min-width: 80px
     font-weight: normal
     &::after
       content: ':'
 
   .uniprot dt
     vertical-align: top
+
+  .uniprot
+    .glyphicon-file
+      font-size: 110%
+    .reviewed
+      color: #c39b00
+    .unreviewed
+      color: #93cffa
+    .status-indicator
+      position: relative
+      width: 14px
+      display: inline-block
+    .star
+      position: absolute
+      top: 7px
+      left: -2px
+      font-size: 75%
+      color: white
+
+    .table
+      margin-bottom: 0
+      ul
+        display: table-row
+      li
+        display: table-cell
 
 .color-legend
   margin-bottom: 0

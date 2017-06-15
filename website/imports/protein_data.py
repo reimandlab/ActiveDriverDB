@@ -827,6 +827,7 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_path='da
 
             try:
                 uniprot, isoform = full_uniprot.split('-')
+                isoform = int(isoform)
             except ValueError:
                 # only one isoform ?
                 # print('No isoform specified for', full_uniprot, refseq_nm)
@@ -857,7 +858,7 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_path='da
             relevant_references = []
             # select relevant references:
             for reference in uniprot_tied_references:
-                if any(entry.isoform == isoform for entry in reference.uniprot_entries):
+                if any(entry.isoform == int(isoform) for entry in reference.uniprot_entries):
                     relevant_references.append(reference)
 
         else:
@@ -865,6 +866,22 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_path='da
             if not uniprot_tied_references:
                 return
             relevant_references = uniprot_tied_references
+
+        if ref_type == 'UniProtKB-ID':
+            # http://www.uniprot.org/help/entry_name
+            # "Each >reviewed< entry is assigned a unique entry name upon integration into UniProtKB/Swiss-Prot"
+            # Entry names comes in format: X_Y;
+            # - for Swiss-Prot entry X is a mnemonic protein identification code (at most 5 characters)
+            # - for TrEMBL entry X is the same as accession code (6 to 10 characters)
+            x, y = value.split('_')
+
+            if len(x) <= 5:
+                for reference in relevant_references:
+                    assert '-' not in full_uniprot
+                    entry = UniprotEntry.query.filter_by(accession=full_uniprot, reference=reference).one()
+                    entry.reviewed = True
+
+            return
 
         if ref_type in ensembl_references_to_collect:
 

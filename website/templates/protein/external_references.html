@@ -8,7 +8,7 @@
     </div>
     <div class="heading-right">
       <div class="source-acknowledgement">
-        Mappings were retrieved from NCBI & Uniprot.
+        Mappings retrieved from NCBI & Uniprot.
       </div>
     </div>
   </div>
@@ -31,9 +31,9 @@
 
     {% if references.entrez_id %}
     <dl>
-        <dt>Entrez Gene</dt>
+        <dt>Entrez</dt>
         <dd>
-          <a href="https://www.ncbi.nlm.nih.gov/gene/{{ references.entrez_id }}" {{ target }}>{{ references.entrez_id }}</a>
+          <a href="https://www.ncbi.nlm.nih.gov/gene/{{ references.entrez_id }}" {{ target }}>gene: {{ references.entrez_id }}</a>
         </dd>
     </dl>
     {% endif %}
@@ -42,9 +42,18 @@
       <dl class="uniprot">
         <dt>Uniprot</dt>
         <dd>
-          {% for uniprot in references.uniprot_entries %}
+          <div class="table">
+          {% for uniprot in references.uniprot_entries | sort(attribute='reviewed', reverse=True) %}
             <ul class="list-inline">
-              <li><a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ uniprot.accession }}{% if uniprot.isoform != 1 %} isoform {{ uniprot.isoform }} {% endif %}</a>
+              <li>
+                {% set reviewed = "reviewed" if uniprot.reviewed else "unreviewed" %}
+                <div class="status-indicator {{ reviewed }}" title="{{ reviewed | title }} entry">
+                  <span class="glyphicon glyphicon-file"></span>
+                  {% if uniprot.reviewed %}
+                    <span class="glyphicon glyphicon-star-empty star"></span>
+                  {% endif %}
+                </div>
+                <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ uniprot.accession }}{% if uniprot.isoform != 1 %}, isoform {{ uniprot.isoform }} {% endif %}</a>
               <li><a href="http://www.phosphosite.org/uniprotAccAction?id={{ uniprot.accession }}" {{ target }}>Phosposite</a>
               <li><a href="http://pfam.xfam.org/protein?acc={{ uniprot.accession }}" {{ target }}>PFAM</a>
               <li><a href="http://string-db.org/newstring_cgi/show_network_section.pl?identifier={{ uniprot.accession }}" {{ target }}>STRING</a>
@@ -52,14 +61,16 @@
               <li><a href="http://www.reactome.org/content/query?cluster=true&q={{ uniprot.accession }}" {{ target }}>Reactome</a>
               <li><a href="http://www.rcsb.org/pdb/protein/{{uniprot.accession}}" {{ target }}>PDB</a>
             </ul>
+
           {% endfor %}
+          </div>
         </dd>
       </dl>
     {% endif %}
 
     {% if references.ensembl_peptides %}
       <dl>
-        <dt>Ensembl protein</dt>
+        <dt>Ensembl</dt>
         <dd>
           <ul class="list-inline">
             {% for ensembl_peptide in references.ensembl_peptides %}

@@ -234,6 +234,7 @@ class UniprotEntry(BioModel):
     # http://www.uniprot.org/help/accession_numbers
     accession = db.Column(db.String(10))
     isoform = db.Column(db.Integer)
+    reviewed = db.Column(db.Boolean, default=False)
 
 
 class ProteinReferences(BioModel):
