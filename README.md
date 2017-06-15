@@ -6,7 +6,7 @@ The project aims to create an interactive visualisation framework for genome mut
 
 # Licence
 
-The application is Open Source and is licensed under the terms of [GNU Lesser General Public License](/reimandlab/ActiveDriverDB/blob/master/GNU Lesser General Public License).
+The application is Open Source and is licensed under the terms of [GNU Lesser General Public License](https://github.com/reimandlab/ActiveDriverDB/blob/master/LICENSE).
 
 # Development
 
