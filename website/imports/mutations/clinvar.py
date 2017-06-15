@@ -141,13 +141,15 @@ class Importer(MutationImporter):
             clinvar_data
         )
 
-    def restart_autoincrement(self):
+    def restart_autoincrement(self, model):
+        assert self.model == model
         restart_autoincrement(self.model)
         db.session.commit()
         restart_autoincrement(ClinicalData)
         db.session.commit()
 
-    def raw_delete_all(self):
+    def raw_delete_all(self, model):
+        assert self.model == model
         # first - remove clinical data
         ClinicalData.query.delete()
         # then mutations

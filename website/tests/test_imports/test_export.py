@@ -73,7 +73,7 @@ class TestExport(DatabaseTest):
             test_models = create_test_models()
             db.session.add_all(test_models.values())
 
-            namespace = Namespace(exporters=['site_specific_network_of_kinases_and_targets'], export_paths=[filename])
+            namespace = Namespace(exporters=['site_specific_network_of_kinases_and_targets'], paths=[filename])
             ProteinRelated.export(namespace)
 
         with open(filename) as f:
@@ -90,7 +90,7 @@ class TestExport(DatabaseTest):
             test_models = create_test_models()
             db.session.add_all(test_models.values())
 
-            namespace = Namespace(exporters=['mc3_muts_affecting_ptm_sites'], export_paths=[filename])
+            namespace = Namespace(exporters=['mc3_muts_affecting_ptm_sites'], paths=[filename])
             ProteinRelated.export(namespace)
 
         with open(filename) as f:

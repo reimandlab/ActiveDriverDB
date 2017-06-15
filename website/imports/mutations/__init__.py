@@ -8,7 +8,7 @@ from flask import current_app
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 
-from database import db, yield_objects
+from database import db, yield_objects, remove_model, raw_delete_all
 from database import fast_count
 from database import get_highest_id
 from database import restart_autoincrement
@@ -252,29 +252,21 @@ class MutationImporter(ABC):
             )
         bulk_ORM_insert(self.model, self.insert_keys, data)
 
-    def raw_delete_all(self):
+    def raw_delete_all(self, model):
         """In subclasses you can overwrite this function
 
         in order implement advanced removal behaviour"""
-        count = self.model.query.delete()
-        return count
+        assert model == self.model
+        return raw_delete_all(model)
 
-    def restart_autoincrement(self):
+    def restart_autoincrement(self, model):
+        assert model == self.model
         restart_autoincrement(self.model)
         db.session.commit()
 
     def remove(self, **kwargs):
-        """This function should stay untouched"""
-        print('Removing %s:' % self.model_name)
-        try:
-            count = self.raw_delete_all()
-            db.session.commit()
-        except SQLAlchemyError:
-            db.session.rollback()
-            print('Removing failed')
-            raise
-        self.restart_autoincrement()
-        print('Removed %s entries of %s' % (count, self.model_name))
+        """Do not overwrite this function"""
+        remove_model(self.model, self.raw_delete_all, self.restart_autoincrement)
 
     def export(self, path=None, only_primary_isoforms=False):
         from datetime import datetime

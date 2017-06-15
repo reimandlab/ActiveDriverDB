@@ -12,12 +12,6 @@ def argument_parameters(*args, **kwargs):
     return args, kwargs
 
 
-def static(func):
-    def wrapped(self, *args, **kwargs):
-        return func(*args, **kwargs)
-    return wrapped
-
-
 def command(func):
     method = func
     method.is_command = True
@@ -25,9 +19,9 @@ def command(func):
     return method
 
 
-def command_argument(command):
+def command_argument(command_func):
     def argument_closure(func):
-        func.commands = [command]
+        func.commands = [command_func]
         func.is_argument = True
         return func
     return argument_closure
@@ -79,7 +73,7 @@ class CommandTarget(metaclass=Register):
         ]
 
     @classmethod
-    def get_arguments(cls, command):
+    def get_arguments(cls, command_func):
         return [
             value()
             for key, value in cls.get_methods()
@@ -87,7 +81,7 @@ class CommandTarget(metaclass=Register):
                 value and value.__dict__.get('is_argument', False) and
                 (
                     (value.__dict__.get('commands') == 'all') or
-                    (command in value.__dict__.get('commands'))
+                    (command_func in value.__dict__.get('commands'))
                 )
             )
         ]

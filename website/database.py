@@ -1,6 +1,6 @@
 from sqlalchemy import func
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.sql.expression import func
 from flask_sqlalchemy import SQLAlchemy
 from berkley_db import BerkleyHashSet
@@ -152,3 +152,21 @@ def yield_objects(base_query, step_size=1000):
             yield obj
         step += 1
         done = not obj
+
+
+def raw_delete_all(model):
+    count = model.query.delete()
+    return count
+
+
+def remove_model(model, delete_func=raw_delete_all, autoincrement_func=restart_autoincrement):
+    print('Removing %s:' % model.__name__)
+    try:
+        count = delete_func(model)
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        print('Removing failed')
+        raise
+    autoincrement_func(model)
+    print('Removed %s entries of %s' % (count, model.__name__))

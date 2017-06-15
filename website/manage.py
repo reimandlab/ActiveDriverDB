@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from database import bdb
+from database import bdb, remove_model
 from database import bdb_refseq
 from imports import import_all
 from imports.protein_data import IMPORTERS
@@ -205,41 +205,6 @@ class ProteinRelated(CommandTarget):
                 db.session.add_all(results)
                 db.session.commit()
 
-    @command
-    def export(args):
-        exporters = EXPORTERS
-        if args.paths and len(args.paths) != len(args.exporters):
-            print('Export paths should be given for every exported file, no less, no more.')
-            return
-        kwargs = {}
-        for i, name in enumerate(args.exporters):
-            exporter = exporters[name]
-            if args.paths:
-                kwargs['path'] = args.paths[i]
-            out_file = exporter(**kwargs)
-            print('Exported %s to %s' % (name, out_file))
-
-    @command
-    def remove(args):
-        reset_relational_db(bind='bio')
-
-    @export.argument
-    def exporters():
-        data_exporters = EXPORTERS
-        return argument_parameters(
-            '-e',
-            '--exporters',
-            nargs='*',
-            help=(
-                'What should be exported?'
-                ' Available: ' + ', '.join(data_exporters) + '.'
-                ' By default everything will be exported.'
-            ),
-            choices=data_exporters,
-            metavar='',
-            default=data_exporters,
-        )
-
     @load.argument
     def importers():
         data_importers = IMPORTERS
@@ -260,6 +225,37 @@ class ProteinRelated(CommandTarget):
             default=data_importers,
         )
 
+    @command
+    def export(args):
+        exporters = EXPORTERS
+        if args.paths and len(args.paths) != len(args.exporters):
+            print('Export paths should be given for every exported file, no less, no more.')
+            return
+        kwargs = {}
+        for i, name in enumerate(args.exporters):
+            exporter = exporters[name]
+            if args.paths:
+                kwargs['path'] = args.paths[i]
+            out_file = exporter(**kwargs)
+            print('Exported %s to %s' % (name, out_file))
+
+    @export.argument
+    def exporters():
+        data_exporters = EXPORTERS
+        return argument_parameters(
+            '-e',
+            '--exporters',
+            nargs='*',
+            help=(
+                'What should be exported?'
+                ' Available: ' + ', '.join(data_exporters) + '.'
+                ' By default everything will be exported.'
+            ),
+            choices=data_exporters,
+            metavar='',
+            default=data_exporters,
+        )
+
     @export.argument
     def paths():
         return argument_parameters(
@@ -267,6 +263,42 @@ class ProteinRelated(CommandTarget):
             nargs='*',
             metavar='',
             help='A path(s) for export file(s)',
+        )
+
+    @command
+    def remove_all(args):
+        reset_relational_db(bind='bio')
+
+    @command
+    def remove(args):
+        import models.bio as bio_models
+        for model_name in args.models:
+            model = getattr(bio_models, model_name)
+            remove_model(model)
+            db.session.commit()
+
+    @remove.argument
+    def models():
+        from models.bio import BioModel
+        from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
+
+        models = [
+            model
+            for model in BioModel._decl_class_registry.values()
+            if not isinstance(model, _ModuleMarker) and model.__module__ == 'models.bio'
+        ]
+
+        models_names = [model.__name__ for model in models]
+
+        return argument_parameters(
+            '--models',
+            nargs='+',
+            metavar='',
+            help=(
+                'Names of models to be removed.'
+                ' Available models: ' + ', '.join(models_names) + '.'
+            ),
+            choices=models_names
         )
 
 
