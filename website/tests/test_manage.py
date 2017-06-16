@@ -103,12 +103,8 @@ class ManageTest(DatabaseTest):
     def test_export(self):
 
         def do_export(filename):
-            # as tqdm by default writes to sys.stderr it is better to suspend its work
-            import tqdm
-            self.monkeypatch.setattr(tqdm, 'tqdm', lambda x, total=None: x)
             command = 'export protein_related -e site_specific_network_of_kinases_and_targets --paths %s' % filename
             msg, error = self.run_command(command)
-            assert not error
             assert 'Exported site_specific_network_of_kinases_and_targets to %s' % filename in msg
 
         from tests.test_imports.test_export import TestExport
