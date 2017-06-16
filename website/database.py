@@ -1,4 +1,6 @@
-from sqlalchemy import func
+from warnings import warn
+
+from sqlalchemy import func, MetaData
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.sql.expression import func
@@ -69,6 +71,9 @@ def restart_autoincrement(model):
     from flask import current_app
     engine = db.get_engine(current_app, model.__bind_key__)
     db.session.close()
+    if db.session.bind.dialect.name == 'sqlite':
+        warn(UserWarning('Sqlite increment reset is not supported'))
+        return
     engine.execute(
         'ALTER TABLE ' + model.__tablename__ + ' AUTO_INCREMENT = 1;'
     )
@@ -170,3 +175,36 @@ def remove_model(model, delete_func=raw_delete_all, autoincrement_func=restart_a
         raise
     autoincrement_func(model)
     print('Removed %s entries of %s' % (count, model.__name__))
+
+
+def set_foreign_key_checks(engine, active=True):
+    if db.session.bind.dialect.name == 'sqlite':
+        warn(UserWarning('Sqlite foreign key checks managements is not supported'))
+        return
+    engine.execute('SET FOREIGN_KEY_CHECKS=%s;' % 1 if active else 0)
+
+
+def reset_relational_db(app, **kwargs):
+
+    name = kwargs.get('bind', 'default')
+
+    print('Removing', name, 'database...')
+    engine = db.get_engine(app, name)
+    set_foreign_key_checks(engine, active=False)
+    db.session.commit()
+    db.reflect()
+    db.session.commit()
+    meta = MetaData()
+    meta.reflect(bind=engine)
+    for table in reversed(meta.sorted_tables):
+        engine.execute(table.delete())
+    set_foreign_key_checks(engine, active=True)
+    print('Removing', name, 'database completed.')
+
+    print('Recreating', name, 'database...')
+    db.create_all(**kwargs)
+    print('Recreating', name, 'database completed.')
+
+
+def get_column_names(table):
+    return set((i.name for i in table.c))

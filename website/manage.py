@@ -1,51 +1,31 @@
 #!/usr/bin/env python3
 import argparse
-from database import bdb, remove_model
-from database import bdb_refseq
-from imports import import_all
-from imports.protein_data import IMPORTERS
-from exports.protein_data import EXPORTERS
-from imports.mappings import import_mappings
-from database import db
-from models import Page
-from models import User
-from imports.mutations import MutationImportManager
-from imports.mutations import get_proteins
 from getpass import getpass
+
+from sqlalchemy.exc import IntegrityError, OperationalError
+
+from app import create_app
+from database import bdb, remove_model, reset_relational_db, get_column_names
+from database import bdb_refseq
+from database import db
+from exceptions import ValidationError
+from exports.protein_data import EXPORTERS
+from helpers.commands import CommandTarget
 from helpers.commands import argument
 from helpers.commands import argument_parameters
-from helpers.commands import CommandTarget
 from helpers.commands import command
 from helpers.commands import create_command_subparsers
-from app import create_app
-from exceptions import ValidationError
-from sqlalchemy import MetaData
-from sqlalchemy.exc import IntegrityError, OperationalError
+from imports import import_all
+from imports.mappings import import_mappings
+from imports.mutations import MutationImportManager
+from imports.mutations import get_proteins
+from imports.protein_data import IMPORTERS
+from models import Page
+from models import User
 
 muts_import_manager = MutationImportManager()
 database_binds = ('bio', 'cms')
-
-
-def reset_relational_db(**kwargs):
-
-    name = kwargs.get('bind', 'default')
-
-    print('Removing', name, 'database...')
-    engine = db.get_engine(app, name)
-    engine.execute('SET FOREIGN_KEY_CHECKS=0;')
-    db.session.commit()
-    db.reflect()
-    db.session.commit()
-    meta = MetaData()
-    meta.reflect(bind=engine)
-    for table in reversed(meta.sorted_tables):
-        engine.execute(table.delete())
-    engine.execute('SET FOREIGN_KEY_CHECKS=1;')
-    print('Removing', name, 'database completed.')
-
-    print('Recreating', name, 'database...')
-    db.create_all(**kwargs)
-    print('Recreating', name, 'database completed.')
+app = None
 
 
 def automigrate(args, app=None):
@@ -56,8 +36,17 @@ def automigrate(args, app=None):
     return True
 
 
-def column_names(table):
-    return set((i.name for i in table.c))
+def get_all_models(module_name='bio'):
+    from models import Model
+    from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
+    module_name = 'models.' + module_name
+
+    models = [
+        model
+        for model in Model._decl_class_registry.values()
+        if not isinstance(model, _ModuleMarker) and model.__module__ == module_name
+    ]
+    return models
 
 
 def basic_auto_migrate_relational_db(app, bind):
@@ -85,9 +74,9 @@ def basic_auto_migrate_relational_db(app, bind):
             db_table = Table(
                 table.name, metadata, autoload=True, autoload_with=engine
             )
-            db_columns = column_names(db_table)
+            db_columns = get_column_names(db_table)
 
-            columns = column_names(table)
+            columns = get_column_names(table)
             new_columns = columns - db_columns
             unused_columns = db_columns - columns
 
@@ -180,7 +169,7 @@ class CMS(CommandTarget):
 
     @command
     def remove(args):
-        reset_relational_db(bind='cms')
+        reset_relational_db(app, bind='cms')
 
 
 class ProteinRelated(CommandTarget):
@@ -267,7 +256,7 @@ class ProteinRelated(CommandTarget):
 
     @command
     def remove_all(args):
-        reset_relational_db(bind='bio')
+        reset_relational_db(app, bind='bio')
 
     @command
     def remove(args):
@@ -279,14 +268,8 @@ class ProteinRelated(CommandTarget):
 
     @remove.argument
     def models():
-        from models.bio import BioModel
-        from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
 
-        models = [
-            model
-            for model in BioModel._decl_class_registry.values()
-            if not isinstance(model, _ModuleMarker) and model.__module__ == 'models.bio'
-        ]
+        models = get_all_models('bio')
 
         models_names = [model.__name__ for model in models]
 
@@ -317,7 +300,7 @@ class SnvToCsvMapping(CommandTarget):
         print('Removing mappings database...')
         bdb.reset()
         bdb_refseq.reset()
-        print('Removing mapings database completed.')
+        print('Removing mappings database completed.')
 
 
 class Mutations(CommandTarget):
@@ -328,7 +311,8 @@ class Mutations(CommandTarget):
     def action(name, args):
         proteins = get_proteins()
         kwargs = vars(args)
-        kwargs.pop('func')
+        if 'func' in kwargs:
+            kwargs.pop('func')
         muts_import_manager.perform(
             name, proteins, **kwargs
         )
@@ -368,7 +352,7 @@ class Mutations(CommandTarget):
             default=mutation_importers
         )
 
-    @argument
+    @export.argument
     def only_primary_isoforms():
         return argument_parameters(
             '-o',
@@ -389,8 +373,15 @@ class All(CommandTarget):
         SnvToCsvMapping.load(args)
         CMS.load(args)
 
+    @command
+    def remove(args):
+        ProteinRelated.remove_all(args)
+        Mutations.remove(argparse.Namespace(sources='__all__'))
+        SnvToCsvMapping.remove(args)
+        CMS.remove(args)
 
-if __name__ == '__main__':
+
+def create_parser():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='sub-commands')
 
@@ -429,26 +420,40 @@ if __name__ == '__main__':
             'By default all binds will be used.'
         )
     )
+    return parser
 
-    args = parser.parse_args()
 
-    if hasattr(args, 'func'):
+def run_manage(parsed_args, my_app=None):
+    if not hasattr(parsed_args, 'func'):
+        print('Scripts loaded successfully, no tasks specified.')
+        return
+
+    if not my_app:
         try:
-            app = create_app(config_override={'LOAD_STATS': False})
+            my_app = create_app(config_override={'LOAD_STATS': False})
         except OperationalError as e:
             if e.orig.args[0] == 1071:
                 print('Please run: ')
                 print('ALTER DATABASE `db_bio` CHARACTER SET utf8;')
                 print('ALTER DATABASE `db_cms` CHARACTER SET utf8;')
                 print('to be able to continue.')
+                return
             else:
                 raise
+    global app
+    app = my_app
 
-        with app.app_context():
-            args.func(args)
-        print('Done, all tasks completed.')
-    else:
-        print('Scripts loaded successfully, no tasks specified.')
+    with app.app_context():
+        parsed_args.func(parsed_args)
+
+    print('Done, all tasks completed.')
+
+
+if __name__ == '__main__':
+    parser = create_parser()
+
+    args = parser.parse_args()
+    run_manage(args)
 
 else:
     print('This script should be run from command line')

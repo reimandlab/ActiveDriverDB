@@ -65,7 +65,7 @@ class TestExport(DatabaseTest):
                 b'SOMEGENE\tNM_0001\t1\tA\tE\tSome disease'
             ]
 
-    def test_network_export(self):
+    def test_network_export(self, do_export=None):
 
         filename = make_named_temp_file()
 
@@ -73,8 +73,11 @@ class TestExport(DatabaseTest):
             test_models = create_test_models()
             db.session.add_all(test_models.values())
 
-            namespace = Namespace(exporters=['site_specific_network_of_kinases_and_targets'], paths=[filename])
-            ProteinRelated.export(namespace)
+            if do_export:
+                do_export(filename)
+            else:
+                namespace = Namespace(exporters=['site_specific_network_of_kinases_and_targets'], paths=[filename])
+                ProteinRelated.export(namespace)
 
         with open(filename) as f:
             assert f.readlines() == [
