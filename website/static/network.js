@@ -316,8 +316,6 @@ var Network = function ()
             var group_kinases = getKinasesByName(group.kinases_ids, local_kinases_grouped)
             assert(group_kinases.length <= group.kinases_ids.length)
 
-            group.kinases = group_kinases
-
             var group_index = index_shift + i
 
             var mutations_in_kinases = 0
@@ -857,6 +855,12 @@ var Network = function ()
             var cloned_kinases = prepareSites(data.sites, nodes_data.length)
             Array.prototype.push.apply(nodes_data, sites)
             Array.prototype.push.apply(nodes_data, cloned_kinases)
+        }
+
+        for(var i = 0; i < kinase_groups.length; i++) {
+            var group = kinase_groups[i]
+            var group_kinases = getKinasesByName(group.kinases_ids, kinases_grouped)
+            group.kinases = group_kinases
         }
 
         return nodes_data
