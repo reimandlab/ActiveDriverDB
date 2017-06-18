@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from "help.html" import help with context %}
 
 {% block title %} {{ protein.gene.name }} - {{ protein.refseq }} - protein view - {{ super() }} {% endblock %}
 
@@ -76,7 +77,10 @@
         </div>
         <div class="panel-body">
           <div class="legend">
-            <h4>Mutation impacts</h4>
+            <h4>
+              Mutation impacts
+              {{ help('legend-mutation-impacts', 'small-top') }}
+            </h4>
             {% for type in mutation_types %}
               <div class="swatch">
                 <div class="impact {{ type }}">
@@ -87,7 +91,10 @@
             {% endfor %}
           </div>
           <div class="legend">
-            <h4>Sites</h4>
+            <h4>
+              Sites
+              {{ help('legend-sequence-sites', 'small-top') }}
+            </h4>
             {% for type in site_types %}
               <div class="swatch">
                 <div class="site {{ type }}">
@@ -128,7 +135,10 @@
       <div class="panel panel-default panel-with-btn protein-summary">
         <div class="panel-heading">
           <div class="heading-left">
-            <h3 class="panel-title">Protein summary</h3>
+            <h3 class="panel-title">
+              Protein summary
+              {{ help('protein-summary') }}
+            </h3>
           </div>
           <div class="heading-right">
             This is {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
@@ -189,7 +199,10 @@
       <div class="panel panel-default panel-needleplot panel-with-btn visualisation">
         <div class="panel-heading">
           <div class="heading-left">
-            <h3 class="panel-title">Mutations Visualisation</h3>
+            <h3 class="panel-title">
+              Mutations Visualisation
+              {{ help('mutations-visualisation') }}
+            </h3>
           </div>
           <div class="heading-right">
             {% include 'buttons/export.html' %}

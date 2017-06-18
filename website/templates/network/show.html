@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "help.html" import help with context %}
 
 {% block title %}
     {{ protein.gene.name }} - {{ protein.refseq }} - network view - {{ super() }}
@@ -82,7 +83,10 @@
           </div>
 
           <div class="legend">
-            <h4>Kinases</h4>
+            <h4>
+              Kinases
+              {{ help('legend-network-kinases', 'small-top') }}
+            </h4>
             <div class="swatch">
               <div class="kinase">
                 <div class="color"></div>
@@ -102,7 +106,10 @@
           </div>
 
           <div class="legend">
-            <h4>Sites</h4>
+            <h4>
+              Sites
+              {{ help('legend-network-sites', 'small-top') }}
+            </h4>
             <div class="swatch">
               <div class="site">
                 <div class="color"></div>
@@ -144,7 +151,10 @@
       <div class="panel panel-default panel-with-btn network visualisation">
           <div class="panel-heading">
             <div class="heading-left">
-              <h3 class="panel-title">PTM Interaction Network Visualisation</h3>
+              <h3 class="panel-title">
+                PTM Interaction Network Visualisation
+                {{ help('ptm-network-visualisation') }}
+              </h3>
             </div>
             <div class="heading-right">
 

@@ -3,7 +3,8 @@
 #content
   position: relative
   clear: both
-  overflow: hidden
+  // TODO: possible overflow hidden is needed
+  overflow: visible
 
 footer
   margin-top: 50px
@@ -141,9 +142,16 @@ $search-box-width: 225px
   h5
     margin-top: 0
 
+.dropdown-menu-center
+  left: 50%
+  right: auto
+  transform: translate(-50%, 0)
+
+
 .dropdown .dropdown-menu
   display: block
   overflow: hidden
+  z-index: 10
 
   opacity: 0
   visibility: hidden
@@ -229,8 +237,8 @@ h3
   dt
     min-width: 80px
     font-weight: normal
-    &::after
-      content: ':'
+    //&::after
+    //  content: ':'
 
   .uniprot dt
     vertical-align: top
@@ -323,3 +331,75 @@ a.list-expand
     width: 100%
     position: absolute
 
+
+.inline-help
+
+  font-size: 14px
+  font-weight: normal
+
+  .help-btn
+    top: 1px
+    background: transparent
+    border: 0
+    padding-left: 4px
+    &.low-padding
+      padding: 0 10px 0 4px
+    &:active
+      background: none!important
+      box-shadow: none
+      .glyphicon
+        color: #d70e00
+
+    &:hover .glyphicon, &:focus .glyphicon
+      color: #c30e00
+
+    span.glyphicon
+      font-size: 124%
+      color: #777
+
+    &.small-top
+      padding: 0 2px 0 2px
+      vertical-align: top
+      top: -4px
+
+      span.glyphicon
+        font-size: 85%
+
+  &.open
+    .help-btn
+      background: none!important
+      box-shadow: none
+      .glyphicon
+        color: #000000
+
+  .content
+    line-height: 140%
+    color: #555
+
+  .edit-form
+    display: none
+    textarea
+      min-height: 100px
+
+  .edit-btn
+    float: right
+
+  .feedback
+    display: none
+    line-height: 140%
+    textarea
+      width: 100%
+      min-height: 150px
+
+  .buttons
+    margin-top: 10px
+    clear: both
+    width: 100%
+
+    .save-btn
+      float: left
+      width: 70%
+
+    .reject-btn
+      float: right
+      width: 30%

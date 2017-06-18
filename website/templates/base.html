@@ -20,6 +20,12 @@
     <link rel="stylesheet" href="{{ ASSET_URL }}" media="print">
   {% endassets %}
 
+  {% if current_user.is_admin %}
+  {% assets "js_inline_help_edit" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+  {% endassets %}
+  {% endif %}
+
   <!--[if lt IE 9]>
     {{ dependency('html5shiv') }}
   <![endif]-->
@@ -145,7 +151,13 @@
 {% endassets %}
 {% block footer_js %}
 <script type="text/javascript">
-document.getElementById('spinner').style.display='none'
+  document.getElementById('spinner').style.display='none'
+
+  {% if current_user.is_admin %}
+    var inline_help = HelpManager();
+    inline_help.init("{{ url_for('ContentManagementSystem:save_inline_help') }}");
+    set_csrf_token("{{ csrf_token() | safe }}")
+  {% endif %}
 </script>
 {% endblock %}
 </body>

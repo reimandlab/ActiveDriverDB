@@ -1,7 +1,7 @@
 from functools import wraps
 from types import FunctionType
 
-from flask import current_app
+from flask import current_app, jsonify
 from flask import flash
 from flask import render_template as template
 from flask import redirect
@@ -15,7 +15,7 @@ from flask_login import current_user
 from flask_login import login_user
 from flask_login import logout_user
 from flask_login import login_required
-from models import Page
+from models import Page, HelpEntry
 from models import Menu
 from models import MenuEntry
 from models import PageMenuEntry
@@ -27,7 +27,7 @@ from database import get_or_create
 from app import login_manager
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, OperationalError
 from statistics import STATISTICS
 from exceptions import ValidationError
 
@@ -170,6 +170,45 @@ class ContentManagementSystem(FlaskView):
         setting = get_system_setting(name)
         if setting:
             return setting.value
+
+    @staticmethod
+    def _inline_help(name):
+        help_entry = HelpEntry.query.filter_by(name=name).first()
+        if not help_entry or not help_entry.content:
+            empty = 'This element has no help text defined yet.'
+            if current_user.is_admin:
+                empty += '\nPlease, click the pencil icon to add help.'
+            return empty
+        return help_entry.content
+
+    @admin_only
+    @route('/admin/save_inline_help', methods=['POST'])
+    def save_inline_help(self):
+        name = request.form['help_id']
+        old_content = request.form['old_content']
+        new_content = request.form['new_content']
+
+        help_entry, created = get_or_create(HelpEntry, name=name)
+        if created:
+            db.session.add(help_entry)
+
+        if created or help_entry.content == old_content:
+            status = 200
+            help_entry.content = new_content
+            try:
+                db.session.commit()
+            except (IntegrityError, OperationalError) as e:
+                print(e)
+                db.session.rollback()
+                status = 501
+        else:
+            status = 409
+
+        result = {
+            'status': status,
+            'content': help_entry.content
+        }
+        return jsonify(result)
 
     @route('/')
     def index(self):

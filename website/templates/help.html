@@ -1,0 +1,37 @@
+{% macro help(id, btn_class='') %}
+  <div class="btn-group dropdown inline-help" role="group" data-id="{{ id }}">
+    <button class="btn btn-default btn-sm dropdown-toggle help-btn {{ btn_class }}" type="button" data-toggle="dropdown" title="What's this?">
+      <span class="glyphicon glyphicon-question-sign"></span>
+    </button>
+    <div class="dropdown-menu short-url-dropdown dropdown-menu-center">
+
+      {% if current_user.is_admin %}
+        <form>
+          <button class="btn btn-default edit-btn" type="button">
+            <span class="glyphicon glyphicon-pencil"></span>
+          </button>
+        </form>
+      {% endif %}
+
+      <div class="content">{{ inline_help(id) | replace('\n', '<br>') | safe }}</div>
+
+      <div class="alert alert-warning feedback" role="alert"></div>
+
+      {% if current_user.is_admin %}
+        <form class="edit-form">
+          <textarea class="form-control new-content" placeholder="Help message">{{ inline_help(id) }}</textarea>
+          <div class="btn-group buttons" role="group">
+            <button type="button" class="btn btn-default btn-primary save-btn">
+              <span class="glyphicon glyphicon-ok"></span>
+              Save
+            </button>
+            <button type="button" class="btn btn-default reject-btn">
+              <span class="glyphicon glyphicon-remove"></span>
+              Reject
+            </button>
+          </div>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+{% endmacro %}

@@ -136,6 +136,7 @@ def create_app(config_filename='config.py', config_override={}):
     jinja_globals['dependency'] = dependency_manager.get_dependency
     jinja_globals['system_menu'] = ContentManagementSystem._system_menu
     jinja_globals['system_setting'] = ContentManagementSystem._system_setting
+    jinja_globals['inline_help'] = ContentManagementSystem._inline_help
     jinja_globals['csrf_token'] = csrf.new_csrf_token
     jinja_globals['is_debug_mode'] = app.debug
 

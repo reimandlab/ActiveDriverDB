@@ -1,12 +1,13 @@
 {% extends 'widgets/widgets_panel.html' %}
 {% from 'widgets/widgets.html' import widget_list %}
 {% from 'widgets/widgets.html' import render_widget %}
+{% from "help.html" import help with context %}
 
 {% block panel_class %}filters-panel{% endblock %}
 
 
 {% block panel_title %}
-  Data Filters
+  Data Filters {{ help('data-filters', 'low-padding') }}
 {% endblock %}
 
 

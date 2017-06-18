@@ -159,3 +159,9 @@ function format(template, variables)
     return template;
 }
 
+function set_csrf_token(token)
+{
+    $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
+        jqXHR.setRequestHeader('X-Csrftoken', token);
+    })
+}

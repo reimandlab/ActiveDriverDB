@@ -71,6 +71,10 @@ class AnonymousUser:
     is_authenticated = False
     datasets = []
 
+    @property
+    def is_admin(self):
+        return False
+
     def datasets_names_by_uri(self):
         return {}
 
@@ -267,6 +271,12 @@ class Setting(CMSModel):
     @property
     def int_value(self):
         return int(self.value)
+
+
+class HelpEntry(CMSModel):
+
+    name = db.Column(db.String(256), nullable=False, unique=True, index=True)
+    content = db.Column(db.Text())
 
 
 class UsersMutationsDataset(CMSModel):
