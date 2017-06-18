@@ -179,9 +179,9 @@ var Network = function ()
 
             function associate_kinase_with_site(kinase_template)
             {
+                var kinase;
                 if(config.clone_by_site)
                 {
-                    var kinase;
                     if(kinase_template.used)
                     {
                         kinase = clone(kinase_template);
@@ -191,6 +191,9 @@ var Network = function ()
                         kinase_template.used = true
                         kinase = kinase_template
                     }
+                }
+                else {
+                    kinase = kinase_template
                 }
                 addEdge(kinase, site, config.site_kinase_link_weight);
                 site.interactors.push(kinase);
