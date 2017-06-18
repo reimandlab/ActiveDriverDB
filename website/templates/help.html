@@ -6,11 +6,11 @@
     <div class="dropdown-menu short-url-dropdown dropdown-menu-center">
 
       {% if current_user.is_admin %}
-        <form>
+        <div>
           <button class="btn btn-default edit-btn" type="button">
             <span class="glyphicon glyphicon-pencil"></span>
           </button>
-        </form>
+        </div>
       {% endif %}
 
       <div class="content">{{ inline_help(id) | replace('\n', '<br>') | safe }}</div>
@@ -18,7 +18,7 @@
       <div class="alert alert-warning feedback" role="alert"></div>
 
       {% if current_user.is_admin %}
-        <form class="edit-form">
+        <div class="edit-form">
           <textarea class="form-control new-content" placeholder="Help message">{{ inline_help(id) }}</textarea>
           <div class="btn-group buttons" role="group">
             <button type="button" class="btn btn-default btn-primary save-btn">
@@ -30,7 +30,7 @@
               Reject
             </button>
           </div>
-        </form>
+        </div>
       {% endif %}
     </div>
   </div>
