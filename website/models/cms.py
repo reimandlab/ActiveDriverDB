@@ -13,7 +13,7 @@ from exceptions import ValidationError
 class CMSModel(Model):
     """Models descending from Model are supposed to hold settings and other data
 
-    to handled by 'Content Managment System', including Users and Page models.
+    to handled by 'Content Management System', including Users and Page models.
     """
     __abstract__ = True
     __bind_key__ = 'cms'
