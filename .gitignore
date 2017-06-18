@@ -18,7 +18,17 @@ website/config.py
 
 # webdeveloper - other
 .webassets-cache
-*/static/thirdparty/*
+.sass-cache
+website/flask_sqlalchemy
+website/static/thirdparty/*
+website/static/min/*
+website/static/sass/*.css
+website/static/js_templates/precompiled/
+website/node_modules/
+website/databases/
+website/data/*
+website/exported
+
 *.min.js
 *.min.css
 # use only sass files
