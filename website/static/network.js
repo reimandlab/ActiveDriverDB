@@ -820,6 +820,10 @@ var Network = function ()
             // those which are not kinases are groups (type was not assigned yet)
             append(groups, cloned_kinases.filter(is_of_type(types.kinase, true)))
         }
+        else
+        {
+            sites = []
+        }
 
         var kinases_which_are_in_groups = prepareKinaseGroups(groups, data.kinases);
         append(nodes_data, groups);
