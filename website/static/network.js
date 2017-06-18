@@ -1,3 +1,8 @@
+function append(destination, new_content)
+{
+    Array.prototype.push.apply(destination, new_content)
+}
+
 function assert(condition)
 {
     if(!condition)
@@ -20,17 +25,15 @@ function clone(object)
 var Network = function ()
 {
     // data variables
-    var kinases
     var sites
-    var kinases_grouped
-    var kinase_groups
+    var groups
     var central_node
+    var force_manager
 
     // visualisation variables
     var nodes
     var svg
     var vis
-    var force
     var links
 
     var zoom
@@ -46,6 +49,8 @@ var Network = function ()
         site: new String('Site'),
         central: new String('Analysed protein')
     }
+
+    var tooltip
 
     function fitTextIntoCircle(d, context)
     {
@@ -96,7 +101,7 @@ var Network = function ()
         show_sites: true,
         clone_by_site: true,
         default_link_distance: 100,
-        site_kinase_link_weight: 1.3,
+        site_kinase_link_weight: 1.15,
 
         // Element sizes
         site_size_unit: 5,
@@ -108,7 +113,7 @@ var Network = function ()
         }),
 
         // Zoom
-        min_zoom: 1/3.5,   // allow to zoom-out up to three and half times
+        min_zoom: 1/4,   // allow to zoom-out up to four times
         max_zoom: 3  // allow to zoom-in up to three times
     }
 
@@ -120,41 +125,17 @@ var Network = function ()
         get_remote_if_needed(config, 'data', callback)
     }
 
-    function getKinasesByName(names, kinases_set)
+    function select_kinases_by_name(names, kinases)
     {
-        kinases_set = kinases_set ? kinases_set : kinases
+        var all_matching_kinases = [];
 
-        var matching_kinases = []
-
-        for(var i = 0; i < kinases_set.length; i++)
+        for(var i = 0; i < names.length; i++)
         {
-            for(var j = 0; j < names.length; j++)
-            {
-                if(kinases_set[i].name === names[j])
-                {
-                    matching_kinases.push(kinases_set[i])
-                }
-            }
+            var name = names[i];
+            var matching_kinases = kinases.filter(function(kinase) {return kinase.name === name});
+            append(all_matching_kinases, matching_kinases);
         }
-        return matching_kinases
-    }
-
-    /*
-    function getKinaseByName(name)
-    {
-        return getKinasesByName([name])[0]
-    }
-    */
-
-    function getKinasesInGroups()
-    {
-        var names = []
-        for(var i = 0; i < kinase_groups.length; i++)
-        {
-            var group = kinase_groups[i]
-            Array.prototype.push.apply(names, group.kinases)
-        }
-        return names
+        return all_matching_kinases
     }
 
     function addEdge(source, target, weight)
@@ -169,20 +150,13 @@ var Network = function ()
         )
     }
 
-    function prepareSites(raw_sites, index_shift)
+    function prepareSites(sites, standalone_kinases)
     {
-        // If kinase occurs both in a group and bounds to
-        // the central protein, duplicate it's node. How?
-        // 1. duplicate the data
-        // 2. make the notion in the data and just add two circles
-        // And currently it is implemented by data duplication
-
-        sites = []
         var cloned_kinases = []
 
-        for(var i = 0; i < raw_sites.length; i++)
+        function parse(site)
         {
-            var site = raw_sites[i]
+            site.visible_interactors = 0
 
             site.name = site.position + ' ' + site.residue
             site.size = Math.max(site.name.length, 6) * config.site_size_unit
@@ -190,43 +164,47 @@ var Network = function ()
             site.size += site.mutations_count / 2
             site.r = Math.sqrt(site.size * site.size / 4)
             site.type = types.site
-            site.node_id = i + index_shift
+            site.collisions_active = true
 
             // this property will be populated for kinases belonging to group in prepareKinaseGroups
             site.group = undefined
 
             // make links to the central protein's node from this site
-            addEdge(site.node_id, 0)
+            addEdge(site, central_node)
 
-            sites.push(site)
+            var site_kinases = select_kinases_by_name(site.kinases, standalone_kinases);
+            append(site_kinases, select_kinases_by_name(site.kinase_groups, groups));
 
-            var site_kinases = getKinasesByName(site.kinases, kinases)
-            site_kinases = site_kinases.concat(getKinasesByName(site.kinase_groups, kinase_groups))
+            site.interactors = [];
 
-            site.interactors = []
-
-            for(var j = 0; j < site_kinases.length; j++)
+            function associate_kinase_with_site(kinase_template)
             {
-                var kinase = site_kinases[j]
                 if(config.clone_by_site)
                 {
-                    if(kinase.used)
+                    var kinase;
+                    if(kinase_template.used)
                     {
-                        kinase = clone(kinase)
-                        kinase.node_id = raw_sites.length + cloned_kinases.length + index_shift
+                        kinase = clone(kinase_template);
                         cloned_kinases.push(kinase)
                     }
-                    else
-                        kinase.used = true
+                    else {
+                        kinase_template.used = true
+                        kinase = kinase_template
+                    }
                 }
-                addEdge(kinase.node_id, site.node_id, config.site_kinase_link_weight)
-                site.interactors.push(kinase)
+                addEdge(kinase, site, config.site_kinase_link_weight);
+                site.interactors.push(kinase);
+                site.visible_interactors += 1
             }
+            site_kinases.forEach(associate_kinase_with_site);
         }
+
+        sites.forEach(parse);
+
         return cloned_kinases
     }
 
-    function prepareKinases(all_kinases, index_shift)
+    function prepareKinases(all_kinases)
     {
         // If kinase occurs both in a group and bounds to
         // the central protein, duplicate it's node. How?
@@ -234,27 +212,25 @@ var Network = function ()
         // 2. make the notion in the data and just add two circles
         // And currently it is implemented by data duplication
 
-        kinases = []
-        kinases_grouped = []
-
-        var kinases_in_groups = getKinasesInGroups()
+        var kinases = []
 
         for(var i = 0; i < all_kinases.length; i++)
         {
             var kinase = all_kinases[i]
 
             kinase.type = types.kinase
+            kinase.collisions_active = false
             kinase.r = calculateRadius()
-            kinase.node_id = i + index_shift
 
             // this property will be populated for kinases belonging to group in prepareKinaseGroups
             kinase.group = undefined
+            // will be populated if and when sites created
+            kinase.site = undefined
 
             if(central_node.protein.kinases.indexOf(kinase.name) !== -1)
             {
                 // add a kinase that binds to the central protein to `kinases` list
                 kinase = clone(kinase)
-                kinase.node_id = kinases.length + index_shift
                 kinases.push(kinase)
 
                 if(!config.show_sites)
@@ -262,56 +238,52 @@ var Network = function ()
                     // make links to the central protein's node from those
                     // kinases that bound to the central protein (i.e.
                     // exclude those which are shown only in groups)
-                    addEdge(kinase.node_id, 0)
+                    addEdge(kinase, central_node)
                 }
             }
-            //
-            if(kinases_in_groups.indexOf(kinase.name) !== -1)
-            {
-                // add a kinase that binds to group to `kinases_grouped` list
-                kinase = clone(kinase)
-                kinase.collapsed = true
-                kinase.node_id = kinases_grouped.length + index_shift
-                kinases_grouped.push(kinase)
-            }
         }
+        return kinases
     }
 
-    function prepareKinaseGroups(index_shift)
+    function prepareKinaseGroups(groups, all_kinases)
     {
-        for(var i = 0; i < kinase_groups.length; i++)
+        var cloned_kinases = [];
+
+        function parse(group)
         {
-            var group = kinase_groups[i]
+            group.kinases_names = group.kinases;
+            group.type = types.group;
 
-            group.type = types.group
-            group.node_id = i + index_shift
-
-            var pos = zoom.viewport_to_canvas([config.width, config.height]);
-            group.x = Math.random() * pos[0]
-            group.y = Math.random() * pos[1]
-
-            var group_kinases = getKinasesByName(group.kinases, kinases_grouped)
-            assert(group_kinases.length <= group.kinases.length)
-            var group_index = index_shift + i
-
-            var mutations_in_kinases = 0
-            for(var j = 0; j < group_kinases.length; j++)
+            function is_in_group(kinase)
             {
-                var kinase = group_kinases[j]
-                kinase.group = group_index
-
-                mutations_in_kinases += kinase.protein ? kinase.protein.mutations_count : 0
-                assert(kinase.node_id + kinases.length < group_index)
-                addEdge(kinase.node_id + kinases.length, group_index)
+                return group.kinases_names.indexOf(kinase.name) !== -1
             }
 
-            group.r = calculateRadius()
+            var group_kinases = all_kinases.filter(is_in_group);
+            var mutations_in_kinases = 0;
+
+            function associate_kinase_with_group(kinase_template)
+            {
+                var kinase = clone(kinase_template);
+                kinase.collapsed = true;
+                cloned_kinases.push(kinase);
+
+                kinase.group = group;
+                mutations_in_kinases += kinase.protein ? kinase.protein.mutations_count : 0;
+                addEdge(kinase, group);
+            }
+
+            group_kinases.forEach(associate_kinase_with_group);
+
+            group.r = calculateRadius();
+
             if(!config.show_sites)
-            {
-                // 0 is (by convention) the index of the central protein
-                addEdge(group_index, 0)
-            }
+                addEdge(group, central_node)
         }
+
+        groups.forEach(parse);
+
+        return cloned_kinases;
     }
 
     function linkDistance(edge)
@@ -321,7 +293,7 @@ var Network = function ()
         {
             return edge.source.link_distance
         }
-        // let's place them in layers around the central protein
+        // let's place sites (or kinases when show sites = false) in layers around the central protein
         if(edge.target.index === 0)
         {
             return orbits.getRadiusByNode(edge.source)
@@ -330,36 +302,159 @@ var Network = function ()
         // a kinase located in a group and its group's node
         if(edge.target.type === types.group)    // target node is a group
         {
-            return edge.target.expanded ? edge.target.r + edge.source.r : 0
+            if(edge.target.expanded)
+            {
+                return edge.target.r + edge.source.r
+            }
+            return 0
         }
         return config.default_link_distance / edge.weight
     }
 
-    function switchGroupState(node, state, time)
+    function ForceManager(config)
+    {
+        var force_affected_nodes = [];
+        var force_affected_links = [];
+        var force;
+
+        force = d3.layout.force()
+            .friction(0.5)
+            .gravity(0)
+            .distance(100)
+            .charge(charge)
+            .size(config.size)
+            .linkDistance(linkDistance);
+
+        var publicSpace = {
+            drag: force.drag,
+            charge: force.charge,
+            start: force.start,
+            stop: force.stop,
+            on: force.on,
+            hide_nodes_links: function(node)
+            {
+                var to_remove = [];
+                for(var e = 0; e < force_affected_links.length; e++)
+                {
+                    var edge = force_affected_links[e];
+                    // noinspection EqualityComparisonWithCoercionJS
+                    if(edge.source == node)
+                        to_remove.push(edge)
+                }
+
+                for(var r = 0; r < to_remove.length; r++)
+                {
+                    var index = force_affected_links.indexOf(to_remove[r]);
+                    force_affected_links.splice(index, 1);
+                }
+                node._removed_links = to_remove;
+            },
+            restore_nodes_links: function(node)
+            {
+                if(node._removed_links)
+                {
+                    for(var e = 0; e < node._removed_links.length; e++)
+                    {
+                        force_affected_links.push(node._removed_links[e])
+                    }
+                }
+
+            },
+            hide_from_force: function(node)
+            {
+                var index = force_affected_nodes.indexOf(node);
+                if(index !== -1)
+                    force_affected_nodes.splice(index, 1)
+            },
+            make_visible_for_force: function(node)
+            {
+                force_affected_nodes.push(node)
+            },
+            settle_force: function(n)
+            {
+                force.start();
+                for (var i = n; i > 0; --i) force.tick()
+                force.stop();
+            },
+            update_force_affected_nodes: function(nodes_data, links_data)
+            {
+                if(nodes_data)
+                    append(force_affected_nodes, nodes_data);
+                if(links_data)
+                    append(force_affected_links, links_data);
+
+                force.nodes(force_affected_nodes);
+                force.links(force_affected_links);
+            }
+        }
+
+        return publicSpace;
+    }
+
+    function create_versor(x, y)
+    {
+        var length = Math.sqrt(Math.pow(x, 2) + Math.pow(y, 2))
+        if(length === 0)
+            return [0, 0]
+        else
+            return [x / length, y /length]
+    }
+
+    function switchGroupState(group, state, time)
     {
         time = (time === undefined) ? 600 : time
-        node.expanded = (state === undefined) ? !node.expanded : state
+        group.expanded = (state === undefined) ? !group.expanded : state
 
         function inGroup(d)
         {
-            return node.index === d.group
+            return group === d.group
         }
 
         function fadeInOut(selection)
         {
             selection
                 .transition().ease('linear').duration(time)
-                .attr('opacity', node.expanded ? 1 : 0)
+                .attr('opacity', group.expanded ? 1 : 0)
         }
+        refresh_group_collisions_state(group);
 
         nodes
             .filter(inGroup)
-            .each(function(d){ d.collapsed = !node.expanded } )
+            .each(function(kinase){
+                kinase.collapsed = !group.expanded;
+                group.visible_interactors += (kinase.collapsed ? -1 : +1)
+
+                if(kinase.collapsed)
+                {
+                    kinase.x = group.x;
+                    kinase.y = group.y;
+                    force_manager.hide_from_force(kinase);
+                    force_manager.hide_nodes_links(kinase);
+                }
+                else
+                {
+                    var center_of_interest;
+
+                    if(group.site && group.site.exposed)
+                        center_of_interest = group.site;
+                    else
+                        center_of_interest = central_node;
+
+                    var versor = create_versor(center_of_interest.x - group.x, center_of_interest.y - group.y);
+
+                    kinase.x = group.x - (Math.random() * 2 * kinase.r) * versor[0];
+                    kinase.y = group.y - (Math.random() * 2 * kinase.r) * versor[1];
+
+                    force_manager.restore_nodes_links(kinase);
+                    force_manager.make_visible_for_force(kinase);
+                }
+            })
+
 
         nodes.selectAll('circle')
             .filter(inGroup)
             .transition().ease('linear').duration(time)
-            .attr('r', function(d){return node.expanded ? d.r : 0})
+            .attr('r', function(d){return group.expanded ? d.r : 0})
 
         nodes.selectAll('.name')
             .filter(inGroup)
@@ -369,11 +464,13 @@ var Network = function ()
             .filter(function(e) { return inGroup(e.source) } )
             .call(fadeInOut)
 
+        force_manager.update_force_affected_nodes()
+
     }
 
     function focusOn(node, radius, animation_speed)
     {
-        var area = radius * 2
+        var area = radius * 2.2
         zoom.center_on([node.x, node.y], area, animation_speed)
     }
 
@@ -381,7 +478,105 @@ var Network = function ()
     {
         // we could disable charge for collapsed nodes completely and instead
         // stick these nodes to theirs groups, but this might be inefficient
-        return node.collapsed ? -1 : -100
+        // noinspection EqualityComparisonWithCoercionJS
+        if(node.type == types.kinase && node.group){
+            if(node.collapsed)
+            {
+                return 0
+            }
+            if(!node.site)
+                return -10
+            return -150 / node.group.site.visible_interactors
+        }
+        // noinspection EqualityComparisonWithCoercionJS
+        // noinspection EqualityComparisonWithCoercionJS
+        if((node.type == types.kinase || node.type == types.group) && !(node.site && node.site.exposed)){
+            if(!node.site)
+                return -10
+            return -150 / node.site.visible_interactors
+        }
+        return 0
+    }
+
+    function refresh_group_collisions_state(group) {
+        if(!config.show_sites) return
+        var site = group.site
+        for (var j = 0; j < group.kinases.length; j++) {
+            var kinase = group.kinases[j]
+            kinase.collisions_active = group.expanded && site.exposed
+        }
+    }
+
+    function is_site_protein_edge(site)
+    {
+        return function(edge){ return edge.source === site }
+    }
+
+    function stop_exposing_site(site)
+    {
+        // move node back to the orbit
+        site.exposed = false
+        site.link_distance = site.previous_link_distance
+        force_manager.charge(charge)
+        force_manager.start()
+
+        var link = links.filter(is_site_protein_edge(site)).transition().duration(3000)
+        link.attr('class', 'link')
+
+        tooltip.unstick()
+        tooltip.hide()
+        tooltip.ignore_next_signal()
+    }
+
+    function expose_site(site, camera_speed)
+    {
+        var link = links.filter(is_site_protein_edge(site)).transition().duration(3000)
+
+        // let's expose the node
+        site.exposed = true
+        var shift = get_max_radius() * 1.5
+
+        var max_distance_squared = 0
+        for(var i = 0; i < site.interactors.length; i++)
+        {
+            var interactor = site.interactors[i]
+            var distance_squared = Math.pow(site.x - interactor.x, 2) + Math.pow(site.y - interactor.y, 2)
+            if(distance_squared > max_distance_squared)
+                max_distance_squared = distance_squared
+        }
+
+        var versor = create_versor(site.x - central_node.x, site.y - central_node.y)
+
+        // usually there is more space on sides (x axis) than below and on top as the network is displayed
+        // in widescreen frame
+        var screen_ratio = 1.2
+        shift = shift * Math.abs(versor[0]) * screen_ratio + shift * Math.abs(versor[1]) / screen_ratio
+
+        var dest = [central_node.x + shift * versor[0], central_node.y + shift * versor[1]]
+
+        site.previous_link_distance = site.link_distance
+
+        site.link_distance = shift
+        site.x = dest[0]
+        site.y = dest[1]
+
+        // tooltips are annoying when popping up during camera movement
+        // (those are showing up just because mouse cursor hovers over many nodes when camera is moving)
+        tooltip.active(false);
+        focusOn(
+            {x: dest[0], y: dest[1]},
+            Math.sqrt(max_distance_squared) * 1.15,
+            camera_speed
+        );
+        setTimeout(function(){tooltip.active(true)}, camera_speed);
+
+        force_manager.start()
+
+        tooltip.unstick()
+        tooltip.hide()
+        tooltip.ignore_next_signal()
+
+        link.attr('class', 'link link-dimmed')
     }
 
     function nodeClick(node)
@@ -391,32 +586,50 @@ var Network = function ()
             if(node.type === types.group)
             {
                 switchGroupState(node)
-                force.start()
+                force_manager.start()
             }
             else if(node.type === types.site)
             {
-                if(node.exposed)
+                var site = node
+                var camera_speed = 2500
+
+                if(site.exposed) // site will be de-exposed
                 {
-                    // move node back to the orbit
-                    node.exposed = false
-                    node.link_distance = config.default_link_distance
-                    publicSpace.zoom_fit()
+                    var return_camera_speed = camera_speed / 5;
+                    stop_exposing_site(site);
+
+                    tooltip.active(false);
+                    publicSpace.zoom_fit(return_camera_speed);
+                    setTimeout(function(){tooltip.active(true)}, return_camera_speed);
                 }
-                else
+                else // site will be exposed
                 {
-                    // let's expose the node
-                    node.exposed = true
-                    var shift = get_max_radius() * 3
-                    node.x = central_node.x + shift
-                    node.y = central_node.y
-                    node.link_distance = shift
-                    focusOn(
-                        {x: node.x, y: node.y},
-                        shift / 2.5
-                    )
+                    for(var s = 0; s < sites.length; s++)
+                    {
+                        var tested_site = sites[s]
+                        if(tested_site.exposed)
+                        {
+                            stop_exposing_site(tested_site)
+                        }
+                    }
+
+                    expose_site(site, camera_speed)
+
+                    force_manager.charge(0)
+
                 }
-                force.start()
+                for(var i = 0; i < site.interactors.length; i++)
+                {
+                    var interactor = site.interactors[i]
+                    interactor.collisions_active = site.exposed
+                    // noinspection EqualityComparisonWithCoercionJS
+                    if(interactor.type == types.group)
+                    {
+                        refresh_group_collisions_state(interactor);
+                    }
+                }
             }
+            force_manager.on('tick', create_ticker())
         }
     }
 
@@ -436,21 +649,122 @@ var Network = function ()
         }
     }
 
-    function forceTick(e)
+    function collide(node_1, node_2, min_dist, min_dist_pow)
     {
-        force
-            .linkDistance(linkDistance)
-            .charge(charge)
+        var x = node_1.x - node_2.x
+        var y = node_1.y - node_2.y
 
-        links
-            .attr('x1', function(d) { return d.source.x })
-            .attr('y1', function(d) { return d.source.y })
-            .attr('x2', function(d) { return d.target.x })
-            .attr('y2', function(d) { return d.target.y })
+        var distance = Math.pow(x, 2) + Math.pow(y, 2)
+        if(distance < min_dist_pow)
+        {
+            var l = Math.sqrt(distance)
+            var change = (min_dist - l) / 2
+            // rescale: to versor and then to displacement
+            if(l)
+            {
+                x /= l
+                x *= change
+                y /= l
+                y *= change
+            }
+            else {
+                x = min_dist / 2
+                y = min_dist / 2
+            }
+            node_1.x += x
+            node_1.y += y
+            node_2.x -= x
+            node_2.y -= y
+        }
 
-        nodes.attr('transform', function(d){ return 'translate(' + [d.x, d.y] + ')'} )
+    }
 
-        dispatch.networkmove(this)
+    function collide_sites(sites, padding)
+    {
+        // could be done with bounding boxes instead as sites are represented as boxes
+        function collide_site(site)
+        {
+            for(var i = 0; i < sites.length; i++)
+            {
+                var other_site = sites[i]
+                var min_dist = site.r + other_site.r + padding
+                collide(site, other_site, min_dist, min_dist * min_dist)
+            }
+        }
+        return collide_site
+    }
+
+    function collide_nodes_belonging_to_exposed_sites(exposed_sites, padding)
+    {
+        // all nodes have the same radius
+        var r = config.radius
+        var d = 2 * r + padding
+        var d2 = Math.pow(d, 2)
+
+
+        var kinases = []
+        var groups = []
+        exposed_sites.each(function(site){
+            var interactors = site.interactors;
+            append(kinases, interactors);
+            append(groups, interactors.filter(
+                function(node){ // noinspection EqualityComparisonWithCoercionJS
+                    return node.type == types.group && node.expanded }
+            ))
+        })
+
+        for(var g = 0; g < groups.length; g++)
+        {
+            var group = groups[g];
+            append(kinases, group.kinases);
+        }
+
+        kinases = kinases.filter(function(kinase){ return kinase.collisions_active })
+
+
+        function collide_sites_nodes(site)
+        {
+            // possibly: filter out kinases from other sites (but really, we have only one site exposed at time)
+            for(var i = 0; i < kinases.length; i++)
+            {
+                var kinase_one = kinases[i]
+
+                for(var j = i + 1; j < kinases.length; j++)
+                {
+                    var kinase_two = kinases[j]
+
+                    collide(kinase_one, kinase_two, d, d2)
+                }
+            }
+        }
+        return collide_sites_nodes
+    }
+
+    function create_ticker()
+    {
+        var site_nodes = nodes.filter(is_of_type(types.site));
+        var site_collider = collide_sites(sites, 3)
+
+        var exposed_sites = site_nodes.filter(function (node) { return node.exposed });
+        var nodes_collider = collide_nodes_belonging_to_exposed_sites(exposed_sites, 3);
+
+        function forceTick(e)
+        {
+            site_nodes.each(site_collider);
+            exposed_sites.each(nodes_collider);
+
+            links
+                .attr('x1', function(d) { return d.source.x })
+                .attr('y1', function(d) { return d.source.y })
+                .attr('x2', function(d) { return d.target.x })
+                .attr('y2', function(d) { return d.target.y })
+
+            nodes.attr('transform', function(d){ return 'translate(' + [d.x, d.y] + ')'} );
+
+            force_manager.start()
+            dispatch.networkmove(this)
+        }
+        return forceTick
     }
 
     function resize()
@@ -468,35 +782,92 @@ var Network = function ()
         zoom.set_viewport_size(config.width, config.height)
     }
 
+    function is_of_type(type, negation)
+    {
+        if(negation)
+            return function(node)
+            {
+                // noinspection EqualityComparisonWithCoercionJS
+                return node.type != type
+            }
+
+        return function(node)
+        {
+            // noinspection EqualityComparisonWithCoercionJS
+            return node.type == type
+        }
+    }
+
     function createNodes(data)
     {
+        groups = data.kinase_groups;
 
-        kinase_groups = data.kinase_groups
+        central_node = createProteinNode(data.protein);
+        var nodes_data = [central_node];
 
-        central_node = createProteinNode(data.protein)
-        var nodes_data = [central_node]
-
-        prepareKinases(data.kinases, nodes_data.length)
-        Array.prototype.push.apply(nodes_data, kinases)
-        Array.prototype.push.apply(nodes_data, kinases_grouped)
-
-        prepareKinaseGroups(nodes_data.length)
-        Array.prototype.push.apply(nodes_data, kinase_groups)
-
-        kinases.concat(kinase_groups)
+        // kinases which are known to interact with protein are returned (standalone)
+        // those as well as other (i.e. kinases which are in families known to interact with protein)
+        // are prepared to be displayed
+        var standalone_kinases = prepareKinases(data.kinases);
+        append(nodes_data, standalone_kinases);
 
         if(config.show_sites)
         {
-            var cloned_kinases = prepareSites(data.sites, nodes_data.length)
-            Array.prototype.push.apply(nodes_data, sites)
-            Array.prototype.push.apply(nodes_data, cloned_kinases)
+            var cloned_kinases = prepareSites(data.sites, standalone_kinases);
+            sites = data.sites;
+            append(nodes_data, cloned_kinases.filter(is_of_type(types.kinase)));
+            append(nodes_data, sites);
+            // those which are not kinases are groups (type was not assigned yet)
+            append(groups, cloned_kinases.filter(is_of_type(types.kinase, true)))
         }
 
-        return nodes_data
+        var kinases_which_are_in_groups = prepareKinaseGroups(groups, data.kinases);
+        append(nodes_data, groups);
+        append(nodes_data, kinases_which_are_in_groups);
+
+        var kinase_nodes = nodes_data.filter(is_of_type(types.kinase));
+
+        groups.forEach(function(group) {
+            group.kinases = []
+            kinase_nodes.forEach(function(node){
+                // noinspection EqualityComparisonWithCoercionJS
+                if(node.group && node.group == group)
+                {
+                    group.kinases.push(node)
+                }
+            })
+        })
+
+        // not in "associate_kinase_with_site" to void circular dependencies while cloning
+        sites.forEach(function(site) {
+            site.interactors.forEach(function(kinase){
+                kinase.site = site
+            });
+        });
+
+        nodes_data.forEach(function(node, index) { node.id = index })
+
+        return {
+            all: nodes_data,
+            in_groups: kinases_which_are_in_groups,
+            groups: groups,
+            sites: sites,
+            standalone: standalone_kinases
+        }
     }
 
+    function hide_kinases_in_groups(kinases_which_are_in_groups) {
+        // force positions of group members to be equal
+        // to initial positions of central node in the group
+        kinases_which_are_in_groups.forEach(
+            function(kinase){
+                kinase.x = kinase.group.x;
+                kinase.y = kinase.group.y
+            }
+        )
+    }
 
-    function placeNodes(nodes_data)
+    function placeNodes(sites, standalone_kinases)
     {
         var orbiting_nodes
         orbits = Orbits()
@@ -504,7 +875,7 @@ var Network = function ()
         if(config.show_sites)
             orbiting_nodes = sites
         else
-            orbiting_nodes = kinases.concat(kinase_groups)
+            orbiting_nodes = standalone_kinases.concat(groups)
 
 
         orbits.init(orbiting_nodes, central_node, {
@@ -513,17 +884,6 @@ var Network = function ()
         })
         orbits.placeNodes()
 
-        for(var j = 0; j < kinases_grouped.length; j++)
-        {
-            // force positions of group members to be equal
-            // to initial positions of central node in the group
-            var kinase = kinases_grouped[j]
-            var group = nodes_data[kinase.group]
-
-            kinase.x = group.x
-            kinase.y = group.y
-        }
-
         if(config.show_sites)
         {
             var link_distance = config.default_link_distance / config.site_kinase_link_weight
@@ -531,14 +891,18 @@ var Network = function ()
             for(var i = 0; i < sites.length; i++)
             {
                 var site = sites[i]
-                if(!site.x)
-                    site.x = 0.0001
 
-                var tg_alpha = site.y / site.x
-                var alpha = Math.atan(tg_alpha)
+                var site_orbit = orbits.getOrbit(site)
+                var angles_available_for_site = Math.PI * 2 / site_orbit.nodes_count
 
-                // give 1/2 of angle space per interactor
-                var angles_per_actor = Math.PI / 180
+                var sx = central_node.x - site.x
+                var sy = central_node.y - site.y
+
+                var alpha = Math.atan2(sy, sx)
+
+                var angles_per_actor = angles_available_for_site
+                if(site.interactors.length > 1)
+                    angles_per_actor /= site.interactors.length - 1
 
                 // set starting angle for first interactor
                 var angle = alpha - (site.interactors.length - 1) / 2 * angles_per_actor
@@ -548,8 +912,8 @@ var Network = function ()
                     var x = Math.cos(angle) * link_distance
                     var y = Math.sin(angle) * link_distance
                     var interactor = site.interactors[k]
-                    interactor.x = site.x + x
-                    interactor.y = site.y + y
+                    interactor.x = site.x - x
+                    interactor.y = site.y - y
                     angle += angles_per_actor
                 }
             }
@@ -587,225 +951,219 @@ var Network = function ()
             on_move: function(event) { dispatch.networkmove(event) }
         })
 
+        // we don't want to close tooltips after panning (which is set to emit
+        // stopPropagation on start what allows us to detect end-of-panning events)
+        svg.on('click', function(){
+            if(d3.event.defaultPrevented) d3.event.stopPropagation()
+        })
 
-            // we don't want to close tooltips after panning (which is set to emit
-            // stopPropagation on start what allows us to detect end-of-panning events)
-            svg.on('click', function(){
-                if(d3.event.defaultPrevented) d3.event.stopPropagation()
-            })
+        resize()
 
-            resize()
+        vis = svg.append('g')
 
-            vis = svg.append('g')
+        var created_nodes = createNodes(config.data);
+        var nodes_data = created_nodes.all;
 
-            var nodes_data = createNodes(config.data)
+        placeNodes(created_nodes.sites, created_nodes.standalone);
 
-            placeNodes(nodes_data)
+        hide_kinases_in_groups(created_nodes.in_groups);
 
-            force = d3.layout.force()
-                .gravity(0.05)
-                .distance(100)
-                .charge(charge)
-                .size(zoom.viewport_to_canvas([config.width, config.height]))
-                .nodes(nodes_data)
-                .links(edges)
-                .linkDistance(linkDistance)
-                // notes for future: it is possible to speed up the force with:
-                // .on('start', start) and using `requestAnimationFrame` in start()
-                // but this creates a terrible effect of laggy animation
+        force_manager = ForceManager({
+            size: zoom.viewport_to_canvas([config.width, config.height])
+        })
 
-            links = vis.selectAll('.link')
-                .data(edges)
-                .enter().append('line')
-                .attr('class', 'link')
+        force_manager.update_force_affected_nodes(nodes_data, edges)
+
+        links = vis.selectAll('.link')
+            .data(edges)
+            .enter().append('line')
+            .attr('class', 'link')
 
 
-            var tooltip = Tooltip()
-            tooltip.init({
-                id: 'node',
-                template: function(node){
-                    return nunjucks.render(
-                        'node_tooltip.njk',
-                        {
-                            node: node,
-                            types: types,
-                            nodeURL: config.nodeURL
-                        }
-                    )
-                },
-                viewport: svg.node().parentElement
-            })
-
-            nodes = vis.selectAll('.node')
-                .data(nodes_data)
-                .enter().append('g')
-                .attr('class', 'node')
-                .call(force.drag)
-                .on('click', nodeClick)
-                .on('mouseover', function(d){ nodeHover(d, true) })
-                .on('mouseout', function(d){ nodeHover(d, false) })
-                // cancel other events (like pining the background)
-                // to allow nodes movement (by force.drag)
-                .on('mousedown', function(d) { d3.event.stopPropagation() })
-                .call(tooltip.bind)
-
-            dispatch.on('networkmove', function(){
-                tooltip.moveToElement()
-            })
-
-
-            var kinase_nodes = nodes
-                .filter(function(d){ return d.type == types.kinase })
-
-            var group_nodes = nodes
-                .filter(function(d){ return d.type == types.group })
-
-            var central_nodes = nodes
-                .filter(function(d){ return d.type == types.central })
-
-            var kinases_color_scale = create_color_scale(
-                [
-                    0,
-                    d3.max(kinases, function(d){
-                        return d.protein ? d.protein.mutations_count : 0
-                    }) || 0
-                ],
-                ['#ffffff', '#007FFF']
-            )
-
-            //var sites_color_scale = create_color_scale(
-            //    [0, central_node.protein.mutations_count],
-            //    ['#ffffff', '#ff0000']
-            //)
-
-            kinase_nodes
-                .append('circle')
-                .attr('r', function(d){ return d.r })
-                .attr('class', 'kinase protein-like shape')
-
-            var octagon_cr_to_a_ratio = 1 / (Math.sqrt(4 + 2 * Math.sqrt(2)) / 2)
-            var octagon_angle = (180 - 135) * (2 * Math.PI) / 360
-
-            group_nodes
-                .append('polygon')
-                .attr('points', function(d){
-                    var points = []
-                    // d.r is a circumradius here
-                    var a = d.r * octagon_cr_to_a_ratio
-                    var x = -d.r + 1
-                    var y = d.r / 2
-                    //points.push([x, y])
-                    for(var i = 0; i < 8; i++)
+        tooltip = Tooltip()
+        tooltip.init({
+            id: 'node',
+            template: function(node){
+                return nunjucks.render(
+                    'node_tooltip.njk',
                     {
-                        var angle = octagon_angle * (i + 1)
-                        x += a * Math.sin(angle)
-                        y += a * Math.cos(angle)
-                        points.push([x, y])
+                        node: node,
+                        types: types,
+                        nodeURL: config.nodeURL
                     }
-                    return points
-                })
-                .attr('class', 'group shape')
-
-            central_nodes
-                .append('ellipse')
-                .attr('rx', function(d){ return d.r })
-                .attr('ry', function(d){ return d.r / 5 * 4 })
-                .attr('class', 'central protein-like shape')
-
-            nodes.selectAll('.protein-like')
-                .attr('fill', function(d){
-                    if(d.protein)
-                        return kinases_color_scale(d.protein.mutations_count)
-                })
-
-            var site_nodes = nodes
-                .filter(function(d){ return d.type === types.site })
-
-            site_nodes
-                .attr('class', function(d){
-                    return 'node ' + d.impact
-                })
-                .append('rect')
-                .attr('width', function(d){ return d.size + 'px' })
-                .attr('height', function(d){ return d.size + 'px' })
-                //.attr('fill', function(d){
-                //    return sites_color_scale(d.mutations_count)
-                //})
-                .attr('class', 'site shape')
-                .attr('transform', function(d){ return 'translate(' + [-d.size / 2, -d.size / 2] + ')'} )
-
-            nodes
-                .append('text')
-                .attr('class', 'name')
-                .text(function(d){
-                    if(d.name.length > 9)
-                        return d.name.substring(0, 7) + '...'
-                    return d.name
-                })
-                .style('font-size', function(d) {
-                    if(d.type !== types.site)
-                        return fitTextIntoCircle(d, this) + 'px'
-                })
-
-            site_nodes.selectAll('.name')
-                .style('font-size', '8px')
-                .attr('dy', '-0.5em')
-
-            site_nodes
-                .append('text')
-                .text(function(d) { return d.nearby_sequence })
-                .style('font-size', '5.5px')
-                .attr('dy', '1.5em')
-
-            group_nodes
-                .append('text')
-                .attr('class', 'type')
-                .text(function(d){ return 'family ' + d.kinases.length  + '/' + d.total_cnt })
-                .style('font-size', function(d) {
-                    return fitTextIntoCircle(d, this) * 0.5 + 'px'
-                })
-                .attr('dy', function(d) {
-                    return fitTextIntoCircle(d, this) * 0.35 + 'px'
-                })
-
-
-            force.on('tick', forceTick)
-
-            publicSpace.zoom_fit(0)    // grasp everything without animation (avoids repeating zoom lags if they occur)
-
-            force.start()
-
-            function kinase_site_with_loss(d)
-            {
-                return (
-                    d.source.type == types.kinase &&
-                    d.target.type == types.site &&
-                    d.target.mimp_losses.indexOf(d.source.name) != -1
                 )
-            }
+            },
+            viewport: svg.node().parentElement
+        })
 
-            links
-                .filter(kinase_site_with_loss)
-                .classed('loss-prediction', true)
-                // the link will be scaled linearly to the number of mimp loss
-                // predictions. This number will be always >= 1 (because we
-                // are working on such filtered subset of links)
-                .style('stroke-width', function(d){
-                    var count = 0
-                    for(var i = 0; i < d.target.mimp_losses.length; i++)
-                        count += (d.target.mimp_losses[i] == d.source.name)
-                    return count * 1.5
-                })
+        nodes = vis.selectAll('.node')
+            .data(nodes_data)
+            .enter().append('g')
+            .attr('class', 'node')
+            .call(force_manager.drag)
+            .on('click', nodeClick)
+            .on('mouseover', function(d){ nodeHover(d, true) })
+            .on('mouseout', function(d){ nodeHover(d, false) })
+            // cancel other events (like pining the background)
+            // to allow nodes movement (by force.drag)
+            .on('mousedown', function(d) { d3.event.stopPropagation() })
+            .call(tooltip.bind)
 
-            for(var i = 0; i < kinase_groups.length; i++)
+        dispatch.on('networkmove', function(){
+            tooltip.moveToElement()
+        })
+
+
+        var kinase_nodes = nodes
+            .filter(is_of_type(types.kinase));
+
+        var group_nodes = nodes
+            .filter(is_of_type(types.group));
+
+        var central_nodes = nodes
+            .filter(is_of_type(types.central));
+
+        var kinases_color_scale = create_color_scale(
+            [
+                0,
+                d3.max(created_nodes.standalone, function(d){
+                    return d.protein ? d.protein.mutations_count : 0
+                }) || 0
+            ],
+            ['#ffffff', '#007FFF']
+        );
+
+        kinase_nodes
+            .append('circle')
+            .attr('r', function(d){ return d.r })
+            .attr('class', 'kinase protein-like shape')
+
+        var octagon_cr_to_a_ratio = 1 / (Math.sqrt(4 + 2 * Math.sqrt(2)) / 2);
+        var octagon_angle = (180 - 135) * (2 * Math.PI) / 360;
+
+        function polygon_points(d) {
+            var points = [];
+            // d.r is a circumradius here
+            var a = d.r * octagon_cr_to_a_ratio;
+            var x = -d.r + 1;
+            var y = d.r / 2;
+            for(var i = 0; i < 8; i++)
             {
-                // collapse the group immediately (time=0)
-                switchGroupState(kinase_groups[i], false, 0)
+                var angle = octagon_angle * (i + 1);
+                x += a * Math.sin(angle);
+                y += a * Math.cos(angle);
+                points.push([x, y])
             }
+            return points
+        }
 
-            $(window).on('resize', resize)
+        group_nodes
+            .append('polygon')
+            .attr('points', polygon_points)
+            .attr('class', 'group shape')
 
-            config.onload()
+        central_nodes
+            .append('ellipse')
+            .attr('rx', function(d){ return d.r })
+            .attr('ry', function(d){ return d.r / 5 * 4 })
+            .attr('class', 'central protein-like shape')
+
+        nodes.selectAll('.protein-like')
+            .attr('fill', function(d){
+                if(d.protein)
+                    return kinases_color_scale(d.protein.mutations_count)
+            })
+
+        var site_nodes = nodes
+            .filter(is_of_type(types.site));
+
+        site_nodes
+            .attr('class', function(d){
+                return 'node ' + d.impact
+            })
+            .append('rect')
+            .attr('width', function(d){ return d.size + 'px' })
+            .attr('height', function(d){ return d.size + 'px' })
+            .attr('class', 'site shape')
+            .attr('transform', function(d){ return 'translate(' + [-d.size / 2, -d.size / 2] + ')'} )
+
+        nodes
+            .append('text')
+            .attr('class', 'name')
+            .text(function(d){
+                if(d.name.length > 9)
+                    return d.name.substring(0, 7) + '...'
+                return d.name
+            })
+            .style('font-size', function(d) {
+                if(d.type !== types.site)
+                    return fitTextIntoCircle(d, this) + 'px'
+            })
+
+        site_nodes.selectAll('.name')
+            .style('font-size', '8px')
+            .attr('dy', '-0.5em')
+
+        site_nodes
+            .append('text')
+            .text(function(d) { return d.nearby_sequence })
+            .style('font-size', '5.5px')
+            .attr('dy', '1.5em')
+
+        group_nodes
+            .append('text')
+            .attr('class', 'type')
+            .text(function(d){ return 'family ' + d.kinases.length  + '/' + d.total_cnt })
+            .style('font-size', function(d) {
+                return fitTextIntoCircle(d, this) * 0.5 + 'px'
+            })
+            .attr('dy', function(d) {
+                return fitTextIntoCircle(d, this) * 0.35 + 'px'
+            })
+
+        publicSpace.zoom_fit(0)    // grasp everything without animation (avoids repeating zoom lags if they occur)
+
+        force_manager.start()
+
+        function kinase_site_with_loss(d)
+        {
+            // noinspection EqualityComparisonWithCoercionJS
+            // noinspection EqualityComparisonWithCoercionJS
+            // noinspection EqualityComparisonWithCoercionJS
+            return (
+                d.source.type == types.kinase &&
+                d.target.type == types.site &&
+                d.target.mimp_losses.indexOf(d.source.name) != -1
+            )
+        }
+
+        links
+            .filter(kinase_site_with_loss)
+            .classed('loss-prediction', true)
+            // the link will be scaled linearly to the number of mimp loss
+            // predictions. This number will be always >= 1 (because we
+            // are working on such filtered subset of links)
+            .style('stroke-width', function(d){
+                var count = 0
+                for(var i = 0; i < d.target.mimp_losses.length; i++)
+                    { // noinspection EqualityComparisonWithCoercionJS
+                        count += (d.target.mimp_losses[i] == d.source.name)
+                    }
+                return count * 1.5
+            })
+
+        // collapse all groups immediately (time=0)
+        groups.forEach(function(group){ switchGroupState(group, false, 0) });
+
+        $(window).on('resize', resize)
+
+        // fast, steady initialization
+        force_manager.settle_force(10);
+        var ticker = create_ticker();
+        force_manager.on('tick', ticker);
+        ticker();
+
+        config.onload()
     }
 
     var publicSpace = {
@@ -828,7 +1186,7 @@ var Network = function ()
             zoom.set_zoom(zoom.get_zoom() / 1.25)
         },
         zoom_fit: function(animation_speed){
-            var radius = get_max_radius()
+            var radius = get_max_radius();
             focusOn(central_node, radius, animation_speed)
         },
         destroy: function()

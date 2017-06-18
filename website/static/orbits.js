@@ -64,7 +64,7 @@ var Orbits = function ()
             return this.outer_radius * angle
         }
 
-        this.recalculateSpace= function(old_perimeter)
+        this.recalculateSpace = function(old_perimeter)
         {
             var percent_available = this.space_available / old_perimeter
             this.space_available = perimeter(this.outer_radius) * percent_available
@@ -149,6 +149,10 @@ var Orbits = function ()
         getRadiusByNode: function(node)
         {
             return orbits[by_node[node.name]].radius
+        },
+        getOrbit: function(node)
+        {
+            return orbits[by_node[node.name]]
         },
         getMaximalRadius: function()
         {

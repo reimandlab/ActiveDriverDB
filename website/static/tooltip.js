@@ -7,6 +7,8 @@ var Tooltip = function()
     var tooltip          // tooltip d3js selection object
     var tooltip_content  // inner tooltip HTML container
                          // (place where content - result of templating - will be inserted)
+    var ignore_next_signal = false; // should next signal be ignored?
+    var active = true;
 
     // configurable
     var viewport
@@ -145,6 +147,14 @@ var Tooltip = function()
         },
         show: function(d)
         {
+            if(ignore_next_signal)
+            {
+                ignore_next_signal = false
+                return
+            }
+            if(!active)
+                return
+
             if(stuck)
                 return
 
@@ -178,8 +188,21 @@ var Tooltip = function()
 
             visible = false
         },
+        ignore_next_signal: function()
+        {
+            ignore_next_signal = true;
+        },
+        active: function(value)
+        {
+            active = value
+        },
         stick: function(d)
         {
+            if(ignore_next_signal)
+            {
+                ignore_next_signal = false
+                return
+            }
             publicSpace.unstick()
             // call `show` method passing `this` context
             publicSpace.show.call(this, d)
