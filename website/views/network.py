@@ -166,12 +166,12 @@ class NetworkView(FlaskView):
                 # related discussion: #72
                 kinases_counts[kinase] = count
 
-        kinases = set(kinases_counts.keys())
+        #kinases = set(kinases_counts.keys())
 
         sites = [
             site
             for site in sites
-            if kinases.intersection(site.kinases)
+            if site.kinases or site.kinase_groups
         ]
 
         protein_kinases_names = [kinase.name for kinase in protein.kinases]
@@ -216,6 +216,11 @@ class NetworkView(FlaskView):
                 ))
             }
 
+        groups = set()
+
+        for site in sites:
+            groups.update(site.kinase_groups)
+
         data = {
             'kinases': kinase_reprs,
             'protein': {
@@ -238,8 +243,7 @@ class NetworkView(FlaskView):
                     }.intersection(protein_kinases_names)),
                     'total_cnt': len(group.kinases)
                 }
-                for site in sites
-                for group in site.kinase_groups
+                for group in groups
             ]
         }
         return data

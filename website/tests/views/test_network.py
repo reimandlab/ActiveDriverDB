@@ -1,5 +1,5 @@
 from view_testing import ViewTest
-from models import Protein
+from models import Protein, KinaseGroup
 from models import Gene
 from models import Site
 from models import Kinase
@@ -62,13 +62,23 @@ class TestNetworkView(ViewTest):
                 mutations=[mutation]
             )
         )
+        group = KinaseGroup(
+            name='Group of kinases',
+        )
         s = Site(
             position=1,
             type='phosphorylation',
             residue='T',
-            kinases=[interactor]
+            kinases=[interactor],
+            kinase_groups=[group]
         )
-        p.sites = [s]
+        s2 = Site(
+            position=2,
+            type='phosphorylation',
+            residue='R',
+            kinase_groups=[group]
+        )
+        p.sites = [s, s2]
         db.session.add(p)
 
         response = self.client.get('/network/representation/NM_0007')
@@ -76,6 +86,9 @@ class TestNetworkView(ViewTest):
         representation = response.json['representation']['network']
         assert ['Kinase Y'] == representation['protein']['kinases']
         assert 'Kinase Y' == representation['kinases'][0]['name']
+        assert len(representation['sites']) == 2
+        assert len(representation['kinase_groups']) == 1
+        assert 'Group of kinases' == representation['kinase_groups'][0]['name']
 
     def test_divide_muts_by_sites(self):
         from views.network import divide_muts_by_sites

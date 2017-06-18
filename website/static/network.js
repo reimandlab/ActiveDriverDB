@@ -1,3 +1,13 @@
+function append(destination, new_content)
+{
+    Array.prototype.push.apply(destination, new_content)
+}
+
+function is_unique(value, index, self)
+{
+    return self.indexOf(value) === index
+}
+
 function assert(condition)
 {
     if(!condition)
@@ -20,10 +30,10 @@ function clone(object)
 var Network = function ()
 {
     // data variables
-    var kinases
+    var standalone_kinases
     var sites
-    var kinases_grouped
-    var kinase_groups
+    var kinases_which_are_in_groups
+    var groups
     var central_node
     var force_manager
 
@@ -122,41 +132,17 @@ var Network = function ()
         get_remote_if_needed(config, 'data', callback)
     }
 
-    function getKinasesByName(names, kinases_set)
+    function select_kinases_by_name(names, kinases)
     {
-        kinases_set = kinases_set ? kinases_set : kinases
+        var all_matching_kinases = [];
 
-        var matching_kinases = []
-
-        for(var i = 0; i < kinases_set.length; i++)
+        for(var i = 0; i < names.length; i++)
         {
-            for(var j = 0; j < names.length; j++)
-            {
-                if(kinases_set[i].name === names[j])
-                {
-                    matching_kinases.push(kinases_set[i])
-                }
-            }
+            var name = names[i];
+            var matching_kinases = kinases.filter(function(kinase) {return kinase.name === name});
+            append(all_matching_kinases, matching_kinases);
         }
-        return matching_kinases
-    }
-
-    /*
-    function getKinaseByName(name)
-    {
-        return getKinasesByName([name])[0]
-    }
-    */
-
-    function get_ids_of_kinases_belonging_to_groups(kinase_groups)
-    {
-        var names = []
-        for(var i = 0; i < kinase_groups.length; i++)
-        {
-            var group = kinase_groups[i]
-            Array.prototype.push.apply(names, group.kinases)
-        }
-        return names
+        return all_matching_kinases
     }
 
     function addEdge(source, target, weight)
@@ -171,20 +157,12 @@ var Network = function ()
         )
     }
 
-    function prepareSites(raw_sites, index_shift)
+    function prepareSites(sites, standalone_kinases)
     {
-        // If kinase occurs both in a group and bounds to
-        // the central protein, duplicate it's node. How?
-        // 1. duplicate the data
-        // 2. make the notion in the data and just add two circles
-        // And currently it is implemented by data duplication
-
-        sites = []
         var cloned_kinases = []
 
-        for(var i = 0; i < raw_sites.length; i++)
+        function parse(site)
         {
-            var site = raw_sites[i]
             site.visible_interactors = 0
 
             site.name = site.position + ' ' + site.residue
@@ -194,56 +172,44 @@ var Network = function ()
             site.r = Math.sqrt(site.size * site.size / 4)
             site.type = types.site
             site.collisions_active = true
-            site.node_id = i + index_shift
 
             // this property will be populated for kinases belonging to group in prepareKinaseGroups
             site.group = undefined
 
             // make links to the central protein's node from this site
-            addEdge(site.node_id, 0)
+            addEdge(site, central_node)
 
-            sites.push(site)
+            var site_kinases = select_kinases_by_name(site.kinases, standalone_kinases);
+            append(site_kinases, select_kinases_by_name(site.kinase_groups, groups));
 
-            var site_kinases = getKinasesByName(site.kinases, kinases)
-            site_kinases = site_kinases.concat(getKinasesByName(site.kinase_groups, kinase_groups))
+            site.interactors = [];
 
-            site.interactors = []
-
-            for(var j = 0; j < site_kinases.length; j++)
+            function associate_kinase_with_site(kinase)
             {
-                var kinase = site_kinases[j]
                 if(config.clone_by_site)
                 {
                     if(kinase.used)
                     {
-                        kinase = clone(kinase)
-                        kinase.node_id = raw_sites.length + cloned_kinases.length + index_shift
+                        var kinase = clone(kinase);
                         cloned_kinases.push(kinase)
                     }
                     else {
                         kinase.used = true
                     }
                 }
-                addEdge(kinase.node_id, site.node_id, config.site_kinase_link_weight)
-                site.interactors.push(kinase)
+                addEdge(kinase, site, config.site_kinase_link_weight);
+                site.interactors.push(kinase);
                 site.visible_interactors += 1
             }
-
+            site_kinases.forEach(associate_kinase_with_site);
         }
 
-        for(var i = 0; i < sites.length; i++)
-        {
-            var site = sites[i]
-            for(j = 0; j < site.interactors.length; j++)
-            {
-                var kinase = site.interactors[j]
-                kinase.site = site
-            }
-        }
+        sites.forEach(parse);
+
         return cloned_kinases
     }
 
-    function prepareKinases(all_kinases, index_shift, kinase_groups)
+    function prepareKinases(all_kinases)
     {
         // If kinase occurs both in a group and bounds to
         // the central protein, duplicate it's node. How?
@@ -252,9 +218,6 @@ var Network = function ()
         // And currently it is implemented by data duplication
 
         var kinases = []
-        var kinases_grouped = []
-
-        var kinases_in_groups = get_ids_of_kinases_belonging_to_groups(kinase_groups)
 
         for(var i = 0; i < all_kinases.length; i++)
         {
@@ -263,7 +226,6 @@ var Network = function ()
             kinase.type = types.kinase
             kinase.collisions_active = false
             kinase.r = calculateRadius()
-            kinase.node_id = i + index_shift
 
             // this property will be populated for kinases belonging to group in prepareKinaseGroups
             kinase.group = undefined
@@ -274,7 +236,6 @@ var Network = function ()
             {
                 // add a kinase that binds to the central protein to `kinases` list
                 kinase = clone(kinase)
-                kinase.node_id = kinases.length + index_shift
                 kinases.push(kinase)
 
                 if(!config.show_sites)
@@ -282,60 +243,52 @@ var Network = function ()
                     // make links to the central protein's node from those
                     // kinases that bound to the central protein (i.e.
                     // exclude those which are shown only in groups)
-                    addEdge(kinase.node_id, 0)
+                    addEdge(kinase, central_node)
                 }
             }
-            //
-            if(kinases_in_groups.indexOf(kinase.name) !== -1)
-            {
-                // add a kinase that binds to group to `kinases_grouped` list
-                kinase = clone(kinase)
-                kinase.collapsed = true
-                kinase.node_id = kinases_grouped.length + index_shift
-                kinases_grouped.push(kinase)
-            }
         }
-        return [kinases, kinases_grouped]
+        return kinases
     }
 
-    function prepareKinaseGroups(index_shift, local_kinases_grouped)
+    function prepareKinaseGroups(groups, all_kinases)
     {
-        for(var i = 0; i < kinase_groups.length; i++)
+        var cloned_kinases = [];
+
+        function parse(group)
         {
-            var group = kinase_groups[i]
-            group.kinases_ids = group.kinases
+            group.kinases_names = group.kinases;
+            group.type = types.group;
 
-            group.type = types.group
-            group.node_id = i + index_shift
-
-            // TODO: possible deletion
-            var pos = zoom.viewport_to_canvas([config.width, config.height]);
-            group.x = Math.random() * pos[0]
-            group.y = Math.random() * pos[1]
-
-            var group_kinases = getKinasesByName(group.kinases_ids, local_kinases_grouped)
-            assert(group_kinases.length <= group.kinases_ids.length)
-
-            var group_index = index_shift + i
-
-            var mutations_in_kinases = 0
-            for(var j = 0; j < group_kinases.length; j++)
+            function is_in_group(kinase)
             {
-                var kinase = group_kinases[j]
-                kinase.group = group
-
-                mutations_in_kinases += kinase.protein ? kinase.protein.mutations_count : 0
-                assert(kinase.node_id + kinases.length < group_index)
-                addEdge(kinase.node_id + kinases.length, group_index)
+                return group.kinases_names.indexOf(kinase.name) !== -1
             }
 
-            group.r = calculateRadius()
+            var group_kinases = all_kinases.filter(is_in_group);
+            var mutations_in_kinases = 0;
+
+            function associate_kinase_with_group(kinase_template)
+            {
+                var kinase = clone(kinase_template);
+                kinase.collapsed = true;
+                cloned_kinases.push(kinase);
+
+                kinase.group = group;
+                mutations_in_kinases += kinase.protein ? kinase.protein.mutations_count : 0;
+                addEdge(kinase, group);
+            }
+
+            group_kinases.forEach(associate_kinase_with_group);
+
+            group.r = calculateRadius();
+
             if(!config.show_sites)
-            {
-                // 0 is (by convention) the index of the central protein
-                addEdge(group_index, 0)
-            }
+                addEdge(group, central_node)
         }
+
+        groups.forEach(parse);
+
+        return cloned_kinases;
     }
 
     function linkDistance(edge)
@@ -431,9 +384,9 @@ var Network = function ()
             update_force_affected_nodes: function(nodes_data, links_data)
             {
                 if(nodes_data)
-                    Array.prototype.push.apply(force_affected_nodes, nodes_data)
+                    append(force_affected_nodes, nodes_data)
                 if(links_data)
-                    Array.prototype.push.apply(force_affected_links, links_data)
+                    append(force_affected_links, links_data)
 
                 force.nodes(force_affected_nodes);
                 force.links(force_affected_links);
@@ -756,8 +709,8 @@ var Network = function ()
         var groups = []
         exposed_sites.each(function(site){
             var interactors = site.interactors;
-            Array.prototype.push.apply(kinases, interactors);
-            Array.prototype.push.apply(groups, interactors.filter(
+            append(kinases, interactors);
+            append(groups, interactors.filter(
                 function(node){ return node.type == types.group && node.expanded }
             ))
         })
@@ -765,7 +718,7 @@ var Network = function ()
         for(var g = 0; g < groups.length; g++)
         {
             var group = groups[g];
-            Array.prototype.push.apply(kinases, group.kinases);
+            append(kinases, group.kinases);
         }
 
         kinases = kinases.filter(function(kinase){ return kinase.collisions_active })
@@ -791,7 +744,7 @@ var Network = function ()
 
     function create_ticker()
     {
-        var site_nodes = nodes.filter(function(node){return node.type == types.site});
+        var site_nodes = nodes.filter(is_of_type(types.site));
         var site_collider = collide_sites(sites, 3)
 
         var exposed_sites = site_nodes.filter(function (node) { return node.exposed });
@@ -831,47 +784,77 @@ var Network = function ()
         zoom.set_viewport_size(config.width, config.height)
     }
 
+    function is_of_type(type, negation)
+    {
+        if(negation)
+            return function(node)
+            {
+                return node.type != type
+            }
+
+        return function(node)
+        {
+            return node.type == type
+        }
+    }
+
     function createNodes(data)
     {
-
-        kinase_groups = data.kinase_groups
+        var cloned_kinases;
+        groups = data.kinase_groups;
 
         central_node = createProteinNode(data.protein)
         var nodes_data = [central_node]
 
-        var r = prepareKinases(data.kinases, nodes_data.length, kinase_groups)
-        kinases = r[0]
-        kinases_grouped = r[1]
-        Array.prototype.push.apply(nodes_data, kinases)
-        Array.prototype.push.apply(nodes_data, kinases_grouped)
-
-        prepareKinaseGroups(nodes_data.length, kinases_grouped)
-        Array.prototype.push.apply(nodes_data, kinase_groups)
-
-        kinases.concat(kinase_groups)
+        // kinases which are known to interact with protein are returned (standalone)
+        // those as well as other (i.e. kinases which are in families known to interact with protein)
+        // are prepared to be displayed
+        standalone_kinases = prepareKinases(data.kinases);
+        append(nodes_data, standalone_kinases)
 
         if(config.show_sites)
         {
-            var cloned_kinases = prepareSites(data.sites, nodes_data.length)
-            Array.prototype.push.apply(nodes_data, sites)
-            Array.prototype.push.apply(nodes_data, cloned_kinases)
+            cloned_kinases = prepareSites(data.sites, standalone_kinases);
+            sites = data.sites
+            append(nodes_data, cloned_kinases.filter(is_of_type(types.kinase)));
+            append(nodes_data, sites);
+            append(groups, cloned_kinases.filter(is_of_type(types.kinase, true)))
         }
 
-        for(var i = 0; i < kinase_groups.length; i++) {
-            var group = kinase_groups[i]
-            var group_kinases = getKinasesByName(group.kinases_ids, kinases_grouped)
-            group.kinases = group_kinases
-        }
+        kinases_which_are_in_groups = prepareKinaseGroups(groups, data.kinases);
+        append(nodes_data, groups);
+        append(nodes_data, kinases_which_are_in_groups);
+
+        var kinase_nodes = nodes_data.filter(is_of_type(types.kinase));
+
+        groups.forEach(function(group) {
+            group.kinases = []
+            kinase_nodes.forEach(function(node){
+                if(node.group && node.group == group)
+                {
+                    group.kinases.push(node)
+                }
+            })
+        })
+
+        // not in "associate_kinase_with_site" to void circular dependencies while cloning
+        sites.forEach(function(site) {
+            site.interactors.forEach(function(kinase){
+                kinase.site = site
+            });
+        });
+
+        nodes_data.forEach(function(node, index) { node.id = index })
 
         return nodes_data
     }
 
     function hide_kinases_in_groups() {
-        for(var j = 0; j < kinases_grouped.length; j++)
+        for(var j = 0; j < kinases_which_are_in_groups.length; j++)
         {
             // force positions of group members to be equal
             // to initial positions of central node in the group
-            var kinase = kinases_grouped[j]
+            var kinase = kinases_which_are_in_groups[j]
 
             kinase.x = kinase.group.x
             kinase.y = kinase.group.y
@@ -886,7 +869,7 @@ var Network = function ()
         if(config.show_sites)
             orbiting_nodes = sites
         else
-            orbiting_nodes = kinases.concat(kinase_groups)
+            orbiting_nodes = standalone_kinases.concat(groups)
 
 
         orbits.init(orbiting_nodes, central_node, {
@@ -1026,18 +1009,18 @@ var Network = function ()
 
 
             var kinase_nodes = nodes
-                .filter(function(d){ return d.type == types.kinase })
+                .filter(is_of_type(types.kinase));
 
             var group_nodes = nodes
-                .filter(function(d){ return d.type == types.group })
+                .filter(is_of_type(types.group));
 
             var central_nodes = nodes
-                .filter(function(d){ return d.type == types.central })
+                .filter(is_of_type(types.central));
 
             var kinases_color_scale = create_color_scale(
                 [
                     0,
-                    d3.max(kinases, function(d){
+                    d3.max(standalone_kinases, function(d){
                         return d.protein ? d.protein.mutations_count : 0
                     }) || 0
                 ],
@@ -1090,7 +1073,7 @@ var Network = function ()
                 })
 
             var site_nodes = nodes
-                .filter(function(d){ return d.type === types.site })
+                .filter(is_of_type(types.site));
 
             site_nodes
                 .attr('class', function(d){
@@ -1165,10 +1148,10 @@ var Network = function ()
                     return count * 1.5
                 })
 
-            for(var i = 0; i < kinase_groups.length; i++)
+            for(var i = 0; i < groups.length; i++)
             {
                 // collapse the group immediately (time=0)
-                switchGroupState(kinase_groups[i], false, 0)
+                switchGroupState(groups[i], false, 0)
             }
 
             $(window).on('resize', resize)
