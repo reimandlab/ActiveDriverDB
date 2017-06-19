@@ -1,15 +1,12 @@
-import pytest
-
-import manage
 from argparse import Namespace
+
 from database_testing import DatabaseTest
 from flask import current_app
 
+import manage
 from database import db
 from models import User, Gene, Cancer, Page
-from tests.miscellaneous import make_named_temp_file
-
-use_fixture = pytest.fixture(autouse=True)
+from tests.miscellaneous import make_named_temp_file, use_fixture
 
 
 class ManageTest(DatabaseTest):

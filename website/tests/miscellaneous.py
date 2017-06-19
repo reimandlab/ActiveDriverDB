@@ -1,5 +1,7 @@
 from tempfile import NamedTemporaryFile
 
+import pytest
+
 
 def make_named_temp_file(data=None, mode='w', opener=open):
     """Create temporary file and return path to it.
@@ -18,3 +20,6 @@ def make_named_temp_file(data=None, mode='w', opener=open):
             f.write(data)
 
     return name
+
+
+use_fixture = pytest.fixture(autouse=True)

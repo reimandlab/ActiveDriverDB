@@ -194,6 +194,8 @@ class Page(CMSModel):
     def validate_address(self, key, address):
         if '//' in address or address.endswith('/') or address.startswith('/'):
             raise ValidationError('Address cannot contain neither consecutive nor trailing slashes')
+        if Page.query.filter_by(address=address).count():
+            raise ValidationError('Page with address: "' + address + '" already exists.')
         return address
 
     @property

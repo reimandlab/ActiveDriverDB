@@ -406,7 +406,7 @@ class ContentManagementSystem(FlaskView):
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            flash('Something went wrong :(', 'danger')
+            flash('Something went wrong.', 'danger')
         return redirect(url_for('ContentManagementSystem:list_menus'))
 
     @route('/menu/<menu_id>/add_custom_menu_entry', methods=['POST'])
@@ -466,11 +466,7 @@ class ContentManagementSystem(FlaskView):
 
         except IntegrityError:
             db.session.rollback()
-            flash(
-                'Page with address: ' + html_link(address, '/' + address) +
-                ' already exists. Please, change the address and try again.',
-                'danger'
-            )
+            flash('Something went wrong.', 'danger')
 
         return self._template(
             'admin/add_page',

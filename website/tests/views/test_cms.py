@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from urllib.parse import quote
 
 from view_testing import ViewTest
@@ -33,19 +34,32 @@ class TestCMS(ViewTest):
             return False
         return True
 
-    def get_flashes(self):
-        with self.client.session_transaction() as session:
-            return [
-                Flash(content, category)
-                for category, content in session.get('_flashes', [])
-            ]
+    @contextmanager
+    def collect_flashes(self):
+        flashes = []
+        from website.views import cms
 
-    def assert_flashes(self, content, category=None):
-        flashes = self.get_flashes()
-        for flash in flashes:
+        original_flash = cms.flash
+
+        def flash_collector(*args):
+            collected_flash = Flash(*args)
+            flashes.append(collected_flash)
+            original_flash(*args)
+
+        cms.flash = flash_collector
+
+        self.recent_flashes = flashes
+
+        yield flashes
+
+        cms.flash = original_flash
+
+    def assert_flashed(self, content, category=None):
+        for flash in self.recent_flashes:
             if flash.content == content and (not category or flash.category == category):
                 return True
-        return False
+        print('Recent flashes: %s' % self.recent_flashes)
+        raise AssertionError('No flash: %s, %s' % (content, category))
 
     def test_admin_only_protection(self):
         from views.cms import admin_only
@@ -94,22 +108,20 @@ class TestCMS(ViewTest):
         assert page and page.title == 'Test'
 
         # no address given
-        add_page(title='Test', address='')
-        self.assert_flashes('Address cannot be empty')
+        with self.collect_flashes():
+            add_page(title='Test', address='')
+            self.assert_flashed('Address cannot be empty')
 
         # existing address
-        add_page(title='Test', address='test')
-        from views.cms import html_link
-        self.assert_flashes(
-            'Page with address: ' + html_link('test', '/test') +
-            ' already exists. Please, change the address and try again.',
-            'danger'
-        )
+        with self.collect_flashes():
+            add_page(title='Test', address='test')
+            self.assert_flashed('Page with address: "test" already exists.')
 
         # invalid address
         for invalid_address in self.invalid_addresses:
-            add_page(address=invalid_address)
-            self.assert_flashes('Address cannot contain neither consecutive nor trailing slashes')
+            with self.collect_flashes():
+                add_page(address=invalid_address)
+                self.assert_flashed('Address cannot contain neither consecutive nor trailing slashes')
 
         # valid but unusual
         for weird_address in self.weird_addresses:
@@ -125,19 +137,21 @@ class TestCMS(ViewTest):
         # normal page
         page = Page(title='My page', content='My text', address='my-page')
         db.session.add(page)
-        response = self.client.get('my-page/')
-        assert b'My page' in response.data
-        assert b'My text' in response.data
-        assert not self.get_flashes()
+        with self.collect_flashes() as flashes:
+            response = self.client.get('my-page/')
+            assert b'My page' in response.data
+            assert b'My text' in response.data
+            assert not flashes
 
         # routing - valid but unusual addresses
         for weird_address in self.weird_addresses:
             page = Page(address=weird_address)
             db.session.add(page)
 
-            response = self.client.get(weird_address + '/')
-            assert response.status_code == 200
-            assert not self.get_flashes()
+            with self.collect_flashes() as flashes:
+                response = self.client.get(weird_address + '/')
+                assert response.status_code == 200
+                assert not flashes
 
     def test_edit_page(self):
         page = Page(title='test title', address='test_page', content='test content')
@@ -199,4 +213,3 @@ class TestCMS(ViewTest):
 
     def test_modify_menu(self):
         assert self.is_only_for_admins('/list_menus/')
-
