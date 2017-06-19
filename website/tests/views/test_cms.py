@@ -108,7 +108,7 @@ class TestCMS(ViewTest):
         self.login(email='admin@domain.org', create=True, admin=True)
 
         # check if form is included in template and if the template renders
-        assert '<form method="POST">' in self.client.get('/add/').data
+        assert b'<form method="POST">' in self.client.get('/add/').data
 
         # test adding a simple page
         response = add_page(title='Test', address='test')
@@ -236,3 +236,12 @@ class TestCMS(ViewTest):
 
     def test_modify_menu(self):
         assert self.is_only_for_admins('/list_menus/')
+
+    def test_sign_up(self):
+        pass
+
+    def test_login(self):
+        pass
+
+    def test_get_page(self):
+        pass
