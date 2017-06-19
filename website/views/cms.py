@@ -499,19 +499,14 @@ class ContentManagementSystem(FlaskView):
                     )
 
             except ValidationError as error:
+                db.session.rollback()
                 flash(error.message, 'warning')
-
+                page = page_new_data
             except IntegrityError:
                 db.session.rollback()
-                flash(
-                    'Page with address: ' + html_link(
-                        page_new_data['address'],
-                        '/' + page_new_data['address']
-                    ) + ' already exists.' +
-                    ' Please, change the address and try saving again.',
-                    'danger'
-                )
+                flash('Something went wrong.', 'danger')
                 page = page_new_data
+
         return self._template('admin/edit_page', page=page)
 
     @route('/remove_page/<path:address>/')

@@ -48,14 +48,18 @@ class TestCMS(ViewTest):
 
         cms.flash = flash_collector
 
-        self.recent_flashes = flashes
-
         yield flashes
 
         cms.flash = original_flash
 
-    def assert_flashed(self, content, category=None):
-        for flash in self.recent_flashes:
+    @contextmanager
+    def assert_flashes(self, *args, **kwargs):
+        with self.collect_flashes() as flashes:
+            yield
+            assert self.assert_flashed(flashes, *args, **kwargs)
+
+    def assert_flashed(self, flashes, content, category=None):
+        for flash in flashes:
             if flash.content == content and (not category or flash.category == category):
                 return True
         print('Recent flashes: %s' % self.recent_flashes)
@@ -102,26 +106,28 @@ class TestCMS(ViewTest):
             )
 
         self.login(email='admin@domain.org', create=True, admin=True)
+
+        # check if form is included in template and if the template renders
+        assert '<form method="POST">' in self.client.get('/add/').data
+
+        # test adding a simple page
         response = add_page(title='Test', address='test')
         assert response.status_code == 200
         page = Page.query.filter_by(address='test').one()
         assert page and page.title == 'Test'
 
         # no address given
-        with self.collect_flashes():
+        with self.assert_flashes('Address cannot be empty'):
             add_page(title='Test', address='')
-            self.assert_flashed('Address cannot be empty')
 
         # existing address
-        with self.collect_flashes():
+        with self.assert_flashes('Page with address: "test" already exists.'):
             add_page(title='Test', address='test')
-            self.assert_flashed('Page with address: "test" already exists.')
 
         # invalid address
         for invalid_address in self.invalid_addresses:
-            with self.collect_flashes():
+            with self.assert_flashes('Address cannot contain neither consecutive nor trailing slashes'):
                 add_page(address=invalid_address)
-                self.assert_flashed('Address cannot contain neither consecutive nor trailing slashes')
 
         # valid but unusual
         for weird_address in self.weird_addresses:
@@ -171,6 +177,23 @@ class TestCMS(ViewTest):
         }
         self.client.post('/edit/test_page/', data=new_data, follow_redirects=True)
         assert page.address == new_data['address']
+        assert page.title == new_data['title']
+        assert page.content == new_data['content']
+
+        with self.assert_flashes('Address cannot be empty'):
+            response = self.client.post(
+                '/edit/changed_address/',
+                data={
+                    'address': '',
+                    'content': 'I accidentally removed address but want the content preserved!'
+                },
+                follow_redirects=True
+            )
+            # user should get their edited text back (no one likes to loose his work)
+            assert b'I accidentally removed address but want the content preserved!' in response.data
+            # but the actual text should not be changed
+            assert page.content == 'changed content'
+            assert page.address == 'changed_address'
 
         # weird addresses
         for weird_address in self.weird_addresses:
