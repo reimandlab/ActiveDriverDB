@@ -1,8 +1,6 @@
 from view_testing import ViewTest
-from models import Protein
 from database import db
 import json
-#from flask_testing import assertRedirects
 
 
 class TestShortUrl(ViewTest):
@@ -24,7 +22,6 @@ class TestShortUrl(ViewTest):
         # check if generated shorthand works
         response = self.client.get('/s/{0}/'.format(shorthand))
 
-        #assert response.status_code == 200
         self.assertRedirects(response, tested_address)
 
     def test_is_word_obscene(self):

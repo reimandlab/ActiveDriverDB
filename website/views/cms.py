@@ -51,8 +51,6 @@ USER_ACCESSIBLE_VARIABLES = {
     'contact_form': create_contact_form
 }
 
-PAGE_COLUMNS = ('title', 'address', 'content')
-
 
 def admin_only(f):
     @wraps(f)
@@ -90,7 +88,7 @@ def get_page(address, operation=''):
     except MultipleResultsFound:
         flash(
             operation + 'multiple results found for page: /' + address +
-            'Manual check of the database is required',
+            ' Manual check of the database is required',
             'danger'
         )
     return None
@@ -214,7 +212,7 @@ class ContentManagementSystem(FlaskView):
     def index(self):
         return self.page('index')
 
-    @route('/<address>/')
+    @route('/<path:address>/')
     def page(self, address):
         page = get_page(address)
         return self._template('page', page=page)
@@ -441,7 +439,7 @@ class ContentManagementSystem(FlaskView):
             return self._template(
                 'admin/add_page',
             )
-        page_data = dict_subset(request.form, PAGE_COLUMNS)
+        page_data = dict_subset(request.form, Page.columns)
 
         try:
             address = request.form['address']
@@ -479,12 +477,12 @@ class ContentManagementSystem(FlaskView):
             page=page_data
         )
 
-    @route('/edit/<address>/', methods=['GET', 'POST'])
+    @route('/edit/<path:address>/', methods=['GET', 'POST'])
     @admin_only
     def edit_page(self, address):
         page = get_page(address, 'Edit')
         if request.method == 'POST' and page:
-            page_new_data = dict_subset(request.form, PAGE_COLUMNS)
+            page_new_data = dict_subset(request.form, Page.columns)
             try:
                 update_obj_with_dict(page, page_new_data)
 
@@ -520,6 +518,7 @@ class ContentManagementSystem(FlaskView):
                 page = page_new_data
         return self._template('admin/edit_page', page=page)
 
+    @route('/remove_page/<path:address>/')
     @admin_only
     def remove_page(self, address):
         page = get_page(address, 'Remove')

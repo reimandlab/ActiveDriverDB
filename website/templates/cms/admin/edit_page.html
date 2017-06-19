@@ -14,7 +14,7 @@
   {% endassets %}
 {% endblock %}
 
-{% set title = 'Edit "' + page.title + '" page' %}
+{% set title = 'Edit "' + (page.title or '') + '" page' %}
 
 {% block title %} {{ title }} - {{ super() }} {% endblock %}
 

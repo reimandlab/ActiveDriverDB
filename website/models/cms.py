@@ -1,6 +1,7 @@
 import pickle
 import os
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.orm import validates
 from werkzeug.utils import cached_property
 from database import db
 from models import Model
@@ -177,6 +178,8 @@ class User(CMSModel):
 class Page(CMSModel):
     """Model representing a single CMS page"""
 
+    columns = ('title', 'address', 'content')
+
     address = db.Column(
         db.String(256),
         unique=True,
@@ -186,6 +189,12 @@ class Page(CMSModel):
     )
     title = db.Column(db.String(256))
     content = db.Column(db.Text())
+
+    @validates('address')
+    def validate_address(self, key, address):
+        if '//' in address or address.endswith('/') or address.startswith('/'):
+            raise ValidationError('Address cannot contain neither consecutive nor trailing slashes')
+        return address
 
     @property
     def url(self):

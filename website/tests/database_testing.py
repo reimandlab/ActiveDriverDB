@@ -26,10 +26,11 @@ class DatabaseTest(TestCase):
             if key.isupper()
         }
 
-    def login(self, email, password, create=False):
+    def login(self, email='user@domain.org', password='strong-password', create=False, admin=False):
         if create:
-            user = User(email, password)
+            user = User(email, password, 10 if admin else 0)
             db.session.add(user)
+            self.logged_user = user
 
         return self.client.post(
             '/login/',
@@ -40,8 +41,12 @@ class DatabaseTest(TestCase):
             follow_redirects=True
         )
 
-    def logout(self):
-        return self.client.get('/logout/', follow_redirects=True)
+    def logout(self, forget_user=True):
+        result = self.client.get('/logout/', follow_redirects=True)
+        if forget_user:
+            db.session.delete(self.logged_user)
+        self.logged_user = None
+        return result
 
     def create_app(self):
         app = create_app(config_override=self.config)
@@ -49,7 +54,7 @@ class DatabaseTest(TestCase):
         return app
 
     def setUp(self):
-
+        self.logged_user = None
         db.create_all()
 
     def tearDown(self):
