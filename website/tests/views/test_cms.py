@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from urllib.parse import quote
 
 from view_testing import ViewTest
-from models import Page
+from models import Page, User
 from models import Menu
 from models import CustomMenuEntry
 from models import PageMenuEntry
@@ -58,12 +58,11 @@ class TestCMS(ViewTest):
             yield
             assert self.assert_flashed(flashes, *args, **kwargs)
 
-    def assert_flashed(self, flashes, content, category=None):
+    def assert_flashed(self, flashes, content=None, category=None):
         for flash in flashes:
-            if flash.content == content and (not category or flash.category == category):
+            if (not content or flash.content == content) and (not category or flash.category == category):
                 return True
-        print('Recent flashes: %s' % self.recent_flashes)
-        raise AssertionError('No flash: %s, %s' % (content, category))
+        raise AssertionError('No flash: %s, %s. Recent flashes: %s.' % (content, category, flashes))
 
     def test_admin_only_protection(self):
         from views.cms import admin_only
@@ -228,6 +227,18 @@ class TestCMS(ViewTest):
     def test_list_pages(self):
         assert self.is_only_for_admins('/list_pages/')
 
+        self.login(email='admin@domain.org', create=True, admin=True)
+
+        response = self.client.get('/list_pages/')
+        assert b'MyTestPage' not in response.data
+
+        page = Page(title='MyTestPage', address='test', content='some')
+        db.session.add(page)
+
+        response = self.client.get('/list_pages/')
+        assert b'MyTestPage' in response.data
+        self.logout()
+
     def test_setting(self):
         assert self.is_only_for_admins('/settings/')
 
@@ -238,10 +249,46 @@ class TestCMS(ViewTest):
         assert self.is_only_for_admins('/list_menus/')
 
     def test_sign_up(self):
-        pass
+        response = self.client.get('/register/')
+        required_fields = ('email', 'password', 'consent')
+        for field in required_fields:
+            assert bytes('name="%s"' % field, 'utf-8') in response.data
+
+        data = {
+            'email': 'user@gmail.com',
+            'password': 'strongPassword',
+            'consent': True
+        }
+        with self.assert_flashes(category='success'):
+            self.client.post('/register/', data=data, follow_redirects=True)
+
+        user = User.query.filter_by(email='user@gmail.com').one()
+        assert user
+        assert not user.is_admin
+
+        # lets try again
+        with self.assert_flashes(
+                'This email is already used for an account. '
+                'If you do not remember your password, please contact us.'
+        ):
+            self.client.post('/register/', data=data, follow_redirects=True)
+
+        data['email'] = 'other@some.org'
+        del data['consent']
+        with self.assert_flashes('Data policy consent is required to proceed.'):
+            self.client.post('/register/', data=data, follow_redirects=True)
 
     def test_login(self):
         pass
 
     def test_get_page(self):
-        pass
+        from website.views.cms import get_page
+
+        page = Page(title='MyTestPage', address='test', content='some')
+        db.session.add(page)
+        assert page == get_page('test')
+
+        with self.collect_flashes() as flashes:
+            get_page('not-existing-page')
+            assert len(flashes) == 1
+            assert 'no such a page' in flashes[0].content
