@@ -179,11 +179,11 @@ class ContentManagementSystem(FlaskView):
             return empty
         return help_entry.content
 
+    @route('/admin/save_inline_help/', methods=['POST'])
     @admin_only
-    @route('/admin/save_inline_help', methods=['POST'])
     def save_inline_help(self):
         name = request.form['help_id']
-        old_content = request.form['old_content']
+        old_content = request.form.get('old_content', None)
         new_content = request.form['new_content']
 
         help_entry, created = get_or_create(HelpEntry, name=name)

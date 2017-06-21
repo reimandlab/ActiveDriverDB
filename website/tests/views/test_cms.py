@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from urllib.parse import quote
 
 from view_testing import ViewTest
-from models import Page, User
+from models import Page, User, HelpEntry
 from models import Menu
 from models import CustomMenuEntry
 from models import PageMenuEntry
@@ -23,12 +23,17 @@ class TestCMS(ViewTest):
     invalid_addresses = ['/test/', ' test/', 'test//', '/', '/test']
     weird_addresses = ['test/test', ' /test', ' test', 'test ']
 
-    def is_only_for_admins(self, address):
-        response = self.client.get(address)
+    def is_only_for_admins(self, address, method='get'):
+        if method == 'get':
+            tester = self.client.get
+        else:
+            tester = self.client.post
+
+        response = tester(address)
         if response.status_code == 200:
             return False
         self.login(create=True, admin=False)
-        response = self.client.get(address)
+        response = tester(address)
         self.logout()
         if response.status_code != 401:
             return False
@@ -238,6 +243,31 @@ class TestCMS(ViewTest):
         response = self.client.get('/list_pages/')
         assert b'MyTestPage' in response.data
         self.logout()
+
+    def test_inline_help(self):
+        help = HelpEntry(name='my-helpful-hint', content='Reading help messages may help you')
+        db.session.add(help)
+
+        from views import ContentManagementSystem
+        assert ContentManagementSystem._inline_help('my-helpful-hint') == help.content
+
+    def test_save_inline_help(self):
+        assert self.is_only_for_admins('/admin/save_inline_help/', method='post')
+
+        self.login(email='admin@domain.org', create=True, admin=True)
+
+        # new entry
+        data = {'help_id': 'new-help', 'new_content': 'Some helpful text.'}
+        response = self.client.post('/admin/save_inline_help/', data=data, follow_redirects=True)
+        assert response.json['status'] == 200
+        entry = HelpEntry.query.filter_by(name='new-help').one()
+        assert entry.content == data['new_content']
+
+        # editing old entry
+        data['old_content'] = data['new_content']
+        data['new_content'] = 'Less helpful msg.'
+        self.client.post('/admin/save_inline_help/', data=data, follow_redirects=True)
+        assert entry.content == 'Less helpful msg.'
 
     def test_setting(self):
         assert self.is_only_for_admins('/settings/')
