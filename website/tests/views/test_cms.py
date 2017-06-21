@@ -2,7 +2,7 @@ from contextlib import contextmanager
 from urllib.parse import quote
 
 from view_testing import ViewTest
-from models import Page, User, HelpEntry
+from models import Page, User, HelpEntry, Setting
 from models import Menu
 from models import CustomMenuEntry
 from models import PageMenuEntry
@@ -22,6 +22,9 @@ class TestCMS(ViewTest):
 
     invalid_addresses = ['/test/', ' test/', 'test//', '/', '/test']
     weird_addresses = ['test/test', ' /test', ' test', 'test ']
+
+    def login_as_admin(self):
+        self.login(email='admin@domain.org', create=True, admin=True)
 
     def is_only_for_admins(self, address, method='get'):
         if method == 'get':
@@ -109,7 +112,7 @@ class TestCMS(ViewTest):
                 follow_redirects=True
             )
 
-        self.login(email='admin@domain.org', create=True, admin=True)
+        self.login_as_admin()
 
         # check if form is included in template and if the template renders
         assert b'<form method="POST">' in self.client.get('/add/').data
@@ -168,7 +171,7 @@ class TestCMS(ViewTest):
         db.session.add(page)
         assert self.is_only_for_admins('/edit/test_page/')
 
-        self.login(email='admin@domain.org', create=True, admin=True)
+        self.login_as_admin()
 
         response = self.client.get('/edit/test_page/')
         assert response.status_code == 200
@@ -215,7 +218,7 @@ class TestCMS(ViewTest):
         db.session.add(page)
         assert self.is_only_for_admins('/remove_page/test_page/')
 
-        self.login(email='admin@domain.org', create=True, admin=True)
+        self.login_as_admin()
 
         # weird addresses
         for weird_address in self.weird_addresses:
@@ -232,7 +235,7 @@ class TestCMS(ViewTest):
     def test_list_pages(self):
         assert self.is_only_for_admins('/list_pages/')
 
-        self.login(email='admin@domain.org', create=True, admin=True)
+        self.login_as_admin()
 
         response = self.client.get('/list_pages/')
         assert b'MyTestPage' not in response.data
@@ -254,7 +257,7 @@ class TestCMS(ViewTest):
     def test_save_inline_help(self):
         assert self.is_only_for_admins('/admin/save_inline_help/', method='post')
 
-        self.login(email='admin@domain.org', create=True, admin=True)
+        self.login_as_admin()
 
         # new entry
         data = {'help_id': 'new-help', 'new_content': 'Some helpful text.'}
@@ -269,11 +272,110 @@ class TestCMS(ViewTest):
         self.client.post('/admin/save_inline_help/', data=data, follow_redirects=True)
         assert entry.content == 'Less helpful msg.'
 
-    def test_setting(self):
+    def test_settings(self):
         assert self.is_only_for_admins('/settings/')
+        s = Setting(name='copyright', value='Authors 2000')
+        db.session.add(s)
 
-    def test_add_menu_entry(self):
-        pass
+        from flask import render_template_string
+        test_use = render_template_string('{{ system_setting("copyright") }}')
+        assert test_use == s.value
+
+        self.login_as_admin()
+
+        response = self.client.get('/settings/')
+        html = response.data.decode('utf-8')
+        assert s.name in html and s.value in html
+
+        self.logout()
+
+    def save_setting(self):
+        assert self.is_only_for_admins('/settings/save/', method='post')
+
+    def test_add_menu(self):
+        assert self.is_only_for_admins('/add_menu/', method='post')
+
+        self.login_as_admin()
+
+        # error handling
+        with self.assert_flashes('Menu name is required'):
+            self.client.post('/add_menu/', data={'name': ''}, follow_redirects=True)
+
+        # menu adding
+        self.client.post('/add_menu/', data={'name': 'My menu'})
+        assert len(Menu.query.filter_by(name='My menu').all()) == 1
+
+        # prevent duplicates
+        with self.collect_flashes() as flashes:
+            self.client.post('/add_menu/', data={'name': 'My menu'}, follow_redirects=True)
+            assert 'already exists' in flashes[0].content
+
+        self.logout()
+
+    def test_add_page_menu_entry(self):
+        assert self.is_only_for_admins('/menu/0/add_page_menu_entry/', method='post')
+
+        menu = Menu(name='My name')
+        page = Page(title='My page', address='my_address')
+        db.session.add_all([menu, page])
+        db.session.commit()
+
+        self.login_as_admin()
+
+        self.client.post(
+            '/menu/%s/add_page_menu_entry/' % menu.id,
+            data={'page_id': page.id},
+            follow_redirects=True
+        )
+
+        entries = PageMenuEntry.query.filter_by(menu_id=menu.id).all()
+        assert len(entries) == 1
+        assert entries[0].page == page
+
+        self.logout()
+
+    def test_add_custom_menu_entry(self):
+        assert self.is_only_for_admins('/menu/0/add_custom_menu_entry/', method='post')
+
+        self.login_as_admin()
+
+        menu = Menu(name='My name')
+        db.session.add(menu)
+        db.session.commit()
+
+        response = self.client.post(
+            '/menu/%s/add_custom_menu_entry/' % menu.id,
+            data={
+                'title': 'ActiveDriverDB repository',
+                'url': 'https://github.com/reimandlab/ActiveDriverDB'
+            },
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+
+        print(CustomMenuEntry.query.all())
+        entries = CustomMenuEntry.query.filter_by(menu_id=menu.id).all()
+        assert len(entries) == 1
+        assert entries[0].title == 'ActiveDriverDB repository'
+        assert entries[0].url == 'https://github.com/reimandlab/ActiveDriverDB'
+
+        self.logout()
+
+    def test_remove_menu(self):
+        assert self.is_only_for_admins('/remove_menu/0')
+
+        menu = Menu(name='Some menu')
+        db.session.add(menu)
+        db.session.commit()
+
+        self.login_as_admin()
+
+        m_id = menu.id
+        assert Menu.query.get(m_id) == menu
+        self.client.get('/remove_menu/%s' % m_id)
+        assert Menu.query.get(m_id) is None
+
+        self.logout()
 
     def test_modify_menu(self):
         assert self.is_only_for_admins('/list_menus/')

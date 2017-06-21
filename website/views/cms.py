@@ -394,7 +394,7 @@ class ContentManagementSystem(FlaskView):
             )
         return redirect(url_for('ContentManagementSystem:list_menus'))
 
-    @route('/menu/<menu_id>/add_page_menu_entry', methods=['POST'])
+    @route('/menu/<menu_id>/add_page_menu_entry/', methods=['POST'])
     @admin_only
     def add_page_menu_entry(self, menu_id):
         try:
@@ -409,7 +409,7 @@ class ContentManagementSystem(FlaskView):
             flash('Something went wrong.', 'danger')
         return redirect(url_for('ContentManagementSystem:list_menus'))
 
-    @route('/menu/<menu_id>/add_custom_menu_entry', methods=['POST'])
+    @route('/menu/<menu_id>/add_custom_menu_entry/', methods=['POST'])
     @admin_only
     def add_custom_menu_entry(self, menu_id):
 
