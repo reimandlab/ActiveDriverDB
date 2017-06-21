@@ -1,12 +1,12 @@
 import gzip
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict, defaultdict, namedtuple
 from tqdm import tqdm
 from database import db
 from database import get_or_create
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
-from models import Domain, UniprotEntry
+from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation
 from models import Gene
 from models import InterproDomain
 from models import Cancer
@@ -741,11 +741,22 @@ def calculate_interactors():
         protein.interactors_count = protein._calc_interactors_count()
 
 
+ListData = namedtuple('ListData', 'name path mutations_source')
+
+
 @importer
 def active_driver_gene_lists(
         lists=(
-            ('TCGA', 'data/ActiveDriver1_result_pvalue_less_0.01_CancerMutation-2017-02-16.txt'),
-            ('ClinVar', 'data/ActiveDriver1_result_pvalue_less_0.01_InheritedMutation-2017-02-16.txt')
+            ListData(
+                name='Cancer (TCGA PanCancerAtlas)',
+                path='data/mc3.v0.2.8.activedriver.txt',
+                mutations_source=MC3Mutation
+            ),
+            ListData(
+                name='Clinical (ClinVar)',
+                path='data/ActiveDriver1_result_pvalue_less_0.01_InheritedMutation-2017-02-16.txt',
+                mutations_source=InheritedMutation
+            )
         ),
         fdr_cutoff=0.01
 ):
@@ -755,15 +766,22 @@ def active_driver_gene_lists(
     ]
     gene_lists = []
 
-    for name, path in lists:
-        if name in current_gene_lists:
+    for list_data in lists:
+        if list_data.name in current_gene_lists:
             print(
                 'Skipping gene list %s: already present in database' %
-                name
+                list_data.name
             )
             continue
 
-        gene_list = GeneList(name=name)
+        gene_list = GeneList(
+            name=list_data.name,
+            mutation_source_name=(
+                list_data.mutations_source.name
+                if list_data.mutations_source
+                else None
+            )
+        )
 
         header = ['gene', 'p', 'fdr']
 
@@ -792,7 +810,7 @@ def active_driver_gene_lists(
 
             gene_list.entries = list_entries
 
-        parse_tsv_file(path, parser, header)
+        parse_tsv_file(list_data.path, parser, header)
 
         gene_lists.append(gene_list)
 

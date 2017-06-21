@@ -1,11 +1,13 @@
-from imports.protein_data import active_driver_gene_lists as load_active_driver_gene_lists
+from imports.protein_data import active_driver_gene_lists as load_active_driver_gene_lists, ListData
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
 from database import db
+from models import TCGAMutation
 
 # merged:
 # head ActiveDriver1_result_pvalue_less_0.01_CancerMutation-2017-02-16.txt -n 4
 # head ActiveDriver1_result_pvalue_less_0.01_CancerMutation-2017-02-16.txt -n 500 | tail
+
 raw_gene_list = """\
 gene	p	fdr
 CTNNB1	7.29868558025906e-65	8.70368255445893e-61
@@ -32,7 +34,7 @@ class TestImport(DatabaseTest):
 
         with self.app.app_context():
             gene_lists = load_active_driver_gene_lists(lists=(
-                ('TCGA', filename),
+                ListData(name='TCGA list', path=filename, mutations_source=TCGAMutation),
             ))
 
         # one gene list returned (TCGA)
@@ -41,7 +43,9 @@ class TestImport(DatabaseTest):
         gene_list = gene_lists[0]
 
         # correct name of gene list
-        assert gene_list.name == 'TCGA'
+        assert gene_list.name == 'TCGA list'
+
+        assert gene_list.mutation_source_name == 'TCGA'
 
         # let's take some entry
         an_entry = gene_list.entries[0]
@@ -58,7 +62,7 @@ class TestImport(DatabaseTest):
 
         with self.app.app_context():
             gene_lists = load_active_driver_gene_lists(lists=(
-                ('TCGA', filename),
+                ListData(name='TCGA list', path=filename, mutations_source=TCGAMutation),
             ))
 
         # no duplicate lists should be created

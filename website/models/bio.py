@@ -56,6 +56,9 @@ class GeneList(BioModel):
     name = db.Column(db.String(256), nullable=False, unique=True, index=True)
     entries = db.relationship(GeneListEntry)
 
+    # some gene lists are specific only to one type of mutations:
+    mutation_source_name = db.Column(db.String(256))
+
 
 class Kinase(BioModel):
     """Kinase represents an entity interacting with some site.

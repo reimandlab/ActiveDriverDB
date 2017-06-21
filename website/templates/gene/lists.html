@@ -27,7 +27,11 @@
       {% for list in lists %}
         <tr>
           <td>
-            <a href="{{ url_for('GeneView:list', list_name=list.name, filters='Mutation.sources:in:' + list.name) }}">
+            <a href="{{ url_for(
+                'GeneView:list',
+                list_name=list.name,
+                filters=('Mutation.sources:in:' + list.mutation_source_name if list.mutation_source_name else None)
+            ) }}">
               {{ list.name }}
             </a>
           </td>

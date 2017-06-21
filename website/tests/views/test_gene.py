@@ -1,5 +1,5 @@
 from view_testing import ViewTest
-from models import Protein, GeneList
+from models import Protein, GeneList, TCGAMutation
 from models import Gene
 from database import db
 
@@ -38,8 +38,9 @@ class TestGeneView(ViewTest):
 
         # create gene list and genes
         with self.app.app_context():
+            from imports.protein_data import ListData
             gene_lists = load_active_driver_gene_lists(lists=(
-                ('TCGA', filename),
+                ListData(name='TCGA', path=filename, mutations_source=TCGAMutation),
             ))
         db.session.add_all(gene_lists)
 
