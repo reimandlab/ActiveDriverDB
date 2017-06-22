@@ -1150,7 +1150,6 @@ class Mutation(BioModel):
     alt = db.Column(db.String(1))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
-    # TODO: there is an error of false negatives for edge muts probably
     # To speed up results retrieval one can precompute value of
     # 'is_ptm' property. It does not carry meaningful information
     # for novel mutations until correctly precomputed (e.g. with
