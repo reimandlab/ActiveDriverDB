@@ -359,7 +359,7 @@ class MutationImporter(ABC):
 
             ref, pos, alt = decode_mutation(mutation[4])
 
-            broken_sequence_tuple = is_sequence_broken(protein, pos, ref)
+            broken_sequence_tuple = is_sequence_broken(protein, pos, ref, alt)
 
             if broken_sequence_tuple:
                 self.broken_seq[refseq].append(broken_sequence_tuple)
