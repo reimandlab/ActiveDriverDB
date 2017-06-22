@@ -67,7 +67,7 @@ class TrackElement(object):
             if len(name) <= self.length:
                 return name
 
-        # if no proposed name fits, use the last one (shortes)
+        # if no proposed name fits, use the last one (shortest)
         return names_to_try[-1]
 
 
@@ -78,15 +78,15 @@ class SequenceTrack(Track):
         self.protein = protein
         self.length = protein.length
 
-        subtracks = self.phosporylation_subtracks()
+        subtracks = self.ptm_sites_subtracks()
 
         super().__init__('sequence', protein.sequence, subtracks)
 
-    def phosporylation_subtracks(self):
+    def ptm_sites_subtracks(self):
 
         # store in descending order or use z-index
         spans = (7, 3)
-        phos_span = {}
+        ptm_site_ranges = {}
 
         for shift in spans:
             size = 2 * shift + 1
@@ -97,33 +97,48 @@ class SequenceTrack(Track):
             ]
             self.trim_ends(coords)
 
-            phos_span[shift] = [
+            ptm_site_ranges[shift] = [
                 TrackElement(start, length)
                 for start, length in coords
             ]
 
         return [
-            Track('phos_span_' + str(shift), phos_span[shift], inline=True)
+            Track('ptm_site_' + str(shift), ptm_site_ranges[shift], inline=True)
             for shift in spans
         ]
 
     def trim_ends(self, elements):
-        """Trim coordinates defining TrackElements to fit into the track"""
+        """Trim coordinates defining TrackElements to fit into the track.
+        Test with: NM_024666
+
+        Args:
+            elements: sorted list of elements positions (tuples: start, end).
+        """
         if not elements:
             return
-        # Meaning of indices: [0] = start, [1] = length
 
         # do not exceed 0 on the beginning
-        begin_pos = 0
-        while elements[begin_pos][0] < 0:
-            elements[begin_pos][0] = 0
-            begin_pos += 1
+        for i, element_data in enumerate(elements):
+            start, length = element_data
+
+            # this element and all consecutive elements are not lower than 0
+            if start > 0:
+                break
+
+            # set start to the first position
+            elements[i][0] = 1
+            # and update length
+            elements[i][1] = length + start - 1    # start is negative
 
         # and do not exceed sequence length at the end
-        final_pos = -1
-        while elements[final_pos][1] > self.length - elements[final_pos][0]:
-            elements[final_pos][1] = self.length - elements[final_pos][0]
-            final_pos -= 1
+        for i, element_data in enumerate(reversed(elements)):
+            start, length = element_data
+
+            if start + length <= self.length:
+                break
+
+            # set length
+            elements[-i - 1][1] = self.length - start + 1
 
 
 class DomainsTrack(Track):
@@ -149,7 +164,7 @@ class DomainsTrack(Track):
                     checked_interpro = domain.interpro
                     hit = False
                     while checked_interpro.parent:
-                        if (consensus_interpro == checked_interpro.parent):
+                        if consensus_interpro == checked_interpro.parent:
                             hit = True
                             break
                         checked_interpro = checked_interpro.parent
