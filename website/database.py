@@ -6,11 +6,18 @@ from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.sql.expression import func
 from flask_sqlalchemy import SQLAlchemy
 from berkley_db import BerkleyHashSet
-
+from helpers.parsers import chunked_list
 
 db = SQLAlchemy()
 bdb = BerkleyHashSet()
 bdb_refseq = BerkleyHashSet()
+
+
+def get_engine(bind_key, app=None):
+    if not app:
+        from flask import current_app
+        app = current_app
+    return db.get_engine(app, bind_key)
 
 
 def remove(orm_object, soft=False):
@@ -68,8 +75,7 @@ def get_highest_id(model):
 
 def restart_autoincrement(model):
     """Restarts autoincrement counter"""
-    from flask import current_app
-    engine = db.get_engine(current_app, model.__bind_key__)
+    engine = get_engine(model.__bind_key__)
     db.session.close()
     if db.session.bind.dialect.name == 'sqlite':
         warn(UserWarning('Sqlite increment reset is not supported'))
@@ -84,8 +90,7 @@ def get_autoincrement(model):
 
     It is database-engine dependent, might not work well with some drivers.
     """
-    from flask import current_app
-    engine = db.get_engine(current_app, model.__bind_key__)
+    engine = get_engine(model.__bind_key__)
     return engine.execute(
         'SELECT `AUTO_INCREMENT`' +
         ' FROM INFORMATION_SCHEMA.TABLES' +
@@ -189,7 +194,7 @@ def reset_relational_db(app, **kwargs):
     name = kwargs.get('bind', 'default')
 
     print('Removing', name, 'database...')
-    engine = db.get_engine(app, name)
+    engine = get_engine(name, app)
     set_foreign_key_checks(engine, active=False)
     db.session.commit()
     db.reflect()
@@ -208,3 +213,28 @@ def reset_relational_db(app, **kwargs):
 
 def get_column_names(table):
     return set((i.name for i in table.c))
+
+
+def bulk_ORM_insert(model, keys, data):
+    for chunk in chunked_list(data):
+        db.session.bulk_insert_mappings(
+            model,
+            [
+                dict(zip(keys, entry))
+                for entry in chunk
+            ]
+        )
+        db.session.flush()
+
+
+def bulk_raw_insert(table, keys, data, bind=None):
+    engine = get_engine(bind)
+    for chunk in chunked_list(data):
+        engine.execute(
+            table.insert(),
+            [
+                dict(zip(keys, entry))
+                for entry in chunk
+            ]
+        )
+        db.session.flush()

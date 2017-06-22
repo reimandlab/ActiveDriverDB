@@ -4,11 +4,10 @@ from abc import abstractmethod
 from collections import OrderedDict
 from collections import defaultdict
 
-from flask import current_app
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm.exc import NoResultFound
 
 from database import db, yield_objects, remove_model, raw_delete_all
+from database import bulk_ORM_insert
 from database import fast_count
 from database import get_highest_id
 from database import restart_autoincrement
@@ -17,31 +16,6 @@ from helpers.bioinf import is_sequence_broken
 from helpers.parsers import chunked_list
 from imports.protein_data import get_proteins
 from models import Mutation
-
-
-def bulk_ORM_insert(model, keys, data):
-    for chunk in chunked_list(data):
-        db.session.bulk_insert_mappings(
-            model,
-            [
-                dict(zip(keys, entry))
-                for entry in chunk
-            ]
-        )
-        db.session.flush()
-
-
-def bulk_raw_insert(table, keys, data, bind=None):
-    engine = db.get_engine(current_app, bind)   # TODO make helper in db
-    for chunk in chunked_list(data):
-        engine.execute(
-            table.insert(),
-            [
-                dict(zip(keys, entry))
-                for entry in chunk
-            ]
-        )
-        db.session.flush()
 
 
 def make_metadata_ordered_dict(keys, metadata, get_from=None):

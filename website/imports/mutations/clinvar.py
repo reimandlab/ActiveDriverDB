@@ -2,10 +2,10 @@ from models import InheritedMutation
 from models import ClinicalData
 from imports.mutations import MutationImporter
 from imports.mutations import make_metadata_ordered_dict
-from imports.mutations import bulk_ORM_insert
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import gzip_open_text
 from database import restart_autoincrement
+from database import bulk_ORM_insert
 from database import db
 
 
