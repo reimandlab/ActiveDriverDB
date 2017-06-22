@@ -473,8 +473,8 @@ class Protein(BioModel):
             kinase_groups.update(site.kinase_groups)
         return kinase_groups
 
-    def get_sites_from_range(self, left, right):
-        """Retrieves sites from given range defined as <left, right>, inclusive.
+    def has_sites_in_range(self, left, right):
+        """Test if there are any sites in given range defined as <left, right>, inclusive.
 
         Algorithm is based on bisection and an assumption,
         that sites are sorted by position in the database.
@@ -488,16 +488,12 @@ class Protein(BioModel):
                 start = i
                 break
         else:
-            return tuple()
+            return False
 
         for i, site in enumerate(reversed(sites)):
             if site.position <= right:
-                end = -i
-                break
-        else:
-            return tuple()
-
-        return sites[start:end]
+                return start <= len(sites) - i - 1
+        return False
 
     @property
     def disease_names(self):

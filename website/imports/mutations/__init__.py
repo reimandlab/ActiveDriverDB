@@ -365,11 +365,10 @@ class MutationImporter(ABC):
                 self.broken_seq[refseq].append(broken_sequence_tuple)
                 continue
 
-            affected_sites = protein.get_sites_from_range(pos - 7, pos + 7)
-            is_ptm = bool(affected_sites)
+            is_ptm_related = protein.has_sites_in_range(pos - 7, pos + 7)
 
             mutation_id = self.get_or_make_mutation(
-                pos, protein.id, alt, is_ptm
+                pos, protein.id, alt, is_ptm_related
             )
 
             yield mutation_id

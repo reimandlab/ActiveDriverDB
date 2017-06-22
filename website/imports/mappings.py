@@ -77,7 +77,7 @@ def import_mappings(
                 broken_seq[refseq].append(broken_sequence_tuple)
                 continue
 
-            sites = protein.get_sites_from_range(aa_pos - 7, aa_pos + 7)
+            is_ptm_related = protein.has_sites_in_range(aa_pos - 7, aa_pos + 7)
 
             # add new item, emulating set update
             item = encode_csv(
@@ -87,7 +87,7 @@ def import_mappings(
                 cdna_pos,
                 exon,
                 protein.id,
-                bool(sites)
+                is_ptm_related
             )
 
             new_variants.add(item)
