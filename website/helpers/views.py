@@ -14,11 +14,15 @@ ordering_functions = {
 }
 
 
+def json_results_mapper(result):
+    return result.to_json()
+
+
 class AjaxTableView:
 
     @staticmethod
     def from_model(
-        model, results_mapper=None,
+        model, results_mapper=json_results_mapper,
         search_filter=None, preset_filter=None, **kwargs
     ):
 
@@ -76,8 +80,6 @@ class AjaxTableView:
 
             rows = [
                 results_mapper(element)
-                if results_mapper
-                else element.to_json()
                 for element in query
             ]
 
@@ -91,7 +93,7 @@ class AjaxTableView:
     @staticmethod
     def from_query(
         query=None, count_query=None,
-        results_mapper=None, filters_class=None,
+        results_mapper=json_results_mapper, filters_class=None,
         search_filter=None, preset_filter=None,
         query_constructor=None, **kwargs
     ):
@@ -141,6 +143,7 @@ class AjaxTableView:
 
             if query_constructor:
                 query = query_constructor(sql_filters)
+                print(query)
             else:
                 query = predefined_query
                 if filters_class:
@@ -172,14 +175,12 @@ class AjaxTableView:
                 print('Statement Error detected!')
                 return jsonify({'message': 'query error'})
 
-            rows = [
-                results_mapper(element)
-                for element in elements
-            ]
-
             return jsonify({
                 'total': count,
-                'rows': rows
+                'rows': [
+                    results_mapper(element)
+                    for element in elements
+                ]
             })
 
         return ajax_table_view

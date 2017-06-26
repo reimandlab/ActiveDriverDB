@@ -22,12 +22,22 @@
 
 {% block content %}
 
-<h3>Pathways</h3>
+<h3>
+  {% block page_title %}
+  All pathways
+  {% endblock %}
+</h3>
 
 <ol class="breadcrumb">
   <li><a href="/">Home</a></li>
-  <li class="active">Pathways</li>
+  <li><a href="/pathways/">Pathways</a></li>
+  {% block breadcrumbs %}
+  <li class="active">All</li>
+  {% endblock %}
 </ol>
+
+{% block description %}
+{% endblock %}
 
 <div>
   <div id="toolbar">
@@ -49,7 +59,7 @@
     data-page-size="25"
     data-page-list="[10, 25, 50, 100, ALL]"
     data-side-pagination="server"
-    data-url="{{ url_for('PathwayView:data') }}"
+    data-url="{{ url_for('PathwayView:' + endpoint, **endpoint_kwargs) }}"
   >
   </table>
 </div>
@@ -65,6 +75,7 @@
     $table.bootstrapTable({
       columns: [
         [
+          {% block columns %}
           {
             title: 'Name',
             field: 'description',
@@ -96,6 +107,7 @@
             field: 'genes',
             formatter: genesFormatter
           }
+          {% endblock %}
         ],
         [
           {

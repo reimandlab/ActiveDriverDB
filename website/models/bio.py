@@ -181,9 +181,11 @@ class Pathway(BioModel):
     gene_ontology = db.Column(db.Integer)
     reactome = db.Column(db.Integer)
 
+    association_table = make_association_table('pathway.id', 'gene.id')
+
     genes = db.relationship(
         'Gene',
-        secondary=make_association_table('pathway.id', 'gene.id'),
+        secondary=association_table,
         backref='pathways'
     )
 
