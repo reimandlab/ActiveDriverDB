@@ -666,6 +666,8 @@ class FilterManager:
             return False
         elif value == 'None':
             return None
+        elif value.isdigit():
+            return int(value)
 
         value = value.replace('+', ' ')
 
