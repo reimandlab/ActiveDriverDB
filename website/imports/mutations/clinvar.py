@@ -111,7 +111,7 @@ class Importer(MutationImporter):
                     clinvar_data.append(
                         (
                             len(clinvar_mutations),
-                            significances[i] if significances else None,
+                            int(significances[i]) if significances else None,
                             names[i],
                             statuses[i] if statuses else None,
                         )

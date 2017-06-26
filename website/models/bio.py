@@ -945,19 +945,19 @@ class ClinicalData(BioModel):
     inherited_id = db.Column(db.Integer, db.ForeignKey('inheritedmutation.id'))
 
     significance_codes = {
-        '0': 'Uncertain significance',
-        '1': 'Not provided',
-        '2': 'Benign',
-        '3': 'Likely benign',
-        '4': 'Likely pathogenic',
-        '5': 'Pathogenic',
-        '6': 'Drug response',
-        '7': 'Histocompatibility',
-        '255': 'Other'
+        0: 'Uncertain significance',
+        1: 'Not provided',
+        2: 'Benign',
+        3: 'Likely benign',
+        4: 'Likely pathogenic',
+        5: 'Pathogenic',
+        6: 'Drug response',
+        7: 'Histocompatibility',
+        255: 'Other'
     }
 
     # CLNSIG: Variant Clinical Significance:
-    sig_code = db.Column(db.Text)   # TODO: make it int
+    sig_code = db.Column(db.Integer)
 
     # CLNDBN: Variant disease name
     disease_name = db.Column(db.Text)

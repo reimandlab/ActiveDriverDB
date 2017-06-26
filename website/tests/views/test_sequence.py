@@ -43,11 +43,11 @@ def create_test_mutations():
                 clin_data=[
                     ClinicalData(
                         disease_name='Disease X',
-                        sig_code='1'
+                        sig_code=1
                     ),
                     ClinicalData(
                         disease_name='Disease Y',
-                        sig_code='1'
+                        sig_code=1
                     )
                 ]
             )
