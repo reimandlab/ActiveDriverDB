@@ -143,7 +143,6 @@ class AjaxTableView:
 
             if query_constructor:
                 query = query_constructor(sql_filters)
-                print(query)
             else:
                 query = predefined_query
                 if filters_class:

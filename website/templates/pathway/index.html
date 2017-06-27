@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %} Pathways - {{ super() }} {% endblock %}
+
+
+{% block breadcrumb %}
+  {{ super() }}
+  <li><a href="{{ url_for('PathwaysView:index') }}">Pathways</a></li>
+{% endblock %}
+
+
+{% block content %}
+
+  <h3>Pathways</h3>
+
+  <div>
+    <p>
+      You can browse pathways selected by number of genes in a pathway that is on top genes list:
+    </p>
+
+    <table class="table">
+      <tr>
+        <th>Pathways list</th>
+        <th>Corresponding genes list</th>
+        <th>Genes count</th>
+      </tr>
+      {% for list in lists %}
+        <tr>
+          <td>
+            <a href="{{ url_for(
+                'PathwaysView:with_significant_genes',
+                significant_gene_list_name=list.name
+            ) }}">
+              Pathways: {{ list.name }}
+            </a>
+          </td>
+          <td>
+            <a href="{{ url_for(
+                'GeneView:list',
+                list_name=list.name,
+                filters=('Mutation.sources:in:' + list.mutation_source_name if list.mutation_source_name else None)
+            ) }}">
+              Gene list: {{ list.name }}
+            </a>
+          </td>
+          <td>
+            {{ list.entries | length }}
+          </td>
+        </tr>
+      {% endfor %}
+
+    </table>
+    <p>Alternatively, you can browse a <a href="{{ url_for('PathwaysView:all') }}">list of all pathways</a>.</p>
+  </div>
+
+{% endblock %}

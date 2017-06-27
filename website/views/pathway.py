@@ -19,7 +19,7 @@ def search_filter(query):
         return Pathway.description.like('%' + query + '%')
 
 
-class PathwayView(FlaskView):
+class PathwaysView(FlaskView):
 
     @route('/pathway/go/<int:gene_ontology_id>/')
     @route('/pathway/reac/<int:reactome_id>/')
@@ -35,9 +35,13 @@ class PathwayView(FlaskView):
 
         return template('pathway/show.html', pathway=pathway)
 
+    def index(self):
+        lists = GeneList.query.all()
+        return template('pathway/index.html', lists=lists)
+
     def all(self):
         return template(
-            'pathway/browse.html',
+            'pathway/all.html',
             endpoint='all_data',
             endpoint_kwargs={}
         )

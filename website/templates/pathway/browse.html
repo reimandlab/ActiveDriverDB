@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "pathway/index.html" %}
 
     {% block title %} Pathways - {{ super() }} {% endblock %}
 
@@ -18,7 +18,13 @@
         <script type="text/javascript" src="/static/js_templates/precompiled/pathway.js"></script>
       {% endif %}
 
+      {% assets "js_utilities" %}
+        <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+      {% endassets %}
+
     {% endblock %}
+
+
 
 {% block content %}
 
@@ -27,14 +33,6 @@
   All pathways
   {% endblock %}
 </h3>
-
-<ol class="breadcrumb">
-  <li><a href="/">Home</a></li>
-  <li><a href="/pathways/">Pathways</a></li>
-  {% block breadcrumbs %}
-  <li class="active">All</li>
-  {% endblock %}
-</ol>
 
 {% block description %}
 {% endblock %}
@@ -59,7 +57,7 @@
     data-page-size="25"
     data-page-list="[10, 25, 50, 100, ALL]"
     data-side-pagination="server"
-    data-url="{{ url_for('PathwayView:' + endpoint, **endpoint_kwargs) }}"
+    data-url="{{ url_for('PathwaysView:' + endpoint, **endpoint_kwargs) }}"
   >
   </table>
 </div>
@@ -74,25 +72,37 @@
   {
     $table.bootstrapTable({
       columns: [
-        [
-          {% block columns %}
           {
             title: 'Name',
             field: 'description',
-            rowspan: 2,
             align: 'center',
             valign: 'middle',
             sortable: true,
           },
+          {% block columns %}
           {
             title: 'Pathway ID',
-            colspan: 2,
             align: 'center',
-            valign: 'middle'
+            width: '150px',
+            valign: 'middle',
+            formatter: idFormatter
           },
+            {
+                field: 'gene_ontology',
+                title: 'Gene Ontology ID',
+                sortable: true,
+                visible: false,
+                align: 'center'
+            },
+            {
+                field: 'reactome',
+                title: 'Reactome ID',
+                sortable: true,
+                visible: false,
+                align: 'center'
+            },
           {
-            title: '# genes',
-            rowspan: 2,
+            title: '# Genes',
             sortable: true,
             valign: 'middle',
             align: 'center',
@@ -100,7 +110,6 @@
           },
           {
             title: 'Genes',
-            rowspan: 2,
             //sortable: true,
             valign: 'middle',
             align: 'center',
@@ -108,20 +117,6 @@
             formatter: genesFormatter
           }
           {% endblock %}
-        ],
-        [
-          {
-            field: 'gene_ontology',
-            title: 'Gene Ontology',
-            sortable: true,
-            align: 'center'
-          }, {
-            field: 'reactome',
-            title: 'Reactome',
-            sortable: true,
-            align: 'center'
-          }
-        ]
       ],
       formatLoadingMessage: function ()
       {
@@ -151,8 +146,39 @@
       )
   }
 
+  /*
+  Used as callback for buttons on list
+   */
+  function show_all_genes(btn)
+  {
+      var btn = $(btn)
+      btn.closest('.gene-list').find('.hidden').removeClass('hidden');
+      btn.hide();
+      event.stopPropagation()
+      return false
+  }
+
+  function idFormatter(value, row, index)
+  {
+      {% raw %}
+      var ids = []
+      if(row.reactome)
+        ids.push(format(
+              'Reactome: <a href="http://www.reactome.org/content/detail/R-HSA-{{ reactome }}">{{ reactome }}</a>',
+              row
+        ))
+      if(row.gene_ontology)
+        ids.push(format(
+            'GO: <a href="http://amigo.geneontology.org/amigo/term/GO:{{ gene_ontology }}">{{ gene_ontology }}</a>',
+            row
+        ))
+      return ids.join('\n')
+      {% endraw %}
+  }
+
   function genesFormatter(value, row, index)
   {
+      nunjucks.installJinjaCompat()
     return nunjucks.render(
         'pathways_gene_list.njk',
         {

@@ -154,7 +154,8 @@ function format(template, variables)
 {
     for(var variable in variables)
     {
-        template = template.replace('{{ ' + variable + ' }}', variables[variable]);
+        var regexp = new RegExp('{{ ' + variable + ' }}', 'g');
+        template = template.replace(regexp, variables[variable]);
     }
     return template;
 }

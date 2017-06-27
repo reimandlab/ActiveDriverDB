@@ -1,26 +1,26 @@
 {% extends "pathway/browse.html" %}
 
 {% block page_title %}
-  Significant pathways - {{ gene_list.name }}.
+  Significant pathways - {{ gene_list.name }}
 {% endblock %}
 
-{% block breadcrumbs %}
-<li class="active">{{ gene_list.name }}</li>
+{% block breadcrumb %}
+  {{ super() }}
+  <li class="active">{{ gene_list.name }}</li>
 {% endblock %}
+
 
 {% block columns %}
   {{ super() }},
   {
-  title: '# significant genes',
-  rowspan: 2,
+  title: '# Significant genes',
   valign: 'middle',
   align: 'center',
   sortable: true,
   field: 'significant_genes_count',
   },
   {
-  title: '# significant / # all',
-  rowspan: 2,
+  title: '# Significant / # All',
   valign: 'middle',
   align: 'center',
   field: 'ratio',

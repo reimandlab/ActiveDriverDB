@@ -1,6 +1,18 @@
-<ul class="list-inline">
-  {% for gene in genes %}
-    <li>
+<ul class="list-inline gene-list">
+  {% set cnt = 5 %}
+  {% for gene in genes[:cnt] %}
+    <li class="">
+      {% if gene.isoforms_count %}
+        <a href="/gene/show/{{ gene.name }}">{{ gene.name }}</a>
+      {% else %}
+        {{ gene.name }}
+      {% endif %}
+  {% endfor %}
+  {% if genes.length > cnt %}
+    <li><button class="btn btn-sm btn-default" onclick="show_all_genes(this)">Show all genes ({{ genes.length - cnt }} more)</button>
+  {% endif %}
+  {% for gene in genes[cnt:] %}
+    <li class="hidden">
       {% if gene.isoforms_count %}
         <a href="/gene/show/{{ gene.name }}">{{ gene.name }}</a>
       {% else %}
