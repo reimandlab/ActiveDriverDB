@@ -88,12 +88,12 @@ class DependencyManager:
             'sha256-vtR0hSWRc3Tb26iuN2oZHt3KRUomwTufNIf5/4oeCyg='
         ),
         'nunjucks': JSResource(
-            'https://cdnjs.cloudflare.com/ajax/libs/nunjucks/3.0.0/nunjucks.min.js',
-            'sha256-LWvp8rf/ha5W5zb5rGjypfi/b8w5Yo0Lm+W6ccH3ejA='
+            'https://cdnjs.cloudflare.com/ajax/libs/nunjucks/3.0.1/nunjucks.min.js',
+            'sha256-sh9FYQZVVLprCQB3/IcNyCRrZwu9hZ+xLHhUszDfsK4='
         ),
         'nunjucks_slim': JSResource(
-            'https://cdnjs.cloudflare.com/ajax/libs/nunjucks/3.0.0/nunjucks-slim.min.js',
-            'sha256-jR3u71exa6Z+mFgFrFsAZnqAIFbpVBzyynMUTq7fSc4='
+            'https://cdnjs.cloudflare.com/ajax/libs/nunjucks/3.0.1/nunjucks-slim.min.js',
+            'sha256-tdB3uMy+X5YRM5JMGgy1oMtdSm1GwTEMmWb7q80e2+g='
         ),
         'bootstrap_table': JSResource(
             'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js',
@@ -216,6 +216,11 @@ bundles = {
         'inline_help.js',
         filters='rjsmin',
         output='min/inlineHelp.js'
+    ),
+    'js_utilities': Bundle(
+        'common.js',
+        filters='rjsmin',
+        output='min/utilities.js'
     ),
     'js_network_view': Bundle(
         'common.js',
