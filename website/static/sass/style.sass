@@ -331,6 +331,43 @@ a.list-expand
     width: 100%
     position: absolute
 
+.admin .text-entry
+  .edit-btn
+    position: relative
+    top: -4px
+  &:hover
+    .edit-btn
+      background: #ecfddc
+
+.inline-editable
+
+  .edit-form
+    display: none
+    textarea
+      min-height: 100px
+
+  .edit-btn
+    float: right
+
+  .feedback
+    display: none
+    line-height: 140%
+    textarea
+      width: 100%
+      min-height: 150px
+
+  .buttons
+    margin-top: 10px
+    clear: both
+    width: 100%
+
+    .save-btn
+      float: left
+      width: 70%
+
+    .reject-btn
+      float: right
+      width: 30%
 
 .inline-help
 
@@ -375,31 +412,3 @@ a.list-expand
   .content
     line-height: 140%
     color: #555
-
-  .edit-form
-    display: none
-    textarea
-      min-height: 100px
-
-  .edit-btn
-    float: right
-
-  .feedback
-    display: none
-    line-height: 140%
-    textarea
-      width: 100%
-      min-height: 150px
-
-  .buttons
-    margin-top: 10px
-    clear: both
-    width: 100%
-
-    .save-btn
-      float: left
-      width: 70%
-
-    .reject-btn
-      float: right
-      width: 30%

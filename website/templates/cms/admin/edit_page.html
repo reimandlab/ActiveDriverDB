@@ -4,13 +4,9 @@
 {% block head %}
   {{ super () }}
 
-  {{ dependency('tinymce') }}
-  {{ dependency('prism') }}
-  {{ dependency('prism_bash') }}
-  {{ dependency('prism_css') }}
-
   {% assets "js_cms_editor" %}
     <script src="{{ ASSET_URL }}"></script>
+    <script>init_tinymce()</script>
   {% endassets %}
 {% endblock %}
 

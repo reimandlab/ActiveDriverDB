@@ -15,7 +15,7 @@ from flask_login import current_user
 from flask_login import login_user
 from flask_login import logout_user
 from flask_login import login_required
-from models import Page, HelpEntry
+from models import Page, HelpEntry, TextEntry
 from models import Menu
 from models import MenuEntry
 from models import PageMenuEntry
@@ -170,6 +170,42 @@ class ContentManagementSystem(FlaskView):
             return setting.value
 
     @staticmethod
+    def _text_entry(name):
+        entry = TextEntry.query.filter_by(name=name).first()
+        if not entry or not entry.content:
+            return 'No text here yet'
+        return entry.content
+
+    @route('/admin/save_text_entry/', methods=['POST'])
+    @admin_only
+    def save_text_entry(self):
+        name = request.form['entry_id']
+        old_content = request.form.get('old_content', None)
+        new_content = request.form['new_content']
+
+        text_entry, created = get_or_create(TextEntry, name=name)
+        if created:
+            db.session.add(text_entry)
+
+        if created or text_entry.content == old_content:
+            status = 200
+            text_entry.content = new_content
+            try:
+                db.session.commit()
+            except (IntegrityError, OperationalError) as e:
+                print(e)
+                db.session.rollback()
+                status = 501
+        else:
+            status = 409
+
+        result = {
+            'status': status,
+            'content': text_entry.content
+        }
+        return jsonify(result)
+
+    @staticmethod
     def _inline_help(name):
         help_entry = HelpEntry.query.filter_by(name=name).first()
         if not help_entry or not help_entry.content:
@@ -182,7 +218,7 @@ class ContentManagementSystem(FlaskView):
     @route('/admin/save_inline_help/', methods=['POST'])
     @admin_only
     def save_inline_help(self):
-        name = request.form['help_id']
+        name = request.form['entry_id']
         old_content = request.form.get('old_content', None)
         new_content = request.form['new_content']
 

@@ -294,6 +294,12 @@ class HelpEntry(CMSModel):
     content = db.Column(db.Text())
 
 
+class TextEntry(CMSModel):
+
+    name = db.Column(db.String(256), nullable=False, unique=True, index=True)
+    content = db.Column(db.Text())
+
+
 class UsersMutationsDataset(CMSModel):
     mutations_dir = 'user_mutations'
 

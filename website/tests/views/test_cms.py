@@ -260,7 +260,7 @@ class TestCMS(ViewTest):
         self.login_as_admin()
 
         # new entry
-        data = {'help_id': 'new-help', 'new_content': 'Some helpful text.'}
+        data = {'entry_id': 'new-help', 'new_content': 'Some helpful text.'}
         response = self.client.post('/admin/save_inline_help/', data=data, follow_redirects=True)
         assert response.json['status'] == 200
         entry = HelpEntry.query.filter_by(name='new-help').one()

@@ -12,6 +12,12 @@
   {{ dependency('jquery') }}
   {{ dependency('bootstrap_js') }}
 
+  {% if current_user.is_admin %}
+    {{ dependency('tinymce') }}
+    {{ dependency('prism') }}
+    {{ dependency('prism_bash') }}
+    {{ dependency('prism_css') }}
+  {% endif %}
 
   {% assets "css_common" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}">
@@ -21,7 +27,7 @@
   {% endassets %}
 
   {% if current_user.is_admin %}
-  {% assets "js_inline_help_edit" %}
+  {% assets "js_inline_edit" %}
     <script type="text/javascript" src="{{ ASSET_URL }}"></script>
   {% endassets %}
   {% endif %}
@@ -35,7 +41,7 @@
   {% block head %}
   {% endblock %}
 </head>
-<body>
+<body class="{{ 'admin' if current_user.is_admin else '' }}">
   <script type="text/javascript">
     {# elements with 'js-hidden' class will be hidden only if js is active #}
     var css = document.createElement('style')
@@ -150,13 +156,28 @@
 <script type="text/javascript" src="{{ ASSET_URL }}"></script>
 {% endassets %}
 {% block footer_js %}
+  {% if current_user.is_admin %}
+  {% assets "js_cms_editor" %}
+    <script src="{{ ASSET_URL }}"></script>
+  {% endassets %}
+  {% endif %}
 <script type="text/javascript">
   document.getElementById('spinner').style.display='none'
 
   {% if current_user.is_admin %}
-    var inline_help = HelpManager();
-    inline_help.init("{{ url_for('ContentManagementSystem:save_inline_help') }}");
+    create_help_manager("{{ url_for('ContentManagementSystem:save_inline_help') }}");
+    create_text_manager("{{ url_for('ContentManagementSystem:save_text_entry') }}");
     set_csrf_token("{{ csrf_token() | safe }}")
+    init_tinymce({
+        selector: 'textarea.inline-entry',
+        height: 100,
+        setup: function (editor) {
+          editor.on('change', function () {
+              editor.save()
+          })
+        },
+        //inline: true
+    })
   {% endif %}
 </script>
 {% endblock %}

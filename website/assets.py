@@ -211,11 +211,11 @@ bundles = {
         filters='rjsmin',
         output='min/geneView.js'
     ),
-    'js_inline_help_edit': Bundle(
+    'js_inline_edit': Bundle(
         'common.js',
-        'inline_help.js',
+        'inline_edit.js',
         filters='rjsmin',
-        output='min/inlineHelp.js'
+        output='min/inlineEdit.js'
     ),
     'js_utilities': Bundle(
         'common.js',
@@ -236,6 +236,7 @@ bundles = {
         output='min/networkView.js'
     ),
     'js_cms_editor': Bundle(
+        'common.js',
         'cms_editor.js',
         output='min/editor.js'
     ),

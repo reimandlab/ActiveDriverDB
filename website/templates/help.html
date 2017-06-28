@@ -1,5 +1,5 @@
 {% macro help(id, btn_class='') %}
-  <div class="btn-group dropdown inline-help" role="group" data-id="{{ id }}">
+  <div class="btn-group dropdown inline-help inline-editable" role="group" data-id="{{ id }}">
     <button class="btn btn-default btn-sm dropdown-toggle help-btn {{ btn_class }}" type="button" data-toggle="dropdown" title="What's this?">
       <span class="glyphicon glyphicon-question-sign"></span>
     </button>
@@ -13,11 +13,11 @@
         </div>
       {% endif %}
 
-      <div class="content">{{ inline_help(id) | replace('\n', '<br>') | safe }}</div>
-
-      <div class="alert alert-warning feedback" role="alert"></div>
+      <div class="content">{{ inline_help(id) | replace('\n', '<br class="automatic">') | safe }}</div>
 
       {% if current_user.is_admin %}
+        <div class="alert alert-warning feedback" role="alert"></div>
+
         <div class="edit-form">
           <textarea class="form-control new-content" placeholder="Help message">{{ inline_help(id) }}</textarea>
           <div class="btn-group buttons" role="group">

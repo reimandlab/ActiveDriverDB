@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "text_entry.html" import text with context %}
 
 {% block title %} Pathways - {{ super() }} {% endblock %}
 
@@ -14,9 +15,7 @@
   <h3>Pathways</h3>
 
   <div>
-    <p>
-      You can browse pathways selected by number of genes in a pathway that is on top genes list:
-    </p>
+    {{ text('pathways-index') }}
 
     <table class="table">
       <tr>
