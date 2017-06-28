@@ -189,17 +189,17 @@ class ContentManagementSystem(FlaskView):
         if created:
             db.session.add(text_entry)
 
-        if created or text_entry.content == old_content:
-            status = 200
-            text_entry.content = new_content
-            try:
-                db.session.commit()
-            except (IntegrityError, OperationalError) as e:
-                print(e)
-                db.session.rollback()
-                status = 501
-        else:
-            status = 409
+        # if created or text_entry.content == old_content:
+        status = 200
+        text_entry.content = new_content
+        try:
+            db.session.commit()
+        except (IntegrityError, OperationalError) as e:
+            print(e)
+            db.session.rollback()
+            status = 501
+        # else:
+        #    status = 409
 
         result = {
             'status': status,
