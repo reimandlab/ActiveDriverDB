@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "text_entry.html" import text with context %}
 
 {% block title %} Gene lists - {{ super() }} {% endblock %}
 
@@ -14,10 +15,7 @@
   <h3>Gene lists</h3>
 
   <div>
-    <p>
-      You can browse genes and statistics for their primary isoforms by following lists,
-      generated with ActiveDriver software:
-    </p>
+    {{ text('genes-list') }}
 
     <table class="table">
       <tr>
@@ -42,7 +40,8 @@
       {% endfor %}
 
     </table>
-    <p>Alternatively, you can browse a <a href="{{ url_for('GeneView:browse') }}">list of all genes</a>.</p>
+
+    {{ text('genes-list') }}
   </div>
 
 {% endblock %}

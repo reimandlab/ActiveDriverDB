@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "text_entry.html" import text with context %}
 
 {% block title %} Genes - {{ super() }} {% endblock %}
 
@@ -33,6 +34,8 @@
 {% block content %}
 
 <h3>Genes</h3>
+
+{{ text('genes-all') }}
 
 <div>
   <div id="toolbar" class="gene-widgets">

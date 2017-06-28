@@ -173,7 +173,9 @@ class ContentManagementSystem(FlaskView):
     def _text_entry(name):
         entry = TextEntry.query.filter_by(name=name).first()
         if not entry or not entry.content:
-            return 'No text here yet'
+            if current_user.is_admin:
+                return 'Please, click the pencil icon to add text here.'
+            return ''
         return entry.content
 
     @route('/admin/save_text_entry/', methods=['POST'])

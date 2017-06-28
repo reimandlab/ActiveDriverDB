@@ -1,4 +1,5 @@
 {% extends "pathway/browse.html" %}
+{% from "text_entry.html" import text with context %}
 
 {% block page_title %}
   Significant pathways - {{ gene_list.name }}
@@ -29,13 +30,5 @@
 {% endblock %}
 
 {% block description %}
-  <p>
-  Following list includes Reactome pathways which have between 10 and 500 genes,
-  including <strong>at least 5</strong> genes predicted as significant by ActiveDriver1.
-  </p>
-  <p>
-    The prediction bases on PTM mutations from {{ gene_list.name }} dataset.
-    Click here to see full list of
-    <a href="{{ url_for('GeneView:list', list_name=gene_list.name) }}">top genes with PTM mutations in {{ dataset.name }}</a>.
-  </p>
+  {{ text('pathways-significant') }}
 {% endblock %}

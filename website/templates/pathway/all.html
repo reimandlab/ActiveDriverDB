@@ -1,7 +1,13 @@
 {% extends "pathway/browse.html" %}
+{% from "text_entry.html" import text with context %}
 
 
 {% block breadcrumb %}
   {{ super() }}
   <li class="active">All</li>
+{% endblock %}
+
+
+{% block description %}
+  {{ text('pathways-all') }}
 {% endblock %}
