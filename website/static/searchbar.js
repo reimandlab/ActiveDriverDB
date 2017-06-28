@@ -1,10 +1,11 @@
-var SearchBar = (function ()
+var SearchBar = function ()
 {
     var input
     var results_div
     var current_query
+    var indicator
 
-    var get_more = '<button type="submit" class="list-group-item">Get more results <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span></button>'
+    var get_more = '<button class="list-group-item">Get more results <span class="glyphicon glyphicon-chevron-right"></span></button>'
 
     function templateResult(result)
     {
@@ -18,6 +19,11 @@ var SearchBar = (function ()
         return link
     }
 
+    var config = {
+        autocomplete_url: '/search/autocomplete_searchbar',
+        template: templateResult
+    }
+
     function updateResults(rawResult, originalQuery) {
 
         // if we've got a result of an old query, it's not interesting anymore
@@ -26,21 +32,21 @@ var SearchBar = (function ()
 
         var results = JSON.parse(rawResult)
 
-        if(!results.length)
+        if(!results.entries.length)
         {
-            results_div.html(templateResult({
+            results_div.html(config.template({
                 name: 'No results found'
-            }))
+            }, results))
         }
         else
         {
             var html = ''
-            var length = Math.min(results.length, 5)
+            var length = Math.min(results.entries.length, 5)
             for(var i = 0; i < length; i++)
             {
-                html += templateResult(results[i])
+                html += config.template(results.entries[i], results)
             }
-            if(results.length > 5)
+            if(results.entries.length > 5)
                 html += get_more
             results_div.html(html)
 
@@ -86,7 +92,7 @@ var SearchBar = (function ()
         current_query = query
 
         $.ajax({
-            url: '/search/autocomplete_searchbar',
+            url: config.autocomplete_url,
             type: 'GET',
             data: {q: encodeURIComponent(query)},
             success: function(query)
@@ -105,9 +111,11 @@ var SearchBar = (function ()
     var publicSpace = {
         init: function(data)
         {
-            input = $(data.input)
-            results_div = $(data.results_div)
-            indicator = $(data.indicator)
+            update_object(config, data)
+            var box = $(data.box)
+            input = box.find('input')
+            results_div = box.find('.results')
+            indicator = box.find('.waiting-indicator')
 
             input.on('change mouseup drop input', searchOnType)
             input.on('click', function(){ return false })
@@ -130,10 +138,9 @@ var SearchBar = (function ()
     }
 
     return publicSpace
-}())
+}
 
-SearchBar.init({
-    'input': document.getElementById('search-bar'),
-    'results_div': document.getElementById('search-quick-results'),
-    'indicator': document.getElementById('waiting-indicator'),
+quick_search_bar = SearchBar()
+quick_search_bar.init({
+    'box': document.getElementById('search-box')
 })

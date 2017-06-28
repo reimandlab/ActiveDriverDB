@@ -1,5 +1,7 @@
 import json
 from operator import itemgetter
+from urllib.parse import unquote
+
 from flask import make_response
 from flask import render_template as template
 from flask import request
@@ -452,4 +454,52 @@ class SearchView(FlaskView):
             for gene in entries
         ]
 
+        return json.dumps({'entries': response})
+
+    def anything(self):
+        pass
+
+    def autocomplete_all(self):
+        query = unquote(request.args.get('q')) or ''
+        if ' ' in query:
+
+            data = query.strip().split()
+
+            if len(data) == 4:
+                chrom, pos, ref, alt = data
+                chrom = chrom[3:]
+
+                items = get_genomic_muts(chrom, pos, ref, alt)
+
+                value_type = 'nucleotide mutation'
+
+            elif len(data) == 2:
+                gene, mut = [x.upper() for x in data]
+
+                items = get_protein_muts(gene, mut)
+
+                value_type = 'aminoacid mutation'
+            else:
+                items = []
+                value_type = 'incomplete mutation'
+
+            for item in items:
+                item['protein'] = item['protein'].to_json()
+                item['mutation'] = item['mutation'].to_json()
+
+            response = {
+                'type': value_type,
+                'entries': items
+            }
+        else:
+
+            entries = search_proteins(query, 6)
+
+            response = {
+                'type': 'gene',
+                'entries': [
+                    gene.to_json()
+                    for gene in entries
+                ]
+            }
         return json.dumps(response)

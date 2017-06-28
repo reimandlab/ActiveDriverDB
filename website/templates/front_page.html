@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% from "text_entry.html" import text with context %}
+
+{% block title %} Front page - {{ super() }} {% endblock %}
+
+
+{% block content %}
+
+  <div class="page-content">
+    {{ text('front-page-top') }}
+
+    <form
+      class="form-group search-box front-search-box"
+      method=GET
+      action="{{ url_for('SearchView:default') }}"
+    >
+      <div class="input-group input-group-lg">
+        <input
+          name="search-query"
+          class="form-control search-input"
+          placeholder="protein: TP53 or NM_000345, mutation: TP53 R282W"
+          autocomplete="off"
+        >
+      <span class="input-group-btn search-btn">
+        <button class="btn btn-primary" type="button">Search!</button>
+      </span>
+
+      </div>
+      <span class="glyphicon glyphicon-refresh glyphicon-spin waiting-indicator"></span>
+      <div class="list-group results">
+        <a href="#" class="list-group-item">
+          Start typing to get results
+        </a>
+      </div>
+    </form>
+
+    {{ text('front-page-bottom') }}
+  </div>
+{% endblock %}
+
+
+{% block footer_js %}
+  {{ super() }}
+  <script type="text/javascript">
+
+  var main_search_bar = SearchBar()
+  main_search_bar.init({
+      box: $('.front-search-box'),
+      autocomplete_url: '{{ url_for('SearchView:autocomplete_all') }}',
+      template: function (result, results)
+          {
+              var type = results.type
+              if(type == 'gene'){
+                  var link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">'
+
+                  if(result.isoforms_count > 1)
+                      link += '<span class="badge">' + result.isoforms_count + ' isoforms</span>'
+
+                  link += result.name + '</a>'
+
+                  return link
+              }
+              else if(type == 'aminoacid mutation'){
+
+                var link_template = '<a href="{{ url_for('MutationView:show', refseq='{{ refseq }}', position='{{ pos }}', alt='{{ alt }}') }}">'
+                var link = format(link_template, {refseq: result.protein.refseq, pos: result.pos, alt: result.alt})
+                  link += result.protein.name +  '</a>'
+              }
+
+          }
+  })
+
+  </script>
+{% endblock %}

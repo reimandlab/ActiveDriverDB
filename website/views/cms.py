@@ -248,7 +248,7 @@ class ContentManagementSystem(FlaskView):
 
     @route('/')
     def index(self):
-        return self.page('index')
+        return template('front_page.html')
 
     @route('/<path:address>/')
     def page(self, address):

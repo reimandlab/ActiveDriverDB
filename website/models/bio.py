@@ -1460,3 +1460,8 @@ class Mutation(BioModel):
     @property
     def name(self):
         return '%s %s' % (self.protein.gene.name, self.short_name)
+
+    def to_json(self):
+        return {
+            'name': self.name
+        }
