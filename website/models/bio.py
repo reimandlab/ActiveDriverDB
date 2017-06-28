@@ -1463,5 +1463,7 @@ class Mutation(BioModel):
 
     def to_json(self):
         return {
-            'name': self.name
+            'name': self.name,
+            'is_confirmed': self.is_confirmed,
+            'is_ptm': self.is_ptm()
         }

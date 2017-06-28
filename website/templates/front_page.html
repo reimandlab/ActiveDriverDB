@@ -61,10 +61,16 @@
                   return link
               }
               else if(type == 'aminoacid mutation'){
+                var link_template = decodeURIComponent('<a href="{{ url_for('MutationView:show', refseq='{{ refseq }}', position='{{ pos }}', alt='{{ alt }}') }}">');
 
-                var link_template = '<a href="{{ url_for('MutationView:show', refseq='{{ refseq }}', position='{{ pos }}', alt='{{ alt }}') }}">'
-                var link = format(link_template, {refseq: result.protein.refseq, pos: result.pos, alt: result.alt})
-                  link += result.protein.name +  '</a>'
+                var link = format(link_template, {refseq: result.protein.refseq, pos: result.pos, alt: result.alt});
+                link += result.mutation.name;
+                if(result.mutation.is_confirmed)
+                  link += '<span class="badge">known mutation</span>';
+                  if(result.mutation.is_ptm)
+                      link += '<span class="badge">PTM mutation</span>';
+                link += '</a>';
+                return link
               }
 
           }
