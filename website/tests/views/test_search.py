@@ -56,7 +56,7 @@ class TestSearchView(ViewTest):
             follow_redirects=True
         )
         assert response.status_code == 200
-        assert response.json[0]['name'].startswith('Gene')
+        assert response.json['entries'][0]['name'].startswith('Gene')
 
     def test_search_proteins(self):
         from views.search import search_proteins
