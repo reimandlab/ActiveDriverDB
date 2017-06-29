@@ -13,5 +13,3 @@ flask_login
 bsddb3
 Flask-Mail
 jinja2_pluralize
-synapseclient
-biomart
