@@ -199,7 +199,7 @@ class ContentManagementSystem(FlaskView):
 
         result = {
             'status': status,
-            'content': text_entry.content
+            'content': substitute_variables(text_entry.content)
         }
         return jsonify(result)
 
