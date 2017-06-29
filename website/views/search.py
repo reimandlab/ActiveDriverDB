@@ -474,7 +474,14 @@ class SearchView(FlaskView):
 
             data = query.upper().strip().split()
 
-            if len(data) == 4:
+            if len(data) == 1:
+
+                if query.startswith('CHR'):
+                    return message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
+                else:
+                    return message('Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+
+            elif len(data) == 4:
                 chrom, pos, ref, alt = data
                 chrom = chrom[3:]
 
