@@ -1041,5 +1041,5 @@ def precompute_ptm_mutations():
         if is_ptm_related != mutation.precomputed_is_ptm:
             mismatch += 1
             mutation.precomputed_is_ptm = is_ptm_related
-    print('Precomputed values of ' + mismatch + ' mutations has been computed and updated')
+    print('Precomputed values of %s mutations has been computed and updated' % mismatch)
     return []
