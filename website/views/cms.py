@@ -182,28 +182,24 @@ class ContentManagementSystem(FlaskView):
     @admin_only
     def save_text_entry(self):
         name = request.form['entry_id']
-        old_content = request.form.get('old_content', None)
         new_content = request.form['new_content']
 
         text_entry, created = get_or_create(TextEntry, name=name)
         if created:
             db.session.add(text_entry)
 
-        if created or text_entry.content == old_content:
-            status = 200
-            text_entry.content = new_content
-            try:
-                db.session.commit()
-            except (IntegrityError, OperationalError) as e:
-                print(e)
-                db.session.rollback()
-                status = 501
-        else:
-            status = 409
+        status = 200
+        text_entry.content = new_content
+        try:
+            db.session.commit()
+        except (IntegrityError, OperationalError) as e:
+            print(e)
+            db.session.rollback()
+            status = 501
 
         result = {
             'status': status,
-            'content': text_entry.content
+            'content': substitute_variables(text_entry.content)
         }
         return jsonify(result)
 
@@ -248,7 +244,7 @@ class ContentManagementSystem(FlaskView):
 
     @route('/')
     def index(self):
-        return self.page('index')
+        return template('front_page.html')
 
     @route('/<path:address>/')
     def page(self, address):

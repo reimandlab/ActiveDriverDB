@@ -17,9 +17,10 @@ function init_tinymce(config)
         autoresize_max_height: 600,
         table_class_list: [
             {title: 'Default', value: 'table table-bordered table-hover'},
-            {title: 'Striped', value: 'table table-bordered table-hover table-striped'},
-            {title: 'Without borders', value: 'table table-hover table-striped'},
-            {title: 'Striped, without borders', value: 'table table-hover table-striped'}
+            {title: 'Hover, Striped', value: 'table table-bordered table-hover table-striped '},
+            {title: 'Hover, Striped, without borders', value: 'table table-hover table-striped table-borderless'},
+            {title: 'Hover, without borders', value: 'table table-hover table-borderless'},
+            {title: 'Clear', value: 'table table-borderless'}
         ],
         codesample_languages: [
             {text: 'HTML/XML', value: 'markup'},

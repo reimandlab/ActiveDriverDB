@@ -43,14 +43,23 @@ footer
   position: relative
   top: 2px
 
-.search-box
-  float: right
 
 // when changing this, make sure that the longest gene name fits;
 // currently it is 'LOC400927-CSNK1E'; you can get this from db e.g. with:
 // r = db.session.execute(sqlalchemy.select([Gene.name])).fetchall()
 // max(r, key=lambda x: len(x[0]))[0]
 $search-box-width: 225px
+
+#navbar
+  .search-box
+    float: right
+    width: 180px
+
+    input.form-control
+      width: inherit!important
+
+    .list-group-item
+      width: $search-box-width
 
 .navbar-form
   padding: 0 5px
@@ -59,13 +68,9 @@ $search-box-width: 225px
   position: relative
   text-align: left
   /* width: $search-box-width */
-  width: 180px
   margin: 0 4px
 
-  input.form-control
-    width: inherit!important
-
-  #waiting-indicator
+  .waiting-indicator
     display: none
     position: absolute
     right: 10px
@@ -73,10 +78,23 @@ $search-box-width: 225px
     color: lightblue
 
   .list-group-item
-    width: $search-box-width
+    min-width: $search-box-width
 
     &:focus
       outline: none
+
+  .results
+    position: absolute
+    z-index: 10
+    display: none
+    box-shadow: 0 2px 7px #eee
+
+.front-search-box
+  margin: 50px 20px
+
+  .results
+    width: 91%
+
 
 .export button::before
   content: 'Export'
@@ -85,11 +103,6 @@ $search-box-width: 225px
 .columns div[title=Columns] button::before
   content: 'Change table columns'
   padding-right: 8px
-
-#search-quick-results
-  position: absolute
-  z-index: 10
-  display: none
 
 @keyframes spin
   from
@@ -412,3 +425,8 @@ a.list-expand
   .content
     line-height: 140%
     color: #555
+
+
+.table-borderless
+  td, th
+    border: none !important

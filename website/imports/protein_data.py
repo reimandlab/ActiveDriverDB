@@ -6,7 +6,7 @@ from database import get_or_create
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
-from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation
+from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation
 from models import Gene
 from models import InterproDomain
 from models import Cancer
@@ -1028,3 +1028,18 @@ def bad_words(path='data/bad-words.txt'):
         for word in list_of_profanities
     ]
     return bad_words
+
+
+@importer
+def precompute_ptm_mutations():
+    print('Counting mutations...')
+    total = Mutation.query.filter_by(is_confirmed=True).count()
+    mismatch = 0
+    for mutation in tqdm(Mutation.query.filter_by(is_confirmed=True), total=total):
+        pos = mutation.position
+        is_ptm_related = mutation.protein.has_sites_in_range(pos - 7, pos + 7)
+        if is_ptm_related != mutation.precomputed_is_ptm:
+            mismatch += 1
+            mutation.precomputed_is_ptm = is_ptm_related
+    print('Precomputed values of %s mutations has been computed and updated' % mismatch)
+    return []
