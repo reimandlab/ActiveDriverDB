@@ -176,7 +176,7 @@ class ContentManagementSystem(FlaskView):
             if current_user.is_admin:
                 return 'Please, click the pencil icon to add text here.'
             return ''
-        return substitute_variables(entry.content)
+        return entry.content
 
     @route('/admin/save_text_entry/', methods=['POST'])
     @admin_only
