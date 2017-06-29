@@ -64,7 +64,6 @@ cd mutations
 #echo "MC3 mutations dataset downloaded"
 
 wget https://www.dropbox.com/s/lhou9rnwl6lwuwj/mc3.v0.2.8.PUBLIC.maf.gz
-wget https://www.dropbox.com/s/b1c4yqgnznsafqv/TCGA_muts_annotated.txt.gz
 wget https://www.dropbox.com/s/zodasbvinx339tw/ESP6500_muts_annotated.txt.gz
 wget https://www.dropbox.com/s/du2qe1skxwmuep2/clinvar_muts_annotated.txt.gz
 wget https://www.dropbox.com/s/pm74k3qwxrqmu2q/all_mimp_annotations_p085.rsav
@@ -107,3 +106,6 @@ rm ALL_PROTEIN_ANNOT.tgz
 
 # remove temporary dir
 rm -r tmp
+
+cd mutations
+./annotate_mc3.sh

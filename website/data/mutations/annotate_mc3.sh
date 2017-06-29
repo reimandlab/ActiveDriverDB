@@ -6,7 +6,7 @@ then
 else
     if [ ! -d annovar ];
     then
-        echo "Please, download annovar into this directory first."
+        echo "Please, download annovar into data/mutations directory and run data/mutations/annotate_mc3.sh script then"
         exit 1
     fi
 fi
