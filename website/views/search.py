@@ -13,6 +13,9 @@ from flask_classful import FlaskView
 from flask_classful import route
 from flask_login import current_user
 from Levenshtein import distance
+from sqlalchemy.orm.exc import NoResultFound
+
+from helpers.bioinf import decode_raw_mutation
 from models import Protein
 from models import Gene
 from models import Mutation
@@ -460,10 +463,16 @@ class SearchView(FlaskView):
         pass
 
     def autocomplete_all(self):
+        import re
+
         query = unquote(request.args.get('q')) or ''
+
+        def message(msg):
+            return json.dumps({'type': 'message', 'entries': [{'name': msg}]})
+
         if ' ' in query:
 
-            data = query.strip().split()
+            data = query.upper().strip().split()
 
             if len(data) == 4:
                 chrom, pos, ref, alt = data
@@ -473,8 +482,59 @@ class SearchView(FlaskView):
 
                 value_type = 'nucleotide mutation'
 
+            elif len(data) == 3:
+                return message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
+
             elif len(data) == 2:
-                gene, mut = [x.upper() for x in data]
+                gene, mut = data
+
+                if gene.startswith('CHR'):
+                    return message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
+
+                all_parts = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)(?P<alt>\D)', mut)
+                ref_and_pos = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)', mut)
+
+                if all_parts:
+                    mut_data = all_parts.groupdict()
+
+                if ref_and_pos:
+                    mut_data = ref_and_pos.groupdict()
+
+                if all_parts or ref_and_pos:
+                    ref = mut_data['ref']
+                    pos = int(mut_data['pos'])
+
+                    # validate if ref is correct
+                    try:
+                        gene_obj = Gene.query.filter_by(name=gene).one()
+                    except NoResultFound:
+                        return message('No isoforms for %s found' % gene)
+
+                    valid = False
+                    for isoform in gene_obj.isoforms:
+                        try:
+                            if isoform.sequence[pos] == ref:
+                                valid = True
+                                break
+                        except IndexError:
+                            # not in range of this isoform, nothing scary.
+                            pass
+
+                    if not valid:
+                        return message(
+                            'Given reference residue <code>%s</code> does not match any of %s isoforms of %s gene at position <code>%s</code>'
+                            %
+                            (ref, len(gene_obj.isoforms), gene, pos)
+                        )
+
+                if ref_and_pos:
+                    # if ref is correct and ask user to specify alt
+                    return message('Awaiting for <code>{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+
+                only_ref = re.fullmatch('(?P<ref>\D)', mut)
+                if only_ref:
+                    # prompt user to write more
+                    return message('Awaiting for <code>{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
 
                 items = get_protein_muts(gene, mut)
 
@@ -486,6 +546,7 @@ class SearchView(FlaskView):
             for item in items:
                 item['protein'] = item['protein'].to_json()
                 item['mutation'] = item['mutation'].to_json()
+                item['input'] = query
 
             response = {
                 'type': value_type,

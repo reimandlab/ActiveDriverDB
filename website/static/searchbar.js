@@ -34,9 +34,9 @@ var SearchBar = function ()
 
         if(!results.entries.length)
         {
-            results_div.html(config.template({
+            results_div.html(templateResult({
                 name: 'No results found'
-            }, results))
+            }))
         }
         else
         {

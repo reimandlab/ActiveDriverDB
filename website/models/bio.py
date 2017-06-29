@@ -403,6 +403,7 @@ class Protein(BioModel):
         filtered_mutations = data_filter(self.confirmed_mutations)
 
         return {
+            'is_preferred': self.is_preferred_isoform,
             'gene_name': self.gene_name,
             'refseq': self.refseq,
             'sites_count': len(data_filter(self.sites)),

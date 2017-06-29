@@ -55,13 +55,42 @@
   <script type="text/javascript">
 
   var main_search_bar = SearchBar()
+  var mutation_template = decodeURIComponent('<a href="{{ url_for('MutationView:show', refseq='{{ refseq }}', position='{{ pos }}', alt='{{ alt }}') }}" class="list-group-item">{{ '{{ name }} {{ badges }}' }}</a>');
+  function badge(name) {
+      return '<span class="badge">' + name + '</span>';
+  }
+
+  function template_mutation(name)
+  {
+      var badges = '';
+
+      if(result.mutation.is_confirmed)
+          badges += badge('known mutation');
+
+      if(result.mutation.is_ptm)
+          badges += badge('PTM mutation');
+
+      if(result.protein.is_preferred)
+          badges += badge('preferred isoform');
+
+      return format(mutation_template, {
+          name: name,
+          refseq: result.protein.refseq,
+          pos: result.pos,
+          alt: result.alt,
+          badges: badges
+      });
+
+  }
+
   main_search_bar.init({
       box: $('.front-search-box'),
       autocomplete_url: '{{ url_for('SearchView:autocomplete_all') }}',
       template: function (result, results)
           {
               var type = results.type
-              if(type == 'gene'){
+
+              if(type === 'gene'){
                   var link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">'
 
                   if(result.isoforms_count > 1)
@@ -71,17 +100,17 @@
 
                   return link
               }
-              else if(type == 'aminoacid mutation'){
-                var link_template = decodeURIComponent('<a href="{{ url_for('MutationView:show', refseq='{{ refseq }}', position='{{ pos }}', alt='{{ alt }}') }}" class="list-group-item">');
-
-                var link = format(link_template, {refseq: result.protein.refseq, pos: result.pos, alt: result.alt});
-                link += result.mutation.name + ' (' + result.protein.refseq + ')';
-                if(result.mutation.is_confirmed)
-                  link += '<span class="badge">known mutation</span>';
-                  if(result.mutation.is_ptm)
-                      link += '<span class="badge">PTM mutation</span>';
-                link += '</a>';
-                return link
+              else if(type === 'aminoacid mutation'){
+                  var name = result.mutation.name + ' (' + result.protein.refseq + ')';
+                  template_mutation(name)
+              }
+              else if(type === 'genomic mutation'){
+                  var name = result.mutation.name + ' (' + result.protein.refseq + ')' + ', result of ' + result.input
+                  template_mutation(name)
+              }
+              else if(type === 'message')
+              {
+                  return '<button class="list-group-item">' + result.name + '</button>'
               }
 
           }
