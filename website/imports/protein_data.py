@@ -1,7 +1,7 @@
 import gzip
 from collections import OrderedDict, defaultdict, namedtuple
 from tqdm import tqdm
-from database import db
+from database import db, yield_objects
 from database import get_or_create
 from helpers.parsers import parse_fasta_file
 from helpers.parsers import parse_tsv_file
@@ -1035,7 +1035,7 @@ def precompute_ptm_mutations():
     print('Counting mutations...')
     total = Mutation.query.filter_by(is_confirmed=True).count()
     mismatch = 0
-    for mutation in tqdm(Mutation.query.filter_by(is_confirmed=True), total=total):
+    for mutation in tqdm(yield_objects(Mutation.query.filter_by(is_confirmed=True)), total=total):
         pos = mutation.position
         is_ptm_related = mutation.protein.has_sites_in_range(pos - 7, pos + 7)
         if is_ptm_related != mutation.precomputed_is_ptm:
