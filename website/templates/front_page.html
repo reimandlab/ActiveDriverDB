@@ -60,7 +60,7 @@
       return '<span class="badge">' + name + '</span>';
   }
 
-  function template_mutation(name)
+  function template_mutation(result, name)
   {
       var badges = '';
 
@@ -102,11 +102,11 @@
               }
               else if(type === 'aminoacid mutation'){
                   var name = result.mutation.name + ' (' + result.protein.refseq + ')';
-                  template_mutation(name)
+                  template_mutation(result, name)
               }
               else if(type === 'genomic mutation'){
                   var name = result.mutation.name + ' (' + result.protein.refseq + ')' + ', result of ' + result.input
-                  template_mutation(name)
+                  template_mutation(result, name)
               }
               else if(type === 'message')
               {
