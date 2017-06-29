@@ -1,6 +1,17 @@
 {% extends "base.html" %}
 {% from "text_entry.html" import text with context %}
 
+{% block head %}
+
+  {{ super() }}
+
+  {% assets "js_utilities" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+  {% endassets %}
+
+{% endblock %}
+
+
 {% block title %} Front page - {{ super() }} {% endblock %}
 
 
