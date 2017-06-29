@@ -29,7 +29,7 @@
         <input
           name="search-query"
           class="form-control search-input"
-          placeholder="protein: TP53 or NM_000345, mutation: TP53 R282W"
+          placeholder="protein: TP53 or NM_000345, mutation: TP53 R282W or chr12 57490358 C A"
           autocomplete="off"
         >
       <span class="input-group-btn search-btn">
@@ -102,11 +102,11 @@
               }
               else if(type === 'aminoacid mutation'){
                   var name = result.mutation.name + ' (' + result.protein.refseq + ')';
-                  template_mutation(result, name)
+                  return template_mutation(result, name)
               }
               else if(type === 'genomic mutation'){
                   var name = result.mutation.name + ' (' + result.protein.refseq + ')' + ', result of ' + result.input
-                  template_mutation(result, name)
+                  return template_mutation(result, name)
               }
               else if(type === 'message')
               {
