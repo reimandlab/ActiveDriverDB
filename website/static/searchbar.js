@@ -114,7 +114,7 @@ var SearchBar = function ()
             update_object(config, data)
             var box = $(data.box)
             input = box.find('input')
-            results_div = box.find('.results')
+            results_div = box.find('.bar-results')
             indicator = box.find('.waiting-indicator')
 
             input.on('change mouseup drop input', searchOnType)
