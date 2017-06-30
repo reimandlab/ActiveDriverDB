@@ -27,10 +27,10 @@
           <ul class="list-inline">
             <li><a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq }}" {{ target }}>mRNA: {{ protein.refseq }}</a>
             {% if references.refseq_np %}
-            <li><a href="https://www.ncbi.nlm.nih.gov/protein/{{ protein.refseq_np }}" {{ target }}>protein: {{ references.refseq_np }}</a>
+            <li><a href="https://www.ncbi.nlm.nih.gov/protein/{{ references.refseq_np }}" {{ target }}>protein: {{ references.refseq_np }}</a>
             {% endif %}
             {% if references.refseq_ng %}
-            <li><a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ protein.refseq_ng }}" {{ target }}>gene: {{ references.refseq_ng }}</a>
+            <li><a href="https://www.ncbi.nlm.nih.gov/nuccore/{{ references.refseq_ng }}" {{ target }}>gene: {{ references.refseq_ng }}</a>
             {% endif %}
           </ul>
         </dd>
