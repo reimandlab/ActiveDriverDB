@@ -23,11 +23,11 @@
     <form
       class="form-group search-box front-search-box"
       method=GET
-      action="{{ url_for('SearchView:default') }}"
+      action="{{ url_for('SearchView:anything') }}"
     >
       <div class="input-group input-group-lg">
         <input
-          name="search-query"
+          name="query"
           class="form-control search-input"
           placeholder="protein: TP53 or NM_000345, mutation: TP53 R282W or chr12 57490358 C A"
           autocomplete="off"

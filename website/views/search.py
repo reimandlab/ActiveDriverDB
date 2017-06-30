@@ -2,7 +2,7 @@ import json
 from operator import itemgetter
 from urllib.parse import unquote
 
-from flask import make_response
+from flask import make_response, redirect
 from flask import render_template as template
 from flask import request
 from flask import jsonify
@@ -460,7 +460,12 @@ class SearchView(FlaskView):
         return json.dumps({'entries': response})
 
     def anything(self):
-        pass
+        query = unquote(request.args.get('query')) or ''
+        if ' ' in query:
+            return redirect(url_for('SearchView:mutations', mutations=query))
+        else:
+            return redirect(url_for('SearchView:proteins', proteins=query))
+
 
     def autocomplete_all(self):
         import re
