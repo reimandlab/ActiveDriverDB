@@ -104,7 +104,7 @@
                   var name = result.mutation.name + ' (' + result.protein.refseq + ')';
                   return template_mutation(result, name)
               }
-              else if(type === 'genomic mutation'){
+              else if(type === 'nucleotide mutation'){
                   var name = result.mutation.name + ' (' + result.protein.refseq + ')' + ', result of ' + result.input
                   return template_mutation(result, name)
               }

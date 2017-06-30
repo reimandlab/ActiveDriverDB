@@ -171,6 +171,7 @@ class DependencyManager:
 
 bundles = {
     'js_search_bar': Bundle(
+        'common.js',
         'searchbar.js',
         filters='rjsmin',
         output='min/searchbar.js'
