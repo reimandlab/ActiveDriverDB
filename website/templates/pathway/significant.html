@@ -31,4 +31,9 @@
 
 {% block description %}
   {{ text('pathways-significant') }}
+  <p>
+    The prediction bases on PTM mutations from {{ gene_list.name }} dataset.
+    Click here to see full list of
+    <a href="{{ url_for('GeneView:list', list_name=gene_list.name) }}">top genes with PTM mutations in {{ dataset.name }}</a>.
+  </p>
 {% endblock %}
