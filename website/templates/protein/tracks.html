@@ -46,23 +46,19 @@
         <div class="input-group">
             <div class="input-group-btn">
                 <button type="button" class="btn btn-default scroll-left">
-                    <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                    <span class="glyphicon glyphicon-chevron-left"></span>
                 </button>
                 <button type="button" class="btn btn-default scroll-right">
-                    <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                    <span class="glyphicon glyphicon-chevron-right"></span>
                 </button>
                 <button type="button" class="btn btn-default zoom-in">
-                    <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+                    <span class="glyphicon glyphicon-zoom-in"></span>
                 </button>
                 <button type="button" class="btn btn-default zoom-out">
-                    <span class="glyphicon glyphicon-zoom-out" aria-hidden="true"></span>
+                    <span class="glyphicon glyphicon-zoom-out"></span>
                 </button>
             </div>
-            {#
-                At the moment of writing I can not use type=number
-                http://caniuse.com/#feat=input-number
-            #}
-            <input type="text" class="form-control scroll-to-input" placeholder="Type a position...">
+            <input class="form-control scroll-to-input" placeholder="Type a position, e.g. 105 or 100-200">
             <span class="input-group-addon">amino acids</span>
             <span class="input-group-btn">
               <button class="btn btn-default scroll-to" type="button">Go!</button>

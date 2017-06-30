@@ -169,7 +169,32 @@ var Tracks = function ()
         var input = $(this).closest('.input-group').find('.scroll-to-input')
 
         // - 1: sequence is 1 based but position is 0 based
-        var pos = $(input).val() - 1
+        var user_input = $(input).val()
+
+        if(user_input.indexOf('-') !== -1)
+        {
+            // get range
+            var range = user_input.split('-')
+            range[0] = parseInt(range[0])
+            range[1] = parseInt(range[1])
+            var pos = range[0] - 1
+            // calculate zoom such that we will see only the desired range
+            var len = range[1] - range[0]
+            var zoom = config.min_zoom * config.sequenceLength / len
+            // and trim it to max allowed zoom
+            zoom = Math.min(zoom, config.max_zoom)
+            print(zoom)
+
+            _setZoom(zoom)
+        }
+        else
+        {
+            // zoom in as close to the mutation as we can get
+            _setZoom(config.max_zoom)
+            // convert to int, make 0 based
+            var visible_positions = config.min_zoom * config.sequenceLength / config.max_zoom
+            var pos = user_input - 1 - visible_positions / 2
+        }
 
         _setAAPosition(pos, false, true)
     }
