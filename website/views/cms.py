@@ -213,6 +213,11 @@ class ContentManagementSystem(FlaskView):
             return empty
         return help_entry.content
 
+    @admin_only
+    def link_list(self):
+        pages = Page.query
+        return jsonify([{'title': page.title, 'value': page.url} for page in pages])
+
     @route('/admin/save_inline_help/', methods=['POST'])
     @admin_only
     def save_inline_help(self):

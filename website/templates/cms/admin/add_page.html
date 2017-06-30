@@ -6,7 +6,7 @@
 
   {% assets "js_cms_editor" %}
     <script src="{{ ASSET_URL }}"></script>
-    <script>init_tinymce()</script>
+    <script>init_tinymce({link_list: '{{ url_for('ContentManagementSystem:link_list') }}'})</script>
   {% endassets %}
 {% endblock %}
 
