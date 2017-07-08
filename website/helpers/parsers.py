@@ -1,8 +1,9 @@
 import os
+from contextlib import contextmanager
 from glob import glob
 import gzip
 from tqdm import tqdm
-
+import subprocess
 
 class ParsingError(Exception):
     """Generic exception thrown by a parser."""
@@ -25,6 +26,21 @@ def get_files(path, pattern):
     return glob(path + os.sep + pattern)
 
 
+@contextmanager
+def fast_gzip_read(file_name, mode='r', processes=4):
+    if mode != 'r':
+        raise ValueError('Only "r" mode is supported')
+
+    command = 'unpigz -p ' + str(processes) + ' -c %s'
+
+    p = subprocess.Popen(
+        (command % file_name).split(' '),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
+    yield p.stdout
+
+
 def read_from_gz_files(directory, pattern, skip_header=True):
     """Creates generator yielding subsequent lines from compressed '.gz' files
 
@@ -32,7 +48,7 @@ def read_from_gz_files(directory, pattern, skip_header=True):
     lines each (to keep quite optimal memory usage / disk operations ratio),
     what allows huge files to be read with this function.
 
-    Progress bar is embeded.
+    Progress bar is embedded.
     """
 
     files = get_files(directory, pattern)
@@ -73,23 +89,50 @@ def buffered_readlines(file_handle, line_count=5000):
 
 def count_lines(file_object):
     """Returns number of lines in a given file."""
-    count = sum(1 for line in file_object)
+    count = sum(1 for _ in file_object)
     file_object.seek(0)   # return to the beginning of the file
     return count
+
+
+def iterate_tsv_gz_file(
+        filename, file_header=None
+):
+    """Utility iterator for gzipped tsv (tab-separated values) file.
+
+    It checks if the file header is the same as given (if provided).
+
+    Progress bar is embedded.
+    """
+    with fast_gzip_read(filename) as f:
+        data_lines_count = sum(1 for _ in f)
+
+    with fast_gzip_read(filename) as f:
+        if file_header:
+            header = f.readline().decode('utf-8').rstrip().split('\t')
+            data_lines_count -= 1
+            if header != file_header:
+                raise ParsingError(
+                    'Given file header does not match to expected: '
+                    'expected: %s, found: %s' % (file_header, header)
+                )
+        for line in tqdm(f, total=data_lines_count, unit=' lines'):
+            line = line.decode('utf-8').rstrip().split('\t')
+            yield line
 
 
 def parse_tsv_file(
     filename, parser, file_header=None, file_opener=open, mode='r'
 ):
-    """Utility function wraping tsv (tab-separated values) file parser.
+    """Utility function wrapping tsv (tab-separated values) file parser.
 
     It checks if the file header is the same as given (if provided).
     For each line parser will be called.
 
-    Progress bar is embeded.
+    Progress bar is embedded.
     """
     with file_opener(filename, mode=mode) as f:
         data_lines_count = count_lines(f)
+    with file_opener(filename, mode=mode) as f:
         if file_header:
             header = f.readline().rstrip().split('\t')
             data_lines_count -= 1
@@ -104,12 +147,12 @@ def parse_tsv_file(
 
 
 def parse_text_file(filename, parser, file_header=None, file_opener=open):
-    """Utility function wraping raw text file parser.
+    """Utility function wrapping raw text file parser.
 
     It checks if the file header is the same as given (if provided).
     For each line parser will be called.
 
-    Progress bar is embeded.
+    Progress bar is embedded.
     """
     with file_opener(filename) as f:
         data_lines_count = count_lines(f)
@@ -124,11 +167,11 @@ def parse_text_file(filename, parser, file_header=None, file_opener=open):
 
 
 def parse_fasta_file(filename, parser, file_opener=open):
-    """Utility function wraping fasta file parser.
+    """Utility function wrapping Fasta file parser.
 
     For each line parser will be called.
 
-    Progress bar is embeded.
+    Progress bar is embedded.
     """
     with file_opener(filename) as f:
         for line in tqdm(f, total=count_lines(f), unit=' lines'):
@@ -136,12 +179,12 @@ def parse_fasta_file(filename, parser, file_opener=open):
 
 
 def chunked_list(full_list, chunk_size=10000):
-    """Creates generator with `full_list` splited into chunks.
+    """Creates generator with `full_list` splitted into chunks.
 
     Each chunk will be no longer than `chunk_size` (the last chunk may have
-    less elements if provided `full_list` is not divisable by `chunk_size`).
+    less elements if provided `full_list` is not divisible by `chunk_size`).
 
-    Progress bar is embeded.
+    Progress bar is embedded.
     """
     element_buffer = []
     for element in tqdm(full_list):

@@ -192,7 +192,7 @@ class ProteinRelated(CommandTarget):
             results = importer()
             if results:
                 db.session.add_all(results)
-                db.session.commit()
+            db.session.commit()
 
     @load.argument
     def importers():

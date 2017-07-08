@@ -125,6 +125,9 @@ class Gene(BioModel):
     # as for storing symbols that are currently in use. Let's use 2 x 40.
     name = db.Column(db.String(80), unique=True, index=True)
 
+    # Full name from HGNC
+    full_name = db.Column(db.Text)
+
     # TRUE represent positive (+) strand, FALSE represents negative (-) strand
     # As equivalent to (?) from Generic Feature Format NULL could be used.
     strand = db.Column(db.Boolean())
@@ -281,6 +284,9 @@ class Protein(BioModel):
     # I did not found any technical documentation; useful resource:
     # ncbi.nlm.nih.gov/books/NBK21091/
     refseq = db.Column(db.String(32), unique=True, index=True)
+
+    # summary from Entrez/RefSeq database as at: https://www.ncbi.nlm.nih.gov/gene/7157
+    summary = db.Column(db.Text)
 
     # sequence of amino acids represented by one-letter IUPAC symbols
     sequence = db.Column(db.Text, default='')

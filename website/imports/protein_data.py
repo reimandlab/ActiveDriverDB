@@ -3,7 +3,7 @@ from collections import OrderedDict, defaultdict, namedtuple
 from tqdm import tqdm
 from database import db, yield_objects
 from database import get_or_create
-from helpers.parsers import parse_fasta_file
+from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file, fast_gzip_read
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
 from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation
@@ -191,6 +191,26 @@ def sequences(path='data/all_RefGene_proteins.fa'):
 
     print('%s sequences overwritten' % overwritten)
     print('%s new sequences saved' % new_count)
+
+
+@importer
+def protein_summaries(path='data/refseq_summary.tsv.gz'):
+
+    known_proteins = get_proteins()
+
+    expected_header = ['#mrnaAcc', 'completeness', 'summary']
+
+    for line_data in iterate_tsv_gz_file(path, expected_header):
+
+        try:
+            refseq, completeness, summary = line_data
+        except ValueError:
+            continue
+
+        if refseq not in known_proteins:
+            continue
+
+        known_proteins[refseq].summary = summary
 
 
 def select_preferred_isoform(gene):
