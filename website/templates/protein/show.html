@@ -190,7 +190,13 @@
           <div class="description">
             <strong>Description:</strong>
             <p>
-              {{ protein.summary }}
+              {{
+                protein.summary
+                  | replace('Publication Note:', '</p><p>Publication Note:<br>')
+                  | replace('##Evidence-Data-START##', '<p class="evidence-data">Evidence data:<br>')
+                  | replace('##Evidence-Data-END##', '</p>')
+                  | safe
+                }}
             </p>
           </div>
 

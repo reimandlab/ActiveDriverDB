@@ -5,6 +5,7 @@ import gzip
 from tqdm import tqdm
 import subprocess
 
+
 class ParsingError(Exception):
     """Generic exception thrown by a parser."""
     pass
