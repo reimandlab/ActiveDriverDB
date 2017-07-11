@@ -126,7 +126,7 @@ function affix(element, bottom_element)
 }
 
 
-$('body').on('click', '.list-expand', function(){
+$('body').off().on('click', '.list-expand', function(){
     var elem = $(this)
     var parent = $(elem.parent())
     parent.toggleClass('list-collapsed')
