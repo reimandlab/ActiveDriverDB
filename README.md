@@ -23,7 +23,7 @@ source virtual_environment/bin/activate
 cd website
 python3 -m pip install -r requirements.txt
 ```
-In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given. An additional requirement is `bsddb3` package, which is often easier to install system-wide with your package manager (on debian named `python3-bsddb3`). You may need to add a symbolic link to the package inside of your virtual environment.
+In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given. An additional requirement is `bsddb3` package, which is often easier to install system-wide with your package manager (on Debian named `python3-bsddb3`). You may need to add a symbolic link to the package inside of your virtual environment.
 
 Recently released version of flask-sqlalchemy (2.2, Feb 2017) fixed some important issues but introduced a regression bug [#470](https://github.com/mitsuhiko/flask-sqlalchemy/issues/470) which forces use of forked, patched version until it is fixed. To get patched version, you will need to clone [flask_sqlalchemy directory](https://github.com/krassowski/flask-sqlalchemy/flask_sqlalchemy) into `website` directory:
 ```bash
@@ -76,7 +76,7 @@ Note that the helps will adapt to specified subcommands (i.e. it will show more 
 **MySQL specific:** if you see a message `MySQL server has gone away`, try to `set global max_allowed_packet=1073741824;`
 
 ### Frontend
-If you don't want to perform steps specified below for every single deployment, you can use `deploy.sh` script (after installing all dependecies listed in the steps below).
+If you don't want to perform steps specified below for every single deployment, you can use `deploy.sh` script (after installing all dependencies listed in the steps below).
 
 
 #### Stylesheet creation
@@ -153,7 +153,7 @@ Following extract from configuration file might be useful help for writing you o
     </Location>
 ```
 
-Usually you can find approriate configuration files in directories like `/etc/apache2/sites-enabled/` or so.
+Usually you can find appropriate configuration files in directories like `/etc/apache2/sites-enabled/` or so.
 
 
 #### Runing python3 in "optimized" mode
@@ -174,10 +174,10 @@ To login to root account (created with `manage.py` script) visit `/login/` page 
 
 For proper compilation of some requirements, additional software will be needed on Debian-based servers. The required packages are:
 ```
-build-essential python3 libmysqlclient-dev python3-dev python-dev git python3-bsddb3
+build-essential python3 libmysqlclient-dev python3-dev python-dev git python3-bsddb3 pigz
 ```
 
-Alternative commands to create virtual environment (workaround for Debian not having some essentsial python3 packages installed): 
+Alternative commands to create virtual environment (workaround for Debian not having some essential python3 packages installed):
 ```bash
 python3 -m venv --without-pip virtual_environment
 source virtual_environment/bin/activate
