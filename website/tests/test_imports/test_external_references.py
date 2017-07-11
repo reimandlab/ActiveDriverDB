@@ -6,7 +6,7 @@ from pytest import raises
 
 from imports.protein_data import external_references as load_external_references
 from database_testing import DatabaseTest
-from models import Protein
+from models import Protein, Gene
 from database import db
 from miscellaneous import make_named_temp_file
 
@@ -70,22 +70,31 @@ refseq_data = """\
 9606	53947	A4GALT	NG_007495.2		NR_146459.1				aligned: Selected
 """
 
+reflink_data = """\
+#name	product	mrnaAcc	protAcc	geneName	prodName	locusLinkId	omimId
+Mroh5	maestro heat-like repeat family member 5	NM_001033365	NP_001028537	258359	439734	268816	0
+ppp1r8b	nuclear inhibitor of protein phosphatase 1	NM_201200	NP_957494	258360	393859	799896	0
+"""
+
 
 class TestImport(DatabaseTest):
 
     def test_protein_references(self):
 
-        filename = make_named_temp_file(data=idmapping_dat, opener=gzip.open, mode='wt')
+        uniprot_filename = make_named_temp_file(data=idmapping_dat, opener=gzip.open, mode='wt')
+        reflink_filename = make_named_temp_file(data=reflink_data, opener=gzip.open, mode='wt')
         refseq_filename = make_named_temp_file(data=refseq_data)
 
         refseqs = [
             'NM_011739',    # present in reference mappings
             'NM_001131572',    # present
+            'NM_201200',    # present
             'NM_0001'       # not present in reference mappings
         ]
 
+        g = Gene(name='Some gene')
         proteins_we_have = {
-            refseq_nm: Protein(refseq=refseq_nm)
+            refseq_nm: Protein(refseq=refseq_nm, gene=g)
             for refseq_nm in refseqs
         }
 
@@ -93,7 +102,7 @@ class TestImport(DatabaseTest):
             # let's pretend that we already have some proteins in our db
             db.session.add_all(proteins_we_have.values())
 
-            references = load_external_references(filename, refseq_filename)
+            references = load_external_references(uniprot_filename, refseq_filename, reflink_filename)
 
             # there are 3 references we would like to have extracted
             assert len(references) == 3
