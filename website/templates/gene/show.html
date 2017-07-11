@@ -27,6 +27,11 @@
 
   <div class="header-panel">
     <h3>All isoforms for {{ gene.name }}</h3>
+    {% if gene.full_name %}
+      <div class="gene-wide-info">
+        {{ gene.full_name }}
+      </div>
+    {% endif %}
     <div class="gene-wide-info">
       Chromosome: {{ gene.chrom }}
     </div>

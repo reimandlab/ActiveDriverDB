@@ -36,11 +36,11 @@
         </dd>
     </dl>
 
-    {% if references.entrez_id %}
+    {% if protein.gene.entrez_id %}
     <dl>
         <dt>Entrez</dt>
         <dd>
-          <a href="https://www.ncbi.nlm.nih.gov/gene/{{ references.entrez_id }}" {{ target }}>gene: {{ references.entrez_id }}</a>
+          <a href="https://www.ncbi.nlm.nih.gov/gene/{{ protein.gene.entrez_id }}" {{ target }}>gene: {{ protein.gene.entrez_id }}</a>
         </dd>
     </dl>
     {% endif %}

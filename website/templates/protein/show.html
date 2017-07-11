@@ -42,13 +42,21 @@
 
 {% block content %}
 
-  <h3>{{ protein.gene.name }} - {{ protein.refseq }}</h3>
+  {% if protein.full_name %}
+    {% set full_name = protein.full_name %}
+  {% elif protein.gene.full_name %}
+    {% set full_name = protein.gene.full_name %}
+  {% else %}
+    {% set full_name = '' %}
+  {% endif %}
+
+  <h3>{{ protein.gene.name }} ({{ protein.refseq }}) {% if full_name %} - {{ full_name | title }} {% endif %}</h3>
 
   <div class="isoform-page-options">
     <ul class="nav nav-tabs">
       <li role="presentation" class="active">
         <a href="#">
-          <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
+          <span class="glyphicon glyphicon-indent-left" style="transform:rotate(-90deg)"></span>
           Sequence View
         </a>
       <li role="presentation">
@@ -57,7 +65,7 @@
           class="variable-url"
           data-url-pattern="{{ url_for('NetworkView:show', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
         >
-          <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
+          <span class="glyphicon glyphicon-globe"></span>
           Network view
         </a>
     </ul>
@@ -186,6 +194,16 @@
           </div>
         </div>
         <div class="panel-body">
+          <strong>{{ protein.gene.name }}:</strong>
+          {% if full_name %}
+            {{ full_name }},
+          {% else %}
+            {% if protein.gene.isoforms | length == 1 %}
+              the only isoform
+            {% else %}
+              {{ protein.refseq }} isoform
+            {% endif %}
+          {% endif %}
 
           <div class="description">
             <strong>Description:</strong>

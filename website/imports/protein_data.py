@@ -838,7 +838,7 @@ def active_driver_gene_lists(
 
 
 @importer
-def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_path='data/LRG_RefSeqGene'):
+def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='data/LRG_RefSeqGene', refseq_link='data/refseq_link.tsv.gz'):
     from models import Protein
     from models import ProteinReferences
     from models import EnsemblPeptide
@@ -934,7 +934,7 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_path='da
                     db.session.add(peptide)
 
     def add_ncbi_mappings(data):
-        '9606    3329    HSPD1   NG_008915.1     NM_199440.1     NP_955472.1     reference standard'
+        # 9606    3329    HSPD1   NG_008915.1     NM_199440.1     NP_955472.1     reference standard
         taxonomy, entrez_id, gene_name, refseq_gene, lrg, refseq_nucleotide, t, refseq_peptide, p, category = data
 
         refseq_nm = refseq_nucleotide.split('.')[0]
@@ -949,23 +949,132 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_path='da
 
         reference, new = get_or_create(ProteinReferences, protein=protein)
 
-        reference.refseq_np = refseq_peptide.split('.')[0]
-        reference.refseq_ng = refseq_gene.split('.')[0]
-        reference.entrez_id = int(entrez_id)
-
         if new:
             db.session.add(reference)
 
-        return
+        reference.refseq_np = refseq_peptide.split('.')[0]
+        reference.refseq_ng = refseq_gene.split('.')[0]
+        gene = protein.gene
 
-    parse_tsv_file(refseq_path, add_ncbi_mappings, file_header=[
+        if gene.name != gene_name:
+            print('Gene name mismatch for RefSeq mappings: %s vs %s' % (gene.name, gene_name))
+
+        entrez_id = int(entrez_id)
+
+        if gene.entrez_id:
+            if gene.entrez_id != entrez_id:
+                print('Entrez ID mismatch for isoforms of %s gene: %s, %s' % (gene.name, gene.entrez_id, entrez_id))
+                if gene.name == gene_name:
+                    print(
+                        'Overwriting %s entrez id with %s for %s gene, because record with %s has matching gene name' %
+                        (gene.entrez_id, entrez_id, gene.name, entrez_id)
+                    )
+                    gene.entrez_id = entrez_id
+        else:
+            gene.entrez_id = entrez_id
+
+    parse_tsv_file(refseq_lrg, add_ncbi_mappings, file_header=[
         '#tax_id', 'GeneID', 'Symbol', 'RSG', 'LRG', 'RNA', 't', 'Protein', 'p', 'Category'
     ])
+
+    # add mappings retrieved from UCSC tables for completeness
+    header = ['#name', 'product', 'mrnaAcc', 'protAcc', 'geneName', 'prodName', 'locusLinkId', 'omimId']
+    for line in iterate_tsv_gz_file(refseq_link, header):
+        gene_name, protein_full_name, refseq_nm, refseq_peptide, _, _, entrez_id, omim_id = line
+
+        if not refseq_nm or not refseq_nm.startswith('NM'):
+            continue
+
+        try:
+            protein = Protein.query.filter_by(refseq=refseq_nm).one()
+        except NoResultFound:
+            continue
+
+        gene = protein.gene
+
+        if gene.name != gene_name:
+            print('Gene name mismatch for RefSeq mappings: %s vs %s' % (gene.name, gene_name))
+
+        entrez_id = int(entrez_id)
+
+        if protein_full_name:
+            if protein.full_name:
+                if protein.full_name != protein_full_name:
+                    print(
+                        'Protein full name mismatch: %s vs %s for %s'
+                        %
+                        (protein.full_name, protein_full_name, protein.refseq)
+                    )
+                continue
+            protein.full_name = protein_full_name
+
+        if gene.entrez_id:
+            if gene.entrez_id != entrez_id:
+                print('Entrez ID mismatch for isoforms of %s gene: %s, %s' % (gene.name, gene.entrez_id, entrez_id))
+                if gene.name == gene_name:
+                    print(
+                        'Overwriting %s entrez id with %s for %s gene, because record with %s has matching gene name' %
+                        (gene.entrez_id, entrez_id, gene.name, entrez_id)
+                    )
+                    gene.entrez_id = entrez_id
+        else:
+            gene.entrez_id = entrez_id
+
+        if refseq_peptide:
+            reference, new = get_or_create(ProteinReferences, protein=protein)
+
+            if new:
+                db.session.add(reference)
+
+            if reference.refseq_np and reference.refseq_np != refseq_peptide:
+                print(
+                    'Refseq peptide mismatch between LRG and UCSC retrieved data: %s vs %s for %s'
+                    %
+                    (reference.refseq_np, refseq_peptide, protein.refseq)
+                )
+
+            reference.refseq_np = refseq_peptide
 
     parse_tsv_file(path, add_uniprot_accession, file_opener=gzip.open, mode='rt')
     parse_tsv_file(path, add_references_by_uniprot, file_opener=gzip.open, mode='rt')
 
     return [reference for reference_group in references.values() for reference in reference_group]
+
+
+@importer
+def full_gene_names(path='data/Homo_sapiens.gene_info.gz'):
+    expected_header = [
+        '#tax_id', 'GeneID', 'Symbol', 'LocusTag', 'Synonyms', 'dbXrefs', 'chromosome', 'map_location',
+        'description', 'type_of_gene', 'Symbol_from_nomenclature_authority', 'Full_name_from_nomenclature_authority',
+        'Nomenclature_status', 'Other_designations', 'Modification_date', 'Feature_type'
+    ]
+
+    known_genes = {gene.entrez_id: gene for gene in Gene.query.all()}
+    genes_covered = set()
+
+    for line_data in iterate_tsv_gz_file(path, expected_header):
+
+        full_name = line_data[11]
+
+        if full_name == '-':
+            continue
+
+        entrez_id = int(line_data[1])
+
+        if entrez_id not in known_genes:
+            continue
+
+        gene = known_genes[entrez_id]
+        gene.full_name = full_name
+
+        genes_covered.add(gene)
+
+    covered = len(genes_covered)
+    count = Gene.query.count()
+    print(
+        'Imported full gene names for %s genes (%s percent of %s total in database, %s percent of those %s having Entrez ID)' %
+        (covered, covered * 100 // count, count, covered * 100//len(known_genes), len(known_genes))
+    )
 
 
 @importer

@@ -7,11 +7,16 @@ do
   }
 done
 
-# refseq mRNA summaries
 wget https://gist.githubusercontent.com/krassowski/8c9710fa20ac944ec8d47ac4a0ac5b4a/raw/444fcc584bc10b5e504c05a6063a281cee808c9c/ucsc_download.sh
 source ucsc_download.sh
+# refseq mRNA summaries
 get_whole_genome_table refseq_summary.tsv.gz genes refGene hgFixed.refSeqSummary gzip
+# some of protein mappings (RefSeq)
+get_whole_genome_table refseq_link.tsv.gz genes refGene hgFixed.refLink gzip
 rm ucsc_download.sh
+
+# full gene name
+wget ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz
 
 # hierarchy tree
 wget ftp://ftp.ebi.ac.uk/pub/databases/interpro/ParentChildTreeFile.txt

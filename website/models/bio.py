@@ -135,6 +135,12 @@ class Gene(BioModel):
     # Chromosome - up to two digits (1-22 inclusive), X and Y and eventually MT
     chrom = db.Column(db.CHAR(2))
 
+    # "Records in Entrez Gene are assigned unique, stable and tracked integers as identifiers"
+    # ncbi.nlm.nih.gov/pmc/articles/PMC3013746, doi: 10.1093/nar/gkq1237
+    # as for Jun 8 2017, there are 18 151 636 genes in Entrez (ncbi.nlm.nih.gov/gene/statistics)
+    # an integer should suffice up to 2,147,483,647 genes.
+    entrez_id = db.Column(db.Integer)
+
     isoforms = db.relationship(
         'Protein',
         backref='gene',
@@ -260,12 +266,6 @@ class ProteinReferences(BioModel):
 
     uniprot_entries = db.relationship(UniprotEntry, backref='reference')
 
-    # "Records in Entrez Gene are assigned unique, stable and tracked integers as identifiers"
-    # ncbi.nlm.nih.gov/pmc/articles/PMC3013746, doi: 10.1093/nar/gkq1237
-    # as for Jun 8 2017, there are 18 151 636 genes in Entrez (ncbi.nlm.nih.gov/gene/statistics)
-    # an integer should suffice up to 2,147,483,647 genes.
-    entrez_id = db.Column(db.Integer)
-
 
 class Protein(BioModel):
     """Protein represents a single isoform of a product of given gene."""
@@ -284,6 +284,10 @@ class Protein(BioModel):
     # I did not found any technical documentation; useful resource:
     # ncbi.nlm.nih.gov/books/NBK21091/
     refseq = db.Column(db.String(32), unique=True, index=True)
+
+    # such as 'cellular tumor antigen p53 isoform a' on https://www.ncbi.nlm.nih.gov/protein/NP_000537
+    # note: this is different than full >gene< name
+    full_name = db.Column(db.Text)
 
     # summary from Entrez/RefSeq database as at: https://www.ncbi.nlm.nih.gov/gene/7157
     summary = db.Column(db.Text)
