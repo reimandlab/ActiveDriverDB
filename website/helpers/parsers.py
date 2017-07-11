@@ -32,7 +32,7 @@ def fast_gzip_read(file_name, mode='r', processes=4):
     if mode != 'r':
         raise ValueError('Only "r" mode is supported')
 
-    command = 'unpigz -p ' + str(processes) + ' -c %s'
+    command = 'pigz -d -p ' + str(processes) + ' -c %s'
 
     p = subprocess.Popen(
         (command % file_name).split(' '),
