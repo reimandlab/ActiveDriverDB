@@ -82,7 +82,7 @@ class TestImport(DatabaseTest):
     def test_protein_references(self):
 
         uniprot_filename = make_named_temp_file(data=idmapping_dat, opener=gzip.open, mode='wt')
-        reflink_filename = make_named_temp_file(data=reflink_data, opener=gzip.open, mode='wt')
+        reflink_filename = make_named_temp_file(data=reflink_data, opener=gzip.open, mode='wt', suffix='.gz')
         refseq_filename = make_named_temp_file(data=refseq_data)
 
         refseqs = [
