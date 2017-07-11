@@ -196,7 +196,7 @@
         <div class="panel-body">
           <strong>{{ protein.gene.name }}:</strong>
           {% if full_name %}
-            {{ full_name }},
+            {{ full_name }}
           {% else %}
             {% if protein.gene.isoforms | length == 1 %}
               the only isoform
