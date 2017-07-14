@@ -286,6 +286,7 @@ def make_widgets(filter_manager):
     }
 
 
+
 class SearchView(FlaskView):
     """Enables searching in any of registered database models."""
 
@@ -466,7 +467,6 @@ class SearchView(FlaskView):
         else:
             return redirect(url_for('SearchView:proteins', proteins=query))
 
-
     def autocomplete_all(self):
         import re
 
@@ -525,7 +525,7 @@ class SearchView(FlaskView):
                     valid = False
                     for isoform in gene_obj.isoforms:
                         try:
-                            if isoform.sequence[pos] == ref:
+                            if isoform.sequence[pos - 1] == ref:
                                 valid = True
                                 break
                         except IndexError:
