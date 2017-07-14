@@ -286,7 +286,6 @@ def make_widgets(filter_manager):
     }
 
 
-
 class SearchView(FlaskView):
     """Enables searching in any of registered database models."""
 

@@ -6,6 +6,8 @@ from database import db
 from models import Gene
 from models import Protein
 from models import UsersMutationsDataset
+from models import Site
+from models import Mutation
 
 
 # base on example from specification in version 4.3:
@@ -104,8 +106,6 @@ class TestSearchView(ViewTest):
         )
 
     def test_search_mutations(self):
-        from models import Site
-        from models import Mutation
 
         s = Site(position=13, type='methylation')
         p = Protein(refseq='NM_007', id=7, sites=[s])
@@ -164,6 +164,29 @@ class TestSearchView(ViewTest):
 
         assert response.status_code == 200
         assert b'NM_007' in response.data
+
+    def test_autocomplete(self):
+        g = Gene(name='BR')
+        p = Protein(refseq='NM_007', gene=g, sequence='XXXXXV')
+        mut = Mutation(protein=p, position=6, alt='E')
+        db.session.add_all([mut, p, g])
+
+        response = self.client.get(
+            '/search/autocomplete_all/?q=BR V6E'
+        )
+        assert response.json['type'] == 'aminoacid mutation'
+
+        response = self.client.get(
+            '/search/autocomplete_all/?q=BR V6'
+        )
+        assert response.json['type'] == 'message'
+        assert 'Awaiting for <code>{alt}</code>' in response.json['entries'][0]['name']
+
+        response = self.client.get(
+            '/search/autocomplete_all/?q=BR V'
+        )
+        assert response.json['type'] == 'message'
+        assert 'Awaiting for <code>{pos}{alt}</code>' in response.json['entries'][0]['name']
 
     def test_save_search(self):
         test_query = 'chr18 19282310 T C'
