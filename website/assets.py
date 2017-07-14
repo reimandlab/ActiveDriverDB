@@ -66,6 +66,9 @@ class DependencyManager:
             'https://code.jquery.com/jquery-1.12.4.min.js',
             'sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ='
         ),
+        'particles.js': JSResource(
+            'https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js'
+        ),
         'bootstrap_css': CSSResource(
             'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css',
             'sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u',
@@ -133,6 +136,10 @@ class DependencyManager:
         'tinymce': JSResource(
             'https://cdnjs.cloudflare.com/ajax/libs/tinymce/4.6.1/tinymce.min.js',
             'sha256-GnWmLZ0UK0TTmZEj5w4U6SLOnEJlalLnsOLDcUXzYyc=',
+            only_cdn=True
+        ),
+        'futura_fonts': JSResource(
+            'https://use.typekit.net/rwz4bfl.js',
             only_cdn=True
         )
     }
@@ -280,6 +287,11 @@ bundles = {
     'css_page': css_bundle(
         'page',
         'sass/page.css'
+    ),
+    'css_front_page': css_bundle(
+        'front',
+        'sass/style.css',
+        'sass/front.css'
     ),
     'css_admin': css_bundle(
         'admin',

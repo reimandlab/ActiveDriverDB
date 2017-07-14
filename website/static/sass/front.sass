@@ -1,0 +1,273 @@
+// FRONT PAGE
+$main_bg: #2fa7c1
+$secondary_bg: #005b7f
+$text_bg: #eff6f7
+$stats_table_color: #025a7e
+
+body
+  overflow-x: hidden
+  font-family: futura-pt, "Helvetica Neue",Helvetica,Arial,sans-serif
+  font-size: 16px
+
+.front-search-box
+  margin-bottom: 35px
+  margin-top: 16px
+
+  input:focus+.glyphicon-search
+    display: none
+
+  .input-icon
+    position: absolute
+    right: 2.5%
+    font-size: 26px
+    top: 30%
+
+  .glyphicon-search
+    color: #68696b
+
+  .bar-results
+    width: 100%
+    box-shadow: none
+
+.strip
+  width: 100%
+
+.strip-top, .footer
+  background: $main_bg
+
+.footer
+  $footer-height: 136px
+  height: $footer-height
+  margin-top: 0
+  border-top: 0
+  padding: 0
+  ul
+    margin: 0
+  a
+    color: white
+    line-height: $footer-height
+
+.slogan
+  font-size: 35px
+  color: #fff
+  text-align: center
+  font-weight: 300
+
+$top_height: 655px
+
+.advanced
+  text-align: center
+  a
+    color: #fff
+    margin: 0 5px
+    z-index: 10
+
+.framed_by_window
+  // image to be framed should be 551 x 315
+  background: url('/static/img/frame.png')
+  width: 571px
+  height: 390px
+  padding: 10px
+  padding-top: 55px
+
+.strip-top
+  height: $top_height
+  position: relative
+
+  a
+    position: relative
+
+  .logo
+    user-select: none
+
+  .website-name
+    font-family: futura-pt-bold, "Helvetica Neue",Helvetica,Arial,sans-serif
+    font-size: 72px
+    font-weight: bold
+    margin-top: 28px
+    line-height: 100%
+    margin-bottom: -5px
+
+  .background
+    height: $top_height
+    position: absolute
+    width: 100%
+    #particles-js
+      height: $top_height
+
+  .strip-content
+    padding-top: 112px
+    text-align: center
+    color: white
+
+.row-stats
+  background: $secondary_bg
+
+.strip-stats
+  $height: 304px
+  $bottom: 56px
+  padding-bottom: $bottom
+
+  .column
+    min-height: $height - $bottom
+    position: relative
+
+  .box
+    position: absolute
+    bottom: 0
+    width: 100%
+    margin: auto
+    text-align: center
+    display: table
+
+    .icon
+      height: 120px
+      display: table-cell
+      vertical-align: middle
+
+      img
+        display: block
+        margin: auto
+        margin-bottom: 12px
+        user-select: none
+
+    .entity, .count
+      color: #fff
+      display: table-row
+      text-transform: uppercase
+      font-weight: 300
+      font-size: 23px
+    .entity
+      line-height: 1
+    .count
+      line-height: 1.55
+
+
+.row-introduction, .row-about
+  background: $text_bg
+
+
+.table-outer-border
+  &, tbody, tr, td
+    border-radius: 16px
+  border-collapse: separate
+  padding: 30px
+
+.row-showcase
+  .table-outer-border
+    border-color: #b7b7b7
+
+.row-about
+  .table-outer-border
+    border-color: $stats_table_color
+    color: $stats_table_color
+    td
+      line-height: 1.32!important
+      padding: 0
+    p
+      margin: 0
+    h4
+      font-size: 36px
+      font-weight: 300
+      color: #000
+      margin-top: 20px
+      margin-bottom: 5px
+    padding-top: 10px
+    padding-bottom: 7px
+    font-size: 110%
+
+
+.text-based-strip
+  h2
+    text-align: center
+    margin-top: 33px
+    font-size: 44px
+    font-weight: 300
+    margin-bottom: 25px
+
+  .content
+    display: inline-block
+    padding: 20px
+    width: 100%
+    font-size: 21px
+    font-weight: 300
+
+.navbar
+  background: linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0))
+  border: none
+  position: absolute
+  z-index: 10
+  text-align: center
+  width: 100%
+  color: #fff
+  margin: 0
+  height: 140px
+  // 40-15; 15px is a normal padding of links in navbar
+  padding-top: 22px
+
+  .navbar-nav
+    float: none
+    display: inline-block
+
+@import "variables"
+
+#navbar li a
+  color: #fff
+  text-shadow: 0 0 2px rgba(100, 100, 100, 0.5)
+  text-transform: uppercase
+  @media #{$pc}
+    font-size: 18px
+  //transition-duration: 0.4s
+  //transition-property: box-shadow
+
+  &:hover
+    //box-shadow: inset 0 0 0 5px rgba(67, 235, 255, 0.1)
+    background: rgba(67, 235, 255, 0.2)
+
+#navbar.collapse.in li a
+  background: rgba($main_bg, 0.9)
+
+
+.navbar-brand
+  display: none
+
+.admin .inline-editable
+  position: relative
+
+  &:hover
+    .edit-btn
+      background: rgba(1, 0.5, 0.5, 0.1)
+
+  .edit-btn
+    float: right
+    right: 2%
+    background: transparent
+    color: #fff
+    position: absolute
+    z-index: 15
+    top: 10px
+    text-shadow: 0px 0px 2px grey, 0 0 1px black
+
+    &:hover
+      background: rgba(1, 0.5, 0.5, 0.3)
+
+  .edit-form
+    //width: 80%
+    margin: auto
+
+    .mce-edit-area, .mce-tinymce
+      background: transparent
+
+    .mce-menubar
+      background-color: #f0f0f0
+
+.page-content
+  background: transparent
+
+
+.form-group-xl
+  .form-control
+    height: 61px
+    padding: 10px 16px
+    font-size: 24px
+    border-radius: 6px

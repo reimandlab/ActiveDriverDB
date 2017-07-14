@@ -19,19 +19,17 @@
     {{ dependency('prism_css') }}
   {% endif %}
 
-  {% block css %}
-    {% assets "css_common" %}
-      <link rel="stylesheet" href="{{ ASSET_URL }}">
-    {% endassets %}
-    {% assets "css_print" %}
-      <link rel="stylesheet" href="{{ ASSET_URL }}" media="print">
-    {% endassets %}
-  {% endblock %}
+  {% assets "css_common" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+  {% assets "css_print" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}" media="print">
+  {% endassets %}
 
   {% if current_user.is_admin %}
-  {% assets "js_inline_edit" %}
-    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
-  {% endassets %}
+    {% assets "js_inline_edit" %}
+      <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+    {% endassets %}
   {% endif %}
 
   <!--[if lt IE 9]>
@@ -44,24 +42,21 @@
   {% endblock %}
 </head>
 <body class="{{ 'admin' if current_user.is_admin else '' }} {% block body_class %}{% endblock %}">
-  <script type="text/javascript">
+<script type="text/javascript">
     {# elements with 'js-hidden' class will be hidden only if js is active #}
     var css = document.createElement('style')
     css.type = 'text/css'
     css.innerHTML = '.js-hidden{display: none}.js-shown{display: block!important}'
     document.body.appendChild(css)
-  </script>
-  <div id="spinner">
-    <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>
-  </div>
+</script>
+<div id="spinner">
+  <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>
+</div>
+
+<div class="container">
 
 
-  {% block body %}
-  <div class="container">
-
-    {% include "navbar.html" %}
-
-    {% block breadcrumbs_bar %}
+  {% block breadcrumbs_bar %}
     <div class="minor-top-navigation">
       <ol class="breadcrumb">
         {% block breadcrumb %}
@@ -103,85 +98,70 @@
         {% endif %}
       </div>
     </div>
-    {% endblock %}
-
-
-    {% set side_menu = system_setting('side_menu') %}
-    {% if side_menu.is_active %}
-    <div class="row">
-      <div class="col-md-9">
-    {% endif %}
-
-    <div id="content">
-      {% include 'messages.html' %}
-      {% block content %}
-      {% endblock %}
-    </div>
-    <footer class="footer">
-      <ul class="menu list-unstyled">
-        {% block footer %}
-          {{ system_menu('footer_menu').as_list }}
-        {% endblock %}
-      </ul>
-    </footer>
-
-    {% if side_menu.is_active %}
-      </div>
-      <div class="col-md-3">
-        <h3>{{ side_menu.name }}</h3>
-        <ul class="nav nav-pills nav-stacked">
-          {{ side_menu.as_list }}
-        </ul>
-      </div>
-    </div>
-    {% endif %}
-
-  </div>
-
   {% endblock %}
 
+
+  {% set side_menu = system_setting('side_menu') %}
+  {% if side_menu.is_active %}
+    <div class="row">
+    <div class="col-md-9">
+  {% endif %}
+
+  <div id="content">
+    {% include 'messages.html' %}
+    {% block content %}
+    {% endblock %}
+  </div>
+  <footer class="footer">
+    <ul class="menu list-unstyled">
+      {% block footer %}
+        {{ system_menu('footer_menu').as_list }}
+      {% endblock %}
+    </ul>
+  </footer>
+
+  {% if side_menu.is_active %}
+    </div>
+    <div class="col-md-3">
+      <h3>{{ side_menu.name }}</h3>
+      <ul class="nav nav-pills nav-stacked">
+        {{ side_menu.as_list }}
+      </ul>
+    </div>
+    </div>
+  {% endif %}
+
+</div>
+
 {% assets "js_search_bar" %}
-<script type="text/javascript" src="{{ ASSET_URL }}"></script>
+  <script type="text/javascript" src="{{ ASSET_URL }}"></script>
 {% endassets %}
 {% block footer_js %}
   {% if current_user.is_admin %}
-  {% assets "js_cms_editor" %}
-    <script src="{{ ASSET_URL }}"></script>
-  {% endassets %}
+    {% assets "js_cms_editor" %}
+      <script src="{{ ASSET_URL }}"></script>
+    {% endassets %}
   {% endif %}
-<script type="text/javascript">
-  document.getElementById('spinner').style.display='none'
+  <script type="text/javascript">
+      document.getElementById('spinner').style.display='none'
 
-  {% if current_user.is_admin %}
-    create_help_manager("{{ url_for('ContentManagementSystem:save_inline_help') }}");
-    create_text_manager("{{ url_for('ContentManagementSystem:save_text_entry') }}");
-    set_csrf_token("{{ csrf_token() | safe }}")
-    init_tinymce({
-        image_class_list: [
-            {title: 'None', value: ''},
-            {title: 'Framed by window', value: 'framed_by_window'}
-        ],
-        selector: 'textarea.inline-entry',
-        height: 100,
-        setup: function (editor) {
-          editor.on('change', function () {
-              editor.save()
+      {% if current_user.is_admin %}
+          create_help_manager("{{ url_for('ContentManagementSystem:save_inline_help') }}");
+          create_text_manager("{{ url_for('ContentManagementSystem:save_text_entry') }}");
+          set_csrf_token("{{ csrf_token() | safe }}")
+          init_tinymce({
+              selector: 'textarea.inline-entry',
+              height: 100,
+              setup: function (editor) {
+                  editor.on('change', function () {
+                      editor.save()
+                  })
+              },
+              link_list: '{{ url_for('ContentManagementSystem:link_list') }}'
+              //inline: true
           })
-          editor.on('init', function(event) {
-            var el = $(editor.getElement());
-            var cls = el.closest('.inline-editable').parent().get(0).className;
-            editor.getBody().className += ' ' + cls;
-
-          });
-        },
-        content_css : [
-            '/static/min/front.css',
-            'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'
-        ],
-        link_list: '{{ url_for('ContentManagementSystem:link_list') }}'
-    })
-  {% endif %}
-</script>
+      {% endif %}
+  </script>
 {% endblock %}
 </body>
 </html>

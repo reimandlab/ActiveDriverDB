@@ -117,6 +117,7 @@ def create_app(config_filename='config.py', config_override={}):
     app.jinja_loader = template_loader
 
     from website.views.cms import substitute_variables
+    from website.views.cms import thousand_separated_number
     from website.views.cms import ContentManagementSystem
     from jinja2_pluralize import pluralize
     import json
@@ -138,6 +139,7 @@ def create_app(config_filename='config.py', config_override={}):
     jinja_globals['system_setting'] = ContentManagementSystem._system_setting
     jinja_globals['inline_help'] = ContentManagementSystem._inline_help
     jinja_globals['text_entry'] = ContentManagementSystem._text_entry
+    jinja_globals['t_sep'] = thousand_separated_number
     jinja_globals['csrf_token'] = csrf.new_csrf_token
     jinja_globals['is_debug_mode'] = app.debug
 

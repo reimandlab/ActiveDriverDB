@@ -9,45 +9,127 @@
     <script type="text/javascript" src="{{ ASSET_URL }}"></script>
   {% endassets %}
 
-{% endblock %}
+  {{ dependency('futura_fonts') }}
+  <script>try{Typekit.load({ async: true });}catch(e){}</script>
 
+  {{ dependency('particles.js') }}
+
+{% endblock %}
 
 {% block title %} Front page - {{ super() }} {% endblock %}
 
-
-{% block content %}
-
-  <div class="page-content">
-    {{ text('front-page-top') }}
-
-    <form
-      class="form-group search-box front-search-box"
-      method=GET
-      action="{{ url_for('SearchView:anything') }}"
-    >
-      <div class="input-group input-group-lg">
-        <input
-          name="query"
-          class="form-control search-input"
-          placeholder="protein: TP53 or NM_000345, mutation: TP53 R282W or chr12 57490358 C A"
-          autocomplete="off"
-        >
-      <span class="input-group-btn search-btn">
-        <button class="btn btn-primary" type="button">Search!</button>
-      </span>
-
-      </div>
-      <span class="glyphicon glyphicon-refresh glyphicon-spin waiting-indicator"></span>
-      <div class="list-group bar-results">
-        <a href="#" class="list-group-item">
-          Start typing to get results
-        </a>
-      </div>
-    </form>
-
-    {{ text('front-page-bottom') }}
-  </div>
+{% block css %}
+  {% assets "css_front_page" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
 {% endblock %}
+
+{% block breadcrumbs_bar %}
+{% endblock %}
+
+{% block body_class %}front-page{% endblock %}
+
+{% block body %}
+
+  {% with without_searchbar = True %}
+    {% include "navbar.html" %}
+  {% endwith %}
+
+  <div class="front-page-content page-content">
+
+    <div class="strip strip-top">
+
+      <div class="background">
+        <div id="particles-js"></div>
+      </div>
+
+      <div class="strip-content">
+        <div class="logo">
+          <img src="/static/img/logo.png">
+        </div>
+        <h1 class="website-name">
+          {{ system_setting('website_name') }}
+        </h1>
+        <div class="slogan">
+          {{ text('front-page-top', compact_mode=True) }}
+        </div>
+
+        <div class="row">
+          <div class="col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-1">
+            <form
+              class="form-group search-box front-search-box"
+              method=GET
+              action="{{ url_for('SearchView:anything') }}"
+            >
+              <div class="form-group form-group-lg form-group-xl">
+
+              <input
+                name="query"
+                class="form-control search-input"
+                placeholder="TP53, NM_000345, TP53 R282W or chr12 57490358 C A"
+                autocomplete="off"
+              >
+              <span class="input-icon glyphicon glyphicon-search"></span>
+              <span class="input-icon glyphicon glyphicon-refresh glyphicon-spin waiting-indicator"></span>
+              <div class="list-group bar-results">
+                <a href="#" class="list-group-item">
+                  Start typing to get results
+                </a>
+              </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="advanced">
+          {{ text('advanced-search', compact_mode=True) }}
+        </div>
+
+      </div>
+
+    </div>
+    <div class="row row-stats">
+      <div class="col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-1">
+        <div class="strip strip-stats">
+          {{ text('front-page-stats') }}
+        </div>
+      </div>
+    </div>
+    <div class="row row-introduction">
+      <div class="col-md-8 col-md-offset-2 col-sm-10 col-sm-offset-1">
+        <div class="strip text-based-strip">
+          {{ text('front-page-introduction') }}
+        </div>
+      </div>
+    </div>
+    <div class="row row-showcase">
+      <div class="col-md-10 col-md-offset-1">
+        <div class="strip text-based-strip">
+          {{ text('front-page-showcase') }}
+        </div>
+      </div>
+    </div>
+  <div class="row row-about">
+    <div class="col-md-10 col-md-offset-1">
+      <div class="strip text-based-strip">
+        {{ text('front-page-about') }}
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="row">
+      <div class="col-md-10 col-md-offset-1">
+        <ul class="menu list-unstyled">
+          {% block footer %}
+            {{ system_menu('footer_menu').as_list }}
+          {% endblock %}
+        </ul>
+      </div>
+    </div>
+  </footer>
+{% endblock %}
+
 
 
 {% block footer_js %}
@@ -115,6 +197,8 @@
 
           }
   })
+
+  particlesJS.load('particles-js', 'static/particlesjs-config.json', function() { });
 
   </script>
 {% endblock %}

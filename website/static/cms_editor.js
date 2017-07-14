@@ -8,9 +8,10 @@ function init_tinymce(config)
             'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'
         ],
         height: 260,
+        branding: false,
         browser_spellcheck: true,
-        plugins : 'anchor advlist autolink link image lists charmap print preview fullscreen table imagetools textcolor colorpicker searchreplace code codesample autoresize',
-        toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | codesample',
+        plugins : 'anchor advlist autolink link image lists charmap print preview fullscreen table imagetools textcolor colorpicker searchreplace code codesample autoresize visualblocks',
+        toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | codesample visualblocks',
         table_default_attributes: {
             class: 'table table-bordered table-hover'
         },
@@ -20,6 +21,7 @@ function init_tinymce(config)
             {title: 'Hover, Striped', value: 'table table-bordered table-hover table-striped '},
             {title: 'Hover, Striped, without borders', value: 'table table-hover table-striped table-borderless'},
             {title: 'Hover, without borders', value: 'table table-hover table-borderless'},
+            {title: 'Outer Border Only', value: 'table table-outer-border'},
             {title: 'Clear', value: 'table table-borderless'}
         ],
         codesample_languages: [
@@ -27,11 +29,29 @@ function init_tinymce(config)
             {text: 'JavaScript', value: 'javascript'},
             {text: 'CSS', value: 'css'},
             {text: 'Python', value: 'python'},
-            {text: 'Bash', value: 'bash'},
+            {text: 'Bash', value: 'bash'}
         ]
     }
 
     update_object(default_config, config)
 
-    tinymce.init(default_config)
+    var editors = $(default_config.selector);
+    delete default_config.selector
+
+    editors.each(
+        function () {
+            var config = {}
+            update_object(config, default_config)
+            if($(this).data('compact'))
+            {
+                config.elementpath = false
+                config.statusbar = false
+                config.menubar = false
+                config.content_style = 'body{padding-bottom:0!important}'
+            }
+
+            config.target = this
+            tinymce.init(config)
+        }
+    )
 }

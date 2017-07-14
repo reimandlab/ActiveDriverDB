@@ -37,7 +37,8 @@ class Statistics:
         interactions, kinases_covered, groups_covered, proteins_covered = self.count_interactions()
 
         mutation_counts = {
-            model.name: self.count_mutations(model)
+            # dirty trick: 1KGenomes is not valid name in python
+            model.name.replace('1', 'T'): self.count_mutations(model)
             for model in Mutation.source_specific_data
         }
 
@@ -68,7 +69,7 @@ class Statistics:
             'genes': self.count(models.Gene),
             'kinases': self.count(models.Kinase),
             'kinase_groups': self.count(models.KinaseGroup),
-            'mutations': mutation_stats,
+            'muts': mutation_stats,
             'sites': self.count(models.Site),
             'pathways': self.count(models.Pathway),
             'cancer': self.count(models.Cancer),

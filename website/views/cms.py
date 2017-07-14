@@ -15,6 +15,9 @@ from flask_login import current_user
 from flask_login import login_user
 from flask_login import logout_user
 from flask_login import login_required
+from jinja2 import TemplateSyntaxError
+from flask import render_template_string
+
 from models import Page, HelpEntry, TextEntry
 from models import Menu
 from models import MenuEntry
@@ -119,8 +122,11 @@ def replace_allowed_object(match_obj):
 def substitute_variables(string):
     import re
     pattern = '\{\{ (.*?) \}\}'
-
-    return re.sub(pattern, replace_allowed_object, string)
+    try:
+        return render_template_string(string, **USER_ACCESSIBLE_VARIABLES)
+    except TemplateSyntaxError as e:
+        print(e)
+        return re.sub(pattern, replace_allowed_object, string)
 
 
 def link_to_page(page):
@@ -130,6 +136,10 @@ def link_to_page(page):
 
 def get_system_setting(name):
     return Setting.query.filter_by(name=name).first()
+
+
+def thousand_separated_number(x):
+    return '{:,}'.format(int(x))
 
 
 class ContentManagementSystem(FlaskView):

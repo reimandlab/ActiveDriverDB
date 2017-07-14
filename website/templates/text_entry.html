@@ -1,4 +1,4 @@
-{% macro text(id, btn_class='') %}
+{% macro text(id, btn_class='', compact_mode=False) %}
   <div class="text-entry inline-editable" data-id="{{ id }}">
     {% if current_user.is_admin %}
       <div>
@@ -14,7 +14,7 @@
       <div class="alert alert-warning feedback" role="alert"></div>
 
       <div class="edit-form">
-        <textarea class="form-control new-content inline-entry" placeholder="Text">{{ text_entry(id) | safe }}</textarea>
+        <textarea class="form-control new-content inline-entry" placeholder="Text" data-compact="{{ 'true' if compact_mode else 'false' }}">{{ text_entry(id) | safe }}</textarea>
         <div class="btn-group buttons" role="group">
           <button type="button" class="btn btn-default btn-primary save-btn">
             <span class="glyphicon glyphicon-ok"></span>
