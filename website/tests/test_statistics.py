@@ -51,13 +51,16 @@ class StatisticsTest(DatabaseTest):
 
         stats = self.exposed_stats()
 
-        for name, model in mutation_models.items():
-            assert stats['mutations'][name] == 1
+        def get_var_name(model_name):
+            return model_name.replace('1', 'T')
 
-        assert stats['mutations']['all'] == len(mutation_models)
+        for name, model in mutation_models.items():
+            assert stats['muts'][get_var_name(name)] == 1
+
+        assert stats['muts']['all'] == len(mutation_models)
 
         # confirmed are all without mimp
-        assert stats['mutations']['all_confirmed'] == len(mutation_models) - 1
+        assert stats['muts']['all_confirmed'] == len(mutation_models) - 1
 
     def test_from_many_sources(self):
 
