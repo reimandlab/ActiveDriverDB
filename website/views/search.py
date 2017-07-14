@@ -446,19 +446,6 @@ class SearchView(FlaskView):
 
         return jsonify(response)
 
-    def autocomplete_searchbar(self, limit=6):
-        """Autocompletion API for search for proteins (untemplated)."""
-        query = request.args.get('q') or ''
-
-        entries = search_proteins(query, limit)
-
-        response = [
-            gene.to_json()
-            for gene in entries
-        ]
-
-        return json.dumps({'entries': response})
-
     def anything(self):
         query = unquote(request.args.get('query')) or ''
         if ' ' in query:

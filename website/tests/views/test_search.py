@@ -54,7 +54,7 @@ class TestSearchView(ViewTest):
         mock_proteins_and_genes(15)
 
         response = self.client.get(
-            'search/autocomplete_searchbar?q=%s' % 'Gene',
+            'search/autocomplete_all?q=%s' % 'Gene',
             follow_redirects=True
         )
         assert response.status_code == 200

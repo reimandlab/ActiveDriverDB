@@ -44,11 +44,7 @@ footer
   top: 2px
 
 
-// when changing this, make sure that the longest gene name fits;
-// currently it is 'LOC400927-CSNK1E'; you can get this from db e.g. with:
-// r = db.session.execute(sqlalchemy.select([Gene.name])).fetchall()
-// max(r, key=lambda x: len(x[0]))[0]
-$search-box-width: 225px
+$search-box-width: 350px
 
 #navbar
   .search-box
@@ -78,13 +74,13 @@ $search-box-width: 225px
     color: lightblue
 
   .list-group-item
-    min-width: $search-box-width
 
     &:focus
       outline: none
 
   .bar-results
     position: absolute
+    right: 0
     z-index: 10
     display: none
     box-shadow: 0 2px 7px #eee

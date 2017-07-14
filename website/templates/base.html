@@ -150,6 +150,16 @@
   {% endassets %}
   {% endif %}
 <script type="text/javascript">
+
+  var mutation_template = decodeURIComponent('<a href="{{ url_for('MutationView:show', refseq='{{ refseq }}', position='{{ pos }}', alt='{{ alt }}') }}" class="list-group-item">{{ '{{ name }} {{ badges }}' }}</a>');
+
+  quick_search_bar = SearchBar()
+  quick_search_bar.init({
+      'box': document.getElementById('search-box'),
+      autocomplete_url: '{{ url_for('SearchView:autocomplete_all') }}',
+      template: advanced_searchbar_templator(mutation_template)
+  })
+
   document.getElementById('spinner').style.display='none'
 
   {% if current_user.is_admin %}

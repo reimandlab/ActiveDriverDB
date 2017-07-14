@@ -20,7 +20,7 @@ var SearchBar = function ()
     }
 
     var config = {
-        autocomplete_url: '/search/autocomplete_searchbar',
+        autocomplete_url: '/search/autocomplete_all',
         template: templateResult
     }
 
@@ -140,7 +140,65 @@ var SearchBar = function ()
     return publicSpace
 }
 
-quick_search_bar = SearchBar()
-quick_search_bar.init({
-    'box': document.getElementById('search-box')
-})
+
+function badge(name) {
+    return '<span class="badge">' + name + '</span>';
+}
+
+function advanced_searchbar_templator(mutation_template)
+{
+
+    function template_mutation(result, name)
+    {
+        var badges = '';
+
+        if(result.mutation.is_confirmed)
+            badges += badge('known mutation');
+
+        if(result.mutation.is_ptm)
+            badges += badge('PTM mutation');
+
+        if(result.protein.is_preferred)
+            badges += badge('preferred isoform');
+
+        return format(mutation_template, {
+            name: name,
+            refseq: result.protein.refseq,
+            pos: result.pos,
+            alt: result.alt,
+            badges: badges
+        });
+
+    }
+
+    return (
+        function (result, results)
+        {
+            var type = results.type
+
+            if(type === 'gene'){
+                var link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">'
+
+                if(result.isoforms_count > 1)
+                    link += '<span class="badge">' + result.isoforms_count + ' isoforms</span>'
+
+                link += result.name + '</a>'
+
+                return link
+            }
+            else if(type === 'aminoacid mutation'){
+                var name = result.mutation.name + ' (' + result.protein.refseq + ')';
+                return template_mutation(result, name)
+            }
+            else if(type === 'nucleotide mutation'){
+                var name = result.mutation.name + ' (' + result.protein.refseq + ')' + ', result of ' + result.input
+                return template_mutation(result, name)
+            }
+            else if(type === 'message')
+            {
+                return '<button class="list-group-item">' + result.name + '</button>'
+            }
+
+        }
+    )
+}
