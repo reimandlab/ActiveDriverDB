@@ -77,7 +77,7 @@
             field: 'description',
             align: 'center',
             valign: 'middle',
-            sortable: true,
+            sortable: true
           },
           {% block columns %}
           {
@@ -106,7 +106,7 @@
             sortable: true,
             valign: 'middle',
             align: 'center',
-            field: 'gene_count',
+            field: 'gene_count'
           },
           {
             title: 'Genes',
@@ -133,7 +133,10 @@
     })
     setTimeout(function ()
     {
+        table.bootstrapTable('resetSearch', {{ query | tojson }})
         $table.bootstrapTable('resetView')
+        $table.bootstrapTable('showLoading')
+
     }, 200)
   }
 
@@ -153,7 +156,7 @@
   function show_all_genes(btn)
   {
       var btn = $(btn)
-      btn.closest('.gene-list').find('.hidden').removeClass('hidden');
+      btn.closest('.gene-list').find('li').css('display', 'inline');
       btn.hide();
       event.stopPropagation()
       return false
@@ -183,7 +186,8 @@
     return nunjucks.render(
         'pathways_gene_list.njk',
         {
-            genes: value
+            genes: value,
+            more: true
         }
     )
   }
