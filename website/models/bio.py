@@ -166,6 +166,10 @@ class Gene(BioModel):
             if isoform.id != self.preferred_isoform_id
         ]
 
+    @property
+    def isoforms_count(self):
+        return len(self.isoforms)
+
     def __repr__(self):
         return '<Gene {0}, with {1} isoforms>'.format(
             self.name,
@@ -180,7 +184,7 @@ class Gene(BioModel):
                 if self.preferred_isoform
                 else None
             ),
-            'isoforms_count': len(self.isoforms)
+            'isoforms_count': self.isoforms_count
         }
 
 

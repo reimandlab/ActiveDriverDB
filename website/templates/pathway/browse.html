@@ -122,6 +122,9 @@
       {
         return 'Loading, please wait... <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>'
       },
+      onSearch: function () {
+          $table.bootstrapTable('showLoading')
+      },
       silentSort: false
     })
     $table.on('click-row.bs.table', function (e, row, $element)
@@ -133,9 +136,9 @@
     })
     setTimeout(function ()
     {
-        table.bootstrapTable('resetSearch', {{ query | tojson }})
         $table.bootstrapTable('resetView')
         $table.bootstrapTable('showLoading')
+        $table.bootstrapTable('resetSearch', {{ query | tojson }})
 
     }, 200)
   }

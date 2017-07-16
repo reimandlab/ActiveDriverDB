@@ -3,7 +3,7 @@ from io import BytesIO
 from view_testing import ViewTest
 
 from database import db
-from models import Gene
+from models import Gene, Pathway
 from models import Protein
 from models import UsersMutationsDataset
 from models import Site
@@ -168,25 +168,76 @@ class TestSearchView(ViewTest):
     def test_autocomplete(self):
         g = Gene(name='BR')
         p = Protein(refseq='NM_007', gene=g, sequence='XXXXXV')
+        g.preferred_isoform = p     # required for gene search to work - genes without preferred isoforms are ignored
         mut = Mutation(protein=p, position=6, alt='E')
         db.session.add_all([mut, p, g])
 
-        response = self.client.get(
-            '/search/autocomplete_all/?q=BR V6E'
-        )
-        assert response.json['type'] == 'aminoacid mutation'
+        def get_entry_and_check_type(response, type_name):
+            entries = response.json['entries']
+            print(response.json)
+            assert len(entries) == 1
+            assert entries[0]['type'] == type_name
+            return entries[0]
 
-        response = self.client.get(
-            '/search/autocomplete_all/?q=BR V6'
-        )
-        assert response.json['type'] == 'message'
-        assert 'Awaiting for <code>{alt}</code>' in response.json['entries'][0]['name']
+        def autocomplete(query):
+            return self.client.get(
+                '/search/autocomplete_all/?q=' + query
+            )
 
-        response = self.client.get(
-            '/search/autocomplete_all/?q=BR V'
-        )
-        assert response.json['type'] == 'message'
-        assert 'Awaiting for <code>{pos}{alt}</code>' in response.json['entries'][0]['name']
+        from database import bdb_refseq
+        bdb_refseq['BR V6E'] = ['NM_007']  # required for mutation search
+
+        response = autocomplete('BR V6E')
+        entry = get_entry_and_check_type(response, 'aminoacid mutation')
+
+        response = autocomplete('BR V6')
+        entry = get_entry_and_check_type(response, 'message')
+        assert 'Awaiting for <code>{alt}</code>' in entry['name']
+
+        response = autocomplete('BR V')
+        entry = get_entry_and_check_type(response, 'message')
+        assert 'Awaiting for <code>{pos}{alt}</code>' in entry['name']
+
+        response = autocomplete('B')
+        entry = get_entry_and_check_type(response, 'gene')
+        assert 'BR' == entry['name']
+
+        pathways = [
+            Pathway(description='Activation of RAS in B cells', reactome=1169092),
+            Pathway(description='abortive mitotic cell cycle', gene_ontology=33277),
+            Pathway(description='amacrine cell differentiation', gene_ontology=35881),
+            Pathway(description='amniotic stem cell differentiation', gene_ontology=97086)
+        ]
+
+        db.session.add_all(pathways)
+
+        response = autocomplete('Activation')
+        entry = get_entry_and_check_type(response, 'pathway')
+        assert entry['name'] == 'Activation of RAS in B cells'
+
+        # check if multiple pathways are returned
+        response = autocomplete('differentiation')
+        assert len(response.json['entries']) == 2
+
+        # check if both genes an pathways are returned simultaneously
+        # there should be: a pathway ('a>b<ortive...') and the >B<R gene
+        response = autocomplete('b')
+        entries = response.json['entries']
+        names = [entry['name'] for entry in entries]
+        assert all([name in names for name in ['BR', 'abortive mitotic cell cycle']])
+
+        # check if "search more pathways is displayed
+        response = autocomplete('cell')    # cell occurs in all four of added pathways;
+        # as a limit of pathways shown is 3, we should get a "show more" link
+        links = list(filter(lambda entry: entry['type'] == 'see_more', response.json['entries']))
+        assert len(links) == 1
+        assert links[0]['name'] == 'Show all pathways matching <i>cell</i>'
+
+        # test case insensitive text search
+        response = autocomplete('AMNIOTIC STEM')
+        pathways = list(filter(lambda entry: entry['type'] == 'pathway', response.json['entries']))
+        assert len(pathways) == 1
+        assert pathways[0]['name'] == 'amniotic stem cell differentiation'
 
     def test_save_search(self):
         test_query = 'chr18 19282310 T C'

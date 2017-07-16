@@ -16,12 +16,12 @@ from Levenshtein import distance
 from sqlalchemy.orm.exc import NoResultFound
 
 from helpers.bioinf import decode_raw_mutation
-from models import Protein
+from models import Protein, Pathway
 from models import Gene
 from models import Mutation
 from models import UsersMutationsDataset
 from models import UserUploadedMutation
-from sqlalchemy import and_
+from sqlalchemy import and_, exists
 from helpers.filters import FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
@@ -44,6 +44,7 @@ class GeneResult:
 
 def search_proteins(phase, limit=None, filter_manager=None):
     """Search for a protein isoform or gene.
+    Only genes which have a primary isoforms will be returned.
 
     Args:
         'limit': number of genes to be returned (for limit=10 there
@@ -85,6 +86,7 @@ def search_proteins(phase, limit=None, filter_manager=None):
         phase = 'NM_' + phase
     if phase.startswith('NM_') or phase.startswith('nm_'):
 
+        # TODO: tests for lowercase
         filters = [Protein.refseq.like(phase + '%')]
 
         if sql_filters:
@@ -454,111 +456,215 @@ class SearchView(FlaskView):
             return redirect(url_for('SearchView:proteins', proteins=query))
 
     def autocomplete_all(self):
-        import re
+        """
+        Supports:
+            Protein or gene:
+            {refseq_id}
+            {gene}
+
+            Mutation:
+            {gene} {ref}{pos}{alt}
+            {chr} {pos} {ref} {alt}
+
+            Pathway:
+            {pathway}
+            GO:{pathway_gene_ontology_id}
+            REAC:{pathway_reactome_id}
+        """
 
         query = unquote(request.args.get('q')) or ''
 
-        def message(msg):
-            return json.dumps({'type': 'message', 'entries': [{'name': msg}]})
-
         if ' ' in query:
-
-            data = query.upper().strip().split()
-
-            if len(data) == 1:
-
-                if query.startswith('CHR'):
-                    return message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
-                else:
-                    return message('Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
-
-            elif len(data) == 4:
-                chrom, pos, ref, alt = data
-                chrom = chrom[3:]
-
-                items = get_genomic_muts(chrom, pos, ref, alt)
-
-                value_type = 'nucleotide mutation'
-
-            elif len(data) == 3:
-                return message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
-
-            elif len(data) == 2:
-                gene, mut = data
-
-                if gene.startswith('CHR'):
-                    return message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
-
-                all_parts = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)(?P<alt>\D)', mut)
-                ref_and_pos = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)', mut)
-
-                if all_parts:
-                    mut_data = all_parts.groupdict()
-
-                if ref_and_pos:
-                    mut_data = ref_and_pos.groupdict()
-
-                if all_parts or ref_and_pos:
-                    ref = mut_data['ref']
-                    pos = int(mut_data['pos'])
-
-                    # validate if ref is correct
-                    try:
-                        gene_obj = Gene.query.filter_by(name=gene).one()
-                    except NoResultFound:
-                        return message('No isoforms for %s found' % gene)
-
-                    valid = False
-                    for isoform in gene_obj.isoforms:
-                        try:
-                            if isoform.sequence[pos - 1] == ref:
-                                valid = True
-                                break
-                        except IndexError:
-                            # not in range of this isoform, nothing scary.
-                            pass
-
-                    if not valid:
-                        return message(
-                            'Given reference residue <code>%s</code> does not match any of %s isoforms of %s gene at position <code>%s</code>'
-                            %
-                            (ref, len(gene_obj.isoforms), gene, pos)
-                        )
-
-                if ref_and_pos:
-                    # if ref is correct and ask user to specify alt
-                    return message('Awaiting for <code>{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
-
-                only_ref = re.fullmatch('(?P<ref>\D)', mut)
-                if only_ref:
-                    # prompt user to write more
-                    return message('Awaiting for <code>{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
-
-                items = get_protein_muts(gene, mut)
-
-                value_type = 'aminoacid mutation'
-            else:
-                items = []
-                value_type = 'incomplete mutation'
-
-            for item in items:
-                item['protein'] = item['protein'].to_json()
-                item['mutation'] = item['mutation'].to_json()
-                item['input'] = query
-
-            response = {
-                'type': value_type,
-                'entries': items
-            }
+            items = autocomplete_mutation(query)
         else:
+            items = autocomplete_gene(query)
 
-            entries = search_proteins(query, 6)
+        pathways = suggest_matching_pathways(query)
 
-            response = {
-                'type': 'gene',
-                'entries': [
-                    gene.to_json()
-                    for gene in entries
-                ]
+        items.extend(pathways)
+
+        return json.dumps({'entries': items})
+
+
+def suggest_matching_pathways(query, count=2):
+    go = reactome = None
+
+    if query.startswith('GO:'):
+        go = query[3:]
+        pathway_filter = Pathway.gene_ontology.like(go + '%')
+    elif query.startswith('REAC:'):
+        reactome = query[5:]
+        pathway_filter = Pathway.reactome.like(reactome + '%')
+    else:
+        pathway_filter = Pathway.description.like('%' + query + '%')
+
+    pathways = Pathway.query.filter(pathway_filter).limit(count + 1).all()
+
+    # show {count} of pathways; if we got {count} + 1 results suggest searching for all
+
+    def display_name(pathway):
+        name = pathway.description
+        if go:
+            name += ' (GO:' + pathway.gene_ontology + ')'
+        if reactome:
+            name += ' (REAC:' + pathway.reactome + ')'
+
+        return name
+
+    items = [
+        {
+            'name': display_name(pathway),
+            'type': 'pathway',
+            'url': url_for('PathwaysView:show', gene_ontology_id=pathway.gene_ontology, reactome_id=pathway.reactome)
+        }
+        for pathway in pathways[:count]
+    ]
+    if len(pathways) > count:
+        items.append(
+            {
+                'name': 'Show all pathways matching <i>%s</i>' % query,
+                'type': 'see_more',
+                'url': url_for('PathwaysView:all', query=query)
             }
-        return json.dumps(response)
+        )
+    return items
+
+
+def gene_exists(name):
+    return db.session.query(exists().where(Gene.name == name)).scalar()
+
+
+def json_message(msg):
+    return [{'name': msg, 'type': 'message'}]
+
+
+def autocomplete_gene(query):
+    entries = search_proteins(query, 6)
+    items = [
+        gene.to_json()
+        for gene in entries
+    ]
+    for item in items:
+        item['type'] = 'gene'
+
+    return items
+
+
+def autocomplete_mutation(query):
+    import re
+    # TODO: rewriting this into regexp-based set of function may increase readability
+
+    data = query.upper().strip().split()
+
+    if len(data) == 1:
+
+        if query.startswith('CHR'):
+            return json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
+        else:
+            gene = data[0].strip()
+
+            if not gene_exists(gene):
+                return json_message('Gene %s not found in the database' % gene)
+
+            return json_message('Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+
+    elif len(data) == 4:
+        if not query.startswith('CHR'):
+            return []
+
+        chrom, pos, ref, alt = data
+        chrom = chrom[3:]
+
+        try:
+            items = get_genomic_muts(chrom, pos, ref, alt)
+        except ValueError:
+            return json_message(
+                'Did you mean to search for mutation with <code>{chrom} {pos} {ref} {alt}</code> format?'
+                ' The <code>{pos}</code> should be an integer.'
+            )
+
+        value_type = 'nucleotide mutation'
+
+    elif len(data) == 3:
+        if not query.startswith('CHR'):
+            return []
+
+        return json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
+
+    elif len(data) == 2:
+        gene, mut = data
+
+        if gene.startswith('CHR'):
+            return json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
+
+        try:
+            gene_obj = Gene.query.filter_by(name=gene).one()
+        except NoResultFound:
+            return json_message('No isoforms for %s found' % gene)
+
+        all_parts = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)(?P<alt>\D)', mut)
+        ref_and_pos = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)', mut)
+
+        if all_parts:
+            mut_data = all_parts.groupdict()
+
+        if ref_and_pos:
+            mut_data = ref_and_pos.groupdict()
+
+        if all_parts or ref_and_pos:
+            ref = mut_data['ref']
+            try:
+                pos = int(mut_data['pos'])
+            except ValueError:
+                return json_message(
+                    'Did you mean to search for mutation with <code>{gene} {ref}{pos}{alt}</code> format?'
+                    ' The <code>{pos}</code> should be an integer.'
+                )
+
+            # validate if ref is correct
+            valid = False
+            for isoform in gene_obj.isoforms:
+                try:
+                    if isoform.sequence[pos - 1] == ref:
+                        valid = True
+                        break
+                except IndexError:
+                    # not in range of this isoform, nothing scary.
+                    pass
+
+            if not valid:
+                return json_message(
+                    'Given reference residue <code>%s</code> does not match any of %s isoforms of %s gene at position <code>%s</code>'
+                    %
+                    (ref, len(gene_obj.isoforms), gene, pos)
+                )
+
+        if ref_and_pos:
+            # if ref is correct and ask user to specify alt
+            return json_message('Awaiting for <code>{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+
+        only_ref = re.fullmatch('(?P<ref>\D)', mut)
+        if only_ref:
+            # prompt user to write more
+            return json_message('Awaiting for <code>{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+
+        try:
+            items = get_protein_muts(gene, mut)
+        except ValueError:
+            return json_message(
+                'Did you mean to search for mutation with <code>{gene} {ref}{pos}{alt}</code> format?'
+                ' The <code>{pos}</code> should be an integer.'
+            )
+
+        value_type = 'aminoacid mutation'
+    else:
+        items = []
+        value_type = 'incomplete mutation'
+
+    for item in items:
+        item['protein'] = item['protein'].to_json()
+        item['mutation'] = item['mutation'].to_json()
+        item['input'] = query
+        item['type'] = value_type
+
+    return items

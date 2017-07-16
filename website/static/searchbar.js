@@ -1,3 +1,5 @@
+var more_icon = '<span class="glyphicon glyphicon-chevron-right more"></span>';
+
 var SearchBar = function ()
 {
     var input
@@ -5,7 +7,7 @@ var SearchBar = function ()
     var current_query
     var indicator
 
-    var get_more = '<button class="list-group-item">Get more results <span class="glyphicon glyphicon-chevron-right"></span></button>'
+    var get_more = '<button class="list-group-item">Get more results ' + more_icon + '</button>'
 
     function templateResult(result)
     {
@@ -44,7 +46,7 @@ var SearchBar = function ()
             var length = Math.min(results.entries.length, 5)
             for(var i = 0; i < length; i++)
             {
-                html += config.template(results.entries[i], results)
+                html += config.template(results.entries[i])
             }
             if(results.entries.length > 5)
                 html += get_more
@@ -172,15 +174,15 @@ function advanced_searchbar_templator(mutation_template)
     }
 
     return (
-        function (result, results)
+        function (result)
         {
-            var type = results.type
+            var type = result.type
 
             if(type === 'gene'){
                 var link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">'
 
                 if(result.isoforms_count > 1)
-                    link += '<span class="badge">' + result.isoforms_count + ' isoforms</span>'
+                    link += badge(result.isoforms_count + ' isoforms')
 
                 link += result.name + '</a>'
 
@@ -198,7 +200,18 @@ function advanced_searchbar_templator(mutation_template)
             {
                 return '<button class="list-group-item">' + result.name + '</button>'
             }
-
+            else if(type === 'pathway')
+            {
+                var link = '<a href="' + result.url + '" class="list-group-item">' + badge('pathway')
+                link += result.name + '</a>'
+                return link
+            }
+            else if(type === 'see_more')
+            {
+                var link = '<a href="' + result.url + '" class="list-group-item">'
+                link += result.name + more_icon + '</a>'
+                return link
+            }
         }
     )
 }

@@ -1,0 +1,34 @@
+{% extends "pathway/index.html" %}
+{% from "text_entry.html" import text with context %}
+
+{% block title %} {{ pathway.description }} - {{ super() }} {% endblock %}
+
+
+{% block breadcrumb %}
+  {{ super() }}
+  <li class="active">
+  {% if pathway.gene_ontology %}
+    GO: {{ pathway.gene_ontology  }}
+  {% endif %}
+  {% if pathway.reactome %}
+    REAC: {{ pathway.reactome }}
+  {% endif %}
+{% endblock %}
+
+
+{% block content %}
+
+  <h3>{{ pathway.description }}</h3>
+
+  <div>
+    {{ text('pathway-generic') }}
+  </div>
+
+  <h4>Genes involved in this pathway:</h4>
+  <div>
+    {% with genes=pathway.genes, more=False %}
+      {% include "pathways_gene_list.njk" %}
+    {% endwith %}
+  </div>
+
+{% endblock %}

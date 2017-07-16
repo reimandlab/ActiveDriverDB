@@ -1,4 +1,4 @@
-from flask import render_template as template
+from flask import render_template as template, request
 from flask import abort
 from flask_classful import FlaskView
 from flask_classful import route
@@ -21,8 +21,8 @@ def search_filter(query):
 
 class PathwaysView(FlaskView):
 
-    @route('/pathway/go/<int:gene_ontology_id>/')
-    @route('/pathway/reac/<int:reactome_id>/')
+    @route('/gene_ontology/<int:gene_ontology_id>/', endpoint='PathwaysView:show')
+    @route('/reactome/<int:reactome_id>/', endpoint='PathwaysView:show')
     def show(self, gene_ontology_id=None, reactome_id=None):
 
         if gene_ontology_id:
@@ -40,13 +40,16 @@ class PathwaysView(FlaskView):
         return template('pathway/index.html', lists=lists)
 
     def all(self):
+        query = request.args.get('query', '')
         return template(
             'pathway/all.html',
             endpoint='all_data',
-            endpoint_kwargs={}
+            endpoint_kwargs={},
+            query=query
         )
 
     def with_significant_genes(self, significant_gene_list_name):
+        query = request.args.get('query', '')
         gene_list = GeneList.query.filter_by(name=significant_gene_list_name).first_or_404()
         dataset = Mutation.get_source_model(gene_list.mutation_source_name)
         return template(
@@ -54,7 +57,8 @@ class PathwaysView(FlaskView):
             gene_list=gene_list,
             dataset=dataset,
             endpoint='significant_data',
-            endpoint_kwargs={'gene_list_id': gene_list.id}
+            endpoint_kwargs={'gene_list_id': gene_list.id},
+            query=query
         )
 
     all_data = route('all_data')(

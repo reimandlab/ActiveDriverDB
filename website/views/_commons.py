@@ -53,7 +53,7 @@ def iterate_affected_isoforms(gene_name, ref, pos, alt):
         gene_name => all_isoforms
     is not enough to satisfy all conditions.
 
-    So what do we have here is (rougly) an equivalent to:
+    So what do we have here is (roughly) an equivalent to:
 
         from models import Gene
 
