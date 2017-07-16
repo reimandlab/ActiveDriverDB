@@ -21,7 +21,7 @@ from models import Gene
 from models import Mutation
 from models import UsersMutationsDataset
 from models import UserUploadedMutation
-from sqlalchemy import and_, exists
+from sqlalchemy import and_, exists, func
 from helpers.filters import FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
@@ -492,13 +492,23 @@ def suggest_matching_pathways(query, count=2):
     if query.startswith('GO:'):
         go = query[3:]
         pathway_filter = Pathway.gene_ontology.like(go + '%')
+        column = Pathway.gene_ontology
     elif query.startswith('REAC:'):
         reactome = query[5:]
         pathway_filter = Pathway.reactome.like(reactome + '%')
+        column = Pathway.reactome
     else:
         pathway_filter = Pathway.description.like('%' + query + '%')
+        column = Pathway.description
 
-    pathways = Pathway.query.filter(pathway_filter).limit(count + 1).all()
+    pathways = Pathway.query.filter(pathway_filter)
+
+    if current_app.config['SQL_LEVENSTHEIN']:
+        pathways = pathways.order_by(
+            func.levenshtein_ratio(func.lower(column), query.lower())
+        )
+
+    pathways = pathways.limit(count + 1).all()
 
     # show {count} of pathways; if we got {count} + 1 results suggest searching for all
 

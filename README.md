@@ -36,7 +36,24 @@ rm -rf flask-sqlalchemy
 
 #### Database creation & configuration
 
-For full deployment two MySQL databases will be needed: one for biological data and one for CMS. You need to create them on your own, along with relevant database users and privileges. Afterwards, you can start writing your configuration by copying the exemplar configuration file:
+For full deployment two MySQL databases will be needed: one for biological data and one for CMS.
+
+You need to create them, along with relevant database users and privileges. This can be achieved with query like:
+
+```sql
+CREATE DATABASE db_bio;
+CREATE DATABASE db_cms;
+CREATE USER 'user'@'localhost' IDENTIFIED BY 'pass';
+GRANT ALL PRIVILEGES ON db_bio.* TO 'user'@'localhost';
+GRANT ALL PRIVILEGES ON db_cms.* TO 'user'@'localhost';
+GRANT INSERT, DELETE, DROP ROUTINE, CREATE ROUTINE, ALTER ROUTINE, EXECUTE ON mysql.* TO 'user'@'localhost';
+```
+Remember to set secure password; user, database and host names are adjustable too.
+You may wish to create two separate users for each of databases, this case is supported too.
+Privileges on mysql database are required to allow to create functions.
+
+
+Afterwards, you can start writing your configuration by copying the exemplar configuration file:
 ```bash
 cp example_config.py config.py
 ```

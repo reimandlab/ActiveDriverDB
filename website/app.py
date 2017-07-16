@@ -2,7 +2,7 @@ import os
 from flask import Flask
 from flask_assets import Environment
 from flask_login import LoginManager
-from database import db
+from database import db, get_engine
 from database import bdb
 from database import bdb_refseq
 from assets import bundles
@@ -62,6 +62,13 @@ def create_app(config_filename='config.py', config_override={}):
 
     bdb.open(app.config['BDB_DNA_TO_PROTEIN_PATH'])
     bdb_refseq.open(app.config['BDB_GENE_TO_ISOFORM_PATH'])
+
+    if app.config['USE_LEVENSTHEIN_MYSQL_UDF']:
+        with app.app_context():
+            for bind_key in ['bio', 'cms']:
+                engine = get_engine(bind_key)
+                engine.execute("DROP FUNCTION IF EXISTS levenshtein_ratio")
+                engine.execute("CREATE FUNCTION levenshtein_ratio RETURNS INTEGER SONAME 'levenshtein.so'")
 
     #
     # Configure Login Manager

@@ -36,3 +36,8 @@ BDB_GENE_TO_ISOFORM_PATH = 'databases/berkley_hash_refseq.db'
 LOAD_STATS = True
 CONTACT_LIST = ['some_maintainer@domain.org', 'other_maintainer@domain.org']
 USE_CONTENT_DELIVERY_NETWORK = True
+
+# Requires PostgresSQL or Levenshtein-MySQL-UDF
+SQL_LEVENSTHEIN = False
+# Note: Levenshtein-MySQL-UDF must be installed in plugin_dir to use it
+USE_LEVENSTHEIN_MYSQL_UDF = False
