@@ -47,6 +47,8 @@ class PathwaysView(FlaskView):
             endpoint_kwargs={},
             query=query
         )
+    #TODO: set eagerload of pathway.genes
+    # TODO find other places where such strattegy could speed up
 
     def with_significant_genes(self, significant_gene_list_name):
         query = request.args.get('query', '')

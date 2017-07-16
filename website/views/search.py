@@ -15,19 +15,18 @@ from flask_login import current_user
 from Levenshtein import distance
 from sqlalchemy.orm.exc import NoResultFound
 
-from helpers.bioinf import decode_raw_mutation
 from models import Protein, Pathway
 from models import Gene
 from models import Mutation
 from models import UsersMutationsDataset
 from models import UserUploadedMutation
-from sqlalchemy import and_, exists, func
+from sqlalchemy import and_, exists
 from helpers.filters import FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 from ._commons import get_genomic_muts
 from ._commons import get_protein_muts
-from database import db
+from database import db, levenshtein_sorted
 
 
 class GeneResult:
@@ -422,32 +421,6 @@ class SearchView(FlaskView):
             widgets=make_widgets(filter_manager)
         )
 
-    def autocomplete_proteins(self, limit=20):
-        """Autocompletion API for search for proteins."""
-
-        filter_manager = SearchViewFilters()
-        # TODO: implement on client side requests with limit higher limits
-        # and return the information about available results (.count()?)
-        query = request.args.get('q') or ''
-
-        entries = search_proteins(query, limit, filter_manager)
-        # page = request.args.get('page', 0)
-        # Pagination(Pathway.query)
-        # just pass pagination html too?
-
-        response = {
-            'query': query,
-            'results': [
-                {
-                    'value': gene.name,
-                    'html': template('search/results/gene.html', gene=gene)
-                }
-                for gene in entries
-            ]
-        }
-
-        return jsonify(response)
-
     def anything(self):
         query = unquote(request.args.get('query')) or ''
         if ' ' in query:
@@ -502,11 +475,7 @@ def suggest_matching_pathways(query, count=2):
         column = Pathway.description
 
     pathways = Pathway.query.filter(pathway_filter)
-
-    if current_app.config['SQL_LEVENSTHEIN']:
-        pathways = pathways.order_by(
-            func.levenshtein_ratio(func.lower(column), query.lower())
-        )
+    pathways = levenshtein_sorted(pathways, column, query)
 
     pathways = pathways.limit(count + 1).all()
 

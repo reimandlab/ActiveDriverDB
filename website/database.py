@@ -137,6 +137,15 @@ def decode_csv(encoded_data):
     ))
 
 
+def levenshtein_sorted(sql_query, column, query):
+    from flask import current_app
+    if current_app.config['SQL_LEVENSTHEIN']:
+        sql_query = sql_query.order_by(
+            func.levenshtein_ratio(func.lower(column), query.lower())
+        )
+    return sql_query
+
+
 def encode_csv(strand, ref, alt, pos, exon, protein_id, is_ptm):
     """Encode a Coding Sequence Variants into a single, short string.
 
