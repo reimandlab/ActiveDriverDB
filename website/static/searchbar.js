@@ -202,7 +202,11 @@ function advanced_searchbar_templator(mutation_template)
             }
             else if(type === 'pathway')
             {
-                var link = '<a href="' + result.url + '" class="list-group-item">' + badge('pathway')
+                var link = '<a href="' + result.url + '" class="list-group-item">'
+                if(result.gene_ontology)
+                    link += badge('Gene Ontology pathway')
+                if(result.reactome)
+                    link += badge('Reactome pathway')
                 link += result.name + '</a>'
                 return link
             }

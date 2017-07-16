@@ -494,6 +494,8 @@ def suggest_matching_pathways(query, count=2):
         {
             'name': display_name(pathway),
             'type': 'pathway',
+            'gene_ontology': pathway.gene_ontology,
+            'reactome': pathway.reactome,
             'url': url_for('PathwaysView:show', gene_ontology_id=pathway.gene_ontology, reactome_id=pathway.reactome)
         }
         for pathway in pathways[:count]
