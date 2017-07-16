@@ -18,88 +18,57 @@ def json_results_mapper(result):
     return result.to_json()
 
 
+class ModelCounter:
+
+    def __init__(self, model):
+        self.query = model.query
+
+    def count(self):
+        return fast_count(self.query)
+
+    def filter(self, *args, **kwargs):
+        self.query = self.query.filter(*args, **kwargs)
+        return self
+
+
 class AjaxTableView:
 
     @staticmethod
-    def from_model(
-        model, results_mapper=json_results_mapper,
-        search_filter=None, preset_filter=None, **kwargs
-    ):
+    def from_model(model, **kwargs):
 
-        args = {
-            'sort': 'id',
-            'search': None,
-            'order': 'asc',
-            'offset': 0,
-            'limit': 25
-        }
+        def prepare_for_sorting(query, sorted_field_name):
+            print(sorted_field_name)
+            sorted_field = getattr(model, sorted_field_name)
 
-        args.update(kwargs)
-
-        def ajax_table_view(self):
-
-            for key, value in args.items():
-                args[key] = request.args.get(key, value)
-
-            ordering_function = ordering_functions.get(
-                args['order'],
-                lambda x: x
-            )
-
-            query = model.query
-
-            if args['sort']:
-                sorted_field = getattr(model, args['sort'])
-
-                if type(sorted_field) is AssociationProxy:
-                    remote_model = (
-                        sorted_field.remote_attr.property.
-                        parent.class_
-                    )
-                    query = query.join(remote_model, sorted_field.local_attr)
-                    sorted_field = sorted_field.remote_attr
-
-                query = query.order_by(
-                    ordering_function(sorted_field)
+            if type(sorted_field) is AssociationProxy:
+                remote_model = (
+                    sorted_field.remote_attr.property.
+                    parent.class_
                 )
+                query = query.join(remote_model, sorted_field.local_attr)
+                sorted_field = sorted_field.remote_attr
 
-            filters = []
+            return query, sorted_field
 
-            if preset_filter:
-                filters.append(preset_filter)
-
-            if args['search'] and search_filter:
-                filters.append(search_filter(args['search']))
-
-            if filters:
-                filters_conjunction = and_(*filters)
-                query = query.filter(filters_conjunction)
-
-            count = fast_count(query)
-            query = query.limit(args['limit']).offset(args['offset'])
-
-            rows = [
-                results_mapper(element)
-                for element in query
-            ]
-
-            return jsonify({
-                'total': count,
-                'rows': rows
-            })
-
-        return ajax_table_view
+        return AjaxTableView.from_query(
+            query=model.query,
+            prepare_for_sorting=prepare_for_sorting,
+            count_query=ModelCounter(model),
+            **kwargs
+        )
 
     @staticmethod
     def from_query(
         query=None, count_query=None,
         results_mapper=json_results_mapper, filters_class=None,
         search_filter=None, preset_filter=None,
-        query_constructor=None, **kwargs
+        query_constructor=None, default_search_sort=None,
+        prepare_for_sorting=None,
+        **kwargs
     ):
 
         args = {
-            'sort': 'id',
+            'sort': None,
             'search': None,
             'order': 'asc',
             'offset': 0,
@@ -148,10 +117,19 @@ class AjaxTableView:
                 if filters_class:
                     filters += sql_filters
 
-            if args['sort']:
+            sorted_by_search = False
 
+            sort_key = args['sort']
+
+            if args['sort'] and prepare_for_sorting:
+                query, sort_key = prepare_for_sorting(query, args['sort'])
+
+            if args['search'] and default_search_sort:
+                query, sorted_by_search = default_search_sort(query, args['search'], sort_key)
+
+            if not sorted_by_search and sort_key:
                 query = query.order_by(
-                    ordering_function(args['sort'])
+                    ordering_function(sort_key)
                 )
 
             if not predefined_count_query:

@@ -18,8 +18,8 @@
       <td>{{ gene.isoforms_count }}</td>
       <td>
         {% if gene.preferred_isoform %}
-          <a href="/protein/show/{{ gene.preferred_isoform }}">
-            {{ gene.preferred_isoform }}
+          <a href="/protein/show/{{ gene.preferred_isoform.refseq }}">
+            {{ gene.preferred_isoform.refseq }}
           </a>
         {% endif %}
       </td>

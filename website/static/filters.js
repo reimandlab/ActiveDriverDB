@@ -157,7 +157,7 @@ var AsyncFiltersHandler = function()
     {
         var $a = $(element);
 
-        var pattern = decodeURIComponent($a.data('url-pattern')).replace(/\+/g, ' ');
+        var pattern = decode_url_pattern($a.data('url-pattern'));
         var new_href = format(pattern, {filters: filters_string});
 
         // clean up the url from unused parameters

@@ -127,12 +127,13 @@
       },
       silentSort: false
     })
+
     $table.on('click-row.bs.table', function (e, row, $element)
     {
       $table.bootstrapTable(
         'expandRow',
         $element.data('index')
-      )
+      );
     })
     setTimeout(function ()
     {
@@ -143,14 +144,32 @@
     }, 200)
   }
 
-  function detailFormatter(index, row)
+  var reactome_url = decode_url_pattern('{{ url_for('PathwaysView:details', reactome_id="{{ reactome }}") }}');
+  var gene_ontology_url = decode_url_pattern('{{ url_for('PathwaysView:details', gene_ontology_id="{{ gene_ontology }}") }}');
+
+  function detailFormatter(index, row, $element)
   {
-      return nunjucks.render(
-          'pathway_details.njk',
-          {
-              pathway: row
-          }
-      )
+
+      $element.html('Loading...');
+
+      var url;
+      if(row.reactome)
+          url = format(reactome_url, row);
+      else
+          url = format(gene_ontology_url, row);
+
+      $.get(url, function (details) {
+          p(details)
+          $element.html(
+              nunjucks.render(
+                  'pathway_details.njk',
+                  {
+                      pathway: details
+                  }
+              )
+          )
+      });
+
   }
 
   /*

@@ -17,6 +17,8 @@ class DatabaseTest(TestCase):
 
     BDB_DNA_TO_PROTEIN_PATH = '.test_databases/dtp.db'
     BDB_GENE_TO_ISOFORM_PATH = '.test_databases/gti.db'
+    SQL_LEVENSTHEIN = False
+    USE_LEVENSTHEIN_MYSQL_UDF = False
 
     @property
     def config(self):

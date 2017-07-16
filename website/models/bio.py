@@ -1,17 +1,19 @@
 from collections import OrderedDict
 from collections import UserList
+
 from sqlalchemy import and_
-from sqlalchemy import or_
-from sqlalchemy import func
 from sqlalchemy import case
-from sqlalchemy.sql import exists
-from sqlalchemy.sql import select
+from sqlalchemy import func
+from sqlalchemy import or_
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.sql import exists
+from sqlalchemy.sql import select
 from werkzeug.utils import cached_property
-from database import db
+
+from database import db, count_expression
 from database import fast_count
 from exceptions import ValidationError
 from models import Model
@@ -157,6 +159,7 @@ class Gene(BioModel):
         foreign_keys=preferred_isoform_id,
         post_update=True
     )
+    preferred_refseq = association_proxy('preferred_isoform', 'refseq')
 
     @cached_property
     def alternative_isoforms(self):
@@ -166,9 +169,13 @@ class Gene(BioModel):
             if isoform.id != self.preferred_isoform_id
         ]
 
-    @property
+    @hybrid_property
     def isoforms_count(self):
         return len(self.isoforms)
+
+    @isoforms_count.expression
+    def isoforms_count(cls):
+        return count_expression(cls, Protein)
 
     def __repr__(self):
         return '<Gene {0}, with {1} isoforms>'.format(
@@ -180,7 +187,7 @@ class Gene(BioModel):
         return {
             'name': self.name,
             'preferred_isoform': (
-                self.preferred_isoform.refseq
+                self.preferred_refseq
                 if self.preferred_isoform
                 else None
             ),
@@ -208,17 +215,7 @@ class Pathway(BioModel):
 
     @gene_count.expression
     def gene_count(cls):
-
-        from sqlalchemy.orm import aliased
-
-        pathway_aliased = aliased(Pathway)
-
-        return (
-            db.session.query(Gene).
-            join(pathway_aliased, Gene.pathways).
-            filter(pathway_aliased.id == cls.id).
-            statement.with_only_columns([func.count()]).order_by(None)
-        )
+        return count_expression(cls, Gene, Gene.pathways)
 
     def to_json(self):
         return {
@@ -228,8 +225,18 @@ class Pathway(BioModel):
             'gene_ontology': self.gene_ontology,
             'gene_count': self.gene_count,
             'genes': [
-                gene.to_json()
-                for gene in self.genes
+                {
+                    'name': gene,
+                    'preferred_isoform': {'refseq': refseq} if refseq else None
+                }
+                for gene, refseq in (
+                    db.session.query(Gene.name, Protein.refseq)
+                        .select_from(Pathway)
+                        .filter(Pathway.id == self.id)
+                        .join(Pathway.association_table)
+                        .join(Gene)
+                        .outerjoin(Protein, Gene.preferred_isoform_id == Protein.id)
+                )
             ]
         }
 

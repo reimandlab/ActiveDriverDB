@@ -2,8 +2,8 @@
   {% set cnt = 10 %}
   {% for gene in genes %}
     <li>
-      {% if gene.isoforms_count %}
-        <a href="/gene/show/{{ gene.name }}">{{ gene.name }}</a>
+      {% if gene.preferred_isoform %}
+        <a href="/protein/show/{{ gene.preferred_isoform.refseq }}">{{ gene.name }}</a>
       {% else %}
         {{ gene.name }}
       {% endif %}

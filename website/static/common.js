@@ -166,3 +166,9 @@ function set_csrf_token(token)
         jqXHR.setRequestHeader('X-Csrftoken', token);
     })
 }
+
+
+function decode_url_pattern(flask_url_pattern)
+{
+    return decodeURIComponent(flask_url_pattern).replace(/\+/g, ' ');
+}

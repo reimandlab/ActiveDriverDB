@@ -1,6 +1,7 @@
 from warnings import warn
 
 from sqlalchemy import func, MetaData
+from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.sql.expression import func
@@ -247,3 +248,16 @@ def bulk_raw_insert(table, keys, data, bind=None):
             ]
         )
         db.session.flush()
+
+
+def count_expression(parent_model, child_model, join_column=None):
+    parent_aliased = aliased(parent_model)
+
+    query = db.session.query(child_model)
+    if join_column:
+        query = query.join(parent_aliased, join_column)
+    return (
+        query.
+            filter(parent_aliased.id == parent_model.id).
+            statement.with_only_columns([func.count()]).order_by(None)
+    )

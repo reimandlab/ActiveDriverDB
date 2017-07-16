@@ -1,10 +1,10 @@
-from flask import render_template as template, request
+from flask import render_template as template, request, jsonify
 from flask import abort
 from flask_classful import FlaskView
 from flask_classful import route
 
-from database import db
-from models import Pathway, GeneList, GeneListEntry, Mutation
+from database import db, levenshtein_sorted
+from models import Pathway, GeneList, GeneListEntry, Mutation, Protein, Gene
 from sqlalchemy import or_, func, and_, text
 from helpers.views import AjaxTableView
 
@@ -19,21 +19,58 @@ def search_filter(query):
         return Pathway.description.like('%' + query + '%')
 
 
+def search_sort(query, q, sort_column):
+    if sort_column is None or sort_column in ['Pathway.description', 'description', Pathway.description]:
+        return levenshtein_sorted(query, Pathway.description, q), True
+    return query, False
+
+
+def get_pathway(gene_ontology_id, reactome_id):
+    if gene_ontology_id:
+        filter_by = {'gene_ontology': gene_ontology_id}
+    elif reactome_id:
+        filter_by = {'reactome': reactome_id}
+    else:
+        raise abort(404)
+    return Pathway.query.filter_by(**filter_by).one()
+
+
 class PathwaysView(FlaskView):
 
     @route('/gene_ontology/<int:gene_ontology_id>/', endpoint='PathwaysView:show')
     @route('/reactome/<int:reactome_id>/', endpoint='PathwaysView:show')
     def show(self, gene_ontology_id=None, reactome_id=None):
 
-        if gene_ontology_id:
-            filter_by = {'gene_ontology': gene_ontology_id}
-        elif reactome_id:
-            filter_by = {'reactome': reactome_id}
-        else:
-            raise abort(404)
-        pathway = Pathway.query.filter_by(**filter_by).one()
+        pathway = get_pathway(gene_ontology_id, reactome_id)
 
         return template('pathway/show.html', pathway=pathway)
+
+    def details(self):
+        gene_ontology_id = request.args.get('gene_ontology_id', None)
+        reactome_id = request.args.get('reactome_id', None)
+        pathway = get_pathway(gene_ontology_id, reactome_id)
+        data = pathway.to_json()
+
+        query = (
+            db.session.query(Gene.name, func.count(Protein.refseq))
+                .select_from(Pathway)
+                .filter(Pathway.id == pathway.id)
+                .join(Pathway.association_table)
+                .join(Gene)
+                .outerjoin(Protein, Gene.id == Protein.gene_id)
+                .group_by(Gene)
+        )
+
+        isoforms_counts = {
+            gene: isoforms_count
+            for gene, isoforms_count in query
+        }
+
+        for i, gene in enumerate(data['genes']):
+            name = gene['name']
+            data['genes'][i]['isoforms_count'] = isoforms_counts.get(name, 0)
+
+        return jsonify(data)
 
     def index(self):
         lists = GeneList.query.all()
@@ -47,8 +84,6 @@ class PathwaysView(FlaskView):
             endpoint_kwargs={},
             query=query
         )
-    #TODO: set eagerload of pathway.genes
-    # TODO find other places where such strattegy could speed up
 
     def with_significant_genes(self, significant_gene_list_name):
         query = request.args.get('query', '')
@@ -67,6 +102,7 @@ class PathwaysView(FlaskView):
         AjaxTableView.from_model(
             Pathway,
             search_filter=search_filter,
+            default_search_sort=search_sort,
             sort='description'
         )
     )
@@ -113,7 +149,8 @@ class PathwaysView(FlaskView):
         ajax_view = AjaxTableView.from_query(
             query_constructor=query_constructor,
             results_mapper=mapper,
-            search_filter=lambda q: Pathway.description.like(q + '%')
+            search_filter=lambda q: Pathway.description.like(q + '%'),
+            default_search_sort=search_sort
         )
         """
         filters_class=GeneViewFilters,
