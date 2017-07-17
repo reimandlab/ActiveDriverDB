@@ -33,25 +33,28 @@ function init_tinymce(config)
         ]
     }
 
-    update_object(default_config, config)
+    $(document).ready(function(){
 
-    var editors = $(default_config.selector);
-    delete default_config.selector
+        update_object(default_config, config)
 
-    editors.each(
-        function () {
-            var config = {}
-            update_object(config, default_config)
-            if($(this).data('compact'))
-            {
-                config.elementpath = false
-                config.statusbar = false
-                config.menubar = false
-                config.content_style = 'body{padding-bottom:0!important}'
+        var editors = $(default_config.selector);
+        delete default_config.selector
+
+        editors.each(
+            function () {
+                var config = {}
+                update_object(config, default_config)
+                if($(this).data('compact'))
+                {
+                    config.elementpath = false
+                    config.statusbar = false
+                    config.menubar = false
+                    config.content_style = 'body{padding-bottom:0!important}'
+                }
+
+                config.target = this
+                tinymce.init(config)
             }
-
-            config.target = this
-            tinymce.init(config)
-        }
-    )
+        )
+    })
 }
