@@ -1,5 +1,5 @@
 from view_testing import ViewTest
-from models import Protein, GeneList, TCGAMutation
+from models import Protein, GeneList, TCGAMutation, Mutation, MC3Mutation
 from models import Gene
 from database import db
 
@@ -46,7 +46,11 @@ class TestGeneView(ViewTest):
 
         # create preferred isoforms for genes
         for i, gene in enumerate(Gene.query.all()):
-            p = Protein(refseq='NM_000%s' % i)
+            # at least one mutation is required for gene on a gene list to be displayed
+            mut = Mutation()
+            MC3Mutation(mutation=mut)
+
+            p = Protein(refseq='NM_000%s' % i, mutations=[mut])
             gene.isoforms = [p]
             gene.preferred_isoform = p
 

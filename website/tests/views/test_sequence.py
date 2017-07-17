@@ -21,7 +21,7 @@ def test_protein_data():
 
 
 def create_test_mutations():
-    return [
+    data = [
         Mutation(
             position=1,
             alt='K',
@@ -69,6 +69,8 @@ def create_test_mutations():
         )
     ]
 
+    return data
+
 
 class TestProteinView(ViewTest):
 
@@ -77,6 +79,9 @@ class TestProteinView(ViewTest):
         p = Protein(**test_protein_data())
         p.mutations = create_test_mutations()
         db.session.add(p)
+
+        from website.views._global_filters import cached_queries
+        cached_queries.reload()
 
         response = self.client.get('/protein/show/NM_000123')
 

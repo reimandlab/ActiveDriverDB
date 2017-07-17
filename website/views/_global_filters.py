@@ -97,7 +97,7 @@ def common_filters(
         SourceDependentFilter(
             [Mutation, MC3Mutation], 'mc3_cancer_code',
             comparators=['in'],
-            choices=CachedQueries.all_cancer_codes_mc3,
+            choices=cached_queries.all_cancer_codes_mc3,
             default=cancer_codes_mc3, nullable=False,
             source='MC3',
             multiple='any',
@@ -148,12 +148,22 @@ def create_dataset_labels():
 
 class CachedQueries:
 
-    all_cancer_codes_mc3 = [cancer.code for cancer in Cancer.query]
-    all_cancer_names = {
-        cancer.code: '%s (%s)' % (cancer.name, cancer.code)
-        for cancer in Cancer.query
-    }
-    dataset_labels = create_dataset_labels()
+    def __init__(self):
+        self.reload()
+
+    def reload(self):
+        """Should be called after each cancer and public-dataset addition or change
+        (It should not happen during normal service, only after migrations and during tests)
+        """
+        self.all_cancer_codes_mc3 = [cancer.code for cancer in Cancer.query]
+        self.all_cancer_names = {
+            cancer.code: '%s (%s)' % (cancer.name, cancer.code)
+            for cancer in Cancer.query
+        }
+        self.dataset_labels = create_dataset_labels()
+
+
+cached_queries = CachedQueries()
 
 
 def create_dataset_specific_widgets(protein, filters_by_id):
@@ -163,7 +173,7 @@ def create_dataset_specific_widgets(protein, filters_by_id):
         FilterWidget(
             'Cancer type', 'checkbox_multiple',
             filter=filters_by_id['Mutation.mc3_cancer_code'],
-            labels=CachedQueries.all_cancer_names,
+            labels=cached_queries.all_cancer_names,
             choices=cancer_codes_mc3,
             all_selected_label='All cancer types'
         ),
@@ -200,7 +210,7 @@ def create_widgets(protein, filters_by_id, custom_datasets_names=None):
         'dataset': FilterWidget(
             'Mutation dataset', 'radio',
             filter=filters_by_id['Mutation.sources'],
-            labels=CachedQueries.dataset_labels,
+            labels=cached_queries.dataset_labels,
             class_name='dataset-widget'
         ),
         'custom_dataset': FilterWidget(

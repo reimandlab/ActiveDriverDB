@@ -149,7 +149,7 @@ class GeneViewFilters(FilterManager):
             Filter(
                 Gene, 'has_ptm_muts',
                 comparators=['eq'],
-                as_sqlalchemy=lambda self, value: text('ptm_muts_cnt > 0') if value else text('ptm_muts_cnt > -1')
+                as_sqlalchemy=lambda self, value: text('ptm_muts_cnt > 0') if value else text('true')
             ),
             SourceDependentFilter(
                 [Mutation, MC3Mutation], 'mc3_cancer_code',
@@ -205,7 +205,6 @@ def ajax_query(sql_filters):
     muts, ptm_muts, sites = prepare_subqueries(sql_filters)
 
     textutal_filters = select_textual_filters(sql_filters)
-
     query = (
         db.session.query(
             Gene.name,
@@ -216,7 +215,7 @@ def ajax_query(sql_filters):
         )
         .select_from(Gene)
         .join(Protein, Protein.id == Gene.preferred_isoform_id)
-        .group_by(Gene.id)
+        .group_by(Gene)
         .having(and_(*textutal_filters))
     )
     return query
@@ -281,8 +280,8 @@ class GeneView(FlaskView):
                 .filter(GeneListEntry.gene_list_id == gene_list.id)
                 .join(Gene, Gene.id == GeneListEntry.gene_id)
                 .join(Protein, Protein.id == Gene.preferred_isoform_id)
+                .group_by(Gene)
                 .having(and_(*textutal_filters))
-                .group_by(Gene.id)
             )
 
         def count_query_constructor(sql_filters):
@@ -301,6 +300,7 @@ class GeneView(FlaskView):
                 .join(Gene, GeneListEntry.gene_id == Gene.id)
                 .join(Protein, Protein.id == Gene.preferred_isoform_id)
                 .filter(GeneListEntry.gene_list_id == gene_list.id)
+                .group_by(GeneListEntry)
                 .having(and_(*textutal_filters))
             )
 

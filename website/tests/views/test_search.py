@@ -3,7 +3,7 @@ from io import BytesIO
 from view_testing import ViewTest
 
 from database import db
-from models import Gene, Pathway
+from models import Gene, Pathway, GeneList, MC3Mutation
 from models import Protein
 from models import UsersMutationsDataset
 from models import Site
@@ -49,16 +49,6 @@ def mock_proteins_and_genes(count):
 
 
 class TestSearchView(ViewTest):
-
-    def test_searchbar(self):
-        mock_proteins_and_genes(15)
-
-        response = self.client.get(
-            'search/autocomplete_all?q=%s' % 'Gene',
-            follow_redirects=True
-        )
-        assert response.status_code == 200
-        assert response.json['entries'][0]['name'].startswith('Gene')
 
     def test_search_proteins(self):
         from views.search import search_proteins
@@ -165,7 +155,28 @@ class TestSearchView(ViewTest):
         assert response.status_code == 200
         assert b'NM_007' in response.data
 
+    def test_autocomplete_proteins(self):
+        # MC3 GeneList is required as a target (a href for links) where users will be pointed
+        # after clicking of cancer autocomplete suggestion
+        gene_list = GeneList(name='TCGA', mutation_source_name=MC3Mutation.name)
+        db.session.add(gene_list)
+
+        mock_proteins_and_genes(15)
+
+        response = self.client.get(
+            'search/autocomplete_all?q=%s' % 'Gene',
+            follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert response.json['entries'][0]['name'].startswith('Gene')
+
     def test_autocomplete(self):
+
+        # MC3 GeneList is required as a target (a href for links) where users will be pointed
+        # after clicking of cancer autocomplete suggestion
+        gene_list = GeneList(name='TCGA', mutation_source_name=MC3Mutation.name)
+        db.session.add(gene_list)
+
         g = Gene(name='BR')
         p = Protein(refseq='NM_007', gene=g, sequence='XXXXXV')
         g.preferred_isoform = p     # required for gene search to work - genes without preferred isoforms are ignored
