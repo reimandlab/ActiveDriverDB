@@ -262,7 +262,7 @@ class NetworkView(FlaskView):
                 'clone_by_site': filter_manager.get_value('JavaScript.clone_by_site'),
                 'show_sites': filter_manager.get_value('JavaScript.show_sites'),
             },
-            'filters': filters_data_view(filter_manager)
+            'filters': filters_data_view(protein, filter_manager)
         }
 
         return jsonify(response)

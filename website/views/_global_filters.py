@@ -10,7 +10,7 @@ from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 
 
-def filters_data_view(filter_manager):
+def filters_data_view(protein, filter_manager):
     from flask import request
     from flask import render_template
     return {
@@ -19,7 +19,7 @@ def filters_data_view(filter_manager):
         'checksum': request.args.get('checksum', ''),
         'dataset_specific_widgets': render_template(
             'widgets/widget_list.html',
-            widgets=create_dataset_specific_widgets(filter_manager.filters),
+            widgets=create_dataset_specific_widgets(protein, filter_manager.filters),
             collapse=True
         )
     }

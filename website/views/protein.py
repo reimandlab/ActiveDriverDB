@@ -19,7 +19,7 @@ from helpers.tracks import MutationsTrack
 from helpers.tracks import DomainsTrack
 from helpers.filters import FilterManager
 from helpers.views import AjaxTableView
-from ._global_filters import common_filters, create_dataset_specific_widgets, filters_data_view
+from ._global_filters import common_filters, filters_data_view
 from ._global_filters import create_widgets
 from ._commons import represent_mutation
 from operator import attrgetter
@@ -252,7 +252,7 @@ class ProteinView(FlaskView):
 
         response = {
             'representation': data,
-            'filters': filters_data_view(filter_manager)
+            'filters': filters_data_view(protein, filter_manager)
         }
 
         return jsonify(response)
