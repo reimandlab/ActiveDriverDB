@@ -66,7 +66,6 @@ def common_filters(
     custom_datasets_ids=[]
 ):
     cancer_codes_mc3 = protein.cancer_codes(MC3Mutation) if protein else []
-    all_cancer_codes_mc3 = [cancer.code for cancer in Cancer.query]
 
     # Python 3.4: cast keys() to list
     populations_1kg = list(The1000GenomesMutation.populations.values())
@@ -98,7 +97,7 @@ def common_filters(
         SourceDependentFilter(
             [Mutation, MC3Mutation], 'mc3_cancer_code',
             comparators=['in'],
-            choices=all_cancer_codes_mc3,
+            choices=CachedQueries.all_cancer_codes_mc3,
             default=cancer_codes_mc3, nullable=False,
             source='MC3',
             multiple='any',
@@ -135,15 +134,37 @@ def common_filters(
     ]
 
 
-def create_dataset_specific_widgets(filters_by_id):
+def create_dataset_labels():
+    # map dataset display names to dataset names
+    dataset_labels = {
+        dataset.name: dataset.display_name
+        for dataset in Mutation.source_specific_data
+    }
+    # hide user's mutations in dataset choice
+    # (there is separate widget for that, shown only if there are any user's datasets)
+    dataset_labels['user'] = None
+    return dataset_labels
+
+
+class CachedQueries:
+
+    all_cancer_codes_mc3 = [cancer.code for cancer in Cancer.query]
+    all_cancer_names = {
+        cancer.code: '%s (%s)' % (cancer.name, cancer.code)
+        for cancer in Cancer.query
+    }
+    dataset_labels = create_dataset_labels()
+
+
+def create_dataset_specific_widgets(protein, filters_by_id):
+    cancer_codes_mc3 = protein.cancer_codes(MC3Mutation) if protein else []
+
     return [
         FilterWidget(
             'Cancer type', 'checkbox_multiple',
             filter=filters_by_id['Mutation.mc3_cancer_code'],
-            labels={
-                cancer.code: '%s (%s)' % (cancer.name, cancer.code)
-                for cancer in Cancer.query
-            },
+            labels=CachedQueries.all_cancer_names,
+            choices=cancer_codes_mc3,
             all_selected_label='All cancer types'
         ),
         FilterWidget(
@@ -172,26 +193,14 @@ def create_dataset_specific_widgets(filters_by_id):
     ]
 
 
-def create_dataset_labels():
-    # map dataset display names to dataset names
-    dataset_labels = {
-        dataset.name: dataset.display_name
-        for dataset in Mutation.source_specific_data
-    }
-    # hide user's mutations in dataset choice
-    # (there is separate widget for that, shown only if there are any user's datasets)
-    dataset_labels['user'] = None
-    return dataset_labels
-
-
-def create_widgets(filters_by_id, custom_datasets_names=None):
+def create_widgets(protein, filters_by_id, custom_datasets_names=None):
     """Widgets to be displayed on a bar above visualisation."""
 
     return {
         'dataset': FilterWidget(
             'Mutation dataset', 'radio',
             filter=filters_by_id['Mutation.sources'],
-            labels=create_dataset_labels(),
+            labels=CachedQueries.dataset_labels,
             class_name='dataset-widget'
         ),
         'custom_dataset': FilterWidget(
@@ -199,7 +208,7 @@ def create_widgets(filters_by_id, custom_datasets_names=None):
             filter=filters_by_id['UserMutations.sources'],
             labels=custom_datasets_names
         ),
-        'dataset_specific': create_dataset_specific_widgets(filters_by_id),
+        'dataset_specific': create_dataset_specific_widgets(protein, filters_by_id),
         'is_ptm': FilterWidget(
             'PTM mutations only', 'checkbox',
             filter=filters_by_id['Mutation.is_ptm'],

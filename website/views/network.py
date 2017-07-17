@@ -117,7 +117,7 @@ class NetworkView(FlaskView):
             'network/show.html', protein=protein,
             filters=filter_manager,
             option_widgets=self._create_option_widgets(filter_manager),
-            widgets=create_widgets(filters_by_id),
+            widgets=create_widgets(protein, filters_by_id),
         )
 
     def _prepare_network_repr(self, protein, filter_manager, include_kinases_from_groups=False):

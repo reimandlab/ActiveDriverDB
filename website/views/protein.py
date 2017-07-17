@@ -278,6 +278,7 @@ class ProteinView(FlaskView):
             protein=protein,
             filters=filter_manager,
             widgets=create_widgets(
+                protein,
                 filter_manager.filters,
                 custom_datasets_names=user_datasets.values()
             ),

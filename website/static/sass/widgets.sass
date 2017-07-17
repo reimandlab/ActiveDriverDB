@@ -54,8 +54,12 @@ select.form-control
 
   .checkbox-list
     max-height: 450px
-    overflow-y: scroll
+    overflow-y: auto
 
+  .list-collapsed
+    .checkbox-list
+      max-height: inherit
+      overflow-y: visible
 
 .widget-panel
   z-index: 1

@@ -97,10 +97,13 @@ class FilterWidget(Widget):
 
     def __init__(
         self, title, template, filter, labels=None, disabled_label=None,
-        associated_comparator_widget=None, **kwargs
+        associated_comparator_widget=None, choices=None, **kwargs
     ):
         self.filter = filter
-        data = filter.choices
+        if choices:
+            data = choices
+        else:
+            data = filter.choices
         target_name = 'filter[' + filter.id + ']'
         super().__init__(
             title, template, data, target_name, labels, disabled_label,
