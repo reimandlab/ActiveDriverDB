@@ -1,4 +1,5 @@
-// FRONT PAGE
+@import "variables"
+
 $main_bg: #2fa7c1
 $secondary_bg: #005b7f
 $text_bg: #eff6f7
@@ -47,12 +48,6 @@ body
     color: white
     line-height: $footer-height
 
-.slogan
-  font-size: 35px
-  color: #fff
-  text-align: center
-  font-weight: 300
-
 $top_height: 655px
 
 .advanced
@@ -81,6 +76,15 @@ $frame_h: 390px
   padding: percentage($sides / $frame_w)
   padding-top: percentage($top / $frame_h)
 
+.slogan
+  font-size: 35px
+  color: #fff
+  text-align: center
+  font-weight: 300
+  @media #{$under-pc}
+    font-size: 31px
+  @media #{$under-tablet}
+    font-size: 27px
 
 .strip-top
   height: $top_height
@@ -99,6 +103,10 @@ $frame_h: 390px
     margin-top: 28px
     line-height: 100%
     margin-bottom: -5px
+    @media #{$under-pc}
+      font-size: 64px
+    @media #{$under-tablet}
+      font-size: 58px
 
   .background
     height: $top_height
@@ -171,6 +179,7 @@ $frame_h: 390px
 
 .row-about
   .table-outer-border
+    width: 100%!important
     border-color: $stats_table_color
     color: $stats_table_color
     td
@@ -187,6 +196,14 @@ $frame_h: 390px
     padding-top: 10px
     padding-bottom: 7px
     font-size: 110%
+
+  @media #{$under-tablet}
+    .table-outer-border
+      td
+        display: inline-block
+      td:nth-child(2)
+        float: left
+        margin-right: 1ch
 
 
 .text-based-strip
@@ -220,8 +237,6 @@ $frame_h: 390px
   .navbar-nav
     float: none
     display: inline-block
-
-@import "variables"
 
 #navbar li a
   color: #fff
@@ -276,10 +291,14 @@ $frame_h: 390px
 .page-content
   background: transparent
 
-
 .form-group-xl
   .form-control
     height: 61px
     padding: 10px 16px
     font-size: 24px
     border-radius: 6px
+
+@media #{$under-tablet}
+  .form-group-xl
+    .form-control
+      height: 54px
