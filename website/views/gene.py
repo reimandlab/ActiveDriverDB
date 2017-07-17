@@ -187,6 +187,7 @@ def ajax_query(sql_filters):
     query = (
         db.session.query(
             Gene.name,
+            Gene.full_name,
             muts,
             ptm_muts,
             sites
@@ -243,6 +244,7 @@ class GeneView(FlaskView):
             return (
                 db.session.query(
                     Gene.name,
+                    Gene.full_name,
                     Protein.refseq,
                     muts,
                     ptm_muts,
