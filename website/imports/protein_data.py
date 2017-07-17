@@ -596,15 +596,6 @@ def sites(path='data/site_table.tsv'):
     interact with these sites - kinases already in database will
     be reused, unknown kinases will be created
 
-    Use following R code to reproduce `site_table.tsv` file:
-    ```
-        load('PTM_site_table.rsav')
-        write.table(
-            site_table, file='site_table.tsv',
-            row.names=F, quote=F, sep='\t'
-        )
-    ```
-
     Args:
         path: to tab-separated-values file with sites to load
 

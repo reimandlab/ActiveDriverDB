@@ -46,6 +46,16 @@ rm hsapiens.TF.NAME.gmt
 
 #  All below are dropbox-dependent ===
 
+wget https://www.dropbox.com/s/6s6mni9x40gphta/PTM_site_table.rsav
+R --no-save <<-SCRIPT
+load('PTM_site_table.rsav')
+write.table(
+site_table, file='site_table.tsv',
+row.names=F, quote=F, sep='\t'
+)
+SCRIPT
+rm PTM_site_table.rsav
+
 wget https://www.dropbox.com/s/wdxnyvf7lkbihnp/biomart_protein_domains_20072016.txt
 wget https://www.dropbox.com/s/pjf7nheutez3w6r/curated_kinase_IDs.txt
 
