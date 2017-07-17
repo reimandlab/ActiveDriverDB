@@ -40,7 +40,7 @@
 <div>
   <div id="toolbar" class="gene-widgets">
     <form method="GET" class="widget-form" id="toolbar_form">
-      {% with widgets=[widgets.dataset, widgets.ptm_type] %}
+      {% with widgets=[widgets.dataset, widgets.ptm_type, widgets.cancer] %}
         {% include 'filters/bar.html' %}
       {% endwith %}
       <input type="hidden" name="fallback" value="True">

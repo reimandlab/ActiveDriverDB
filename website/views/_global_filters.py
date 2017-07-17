@@ -66,6 +66,7 @@ def common_filters(
     custom_datasets_ids=[]
 ):
     cancer_codes_mc3 = protein.cancer_codes(MC3Mutation) if protein else []
+    all_cancer_codes_mc3 = [cancer.code for cancer in Cancer.query]
 
     # Python 3.4: cast keys() to list
     populations_1kg = list(The1000GenomesMutation.populations.values())
@@ -97,7 +98,7 @@ def common_filters(
         SourceDependentFilter(
             [Mutation, MC3Mutation], 'mc3_cancer_code',
             comparators=['in'],
-            choices=cancer_codes_mc3,
+            choices=all_cancer_codes_mc3,
             default=cancer_codes_mc3, nullable=False,
             source='MC3',
             multiple='any',

@@ -3,13 +3,13 @@ from flask import jsonify
 from flask import request
 from flask_classful import FlaskView
 from flask_classful import route
-from models import Protein
+from models import Protein, MC3Mutation, Cancer
 from models import Mutation
 from models import Gene
 from models import Site
 from models import GeneList
 from models import GeneListEntry
-from sqlalchemy import func
+from sqlalchemy import func, text
 from sqlalchemy import distinct
 from sqlalchemy import case
 from sqlalchemy import literal_column
@@ -18,7 +18,7 @@ from helpers.views import AjaxTableView
 from helpers.filters import FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
-from ._global_filters import sources_to_sa_filter, create_dataset_labels
+from ._global_filters import sources_to_sa_filter, create_dataset_labels, SourceDependentFilter
 
 from sqlalchemy import and_
 import sqlalchemy
@@ -122,6 +122,9 @@ def prepare_subqueries(sql_filters):
 class GeneViewFilters(FilterManager):
 
     def __init__(self, **kwargs):
+
+        cancer_codes_mc3 = [row[0] for row in db.session.query(Cancer.code)]
+
         filters = [
             Filter(
                 Mutation, 'sources', comparators=['in'],
@@ -133,14 +136,23 @@ class GeneViewFilters(FilterManager):
                 Site, 'type', comparators=['in'],
                 choices=Site.types,
                 as_sqlalchemy=True
-            )
+            ),
+            SourceDependentFilter(
+                [Mutation, MC3Mutation], 'mc3_cancer_code',
+                comparators=['in'],
+                choices=cancer_codes_mc3,
+                default=cancer_codes_mc3, nullable=False,
+                source='MC3',
+                multiple='any',
+                as_sqlalchemy=True
+            ),
         ]
         super().__init__(filters)
         self.update_from_request(request)
 
 
-def make_widgets(filter_manager):
-    return {
+def make_widgets(filter_manager, cancer=False):
+    base_widgets = {
         'dataset': FilterWidget(
             'Mutation dataset', 'select',
             filter=filter_manager.filters['Mutation.sources'],
@@ -153,6 +165,19 @@ def make_widgets(filter_manager):
             disabled_label='all sites'
         )
     }
+    if cancer:
+        base_widgets.update({
+            'cancer': FilterWidget(
+               'Cancer type', 'select_multiple',
+               filter=filter_manager.filters['Mutation.mc3_cancer_code'],
+               labels={
+                   cancer.code: '%s (%s)' % (cancer.name, cancer.code)
+                   for cancer in Cancer.query
+               },
+               all_selected_label='All cancer types'
+            )
+        })
+    return base_widgets
 
 
 def ajax_query(sql_filters):
@@ -199,7 +224,7 @@ class GeneView(FlaskView):
 
     def list(self, list_name):
         filter_manager = GeneViewFilters()
-        widgets = make_widgets(filter_manager)
+        widgets = make_widgets(filter_manager, True)
         return template(
             'gene/list.html', list_name=list_name,
             widgets=widgets, filter_manager=filter_manager
@@ -213,8 +238,6 @@ class GeneView(FlaskView):
         gene_list = GeneList.query.filter_by(name=list_name).first_or_404()
 
         def query_constructor(sql_filters):
-            # TODO: create "PurportedMutation" for MIMP data, skip MIMP mutations somehow.
-
             muts, ptm_muts, sites = prepare_subqueries(sql_filters)
 
             return (
@@ -230,7 +253,23 @@ class GeneView(FlaskView):
                 .filter(GeneListEntry.gene_list_id == gene_list.id)
                 .join(Gene, Gene.id == GeneListEntry.gene_id)
                 .join(Protein, Protein.id == Gene.preferred_isoform_id)
+                .having(text('muts_cnt > 0'))
                 .group_by(Gene.id)
+            )
+
+        def count_query_constructor(sql_filters):
+            muts, ptm_muts, sites = prepare_subqueries(sql_filters)
+
+            return (
+                db.session.query(
+                    GeneListEntry.id,
+                    muts
+                )
+                .select_from(GeneListEntry)
+                .join(Gene, GeneListEntry.gene_id == Gene.id)
+                .join(Protein, Protein.id == Gene.preferred_isoform_id)
+                .filter(GeneListEntry.gene_list_id == gene_list.id)
+                .having(text('muts_cnt > 0'))
             )
 
         ajax_view = AjaxTableView.from_query(
@@ -238,15 +277,7 @@ class GeneView(FlaskView):
             results_mapper=lambda row: row._asdict(),
             filters_class=GeneViewFilters,
             search_filter=lambda q: Gene.name.like(q + '%'),
-            count_query=(
-                db.session.query(
-                    GeneListEntry.id
-                )
-                .select_from(GeneListEntry)
-                .join(Gene, GeneListEntry.gene_id == Gene.id)
-                .join(Protein, Protein.id == Gene.preferred_isoform_id)
-                .filter(GeneListEntry.gene_list_id == gene_list.id)
-            ),
+            count_query_constructor=count_query_constructor,
             sort='fdr'
         )
         return ajax_view(self)

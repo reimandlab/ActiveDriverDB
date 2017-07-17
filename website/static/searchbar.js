@@ -173,6 +173,8 @@ function advanced_searchbar_templator(mutation_template)
 
     }
 
+    var cancer_template = 'Did you mean somatic cancer mutations of {{ name }} ({{ code }}) from TCGA?'
+
     return (
         function (result)
         {
@@ -208,6 +210,12 @@ function advanced_searchbar_templator(mutation_template)
                 if(result.reactome)
                     link += badge('Reactome pathway')
                 link += result.name + '</a>'
+                return link
+            }
+            else if(type === 'cancer')
+            {
+                var link = '<a href="' + result.url + '" class="list-group-item">'
+                link += format(cancer_template, result) + badge('cancer') + '</a>'
                 return link
             }
             else if(type === 'see_more')

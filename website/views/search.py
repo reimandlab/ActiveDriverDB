@@ -15,12 +15,12 @@ from flask_login import current_user
 from Levenshtein import distance
 from sqlalchemy.orm.exc import NoResultFound
 
-from models import Protein, Pathway
+from models import Protein, Pathway, Cancer, GeneList, MC3Mutation
 from models import Gene
 from models import Mutation
 from models import UsersMutationsDataset
 from models import UserUploadedMutation
-from sqlalchemy import and_, exists
+from sqlalchemy import and_, exists, or_
 from helpers.filters import FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
@@ -443,6 +443,9 @@ class SearchView(FlaskView):
             {pathway}
             GO:{pathway_gene_ontology_id}
             REAC:{pathway_reactome_id}
+
+            Genes with mutations detected in cancer samples:
+            {cancer name}
         """
 
         query = unquote(request.args.get('q')) or ''
@@ -454,9 +457,39 @@ class SearchView(FlaskView):
 
         pathways = suggest_matching_pathways(query)
 
+        cancers = suggest_matching_cancers(query)
+
+        items.extend(cancers)
         items.extend(pathways)
 
         return json.dumps({'entries': items})
+
+
+def suggest_matching_cancers(query, count=2):
+    cancers = Cancer.query.filter(
+        or_(
+            Cancer.code.ilike(query + '%'),
+            Cancer.name.ilike(query + '%'),
+        )
+    )
+    tcga_list = GeneList.query.filter_by(mutation_source_name=MC3Mutation.name).one()
+    return [
+        {
+            'name': cancer.name,
+            'code': cancer.code,
+            'type': 'cancer',
+            'url': url_for(
+                'GeneView:list',
+                list_name=tcga_list.name,
+                filters=(
+                    'Mutation.sources:in:%s' % tcga_list.mutation_source_name
+                    +
+                    ';Mutation.mc3_cancer_code:in:%s' % cancer.code
+                )
+            )
+        }
+        for cancer in cancers
+    ]
 
 
 def suggest_matching_pathways(query, count=2):

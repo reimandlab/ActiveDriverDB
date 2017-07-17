@@ -63,7 +63,7 @@ class AjaxTableView:
         results_mapper=json_results_mapper, filters_class=None,
         search_filter=None, preset_filter=None,
         query_constructor=None, default_search_sort=None,
-        prepare_for_sorting=None,
+        prepare_for_sorting=None, count_query_constructor=None,
         **kwargs
     ):
 
@@ -132,10 +132,12 @@ class AjaxTableView:
                     ordering_function(sort_key)
                 )
 
-            if not predefined_count_query:
-                count_query = query
-            else:
+            if count_query_constructor:
+                count_query = count_query_constructor(sql_filters)
+            elif predefined_count_query:
                 count_query = predefined_count_query
+            else:
+                count_query = query
 
             if filters:
                 filters_conjunction = and_(*filters)
