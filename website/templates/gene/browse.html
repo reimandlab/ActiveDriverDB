@@ -17,9 +17,10 @@
     {{ dependency('nunjucks_slim') }}
     <script type="text/javascript" src="/static/js_templates/precompiled/gene.js"></script>
   {% endif %}
-  <style type="text/css">
-    .gene-widgets label{display: none}
-  </style>
+
+  {% assets "css_gene" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
 
 {% endblock %}
 
@@ -27,52 +28,65 @@
 {% block breadcrumb %}
   {{ super() }}
   <li><a href="{{ url_for('GeneView:lists') }}">Gene lists</a></li>
+  {% block leaf %}
   <li class="active">All genes</li>
+  {% endblock %}
 {% endblock %}
 
 
 {% block content %}
 
-<h3>Genes</h3>
+  {% block introduction %}
+    <h3>Genes</h3>
 
-{{ text('genes-all') }}
+    {{ text('genes-all') }}
+  {% endblock %}
 
-<div>
-  <div id="toolbar" class="gene-widgets">
-    <form method="GET" class="widget-form" id="toolbar_form">
-      {% with widgets=[widgets.dataset, widgets.ptm_type] %}
-        {% include 'filters/bar.html' %}
-      {% endwith %}
-      <input type="hidden" name="fallback" value="True">
-    </form>
+  <div class="row">
+
+    <div class="col-md-3">
+      <div id="sticky_box">
+        {# Filters #}
+        <form method="GET" class="widget-form" id="filters_form">
+          {% include 'filters/gene_table.html' %}
+          <input type="hidden" name="fallback" value="True">
+        </form>
+      </div>
+    </div>
+
+    <div class="col-md-9">
+
+      <div id="toolbar" class="gene-widgets">
+      </div>
+      <table
+        id="table"
+        data-toolbar="#toolbar"
+        data-search="true"
+        data-show-refresh="true"
+        data-show-toggle="true"
+        data-show-columns="true"
+        data-show-export="true"
+        data-detail-view="true"
+        data-detail-formatter="detailFormatter"
+        data-minimum-count-columns="2"
+        data-pagination="true"
+        data-id-field="id"
+        data-page-size="25"
+        data-page-list="[10, 25, 50, 100, ALL]"
+        data-silent-sort="false"
+        data-side-pagination="server"
+        data-url="{% block data_url %}{{ url_for('GeneView:browse_data') }}{% endblock %}"
+        data-query-params="queryParams"
+      >
+      </table>
+    </div>
   </div>
-  <table
-    id="table"
-    data-toolbar="#toolbar"
-    data-search="true"
-    data-show-refresh="true"
-    data-show-toggle="true"
-    data-show-columns="true"
-    data-show-export="true"
-    data-detail-view="true"
-    data-detail-formatter="detailFormatter"
-    data-minimum-count-columns="2"
-    data-pagination="true"
-    data-id-field="id"
-    data-page-size="25"
-    data-page-list="[10, 25, 50, 100, ALL]"
-    data-silent-sort="false"
-    data-side-pagination="server"
-    data-url="{{ url_for('GeneView:browse_data') }}"
-    data-query-params="queryParams"
-  >
-  </table>
-</div>
 
-{% assets "js_gene_view" %}
-  <script type="text/javascript" src="{{ ASSET_URL }}"></script>
-{% endassets %}
-<script>
+  {% assets "js_gene_view" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+  {% endassets %}
+
+  <script>
 
   nunjucks.configure('/static/js_templates', {autoescape: true});
 
@@ -90,6 +104,7 @@
     $table.bootstrapTable({
       columns: [
         [
+          {% block columns %}
           {
             title: 'Gene name',
             field: 'name',
@@ -126,6 +141,7 @@
             align: 'center',
             field: 'ptm_sites_cnt'
           }
+          {% endblock %}
         ],
       ],
       formatLoadingMessage: function ()
@@ -146,6 +162,8 @@
         $table.bootstrapTable('resetView')
     }, 200)
   }
+
+  {% block other_js %}
 
   var isoforms_url = decodeURIComponent(
     '{{ url_for('GeneView:isoforms', gene_name='<gene_name>') }}'
@@ -187,12 +205,16 @@
     return '<a href="/protein/show/' + value + '">' + value + '</a>'
   }
 
+  {% endblock %}
+
   $(function ()
   {
       initTable()
   });
 
-  Widgets.init($('#toolbar_form'));
+  Widgets.init($('#filters_form'));
+
+  affix($('#sticky_box'), $('footer'));
 </script>
 
 

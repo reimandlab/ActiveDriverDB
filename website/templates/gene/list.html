@@ -1,231 +1,130 @@
-{% extends "base.html" %}
+{% extends "gene/browse.html" %}
 {% from "text_entry.html" import text with context %}
 
 {% block title %} Gene list: {{ list_name }} - {{ super() }} {% endblock %}
 
-{% block head %}
-
-  {{ super() }}
-
-  {{ dependency('bootstrap_table') }}
-  {{ dependency('bootstrap_table_css') }}
-
-  {# Nunjucks templates #}
-  {% if is_debug_mode %}
-    {{ dependency('nunjucks') }}
-  {% else %}
-    {{ dependency('nunjucks_slim') }}
-    <script type="text/javascript" src="/static/js_templates/precompiled/gene.js"></script>
-  {% endif %}
-  <style type="text/css">
-    .gene-widgets label{display: none}
-  </style>
-
-{% endblock %}
-
-
-{% block breadcrumb %}
-  {{ super() }}
-  <li><a href="{{ url_for('GeneView:lists') }}">Gene lists</a></li>
+{% block leaf %}
   <li class="active">{{ list_name }}</li>
 {% endblock %}
 
 
-{% block content %}
+{% block introduction %}
+  <h3>Gene list: {{ list_name }}</h3>
 
-<h3>Gene list: {{ list_name }}</h3>
+  {{ text('genes-list') }}
+{% endblock %}
 
-{{ text('genes-list') }}
+{% block data_url %}{{ url_for('GeneView:list_data', list_name=list_name) }}{% endblock %}
 
-<div>
-  <div id="toolbar" class="gene-widgets">
-    <form method="GET" class="widget-form" id="toolbar_form">
-      {% with widgets=[widgets.dataset, widgets.ptm_type, widgets.cancer, widgets.has_ptm] %}
-        {% include 'filters/bar.html' %}
-      {% endwith %}
-      <input type="hidden" name="fallback" value="True">
-    </form>
-  </div>
-  <table
-    id="table"
-    data-toolbar="#toolbar"
-    data-search="true"
-    data-show-refresh="true"
-    data-show-toggle="true"
-    data-show-columns="true"
-    data-show-export="true"
-    data-detail-view="true"
-    data-detail-formatter="detailFormatter"
-    data-minimum-count-columns="2"
-    data-pagination="true"
-    data-id-field="id"
-    data-page-size="25"
-    data-page-list="[10, 25, 50, 100, ALL]"
-    data-silent-sort="false"
-    data-side-pagination="server"
-    data-url="{{ url_for('GeneView:list_data', list_name=list_name) }}"
-    data-query-params="queryParams"
-  >
-  </table>
-</div>
+{% block columns %}
+{
+  title: 'Gene name',
+  field: 'name',
+  align: 'center',
+  valign: 'middle',
+  sortable: true
+},
+{
+    title: 'Summary',
+    field: 'full_name',
+    align: 'left',
+    valign: 'middle',
+    sortable: true
+},
+{
+  title: 'Protein View',
+  field: 'refseq',
+  align: 'center',
+  valign: 'middle',
+  formatter: proteinFormatter
+},
+{
+  title: 'Network View',
+  field: 'refseq',
+  align: 'center',
+  valign: 'middle',
+  formatter: networkFormatter
+},
+{
+  title: '# mutations',
+  sortable: true,
+  valign: 'middle',
+  align: 'center',
+  field: 'muts_cnt'
+},
+{
+  title: '# PTM mutations',
+  sortable: true,
+  valign: 'middle',
+  align: 'center',
+  field: 'ptm_muts_cnt'
+},
+{
+  title: '# PTM sites',
+  sortable: true,
+  valign: 'middle',
+  align: 'center',
+  field: 'ptm_sites_cnt'
+},
+{
+  title: 'FDR',
+  sortable: true,
+  valign: 'middle',
+  align: 'center',
+  field: 'fdr',
+  formatter: fdrFormatter
+}
+{% endblock %}
 
-{% assets "js_gene_view" %}
-  <script type="text/javascript" src="{{ ASSET_URL }}"></script>
-{% endassets %}
-<script>
 
-  nunjucks.configure('/static/js_templates', {autoescape: true})
+{% block other_js %}
+var isoforms_url = decodeURIComponent(
+  '{{ url_for('GeneView:isoforms', gene_name='<gene_name>') }}'
+);
 
-  var $table = $('#table');
+function detailFormatter(index, gene_row)
+{
+  var url = isoforms_url.replace('<gene_name>', gene_row.name);
 
-  function queryParams(params)
-  {
-    var site_params = get_url_params();
-    params.filters = site_params.filters;
-    return params
-  }
+  $.ajax({
+    url: url,
+    type: 'GET',
+    async: true,
+    success: function(data)
+    {
+      var detail_row = $('tr[data-index=' + index + ']')
+      detail_row = detail_row.next('tr.detail-view')
 
-  function initTable()
-  {
-    $table.bootstrapTable({
-      columns: [
-        [
-          {
-            title: 'Gene name',
-            field: 'name',
-            align: 'center',
-            valign: 'middle',
-            sortable: true
-          },
-          {
-              title: 'Summary',
-              field: 'full_name',
-              align: 'left',
-              valign: 'middle',
-              sortable: true
-          },
-          {
-            title: 'Protein View',
-            field: 'refseq',
-            align: 'center',
-            valign: 'middle',
-            formatter: proteinFormatter
-          },
-          {
-            title: 'Network View',
-            field: 'refseq',
-            align: 'center',
-            valign: 'middle',
-            formatter: networkFormatter
-          },
-          {
-            title: '# mutations',
-            sortable: true,
-            valign: 'middle',
-            align: 'center',
-            field: 'muts_cnt'
-          },
-          {
-            title: '# PTM mutations',
-            sortable: true,
-            valign: 'middle',
-            align: 'center',
-            field: 'ptm_muts_cnt'
-          },
-          {
-            title: '# PTM sites',
-            sortable: true,
-            valign: 'middle',
-            align: 'center',
-            field: 'ptm_sites_cnt'
-          },
-          {
-            title: 'FDR',
-            sortable: true,
-            valign: 'middle',
-            align: 'center',
-            field: 'fdr',
-            formatter: fdrFormatter
-          }
-        ]
-      ],
-      formatLoadingMessage: function ()
+      if(detail_row)
       {
-        return 'Loading, please wait... <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>'
-      },
-      silentSort: false
-    });
-    $table.on('click-row.bs.table', function (e, row, $element)
-    {
-      $table.bootstrapTable(
-        'expandRow',
-        $element.data('index')
-      )
-    });
-    setTimeout(function ()
-    {
-        $table.bootstrapTable('resetView')
-    }, 200)
-  }
+        var html = nunjucks.render(
+            'gene_isoforms.njk',
+            {
+                gene_isoforms: data,
+                gene_name: gene_row.name
+            }
+        );
+        detail_row.children('td').html(html)
+      }
+    }
+  })
+  return 'Loading...'
+}
 
-  var isoforms_url = decodeURIComponent(
-    '{{ url_for('GeneView:isoforms', gene_name='<gene_name>') }}'
-  );
+function fdrFormatter(value, row, index)
+{
+  return value.toPrecision(2)
+}
 
-  function detailFormatter(index, gene_row)
-  {
-    var url = isoforms_url.replace('<gene_name>', gene_row.name);
+function proteinFormatter(value, row, index)
+{
+  var site_params = get_url_params();
+  return '<a href="/protein/show/' + value + '?filters=' + site_params.filters + '">protein view</a>'
+}
 
-    $.ajax({
-			url: url,
-			type: 'GET',
-			async: true,
-			success: function(data)
-			{
-        var detail_row = $('tr[data-index=' + index + ']')
-        detail_row = detail_row.next('tr.detail-view')
-
-        if(detail_row)
-        {
-          var html = nunjucks.render(
-              'gene_isoforms.njk',
-              {
-                  gene_isoforms: data,
-                  gene_name: gene_row.name
-              }
-          );
-          detail_row.children('td').html(html)
-        }
-			}
-		})
-    return 'Loading...'
-  }
-
-  function fdrFormatter(value, row, index)
-  {
-    return value.toPrecision(2)
-  }
-
-  function proteinFormatter(value, row, index)
-  {
-    var site_params = get_url_params();
-    return '<a href="/protein/show/' + value + '?filters=' + site_params.filters + '">protein view</a>'
-  }
-
-  function networkFormatter(value, row, index)
-  {
-    var site_params = get_url_params();
-    return '<a href="/network/show/' + value + '?filters=' + site_params.filters + '">network view</a>'
-  }
-
-  $(function ()
-  {
-      initTable()
-  });
-
-  Widgets.init($('#toolbar_form'));
-
-</script>
-
-
+function networkFormatter(value, row, index)
+{
+  var site_params = get_url_params();
+  return '<a href="/network/show/' + value + '?filters=' + site_params.filters + '">network view</a>'
+}
 {% endblock %}

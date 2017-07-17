@@ -168,13 +168,13 @@ class GeneViewFilters(FilterManager):
 def make_widgets(filter_manager, cancer=False):
     base_widgets = {
         'dataset': FilterWidget(
-            'Mutation dataset', 'select',
+            'Mutation dataset', 'radio',
             filter=filter_manager.filters['Mutation.sources'],
             labels=create_dataset_labels(),
             disabled_label='All datasets'
         ),
         'ptm_type': FilterWidget(
-            'Type of PTM site', 'select',
+            'Type of PTM site', 'radio',
             filter=filter_manager.filters['Site.type'],
             disabled_label='all sites'
         ),
@@ -186,9 +186,9 @@ def make_widgets(filter_manager, cancer=False):
         ),
     }
     if cancer:
-        base_widgets.update({
-            'cancer': FilterWidget(
-               'Cancer type', 'select_multiple',
+        base_widgets['dataset_specific'] = [
+            FilterWidget(
+               'Cancer type', 'checkbox_multiple',
                filter=filter_manager.filters['Mutation.mc3_cancer_code'],
                labels={
                    cancer.code: '%s (%s)' % (cancer.name, cancer.code)
@@ -196,7 +196,7 @@ def make_widgets(filter_manager, cancer=False):
                },
                all_selected_label='All cancer types'
             )
-        })
+        ]
     return base_widgets
 
 

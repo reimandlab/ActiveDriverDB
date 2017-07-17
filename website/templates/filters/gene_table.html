@@ -1,0 +1,23 @@
+{% extends 'filters/box.html' %}
+{% from 'widgets/widgets.html' import widget_list %}
+{% from 'widgets/widgets.html' import render_widget %}
+
+{% block dataset_widgets %}
+  <div class="is-ptm">
+    {{ render_widget(widgets.has_ptm) }}
+  </div>
+
+  <div class="dataset">
+    {{ render_widget(widgets.dataset) }}
+  </div>
+
+  <div class="dataset-specific">
+    {{ widget_list(widgets.dataset_specific, collapse=True) }}
+  </div>
+{% endblock %}
+
+{% block other_widgets %}
+  <div class="ptm-type">
+    {{ render_widget(widgets.ptm_type) }}
+  </div>
+{% endblock %}
