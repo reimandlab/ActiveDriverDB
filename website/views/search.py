@@ -469,10 +469,12 @@ def suggest_matching_cancers(query, count=2):
     cancers = Cancer.query.filter(
         or_(
             Cancer.code.ilike(query + '%'),
-            Cancer.name.ilike(query + '%'),
+            Cancer.name.ilike('%' + query + '%'),
         )
-    )
+    ).limit(count)
+
     tcga_list = GeneList.query.filter_by(mutation_source_name=MC3Mutation.name).one()
+
     return [
         {
             'name': cancer.name,
