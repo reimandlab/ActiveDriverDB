@@ -62,11 +62,17 @@ $top_height: 655px
     margin: 0 5px
     z-index: 5
 
+$frame_w: 571px
+$frame_h: 390px
+
+.window_frame
+  max-width: $frame_w
+  max-height: $frame_h
+  margin: auto
+
 .framed_by_window
   $top: 55px
   $sides: 10px
-  $frame_w: 571px
-  $frame_h: 390px
   // image to be framed should be 551 x 315
   background: url('/static/img/frame.png') no-repeat
   background-size: 100% 100%
@@ -74,6 +80,7 @@ $top_height: 655px
   width: 100%
   padding: percentage($sides / $frame_w)
   padding-top: percentage($top / $frame_h)
+
 
 .strip-top
   height: $top_height
