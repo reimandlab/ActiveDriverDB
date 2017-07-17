@@ -3,6 +3,8 @@ from flask import jsonify
 from flask import request
 from flask_classful import FlaskView
 from flask_classful import route
+from sqlalchemy.sql.elements import TextClause
+
 from models import Protein, MC3Mutation, Cancer
 from models import Mutation
 from models import Gene
@@ -22,6 +24,13 @@ from ._global_filters import sources_to_sa_filter, create_dataset_labels, Source
 
 from sqlalchemy import and_
 import sqlalchemy
+
+
+def select_textual_filters(filters):
+    return [
+        filter_ for filter_ in filters
+        if type(filter_) is TextClause
+    ]
 
 
 def select_filters(filters, models):
@@ -137,6 +146,11 @@ class GeneViewFilters(FilterManager):
                 choices=Site.types,
                 as_sqlalchemy=True
             ),
+            Filter(
+                Gene, 'has_ptm_muts',
+                comparators=['eq'],
+                as_sqlalchemy=lambda self, value: text('ptm_muts_cnt > 0') if value else text('ptm_muts_cnt > -1')
+            ),
             SourceDependentFilter(
                 [Mutation, MC3Mutation], 'mc3_cancer_code',
                 comparators=['in'],
@@ -163,7 +177,13 @@ def make_widgets(filter_manager, cancer=False):
             'Type of PTM site', 'select',
             filter=filter_manager.filters['Site.type'],
             disabled_label='all sites'
-        )
+        ),
+        'has_ptm': FilterWidget(
+            'Genes with PTM mutations only', 'checkbox',
+            filter=filter_manager.filters['Gene.has_ptm_muts'],
+            disabled_label='all genes',
+            labels=['Genes with PTM mutations only']
+        ),
     }
     if cancer:
         base_widgets.update({
@@ -184,6 +204,8 @@ def ajax_query(sql_filters):
 
     muts, ptm_muts, sites = prepare_subqueries(sql_filters)
 
+    textutal_filters = select_textual_filters(sql_filters)
+
     query = (
         db.session.query(
             Gene.name,
@@ -195,6 +217,7 @@ def ajax_query(sql_filters):
         .select_from(Gene)
         .join(Protein, Protein.id == Gene.preferred_isoform_id)
         .group_by(Gene.id)
+        .having(and_(*textutal_filters))
     )
     return query
 
@@ -241,6 +264,9 @@ class GeneView(FlaskView):
         def query_constructor(sql_filters):
             muts, ptm_muts, sites = prepare_subqueries(sql_filters)
 
+            textutal_filters = select_textual_filters(sql_filters)
+            textutal_filters.append(text('muts_cnt > 0'))
+
             return (
                 db.session.query(
                     Gene.name,
@@ -255,23 +281,27 @@ class GeneView(FlaskView):
                 .filter(GeneListEntry.gene_list_id == gene_list.id)
                 .join(Gene, Gene.id == GeneListEntry.gene_id)
                 .join(Protein, Protein.id == Gene.preferred_isoform_id)
-                .having(text('muts_cnt > 0'))
+                .having(and_(*textutal_filters))
                 .group_by(Gene.id)
             )
 
         def count_query_constructor(sql_filters):
             muts, ptm_muts, sites = prepare_subqueries(sql_filters)
 
+            textutal_filters = select_textual_filters(sql_filters)
+            textutal_filters.append(text('muts_cnt > 0'))
+
             return (
                 db.session.query(
                     GeneListEntry.id,
+                    ptm_muts,
                     muts
                 )
                 .select_from(GeneListEntry)
                 .join(Gene, GeneListEntry.gene_id == Gene.id)
                 .join(Protein, Protein.id == Gene.preferred_isoform_id)
                 .filter(GeneListEntry.gene_list_id == gene_list.id)
-                .having(text('muts_cnt > 0'))
+                .having(and_(*textutal_filters))
             )
 
         ajax_view = AjaxTableView.from_query(
