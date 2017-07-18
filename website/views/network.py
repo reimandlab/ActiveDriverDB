@@ -4,7 +4,7 @@ from flask import url_for
 from flask import jsonify
 from flask import render_template as template
 from flask_classful import FlaskView
-from models import Protein
+from models import Protein, Mutation
 from helpers.filters import Filter
 from helpers.filters import FilterManager
 from helpers.widgets import FilterWidget
@@ -118,6 +118,7 @@ class NetworkView(FlaskView):
             filters=filter_manager,
             option_widgets=self._create_option_widgets(filter_manager),
             widgets=create_widgets(protein, filters_by_id),
+            mutation_types=Mutation.types
         )
 
     def _prepare_network_repr(self, protein, filter_manager, include_kinases_from_groups=False):

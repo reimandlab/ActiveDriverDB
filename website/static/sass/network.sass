@@ -109,13 +109,57 @@ text
       background: lightblue
 
   .site
-    .color
+    &.example .color
       background: orange
+    .color
+      border-color: darkorange
 
-  div
-    display: block
-    margin: auto
-    text-align: center
+  .sites
+    .swatch
+      display: block
+      width: 100%
+      text-align: left
+
+      div
+        display: inline-block
+
+      .site .color
+        width: 20px
+        height: 20px
+        border-width: 1px
+
+  .interaction
+    $thickness: 2px
+    $height: 20px
+    position: relative
+    height: $height
+    width: 100%
+
+    .kinase .color
+      position: absolute
+      width: $height
+      height: $height
+      top: 0
+
+    .link .color
+      height: 0
+      width: 100%
+      border: $thickness solid grey
+      border-top: 0
+      top: ($height - $thickness) / 2
+      position: relative
+
+    .site .color
+      position: absolute
+      width: $height
+      height: $height
+      top: 0
+      right: 0
+
+    &.loss
+      .link .color
+        border: $thickness dashed red
+
 
   .gradient
     .color
@@ -129,4 +173,9 @@ text
   .kinase-gradient
     .color
       background: linear-gradient(90deg, white, blue)
+
+.swatch-centered div
+  display: block
+  margin: auto
+  text-align: center
 
