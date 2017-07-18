@@ -8,6 +8,7 @@ class StatisticsTest(DatabaseTest):
     def exposed_stats(self):
         from statistics import Statistics
         s = Statistics()
+        s.calc_all()
         return s.get_all()
 
     def test_simple_models(self):
@@ -73,7 +74,7 @@ class StatisticsTest(DatabaseTest):
         from statistics import Statistics
         statistics = Statistics()
 
-        in_many_sources = statistics.from_many_sources()
+        in_many_sources = statistics.from_more_than_one_source()
 
         assert in_many_sources == 1
 
@@ -110,8 +111,10 @@ class StatisticsTest(DatabaseTest):
 
         from statistics import Statistics
         statistics = Statistics()
-        interactions = statistics.count_interactions()
-        all_interactions, kinases_covered, kinase_groups_covered, proteins_covered = interactions
+        all_interactions = statistics.interactions()
+        kinases_covered = statistics.kinases_covered()
+        kinase_groups_covered = statistics.kinase_groups_covered()
+        proteins_covered = statistics.proteins_covered()
 
         assert all_interactions == u_all_interactions
         assert kinases_covered == len(u_kinases_covered)
