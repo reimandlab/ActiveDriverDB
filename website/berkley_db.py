@@ -7,11 +7,11 @@ from os.path import join
 
 
 class SetWithCallback(set):
-    """A set implementation that trigggers callbacks on `add` or `update`.
+    """A set implementation that triggers callbacks on `add` or `update`.
 
-    It has an impotant use in BerkleyHashSet database implementation:
+    It has an important use in BerkleyHashSet database implementation:
     it allows a user to modify sets like native Python's structures while all
-    the changes are forwarded to the database, without addtional user's action.
+    the changes are forwarded to the database, without additional user's action.
     """
     _modifying_methods = {'update', 'add'}
 
@@ -84,11 +84,9 @@ class BerkleyHashSet:
 
         key = bytes(key, 'utf-8')
         try:
-            items = list(
-                filter(
-                    bool,
-                    self.db.get(key).decode('utf-8').split('|')
-                )
+            items = filter(
+                bool,
+                self.db.get(key).decode('utf-8').split('|')
             )
         except (KeyError, AttributeError):
             items = []
@@ -97,6 +95,40 @@ class BerkleyHashSet:
             items,
             lambda new_set: self.__setitem__(key, new_set)
         )
+
+    def update(self, key, value):
+        key = bytes(key, 'utf-8')
+        try:
+            items = set(
+                filter(
+                    bool,
+                    self.db.get(key).split(b'|')
+                )
+            )
+        except (KeyError, AttributeError):
+            items = set()
+
+        assert '|' not in value
+        items.update((bytes(v, 'utf-8') for v in value))
+
+        self.db[key] = b'|'.join(items)
+
+    def add(self, key, value):
+        key = bytes(key, 'utf-8')
+        try:
+            items = set(
+                filter(
+                    bool,
+                    self.db.get(key).split(b'|')
+                )
+            )
+        except (KeyError, AttributeError):
+            items = set()
+
+        assert '|' not in value
+        items.add(bytes(value, 'utf-8'))
+
+        self.db[key] = b'|'.join(items)
 
     @require_open
     def __setitem__(self, key, items):

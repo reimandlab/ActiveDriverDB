@@ -39,8 +39,7 @@ def decode_mutation(mut):
     No assertion about source of mutations is made: you can use c.C110T as well
     """
     assert mut[1] == '.'
-    result = (mut[2], int(mut[3:-1]), mut[-1])
-    return result
+    return mut[2], int(mut[3:-1]), mut[-1]
 
 
 def decode_raw_mutation(mut):
@@ -51,8 +50,7 @@ def decode_raw_mutation(mut):
         252 is position of mutation,
         H is alternative residue,
     """
-    result = (mut[0], int(mut[1:-1]), mut[-1])
-    return result
+    return mut[0], int(mut[1:-1]), mut[-1]
 
 
 def determine_strand(ref, cdna_ref, alt, cdna_alt):
@@ -89,11 +87,10 @@ def is_sequence_broken(protein, test_pos, test_res, test_alt=None):
 
     TODO: use test_alt to detect those ref -> alt transitions which are not possible?
     """
-    ref_in_db = '-'
-    try:
+    if len(protein.sequence) <= int(test_pos):
+        return protein.refseq, '-', test_res, str(test_pos), test_alt
+    else:
         ref_in_db = protein.sequence[int(test_pos) - 1]
-        if test_res != ref_in_db:
-            raise ValueError
-    except (ValueError, IndexError):
+        if test_res == ref_in_db:
+            return False
         return protein.refseq, ref_in_db, test_res, str(test_pos), test_alt
-    return False

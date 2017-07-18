@@ -24,6 +24,7 @@ def get_files(path, pattern):
 
     Patterns should be string expression with wildcards * following Unix style.
     """
+
     return glob(path + os.sep + pattern)
 
 
@@ -57,13 +58,12 @@ def read_from_gz_files(directory, pattern, skip_header=True):
 
     for filename in tqdm(files, unit=' files'):
 
-        # with gzip.open(filename, 'rb') as f:
         with fast_gzip_read(filename, processes=4, as_str=True) as f:
 
             if skip_header:
                 next(f)
 
-            for line in buffered_readlines(f, 10000):
+            for line in f:
                 yield line
 
 
@@ -182,7 +182,7 @@ def parse_fasta_file(filename, parser, file_opener=open):
 
 
 def chunked_list(full_list, chunk_size=10000):
-    """Creates generator with `full_list` splitted into chunks.
+    """Creates generator with `full_list` slitted into chunks.
 
     Each chunk will be no longer than `chunk_size` (the last chunk may have
     less elements if provided `full_list` is not divisible by `chunk_size`).

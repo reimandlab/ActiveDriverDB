@@ -9,6 +9,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import backref
 from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
 from werkzeug.utils import cached_property
@@ -145,7 +146,7 @@ class Gene(BioModel):
 
     isoforms = db.relationship(
         'Protein',
-        backref='gene',
+        backref=backref('gene', lazy='immediate'),
         foreign_keys='Protein.gene_id'
     )
 
@@ -324,7 +325,8 @@ class Protein(BioModel):
     sites = db.relationship(
         'Site',
         order_by='Site.position',
-        backref='protein'
+        backref='protein',
+        lazy='immediate'
     )
     mutations = db.relationship(
         'Mutation',

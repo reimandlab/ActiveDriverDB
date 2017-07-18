@@ -96,9 +96,9 @@ def import_mappings(
 
             new_variants.add(item)
             key = protein.gene.name + ' ' + aa_ref + str(aa_pos) + aa_alt
-            database.bdb_refseq[key].update({refseq})
+            database.bdb_refseq.add(key, refseq)
 
-        database.bdb[snv].update(new_variants)
+        database.bdb.update(snv, new_variants)
 
         i += 1
         if i % 200000 == 0:
