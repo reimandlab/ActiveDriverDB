@@ -57,7 +57,13 @@
         Refseq
       </th>
       <th data-sortable=true>
-        Protein residues
+        Full name
+      </th>
+      <th data-sortable=true>
+        Uniprot ID
+      </th>
+      <th data-sortable=true>
+        Residues
       </th>
       <th data-sortable=true>
         CDS
@@ -77,32 +83,56 @@
           {{ isoform.refseq }} {% if isoform.is_preferred_isoform %} <span class="preferred">Preferred</span> {% endif %}
         </td>
         <td>
+          {{ isoform.full_name }}
+        </td>
+        <td>
+          {% set references = isoform.external_references %}
+          <ul class="external-references list-unstyled">
+          {% for uniprot in references.uniprot_entries | sort(attribute='reviewed', reverse=True) %}
+              <li class="uniprot">
+                {% set reviewed = "reviewed" if uniprot.reviewed else "unreviewed" %}
+                <div class="status-indicator {{ reviewed }}" title="{{ reviewed | title }} entry">
+                  <span class="glyphicon glyphicon-file"></span>
+                  {% if uniprot.reviewed %}
+                    <span class="glyphicon glyphicon-star-empty star"></span>
+                  {% endif %}
+                </div>
+                <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ uniprot.accession }}</a>{% if uniprot.isoform != 1 %},
+                <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}#{{ uniprot.accession }}-{{ uniprot.isoform }}" {{ target }}>isoform {{ uniprot.isoform }}</a>
+              {% endif %}
+          {% endfor %}
+          </ul>
+        </td>
+        <td>
           {{ isoform.length }}
         </td>
         <td>
-          {{ '{:,}'.format(isoform.cds_start) if isoform.cds_start else '?' }}
+          {{ t_sep(isoform.cds_start) if isoform.cds_start else '?' }}
           -
-          {{ '{:,}'.format(isoform.cds_end) if isoform.cds_end else '?' }}
+          {{ t_sep(isoform.cds_end) if isoform.cds_end else '?' }}
         </td>
         <td>
-          {{ '{:,}'.format(isoform.tx_start) if isoform.tx_start else '?' }}
+          {{ t_sep(isoform.tx_start) if isoform.tx_start else '?' }}
           -
-          {{ '{:,}'.format(isoform.tx_end) if isoform.tx_end else '?' }}
+          {{ t_sep(isoform.tx_end) if isoform.tx_end else '?' }}
         </td>
         <td>
-          <a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">
-            Sequence View
-            ({{ isoform.sites | length }} PTM sites,
-            {{ isoform.confirmed_mutations_count }} mutations)
-          </a>
-          {# Note: fetching interactors may be slow sometimes, although very useful #}
-          {% set interactors = isoform.interactors_count %}
-          <a href="{{ url_for('NetworkView:show', refseq=isoform.refseq) }}" class="{{ 'inactive' if not interactors }}">
-            Network View
-            {% if interactors %}
-              ({{ interactors }} PTM enzymes)
-            {% endif %}
-          </a>
+          <ul class="list-unstyled">
+            <li><a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">
+              Sequence View
+              ({{ isoform.sites | length }} PTM sites,
+              {{ isoform.confirmed_mutations_count }} mutations)
+            </a>
+            {# Note: fetching interactors may be slow sometimes, although very useful #}
+            {% set interactors = isoform.interactors_count %}
+            <li><a href="{{ url_for('NetworkView:show', refseq=isoform.refseq) }}" class="{{ 'inactive' if not interactors }}">
+              Network View
+              {% if interactors %}
+                ({{ interactors }} PTM enzymes)
+              {% endif %}
+            </a>
+
+          </ul>
         </td>
       </tr>
     {% endfor %}
