@@ -1,6 +1,4 @@
 from collections import defaultdict
-from database import bdb
-from database import bdb_refseq
 from database import make_snv_key
 from database import encode_csv
 from helpers.bioinf import decode_mutation
@@ -8,6 +6,10 @@ from helpers.bioinf import is_sequence_broken
 from helpers.parsers import read_from_gz_files
 from helpers.bioinf import get_human_chromosomes
 from helpers.bioinf import determine_strand
+from importlib import reload
+from flask import current_app
+import database
+import gc
 
 
 def import_mappings(
@@ -20,8 +22,10 @@ def import_mappings(
     chromosomes = get_human_chromosomes()
     broken_seq = defaultdict(list)
 
-    bdb.reset()
-    bdb_refseq.reset()
+    database.bdb.reset()
+    database.bdb_refseq.reset()
+
+    i = 0
 
     for line in read_from_gz_files(mappings_dir, mappings_file_pattern):
         chrom, pos, ref, alt, prot = line.rstrip().split('\t')
@@ -92,8 +96,17 @@ def import_mappings(
 
             new_variants.add(item)
             key = protein.gene.name + ' ' + aa_ref + str(aa_pos) + aa_alt
-            bdb_refseq[key].update({refseq})
+            database.bdb_refseq[key].update({refseq})
 
-        bdb[snv].update(new_variants)
+        database.bdb[snv].update(new_variants)
+
+        i += 1
+        if i % 200000 == 0:
+            database.bdb.close()
+            database.bdb_refseq.close()
+            reload(database)
+            database.bdb.open(current_app.config['BDB_DNA_TO_PROTEIN_PATH'])
+            database.bdb_refseq.open(current_app.config['BDB_GENE_TO_ISOFORM_PATH'])
+            gc.collect()
 
     return broken_seq

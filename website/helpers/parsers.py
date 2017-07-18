@@ -28,7 +28,7 @@ def get_files(path, pattern):
 
 
 @contextmanager
-def fast_gzip_read(file_name, mode='r', processes=4):
+def fast_gzip_read(file_name, mode='r', processes=4, as_str=False):
     if mode != 'r':
         raise ValueError('Only "r" mode is supported')
 
@@ -37,7 +37,8 @@ def fast_gzip_read(file_name, mode='r', processes=4):
     p = subprocess.Popen(
         (command % file_name).split(' '),
         stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT
+        stderr=subprocess.STDOUT,
+        universal_newlines=as_str
     )
     yield p.stdout
 
@@ -56,13 +57,14 @@ def read_from_gz_files(directory, pattern, skip_header=True):
 
     for filename in tqdm(files, unit=' files'):
 
-        with gzip.open(filename, 'rb') as f:
+        # with gzip.open(filename, 'rb') as f:
+        with fast_gzip_read(filename, processes=4, as_str=True) as f:
 
             if skip_header:
                 next(f)
 
             for line in buffered_readlines(f, 10000):
-                yield line.decode('latin1')
+                yield line
 
 
 def buffered_readlines(file_handle, line_count=5000):

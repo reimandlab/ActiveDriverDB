@@ -75,6 +75,9 @@ class BerkleyHashSet:
         self.db = bsddb.hashopen(self.path, mode)
         self.is_open = True
 
+    def close(self):
+        self.db.close()
+
     @require_open
     def __getitem__(self, key):
         """key: has to be str"""
