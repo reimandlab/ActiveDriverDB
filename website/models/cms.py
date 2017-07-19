@@ -20,6 +20,12 @@ class CMSModel(Model):
     __bind_key__ = 'cms'
 
 
+class Count(CMSModel):
+    """Statistics holder"""
+    name = db.Column(db.String(254), unique=True)
+    value = db.Column(db.Integer)
+
+
 class BadWord(CMSModel):
     """Model for words which should be filtered out"""
 

@@ -74,7 +74,7 @@
 
           <div class="legend">
             <h4>Protein</h4>
-            <div class="swatch">
+            <div class="swatch swatch-centered">
               <div class="protein">
                 <div class="color"></div>
               </div>
@@ -87,13 +87,13 @@
               Kinases
               {{ help('legend-network-kinases', 'small-top') }}
             </h4>
-            <div class="swatch">
+            <div class="swatch swatch-centered">
               <div class="kinase">
                 <div class="color"></div>
               </div>
               <div class="name">Kinase interacting with one of sites</div>
             </div>
-            <div class="swatch">
+            <div class="swatch swatch-centered">
               <div class="kinase-gradient gradient">
                 <div class="left-edge edge">0</div>
                 <div class="color"></div>
@@ -110,12 +110,57 @@
               Sites
               {{ help('legend-network-sites', 'small-top') }}
             </h4>
-            <div class="swatch">
-              <div class="site">
+            <div class="swatch swatch-centered">
+              <div class="site example">
                 <div class="color"></div>
               </div>
               <div class="name">PTM Site</div>
-              <div class="name">color corresponds to type</div>
+              <div class="name"><p>Color corresponds to (most severe) impact of mutations on given site:</p></div>
+              <div class="sites">
+                {% for type in mutation_types %}
+                  <div class="swatch">
+                    <div class="site impact {{ type }}">
+                      <div class="color"></div>
+                    </div>
+                    <div class="name">{{ type }}</div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <div class="legend">
+            <h4>Interactions</h4>
+            <div class="swatch">
+              <div class="interaction normal">
+                <div class="link">
+                  <div class="color"></div>
+                </div>
+                <div class="kinase">
+                  <div class="color"></div>
+                </div>
+                <div class="site none">
+                  <div class="color"></div>
+                </div>
+              </div>
+              <div class="name">Kinase interacts with analysed protein at this site</div>
+            </div>
+            <div class="swatch">
+              <div class="interaction loss">
+                <div class="link">
+                  <div class="color"></div>
+                </div>
+                <div class="kinase">
+                  <div class="color"></div>
+                </div>
+                <div class="site network-rewiring">
+                  <div class="color"></div>
+                </div>
+              </div>
+              <div class="name">
+                Loss of interaction predicted: some mutation causes disruption of a binding motif
+                {{ help('legend-network-interaction-loss', 'small-top') }}
+              </div>
             </div>
           </div>
 

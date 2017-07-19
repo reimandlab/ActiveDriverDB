@@ -36,6 +36,16 @@ def automigrate(args, app=None):
     return True
 
 
+def calc_statistics(args, app=None):
+    if not app:
+        app = create_app(config_override={'LOAD_STATS': False})
+    with app.app_context():
+        from statistics import Statistics
+        statistics = Statistics()
+        statistics.calc_all()
+        db.session.commit()
+
+
 def get_all_models(module_name='bio'):
     from models import Model
     from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
@@ -396,6 +406,15 @@ def create_parser():
     }
 
     create_command_subparsers(command_subparsers)
+
+    # STATS SUBCOMMAND
+    stats_parser = subparsers.add_parser(
+        'calc_stats',
+        help=(
+            'should statistics (counts of protein, pathways, mutation, etc) be recalculated?'
+        )
+    )
+    stats_parser.set_defaults(func=calc_statistics)
 
     # MIGRATE SUBCOMMAND
     migrate_parser = subparsers.add_parser(
