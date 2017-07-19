@@ -126,6 +126,7 @@ class NetworkView(FlaskView):
         from sqlalchemy import and_
         from sqlalchemy import or_
 
+        # TODO: all of this could be fetched in a single query
         protein_mutations = filter_manager.query_all(
             Mutation,
             lambda q: and_(q, Mutation.protein == protein)
@@ -195,6 +196,16 @@ class NetworkView(FlaskView):
 
         def prepare_site(site):
             site_mutations = muts_by_site[site]
+            mutations = [
+                {
+                    'ref': mutation.ref,
+                    'pos': mutation.position,
+                    'alt': mutation.alt,
+                    'impact': mutation.impact_on_specific_ptm(site)
+                }
+                for mutation in site_mutations
+            ]
+
             return {
                 'position': site.position,
                 'residue': site.residue,
@@ -203,8 +214,9 @@ class NetworkView(FlaskView):
                     group.name for group in site.kinase_groups
                 ],
                 'kinases_count': len(site.kinases),
-                'nearby_sequence': get_nearby_sequence(site, protein),
+                'sequence': get_nearby_sequence(site, protein, dst=7),
                 'mutations_count': len(site_mutations),
+                'mutations': mutations,
                 'mimp_losses': [
                     mimp.pwm
                     for mutation in site_mutations
@@ -212,8 +224,8 @@ class NetworkView(FlaskView):
                     if not mimp.effect
                 ],
                 'impact': most_significant_impact(set(
-                    mutation.impact_on_specific_ptm(site)
-                    for mutation in site_mutations
+                    mutation['impact']
+                    for mutation in mutations
                 ))
             }
 

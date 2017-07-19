@@ -1,16 +1,57 @@
-<h5>{{ node.name }}</h5>
-<i>{{ node.type }}</i>
+<h5>{{ node.type }}: {{ node.name }}</h5>
 <div>
 {% if node.type === types.site %}
-  Nearby sequence: {{ node.nearby_sequence }}<br>
+  Nearby sequence: {{ node.sequence }}<br>
   Mutations in nearby that satisfy applied filters: {{ node.mutations_count }}<br>
   {% if node.impact != 'none' %}
-    Nearby mutations
+    <p>
+    Mutations in nearby
     {% if node.impact == 'network-rewiring' %}
       this site are predicted to have network-rewiring effect.
     {% else %}
       are affecting the site having '{{ node.impact }}' impact.
     {% endif %}
+    </p>
+    <div class="site-muts">
+        <table
+          class="table site-muts-table"
+          data-page-size="5"
+          data-pagination="true"
+          data-page-list="[]"
+        >
+          <thead>
+            <th data-sortable="true">Mutation</th>
+            <th data-sortable="true">In sequence</th>
+            <th data-sortable="true">Distance</th>
+            <th data-sortable="true">Impact</th>
+          </thead>
+          {% for mutation in node.mutations %}
+            {% set pos = node.position - mutation.pos %}
+            <tr>
+              <td>
+                <a href="/mutation/show/{{ refseq }}/{{ mutation.pos }}/{{ mutation.alt }}">{{ mutation.pos }}{{ mutation.alt }}</a>
+              </td>
+              <td>
+                <a href="/protein/show/{{ refseq }}#{{ mutation.pos }}{{ mutation.alt }}" class="sequence">
+                  {% if pos < 7 -%}
+                    {{ node.sequence | truncate(7 - pos, true, '') }}
+                  {%- endif -%}
+                    [{{ mutation.ref }}/{{ mutation.alt }}]
+                  {%- if pos > -7 -%}
+                    {{ node.sequence | reverse | truncate(7 + pos, true, '') | reverse }}
+                  {% endif %}
+                </a>
+              </td>
+              <td>
+                {{ pos | abs }}
+              </td>
+              <td>
+                {{ mutation.impact }}
+              </td>
+            </tr>
+          {% endfor %}
+        </table>
+    </div>
   {% endif %}
 {% elif node.type === types.group %}
   In this group there are:<br>

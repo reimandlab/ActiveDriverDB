@@ -593,6 +593,9 @@ var Network = function ()
             }
             else if(node.type === types.site)
             {
+                if(!d3.event.ctrlKey)
+                    return
+
                 var site = node
                 var camera_speed = 2500
 
@@ -986,7 +989,6 @@ var Network = function ()
             .enter().append('line')
             .attr('class', 'link')
 
-
         tooltip = Tooltip()
         tooltip.init({
             id: 'node',
@@ -994,13 +996,17 @@ var Network = function ()
                 return nunjucks.render(
                     'node_tooltip.njk',
                     {
+                        refseq: central_node.protein.refseq,
                         node: node,
                         types: types,
                         nodeURL: config.nodeURL
                     }
                 )
             },
-            viewport: svg.node().parentElement
+            viewport: document.body,
+            callback: function(element){
+                $(element).find('.site-muts-table').bootstrapTable()
+            }
         })
 
         nodes = vis.selectAll('.node')
@@ -1113,7 +1119,7 @@ var Network = function ()
 
         site_nodes
             .append('text')
-            .text(function(d) { return d.nearby_sequence })
+            .text(function(d) { return d.sequence.slice(4, -4) })
             .style('font-size', '5.5px')
             .attr('dy', '1.5em')
 

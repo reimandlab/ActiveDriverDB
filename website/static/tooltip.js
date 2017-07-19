@@ -14,6 +14,7 @@ var Tooltip = function()
     var viewport
     var preprocess_data
     var data_url    // from where additional data for tooltip should be fetched
+    var callback
 
     // pointer offsets
     var pointerOffsetX = 0
@@ -92,6 +93,7 @@ var Tooltip = function()
      * @typedef {Object} Config
      * @property {string} id - REQUIRED identifier for the tooltips to be used in events binding
      * @property {function} template - will be called with data as the only argument, in context of bound element
+     * @property {function} callback - to be called after new content is set to the tooltip (after templating)
      * @property {function} preprocess_data - will be called before templating,
      * basically a hook to modify data given to template function.
      * It will be called with data as the first argument and
@@ -124,6 +126,9 @@ var Tooltip = function()
 
             if(config.template)
                 _template = config.template
+
+            if(config.callback)
+                callback = config.callback
 
             d3.select('body')
                 .on('click.' + config.id, publicSpace.unstick)
@@ -164,6 +169,9 @@ var Tooltip = function()
                 element = this
                 // re-render template only on if the element has changed
                 render_template(d)
+
+                if(callback)
+                    callback(tooltip_content.node())
             }
 
             publicSpace.moveToPointer()
