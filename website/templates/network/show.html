@@ -38,7 +38,8 @@
 
 {% block content %}
 
-<h3>{{ protein.gene.name }} - {{ protein.refseq }}</h3>
+<h3>{{ protein.gene.name }} ({{ protein.refseq }}) {% if protein.gene.full_name %} - {{ protein.gene.full_name }} {% endif %}</h3>
+<p class="full-protein-name">{% if protein.full_name %}{{ protein.full_name | title }}{% endif %}</p>
 
   <div class="isoform-page-options">
     <ul class="nav nav-tabs">
