@@ -74,7 +74,7 @@ class Statistics:
             # dirty trick: 1KGenomes is not valid name in python
             name = 'mutations_' + model.name.replace('1', 'T')
 
-            def muts_counter(self):
+            def muts_counter(self, model=model):
                 return self.count_mutations(model)
             muts_counter.to_be_registered = True
 
