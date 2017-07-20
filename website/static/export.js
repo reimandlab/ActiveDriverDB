@@ -20,7 +20,7 @@ var Export = (function ()
 
     var publicSpace = {
 
-        init: function(element, title, style_address)
+        init: function(element, title, style_address, custom_exporters)
         {
             svg_element = element
             file_name = title
@@ -28,6 +28,27 @@ var Export = (function ()
 
             $('.export_svg').click(publicSpace.export_svg)
             $('.export_print').click(publicSpace.export_print)
+
+            if(custom_exporters)
+            {
+                publicSpace.set_custom_exporters(custom_exporters)
+            }
+        },
+        set_custom_exporters: function(exporters)
+        {
+            var menu = $('.export-menu')
+
+            // clear from old exporters
+            menu.find('.custom_exporter').remove()
+
+            exporters.forEach(
+                function (exporter) {
+                    var element = $(
+                        '<li><a href="' + exporter.url + '" class="custom_exporter" target="_blank"><span class="glyphicon glyphicon-' + exporter.icon + '"></span> ' + exporter.name + '</a>'
+                    )
+                    menu.append(element)
+                }
+            )
 
         },
         update_title: function(title)

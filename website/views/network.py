@@ -1,4 +1,6 @@
-from flask import request
+from collections import namedtuple
+
+from flask import request, abort, Response, json
 from flask import redirect
 from flask import url_for
 from flask import jsonify
@@ -209,6 +211,7 @@ class NetworkView(FlaskView):
             return {
                 'position': site.position,
                 'residue': site.residue,
+                'type': site.type,
                 'kinases': [kinase.name for kinase in site.kinases],
                 'kinase_groups': [
                     group.name for group in site.kinase_groups
@@ -260,6 +263,58 @@ class NetworkView(FlaskView):
             ]
         }
         return data
+
+    def _as_tsv(self, protein, filter_manager):
+        header = ['target_protein', 'target_site', 'target_site_type', 'target_site_mutation_impact', 'bound_enzyme']
+        content = ['#' + '\t'.join(header)]
+
+        network = self._prepare_network_repr(protein, filter_manager)
+        target_protein = protein.refseq
+
+        for site in network['sites']:
+            target_site = '%s,%s' % (site['position'], site['residue'])
+            protein_and_site = [target_protein, target_site, site['type'], site['impact']]
+
+            for kinase in site['kinases'] + site['kinase_groups']:
+                row = protein_and_site + [kinase]
+                content.append('\t'.join(row))
+
+        return '\n'.join(content)
+
+    def download(self, refseq, format):
+
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+        filter_manager = NetworkViewFilters(protein)
+
+        Formatter = namedtuple('Formatter', 'get_content mime_type extension')
+
+        formatters = {
+            'json': Formatter(
+                lambda: json.dumps(self._prepare_network_repr(protein, filter_manager)),
+                'text/json',
+                'json'
+            ),
+            'tsv': Formatter(
+                lambda: self._as_tsv(protein, filter_manager),
+                'text/tsv',
+                'tsv'
+            )
+        }
+
+        if format not in formatters:
+            raise abort(404)
+
+        formatter = formatters[format]
+
+        name = refseq + '-' + filter_manager.url_string(expanded=True)
+
+        filename = '%s.%s' % (name, formatter.extension)
+
+        return Response(
+            formatter.get_content(),
+            mimetype=formatter.mime_type,
+            headers={'Content-disposition': 'attachment; filename=' + filename}
+        )
 
     def representation(self, refseq):
 

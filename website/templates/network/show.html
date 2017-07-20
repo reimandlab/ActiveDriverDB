@@ -209,17 +209,19 @@
 
               <div class="btn-group zooming" role="group">
                 <button type="button" class="btn btn-default zoom-in" title="Zoom in">
-                  <span class="glyphicon glyphicon-zoom-in" aria-hidden="true"></span>
+                  <span class="glyphicon glyphicon-zoom-in"></span>
                 </button>
                 <button type="button" class="btn btn-default zoom-fit" title="Fit to the window">
-                  <span class="glyphicon glyphicon-screenshot" aria-hidden="true"></span> Fit window
+                  <span class="glyphicon glyphicon-screenshot"></span> Fit window
                 </button>
                 <button type="button" class="btn btn-default zoom-out" title="Zoom out">
-                  <span class="glyphicon glyphicon-zoom-out" aria-hidden="true"></span>
+                  <span class="glyphicon glyphicon-zoom-out"></span>
                 </button>
               </div>
 
-              {% include 'buttons/export.html' %}
+              {% with entity='network' %}
+                {% include 'buttons/export.html' %}
+              {% endwith %}
             </div>
           </div>
           <div class="panel-body">
@@ -318,6 +320,8 @@
      * @property {boolean} show_sites
      */
 
+    var download_link = decode_url_pattern("{{ url_for('NetworkView:download', refseq=protein.refseq, format='{{ format }}', filters='{{ filters }}') }}")
+
     /**
      * Callback for AsyncFiltersHandler loading representation from server response.
      * @param {NetworkViewData} data
@@ -337,6 +341,21 @@
                     expanded_filters: filters_data.expanded_query
                 }
             )
+        );
+
+        Export.set_custom_exporters(
+            [
+                {
+                    name: 'TSV file',
+                    icon: 'file',
+                    url: format(download_link, {format: 'tsv', 'filters': filters_data.query})
+                },
+                {
+                    name: 'JSON file',
+                    icon: 'file',
+                    url: format(download_link, {format: 'json', 'filters': filters_data.query})
+                }
+            ]
         );
 
         init_network({
