@@ -139,7 +139,6 @@ $('body').off().on('click', '.list-expand', function(){
 })
 
 /* Just for debug purposes */
-var print = console.log
 var p = console.log
 
 /**
