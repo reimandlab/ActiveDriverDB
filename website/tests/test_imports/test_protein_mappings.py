@@ -65,6 +65,9 @@ class TestImport(DatabaseTest):
                 path.basename(mappings_filename)
             )
 
+            # in some cases it is needed to reload bdb after import
+            bdb.reload()
+
             assert not bdb[make_snv_key('1', 19282216, 'G', 'A')]
             assert bdb[make_snv_key('17', 19282216, 'G', 'A')]
 

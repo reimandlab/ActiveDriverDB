@@ -152,3 +152,8 @@ class BerkleyHashSet:
         """Reset database completely by its removal and recreation."""
         self.drop()
         self.open(self.name)
+
+    @require_open
+    def reload(self):
+        self.close()
+        self.open(self.name)
