@@ -1,4 +1,4 @@
-<h5>{{ node.type }}: {{ node.name }}</h5>
+<h5>{{ node.type }}: {{ node.name }} {% if node.type === types.site %}({{ node.ptm_type | replace(',', ', ') }}){% endif %}</h5>
 <div>
 {% if node.type === types.site %}
   Nearby sequence: {{ node.sequence }}<br>
@@ -63,6 +63,6 @@
 {% if node.protein %}
   Mutations satisfying applied filters: {{ node.protein.mutations_count }}
   <br>
-  <a href="{{ nodeURL(node) }}">Show associated protein</a>
+  <a href="{{ nodeURL(node) }}">Show associated protein ({{ node.protein.refseq }})</a>
 {% endif %}
 </div>

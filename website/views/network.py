@@ -211,7 +211,7 @@ class NetworkView(FlaskView):
             return {
                 'position': site.position,
                 'residue': site.residue,
-                'type': site.type,
+                'ptm_type': site.type,
                 'kinases': [kinase.name for kinase in site.kinases],
                 'kinase_groups': [
                     group.name for group in site.kinase_groups
@@ -273,7 +273,7 @@ class NetworkView(FlaskView):
 
         for site in network['sites']:
             target_site = '%s,%s' % (site['position'], site['residue'])
-            protein_and_site = [target_protein, target_site, site['type'], site['impact']]
+            protein_and_site = [target_protein, target_site, site['ptm_type'], site['impact']]
 
             for kinase in site['kinases'] + site['kinase_groups']:
                 row = protein_and_site + [kinase]
