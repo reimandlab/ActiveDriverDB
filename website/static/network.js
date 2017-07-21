@@ -584,17 +584,23 @@ var Network = function ()
 
     function nodeClick(node)
     {
+        if(d3.event.shiftKey && node !== central_node)
+            node.fixed = false
+
         if(d3.event.defaultPrevented === false)
         {
             if(node.type === types.group)
             {
                 switchGroupState(node)
+                node.fixed = false
                 force_manager.start()
             }
             else if(node.type === types.site)
             {
                 if(!d3.event.ctrlKey)
                     return
+
+                node.fixed = false
 
                 var site = node
                 var camera_speed = 2500
@@ -627,6 +633,7 @@ var Network = function ()
                 for(var i = 0; i < site.interactors.length; i++)
                 {
                     var interactor = site.interactors[i]
+                    interactor.fixed = false
                     interactor.collisions_active = site.exposed
                     // noinspection EqualityComparisonWithCoercionJS
                     if(interactor.type == types.group)
@@ -1009,6 +1016,9 @@ var Network = function ()
                 $(element).find('.site-muts-table').bootstrapTable()
             }
         })
+
+        force_manager.drag()
+            .on('dragstart', function(d){ d.fixed = true })
 
         nodes = vis.selectAll('.node')
             .data(nodes_data)
