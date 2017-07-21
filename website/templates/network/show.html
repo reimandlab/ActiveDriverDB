@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "help.html" import help with context %}
+{% from "text_entry.html" import text with context %}
 
 {% block title %}
     {{ protein.gene.name }} - {{ protein.refseq }} - network view - {{ super() }}
@@ -243,6 +244,17 @@
             <div id="network_plot">
             </div>
           </div>
+      </div>
+
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">
+            Usage summary
+          </h3>
+        </div>
+        <div class="panel-body">
+          {{ text('network-usage-summary') }}
+        </div>
       </div>
 
       {# references #}
