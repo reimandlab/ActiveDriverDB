@@ -55,7 +55,7 @@ var Export = (function ()
         {
             file_name = title
         },
-        export_svg: function()
+        export_svg: function(event)
         {
             if(style_url && styles === undefined)
             {
@@ -101,7 +101,7 @@ var Export = (function ()
 
             event.preventDefault()
         },
-        export_print: function()
+        export_print: function(event)
         {
             window.print()
             event.preventDefault()

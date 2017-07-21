@@ -183,7 +183,6 @@ var Tracks = function ()
             var zoom = config.min_zoom * config.sequenceLength / len
             // and trim it to max allowed zoom
             zoom = Math.min(zoom, config.max_zoom)
-            print(zoom)
 
             _setZoom(zoom)
         }
