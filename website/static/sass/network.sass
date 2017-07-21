@@ -90,6 +90,9 @@ text
 .legend
   width: 100%
 
+$sqrt_3: 1.73205080757
+$sqrt_2: 1.41421356237
+
 .swatch
   .color
     height: 35px
@@ -160,6 +163,11 @@ text
       .link .color
         border: $thickness dashed red
 
+  .kinase-group
+    .color, .node
+      border: 0
+      width: 35px
+      height: 35px
 
   .gradient
     .color
@@ -170,6 +178,9 @@ text
     .color, .edge
       display: inline-block
 
+    .edge
+      width: 20px
+
   .kinase-gradient
     .color
       background: linear-gradient(90deg, white, blue)
@@ -178,6 +189,13 @@ text
   display: block
   margin: auto
   text-align: center
+
+.side-by-side
+  clear: both
+
+  .swatch
+    width: 50%
+    float: left
 
 .site-muts
   width: 400px
