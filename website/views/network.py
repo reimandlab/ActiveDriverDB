@@ -265,15 +265,18 @@ class NetworkView(FlaskView):
         return data
 
     def _as_tsv(self, protein, filter_manager):
-        header = ['target_protein', 'target_site', 'target_site_type', 'target_site_mutation_impact', 'bound_enzyme']
+        header = [
+            'target_protein', 'target_protein_refseq',
+            'target_site', 'target_site_type',
+            'target_site_mutation_impact', 'bound_enzyme'
+        ]
         content = ['#' + '\t'.join(header)]
 
         network = self._prepare_network_repr(protein, filter_manager)
-        target_protein = protein.refseq
 
         for site in network['sites']:
             target_site = '%s,%s' % (site['position'], site['residue'])
-            protein_and_site = [target_protein, target_site, site['ptm_type'], site['impact']]
+            protein_and_site = [protein.gene_name, protein.refseq, target_site, site['ptm_type'], site['impact']]
 
             for kinase in site['kinases'] + site['kinase_groups']:
                 row = protein_and_site + [kinase]
@@ -313,7 +316,7 @@ class NetworkView(FlaskView):
         return Response(
             formatter.get_content(),
             mimetype=formatter.mime_type,
-            headers={'Content-disposition': 'attachment; filename=' + filename}
+            headers={'Content-disposition': 'attachment; filename="%s"' % filename}
         )
 
     def representation(self, refseq):
