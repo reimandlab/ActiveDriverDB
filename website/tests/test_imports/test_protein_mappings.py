@@ -36,7 +36,8 @@ class TestImport(DatabaseTest):
         mappings_filename = make_named_temp_file(
             data=raw_mappings.encode(),
             mode='wb',
-            opener=gzip.open
+            opener=gzip.open,
+            suffix='.gz'
         )
         print(mappings_filename)
 

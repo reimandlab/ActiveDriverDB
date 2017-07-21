@@ -61,7 +61,7 @@ def read_from_gz_files(directory, pattern, skip_header=True):
         with fast_gzip_read(filename, processes=4, as_str=True) as f:
 
             if skip_header:
-                next(f)
+                next(f)         # TODO: force header checking, this allows errors to pass silently!
 
             for line in f:
                 yield line
