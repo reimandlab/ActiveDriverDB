@@ -4,6 +4,18 @@
  * Following terms are used in this module:
  * - canvas: an html element (presumably <svg>) to be zoomed and moved
  * - viewport: a container restricting movement and scale of the canvas
+ *
+ * The Zoom was implemented using CSS transitions to speed up zooming and panning on older browsers,
+ * where support for SVG transitions was not hardware-accelerated as CSS3 transitions are.
+ * Currently some browsers support SVG transitions much smoother but still,
+ * the older browser keep a major share in the market.
+ *
+ * Some browsers (Safari family) seems to have problems with CSS or element transitions executed on SVG elements;
+ * for those, and for brave future where all browsers support all transitions equally there is ZoomFallback
+ * which may be returned by Zoom initializer if it decides it is a better to use the simpler, SVG-only transitions.
+ *
+ * Zoom and ZoomFallback should be merged into a class hierarchy in future when support for ES6 matures:
+ * see: http://caniuse.com/es6-class. At time of writing classes are supported in browsers of 73.97% users.
  */
 var Zoom = function()
 {
@@ -92,6 +104,19 @@ var Zoom = function()
          */
         init: function(user_config)
         {
+            var agent = navigator.userAgent;
+            var is_safari = agent.indexOf('Safari') > -1;
+            var is_chrome = agent.indexOf('Chrome') > -1;
+            if (is_safari && is_chrome)
+                is_safari = false;
+
+            if(is_safari)
+            {
+                var zoom_fallback = ZoomFallback();
+                zoom_fallback.init(user_config);
+                return zoom_fallback;
+            }
+
             config = user_config;
             svg = config.element;
             min = config.min;
@@ -101,6 +126,8 @@ var Zoom = function()
 
             viewport = d3.select(config.viewport);
             viewport.call(zoom)
+
+            return this;
         },
         viewport_to_canvas: viewport_to_canvas,
         canvas_to_viewport: canvas_to_viewport,
@@ -142,4 +169,97 @@ var Zoom = function()
         }
     }
 }
+var ZoomFallback = function()
+{
+    var svg;
+    var min;
+    var max;
+    var config;
+    var zoom;
+    var viewport;
+    var svg_canvas;
 
+    var viewport_size = [];
+
+    function callback()
+    {
+        transform(d3.event.translate, d3.event.scale, 0);
+        config.on_move(this)
+    }
+
+    function transform(translate, scale, animation_speed)
+    {
+        zoom.translate(translate);
+        zoom.scale(scale);
+
+        if(animation_speed)
+        {
+            svg_canvas.transition()
+                .duration(animation_speed)
+                .attr('transform', 'translate(' + translate + ')scale(' + scale + ')');
+        }
+        else
+        {
+            svg_canvas
+                .attr('transform', 'translate(' + translate + ')scale(' + scale + ')');
+        }
+    }
+
+    function set_viewport_size(width, height)
+    {
+        viewport_size[0] = width;
+        viewport_size[1] = height;
+
+        svg.attr('viewBox', '0 0 ' + width + ' ' + height);
+        svg.attr('width', width + 'px');
+        svg.attr('height', height + 'px');
+        svg.style('transform-origin', 'top left');
+    }
+
+    return {
+        init: function (user_config) {
+
+            config = user_config;
+            svg = config.element;
+            svg_canvas = config.inner_element;
+            min = config.min;
+            max = config.max;
+
+            zoom = prepareZoom(min, max, callback);
+
+            viewport = d3.select(config.viewport);
+            viewport.call(zoom)
+
+            return this;
+        },
+        viewport_to_canvas: function(position){return position},
+        canvas_to_viewport: function(position){return position},
+        set_viewport_size: set_viewport_size,
+        set_zoom: function(new_scale)
+        {
+            zoom.scale(new_scale);
+            new_scale = zoom.scale();
+
+            var translate = zoom.translate();
+
+            // apply the new zoom
+            transform(translate, new_scale, 600)
+        },
+        center_on: function(position, radius, animation_speed)
+        {
+            animation_speed = (typeof animation_speed === 'undefined') ? 750: animation_speed;
+
+            var scale = Math.min(viewport_size[0], viewport_size[1]) / radius;
+
+            position[0] *= -scale;
+            position[1] *= -scale;
+            position[0] += viewport_size[0] / 2;
+            position[1] += viewport_size[1] / 2;
+
+            transform(position, scale, animation_speed)
+        },
+        get_zoom: function(){
+            return zoom.scale();
+        }
+    }
+}

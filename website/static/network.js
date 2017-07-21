@@ -952,9 +952,12 @@ var Network = function ()
     {
         svg = prepareSVG(config.element)
 
+        vis = svg.append('g')
+
         zoom = Zoom()
-        zoom.init({
+        zoom = zoom.init({
             element: svg,
+            inner_element: vis,
             min: config.min_zoom,
             max: config.max_zoom,
             viewport: svg.node().parentNode,
@@ -968,8 +971,6 @@ var Network = function ()
         })
 
         resize()
-
-        vis = svg.append('g')
 
         var created_nodes = createNodes(config.data);
         var nodes_data = created_nodes.all;
