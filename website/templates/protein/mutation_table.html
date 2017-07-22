@@ -59,10 +59,10 @@
                 title="Mutation summary (click on + for more info)">
                 {% if source in ('1KGenomes', 'ESP6500') %}
                     MAF
-                {% elif source == 'TCGA' %}
-                    cancer types
+                {% elif source in ('TCGA', 'MC3') %}
+                    Cancer types
                 {% elif source == 'ClinVar' %}
-                    disease annotations
+                    Disease annotations
                 {% endif %}
             </th>
             {% endif %}
