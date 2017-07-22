@@ -279,6 +279,22 @@ class ProteinReferences(BioModel):
     uniprot_entries = db.relationship(UniprotEntry, backref='reference')
 
 
+class AnatomicalTherapeuticChemicalCode(BioModel):
+    code = db.Column(db.String(32))
+
+
+class DrugGroup(BioModel):
+    """approved investigational etc"""
+    group = db.Column(db.String(32))
+
+
+class Drug(BioModel):
+    name = db.Column(db.String(64))
+    drug_bank_id = db.Column(db.String(32))
+    description = db.Column(db.Text)
+    atc_codes = db.relationship()
+
+
 class Protein(BioModel):
     """Protein represents a single isoform of a product of given gene."""
 
