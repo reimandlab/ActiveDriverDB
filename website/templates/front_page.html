@@ -35,7 +35,7 @@
     {% include "navbar.html" %}
   {% endwith %}
 
-  <div class="front-page-content page-content">
+  <div class="front-page-content page-content main-container">
 
     <div class="strip strip-top">
 
@@ -119,18 +119,6 @@
       </div>
     </div>
   </div>
-
-  <footer class="footer">
-    <div class="row">
-      <div class="col-md-10 col-md-offset-1">
-        <ul class="menu list-unstyled">
-          {% block footer %}
-            {{ system_menu('footer_menu').as_list }}
-          {% endblock %}
-        </ul>
-      </div>
-    </div>
-  </footer>
 {% endblock %}
 
 

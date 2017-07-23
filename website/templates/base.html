@@ -57,9 +57,10 @@
 
 
   {% block body %}
-  <div class="container">
 
-    {% include "navbar.html" %}
+  {% include "navbar.html" %}
+
+  <div class="container main-container">
 
     {% block breadcrumbs_bar %}
     <div class="minor-top-navigation">
@@ -117,13 +118,6 @@
       {% block content %}
       {% endblock %}
     </div>
-    <footer class="footer">
-      <ul class="menu list-unstyled">
-        {% block footer %}
-          {{ system_menu('footer_menu').as_list }}
-        {% endblock %}
-      </ul>
-    </footer>
 
     {% if side_menu.is_active %}
       </div>
@@ -137,8 +131,18 @@
     {% endif %}
 
   </div>
-
   {% endblock %}
+
+<footer class="footer">
+  <div class="col-md-10 col-md-offset-1">
+      <ul class="menu list-unstyled">
+          {% block footer %}
+              {{ system_menu('footer_menu').as_list }}
+          {% endblock %}
+      </ul>
+  </div>
+</footer>
+
 
 {% assets "js_search_bar" %}
 <script type="text/javascript" src="{{ ASSET_URL }}"></script>
