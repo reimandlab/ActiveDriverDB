@@ -41,6 +41,7 @@
                 data-visible={{ (source not in ('1KGenomes', 'ESP6500')) | string | lower }}
                 data-switchable=true>{{ value_type }}</th>
             <th data-sortable=true
+                data-sorter="impact_sorter"
                 title="Impact on closest PTM site">PTM impact</th>
             <th data-sortable=true
                 title="Number of adjacent PTMs affected">PTMs affected</th>
