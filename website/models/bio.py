@@ -280,19 +280,34 @@ class ProteinReferences(BioModel):
 
 
 class AnatomicalTherapeuticChemicalCode(BioModel):
-    code = db.Column(db.String(32))
+    code = db.Column(db.String(32), unique=True, index=True)
 
 
 class DrugGroup(BioModel):
     """approved investigational etc"""
-    group = db.Column(db.String(32))
+    group = db.Column(db.String(32), unique=True, index=True)
 
 
 class Drug(BioModel):
     name = db.Column(db.String(64))
     drug_bank_id = db.Column(db.String(32))
     description = db.Column(db.Text)
-    atc_codes = db.relationship()
+
+    atc_association_table = make_association_table('drug.id', AnatomicalTherapeuticChemicalCode.id)
+
+    atc_codes = db.relationship(
+        AnatomicalTherapeuticChemicalCode,
+        secondary=atc_association_table,
+        backref='drugs'
+    )
+
+    group_association_table = make_association_table('drug.id', DrugGroup.id)
+
+    group_codes = db.relationship(
+        AnatomicalTherapeuticChemicalCode,
+        secondary=group_association_table,
+        backref='drugs'
+    )
 
 
 class Protein(BioModel):
