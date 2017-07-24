@@ -44,11 +44,15 @@ class GeneResult:
 def search_proteins(phase, limit=None, filter_manager=None):
     """Search for a protein isoform or gene.
     Only genes which have a primary isoforms will be returned.
+    The query phrase will be trimmed on both ends as we do not
+    expect HGNC gene names nor RefSeq ids to contain spaces.
 
     Args:
         'limit': number of genes to be returned (for limit=10 there
                  may be 100 -or more- isoforms and 10 genes returned)
     """
+    phase = phase.strip()
+
     if not phase:
         return []
 
@@ -420,6 +424,31 @@ class SearchView(FlaskView):
             target=target,
             widgets=make_widgets(filter_manager)
         )
+
+    def autocomplete_proteins(self, limit=20):
+        """Autocompletion API for search for proteins."""
+
+        filter_manager = SearchViewFilters()
+        # TODO: implement on client side pagination?
+        query = unquote(request.args.get('q')) or ''
+
+        entries = search_proteins(query, limit, filter_manager)
+        # page = request.args.get('page', 0)
+        # Pagination(Pathway.query)
+        # just pass pagination html too?
+
+        response = {
+            'query': query,
+            'results': [
+                {
+                    'value': gene.name,
+                    'html': template('search/results/gene.html', gene=gene)
+                }
+                for gene in entries
+            ]
+        }
+
+        return jsonify(response)
 
     def anything(self):
         query = unquote(request.args.get('query')) or ''

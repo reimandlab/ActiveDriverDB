@@ -69,25 +69,31 @@ class TestSearchView(ViewTest):
         results = search_proteins('gene', 1)
         assert results
 
+        # should ignore flanking whitespaces
+        for query in ('gene ', 'gene   ', ' gene', ' gene '):
+            assert search_proteins(query, 1)
+
         # the same for refseq search
         assert search_proteins('NM_0003', 1)
         assert search_proteins('nm_0003', 1)
         assert search_proteins('0003', 1)
 
+        # negative control
         assert not search_proteins('9999', 1)
 
-    def test_search_proteins_view(self):
-
+    def test_autocomplete_proteins(self):
         mock_proteins_and_genes(15)
 
-        response = self.client.get(
-            '/search/proteins?proteins=Gene_2',
-            follow_redirects=True
-        )
-
-        assert response.status_code == 200
-        assert b'Gene_2' in response.data
-        assert b'NM_0002' in response.data
+        for route in ('autocomplete_proteins?q=', 'proteins?proteins='):
+            for accepted_gene_2_query in ('Gene_2', 'Gene', 'gene', 'Gene_2 ', ' gene', 'gene%20'):
+                print(route, accepted_gene_2_query)
+                response = self.client.get(
+                    'search/%s%s' % (route, accepted_gene_2_query),
+                    follow_redirects=True
+                )
+                assert response.status_code == 200
+                assert b'Gene_2' in response.data
+                assert b'NM_0002' in response.data
 
     def search_mutations(self, **data):
         return self.client.post(
@@ -155,7 +161,7 @@ class TestSearchView(ViewTest):
         assert response.status_code == 200
         assert b'NM_007' in response.data
 
-    def test_autocomplete_proteins(self):
+    def test_autocomplete_all_proteins(self):
         # MC3 GeneList is required as a target (a href for links) where users will be pointed
         # after clicking of cancer autocomplete suggestion
         gene_list = GeneList(name='TCGA', mutation_source_name=MC3Mutation.name)
@@ -170,7 +176,7 @@ class TestSearchView(ViewTest):
         assert response.status_code == 200
         assert response.json['entries'][0]['name'].startswith('Gene')
 
-    def test_autocomplete(self):
+    def test_autocomplete_all(self):
 
         # MC3 GeneList is required as a target (a href for links) where users will be pointed
         # after clicking of cancer autocomplete suggestion
