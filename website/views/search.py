@@ -479,17 +479,42 @@ class SearchView(FlaskView):
 
         query = unquote(request.args.get('q')) or ''
 
+        items = []
+
         if ' ' in query:
-            items = autocomplete_mutation(query)
+            # TODO: use exceptions for mmessaging essaging control?
+            mutation_result = autocomplete_mutation(query)
+            if type(mutation_result) is tuple:
+                mutations, are_there_more_muts = mutation_result
+                items.extend(mutations)
+                if are_there_more_muts:
+                    items.append({
+                        'type': 'see_more',
+                        'name': 'Show all mutations matching <i>%s</i>' % query,
+                        'url': url_for('SearchView:mutations', mutations=query)
+                    })
+            else:
+                items.extend(mutation_result)
+
+        if ' ' in query:
+            genes, are_there_more_genes = autocomplete_gene(query, limit=2)
         else:
-            items = autocomplete_gene(query)
+            genes, are_there_more_genes = autocomplete_gene(query, limit=3)
+
+        items.extend(genes)
+        if are_there_more_genes:
+            items.append({
+                'type': 'see_more',
+                'name': 'Show all genes matching <i>%s</i>' % query,
+                'url': url_for('SearchView:proteins', proteins=query)
+            })
 
         pathways = suggest_matching_pathways(query)
 
         cancers = suggest_matching_cancers(query)
 
-        items.extend(cancers)
         items.extend(pathways)
+        items.extend(cancers)
 
         return json.dumps({'entries': items})
 
@@ -583,8 +608,9 @@ def json_message(msg):
     return [{'name': msg, 'type': 'message'}]
 
 
-def autocomplete_gene(query):
-    entries = search_proteins(query, 6)
+def autocomplete_gene(query, limit=5):
+    """Returns: (autocompletion_gene_results, are_there_more)"""
+    entries = search_proteins(query, limit + 1)
     items = [
         gene.to_json()
         for gene in entries
@@ -592,12 +618,14 @@ def autocomplete_gene(query):
     for item in items:
         item['type'] = 'gene'
 
-    return items
+    return items[:limit], len(entries) > limit
 
 
-def autocomplete_mutation(query):
+def autocomplete_mutation(query, limit=None):
+    """Returns: (autocompletion_mutation_results, are_there_more)"""
     import re
     # TODO: rewriting this into regexp-based set of function may increase readability
+    # TODO: use limit to restrict queries
 
     data = query.upper().strip().split()
 
@@ -712,4 +740,6 @@ def autocomplete_mutation(query):
         item['input'] = query
         item['type'] = value_type
 
-    return items
+    if not limit:
+        limit = len(items)
+    return items[:limit], len(items) > limit
