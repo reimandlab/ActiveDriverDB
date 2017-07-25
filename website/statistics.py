@@ -236,6 +236,37 @@ class Statistics:
         )
 
 
+def generate_source_specific_summary_table():
+
+    muts_in_ptm_sites = {}
+    mimp_muts = {}
+
+    sources = Mutation.sources_dict
+    for name, source in sources.items():
+        if name == 'user':
+            continue
+        model = Mutation.get_source_model(name)
+        count = (
+            Mutation.query
+            .filter_by(is_confirmed=True, is_ptm_distal=True)
+            .filter(Statistics.get_filter_by_sources([model]))
+            .count()
+        )
+        muts_in_ptm_sites[name] = count
+
+        mimp_muts[name] = (
+            Mutation.query
+            .filter(
+                and_(
+                    Statistics.get_filter_by_sources([models.MIMPMutation, model]),
+                    Mutation.is_confirmed,
+                )
+            ).count()
+        )
+
+
+
+
 if current_app.config['LOAD_STATS']:
     stats = Statistics()
     print('Loading statistics')
