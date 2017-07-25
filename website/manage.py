@@ -295,7 +295,7 @@ class ProteinRelated(CommandTarget):
         )
 
 
-class SnvToCsvMapping(CommandTarget):
+class Mappings(CommandTarget):
 
     description = 'should mappings (DNA -> protein) be {command}ed'
 
@@ -303,7 +303,16 @@ class SnvToCsvMapping(CommandTarget):
     def load(args):
         print('Importing mappings')
         proteins = get_proteins()
-        import_mappings(proteins)
+        import_mappings(proteins, bdb_dir=args.path)
+
+    @load.argument
+    def path():
+        return argument_parameters(
+            '--path',
+            type=str,
+            default='',
+            help='A path to dir where mappings dbs should be created'
+        )
 
     @command
     def remove(args):
@@ -380,14 +389,14 @@ class All(CommandTarget):
     def load(args):
         ProteinRelated.load_all(args)
         Mutations.load(argparse.Namespace(sources='__all__'))
-        SnvToCsvMapping.load(args)
+        Mappings.load(args)
         CMS.load(args)
 
     @command
     def remove(args):
         ProteinRelated.remove_all(args)
         Mutations.remove(argparse.Namespace(sources='__all__'))
-        SnvToCsvMapping.remove(args)
+        Mappings.remove(args)
         CMS.remove(args)
 
 

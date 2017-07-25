@@ -32,15 +32,16 @@
             >Mutation</th>
             <th data-field="pos"
                 data-sortable=true
-                title="Position of mutation in protein">Position</th>
+                title="Position of mutation in protein">Pos</th>
             <th data-sortable=true
-                title="Reference amino acid residue in protein">Ref aa</th>
+                title="Reference amino acid residue in protein">Ref</th>
             <th data-sortable=true
-            title="Mutated amino acid residue in protein">Alt aa</th>
+            title="Mutated amino acid residue in protein">Alt</th>
             <th data-sortable=true
                 data-visible={{ (source not in ('1KGenomes', 'ESP6500')) | string | lower }}
                 data-switchable=true>{{ value_type }}</th>
             <th data-sortable=true
+                data-sorter="impact_sorter"
                 title="Impact on closest PTM site">PTM impact</th>
             <th data-sortable=true
                 title="Number of adjacent PTMs affected">PTMs affected</th>
@@ -56,13 +57,13 @@
             {% endfor %}
             <th data-sortable=true
                 data-switchable=true
-                title="Mutation summary (click on + for more info)">Summary:
+                title="Mutation summary (click on + for more info)">
                 {% if source in ('1KGenomes', 'ESP6500') %}
                     MAF
-                {% elif source == 'TCGA' %}
-                    cancer types
+                {% elif source in ('TCGA', 'MC3') %}
+                    Cancer types
                 {% elif source == 'ClinVar' %}
-                    disease annotations
+                    Disease annotations
                 {% endif %}
             </th>
             {% endif %}
@@ -81,11 +82,13 @@
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
             <td>{{ mutation.value }}</td>
-            <td class="{{ mutation.category or '' }}">
-                {{ mutation.category or '' }}
-                {% if mutation.category == 'network-rewiring' %}
-                    - motif {{ mutation.meta['MIMP'].effect }}
-                {% endif %}
+            <td>
+                <div class="{{ mutation.category or '' }} badge">
+                    {{ mutation.category or '' }}
+                    {% if mutation.category == 'network-rewiring' %}
+                        - motif {{ mutation.meta['MIMP'].effect }}
+                    {% endif %}
+                </div>
             </td>
             <td>{{ mutation.cnt_ptm }}</td>
             <td>

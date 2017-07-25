@@ -1,4 +1,6 @@
 from collections import defaultdict
+from os.path import basename
+
 from database import make_snv_key
 from database import encode_csv
 from helpers.bioinf import decode_mutation
@@ -8,22 +10,29 @@ from helpers.bioinf import get_human_chromosomes
 from helpers.bioinf import determine_strand
 from importlib import reload
 from flask import current_app
-import database
+from database import bdb, bdb_refseq
 import gc
 
 
 def import_mappings(
     proteins,
     mappings_dir='data/200616/all_variants/playground',
-    mappings_file_pattern='annot_*.txt.gz'
+    mappings_file_pattern='annot_*.txt.gz',
+    bdb_dir=''
 ):
     print('Importing mappings:')
 
     chromosomes = get_human_chromosomes()
     broken_seq = defaultdict(list)
 
-    database.bdb.reset()
-    database.bdb_refseq.reset()
+    bdb.reset()
+    bdb_refseq.reset()
+    bdb.close()
+    bdb_refseq.close()
+    if bdb_dir:
+        bdb_dir += '/'
+    bdb.open(bdb_dir + basename(current_app.config['BDB_DNA_TO_PROTEIN_PATH']))
+    bdb_refseq.open(bdb_dir + basename(current_app.config['BDB_GENE_TO_ISOFORM_PATH']))
 
     i = 0
 
@@ -96,17 +105,12 @@ def import_mappings(
 
             new_variants.add(item)
             key = protein.gene.name + ' ' + aa_ref + str(aa_pos) + aa_alt
-            database.bdb_refseq.add(key, refseq)
+            bdb_refseq.add(key, refseq)
 
-        database.bdb.update(snv, new_variants)
+        bdb.update(snv, new_variants)
 
-        i += 1
-        if i % 200000 == 0:
-            database.bdb.close()
-            database.bdb_refseq.close()
-            reload(database)
-            database.bdb.open(current_app.config['BDB_DNA_TO_PROTEIN_PATH'])
-            database.bdb_refseq.open(current_app.config['BDB_GENE_TO_ISOFORM_PATH'])
-            gc.collect()
+        #i += 1
+        #if i % 200000 == 0:
+        #    gc.collect()
 
     return broken_seq

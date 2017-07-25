@@ -1,9 +1,6 @@
 @import "variables"
+@import "colors"
 
-$main_bg: #2fa7c1
-$secondary_bg: #005b7f
-$text_bg: #eff6f7
-$stats_table_color: #025a7e
 
 body
   overflow-x: hidden
@@ -32,21 +29,6 @@ body
 
 .strip
   width: 100%
-
-.strip-top, .footer
-  background: $main_bg
-
-.footer
-  $footer-height: 136px
-  height: $footer-height
-  margin-top: 0
-  border-top: 0
-  padding: 0
-  ul
-    margin: 0
-  a
-    color: white
-    line-height: $footer-height
 
 $top_height: 655px
 
@@ -205,7 +187,6 @@ $frame_h: 390px
         float: left
         margin-right: 1ch
 
-
 .text-based-strip
   h2
     text-align: center
@@ -225,35 +206,11 @@ $frame_h: 390px
   background: linear-gradient(to bottom, rgba(0,0,0,0.5), rgba(0,0,0,0))
   border: none
   position: absolute
-  z-index: 10
-  text-align: center
-  width: 100%
   color: #fff
+  padding-top: 22px
   margin: 0
   height: 140px
   // 40-15; 15px is a normal padding of links in navbar
-  padding-top: 22px
-
-  .navbar-nav
-    float: none
-    display: inline-block
-
-#navbar li a
-  color: #fff
-  text-shadow: 0 0 2px rgba(100, 100, 100, 0.5)
-  text-transform: uppercase
-  @media #{$pc}
-    font-size: 18px
-  //transition-duration: 0.4s
-  //transition-property: box-shadow
-
-  &:hover
-    //box-shadow: inset 0 0 0 5px rgba(67, 235, 255, 0.1)
-    background: rgba(67, 235, 255, 0.2)
-
-#navbar.collapse.in li a
-  background: rgba($main_bg, 0.9)
-
 
 .navbar-brand
   display: none
@@ -302,3 +259,9 @@ $frame_h: 390px
   .form-group-xl
     .form-control
       height: 54px
+
+.main-container
+  padding-bottom: 0
+
+.footer
+  margin-top: 0

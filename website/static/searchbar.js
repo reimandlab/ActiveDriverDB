@@ -7,8 +7,6 @@ var SearchBar = function ()
     var current_query
     var indicator
 
-    var get_more = '<button class="list-group-item">Get more results ' + more_icon + '</button>'
-
     function templateResult(result)
     {
         var link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">'
@@ -43,13 +41,10 @@ var SearchBar = function ()
         else
         {
             var html = ''
-            var length = Math.min(results.entries.length, 5)
-            for(var i = 0; i < length; i++)
+            for(var i = 0; i < results.entries.length; i++)
             {
                 html += config.template(results.entries[i])
             }
-            if(results.entries.length > 5)
-                html += get_more
             results_div.html(html)
 
             add_dropdown_navigation(results_div)
