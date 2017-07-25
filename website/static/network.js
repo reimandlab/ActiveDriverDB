@@ -1136,7 +1136,7 @@ var Network = function ()
         drug_nodes
             .append('polygon')
             .attr('points', isotoxal_concave_hexagon_points)
-            .attr('class', 'drug group shape')
+            .attr('class', 'drug shape')
 
         var octagon_cr_to_a_ratio = 1 / (Math.sqrt(4 + 2 * Math.sqrt(2)) / 2);
         var octagon_angle = (180 - 135) * (2 * Math.PI) / 360;
@@ -1191,13 +1191,17 @@ var Network = function ()
             .append('text')
             .attr('class', 'name')
             .text(function(d){
-                if(d.name.length > 9)
-                    return d.name.substring(0, 7) + '...'
+                //if(d.name.length > 9)
+                //    return d.name.substring(0, 7) + '...'
                 return d.name
             })
             .style('font-size', function(d) {
                 if(d.type !== types.site)
                     return fitTextIntoCircle(d, this) + 'px'
+            })
+            .attr('y', function (d) {
+                if(d.type === types.drug)
+                    return d.r + 5
             })
 
         site_nodes.selectAll('.name')
