@@ -45,6 +45,7 @@ var Network = function ()
 
     var types = {
         kinase: new String('Kinase'),
+        drug: new String('Drug'),
         group: new String('Family or group'),
         site: new String('Site'),
         central: new String('Analysed protein')
@@ -811,6 +812,26 @@ var Network = function ()
         }
     }
 
+    function create_drug_nodes(kinase_nodes)
+    {
+        var drugs = []
+        kinase_nodes.forEach(function(kinase) {
+            kinase.drugs_targetting_kinase_gene.forEach(
+                function(drug)
+                {
+                    var drug_node = {
+                        name: drug.name,
+                        r: 25,
+                        type: types.drug
+                    }
+                    addEdge(drug_node, kinase)
+                    drugs.push(drug_node)
+                }
+            )
+        })
+        return drugs
+    }
+
     function createNodes(data)
     {
         groups = data.kinase_groups;
@@ -854,6 +875,9 @@ var Network = function ()
                 }
             })
         })
+
+        var drug_nodes = create_drug_nodes(kinase_nodes)
+        append(nodes_data, drug_nodes);
 
         // not in "associate_kinase_with_site" to void circular dependencies while cloning
         sites.forEach(function(site) {
@@ -1037,7 +1061,6 @@ var Network = function ()
             tooltip.moveToElement()
         })
 
-
         var kinase_nodes = nodes
             .filter(is_of_type(types.kinase));
 
@@ -1046,6 +1069,10 @@ var Network = function ()
 
         var central_nodes = nodes
             .filter(is_of_type(types.central));
+
+        var drug_nodes = nodes
+            .filter(is_of_type(types.drug));
+
 
         var kinases_color_scale = create_color_scale(
             [
@@ -1062,10 +1089,59 @@ var Network = function ()
             .attr('r', function(d){ return d.r })
             .attr('class', 'kinase protein-like shape')
 
+
+        function radians(x){
+            return x * Math.PI / 180
+        }
+
+        var ich_outer_angle = radians(150) // between 120 and 180
+        var ich_inner_angle = radians(180) - ich_outer_angle
+
+        function isotoxal_concave_hexagon_points(d) {
+            var points = [];
+            var outscribed_triangle_edge = 2 * (d.r * Math.sqrt(3) / 2)
+            var edge = (outscribed_triangle_edge / 2) / Math.sin(ich_outer_angle / 2)
+
+            var x = 0;
+            var y = -d.r / 2;
+
+            var x_change = Math.sin(ich_inner_angle / 2) * edge
+            var y_change = Math.cos(ich_inner_angle / 2) * edge
+
+            points.push([x, y])
+            x += x_change
+            y += y_change
+            points.push([x, y])
+
+            var l = outscribed_triangle_edge / 2 - x_change
+            x += l
+            y += Math.sin((radians(180) - ich_outer_angle) / 2 + ich_inner_angle) * edge
+            points.push([x, y])
+
+            x -= y_change
+            y -= x_change
+            points.push([x, y])
+
+            x -= y_change
+            y += x_change
+            points.push([x, y])
+
+            x += l
+            y -= Math.sin((radians(180) - ich_outer_angle) / 2 + ich_inner_angle) * edge
+            points.push([x, y])
+
+            return points
+        }
+
+        drug_nodes
+            .append('polygon')
+            .attr('points', isotoxal_concave_hexagon_points)
+            .attr('class', 'drug group shape')
+
         var octagon_cr_to_a_ratio = 1 / (Math.sqrt(4 + 2 * Math.sqrt(2)) / 2);
         var octagon_angle = (180 - 135) * (2 * Math.PI) / 360;
 
-        function polygon_points(d) {
+        function octagon_points(d) {
             var points = [];
             // d.r is a circumradius here
             var a = d.r * octagon_cr_to_a_ratio;
@@ -1083,7 +1159,7 @@ var Network = function ()
 
         group_nodes
             .append('polygon')
-            .attr('points', polygon_points)
+            .attr('points', octagon_points)
             .attr('class', 'group shape')
 
         central_nodes

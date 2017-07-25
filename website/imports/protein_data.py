@@ -6,7 +6,7 @@ from database import get_or_create
 from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file, fast_gzip_read
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
-from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation
+from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug
 from models import Gene
 from models import InterproDomain
 from models import Cancer
@@ -1163,3 +1163,22 @@ def precompute_ptm_mutations():
             mutation.precomputed_is_ptm = is_ptm_related
     print('Precomputed values of %s mutations has been computed and updated' % mismatch)
     return []
+
+
+@importer
+def drugbank(path='data/drugbank/drug-targets.txt'):
+
+    drugs = set()
+
+    def parser(data):
+        gene_name, drug_name, drug_type = data
+        target_gene = Gene.query.filter_by(name=gene_name).first()
+        if target_gene:
+            drug, created = get_or_create(Drug, name=drug_name)
+            if created:
+                drugs.add(drug)
+            drug.target_genes.append(target_gene)
+
+    parse_tsv_file(path, parser)
+
+    return drugs

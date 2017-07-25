@@ -39,8 +39,8 @@ def make_association_table(fk1, fk2):
     table_name = '%s_%s_association' % (fk1.split('.')[0], fk2.split('.')[0])
     return db.Table(
         table_name, db.metadata,
-        db.Column(fk1.replace('.', '_'), db.Integer, db.ForeignKey(fk1)),
-        db.Column(fk2.replace('.', '_'), db.Integer, db.ForeignKey(fk2)),
+        db.Column(fk1.replace('.', '_'), db.Integer, db.ForeignKey(fk1, ondelete='cascade')),
+        db.Column(fk2.replace('.', '_'), db.Integer, db.ForeignKey(fk2, ondelete='cascade')),
         info={'bind_key': 'bio'}    # use 'bio' database
     )
 
@@ -92,7 +92,10 @@ class Kinase(BioModel):
             'name': self.name,
             'protein': {
                 'refseq': self.protein.refseq
-            } if self.protein else None
+            } if self.protein else None,
+            'drugs_targetting_kinase_gene': [
+                drug.to_json() for drug in self.protein.gene.drugs
+            ] if self.protein else None
         }
 
 
@@ -289,11 +292,21 @@ class DrugGroup(BioModel):
 
 
 class Drug(BioModel):
-    name = db.Column(db.String(64))
+    name = db.Column(db.String(128))
     drug_bank_id = db.Column(db.String(32))
     description = db.Column(db.Text)
 
-    atc_association_table = make_association_table('drug.id', AnatomicalTherapeuticChemicalCode.id)
+    target_genes_association_table = make_association_table('drug.id', 'gene.id')
+
+    target_genes = db.relationship(
+        Gene,
+        secondary=target_genes_association_table,
+        backref=db.backref('drugs', cascade='all,delete', passive_deletes=True),
+        cascade='all,delete',
+        passive_deletes=True
+    )
+
+    atc_association_table = make_association_table('drug.id', 'anatomicaltherapeuticchemicalcode.id')
 
     atc_codes = db.relationship(
         AnatomicalTherapeuticChemicalCode,
@@ -301,13 +314,18 @@ class Drug(BioModel):
         backref='drugs'
     )
 
-    group_association_table = make_association_table('drug.id', DrugGroup.id)
+    group_association_table = make_association_table('drug.id', 'druggroup.id')
 
     group_codes = db.relationship(
-        AnatomicalTherapeuticChemicalCode,
+        DrugGroup,
         secondary=group_association_table,
         backref='drugs'
     )
+
+    def to_json(self):
+        return {
+            'name': self.name
+        }
 
 
 class Protein(BioModel):
