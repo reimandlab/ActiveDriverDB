@@ -72,7 +72,7 @@ class BerkleyHashSet:
         """
         self.name = name
         self.path = self._create_path()
-        self.db = bsddb.hashopen(self.path, mode)
+        self.db = bsddb.hashopen(self.path, mode, cachesize=20480 * 2)
         self.is_open = True
 
     def close(self):

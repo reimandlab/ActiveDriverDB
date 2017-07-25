@@ -47,10 +47,6 @@ def fast_gzip_read(file_name, mode='r', processes=4, as_str=False):
 def read_from_gz_files(directory, pattern, skip_header=True):
     """Creates generator yielding subsequent lines from compressed '.gz' files
 
-    Lines from each file will be decoded to 'latin1' and read in chunk of 10000
-    lines each (to keep quite optimal memory usage / disk operations ratio),
-    what allows huge files to be read with this function.
-
     Progress bar is embedded.
     """
 
