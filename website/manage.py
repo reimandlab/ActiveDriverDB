@@ -389,14 +389,14 @@ class All(CommandTarget):
     def load(args):
         ProteinRelated.load_all(args)
         Mutations.load(argparse.Namespace(sources='__all__'))
-        SnvToCsvMapping.load(args)
+        Mappings.load(args)
         CMS.load(args)
 
     @command
     def remove(args):
         ProteinRelated.remove_all(args)
         Mutations.remove(argparse.Namespace(sources='__all__'))
-        SnvToCsvMapping.remove(args)
+        Mappings.remove(args)
         CMS.remove(args)
 
 

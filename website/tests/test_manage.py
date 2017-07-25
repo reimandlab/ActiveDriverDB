@@ -48,7 +48,7 @@ class ManageTest(DatabaseTest):
 
         # test load help
         help_message = get_help('load -h')
-        choices = 'cms,mutations,protein_related,snv_to_csv_mapping,all'.split(',')
+        choices = 'cms,mutations,protein_related,mappings,all'.split(',')
         assert all(choice in help_message for choice in choices)
 
         # test load mutations help
@@ -68,7 +68,7 @@ class ManageTest(DatabaseTest):
 
         # test remove help
         help_message = get_help('remove -h')
-        choices = 'cms,mutations,protein_related,snv_to_csv_mapping'.split(',')
+        choices = 'cms,mutations,protein_related,mappings'.split(',')
         assert all(choice in help_message for choice in choices)
 
         help_message = get_help('remove protein_related -h')
