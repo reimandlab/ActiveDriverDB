@@ -816,7 +816,7 @@ var Network = function ()
     {
         var drugs = []
         kinase_nodes.forEach(function(kinase) {
-            kinase.drugs_targetting_kinase_gene.forEach(
+            kinase.drugs_targeting_kinase_gene.forEach(
                 function(drug)
                 {
                     var drug_node = {

@@ -170,6 +170,8 @@ class NetworkView(FlaskView):
                 # related discussion: #72
                 kinases_counts[kinase] = count
 
+            # KINASES NOT MAPPED TO PROTEINS ARE NOT SHOWN
+
         #kinases = set(kinases_counts.keys())
 
         sites = [
@@ -268,7 +270,8 @@ class NetworkView(FlaskView):
         header = [
             'target_protein', 'target_protein_refseq',
             'target_site', 'target_site_type',
-            'target_site_mutation_impact', 'bound_enzyme'
+            'target_site_mutation_impact', 'bound_enzyme',
+            'drug_targeting_bound_enzyme'
         ]
         content = ['#' + '\t'.join(header)]
 
@@ -278,8 +281,18 @@ class NetworkView(FlaskView):
             target_site = '%s,%s' % (site['position'], site['residue'])
             protein_and_site = [protein.gene_name, protein.refseq, target_site, site['ptm_type'], site['impact']]
 
-            for kinase in site['kinases'] + site['kinase_groups']:
-                row = protein_and_site + [kinase]
+            for kinase_name in site['kinases']:
+                try:
+                    kinase = list(filter(lambda k: k['name'] == kinase_name, network['kinases']))[0]
+                except IndexError:
+                    continue
+                drugs = kinase['drugs_targeting_kinase_gene']
+                drugs = ','.join([drug['name'] for drug in drugs]) or ''
+                row = protein_and_site + [kinase_name, drugs]
+                content.append('\t'.join(row))
+
+            for kinase_group in site['kinase_groups']:
+                row = protein_and_site + [kinase_group]
                 content.append('\t'.join(row))
 
         return '\n'.join(content)

@@ -93,7 +93,7 @@ class Kinase(BioModel):
             'protein': {
                 'refseq': self.protein.refseq
             } if self.protein else None,
-            'drugs_targetting_kinase_gene': [
+            'drugs_targeting_kinase_gene': [
                 drug.to_json() for drug in self.protein.gene.drugs
             ] if self.protein else None
         }
