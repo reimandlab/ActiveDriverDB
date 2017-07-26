@@ -269,7 +269,6 @@ var Network = function ()
             function associate_kinase_with_group(kinase_template)
             {
                 var kinase = clone(kinase_template);
-                kinase.collapsed = true;
                 cloned_kinases.push(kinase);
 
                 kinase.group = group;
@@ -424,16 +423,16 @@ var Network = function ()
 
         nodes
             .filter(inGroup)
-            .each(function(kinase){
-                kinase.collapsed = !group.expanded;
-                group.visible_interactors += (kinase.collapsed ? -1 : +1)
+            .each(function(node){
+                node.collapsed = !group.expanded;
+                group.visible_interactors += (node.collapsed ? -1 : +1)
 
-                if(kinase.collapsed)
+                if(node.collapsed)
                 {
-                    kinase.x = group.x;
-                    kinase.y = group.y;
-                    force_manager.hide_from_force(kinase);
-                    force_manager.hide_nodes_links(kinase);
+                    node.x = group.x;
+                    node.y = group.y;
+                    force_manager.hide_from_force(node);
+                    force_manager.hide_nodes_links(node);
                 }
                 else
                 {
@@ -446,19 +445,20 @@ var Network = function ()
 
                     var versor = create_versor(center_of_interest.x - group.x, center_of_interest.y - group.y);
 
-                    kinase.x = group.x - (Math.random() * 2 * kinase.r) * versor[0];
-                    kinase.y = group.y - (Math.random() * 2 * kinase.r) * versor[1];
+                    node.x = group.x - (Math.random() * 2 * node.r) * versor[0];
+                    node.y = group.y - (Math.random() * 2 * node.r) * versor[1];
 
-                    force_manager.restore_nodes_links(kinase);
-                    force_manager.make_visible_for_force(kinase);
+                    force_manager.restore_nodes_links(node);
+                    force_manager.make_visible_for_force(node);
                 }
             })
 
+        var scale = group.expanded ? 1 : 0
 
-        nodes.selectAll('circle')
+        nodes.selectAll('.shape')
             .filter(inGroup)
             .transition().ease('linear').duration(time)
-            .attr('r', function(d){return group.expanded ? d.r : 0})
+            .attr('transform', 'scale(' + scale + ')')
 
         nodes.selectAll('.name')
             .filter(inGroup)
@@ -483,7 +483,7 @@ var Network = function ()
         // we could disable charge for collapsed nodes completely and instead
         // stick these nodes to theirs groups, but this might be inefficient
         // noinspection EqualityComparisonWithCoercionJS
-        if(node.type == types.kinase && node.group){
+        if(node.group){
             if(node.collapsed)
             {
                 return 0
@@ -494,7 +494,7 @@ var Network = function ()
         }
         // noinspection EqualityComparisonWithCoercionJS
         // noinspection EqualityComparisonWithCoercionJS
-        if((node.type == types.kinase || node.type == types.group) && !(node.site && node.site.exposed)){
+        if((node.type == types.kinase || node.type == types.drug || node.type == types.group) && !(node.site && node.site.exposed)){
             if(!node.site)
                 return -10
             return -150 / node.site.visible_interactors
@@ -822,7 +822,8 @@ var Network = function ()
                     var drug_node = {
                         name: drug.name,
                         r: 25,
-                        type: types.drug
+                        type: types.drug,
+                        group: kinase.group
                     }
                     addEdge(drug_node, kinase)
                     drugs.push(drug_node)
@@ -890,22 +891,10 @@ var Network = function ()
 
         return {
             all: nodes_data,
-            in_groups: kinases_which_are_in_groups,
             groups: groups,
             sites: sites,
             standalone: standalone_kinases
         }
-    }
-
-    function hide_kinases_in_groups(kinases_which_are_in_groups) {
-        // force positions of group members to be equal
-        // to initial positions of central node in the group
-        kinases_which_are_in_groups.forEach(
-            function(kinase){
-                kinase.x = kinase.group.x;
-                kinase.y = kinase.group.y
-            }
-        )
     }
 
     function placeNodes(sites, standalone_kinases)
@@ -1008,8 +997,6 @@ var Network = function ()
 
         placeNodes(created_nodes.sites, created_nodes.standalone);
 
-        hide_kinases_in_groups(created_nodes.in_groups);
-
         force_manager = ForceManager({
             size: zoom.viewport_to_canvas([config.width, config.height])
         })
@@ -1103,7 +1090,7 @@ var Network = function ()
             var edge = (outscribed_triangle_edge / 2) / Math.sin(ich_outer_angle / 2)
 
             var x = 0;
-            var y = -d.r / 2;
+            var y = -d.r;
 
             var x_change = Math.sin(ich_inner_angle / 2) * edge
             var y_change = Math.cos(ich_inner_angle / 2) * edge
