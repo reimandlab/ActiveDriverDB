@@ -6,7 +6,7 @@ from database import get_or_create
 from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file, fast_gzip_read
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
-from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug
+from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType
 from models import Gene
 from models import InterproDomain
 from models import Cancer
@@ -1166,19 +1166,33 @@ def precompute_ptm_mutations():
 
 
 @importer
-def drugbank(path='data/drugbank/drug-targets.txt'):
+def drugbank(path='data/drugbank/drugbank.tsv'):
 
     drugs = set()
 
     def parser(data):
-        gene_name, drug_name, drug_type = data
+        drug_id, gene_name, drug_name, drug_groups, drug_type_name = data
         target_gene = Gene.query.filter_by(name=gene_name).first()
+
         if target_gene:
             drug, created = get_or_create(Drug, name=drug_name)
             if created:
                 drugs.add(drug)
             drug.target_genes.append(target_gene)
+            drug.drug_bank_id = drug_id
 
-    parse_tsv_file(path, parser)
+            for drug_group_name in drug_groups.split(';'):
+                if drug_group_name != 'NA':
+                    drug_group, created = get_or_create(DrugGroup, name=drug_group_name)
+                    drug.groups.add(drug_group)
+
+            if drug_type_name != 'NA':
+                drug_type, created = get_or_create(DrugType, name=drug_type_name)
+                drug.type = drug_type
+
+    # TODO: the header has type and group swapped
+    header = 'DRUG_id	GENE_symbol	DRUG_name	DRUG_type	DRUG_group'.split('\t')
+
+    parse_tsv_file(path, parser, header)
 
     return drugs

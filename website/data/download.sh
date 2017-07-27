@@ -1,4 +1,18 @@
 #!/usr/bin/env bash
+# Please be advised that files downloaded using this script are subject of different licencing policies
+# and use of some files may be forbidden for commercial purposes. Authors of some files ask for citation
+# if you use their work; some authors ask not to distribute their work directly for download.
+#
+# Please be advised that all the download links collected here are >not< meant to be used
+# for standalone download and distribution of the data files linked.
+
+# It is your responsibility to check authors citation requirements and data usage restrictions
+# if you want to use any of the files outside of their original purpose (i.e. incorporation to ActiveDriverDB)
+
+# In effort to acknowledge all authors of the data used in ActiveDriverDB we prepared acknowledgments section on:
+# https://activedriverdb.org/publications/
+
+
 for required_program in 'wget' 'unzip' 'Rscript' 'tar' 'synapse'
 do
   hash $required_program 2>/dev/null || {
@@ -45,6 +59,11 @@ rm hsapiens.REAC.NAME.gmt
 rm hsapiens.TF.NAME.gmt
 
 #  All below are dropbox-dependent ===
+
+mkdir -p drugbank
+cd drugbank
+wget https://www.dropbox.com/s/r4rfureo1h2h31y/drugbank.tsv
+cd ..
 
 wget https://www.dropbox.com/s/6s6mni9x40gphta/PTM_site_table.rsav
 R --no-save <<-SCRIPT

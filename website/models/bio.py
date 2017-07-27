@@ -282,13 +282,52 @@ class ProteinReferences(BioModel):
     uniprot_entries = db.relationship(UniprotEntry, backref='reference')
 
 
-class AnatomicalTherapeuticChemicalCode(BioModel):
-    code = db.Column(db.String(32), unique=True, index=True)
-
-
 class DrugGroup(BioModel):
-    """approved investigational etc"""
-    group = db.Column(db.String(32), unique=True, index=True)
+    """>Drugs are categorized by group, which determines their drug development status.<
+    A drug can belong to multiple groups.
+
+    Relevant schema definition fragment (drugbank.xsd):
+
+    <xs:complexType name="group-list-type">
+        <xs:sequence maxOccurs="6" minOccurs="1">
+            <xs:element name="group" type="group-type"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:simpleType name="group-type">
+        <xs:annotation>
+            <xs:documentation>Drugs are grouped into a category like approved, experimental, illict.</xs:documentation>
+        </xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="illicit"/>
+            <xs:enumeration value="experimental"/>
+            <xs:enumeration value="withdrawn"/>
+            <xs:enumeration value="nutraceutical"/>
+            <xs:enumeration value="investigational"/>
+            <xs:enumeration value="vet_approved"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    """
+    name = db.Column(db.String(32), unique=True, index=True)
+
+
+class DrugType(BioModel):
+    """Drug type is either 'small molecule' or 'biotech'.
+    Every drug has only one type.
+
+    Relevant schema definition fragment (drugbank.xsd):
+
+    <xs:attribute name="type" use="required">
+        <xs:simpleType>
+            <xs:restriction base="xs:string">
+                <xs:enumeration value="small molecule"/>
+                <xs:enumeration value="biotech"/>
+            </xs:restriction>
+        </xs:simpleType>
+    </xs:attribute>
+    """
+    name = db.Column(db.String(32), unique=True, index=True)
 
 
 class Drug(BioModel):
@@ -306,25 +345,23 @@ class Drug(BioModel):
         passive_deletes=True
     )
 
-    atc_association_table = make_association_table('drug.id', 'anatomicaltherapeuticchemicalcode.id')
-
-    atc_codes = db.relationship(
-        AnatomicalTherapeuticChemicalCode,
-        secondary=atc_association_table,
-        backref='drugs'
-    )
+    type_id = db.Column(db.Integer, db.ForeignKey('drugtype.id'))
+    type = db.relationship(DrugType, backref='drugs')
 
     group_association_table = make_association_table('drug.id', 'druggroup.id')
 
-    group_codes = db.relationship(
+    groups = db.relationship(
         DrugGroup,
         secondary=group_association_table,
+        collection_class=set,
         backref='drugs'
     )
 
     def to_json(self):
         return {
-            'name': self.name
+            'name': self.name,
+            'type': self.type.name if self.type else '',
+            'groups': [drug_group.name for drug_group in self.groups],
         }
 
 
