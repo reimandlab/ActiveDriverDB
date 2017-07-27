@@ -302,7 +302,7 @@ class Mappings(CommandTarget):
 
     @command
     def load(args):
-        print('Importing mappings')
+        print('Importing %s mappings' % (args.restrict_to or 'all'))
         proteins = get_proteins()
 
         if args.restrict_to != 'aminoacid_refseq':
@@ -315,7 +315,7 @@ class Mappings(CommandTarget):
         return argument_parameters(
             '--restrict_to', '-r',
             default=None,
-            choices=['genome_proteome', 'aminoacid_refseq'].
+            choices=['genome_proteome', 'aminoacid_refseq'],
             help='Should only genome_proteome or aminoacid_refseq mappings be imported?'
         )
 
