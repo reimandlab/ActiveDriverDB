@@ -30,8 +30,6 @@ def import_genome_proteome_mappings(
         bdb_dir += '/'
     bdb.open(bdb_dir + basename(current_app.config['BDB_DNA_TO_PROTEIN_PATH']))
 
-    i = 0
-
     for line in read_from_gz_files(mappings_dir, mappings_file_pattern):
         chrom, pos, ref, alt, prot = line.rstrip().split('\t')
 
@@ -114,15 +112,12 @@ def import_aminoacid_mutation_refseq_mappings(
     print('Importing mappings:')
 
     chromosomes = get_human_chromosomes()
-    broken_seq = defaultdict(list)
 
     bdb_refseq.reset()
     bdb_refseq.close()
     if bdb_dir:
         bdb_dir += '/'
     bdb_refseq.open(bdb_dir + basename(current_app.config['BDB_GENE_TO_ISOFORM_PATH']))
-
-    i = 0
 
     for line in read_from_gz_files(mappings_dir, mappings_file_pattern):
         chrom, pos, ref, alt, prot = line.rstrip().split('\t')
@@ -131,10 +126,14 @@ def import_aminoacid_mutation_refseq_mappings(
         chrom = chrom[3:]
 
         assert chrom in chromosomes
-        ref = ref.rstrip()
 
         for dest in filter(bool, prot.split(',')):
-            name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
+            try:
+                name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
+            except ValueError:
+                print('Import error:')
+                print(line, dest)
+
             assert refseq.startswith('NM_')
 
             assert cdna_mut.startswith('c')
