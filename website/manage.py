@@ -285,7 +285,7 @@ class ProteinRelated(CommandTarget):
         models_names = [model.__name__ for model in models]
 
         return argument_parameters(
-            '--models',
+            '--models', '-m',
             nargs='+',
             metavar='',
             help=(

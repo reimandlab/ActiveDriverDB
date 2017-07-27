@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 from flask import request, abort, Response, json
 from flask import redirect
@@ -6,7 +6,9 @@ from flask import url_for
 from flask import jsonify
 from flask import render_template as template
 from flask_classful import FlaskView
-from models import Protein, Mutation
+from sqlalchemy.orm import joinedload
+
+from models import Protein, Mutation, Drug, Gene
 from helpers.filters import Filter
 from helpers.filters import FilterManager
 from helpers.widgets import FilterWidget
@@ -28,23 +30,24 @@ class Target:
     __name__ = 'JavaScript'
 
 
+def js_toggle(name, default=True):
+    return Filter(
+        Target(), name,
+        comparators=['eq'], default=default
+    )
+
+
 class NetworkViewFilters(FilterManager):
 
     def __init__(self, protein, **kwargs):
 
         filters = common_filters(protein, **kwargs)
 
-        # TODO: use filter manager only for true filters,
-        # make an "option manager" for options.
+        # TODO: use filter manager only for true filters, make an "option manager" for options?
         filters += [
-            Filter(
-                Target(), 'show_sites',
-                comparators=['eq'], default=True
-            ),
-            Filter(
-                Target(), 'clone_by_site',
-                comparators=['eq'], default=True
-            )
+            js_toggle('show_sites'),
+            js_toggle('clone_by_site'),
+            js_toggle('collide_drugs'),
         ]
 
         super().__init__(filters)
@@ -91,6 +94,10 @@ class NetworkView(FlaskView):
             FilterWidget(
                 'Clone kinases by site', 'binary',
                 filter=filter_manager.filters['JavaScript.clone_by_site']
+            ),
+            FilterWidget(
+                'Prevent drug overlapping', 'binary',
+                filter=filter_manager.filters['JavaScript.collide_drugs']
             ),
         ]
 
@@ -182,11 +189,30 @@ class NetworkView(FlaskView):
 
         protein_kinases_names = [kinase.name for kinase in protein.kinases]
 
+        kinase_gene_ids = [kinase.protein.gene_id for kinase in protein.kinases if kinase.protein]
+
+        drugs = filter_manager.query_all(
+            Drug,
+            lambda q: and_(
+                q,
+                Gene.id.in_(kinase_gene_ids)
+            ),
+            lambda query: query.join(Drug.target_genes)
+        )
+        drugs_by_kinase = defaultdict(set)
+        for drug in drugs:
+            for target_gene in drug.target_genes:
+                drugs_by_kinase[target_gene].add(drug)
+
         kinase_reprs = []
         for kinase, count in kinases_counts.items():
             json_repr = kinase.to_json()
             if json_repr['protein']:
                 json_repr['protein']['mutations_count'] = count
+
+            json_repr['drugs_targeting_kinase_gene'] = [
+                drug.to_json() for drug in drugs_by_kinase[kinase.protein.gene]
+            ]
             kinase_reprs.append(json_repr)
 
         muts_by_site = divide_muts_by_sites(protein_mutations, sites)
@@ -345,6 +371,7 @@ class NetworkView(FlaskView):
                 'network': data,
                 'clone_by_site': filter_manager.get_value('JavaScript.clone_by_site'),
                 'show_sites': filter_manager.get_value('JavaScript.show_sites'),
+                'collide_drugs': filter_manager.get_value('JavaScript.collide_drugs'),
             },
             'filters': filters_data_view(protein, filter_manager)
         }

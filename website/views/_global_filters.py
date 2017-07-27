@@ -1,4 +1,4 @@
-from models import MC3Mutation
+from models import MC3Mutation, DrugGroup, Drug
 from models import Cancer
 from models import Mutation
 from models import Site
@@ -59,6 +59,40 @@ class UserMutations:
     pass
 
 
+def create_dataset_labels():
+    # map dataset display names to dataset names
+    dataset_labels = {
+        dataset.name: dataset.display_name
+        for dataset in Mutation.source_specific_data
+    }
+    # hide user's mutations in dataset choice
+    # (there is separate widget for that, shown only if there are any user's datasets)
+    dataset_labels['user'] = None
+    return dataset_labels
+
+
+class CachedQueries:
+
+    def __init__(self):
+        self.reload()
+
+    def reload(self):
+        """Should be called after each cancer and public-dataset addition or change
+        (It should not happen during normal service, only after migrations and during tests)
+        """
+        self.drug_groups = sorted([group.name for group in DrugGroup.query])
+
+        self.all_cancer_codes_mc3 = [cancer.code for cancer in Cancer.query]
+        self.all_cancer_names = {
+            cancer.code: '%s (%s)' % (cancer.name, cancer.code)
+            for cancer in Cancer.query
+        }
+        self.dataset_labels = create_dataset_labels()
+
+
+cached_queries = CachedQueries()
+
+
 def common_filters(
     protein,
     default_source='MC3',
@@ -88,6 +122,14 @@ def common_filters(
         Filter(
             Mutation, 'is_ptm', comparators=['eq'],
             is_attribute_a_method=True
+        ),
+        Filter(
+            Drug, 'groups.name', comparators=['in'],
+            nullable=False,
+            choices=cached_queries.drug_groups,
+            default='approved',
+            multiple='any',
+            as_sqlalchemy=True
         ),
         Filter(
             Site, 'type', comparators=['in'],
@@ -132,38 +174,6 @@ def common_filters(
             multiple='any'
         )
     ]
-
-
-def create_dataset_labels():
-    # map dataset display names to dataset names
-    dataset_labels = {
-        dataset.name: dataset.display_name
-        for dataset in Mutation.source_specific_data
-    }
-    # hide user's mutations in dataset choice
-    # (there is separate widget for that, shown only if there are any user's datasets)
-    dataset_labels['user'] = None
-    return dataset_labels
-
-
-class CachedQueries:
-
-    def __init__(self):
-        self.reload()
-
-    def reload(self):
-        """Should be called after each cancer and public-dataset addition or change
-        (It should not happen during normal service, only after migrations and during tests)
-        """
-        self.all_cancer_codes_mc3 = [cancer.code for cancer in Cancer.query]
-        self.all_cancer_names = {
-            cancer.code: '%s (%s)' % (cancer.name, cancer.code)
-            for cancer in Cancer.query
-        }
-        self.dataset_labels = create_dataset_labels()
-
-
-cached_queries = CachedQueries()
 
 
 def create_dataset_specific_widgets(protein, filters_by_id):
@@ -213,6 +223,7 @@ def create_widgets(protein, filters_by_id, custom_datasets_names=None):
             labels=cached_queries.dataset_labels,
             class_name='dataset-widget'
         ),
+        'drug_group': '',
         'custom_dataset': FilterWidget(
             'Custom mutation dataset', 'radio',
             filter=filters_by_id['UserMutations.sources'],
@@ -230,5 +241,9 @@ def create_widgets(protein, filters_by_id, custom_datasets_names=None):
             filter=filters_by_id['Site.type'],
             disabled_label='all sites'
         ),
-        'other': []
+        'other': [FilterWidget(
+            'Drug group', 'radio',
+            filter=filters_by_id['Drug.groups.name'],
+            labels=[group.title() for group in cached_queries.drug_groups],
+        )]
     }

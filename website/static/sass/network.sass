@@ -171,6 +171,7 @@ $sqrt_2: 1.41421356237
     &.loss
       .link .color
         border: $thickness dashed red
+        border-top: 0
 
   .kinase-group
     .color, .node
@@ -230,5 +231,25 @@ $sqrt_2: 1.41421356237
   .pagination-info
     display: none
 
-.tooltip h5
-  font-weight: bold
+.tooltip
+  h5
+    font-weight: bold
+
+  .badges
+    padding: 3px 0
+
+    .badge
+      font-size: 10.5px
+      border-radius: 5px
+
+    .approved
+      background: #2ea92e
+
+    .investigational
+      background: #bbb213
+
+    .experimental
+      background: purple
+
+    .withdrawn
+      background: indianred

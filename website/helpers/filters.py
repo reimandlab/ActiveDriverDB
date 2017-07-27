@@ -6,6 +6,7 @@ from collections import defaultdict
 from collections import Iterable
 from sqlalchemy import and_
 from sqlalchemy import or_
+from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 
 def is_iterable_but_not_str(obj):
@@ -171,10 +172,11 @@ class Filter:
                 sub_attr = path[1]
                 func = getattr(field, 'any')
 
+                values = self.value if is_iterable_but_not_str(self.value) else [self.value]
                 comp_func = join_operators[self.multiple](
                     *[
                         func(**{sub_attr: sub_value})
-                        for sub_value in self.value
+                        for sub_value in values
                     ]
                 )
                 return comp_func
@@ -465,7 +467,7 @@ class FilterManager:
 
         return query_filters, to_apply_manually
 
-    def build_query(self, target, custom_filter=None):
+    def build_query(self, target, custom_filter=None, query_modifier=None):
         """There are two strategies of using filter manager:
 
             - you can get results from database and walk through
@@ -482,23 +484,26 @@ class FilterManager:
 
         query = target.query.filter(query_filters_sum)
 
+        if query_modifier:
+            query = query_modifier(query)
+
         return query, to_apply_manually
 
-    def query_all(self, target, custom_filter=None):
+    def query_all(self, target, custom_filter=None, query_modifier=None):
         """Retrieve all objects of type 'target' which
         match criteria of currently active filters.
         """
 
-        query, to_apply_manually = self.build_query(target, custom_filter)
+        query, to_apply_manually = self.build_query(target, custom_filter, query_modifier)
 
         return self.apply(query, to_apply_manually)
 
-    def query_count(self, target, custom_filter=None):
+    def query_count(self, target, custom_filter=None, query_modifier=None):
         """Retrieve count of all objects of type 'target' which
         match criteria of currently active filters.
         """
 
-        query, to_apply_manually = self.build_query(target, custom_filter)
+        query, to_apply_manually = self.build_query(target, custom_filter, query_modifier)
 
         if not to_apply_manually:
             return query.with_entities(target.id).count()

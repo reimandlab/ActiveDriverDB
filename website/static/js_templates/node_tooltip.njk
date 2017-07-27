@@ -59,6 +59,21 @@
   {{ node.total_cnt }} kinases at total.
 {% endif %}
 
+{% if node.type === types.drug %}
+  <div class="badges">
+  {% for group in node.data.groups %}
+    <div class="badge {{ group }}">{{ group }}</div>
+  {% endfor %}
+  </div>
+  <div>
+  {% if node.data.type %}
+  {{ node.data.type | title }}
+  </div>
+  {% endif %}
+  <p>
+    See more in DrugBank: <a href="https://www.drugbank.ca/drugs/{{ node.data.drugbank }}">{{ node.data.drugbank }}</a>
+  </p>
+{% endif %}
 
 {% if node.protein %}
   Mutations satisfying applied filters: {{ node.protein.mutations_count }}

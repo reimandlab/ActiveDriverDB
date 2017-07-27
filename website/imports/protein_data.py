@@ -1170,6 +1170,13 @@ def drugbank(path='data/drugbank/drugbank.tsv'):
 
     drugs = set()
 
+    # in case we need to query drugbank, it's better to keep names comapt.
+    drug_type_map = {
+        'BiotechDrug': 'biotech',
+        'SmallMoleculeDrug': 'small molecule'
+    }
+
+
     def parser(data):
         drug_id, gene_name, drug_name, drug_groups, drug_type_name = data
         target_gene = Gene.query.filter_by(name=gene_name).first()
@@ -1187,7 +1194,7 @@ def drugbank(path='data/drugbank/drugbank.tsv'):
                     drug.groups.add(drug_group)
 
             if drug_type_name != 'NA':
-                drug_type, created = get_or_create(DrugType, name=drug_type_name)
+                drug_type, created = get_or_create(DrugType, name=drug_type_map[drug_type_name])
                 drug.type = drug_type
 
     # TODO: the header has type and group swapped

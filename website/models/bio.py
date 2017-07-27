@@ -92,10 +92,7 @@ class Kinase(BioModel):
             'name': self.name,
             'protein': {
                 'refseq': self.protein.refseq
-            } if self.protein else None,
-            'drugs_targeting_kinase_gene': [
-                drug.to_json() for drug in self.protein.gene.drugs
-            ] if self.protein else None
+            } if self.protein else None
         }
 
 
@@ -346,7 +343,7 @@ class Drug(BioModel):
     )
 
     type_id = db.Column(db.Integer, db.ForeignKey('drugtype.id'))
-    type = db.relationship(DrugType, backref='drugs')
+    type = db.relationship(DrugType, backref='drugs', lazy=False)
 
     group_association_table = make_association_table('drug.id', 'druggroup.id')
 
@@ -362,6 +359,7 @@ class Drug(BioModel):
             'name': self.name,
             'type': self.type.name if self.type else '',
             'groups': [drug_group.name for drug_group in self.groups],
+            'drugbank': self.drug_bank_id
         }
 
 

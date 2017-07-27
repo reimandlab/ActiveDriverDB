@@ -342,6 +342,7 @@
      * @property {Object} network
      * @property {boolean} clone_by_site
      * @property {boolean} show_sites
+     * @property {boolean} collide_drugs
      */
 
     var download_link = decode_url_pattern("{{ url_for('NetworkView:download', refseq=protein.refseq, format='{{ format }}', filters='{{ filters }}') }}")
@@ -385,6 +386,7 @@
         init_network({
             data: data.network,
             show_sites: data.show_sites,
+            collide_drugs: data.collide_drugs,
             clone_by_site: data.clone_by_site
         })
     }

@@ -103,6 +103,7 @@ var Network = function ()
         clone_by_site: true,
         default_link_distance: 100,
         site_kinase_link_weight: 1.15,
+        collide_drugs: true,
 
         // Element sizes
         site_size_unit: 5,
@@ -693,19 +694,42 @@ var Network = function ()
 
     }
 
-    function collide_sites(sites, padding)
+    function collide_nodes(nodes, padding, constant_radius)
     {
-        // could be done with bounding boxes instead as sites are represented as boxes
-        function collide_site(site)
+        nodes = nodes.data()
+        if(constant_radius)
         {
-            for(var i = 0; i < sites.length; i++)
+            var min_dist = 2 * constant_radius + padding
+            var min_dist_squared = Math.pow(min_dist, 2)
+
+            function collide_node(node)
             {
-                var other_site = sites[i]
-                var min_dist = site.r + other_site.r + padding
-                collide(site, other_site, min_dist, min_dist * min_dist)
+                for(var i = 0; i < nodes.length; i++)
+                {
+                    var other_node = nodes[i]
+                    if(node != other_node)
+                    {
+                        collide(node, other_node, min_dist, min_dist_squared)
+                    }
+                }
             }
         }
-        return collide_site
+        else
+        {
+            function collide_node(node)
+            {
+                for(var i = 0; i < nodes.length; i++)
+                {
+                    var other_node = nodes[i]
+                    if(node != other_node)
+                    {
+                        var min_dist = node.r + other_node.r + padding
+                        collide(node, other_node, min_dist, min_dist * min_dist)
+                    }
+                }
+            }
+        }
+        return collide_node
     }
 
     function collide_nodes_belonging_to_exposed_sites(exposed_sites, padding)
@@ -736,7 +760,7 @@ var Network = function ()
         kinases = kinases.filter(function(kinase){ return kinase.collisions_active })
 
 
-        function collide_sites_nodes(site)
+        function collide_sites_nodes()
         {
             // possibly: filter out kinases from other sites (but really, we have only one site exposed at time)
             for(var i = 0; i < kinases.length; i++)
@@ -757,7 +781,11 @@ var Network = function ()
     function create_ticker()
     {
         var site_nodes = nodes.filter(is_of_type(types.site));
-        var site_collider = collide_sites(sites, 3)
+        var drug_nodes = nodes.filter(is_of_type(types.drug));
+
+        // could be done with bounding boxes instead as sites are represented as boxes
+        var site_collider = collide_nodes(site_nodes, 3)
+        var drugs_collider = collide_nodes(drug_nodes, 1, config.radius * 0.8)
 
         var exposed_sites = site_nodes.filter(function (node) { return node.exposed });
         var nodes_collider = collide_nodes_belonging_to_exposed_sites(exposed_sites, 3);
@@ -766,6 +794,8 @@ var Network = function ()
         {
             site_nodes.each(site_collider);
             exposed_sites.each(nodes_collider);
+            if(config.collide_drugs)
+                drug_nodes.each(drugs_collider);
 
             links
                 .attr('x1', function(d) { return d.source.x })
@@ -816,19 +846,23 @@ var Network = function ()
     {
         var drugs = []
         kinase_nodes.forEach(function(kinase) {
+            var kinase_drugs = []
             kinase.drugs_targeting_kinase_gene.forEach(
-                function(drug)
+                function(drug_data)
                 {
                     var drug_node = {
-                        name: drug.name,
-                        r: 25,
+                        name: drug_data.name,
+                        r: config.radius,
                         type: types.drug,
-                        group: kinase.group
+                        group: kinase.group,
+                        data: drug_data
                     }
                     addEdge(drug_node, kinase)
-                    drugs.push(drug_node)
+                    kinase_drugs.push(drug_node)
                 }
             )
+            kinase.drugs = kinase_drugs
+            append(drugs, kinase_drugs)
         })
         return drugs
     }
@@ -893,11 +927,34 @@ var Network = function ()
             all: nodes_data,
             groups: groups,
             sites: sites,
-            standalone: standalone_kinases
+            standalone: standalone_kinases,
+            kinases: kinase_nodes
         }
     }
 
-    function placeNodes(sites, standalone_kinases)
+    function place_interactors(node, interactors, angles_per_actor, link_distance) {
+        var sx = central_node.x - node.x
+        var sy = central_node.y - node.y
+
+        var alpha = Math.atan2(sy, sx)
+
+        if (interactors.length > 1)
+            angles_per_actor /= interactors.length - 1
+
+        // set starting angle for first interactor
+        var angle = alpha - (interactors.length - 1) / 2 * angles_per_actor
+
+        for (var k = 0; k < interactors.length; k++) {
+            var x = Math.cos(angle) * link_distance
+            var y = Math.sin(angle) * link_distance
+            var interactor = interactors[k]
+            interactor.x = node.x - x
+            interactor.y = node.y - y
+            angle += angles_per_actor
+        }
+    }
+
+    function placeNodes(sites, standalone_kinases, kinases)
     {
         var orbiting_nodes
         orbits = Orbits()
@@ -924,30 +981,17 @@ var Network = function ()
 
                 var site_orbit = orbits.getOrbit(site)
                 var angles_available_for_site = Math.PI * 2 / site_orbit.nodes_count
-
-                var sx = central_node.x - site.x
-                var sy = central_node.y - site.y
-
-                var alpha = Math.atan2(sy, sx)
-
-                var angles_per_actor = angles_available_for_site
-                if(site.interactors.length > 1)
-                    angles_per_actor /= site.interactors.length - 1
-
-                // set starting angle for first interactor
-                var angle = alpha - (site.interactors.length - 1) / 2 * angles_per_actor
-
-                for(var k = 0; k < site.interactors.length; k++)
-                {
-                    var x = Math.cos(angle) * link_distance
-                    var y = Math.sin(angle) * link_distance
-                    var interactor = site.interactors[k]
-                    interactor.x = site.x - x
-                    interactor.y = site.y - y
-                    angle += angles_per_actor
-                }
+                place_interactors(site, site.interactors, angles_available_for_site, link_distance)
             }
         }
+
+        var link = config.default_link_distance / config.site_kinase_link_weight
+        for(var j = 0; j < kinases.length; j++)
+        {
+            var kinase = kinases[j]
+            place_interactors(kinase, kinase.drugs, Math.PI * 2 / 360, link)
+        }
+
     }
 
     function create_color_scale(domain, range)
@@ -995,7 +1039,7 @@ var Network = function ()
         var created_nodes = createNodes(config.data);
         var nodes_data = created_nodes.all;
 
-        placeNodes(created_nodes.sites, created_nodes.standalone);
+        placeNodes(created_nodes.sites, created_nodes.standalone, created_nodes.kinases);
 
         force_manager = ForceManager({
             size: zoom.viewport_to_canvas([config.width, config.height])
@@ -1060,7 +1104,6 @@ var Network = function ()
         var drug_nodes = nodes
             .filter(is_of_type(types.drug));
 
-
         var kinases_color_scale = create_color_scale(
             [
                 0,
@@ -1075,7 +1118,6 @@ var Network = function ()
             .append('circle')
             .attr('r', function(d){ return d.r })
             .attr('class', 'kinase protein-like shape')
-
 
         function radians(x){
             return x * Math.PI / 180
@@ -1188,7 +1230,7 @@ var Network = function ()
             })
             .attr('y', function (d) {
                 if(d.type === types.drug)
-                    return d.r + 5
+                    return d.r * 0.8
             })
 
         site_nodes.selectAll('.name')
