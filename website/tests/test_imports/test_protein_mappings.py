@@ -1,6 +1,6 @@
 import gzip
 from os import path
-from imports.mappings import import_mappings
+from imports.mappings import import_genome_proteome_mappings
 from database_testing import DatabaseTest
 from models import Protein
 from models import Gene
@@ -60,7 +60,7 @@ class TestImport(DatabaseTest):
             db.session.add(gene)
             db.session.commit()
 
-            broken_sequences = import_mappings(
+            broken_sequences = import_genome_proteome_mappings(
                 proteins,
                 path.dirname(mappings_filename),
                 path.basename(mappings_filename)

@@ -16,7 +16,8 @@ from helpers.commands import argument_parameters
 from helpers.commands import command
 from helpers.commands import create_command_subparsers
 from imports import import_all
-from imports.mappings import import_mappings
+from imports.mappings import import_genome_proteome_mappings
+from imports.mappings import import_aminoacid_mutation_refseq_mappings
 from imports.mutations import MutationImportManager
 from imports.mutations import get_proteins
 from imports.protein_data import IMPORTERS
@@ -303,7 +304,20 @@ class Mappings(CommandTarget):
     def load(args):
         print('Importing mappings')
         proteins = get_proteins()
-        import_mappings(proteins, bdb_dir=args.path)
+
+        if args.restrict_to != 'aminoacid_refseq':
+            import_genome_proteome_mappings(proteins, bdb_dir=args.path)
+        if args.restrict_to != 'genome_proteome':
+            import_aminoacid_mutation_refseq_mappings(proteins, bdb_dir=args.path)
+
+    @load.argument
+    def restrict_to():
+        return argument_parameters(
+            '--restrict_to', '-r',
+            default=None,
+            choices=['genome_proteome', 'aminoacid_refseq'].
+            help='Should only genome_proteome or aminoacid_refseq mappings be imported?'
+        )
 
     @load.argument
     def path():

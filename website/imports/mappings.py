@@ -11,10 +11,9 @@ from helpers.bioinf import determine_strand
 from importlib import reload
 from flask import current_app
 from database import bdb, bdb_refseq
-import gc
 
 
-def import_mappings(
+def import_genome_proteome_mappings(
     proteins,
     mappings_dir='data/200616/all_variants/playground',
     mappings_file_pattern='annot_*.txt.gz',
@@ -26,13 +25,10 @@ def import_mappings(
     broken_seq = defaultdict(list)
 
     bdb.reset()
-    bdb_refseq.reset()
     bdb.close()
-    bdb_refseq.close()
     if bdb_dir:
         bdb_dir += '/'
     bdb.open(bdb_dir + basename(current_app.config['BDB_DNA_TO_PROTEIN_PATH']))
-    bdb_refseq.open(bdb_dir + basename(current_app.config['BDB_GENE_TO_ISOFORM_PATH']))
 
     i = 0
 
@@ -104,13 +100,62 @@ def import_mappings(
             )
 
             new_variants.add(item)
-            key = protein.gene.name + ' ' + aa_ref + str(aa_pos) + aa_alt
-            bdb_refseq.add(key, refseq)
 
         bdb.update(snv, new_variants)
 
-        #i += 1
-        #if i % 200000 == 0:
-        #    gc.collect()
-
     return broken_seq
+
+def import_aminoacid_mutation_refseq_mappings(
+    proteins,
+    mappings_dir='data/200616/all_variants/playground',
+    mappings_file_pattern='annot_*.txt.gz',
+    bdb_dir=''
+):
+    print('Importing mappings:')
+
+    chromosomes = get_human_chromosomes()
+    broken_seq = defaultdict(list)
+
+    bdb_refseq.reset()
+    bdb_refseq.close()
+    if bdb_dir:
+        bdb_dir += '/'
+    bdb_refseq.open(bdb_dir + basename(current_app.config['BDB_GENE_TO_ISOFORM_PATH']))
+
+    i = 0
+
+    for line in read_from_gz_files(mappings_dir, mappings_file_pattern):
+        chrom, pos, ref, alt, prot = line.rstrip().split('\t')
+
+        assert chrom.startswith('chr')
+        chrom = chrom[3:]
+
+        assert chrom in chromosomes
+        ref = ref.rstrip()
+
+        for dest in filter(bool, prot.split(',')):
+            name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
+            assert refseq.startswith('NM_')
+
+            assert cdna_mut.startswith('c')
+            cdna_ref, cdna_pos, cdna_alt = decode_mutation(cdna_mut)
+
+            assert prot_mut.startswith('p')
+
+            aa_ref, aa_pos, aa_alt = decode_mutation(prot_mut)
+
+            try:
+                # try to get it from cache (`proteins` dictionary)
+                protein = proteins[refseq]
+            except KeyError:
+                continue
+
+            assert aa_pos == (int(cdna_pos) - 1) // 3 + 1
+
+            broken_sequence_tuple = is_sequence_broken(protein, aa_pos, aa_ref, aa_alt)
+
+            if broken_sequence_tuple:
+                continue
+
+            key = protein.gene.name + ' ' + aa_ref + str(aa_pos) + aa_alt
+            bdb_refseq.add(key, refseq)
