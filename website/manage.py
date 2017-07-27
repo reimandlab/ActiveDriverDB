@@ -102,7 +102,7 @@ def basic_auto_migrate_relational_db(app, bind):
                 print('Creating column: %s' % column_name)
 
                 definition = ddl.get_column_specification(column)
-                sql = 'ALTER TABLE %s ADD %s' % (table.name, definition)
+                sql = 'ALTER TABLE `%s` ADD `%s`' % (table.name, definition)
                 engine.execute(sql)
 
             if unused_columns:
@@ -116,7 +116,7 @@ def basic_auto_migrate_relational_db(app, bind):
                         answer = input('%s: remove (y/n)? ' % column)
                         if answer == 'y':
                             sql = (
-                                'ALTER TABLE %s DROP %s'
+                                'ALTER TABLE `%s` DROP `%s`'
                                 % (table.name, column)
                             )
                             engine.execute(sql)
