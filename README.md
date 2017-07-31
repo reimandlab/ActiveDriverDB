@@ -209,6 +209,13 @@ python3 -m pip install -r requirements.txt
 
 All tests are placed in [website/tests](/website/tests) directory. Please find all steps explained in `readme.md` file inside this subdirectory.
 
+Browser compatibility testing is provided by [BrowserStack](https://www.browserstack.com) which allows cloud testing on desktop browsers, real iOS and Android devices. It also allows automate testing integration.
+
 ## Acknowledgments
 
-The project was developed with support from Google Summer Code.
+The project is developed with support from [Ontario Institute of Cancer Research](https://oicr.on.ca/) and received support from [Google Summer of Code 2016](https://developers.google.com/open-source/gsoc/).
+
+[<img src="https://cdn.rawgit.com/reimandlab/ActiveDriverDB/master/thirdparty/images/browserstack.svg" height="30px" valign="bottom">](https://www.browserstack.com)
+
+
+BrowserStack supports this open source project allowing us to use their testing systems for free.
