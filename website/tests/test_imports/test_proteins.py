@@ -1,10 +1,11 @@
 from imports.protein_data import get_proteins
 from imports.protein_data import proteins_and_genes
+from imports.protein_data import select_preferred_isoform
 from imports.protein_data import sequences as load_sequences
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
 from database import db
-from models import Protein
+from models import Protein, ProteinReferences, UniprotEntry
 from models import Gene
 
 
@@ -82,3 +83,28 @@ class TestImport(DatabaseTest):
             load_sequences(filename)
 
         assert proteins['NM_021806'].sequence == 'MRLAGPLRIVVLVVSVGVTWIVVSILLGGPGSGFPRIQQLFTSPESSVTAAPRARKYKCGLPQPCPEEHLAFRVVSGAANVIGPKICLEDKMLMSSVKDNVGRGLNIALVNGVSGELIEARAFDMWAGDVNDLLKFIRPLHEGTLVFVASYDDPATKMNEETRKLFSELGSRNAKELAFRDSWVFVGAKGVQNKSPFEQHVKNSKHSNKYEGWPEALEMEGCIPRRSTAS*'
+
+    def test_select_preferred_isoform(self):
+        proteins_data = [
+            ('NM_001', 'MA', False),
+            ('NM_002', 'MAA', True),
+            ('NM_003', 'MAAA', True),   # we want this one:
+                                        # canonical according to uniprot, then longest, then oldest in refseq
+            ('NM_004', 'MAAA', True),
+            ('NM_005', 'MAAAA', False)
+        ]
+
+        preferred_refseq = 'NM_003'
+
+        gene = Gene(name='Gene X')
+        for refseq, seq, is_uniprot_canonical in proteins_data:
+            protein = Protein(refseq=refseq, sequence=seq, gene=gene)
+            if is_uniprot_canonical:
+                protein_references = ProteinReferences(uniprot_entries=[UniprotEntry(isoform=1, reviewed=True)])
+                protein.external_references = protein_references
+
+        db.session.add(gene)
+
+        isoform = select_preferred_isoform(gene)
+        assert isoform
+        assert isoform.refseq == preferred_refseq

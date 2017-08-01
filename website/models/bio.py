@@ -276,7 +276,7 @@ class ProteinReferences(BioModel):
     # ensembl peptides
     ensembl_peptides = db.relationship('EnsemblPeptide',  backref='reference')
 
-    uniprot_entries = db.relationship(UniprotEntry, backref='reference')
+    uniprot_entries = db.relationship(UniprotEntry, backref='reference', collection_class=set)
 
 
 class DrugGroup(BioModel):
@@ -374,6 +374,14 @@ class Protein(BioModel):
         backref='protein',
         uselist=False
     )
+
+    @property
+    def is_swissprot_canonical_isoform(self):
+        if self.external_references:
+            for entry in self.external_references.uniprot_entries:
+                if entry.reviewed and entry.isoform == 1:
+                    return True
+        return False
 
     # refseq id of mRNA sequence (always starts with 'NM_')
     # HGNC reserves up to 50 characters; 32 seems good enough but

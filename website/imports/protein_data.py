@@ -213,24 +213,234 @@ def protein_summaries(path='data/refseq_summary.tsv.gz'):
         known_proteins[refseq].summary = summary
 
 
+@importer
+def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='data/LRG_RefSeqGene', refseq_link='data/refseq_link.tsv.gz'):
+    from models import Protein
+    from models import ProteinReferences
+    from models import EnsemblPeptide
+    from sqlalchemy.orm.exc import NoResultFound
+
+    references = defaultdict(list)
+
+    def add_uniprot_accession(data):
+
+        # full uniprot includes isoform (if relevant)
+        full_uniprot, ref_type, value = data
+
+        if ref_type == 'RefSeq_NT':
+            # get protein
+            refseq_nm = value.split('.')[0]
+
+            if not refseq_nm or not refseq_nm.startswith('NM') or not full_uniprot:
+                return
+
+            try:
+                protein = Protein.query.filter_by(refseq=refseq_nm).one()
+            except NoResultFound:
+                return
+
+            try:
+                uniprot, isoform = full_uniprot.split('-')
+                isoform = int(isoform)
+            except ValueError:
+                # only one isoform ?
+                # print('No isoform specified for', full_uniprot, refseq_nm)
+                uniprot = full_uniprot
+                isoform = 1
+
+            reference, new = get_or_create(ProteinReferences, protein=protein)
+            uniprot_entry, _ = get_or_create(UniprotEntry, accession=uniprot, isoform=isoform)
+            reference.uniprot_entries.append(uniprot_entry)
+            references[uniprot].append(reference)
+
+            if new:
+                db.session.add(reference)
+
+    ensembl_references_to_collect = {
+        'Ensembl_PRO': 'peptide_id'
+    }
+
+    def add_references_by_uniprot(data):
+
+        full_uniprot, ref_type, value = data
+
+        if '-' in full_uniprot:
+            uniprot, isoform = full_uniprot.split('-')
+            uniprot_tied_references = references.get(uniprot, None)
+            if not uniprot_tied_references:
+                return
+
+            relevant_references = []
+            # select relevant references:
+            for reference in uniprot_tied_references:
+                if any(entry.isoform == int(isoform) for entry in reference.uniprot_entries):
+                    relevant_references.append(reference)
+
+        else:
+            uniprot_tied_references = references.get(full_uniprot, None)
+            if not uniprot_tied_references:
+                return
+            relevant_references = uniprot_tied_references
+
+        if ref_type == 'UniProtKB-ID':
+            # http://www.uniprot.org/help/entry_name
+            # "Each >reviewed< entry is assigned a unique entry name upon integration into UniProtKB/Swiss-Prot"
+            # Entry names comes in format: X_Y;
+            # - for Swiss-Prot entry X is a mnemonic protein identification code (at most 5 characters)
+            # - for TrEMBL entry X is the same as accession code (6 to 10 characters)
+            x, y = value.split('_')
+
+            if len(x) <= 5:
+                for reference in relevant_references:
+                    assert '-' not in full_uniprot
+                    entry = UniprotEntry.query.filter_by(accession=full_uniprot, reference=reference).one()
+                    entry.reviewed = True
+
+            return
+
+        if ref_type in ensembl_references_to_collect:
+
+            attr = ensembl_references_to_collect[ref_type]
+
+            for relevant_reference in relevant_references:
+                attrs = {'reference': relevant_reference, attr: value}
+
+                peptide, new = get_or_create(EnsemblPeptide, **attrs)
+
+                if new:
+                    db.session.add(peptide)
+
+    def add_ncbi_mappings(data):
+        # 9606    3329    HSPD1   NG_008915.1     NM_199440.1     NP_955472.1     reference standard
+        taxonomy, entrez_id, gene_name, refseq_gene, lrg, refseq_nucleotide, t, refseq_peptide, p, category = data
+
+        refseq_nm = refseq_nucleotide.split('.')[0]
+
+        if not refseq_nm or not refseq_nm.startswith('NM'):
+            return
+
+        try:
+            protein = Protein.query.filter_by(refseq=refseq_nm).one()
+        except NoResultFound:
+            return
+
+        reference, new = get_or_create(ProteinReferences, protein=protein)
+
+        if new:
+            db.session.add(reference)
+
+        reference.refseq_np = refseq_peptide.split('.')[0]
+        reference.refseq_ng = refseq_gene.split('.')[0]
+        gene = protein.gene
+
+        if gene.name != gene_name:
+            print('Gene name mismatch for RefSeq mappings: %s vs %s' % (gene.name, gene_name))
+
+        entrez_id = int(entrez_id)
+
+        if gene.entrez_id:
+            if gene.entrez_id != entrez_id:
+                print('Entrez ID mismatch for isoforms of %s gene: %s, %s' % (gene.name, gene.entrez_id, entrez_id))
+                if gene.name == gene_name:
+                    print(
+                        'Overwriting %s entrez id with %s for %s gene, because record with %s has matching gene name' %
+                        (gene.entrez_id, entrez_id, gene.name, entrez_id)
+                    )
+                    gene.entrez_id = entrez_id
+        else:
+            gene.entrez_id = entrez_id
+
+    parse_tsv_file(refseq_lrg, add_ncbi_mappings, file_header=[
+        '#tax_id', 'GeneID', 'Symbol', 'RSG', 'LRG', 'RNA', 't', 'Protein', 'p', 'Category'
+    ])
+
+    # add mappings retrieved from UCSC tables for completeness
+    header = ['#name', 'product', 'mrnaAcc', 'protAcc', 'geneName', 'prodName', 'locusLinkId', 'omimId']
+    for line in iterate_tsv_gz_file(refseq_link, header):
+        gene_name, protein_full_name, refseq_nm, refseq_peptide, _, _, entrez_id, omim_id = line
+
+        if not refseq_nm or not refseq_nm.startswith('NM'):
+            continue
+
+        try:
+            protein = Protein.query.filter_by(refseq=refseq_nm).one()
+        except NoResultFound:
+            continue
+
+        gene = protein.gene
+
+        if gene.name != gene_name:
+            print('Gene name mismatch for RefSeq mappings: %s vs %s' % (gene.name, gene_name))
+
+        entrez_id = int(entrez_id)
+
+        if protein_full_name:
+            if protein.full_name:
+                if protein.full_name != protein_full_name:
+                    print(
+                        'Protein full name mismatch: %s vs %s for %s'
+                        %
+                        (protein.full_name, protein_full_name, protein.refseq)
+                    )
+                continue
+            protein.full_name = protein_full_name
+
+        if gene.entrez_id:
+            if gene.entrez_id != entrez_id:
+                print('Entrez ID mismatch for isoforms of %s gene: %s, %s' % (gene.name, gene.entrez_id, entrez_id))
+                if gene.name == gene_name:
+                    print(
+                        'Overwriting %s entrez id with %s for %s gene, because record with %s has matching gene name' %
+                        (gene.entrez_id, entrez_id, gene.name, entrez_id)
+                    )
+                    gene.entrez_id = entrez_id
+        else:
+            gene.entrez_id = entrez_id
+
+        if refseq_peptide:
+            reference, new = get_or_create(ProteinReferences, protein=protein)
+
+            if new:
+                db.session.add(reference)
+
+            if reference.refseq_np and reference.refseq_np != refseq_peptide:
+                print(
+                    'Refseq peptide mismatch between LRG and UCSC retrieved data: %s vs %s for %s'
+                    %
+                    (reference.refseq_np, refseq_peptide, protein.refseq)
+                )
+
+            reference.refseq_np = refseq_peptide
+
+    parse_tsv_file(path, add_uniprot_accession, file_opener=gzip.open, mode='rt')
+    parse_tsv_file(path, add_references_by_uniprot, file_opener=gzip.open, mode='rt')
+
+    return [reference for reference_group in references.values() for reference in reference_group]
+
+
 def select_preferred_isoform(gene):
-    max_length = 0
-    longest_isoforms = []
-    for isoform in gene.isoforms:
-        length = isoform.length
-        if length == max_length:
-            longest_isoforms.append(isoform)
-        elif length > max_length:
-            longest_isoforms = [isoform]
-            max_length = length
 
-    # sort by refseq id (lower id will be earlier in the list)
-    longest_isoforms.sort(key=lambda isoform: int(isoform.refseq[3:]))
+    if not gene.isoforms:
+        return
 
-    try:
-        return longest_isoforms[0]
-    except IndexError:
-        print('No isoform for:', gene)
+    def isoform_ordering(isoform):
+        """Return a tuple for an isoform which will be used to compare isoforms"""
+
+        # Isoforms which were added earlier to RefSeq should be more familiar to researchers/
+        # Also, the "older" (in RefSeq db) isoforms may correspond to isoforms more abundant
+        # in cells as those were easier to observed. Here we assume that the isoforms which
+        # were added to RefSeq earlier have lower id numbers. It is valid across sequences
+        # with common prefixes (like: all sequences with NM_).
+
+        assert isoform.refseq[:3] == 'NM_'
+
+        isoform_age_in_refseq_db = int(isoform.refseq[3:])
+
+        return isoform.is_swissprot_canonical_isoform, isoform.length, -isoform_age_in_refseq_db
+
+    isoforms = sorted(gene.isoforms, key=isoform_ordering, reverse=True)
+
+    return isoforms[0]
 
 
 @importer
@@ -826,210 +1036,6 @@ def active_driver_gene_lists(
         gene_lists.append(gene_list)
 
     return gene_lists
-
-
-@importer
-def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='data/LRG_RefSeqGene', refseq_link='data/refseq_link.tsv.gz'):
-    from models import Protein
-    from models import ProteinReferences
-    from models import EnsemblPeptide
-    from sqlalchemy.orm.exc import NoResultFound
-
-    references = defaultdict(list)
-
-    def add_uniprot_accession(data):
-
-        # full uniprot includes isoform (if relevant)
-        full_uniprot, ref_type, value = data
-
-        if ref_type == 'RefSeq_NT':
-            # get protein
-            refseq_nm = value.split('.')[0]
-
-            if not refseq_nm or not refseq_nm.startswith('NM') or not full_uniprot:
-                return
-
-            try:
-                protein = Protein.query.filter_by(refseq=refseq_nm).one()
-            except NoResultFound:
-                return
-
-            try:
-                uniprot, isoform = full_uniprot.split('-')
-                isoform = int(isoform)
-            except ValueError:
-                # only one isoform ?
-                # print('No isoform specified for', full_uniprot, refseq_nm)
-                uniprot = full_uniprot
-                isoform = 1
-
-            reference, new = get_or_create(ProteinReferences, protein=protein)
-            reference.uniprot_entries.append(UniprotEntry(accession=uniprot, isoform=isoform))
-            references[uniprot].append(reference)
-
-            if new:
-                db.session.add(reference)
-
-    ensembl_references_to_collect = {
-        'Ensembl_PRO': 'peptide_id'
-    }
-
-    def add_references_by_uniprot(data):
-
-        full_uniprot, ref_type, value = data
-
-        if '-' in full_uniprot:
-            uniprot, isoform = full_uniprot.split('-')
-            uniprot_tied_references = references.get(uniprot, None)
-            if not uniprot_tied_references:
-                return
-
-            relevant_references = []
-            # select relevant references:
-            for reference in uniprot_tied_references:
-                if any(entry.isoform == int(isoform) for entry in reference.uniprot_entries):
-                    relevant_references.append(reference)
-
-        else:
-            uniprot_tied_references = references.get(full_uniprot, None)
-            if not uniprot_tied_references:
-                return
-            relevant_references = uniprot_tied_references
-
-        if ref_type == 'UniProtKB-ID':
-            # http://www.uniprot.org/help/entry_name
-            # "Each >reviewed< entry is assigned a unique entry name upon integration into UniProtKB/Swiss-Prot"
-            # Entry names comes in format: X_Y;
-            # - for Swiss-Prot entry X is a mnemonic protein identification code (at most 5 characters)
-            # - for TrEMBL entry X is the same as accession code (6 to 10 characters)
-            x, y = value.split('_')
-
-            if len(x) <= 5:
-                for reference in relevant_references:
-                    assert '-' not in full_uniprot
-                    entry = UniprotEntry.query.filter_by(accession=full_uniprot, reference=reference).one()
-                    entry.reviewed = True
-
-            return
-
-        if ref_type in ensembl_references_to_collect:
-
-            attr = ensembl_references_to_collect[ref_type]
-
-            for relevant_reference in relevant_references:
-                attrs = {'reference': relevant_reference, attr: value}
-
-                peptide, new = get_or_create(EnsemblPeptide, **attrs)
-
-                if new:
-                    db.session.add(peptide)
-
-    def add_ncbi_mappings(data):
-        # 9606    3329    HSPD1   NG_008915.1     NM_199440.1     NP_955472.1     reference standard
-        taxonomy, entrez_id, gene_name, refseq_gene, lrg, refseq_nucleotide, t, refseq_peptide, p, category = data
-
-        refseq_nm = refseq_nucleotide.split('.')[0]
-
-        if not refseq_nm or not refseq_nm.startswith('NM'):
-            return
-
-        try:
-            protein = Protein.query.filter_by(refseq=refseq_nm).one()
-        except NoResultFound:
-            return
-
-        reference, new = get_or_create(ProteinReferences, protein=protein)
-
-        if new:
-            db.session.add(reference)
-
-        reference.refseq_np = refseq_peptide.split('.')[0]
-        reference.refseq_ng = refseq_gene.split('.')[0]
-        gene = protein.gene
-
-        if gene.name != gene_name:
-            print('Gene name mismatch for RefSeq mappings: %s vs %s' % (gene.name, gene_name))
-
-        entrez_id = int(entrez_id)
-
-        if gene.entrez_id:
-            if gene.entrez_id != entrez_id:
-                print('Entrez ID mismatch for isoforms of %s gene: %s, %s' % (gene.name, gene.entrez_id, entrez_id))
-                if gene.name == gene_name:
-                    print(
-                        'Overwriting %s entrez id with %s for %s gene, because record with %s has matching gene name' %
-                        (gene.entrez_id, entrez_id, gene.name, entrez_id)
-                    )
-                    gene.entrez_id = entrez_id
-        else:
-            gene.entrez_id = entrez_id
-
-    parse_tsv_file(refseq_lrg, add_ncbi_mappings, file_header=[
-        '#tax_id', 'GeneID', 'Symbol', 'RSG', 'LRG', 'RNA', 't', 'Protein', 'p', 'Category'
-    ])
-
-    # add mappings retrieved from UCSC tables for completeness
-    header = ['#name', 'product', 'mrnaAcc', 'protAcc', 'geneName', 'prodName', 'locusLinkId', 'omimId']
-    for line in iterate_tsv_gz_file(refseq_link, header):
-        gene_name, protein_full_name, refseq_nm, refseq_peptide, _, _, entrez_id, omim_id = line
-
-        if not refseq_nm or not refseq_nm.startswith('NM'):
-            continue
-
-        try:
-            protein = Protein.query.filter_by(refseq=refseq_nm).one()
-        except NoResultFound:
-            continue
-
-        gene = protein.gene
-
-        if gene.name != gene_name:
-            print('Gene name mismatch for RefSeq mappings: %s vs %s' % (gene.name, gene_name))
-
-        entrez_id = int(entrez_id)
-
-        if protein_full_name:
-            if protein.full_name:
-                if protein.full_name != protein_full_name:
-                    print(
-                        'Protein full name mismatch: %s vs %s for %s'
-                        %
-                        (protein.full_name, protein_full_name, protein.refseq)
-                    )
-                continue
-            protein.full_name = protein_full_name
-
-        if gene.entrez_id:
-            if gene.entrez_id != entrez_id:
-                print('Entrez ID mismatch for isoforms of %s gene: %s, %s' % (gene.name, gene.entrez_id, entrez_id))
-                if gene.name == gene_name:
-                    print(
-                        'Overwriting %s entrez id with %s for %s gene, because record with %s has matching gene name' %
-                        (gene.entrez_id, entrez_id, gene.name, entrez_id)
-                    )
-                    gene.entrez_id = entrez_id
-        else:
-            gene.entrez_id = entrez_id
-
-        if refseq_peptide:
-            reference, new = get_or_create(ProteinReferences, protein=protein)
-
-            if new:
-                db.session.add(reference)
-
-            if reference.refseq_np and reference.refseq_np != refseq_peptide:
-                print(
-                    'Refseq peptide mismatch between LRG and UCSC retrieved data: %s vs %s for %s'
-                    %
-                    (reference.refseq_np, refseq_peptide, protein.refseq)
-                )
-
-            reference.refseq_np = refseq_peptide
-
-    parse_tsv_file(path, add_uniprot_accession, file_opener=gzip.open, mode='rt')
-    parse_tsv_file(path, add_references_by_uniprot, file_opener=gzip.open, mode='rt')
-
-    return [reference for reference_group in references.values() for reference in reference_group]
 
 
 @importer
