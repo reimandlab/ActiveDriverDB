@@ -1,0 +1,36 @@
+.protein-summary
+  .progress
+    margin-bottom: 0
+
+    .progress-text
+      $col: #bb4946
+      position: absolute
+      text-shadow: 1px 0 0 $col, 0 1px 0 $col, -1px 0 0 $col, 0 -1px 0 $col, 0 0 1px $col, 0 0 3px $col
+      margin-left: auto
+      margin-right: auto
+      left: 0
+      right: 0
+
+
+  dt::after
+    content: ':'
+
+  .gene-wide-data
+    dl
+      margin: 0
+
+    .strand
+      float: right
+      margin-right: 20%
+
+      dd
+        margin-left: 70px
+      dt
+        width: 70px
+
+  .dl-horizontal
+    dd
+      margin-left: 125px
+    dt
+      width: 125px
+      text-align: left
