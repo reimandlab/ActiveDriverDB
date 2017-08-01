@@ -276,7 +276,7 @@ class ProteinReferences(BioModel):
     # ensembl peptides
     ensembl_peptides = db.relationship('EnsemblPeptide',  backref='reference')
 
-    uniprot_entries = db.relationship(UniprotEntry, backref='reference', collection_class=set)
+    uniprot_entries = db.relationship(UniprotEntry, backref='reference')
 
 
 class DrugGroup(BioModel):
