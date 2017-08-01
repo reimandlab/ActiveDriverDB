@@ -535,8 +535,8 @@ class Protein(BioModel):
 
     @cached_property
     def length(self):
-        """Length of protein's sequence"""
-        return len(self.sequence)
+        """Length of protein's sequence, without the trailing stop (*) character"""
+        return len(self.sequence.rstrip('*'))
 
     @cached_property
     def disorder_length(self):
