@@ -68,7 +68,7 @@ def create_app(config_filename='config.py', config_override={}):
             for bind_key in ['bio', 'cms']:
                 engine = get_engine(bind_key)
                 engine.execute("DROP FUNCTION IF EXISTS levenshtein_ratio")
-                engine.execute("CREATE FUNCTION levenshtein_ratio RETURNS INTEGER SONAME 'levenshtein.so'")
+                engine.execute("CREATE FUNCTION levenshtein_ratio RETURNS REAL SONAME 'levenshtein.so'")
 
     #
     # Configure Login Manager
