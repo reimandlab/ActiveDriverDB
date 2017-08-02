@@ -638,6 +638,10 @@ var Network = function ()
                     {
                         refresh_group_collisions_state(interactor);
                     }
+                    for(var d = 0; d < interactor.drugs.length; d++)
+                    {
+                        interactor.drugs[d].fixed = false
+                    }
                 }
             }
             force_manager.on('tick', create_ticker())
