@@ -15,7 +15,6 @@ install:
   - sass --update .:.
 
 script:
-  - python3 -m pytest -k 'not data_dependent'
   - python3 -m pytest --cov=. -k 'not data_dependent'
 
 
