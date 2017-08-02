@@ -10,11 +10,11 @@
   <tr>
     {% set columns_count = 10 %}
     <th>User input</th>
-    <th>Gene name</th>
+    <th>Gene</th>
     <th>Refseq</th>
-    <th>Ref aa</th>
-    <th>Alt aa</th>
-    <th>Position</th>
+    <th title="Reference amino acid residue in protein">Ref</th>
+    <th title="Mutated amino acid residue in protein">Alt</th>
+    <th title="Position of mutation in protein">Position</th>
     <th>is PTM?</th>
     <th>Count</th>
     <th>Impact</th>
@@ -60,20 +60,22 @@
           #}</td>
           <td>{{ mutation.meta_user.count }}</td>
           {% set impact = mutation.impact_on_ptm() %}
-          <td class="{{ impact or '' }}">
+          <td>
+            <div class="{{ mutation.category or '' }} badge">
               {{ impact or '' }}
               {% if impact == 'network-rewiring' %}
                   - motif {{ mutation.meta_MIMP.effect }}
               {% endif %}
+            </div>
           </td>
           <td>
-              {% if mutation.is_confirmed %}
-                <a href="{{ url_for('MutationView:show', refseq=result.protein.refseq, position=result.pos, alt=result.alt) }}">
+              <a href="{{ url_for('MutationView:show', refseq=result.protein.refseq, position=result.pos, alt=result.alt) }}">
+                {% if mutation.is_confirmed %}
                   mutation details →
-                </a>
-              {% else %}
-                novel mutation
-              {% endif %}
+                {% else %}
+                  novel mutation →
+                {% endif %}
+              </a>
           </td>
         </tr>
       {% endfor %}
