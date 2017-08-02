@@ -3,7 +3,11 @@
         <li class="checkbox check-all js-shown">
             <label>
                 <input type="checkbox" class="programmatic" {{ 'checked' if widget.all_active }}>
-                All {{ widget.title | lower | pluralize }}
+                {%  if widget.all_selected_label %}
+                  {{ widget.all_selected_label }}
+                {%  else %}
+                  All {{ widget.title | lower | pluralize }}
+                {% endif %}
             </label>
         </li>
     {% endif %}

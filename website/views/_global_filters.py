@@ -127,8 +127,8 @@ def common_filters(
             Drug, 'groups.name', comparators=['in'],
             nullable=False,
             choices=cached_queries.drug_groups,
-            default='approved',
-            multiple='any',
+            default=['approved'],
+            multiple='all',
             as_sqlalchemy=True
         ),
         Filter(
@@ -185,30 +185,30 @@ def create_dataset_specific_widgets(protein, filters_by_id):
             filter=filters_by_id['Mutation.mc3_cancer_code'],
             labels=cached_queries.all_cancer_names,
             choices=cancer_codes_mc3,
-            all_selected_label='All cancer types'
+            all_selected_label='Any cancer type'
         ),
         FilterWidget(
             'Ethnicity', 'checkbox_multiple',
             filter=filters_by_id['Mutation.populations_1KG'],
             labels=populations_labels(The1000GenomesMutation.populations),
-            all_selected_label='All ethnicities'
+            all_selected_label='Any ethnicity'
         ),
         FilterWidget(
             'Ethnicity', 'checkbox_multiple',
             filter=filters_by_id['Mutation.populations_ESP6500'],
             labels=populations_labels(ExomeSequencingMutation.populations),
-            all_selected_label='All ethnicities'
+            all_selected_label='Any ethnicity'
         ),
         FilterWidget(
             'Clinical significance', 'checkbox_multiple',
             filter=filters_by_id['Mutation.sig_code'],
-            all_selected_label='All clinical significance classes',
+            all_selected_label='Any clinical significance class',
             labels=ClinicalData.significance_codes.values()
         ),
         FilterWidget(
             'Disease name', 'checkbox_multiple',
             filter=filters_by_id['Mutation.disease_name'],
-            all_selected_label='All clinical significance classes'
+            all_selected_label='Any clinical significance class'
         )
     ]
 
@@ -223,7 +223,6 @@ def create_widgets(protein, filters_by_id, custom_datasets_names=None):
             labels=cached_queries.dataset_labels,
             class_name='dataset-widget'
         ),
-        'drug_group': '',
         'custom_dataset': FilterWidget(
             'Custom mutation dataset', 'radio',
             filter=filters_by_id['UserMutations.sources'],
@@ -239,10 +238,10 @@ def create_widgets(protein, filters_by_id, custom_datasets_names=None):
         'ptm_type': FilterWidget(
             'Type of PTM site', 'radio',
             filter=filters_by_id['Site.type'],
-            disabled_label='all sites'
+            disabled_label='Any site'
         ),
         'other': [FilterWidget(
-            'Drug group', 'radio',
+            'Drug group', 'checkbox_multiple',
             filter=filters_by_id['Drug.groups.name'],
             labels=[group.title() for group in cached_queries.drug_groups],
         )]

@@ -6,7 +6,6 @@ from flask import url_for
 from flask import jsonify
 from flask import render_template as template
 from flask_classful import FlaskView
-from sqlalchemy.orm import joinedload
 
 from models import Protein, Mutation, Drug, Gene
 from helpers.filters import Filter

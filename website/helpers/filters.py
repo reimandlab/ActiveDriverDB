@@ -121,8 +121,8 @@ class Filter:
     def as_sqlalchemy(self, target):
         from sqlalchemy.ext.associationproxy import AssociationProxy
         from sqlalchemy.sql.annotation import AnnotatedSelect
+        from sqlalchemy.sql.sqltypes import Text
         from types import FunctionType
-        #from types import MethodType
 
         comparators = {
             'ge': '__ge__',
@@ -180,20 +180,6 @@ class Filter:
                     ]
                 )
                 return comp_func
-
-        #apply_to_attribute = True
-        #if self.comparator == 'in' and apply_to_attribute:
-        #    return join_operators[self.multiple](
-        #        *[
-        #            getattr(field, sub_value).__gt__(0)
-        #            for sub_value in self.value
-        #        ]
-        #    )
-
-        # if type(field) is MethodType:
-        #    return getattr(field, comparators[self.comparator])(target)
-
-        from sqlalchemy.sql.sqltypes import Text
 
         if (
             self.comparator == 'in' and
@@ -550,7 +536,7 @@ class FilterManager:
         ]
 
     def get_value(self, filter_id):
-        """Return value of filter with specified identificator."""
+        """Return value of filter with specified identifier."""
         return self.filters[filter_id].value
 
     def update_from_request(self, request):
