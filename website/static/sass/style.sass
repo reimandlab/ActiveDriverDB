@@ -117,18 +117,6 @@ $search-box-width: 300px
   to
     transform: rotate(359deg)
 
-@-webkit-keyframes spin
-  from
-    -webkit-transform: rotate(0deg)
-  to
-    -webkit-transform: rotate(359deg)
-
-@-moz-keyframes spin
-  from
-    -moz-transform: rotate(0deg)
-  to
-    -moz-transform: rotate(359deg)
-
 
 #spinner
   position: fixed
@@ -142,15 +130,10 @@ $search-box-width: 300px
 
 .glyphicon-spin
   transform-origin: 50% 49%
-  -webkit-transform-origin: 50% 49%
   -moz-transform-origin: 50% 43%
-  -ms-transform-origin: 50% 49%
   $function: ease-in-out
   $time: 3s
   animation: spin $time infinite $function
-  -webkit-animation: spin $time infinite $function
-  -moz-animation: spin $time infinite $function
-  -ms-animation: spin $time infinite $function
 
 .short-url-dropdown
   min-width: 335px
@@ -177,10 +160,6 @@ $search-box-width: 300px
   visibility: hidden
 
   $time: 0.20s
-  -webkit-transition: all $time
-  -moz-transition: all $time
-  -ms-transition: all $time
-  -o-transition: all $time
   transition: all $time
 
 .dropdown.open .dropdown-menu
@@ -188,10 +167,6 @@ $search-box-width: 300px
   visibility: visible
 
   $time: 0.30s
-  -webkit-transition: all $time
-  -moz-transition: all $time
-  -ms-transition: all $time
-  -o-transition: all $time
   transition: all $time
 
 .isoform-page-options
