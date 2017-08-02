@@ -367,7 +367,9 @@ class SearchView(FlaskView):
             store_on_server = request.form.get('store_on_server', False)
 
             if store_on_server:
-                name = request.form.get('dataset_name', 'Custom Dataset')
+                name = request.form.get('dataset_name', None)
+                if not name:
+                    name = 'Custom Dataset'
 
                 if current_user.is_authenticated:
                     user = current_user

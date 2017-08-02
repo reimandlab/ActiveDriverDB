@@ -5,6 +5,7 @@ from sqlalchemy.orm import validates
 from werkzeug.utils import cached_property
 from database import db
 from models import Model
+from sqlalchemy.ext.hybrid import hybrid_property
 import security
 from datetime import datetime
 from datetime import timedelta
@@ -96,7 +97,13 @@ class User(CMSModel):
     email = db.Column(db.String(254), unique=True)
     access_level = db.Column(db.Integer, default=0)
     pass_hash = db.Column(db.Text())
-    datasets = db.relationship('UsersMutationsDataset', backref='owner')
+
+    # only datasets
+    datasets = db.relationship(
+        'UsersMutationsDataset',
+        primaryjoin='and_(User.id==UsersMutationsDataset.owner_id, UsersMutationsDataset.is_expired==False)'
+    )
+    all_datasets = db.relationship('UsersMutationsDataset', backref='owner')
 
     def __init__(self, email, password, access_level=0):
 
@@ -313,6 +320,7 @@ class UsersMutationsDataset(CMSModel):
     uri = db.Column(db.String(256), unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_on = db.Column(db.DateTime, default=datetime.utcnow)
+    store_until = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(days=7))
 
     def __init__(self, *args, **kwargs):
         data = kwargs.pop('data')
@@ -378,10 +386,18 @@ class UsersMutationsDataset(CMSModel):
                 data = pickle.load(f)
         return data
 
-    @property
+    @hybrid_property
+    def is_expired(self):
+        return self.life_expectancy < timedelta(0)
+
+    @is_expired.expression
+    def is_expired(self):
+        return UsersMutationsDataset.store_until < datetime.utcnow()
+
+    @hybrid_property
     def life_expectancy(self):
-        """How many time is left for this dataset before removal."""
-        return self.created_on - datetime.utcnow() + timedelta(days=7)
+        """How much time is left for this dataset before removal."""
+        return self.store_until - datetime.utcnow()
 
     @property
     def query_size(self):

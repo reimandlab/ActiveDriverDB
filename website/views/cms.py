@@ -649,11 +649,10 @@ class ContentManagementSystem(FlaskView):
 
     @login_required
     def my_datasets(self):
-        from datetime import timedelta
         datasets = [
             dataset
             for dataset in current_user.datasets
-            if dataset.life_expectancy > timedelta(0)
+            if not dataset.is_expired
         ]
         return self._template('datasets', datasets=datasets)
 
