@@ -594,7 +594,6 @@ var Network = function ()
                 switchGroupState(node)
                 tooltip.unstick()
                 tooltip.hide()
-                node.fixed = false
                 force_manager.start()
             }
             else if(node.type === types.site)
