@@ -61,7 +61,7 @@
           <td>{{ mutation.meta_user.count }}</td>
           {% set impact = mutation.impact_on_ptm() %}
           <td>
-            <div class="{{ mutation.category or '' }} badge">
+            <div class="{{ impact or '' }} badge">
               {{ impact or '' }}
               {% if impact == 'network-rewiring' %}
                   - motif {{ mutation.meta_MIMP.effect }}
