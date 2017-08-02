@@ -105,7 +105,7 @@ sass --update .:.
 ```
 
 #### Precompiling Nunjucks templates
-Nunjucks templating system is used for clint-side templating. It allows to move some repeatedly performed templating tasks to user's browser, which reduces transfer and speeds-up site loading. It uses jinja-nearly-compatible syntax.
+Nunjucks templating system is used for client-side templating. It allows to move some repeatedly performed templating tasks to user's browser, which reduces transfer and speeds-up site loading. It uses jinja-nearly-compatible syntax.
 To keep this process efficient, templates should be precompiled. To do so, you will need to get full nunjucks installation, for example with `npm` (you should be able to install `npm` with your system's package manager):
 ```bash
 sudo npm install -g nunjucks

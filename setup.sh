@@ -32,3 +32,10 @@ sudo cp levenshtein.so /usr/lib/mysql/plugin/
 # sudo cp levenshtein.so $plugin_dir
 cd ..
 rm -rf Levenshtein-MySQL-UDF
+
+# install autoprefixer, clean-css and nunjucks
+sudo npm install -g autoprefixer postcss-cli nunjucks
+
+# to be replaced with 'clean-css clean-css-cli' after a new release of webassets:
+# currently integration fails for new versions but the fix seems to be already implemented on master branch
+sudo npm install -g clean-css@3.4.24

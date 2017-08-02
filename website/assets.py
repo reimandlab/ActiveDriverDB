@@ -6,7 +6,7 @@ from flask import Markup
 def css_bundle(name, *args):
     return Bundle(
         *args,
-        # filters='cssutils',   # cssutils breaks keyframes :(
+        filters=['autoprefixer6', 'cleancss'],
         output='min/' + name + '.css'
     )
 
