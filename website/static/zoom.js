@@ -125,7 +125,7 @@ var Zoom = function()
             zoom = prepareZoom(min, max, callback);
 
             viewport = d3.select(config.viewport);
-            viewport.call(zoom)
+            viewport.call(zoom).on('dblclick.zoom', null)
 
             return this;
         },

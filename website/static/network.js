@@ -584,24 +584,21 @@ var Network = function ()
         link.attr('class', 'link link-dimmed')
     }
 
-    function nodeClick(node)
+    function node_dbl_click(node)
     {
-        if(d3.event.shiftKey && node !== central_node)
-            node.fixed = false
 
         if(d3.event.defaultPrevented === false)
         {
             if(node.type === types.group)
             {
                 switchGroupState(node)
+                tooltip.unstick()
+                tooltip.hide()
                 node.fixed = false
                 force_manager.start()
             }
             else if(node.type === types.site)
             {
-                if(!d3.event.ctrlKey)
-                    return
-
                 node.fixed = false
 
                 var site = node
@@ -646,6 +643,12 @@ var Network = function ()
             }
             force_manager.on('tick', create_ticker())
         }
+    }
+
+    function node_click(node)
+    {
+        if(d3.event.shiftKey && node !== central_node)
+            node.fixed = false
     }
 
     function nodeHover(node, hover_in)
@@ -1073,14 +1076,18 @@ var Network = function ()
         })
 
         force_manager.drag()
-            .on('dragstart', function(d){ d.fixed = true })
+            .on('dragstart', function(d){
+                d3.event.sourceEvent.stopPropagation()
+                d.fixed = true
+            })
 
         nodes = vis.selectAll('.node')
             .data(nodes_data)
             .enter().append('g')
             .attr('class', 'node')
             .call(force_manager.drag)
-            .on('click', nodeClick)
+            .on('click', node_click)
+            .on('dblclick', node_dbl_click)
             .on('mouseover', function(d){ nodeHover(d, true) })
             .on('mouseout', function(d){ nodeHover(d, false) })
             // cancel other events (like pining the background)

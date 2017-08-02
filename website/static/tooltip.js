@@ -211,6 +211,7 @@ var Tooltip = function()
                 ignore_next_signal = false
                 return
             }
+            if (d3.event.defaultPrevented) return
             publicSpace.unstick()
             // call `show` method passing `this` context
             publicSpace.show.call(this, d)
