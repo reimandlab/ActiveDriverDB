@@ -647,7 +647,10 @@ var Network = function ()
     function node_click(node)
     {
         if(d3.event.shiftKey && node !== central_node)
+        {
             node.fixed = false
+            tooltip.ignore_next_signal()
+        }
     }
 
     function nodeHover(node, hover_in)
