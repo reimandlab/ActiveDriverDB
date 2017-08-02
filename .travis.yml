@@ -7,7 +7,7 @@ python:
 
 install:
   - sudo apt-get update
-  - sudo apt-get install -y pigz
+  - sudo apt-get install -y pigz npm
   - bash setup.sh
   - cd website
   - pip install -r requirements.txt
