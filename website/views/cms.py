@@ -649,12 +649,7 @@ class ContentManagementSystem(FlaskView):
 
     @login_required
     def my_datasets(self):
-        datasets = [
-            dataset
-            for dataset in current_user.datasets
-            if not dataset.is_expired
-        ]
-        return self._template('datasets', datasets=datasets)
+        return self._template('datasets', datasets=current_user.datasets)
 
     def logout(self):
         logout_user()

@@ -337,7 +337,7 @@ class SearchView(FlaskView):
             current_app.login_manager.unauthorized()
 
         response = make_response(template(
-            'search/index.html',
+            'search/dataset.html',
             target='mutations',
             results=dataset.data.results,
             widgets=make_widgets(filter_manager),
