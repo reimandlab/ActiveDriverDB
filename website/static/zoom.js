@@ -105,12 +105,14 @@ var Zoom = function()
         init: function(user_config)
         {
             var agent = navigator.userAgent;
+            var is_ie = !!document.documentMode;
+            var is_edge = agent.indexOf('Edge') > -1;
             var is_safari = agent.indexOf('Safari') > -1;
             var is_chrome = agent.indexOf('Chrome') > -1;
             if (is_safari && is_chrome)
                 is_safari = false;
 
-            if(is_safari)
+            if(is_safari || is_edge || is_ie)
             {
                 var zoom_fallback = ZoomFallback();
                 zoom_fallback.init(user_config);
