@@ -1,14 +1,27 @@
 <div class="btn-group dropdown" role="group">
-  <button class="btn btn-default dropdown-toggle" type="button" id="export_dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-    <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
+  <button class="btn btn-default dropdown-toggle" type="button" id="export_dropdown" data-toggle="dropdown">
+    <span class="glyphicon glyphicon-indent-left" style="transform:rotate(-90deg)"></span>
     Show in protein context
     <span class="caret"></span>
   </button>
   <ul class="dropdown-menu" aria-labelledby="export_dropdown">
-    {% for dataset_filter, dataset in datasets.items() %}
-      <li>
-        <a href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=dataset_filter) }}#{{ mutation.position }}{{ mutation.alt }}">
+    {% for dataset in datasets %}
+      <li
+        {% if not dataset.mutation_present %}
+          class="disabled"
+        {% endif %}
+      >
+        <a
+          {% if dataset.mutation_present %}
+            href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=dataset.filter) }}#{{ mutation.position }}{{ mutation.alt }}"
+          {% else %}
+            href="#"
+          {% endif %}
+        >
           {{ dataset.name }}
+          {% if not dataset.mutation_present %}
+            (absent)
+          {% endif %}
         </a>
       </li>
     {% endfor %}

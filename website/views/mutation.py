@@ -34,17 +34,28 @@ class MutationView(FlaskView):
             alt=alt
         )
         """
-        datasets = OrderedDict()
+        datasets = []
 
-        for source, dataset in mutation.sources_dict.items():
+        sources_with_mutation = mutation.sources_dict
+
+        for source in mutation.source_fields:
+            model = mutation.get_source_model(source)
             if source != 'user':
-                datasets['Mutation.sources:in:' + source] = dataset
+                datasets.append({
+                    'filter': 'Mutation.sources:in:' + source,
+                    'name': model.display_name,
+                    'mutation_present': sources_with_mutation.get(source, False)
+                })
 
         user_datasets = []
 
         for dataset in current_user.datasets:
             if mutation in dataset.mutations:
-                datasets['UserMutations.sources:in:' + dataset.uri] = dataset
+                datasets.append({
+                    'filter': 'UserMutations.sources:in:' + dataset.uri,
+                    'name': dataset.name,
+                    'mutation_present': True
+                })
                 user_datasets.append(dataset)
 
         return template(
