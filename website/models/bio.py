@@ -478,6 +478,21 @@ class Protein(BioModel):
         )
 
     @hybrid_property
+    def ptm_mutations_count(self):
+        return sum(1 for mut in self.confirmed_mutations if mut.precomputed_is_ptm)
+
+    @ptm_mutations_count.expression
+    def ptm_mutations_count(cls):
+        return (
+            select(func.count(Mutation.id))
+            .filter(and_(
+                Mutation.protein_id == Protein.id,
+                Mutation.precomputed_is_ptm,
+                Mutation.is_confirmed == True
+            ))
+        )
+
+    @hybrid_property
     def mutations_count(self):
         return self.mutations.count()
 
