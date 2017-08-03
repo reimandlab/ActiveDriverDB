@@ -100,7 +100,7 @@ function affix(element, bottom_element)
                 return (this.top = element.offset().top)
             },
             bottom: function () {
-                return (this.bottom = bottom_element.outerHeight(true))
+                return (this.bottom = bottom_element.outerHeight())
             }
         }
     })

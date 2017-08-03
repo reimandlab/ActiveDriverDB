@@ -263,8 +263,6 @@ h3
       li
         display: table-cell
 
-.color-legend
-  margin-bottom: 0
 
 .list-collapsed
   // hide all elements but first four
@@ -302,11 +300,13 @@ a.list-expand
   display: inline-block
 
 #sticky_box
-  // keep space from top edge when affixed & keep space from legend above when stuck
-  padding-top: 20px
+  transition: padding 0.2s
 
   &.affix
     top: 0
+    // keep space from top edge when affixed & keep space from legend above when stuck
+    padding-top: 15px
+
 
   &.affix-bottom
     position: absolute
