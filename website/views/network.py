@@ -15,16 +15,6 @@ from ._global_filters import common_filters, filters_data_view
 from ._global_filters import create_widgets
 
 
-def get_nearby_sequence(site, protein, dst=3):
-    left = site.position - dst - 1
-    right = site.position + dst
-    return (
-        '-' * -min(0, left) +
-        protein.sequence[max(0, left):min(right, protein.length)] +
-        '-' * (max(protein.length, left) - protein.length)
-    )
-
-
 class Target:
     __name__ = 'JavaScript'
 
@@ -257,7 +247,7 @@ class NetworkView(FlaskView):
                     group.name for group in site.kinase_groups
                 ],
                 'kinases_count': len(site.kinases),
-                'sequence': get_nearby_sequence(site, protein, dst=7),
+                'sequence': site.sequence,
                 'mutations_count': len(site_mutations),
                 'mutations': mutations,
                 'mimp_losses': [

@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from flask import render_template as template
 from flask_classful import FlaskView
 from flask_login import current_user

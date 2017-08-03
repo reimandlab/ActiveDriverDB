@@ -689,6 +689,32 @@ class Site(BioModel):
         self.validate_position()
         self.validate_residue()
 
+    def get_nearby_sequence(self, protein, dst=3):
+        left = self.position - dst - 1
+        right = self.position + dst
+        return (
+            '-' * -min(0, left) +
+            protein.sequence[max(0, left):min(right, protein.length)] +
+            '-' * (max(protein.length, left) - protein.length)
+        )
+
+    @hybrid_property
+    def sequence(self):
+        return self.get_nearby_sequence(self.protein, dst=7)
+
+    @hybrid_property
+    def mutations(self):
+        return [
+            {
+                'ref': mutation.ref,
+                'pos': mutation.position,
+                'alt': mutation.alt,
+                'impact': mutation.impact_on_specific_ptm(self)
+            }
+            for mutation in self.protein.mutations
+            if abs(mutation.position - self.position) < 7
+        ]
+
     def validate_position(self):
         position = self.position
         if self.protein:

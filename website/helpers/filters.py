@@ -6,7 +6,6 @@ from collections import defaultdict
 from collections import Iterable
 from sqlalchemy import and_
 from sqlalchemy import or_
-from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 
 def is_iterable_but_not_str(obj):

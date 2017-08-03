@@ -10,6 +10,9 @@
 
   {{ dependency('d3.js') }}
 
+  {{ dependency('bootstrap_table') }}
+  {{ dependency('bootstrap_table_css') }}
+
   {# Nunjucks templates #}
   {% if is_debug_mode %}
     {{ dependency('nunjucks') }}
@@ -147,56 +150,71 @@
       <div class="panel-body">
         {% set impact = mutation.impact_on_specific_ptm(site) %}
 
-        {% if impact == 'network-rewiring' %}
-          {% from "mimp.njk" import best_prediction %}
-          {% from "mimp.njk" import weaker_predictions %}
-
-          {% set mimp_meta=mutation.meta_MIMP.to_json() %}
-
-          {% for effect in ['gain', 'loss'] %}
-            {% if mimp_meta[effect] | length %}
-            <div class="mimp-effect">
-              {% set annotations_with_effect = mimp_meta[effect] %}
-              {% set effect_count = annotations_with_effect | length %}
-              {% set best = annotations_with_effect | first %}
-              <h4>{{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }} of PTM site:</h4>
-              {{ best_prediction(best, effect) }}
-
-              {% from 'macros.njk' import represent_site %}
-              {% set mimp = best %}
-              <div>
-                Site: {{ represent_site(mimp.site) }}
-              </div>
-              <div>
-                Position in motif: {{ mimp.pos_in_motif }}
-              </div>
-
-              {% if effect_count > 1 %}
-                <div>
-                  {{ weaker_predictions(annotations_with_effect, effect_count) | safe }}
-                </div>
-              {% endif %}
-              {% include 'mimp_image.njk' %}
+        <div class="row">
+          <div class="col-md-2">
+            <h4>Affected site:</h4>
+            <div>
+              Position: {{ site.position }}
             </div>
+            <div>
+              Residue: {{ site.residue }}
+            </div>
+            <div>
+              Type: {{ site.type }}
+            </div>
+          </div>
+          <div class="col-md-4">
+
+            {% if impact == 'network-rewiring' %}
+              {% from "mimp.njk" import best_prediction %}
+              {% from "mimp.njk" import weaker_predictions %}
+
+              {% set mimp_meta=mutation.meta_MIMP.to_json() %}
+
+              {% for effect in ['gain', 'loss'] %}
+                {% if mimp_meta[effect] | length %}
+                  <div class="mimp-effect">
+                    <div>
+
+                    {% set annotations_with_effect = mimp_meta[effect] %}
+                    {% set effect_count = annotations_with_effect | length %}
+                    {% set best = annotations_with_effect | first %}
+                    <h4>{{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }} of PTM site:</h4>
+                    {{ best_prediction(best, effect) }}
+
+                    {% from 'macros.njk' import represent_site %}
+                    {% set mimp = best %}
+                    <div>
+                      Site: {{ represent_site(mimp.site) }}
+                    </div>
+                    <div>
+                      Position in motif: {{ mimp.pos_in_motif }}
+                    </div>
+
+                    {% if effect_count > 1 %}
+                      <div>
+                        {{ weaker_predictions(annotations_with_effect, effect_count) | safe }}
+                      </div>
+                    {% endif %}
+                    </div>
+                    <div>
+                    {% include 'mimp_image.njk' %}
+                    </div>
+                  </div>
+                {% endif %}
+              {% endfor %}
+
+            {% else %}
+              <h4>Impact:</h4>
+              {{ impact }}
             {% endif %}
-          {% endfor %}
 
-        {% else %}
-          <h4>Impact:</h4>
-          {{ impact }}
-        {% endif %}
-
-        <h4>Affected site:</h4>
-        <div>
-          Position: {{ site.position }}
+          </div>
+          <div class="col-md-6">
+            <h4>Other mutations affecting this site</h4>
+            {% include 'site_mutations_table.njk' %}
+          </div>
         </div>
-        <div>
-          Residue: {{ site.residue }}
-        </div>
-        <div>
-          Type: {{ site.type }}
-        </div>
-
       </div>
     </div>
   {% endfor %}
