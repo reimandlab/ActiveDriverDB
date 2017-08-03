@@ -308,7 +308,9 @@
 
     <script type="text/javascript">
     nunjucks.configure('/static/js_templates', {autoescape: true});
-    nunjucks.installJinjaCompat()
+    {% if is_debug_mode %}
+      nunjucks.installJinjaCompat()
+    {% endif %}
 
     affix($('#sticky_box'), $('footer'));
 
