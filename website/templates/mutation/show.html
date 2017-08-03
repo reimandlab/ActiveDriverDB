@@ -100,14 +100,6 @@
           <h3 class="panel-title">Clinical Information</h3>
         </div>
         <div class="panel-body">
-          <h4>Cancer types: <span class="source">(TCGA)</span></h4>
-          <div class="clinical-data">
-            {% if mutation.meta_TCGA %}
-              {{ mutation.meta_TCGA.summary() | join(', ') }}
-            {% else %}
-              <span class="empty">no data</span>
-            {% endif %}
-          </div>
           <h4>Cancer types: <span class="source">(MC3)</span></h4>
           <div class="clinical-data">
             {% if mutation.meta_MC3 %}
