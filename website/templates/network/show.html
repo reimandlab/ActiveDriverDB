@@ -20,12 +20,15 @@
   {{ dependency('bootstrap_table_css') }}
 
   {# Nunjucks templates #}
+  {#
   {% if is_debug_mode %}
     {{ dependency('nunjucks') }}
   {% else %}
     {{ dependency('nunjucks_slim') }}
     <script type="text/javascript" src="/static/js_templates/precompiled/network.js"></script>
   {% endif %}
+  #}
+  {{ dependency('nunjucks') }}
 
   {{ dependency('clipboard.js') }}
 
@@ -308,9 +311,7 @@
 
     <script type="text/javascript">
     nunjucks.configure('/static/js_templates', {autoescape: true});
-    {% if is_debug_mode %}
-      nunjucks.installJinjaCompat()
-    {% endif %}
+    nunjucks.installJinjaCompat()
 
     affix($('#sticky_box'), $('footer'));
 
