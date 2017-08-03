@@ -56,10 +56,23 @@
           <span class="glyphicon glyphicon-indent-left" style="transform:rotate(-90deg)"></span>
           Sequence View
         </a>
-      <li role="presentation" class="active">
-        <a href="#">
+      <li role="presentation" class="{{ 'active' if not predicted_interactions }}">
+        <a
+          href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string()) }}"
+          class="variable-url"
+          data-url-pattern="{{ url_for('NetworkView:show', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
+        >
           <span class="glyphicon glyphicon-globe"></span>
           Network view
+        </a>
+      <li role="presentation" class="{{ 'active' if predicted_interactions }}">
+        <a
+          href="{{ url_for('NetworkView:predicted', refseq=protein.refseq, filters=filters.url_string()) }}"
+          class="variable-url"
+          data-url-pattern="{{ url_for('NetworkView:predicted', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
+        >
+          <span class="glyphicon glyphicon-globe"></span>
+          Network view, predicted
         </a>
     </ul>
     <div class="actions">
@@ -412,7 +425,7 @@
     filters_handler.init({
         form: $('#filters_form'),
         data_handler: load_data,
-        representation_url: "{{ url_for('NetworkView:representation', refseq=protein.refseq) }}",
+        representation_url: "{{ url_for('NetworkView:' +  ('predicted_' if predicted_interactions else '') + 'representation', refseq=protein.refseq) }}",
         on_loading_start: function (){
             if (network)
                 network.destroy();

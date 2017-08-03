@@ -113,7 +113,7 @@ class NetworkView(FlaskView):
         """Show SearchView as default page"""
         return redirect(url_for('SearchView:default', target='proteins'))
 
-    def show(self, refseq):
+    def show(self, refseq, predicted_interactions=False):
         """Show a protein network visualisation"""
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
@@ -126,10 +126,17 @@ class NetworkView(FlaskView):
             filters=filter_manager,
             option_widgets=self._create_option_widgets(filter_manager),
             widgets=create_widgets(protein, filters_by_id),
-            mutation_types=Mutation.types
+            mutation_types=Mutation.types,
+            predicted_interactions=predicted_interactions
         )
 
-    def _prepare_network_repr(self, protein, filter_manager, include_kinases_from_groups=False):
+    def predicted(self, refseq):
+        return self.show(refseq, predicted_interactions=True)
+
+    def _prepare_network_repr(
+            self, protein, filter_manager, include_kinases_from_groups=False,
+            include_mimp_gain_kinases=False
+    ):
         from models import Mutation, Site
         from sqlalchemy import and_
         from sqlalchemy import or_
@@ -140,20 +147,26 @@ class NetworkView(FlaskView):
             lambda q: and_(q, Mutation.protein == protein)
         )
 
-        sites = [
-            site
-            for site in filter_manager.query_all(
-                Site,
-                lambda q: and_(
-                    q,
-                    Site.protein == protein,
-                    or_(
-                        Site.kinases.any(),
-                        Site.kinase_groups.any()
+        if include_mimp_gain_kinases:
+            sites = set()
+            for mimp_mutation in filter(lambda m: m.meta_MIMP, protein_mutations):
+                for mimp in mimp_mutation.meta_MIMP:
+                    sites.add(mimp.site)
+        else:
+            sites = [
+                site
+                for site in filter_manager.query_all(
+                    Site,
+                    lambda q: and_(
+                        q,
+                        Site.protein == protein,
+                        or_(
+                            Site.kinases.any(),
+                            Site.kinase_groups.any()
+                        )
                     )
                 )
-            )
-        ]
+            ]
 
         kinases = set(
             kinase
@@ -357,13 +370,16 @@ class NetworkView(FlaskView):
             headers={'Content-disposition': 'attachment; filename="%s"' % filename}
         )
 
-    def representation(self, refseq):
+    def predicted_representation(self, refseq):
+        return self.representation(refseq, include_mimp_gain_kinases=True)
+
+    def representation(self, refseq, include_mimp_gain_kinases=False):
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
         filter_manager = NetworkViewFilters(protein)
 
-        data = self._prepare_network_repr(protein, filter_manager)
+        data = self._prepare_network_repr(protein, filter_manager, include_mimp_gain_kinases=include_mimp_gain_kinases)
 
         response = {
             'representation': {
