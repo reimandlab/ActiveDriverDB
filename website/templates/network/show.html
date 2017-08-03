@@ -83,131 +83,6 @@
   <div class="row">
     <div class="col-md-3">
 
-      {# Legend #}
-      <div class="panel panel-default color-legend">
-        <div class="panel-heading">
-          <h3 class="panel-title">Legend</h3>
-        </div>
-        <div class="panel-body">
-
-          <div class="legend">
-            <h4>Protein</h4>
-            <div class="swatch swatch-centered">
-              <div class="protein">
-                <div class="color"></div>
-              </div>
-              <div class="name">Currently analysed protein</div>
-            </div>
-          </div>
-
-          <div class="legend">
-            <h4>
-              Kinases
-              {{ help('legend-network-kinases', 'small-top') }}
-            </h4>
-            <div class="side-by-side">
-              <div class="swatch swatch-centered">
-                <div class="kinase">
-                  <div class="color"></div>
-                </div>
-                <div class="name">Kinase</div>
-              </div>
-              <div class="swatch swatch-centered">
-                <div class="svg-node">
-                  <div class="node">
-                    <svg viewBox="-21 -8 40 20" class="color">
-                      <polygon class="group shape" points="-8.176,20.823922,7.13,20.823922,17.955,10,18,-5.307337,7.131,-16.131,-8.176,-16.131,-19,-5.307,-19,10" />
-                    </svg>
-                  </div>
-                </div>
-                <div class="name">Group</div>
-              </div>
-              <div class="swatch swatch-centered">
-                <div class="svg-node">
-                  <div class="node">
-                    <svg viewBox="-21 -15 40 20" class="color">
-                      <polygon class="drug shape" points="0,5.36 -17.32,10 -4.64,-2.68 0,-20 4.64,-2.68 17.32,10" />
-                    </svg>
-                  </div>
-                </div>
-                <div class="name">Drug</div>
-              </div>
-
-            </div>
-            <div class="swatch swatch-centered">
-              <div class="name">
-                Mutations in a kinase:
-              </div>
-              <div class="kinase-gradient gradient">
-                <div class="left-edge edge">0</div>
-                <div class="color"></div>
-                <div class="right-edge edge">max</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="legend">
-            <h4>
-              Sites
-              {{ help('legend-network-sites', 'small-top') }}
-            </h4>
-            <div class="swatch swatch-centered">
-              <div class="site example">
-                <div class="color"></div>
-              </div>
-              <div class="name">PTM Site</div>
-              <div class="name"><p>Color corresponds to (the&nbsp;most severe) impact of mutations on given site:</p></div>
-              <div class="sites">
-                {% for type in mutation_types %}
-                  <div class="swatch">
-                    <div class="site impact {{ type }}">
-                      <div class="color"></div>
-                    </div>
-                    <div class="name">{{ type }}</div>
-                  </div>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-
-          <div class="legend">
-            <h4>Interactions</h4>
-            <div class="swatch">
-              <div class="interaction normal">
-                <div class="link">
-                  <div class="color"></div>
-                </div>
-                <div class="kinase">
-                  <div class="color"></div>
-                </div>
-                <div class="site none">
-                  <div class="color"></div>
-                </div>
-              </div>
-              <div class="name">Kinase interacts with analysed protein at this site</div>
-            </div>
-            <div class="swatch">
-              <div class="interaction loss">
-                <div class="link">
-                  <div class="color"></div>
-                </div>
-                <div class="kinase">
-                  <div class="color"></div>
-                </div>
-                <div class="site network-rewiring">
-                  <div class="color"></div>
-                </div>
-              </div>
-              <div class="name">
-                Loss of interaction predicted: some mutation causes disruption of a binding motif
-                {{ help('legend-network-interaction-loss', 'small-top') }}
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
       <div id="sticky_box">
 
         {# Filters #}
@@ -222,6 +97,131 @@
 
           <input type="hidden" name="fallback" value="True">
         </form>
+
+        {# Legend #}
+        <div class="panel panel-default color-legend">
+          <div class="panel-heading">
+            <h3 class="panel-title">Legend</h3>
+          </div>
+          <div class="panel-body">
+
+            <div class="legend">
+              <h4>Protein</h4>
+              <div class="swatch swatch-centered">
+                <div class="protein">
+                  <div class="color"></div>
+                </div>
+                <div class="name">Currently analysed protein</div>
+              </div>
+            </div>
+
+            <div class="legend">
+              <h4>
+                Kinases
+                {{ help('legend-network-kinases', 'small-top') }}
+              </h4>
+              <div class="side-by-side">
+                <div class="swatch swatch-centered">
+                  <div class="kinase">
+                    <div class="color"></div>
+                  </div>
+                  <div class="name">Kinase</div>
+                </div>
+                <div class="swatch swatch-centered">
+                  <div class="svg-node">
+                    <div class="node">
+                      <svg viewBox="-21 -8 40 20" class="color">
+                        <polygon class="group shape" points="-8.176,20.823922,7.13,20.823922,17.955,10,18,-5.307337,7.131,-16.131,-8.176,-16.131,-19,-5.307,-19,10" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="name">Group</div>
+                </div>
+                <div class="swatch swatch-centered">
+                  <div class="svg-node">
+                    <div class="node">
+                      <svg viewBox="-21 -15 40 20" class="color">
+                        <polygon class="drug shape" points="0,5.36 -17.32,10 -4.64,-2.68 0,-20 4.64,-2.68 17.32,10" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="name">Drug</div>
+                </div>
+
+              </div>
+              <div class="swatch swatch-centered">
+                <div class="name">
+                  Mutations in a kinase:
+                </div>
+                <div class="kinase-gradient gradient">
+                  <div class="left-edge edge">0</div>
+                  <div class="color"></div>
+                  <div class="right-edge edge">max</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="legend">
+              <h4>
+                Sites
+                {{ help('legend-network-sites', 'small-top') }}
+              </h4>
+              <div class="swatch swatch-centered">
+                <div class="site example">
+                  <div class="color"></div>
+                </div>
+                <div class="name">PTM Site</div>
+                <div class="name"><p>Color corresponds to (the&nbsp;most severe) impact of mutations on given site:</p></div>
+                <div class="sites">
+                  {% for type in mutation_types %}
+                    <div class="swatch">
+                      <div class="site impact {{ type }}">
+                        <div class="color"></div>
+                      </div>
+                      <div class="name">{{ type }}</div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <div class="legend">
+              <h4>Interactions</h4>
+              <div class="swatch">
+                <div class="interaction normal">
+                  <div class="link">
+                    <div class="color"></div>
+                  </div>
+                  <div class="kinase">
+                    <div class="color"></div>
+                  </div>
+                  <div class="site none">
+                    <div class="color"></div>
+                  </div>
+                </div>
+                <div class="name">Kinase interacts with analysed protein at this site</div>
+              </div>
+              <div class="swatch">
+                <div class="interaction loss">
+                  <div class="link">
+                    <div class="color"></div>
+                  </div>
+                  <div class="kinase">
+                    <div class="color"></div>
+                  </div>
+                  <div class="site network-rewiring">
+                    <div class="color"></div>
+                  </div>
+                </div>
+                <div class="name">
+                  Loss of interaction predicted: some mutation causes disruption of a binding motif
+                  {{ help('legend-network-interaction-loss', 'small-top') }}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
 
         {# Contact us #}
         {% with feature='protein', title=protein.gene.name + ' - ' + protein.refseq %}
@@ -270,6 +270,9 @@
           </div>
       </div>
 
+      {# Summary #}
+      {% include 'protein/summary.html' %}
+
       <div class="panel panel-default">
         <div class="panel-heading">
           <h3 class="panel-title">
@@ -280,9 +283,6 @@
           {{ text('network-usage-summary') }}
         </div>
       </div>
-
-      {# Summary #}
-      {% include 'protein/summary.html' %}
 
       {# references #}
       {% include 'protein/external_references.html' %}

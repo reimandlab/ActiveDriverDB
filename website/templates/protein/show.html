@@ -71,50 +71,6 @@
   <div class="row">
     <div class="col-md-3">
 
-      {# Legend #}
-      <div class="panel panel-default color-legend">
-        <div class="panel-heading">
-          <h3 class="panel-title">Legend</h3>
-        </div>
-        <div class="panel-body">
-          <div class="legend">
-            <h4>
-              Mutation impacts
-              {{ help('legend-mutation-impacts', 'small-top') }}
-            </h4>
-            {% for type in mutation_types %}
-              <div class="swatch">
-                <div class="impact {{ type }}">
-                  <div class="color"></div>
-                </div>
-                <div class="name">{{ type }}</div>
-              </div>
-            {% endfor %}
-          </div>
-          <div class="legend">
-            <h4>
-              Sites
-              {{ help('legend-sequence-sites', 'small-top') }}
-            </h4>
-            {% for type in site_types %}
-              <div class="swatch">
-                <div class="site {{ type }}">
-                  <div class="color"></div>
-                </div>
-                <div class="name">{{ type }}</div>
-              </div>
-            {% endfor %}
-          </div>
-          <div class="legend">
-            <h4>Others</h4>
-            <div class="swatch">
-              <div class="site-position"></div>
-              <div class="name long">Exact position of a PTM site</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div id="sticky_box">
 
         {# Filters #}
@@ -122,6 +78,50 @@
           {% include 'filters/protein.html' %}
           <input type="hidden" name="fallback" value="True">
         </form>
+
+        {# Legend #}
+        <div class="panel panel-default color-legend">
+          <div class="panel-heading">
+            <h3 class="panel-title">Legend</h3>
+          </div>
+          <div class="panel-body">
+            <div class="legend">
+              <h4>
+                Mutation impacts
+                {{ help('legend-mutation-impacts', 'small-top') }}
+              </h4>
+              {% for type in mutation_types %}
+                <div class="swatch">
+                  <div class="impact {{ type }}">
+                    <div class="color"></div>
+                  </div>
+                  <div class="name">{{ type }}</div>
+                </div>
+              {% endfor %}
+            </div>
+            <div class="legend">
+              <h4>
+                Sites
+                {{ help('legend-sequence-sites', 'small-top') }}
+              </h4>
+              {% for type in site_types %}
+                <div class="swatch">
+                  <div class="site {{ type }}">
+                    <div class="color"></div>
+                  </div>
+                  <div class="name">{{ type }}</div>
+                </div>
+              {% endfor %}
+            </div>
+            <div class="legend">
+              <h4>Others</h4>
+              <div class="swatch">
+                <div class="site-position"></div>
+                <div class="name long">Exact position of a PTM site</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {# Contact us #}
         {% with feature='protein', title=protein.gene.name + ' - ' + protein.refseq %}
