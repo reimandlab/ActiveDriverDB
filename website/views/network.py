@@ -262,6 +262,43 @@ class NetworkRepresentation:
         )
         return sites, kinases
 
+    def as_tsv(self):
+        header = [
+            'target_protein', 'target_protein_refseq',
+            'target_site', 'target_site_type',
+            'target_site_mutation_impact', 'bound_enzyme',
+            'drug_targeting_bound_enzyme'
+        ]
+        content = ['#' + '\t'.join(header)]
+
+        network = self.data
+
+        for site in network['sites']:
+            target_site = '%s,%s' % (site['position'], site['residue'])
+            protein_and_site = [
+                self.protein.gene_name,
+                self.protein.refseq,
+                target_site,
+                site['ptm_type'],
+                site['impact']
+            ]
+
+            for kinase_name in site['kinases']:
+                try:
+                    kinase = list(filter(lambda k: k['name'] == kinase_name, network['kinases']))[0]
+                except IndexError:
+                    continue
+                drugs = kinase['drugs_targeting_kinase_gene']
+                drugs = ','.join([drug['name'] for drug in drugs]) or ''
+                row = protein_and_site + [kinase_name, drugs]
+                content.append('\t'.join(row))
+
+            for kinase_group in site['kinase_groups']:
+                row = protein_and_site + [kinase_group]
+                content.append('\t'.join(row))
+
+        return '\n'.join(content)
+
 
 def list_without_nones(iterable):
     return list(filter(lambda x: x is not None, iterable))
@@ -294,6 +331,14 @@ class PredictedNetworkRepresentation(NetworkRepresentation):
             for mutation in site_mutations
             for mimp in mutation.meta_MIMP
         })
+
+
+def create_representation(protein, filter_manager, include_mimp_gain_kinases=False):
+    if include_mimp_gain_kinases:
+        representation = PredictedNetworkRepresentation(protein, filter_manager)
+    else:
+        representation = NetworkRepresentation(protein, filter_manager)
+    return representation
 
 
 class NetworkView(FlaskView):
@@ -349,52 +394,26 @@ class NetworkView(FlaskView):
     def predicted(self, refseq):
         return self.show(refseq, predicted_interactions=True)
 
-    def _as_tsv(self, protein, filter_manager):
-        header = [
-            'target_protein', 'target_protein_refseq',
-            'target_site', 'target_site_type',
-            'target_site_mutation_impact', 'bound_enzyme',
-            'drug_targeting_bound_enzyme'
-        ]
-        content = ['#' + '\t'.join(header)]
+    def download_predicted(self, refseq, format):
+        return self.download(refseq, format, include_mimp_gain_kinases=True)
 
-        network = NetworkRepresentation(protein, filter_manager).as_json()
-
-        for site in network['sites']:
-            target_site = '%s,%s' % (site['position'], site['residue'])
-            protein_and_site = [protein.gene_name, protein.refseq, target_site, site['ptm_type'], site['impact']]
-
-            for kinase_name in site['kinases']:
-                try:
-                    kinase = list(filter(lambda k: k['name'] == kinase_name, network['kinases']))[0]
-                except IndexError:
-                    continue
-                drugs = kinase['drugs_targeting_kinase_gene']
-                drugs = ','.join([drug['name'] for drug in drugs]) or ''
-                row = protein_and_site + [kinase_name, drugs]
-                content.append('\t'.join(row))
-
-            for kinase_group in site['kinase_groups']:
-                row = protein_and_site + [kinase_group]
-                content.append('\t'.join(row))
-
-        return '\n'.join(content)
-
-    def download(self, refseq, format):
+    def download(self, refseq, format, include_mimp_gain_kinases=False):
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
         filter_manager = NetworkViewFilters(protein)
 
         Formatter = namedtuple('Formatter', 'get_content mime_type extension')
 
+        representation = create_representation(protein, filter_manager, include_mimp_gain_kinases)
+
         formatters = {
             'json': Formatter(
-                lambda: json.dumps(NetworkRepresentation(protein, filter_manager).as_json()),
+                lambda: json.dumps(representation.as_json()),
                 'text/json',
                 'json'
             ),
             'tsv': Formatter(
-                lambda: self._as_tsv(protein, filter_manager),
+                representation.as_tsv,
                 'text/tsv',
                 'tsv'
             )
@@ -406,6 +425,9 @@ class NetworkView(FlaskView):
         formatter = formatters[format]
 
         name = refseq + '-' + filter_manager.url_string(expanded=True)
+
+        if include_mimp_gain_kinases:
+            name = 'predicted-' + name
 
         filename = '%s.%s' % (name, formatter.extension)
 
@@ -424,10 +446,7 @@ class NetworkView(FlaskView):
 
         filter_manager = NetworkViewFilters(protein)
 
-        if include_mimp_gain_kinases:
-            representation = PredictedNetworkRepresentation(protein, filter_manager)
-        else:
-            representation = NetworkRepresentation(protein, filter_manager)
+        representation = create_representation(protein, filter_manager, include_mimp_gain_kinases)
 
         response = {
             'representation': {

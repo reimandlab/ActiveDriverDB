@@ -331,6 +331,9 @@
     {% raw %}
     var export_title_pattern = 'network_view:{{ gene }}-{{ refseq }}-{{ expanded_filters }}';
     {% endraw %}
+    {% if predicted_interactions %}
+        export_title_pattern = 'predicted:' + export_title_pattern
+    {% endif %}
 
     {% assets "css_network" %}
     Export.init(
@@ -350,7 +353,14 @@
      * @property {boolean} collide_drugs
      */
 
-    var download_link = decode_url_pattern("{{ url_for('NetworkView:download', refseq=protein.refseq, format='{{ format }}', filters='{{ filters }}') }}")
+    var download_link = decode_url_pattern("{{
+      url_for(
+        'NetworkView:download' + ('_predicted' if predicted_interactions else ''),
+         refseq=protein.refseq,
+         format='{{ format }}',
+         filters='{{ filters }}'
+      )
+    }}")
 
     /**
      * Callback for AsyncFiltersHandler loading representation from server response.
