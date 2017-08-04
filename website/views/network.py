@@ -137,11 +137,17 @@ class NetworkView(FlaskView):
             lambda q: and_(q, Mutation.protein == protein)
         )
 
+        mimp_mutations = [m for m in protein_mutations if m.meta_MIMP]
+
         if include_mimp_gain_kinases:
             sites = set()
-            for mimp_mutation in filter(lambda m: m.meta_MIMP, protein_mutations):
+            kinases = set()
+            for mimp_mutation in mimp_mutations:
                 for mimp in mimp_mutation.meta_MIMP:
                     sites.add(mimp.site)
+                    if mimp.kinase not in mimp.site.kinases:
+                        mimp.site.kinases.append(mimp.kinase)
+                    kinases.add(mimp.kinase)
         else:
             sites = [
                 site
@@ -158,14 +164,14 @@ class NetworkView(FlaskView):
                 )
             ]
 
-        kinases = set(
-            kinase
-            for site in sites
-            for kinase in (
-                site.kinases +
-                (site.kinase_groups if include_kinases_from_groups else [])
+            kinases = set(
+                kinase
+                for site in sites
+                for kinase in (
+                    site.kinases +
+                    (site.kinase_groups if include_kinases_from_groups else [])
+                )
             )
-        )
 
         kinases_counts = dict()
         for kinase in kinases:
@@ -254,7 +260,13 @@ class NetworkView(FlaskView):
                     mimp.pwm
                     for mutation in site_mutations
                     for mimp in mutation.meta_MIMP
-                    if not mimp.effect
+                    if mimp.is_loss
+                ],
+                'mimp_gains': [
+                    mimp.pwm
+                    for mutation in site_mutations
+                    for mimp in mutation.meta_MIMP
+                    if mimp.is_gain
                 ],
                 'impact': most_significant_impact(set(
                     mutation['impact']

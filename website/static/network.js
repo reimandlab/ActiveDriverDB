@@ -1271,32 +1271,44 @@ var Network = function ()
 
         force_manager.start()
 
-        function kinase_site_with_loss(d)
+        function kinase_site_with_mimp_effect(effect)
         {
-            // noinspection EqualityComparisonWithCoercionJS
-            // noinspection EqualityComparisonWithCoercionJS
-            // noinspection EqualityComparisonWithCoercionJS
-            return (
-                d.source.type == types.kinase &&
-                d.target.type == types.site &&
-                d.target.mimp_losses.indexOf(d.source.name) != -1
-            )
+            var effect_accessor = 'mimp_' + effect
+            p(effect_accessor)
+            return function(d)
+            {
+                // noinspection EqualityComparisonWithCoercionJS
+                // noinspection EqualityComparisonWithCoercionJS
+                // noinspection EqualityComparisonWithCoercionJS
+                return (
+                    d.source.type == types.kinase &&
+                    d.target.type == types.site &&
+                    d.target[effect_accessor].indexOf(d.source.name) != -1
+                )
+            }
         }
 
-        links
-            .filter(kinase_site_with_loss)
-            .classed('loss-prediction', true)
-            // the link will be scaled linearly to the number of mimp loss
-            // predictions. This number will be always >= 1 (because we
-            // are working on such filtered subset of links)
-            .style('stroke-width', function(d){
-                var count = 0
-                for(var i = 0; i < d.target.mimp_losses.length; i++)
-                    { // noinspection EqualityComparisonWithCoercionJS
-                        count += (d.target.mimp_losses[i] == d.source.name)
-                    }
-                return count * 1.5
-            })
+        ['losses', 'gains'].forEach(
+            function(effect)
+            {
+                var effect_accessor = 'mimp_' + effect
+                links
+                    .filter(kinase_site_with_mimp_effect(effect))
+                    .classed(effect + '-prediction', true)
+                    // the link will be scaled linearly to the number of mimp loss
+                    // predictions. This number will be always >= 1 (because we
+                    // are working on such filtered subset of links)
+                    .style('stroke-width', function(d){
+                        var count = 0
+                        var target = d.target[effect_accessor]
+                        for(var i = 0; i < target.length; i++)
+                        { // noinspection EqualityComparisonWithCoercionJS
+                            count += (target[i] == d.source.name)
+                        }
+                        return count * 1.5
+                    })
+            }
+        )
 
         // collapse all groups immediately (time=0)
         groups.forEach(function(group){ switchGroupState(group, false, 0) });
