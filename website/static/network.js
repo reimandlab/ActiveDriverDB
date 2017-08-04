@@ -1274,7 +1274,6 @@ var Network = function ()
         function kinase_site_with_mimp_effect(effect)
         {
             var effect_accessor = 'mimp_' + effect
-            p(effect_accessor)
             return function(d)
             {
                 // noinspection EqualityComparisonWithCoercionJS

@@ -1262,6 +1262,11 @@ class MIMPMutation(MutationDetails, BioModel):
         primaryjoin='foreign(Kinase.name)==MIMPMutation.pwm',
         uselist=False
     )
+    kinase_group = db.relationship(
+        'KinaseGroup',
+        primaryjoin='foreign(KinaseGroup.name)==MIMPMutation.pwm_family',
+        uselist=False
+    )
 
     # gain = +1, loss = -1
     effect = db.Column(db.Boolean)
