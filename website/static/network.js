@@ -258,6 +258,7 @@ var Network = function ()
         {
             group.kinases_names = group.kinases;
             group.type = types.group;
+            group.drugs = [];   // No drugs for kinase groups are displayed currently
 
             function is_in_group(kinase)
             {
@@ -1279,10 +1280,20 @@ var Network = function ()
                 // noinspection EqualityComparisonWithCoercionJS
                 // noinspection EqualityComparisonWithCoercionJS
                 // noinspection EqualityComparisonWithCoercionJS
+                var site = d.target;
+                if (site.type != types.site) return false;
+
+                var kinase = d.source
+
                 return (
-                    d.source.type == types.kinase &&
-                    d.target.type == types.site &&
-                    d.target[effect_accessor].indexOf(d.source.name) != -1
+                    (
+                        kinase.type == types.kinase &&
+                        site[effect_accessor].indexOf(kinase.name) != -1
+                    ) ||
+                    (
+                        kinase.type == types.group &&
+                        site[effect_accessor + '_family'].indexOf(kinase.name) != -1
+                    )
                 )
             }
         }
@@ -1298,11 +1309,18 @@ var Network = function ()
                     // predictions. This number will be always >= 1 (because we
                     // are working on such filtered subset of links)
                     .style('stroke-width', function(d){
+                        var kinase = d.source
+                        var accessor = effect_accessor
+                        if(kinase.type == types.group){
+                            accessor += '_family'
+                            p(kinase)
+                        }
+                        var site = d.target
                         var count = 0
-                        var target = d.target[effect_accessor]
-                        for(var i = 0; i < target.length; i++)
+                        var mimp = site[accessor]
+                        for(var i = 0; i < mimp.length; i++)
                         { // noinspection EqualityComparisonWithCoercionJS
-                            count += (target[i] == d.source.name)
+                            count += (mimp[i] == kinase.name)
                         }
                         return count * 1.5
                     })

@@ -78,7 +78,7 @@ class NetworkRepresentation:
         self.include_kinases_from_groups = include_kinases_from_groups
         self.protein_mutations = get_raw_mutations(protein, filter_manager)
 
-        sites, kinases = self.get_sites_and_kinases()
+        sites, kinases, kinase_groups = self.get_sites_and_kinases()
 
         from sqlalchemy import and_
         kinases_counts = dict()
@@ -132,11 +132,6 @@ class NetworkRepresentation:
 
         self.muts_by_site = divide_muts_by_sites(self.protein_mutations, sites)
 
-        groups = set()
-
-        for site in sites:
-            groups.update(site.kinase_groups)
-
         data = {
             'kinases': kinase_reprs,
             'protein': {
@@ -161,7 +156,7 @@ class NetworkRepresentation:
                     ),
                     'total_cnt': len(group.kinases)
                 }
-                for group in groups
+                for group in kinase_groups
             ]
         }
         self.data = data
@@ -211,6 +206,18 @@ class NetworkRepresentation:
                 for mimp in mutation.meta_MIMP
                 if mimp.is_loss
             ],
+            'mimp_losses_family': [
+                mimp.pwm_family
+                for mutation in site_mutations
+                for mimp in mutation.meta_MIMP
+                if mimp.is_loss
+            ],
+            'mimp_gains_family': [
+                mimp.pwm_family
+                for mutation in site_mutations
+                for mimp in mutation.meta_MIMP
+                if mimp.is_gain
+            ],
             'mimp_gains': [
                 mimp.pwm
                 for mutation in site_mutations
@@ -253,7 +260,13 @@ class NetworkRepresentation:
                 (site.kinase_groups if self.include_kinases_from_groups else [])
             )
         )
-        return sites, kinases
+
+        groups = set()
+
+        for site in sites:
+            groups.update(site.kinase_groups)
+
+        return sites, kinases, groups
 
     def as_tsv(self):
         header = [
@@ -303,11 +316,13 @@ class PredictedNetworkRepresentation(NetworkRepresentation):
         mimp_mutations = [m for m in self.protein_mutations if m.meta_MIMP]
         sites = set()
         kinases = set()
+        groups = set()
         for mimp_mutation in mimp_mutations:
             for mimp in mimp_mutation.meta_MIMP:
                 sites.add(mimp.site)
                 kinases.add(mimp.kinase)
-        return sites, kinases
+                groups.add(mimp.kinase_group)
+        return sites, list_without_nones(kinases), list_without_nones(groups)
 
     def get_site_kinases(self, site):
         site_mutations = self.muts_by_site[site]
