@@ -32,7 +32,7 @@ class TestNetworkView(ViewTest):
 
         response = self.client.get('/network/representation/NM_0007')
         assert response.status_code == 200
-        representation = response.json['representation']['network']
+        representation = response.json['network']
         assert representation
         assert representation['kinases'] == []
         assert representation['protein']['name'] == 'Gene X'
@@ -83,7 +83,7 @@ class TestNetworkView(ViewTest):
 
         response = self.client.get('/network/representation/NM_0007')
         assert response.status_code == 200
-        representation = response.json['representation']['network']
+        representation = response.json['network']
         assert ['Kinase Y'] == representation['protein']['kinases']
         assert 'Kinase Y' == representation['kinases'][0]['name']
         assert len(representation['sites']) == 2
