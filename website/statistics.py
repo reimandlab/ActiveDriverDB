@@ -1,13 +1,14 @@
+from collections import defaultdict
 from functools import lru_cache
 from itertools import combinations
 
 from database import db, get_or_create
 from database import fast_count
 import models
-from sqlalchemy import and_, distinct, func
+from sqlalchemy import and_, distinct, func, literal_column, case
 from sqlalchemy import or_
 from flask import current_app
-from models import Mutation, Count
+from models import Mutation, Count, Site, Protein
 
 counters = {}
 
@@ -240,6 +241,7 @@ def generate_source_specific_summary_table():
 
     muts_in_ptm_sites = {}
     mimp_muts = {}
+    mutated_sites = defaultdict(dict)
 
     sources = Mutation.sources_dict
     for name, source in sources.items():
@@ -264,7 +266,35 @@ def generate_source_specific_summary_table():
             ).count()
         )
 
+        for site_type in Site.types:
+            mutated_sites[name][site_type] = (
+                db.session.query(
+                    func.count(distinct(case(
+                        [
+                            (
+                                (
+                                    Mutation.position.between(
+                                        Site.position - 7,
+                                        Site.position + 7
+                                    )
+                                ),
+                                Site.id
+                            )
+                        ],
+                        else_=literal_column('NULL')
+                    )))
+                )
+                .filter(and_(
+                    Mutation.protein_id == Protein.id,
+                    Site.protein_id == Protein.id,
+                    Site.type.like('%' + site_type + '%'),
+                    Mutation.precomputed_is_ptm
+                ))
+                .join(Mutation, Site.protein_id == Mutation.protein_id)
+                .filter(Statistics.get_filter_by_sources([model]))
+            ).scalar()
 
+    print(mutated_sites)
 
 
 if current_app.config['LOAD_STATS']:
