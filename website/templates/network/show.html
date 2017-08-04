@@ -49,35 +49,9 @@
 <p class="full-protein-name">{% if protein.full_name %}{{ protein.full_name | title }}{% endif %}</p>
 
   <div class="isoform-page-options">
-    <ul class="nav nav-tabs">
-      <li role="presentation">
-        <a
-           href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string()) }}"
-           class="variable-url"
-           data-url-pattern="{{ url_for('ProteinView:show', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
-        >
-          <span class="glyphicon glyphicon-indent-left" style="transform:rotate(-90deg)"></span>
-          Sequence View
-        </a>
-      <li role="presentation" class="{{ 'active' if not predicted_interactions }}">
-        <a
-          href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string()) }}"
-          class="variable-url"
-          data-url-pattern="{{ url_for('NetworkView:show', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
-        >
-          <span class="glyphicon glyphicon-globe"></span>
-          Network view
-        </a>
-      <li role="presentation" class="{{ 'active' if predicted_interactions }}">
-        <a
-          href="{{ url_for('NetworkView:predicted', refseq=protein.refseq, filters=filters.url_string()) }}"
-          class="variable-url"
-          data-url-pattern="{{ url_for('NetworkView:predicted', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
-        >
-          <span class="glyphicon glyphicon-globe"></span>
-          Network view, predicted
-        </a>
-    </ul>
+    {% with active_tab = 'network-predicted' if predicted_interactions else 'network' %}
+      {% include 'isoform_tabs_menu.html' %}
+    {% endwith %}
     <div class="actions">
       {% include 'buttons/short_url.html' %}
     </div>
