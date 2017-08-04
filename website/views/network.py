@@ -438,12 +438,28 @@ class NetworkView(FlaskView):
         )
 
     def predicted_representation(self, refseq):
+        """Representation (of predicted network) exposed to an API user"""
         return self.representation(refseq, include_mimp_gain_kinases=True)
 
     def representation(self, refseq, include_mimp_gain_kinases=False):
+        """Representation (of network) exposed to an API user"""
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+        filter_manager = NetworkViewFilters(protein)
 
+        representation = create_representation(protein, filter_manager, include_mimp_gain_kinases)
+
+        response = {'network': representation.as_json()}
+
+        return jsonify(response)
+
+    def predicted_data(self, refseq):
+        return self.data(refseq, include_mimp_gain_kinases=True)
+
+    def data(self, refseq, include_mimp_gain_kinases=False):
+        """Internal endpoint used for network rendering and asynchronous updates"""
+
+        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
         filter_manager = NetworkViewFilters(protein)
 
         representation = create_representation(protein, filter_manager, include_mimp_gain_kinases)
@@ -459,3 +475,4 @@ class NetworkView(FlaskView):
         }
 
         return jsonify(response)
+

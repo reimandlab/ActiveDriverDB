@@ -345,7 +345,7 @@
 
 
     /**
-     * Representation of NetworkView as defined in NetworkView:representation().
+     * Representation of NetworkView as defined in NetworkView:data().
      * @typedef {RepresentationData} NetworkViewData
      * @property {Object} network
      * @property {boolean} clone_by_site
@@ -413,7 +413,7 @@
     filters_handler.init({
         form: $('#filters_form'),
         data_handler: load_data,
-        representation_url: "{{ url_for('NetworkView:' +  ('predicted_' if predicted_interactions else '') + 'representation', refseq=protein.refseq) }}",
+        representation_url: "{{ url_for('NetworkView:' +  ('predicted_' if predicted_interactions else '') + 'data', refseq=protein.refseq) }}",
         on_loading_start: function (){
             if (network)
                 network.destroy();
