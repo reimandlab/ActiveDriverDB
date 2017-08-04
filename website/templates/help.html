@@ -5,7 +5,7 @@
     </button>
     <div class="dropdown-menu short-url-dropdown dropdown-menu-center">
 
-      {% if current_user.is_admin %}
+      {% if current_user.is_moderator %}
         <div>
           <button class="btn btn-default edit-btn" type="button">
             <span class="glyphicon glyphicon-pencil"></span>
@@ -15,7 +15,7 @@
 
       <div class="content">{{ inline_help(id) | replace('\n', '<br class="automatic">') | safe }}</div>
 
-      {% if current_user.is_admin %}
+      {% if current_user.is_moderator %}
         <div class="alert alert-warning feedback" role="alert"></div>
 
         <div class="edit-form">

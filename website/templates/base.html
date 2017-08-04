@@ -12,7 +12,7 @@
   {{ dependency('jquery') }}
   {{ dependency('bootstrap_js') }}
 
-  {% if current_user.is_admin %}
+  {% if current_user.is_moderator %}
     {{ dependency('tinymce') }}
     {{ dependency('prism') }}
     {{ dependency('prism_bash') }}
@@ -28,7 +28,7 @@
     {% endassets %}
   {% endblock %}
 
-  {% if current_user.is_admin %}
+  {% if current_user.is_moderator %}
   {% assets "js_inline_edit" %}
     <script type="text/javascript" src="{{ ASSET_URL }}"></script>
   {% endassets %}
@@ -43,7 +43,7 @@
   {% block head %}
   {% endblock %}
 </head>
-<body class="{{ 'admin' if current_user.is_admin else '' }} {% block body_class %}{% endblock %}">
+<body class="{{ 'admin' if current_user.is_moderator else '' }} {% block body_class %}{% endblock %}">
   <script type="text/javascript">
     {# elements with 'js-hidden' class will be hidden only if js is active #}
     var css = document.createElement('style')
@@ -73,11 +73,13 @@
         {% if current_user.is_authenticated %}
           <span class="welcome-user">Welcome {{ current_user.username }}!</span>
           {% block user_menu %}
-            {% if current_user.is_admin %}
+            {% if current_user.is_moderator %}
               <a href="{{ url_for('ContentManagementSystem:list_pages') }}" class="btn btn-default">
                 <span class="glyphicon glyphicon-list-alt"></span>
                 Pages
               </a>
+            {% endif %}
+            {% if current_user.is_admin %}
               <a href="{{ url_for('ContentManagementSystem:list_menus') }}" class="btn btn-default">
                 <span class="glyphicon glyphicon-list"></span>
                 Menus
@@ -148,7 +150,7 @@
 <script type="text/javascript" src="{{ ASSET_URL }}"></script>
 {% endassets %}
 {% block footer_js %}
-  {% if current_user.is_admin %}
+  {% if current_user.is_moderator %}
   {% assets "js_cms_editor" %}
     <script src="{{ ASSET_URL }}"></script>
   {% endassets %}
@@ -166,7 +168,7 @@
 
   document.getElementById('spinner').style.display='none'
 
-  {% if current_user.is_admin %}
+  {% if current_user.is_moderator %}
     create_help_manager("{{ url_for('ContentManagementSystem:save_inline_help') }}");
     create_text_manager("{{ url_for('ContentManagementSystem:save_text_entry') }}");
     set_csrf_token("{{ csrf_token() | safe }}")

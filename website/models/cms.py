@@ -80,6 +80,14 @@ class AnonymousUser:
     datasets = []
 
     @property
+    def access_level(self):
+        return 0
+
+    @property
+    def is_moderator(self):
+        return False
+
+    @property
     def is_admin(self):
         return False
 
@@ -158,6 +166,10 @@ class User(CMSModel):
     @property
     def is_admin(self):
         return self.access_level == 10
+
+    @property
+    def is_moderator(self):
+        return self.access_level >= 5
 
     @property
     def is_authenticated(self):

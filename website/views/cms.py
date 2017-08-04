@@ -69,6 +69,20 @@ def admin_only(f):
     return decorated_function
 
 
+def moderator_or_admin(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for(
+                'ContentManagementSystem:login',
+                next=request.url
+            ))
+        if current_user.access_level < 5:
+            abort(401)
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 def html_link(address, content):
     return '<a href="/{0}">{1}</a>'.format(address, content)
 
@@ -183,13 +197,13 @@ class ContentManagementSystem(FlaskView):
     def _text_entry(name):
         entry = TextEntry.query.filter_by(name=name).first()
         if not entry or not entry.content:
-            if current_user.is_admin:
+            if current_user.access_level >= 5:
                 return 'Please, click the pencil icon to add text here.'
             return ''
         return entry.content
 
     @route('/admin/save_text_entry/', methods=['POST'])
-    @admin_only
+    @moderator_or_admin
     def save_text_entry(self):
         name = request.form['entry_id']
         new_content = request.form['new_content']
@@ -218,7 +232,7 @@ class ContentManagementSystem(FlaskView):
         help_entry = HelpEntry.query.filter_by(name=name).first()
         if not help_entry or not help_entry.content:
             empty = 'This element has no help text defined yet.'
-            if current_user.is_admin:
+            if current_user.access_level >= 5:
                 empty += '\nPlease, click the pencil icon to add help.'
             return empty
         return help_entry.content
@@ -229,7 +243,7 @@ class ContentManagementSystem(FlaskView):
         return jsonify([{'title': page.title, 'value': page.url} for page in pages])
 
     @route('/admin/save_inline_help/', methods=['POST'])
-    @admin_only
+    @moderator_or_admin
     def save_inline_help(self):
         name = request.form['entry_id']
         old_content = request.form.get('old_content', None)
@@ -312,7 +326,7 @@ class ContentManagementSystem(FlaskView):
 
         return redirection
 
-    @admin_only
+    @moderator_or_admin
     def list_pages(self):
         pages = Page.query.all()
         return self._template('admin/pages', entries=pages)
@@ -482,7 +496,7 @@ class ContentManagementSystem(FlaskView):
         return redirect(url_for('ContentManagementSystem:list_menus'))
 
     @route('/add/', methods=['GET', 'POST'])
-    @admin_only
+    @moderator_or_admin
     def add_page(self):
         if request.method == 'GET':
             return self._template(
@@ -523,7 +537,7 @@ class ContentManagementSystem(FlaskView):
         )
 
     @route('/edit/<path:address>/', methods=['GET', 'POST'])
-    @admin_only
+    @moderator_or_admin
     def edit_page(self, address):
         page = get_page(address, 'Edit')
         if request.method == 'POST' and page:
@@ -559,7 +573,7 @@ class ContentManagementSystem(FlaskView):
         return self._template('admin/edit_page', page=page)
 
     @route('/remove_page/<path:address>/')
-    @admin_only
+    @moderator_or_admin
     def remove_page(self, address):
         page = get_page(address, 'Remove')
         if page:
