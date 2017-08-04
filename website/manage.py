@@ -414,6 +414,30 @@ class All(CommandTarget):
         CMS.remove(args)
 
 
+def new_subparser(subparsers, name, func, **kwargs):
+    subparser = subparsers.add_parser(name, **kwargs)
+    subparser.set_defaults(func=func)
+    return subparser
+
+
+def run_shell(args):
+    print('Starting interactive shell...')
+    app = create_app()
+    import models
+    import database
+    import statistics
+    from database import db
+    print('You can access current application using "app" variable.')
+    print('Database, models and statistics modules are pre-loaded.')
+    try:
+        from IPython import embed
+        embed()
+    except ImportError:
+        print('To use enhanced interactive shell install ipython3')
+        import code
+        code.interact(local=locals())
+
+
 def create_parser():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='sub-commands')
@@ -430,24 +454,30 @@ def create_parser():
 
     create_command_subparsers(command_subparsers)
 
-    # STATS SUBCOMMAND
-    stats_parser = subparsers.add_parser(
+    new_subparser(
+        subparsers,
         'calc_stats',
+        calc_statistics,
         help=(
             'should statistics (counts of protein, pathways, mutation, etc) be recalculated?'
         )
     )
-    stats_parser.set_defaults(func=calc_statistics)
 
-    # MIGRATE SUBCOMMAND
-    migrate_parser = subparsers.add_parser(
+    new_subparser(
+        subparsers,
+        'shell',
+        run_shell
+    )
+
+    migrate_parser = new_subparser(
+        subparsers,
         'migrate',
+        automigrate,
         help=(
             'should a basic auto migration on relational databases'
             'be performed? It will only create new tables'
         )
     )
-    migrate_parser.set_defaults(func=automigrate)
 
     migrate_parser.add_argument(
         '-d',
