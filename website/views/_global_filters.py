@@ -208,7 +208,7 @@ def create_dataset_specific_widgets(protein, filters_by_id):
         FilterWidget(
             'Disease name', 'checkbox_multiple',
             filter=filters_by_id['Mutation.disease_name'],
-            all_selected_label='Any clinical significance class'
+            all_selected_label='Any disease name'
         )
     ]
 
