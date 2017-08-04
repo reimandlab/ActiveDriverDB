@@ -266,7 +266,14 @@ def generate_source_specific_summary_table():
             ).count()
         )
 
-        for site_type in Site.types:
+        site_type_queries = [
+            ',',    # multiple
+            ''  # any
+        ]
+        site_type_queries.extend(Site.types)
+
+        from tqdm import tqdm
+        for site_type in tqdm(site_type_queries):
             mutated_sites[name][site_type] = (
                 db.session.query(
                     func.count(distinct(case(
