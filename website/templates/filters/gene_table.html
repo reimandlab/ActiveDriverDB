@@ -1,6 +1,6 @@
 {% extends 'filters/box.html' %}
-{% from 'widgets/widgets.html' import widget_list %}
-{% from 'widgets/widgets.html' import render_widget %}
+{% from 'widgets/widgets.html' import widget_list with context %}
+{% from 'widgets/widgets.html' import render_widget with context %}
 
 {% block dataset_widgets %}
   <div class="is-ptm">

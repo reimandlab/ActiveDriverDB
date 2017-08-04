@@ -64,7 +64,7 @@
 
         {# Filters #}
         <form method="GET" class="widget-form" id="filters_form">
-          {% include 'filters/protein.html' %}
+          {% include 'filters/protein.html' with context %}
 
           <div class="collapse-me" tabindex="-1">
             {% with collapsed=True %}

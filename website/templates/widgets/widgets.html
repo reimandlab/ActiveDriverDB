@@ -1,5 +1,3 @@
-{% from "help.html" import help with context %}
-
 {% macro widget_list(filters, title, class, collapse=False) %}
   {% set filters = filters | selectattr('visible') | list %}
 
@@ -23,6 +21,7 @@
 {% endmacro %}
 
 {% macro render_widget(widget) %}
+    {% from "help.html" import help with context %}
     {% if widget.visible %}
     {% if widget.comparator_widget %}
         {{ render_widget(widget.comparator_widget) }}
