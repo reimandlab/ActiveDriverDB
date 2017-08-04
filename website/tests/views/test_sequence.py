@@ -1,3 +1,5 @@
+from urllib.parse import urlparse, urlunparse
+
 from view_testing import ViewTest
 from models import Protein
 from models import Gene
@@ -72,7 +74,7 @@ def create_test_mutations():
     return data
 
 
-class TestProteinView(ViewTest):
+class TestSequenceView(ViewTest):
 
     def test_show(self):
 
@@ -83,13 +85,13 @@ class TestProteinView(ViewTest):
         from website.views._global_filters import cached_queries
         cached_queries.reload()
 
-        response = self.client.get('/protein/show/NM_000123')
+        response = self.client.get('/sequence/show/NM_000123')
 
         assert response.status_code == 200
         assert b'SomeGene' in response.data
         assert b'NM_000123' in response.data
 
-        response = self.client.get('/protein/representation_data/NM_000123')
+        response = self.client.get('/sequence/representation_data/NM_000123')
 
         assert response.status_code == 200
         assert b'MART' in response.data
@@ -163,3 +165,14 @@ class TestProteinView(ViewTest):
             assert json_response['refseq'] == 'NM_000123'
             assert set(json_response['meta']) == set(expected_meta)
             assert json_response['muts_count'] == 1
+
+    def test_redirect(self):
+
+        p = Protein(**test_protein_data())
+        db.session.add(p)
+
+        response = self.client.get('/protein/show/NM_000123?filters=Mutation.sources:in:MC3')
+        assert response.status_code == 302
+        url = urlparse(response.location)
+        without_net_location = urlunparse(['', '', url.path, url.params, url.query, url.fragment])
+        assert without_net_location == '/sequence/show/NM_000123?filters=Mutation.sources:in:MC3'

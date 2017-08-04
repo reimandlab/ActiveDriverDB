@@ -1,10 +1,10 @@
-from models import Protein
-from models import Mutation
 from database import bdb, bdb_refseq
-from database import make_snv_key
 from database import decode_csv
 from database import get_or_create
+from database import make_snv_key
 from helpers.bioinf import decode_raw_mutation
+from models import Mutation
+from models import Protein
 
 
 def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
@@ -146,3 +146,5 @@ def represent_mutation(mutation, data_filter, representation_type=dict):
             ])
         )
     )
+
+

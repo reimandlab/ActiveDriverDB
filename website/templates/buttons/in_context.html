@@ -13,7 +13,7 @@
       >
         <a
           {% if dataset.mutation_present %}
-            href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=dataset.filter) }}#{{ mutation.position }}{{ mutation.alt }}"
+            href="{{ url_for('SequenceView:show', refseq=protein.refseq, filters=dataset.filter) }}#{{ mutation.position }}{{ mutation.alt }}"
           {% else %}
             href="#"
           {% endif %}

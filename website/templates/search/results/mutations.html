@@ -46,7 +46,7 @@
           </td>
           {% endif %}
           <td>
-            <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq) }}">
+            <a href="{{ url_for('SequenceView:show', refseq=result.protein.refseq) }}">
               {{ result.protein.refseq }}
             </a>
           </td>

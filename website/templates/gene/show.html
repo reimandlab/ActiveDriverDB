@@ -118,7 +118,7 @@
         </td>
         <td>
           <ul class="list-unstyled">
-            <li><a href="{{ url_for('ProteinView:show', refseq=isoform.refseq) }}">
+            <li><a href="{{ url_for('SequenceView:show', refseq=isoform.refseq) }}">
               Sequence View
               ({{ isoform.sites | length }} PTM sites,
               {{ isoform.confirmed_mutations_count }} mutations)

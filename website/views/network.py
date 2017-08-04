@@ -5,12 +5,12 @@ from flask import redirect
 from flask import url_for
 from flask import jsonify
 from flask import render_template as template
-from flask_classful import FlaskView
 
 from models import Protein, Mutation, Drug, Gene
 from helpers.filters import Filter
 from helpers.filters import FilterManager
 from helpers.widgets import FilterWidget
+from views.abstract_protein import AbstractProteinView, get_raw_mutations
 from ._global_filters import common_filters, filters_data_view
 from ._global_filters import create_widgets
 
@@ -76,18 +76,11 @@ class NetworkRepresentation:
         self.protein = protein
         self.filter_manager = filter_manager
         self.include_kinases_from_groups = include_kinases_from_groups
-
-        from models import Mutation
-        from sqlalchemy import and_
-
-        # TODO: all of this could be fetched in a single query
-        self.protein_mutations = filter_manager.query_all(
-            Mutation,
-            lambda q: and_(q, Mutation.protein == protein)
-        )
+        self.protein_mutations = get_raw_mutations(protein, filter_manager)
 
         sites, kinases = self.get_sites_and_kinases()
 
+        from sqlalchemy import and_
         kinases_counts = dict()
         for kinase in kinases:
             if kinase.protein:
@@ -341,8 +334,10 @@ def create_representation(protein, filter_manager, include_mimp_gain_kinases=Fal
     return representation
 
 
-class NetworkView(FlaskView):
+class NetworkView(AbstractProteinView):
     """View for local network of proteins"""
+
+    filter_class = NetworkViewFilters
 
     def _create_option_widgets(self, filter_manager):
 
@@ -360,15 +355,6 @@ class NetworkView(FlaskView):
                 filter=filter_manager.filters['JavaScript.collide_drugs']
             ),
         ]
-
-    def before_request(self, name, *args, **kwargs):
-        protein = Protein.query.filter_by(refseq=kwargs['refseq']).first_or_404()
-        filter_manager = NetworkViewFilters(protein)
-        endpoint = self.build_route_name(name)
-
-        return filter_manager.reformat_request_url(
-            request, endpoint, *args, **kwargs
-        )
 
     def index(self):
         """Show SearchView as default page"""

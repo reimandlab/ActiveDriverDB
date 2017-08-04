@@ -1,9 +1,9 @@
 <ul class="nav nav-tabs">
   <li role="presentation" class="{{ 'active' if active_tab == 'sequence' }}">
     <a
-      href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string()) }}"
+      href="{{ url_for('SequenceView:show', refseq=protein.refseq, filters=filters.url_string()) }}"
       class="variable-url"
-      data-url-pattern="{{ url_for('ProteinView:show', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
+      data-url-pattern="{{ url_for('SequenceView:show', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
     >
       <span class="glyphicon glyphicon-indent-left" style="transform:rotate(-90deg)"></span>
       Sequence View

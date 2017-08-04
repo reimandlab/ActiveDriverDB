@@ -277,8 +277,8 @@
     {% endassets %}
 
     /**
-     * Representation of ProteinView as defined in ProteinView:representation_data().
-     * @typedef {RepresentationData} ProteinViewData
+     * Representation of SequenceView as defined in SequenceView:representation_data().
+     * @typedef {RepresentationData} SequenceViewData
      * @property {html} mutation_table
      * @property {html} tracks
      * @property {Object} mutations
@@ -289,7 +289,7 @@
 
     /**
      * Callback for AsyncFiltersHandler loading representation from server response.
-     * @param {ProteinViewData} data
+     * @param {SequenceViewData} data
      * @param {FiltersData} filters_data
      */
     function load_data(data, filters_data)
@@ -354,7 +354,7 @@
     filters_handler.init({
         form: $('#filters_form'),
         data_handler: load_data,
-        representation_url: "{{ url_for('ProteinView:representation_data', refseq=protein.refseq) }}",
+        representation_url: "{{ url_for('SequenceView:representation_data', refseq=protein.refseq) }}",
         on_loading_start: function (){
             if (needle_plot)
                 needle_plot.destroy();

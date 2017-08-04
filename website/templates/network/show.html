@@ -301,7 +301,7 @@
             radius: 20,
             ratio: 0.5, /* remember to keep update with style of network */
             nodeURL: function(node){
-                return '{{ url_for('ProteinView:show', refseq='') }}' + node.protein.refseq
+                return '{{ url_for('SequenceView:show', refseq='') }}' + node.protein.refseq
             },
             onload: function(){ network_spinner.hide() }
         };
