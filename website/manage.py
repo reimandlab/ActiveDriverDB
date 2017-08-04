@@ -427,6 +427,9 @@ def run_shell(args):
     import database
     import statistics
     from database import db
+    if args.command:
+        print('Executing supplied command: "%s"' % args.command)
+        eval(args.command)
     print('You can access current application using "app" variable.')
     print('Database, models and statistics modules are pre-loaded.')
     try:
@@ -463,10 +466,16 @@ def create_parser():
         )
     )
 
-    new_subparser(
+    shell_parser = new_subparser(
         subparsers,
         'shell',
         run_shell
+    )
+
+    shell_parser.add_argument(
+        '-c',
+        '--command',
+        type=str
     )
 
     migrate_parser = new_subparser(
