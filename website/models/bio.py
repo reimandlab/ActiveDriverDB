@@ -920,7 +920,7 @@ class MIMPMetaManager(UserList):
         # TODO: sort by p-value, so first we will have loss
         # if the loss data is more reliable and vice versa.
         for mimp in self.data:
-            if mimp.effect:
+            if mimp.is_gain:
                 effects.add('gain')
             else:
                 effects.add('loss')
@@ -1257,8 +1257,22 @@ class MIMPMutation(MutationDetails, BioModel):
     pwm = db.Column(db.Text)
     pwm_family = db.Column(db.Text)
 
+    kinase = db.relationship(
+        'Kinase',
+        primaryjoin='foreign(Kinase.name)==MIMPMutation.pwm',
+        uselist=False
+    )
+
     # gain = +1, loss = -1
     effect = db.Column(db.Boolean)
+
+    @property
+    def is_gain(self):
+        return self.effect
+
+    @property
+    def is_loss(self):
+        return not self.effect
 
     # position of a mutation in an associated motif
     position_in_motif = db.Column(db.Integer)
