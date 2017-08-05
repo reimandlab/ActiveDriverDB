@@ -353,6 +353,21 @@ def generate_source_specific_summary_table():
     print(mutated_sites)
 
 
+def count_mutated_potential_sites():
+    count = 0
+    total_length = 0
+    for protein in tqdm(Protein.query, total=Protein.query.count()):
+        mutated_positions = set()
+        for mut in protein.confirmed_mutations:
+            mutated_positions.update(range(mut.position - 7, mut.position + 7))
+        total_length += protein.length
+
+        for i in range(protein.length):
+            if i in mutated_positions:
+                count += 1
+    print(count, total_length, count/total_length*100)
+
+
 if current_app.config['LOAD_STATS']:
     stats = Statistics()
     print('Loading statistics')
