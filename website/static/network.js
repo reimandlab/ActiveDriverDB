@@ -842,10 +842,10 @@ var Network = function ()
                 )
             }
         )
-        var r = config.default_link_distance * 0.3 + config.radius * 0.6
 
         function force_tick(e)
         {
+            // keep drugs in line with kinases
             exposed_sites.each(
                 function(site)
                 {

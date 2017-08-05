@@ -100,7 +100,10 @@ class NetworkRepresentation:
         sites = [
             site
             for site in sites
-            if site.kinases or site.kinase_groups
+            if (
+                self.get_site_kinases(site) or
+                self.get_site_kinase_groups(site)
+            )
         ]
 
         protein_kinases_names = [kinase.name for kinase in kinases]
