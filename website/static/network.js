@@ -522,6 +522,7 @@ var Network = function ()
     {
         // move node back to the orbit
         site.exposed = false
+        site.fixed = false
         site.link_distance = site.previous_link_distance
         force_manager.charge(charge)
         force_manager.start()
@@ -574,7 +575,10 @@ var Network = function ()
             Math.sqrt(max_distance_squared) * 1.15,
             camera_speed
         );
-        setTimeout(function(){tooltip.active(true)}, camera_speed);
+        setTimeout(function(){
+            tooltip.active(true);
+            site.fixed = true
+        }, camera_speed);
 
         force_manager.start()
 
@@ -701,7 +705,31 @@ var Network = function ()
             node_2.x -= x
             node_2.y -= y
         }
+    }
 
+    function arrange_in_line(node_1, node_2, node_3, drugs_count_minus_one)
+    {
+        var x = node_1.x - node_2.x
+        var y = node_1.y - node_2.y
+
+        var angle = Math.atan2(y, x)
+
+        x = node_2.x - node_3.x
+        y = node_2.y - node_3.y
+
+        var drug_angle = Math.atan2(y, x)
+
+        if(Math.abs(angle - drug_angle) < 0.4 * drugs_count_minus_one)
+            return
+
+        var distance = Math.pow(x, 2) + Math.pow(y, 2)
+        var l = Math.sqrt(distance)
+
+        var dx = Math.cos(angle)
+        var dy = Math.sin(angle)
+
+        node_3.x = (2 * node_3.x + node_2.x - dx * l) / 3
+        node_3.y = (2 * node_3.y + node_2.y - dy * l) / 3
     }
 
     function collide_nodes(nodes, padding, constant_radius)
@@ -800,8 +828,41 @@ var Network = function ()
         var exposed_sites = site_nodes.filter(function (node) { return node.exposed });
         var nodes_collider = collide_nodes_belonging_to_exposed_sites(exposed_sites, 3);
 
-        function forceTick(e)
+        var drugs_by_site = {}
+        exposed_sites.each(
+            function(site)
+            {
+                drugs_by_site[site] = []
+
+                site.interactors.forEach(
+                    function(kinase)
+                    {
+                        append(drugs_by_site[site], kinase.drugs)
+                    }
+                )
+            }
+        )
+        var r = config.default_link_distance * 0.3 + config.radius * 0.6
+
+        function force_tick(e)
         {
+            exposed_sites.each(
+                function(site)
+                {
+                    site.interactors.forEach(
+                        function(kinase)
+                        {
+                            var l = kinase.drugs.length - 1
+                            kinase.drugs.forEach(
+                                function(drug)
+                                {
+                                    arrange_in_line(site, kinase, drug, l)
+                                }
+                            )
+                        }
+                    )
+                }
+            )
             site_nodes.each(site_collider);
             exposed_sites.each(nodes_collider);
             if(config.collide_drugs)
@@ -818,7 +879,7 @@ var Network = function ()
             force_manager.start()
             dispatch.networkmove(this)
         }
-        return forceTick
+        return force_tick
     }
 
     function resize()
@@ -1313,7 +1374,6 @@ var Network = function ()
                         var accessor = effect_accessor
                         if(kinase.type == types.group){
                             accessor += '_family'
-                            p(kinase)
                         }
                         var site = d.target
                         var count = 0
