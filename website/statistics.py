@@ -9,6 +9,7 @@ from sqlalchemy import and_, distinct, func, literal_column, case
 from sqlalchemy import or_
 from flask import current_app
 from models import Mutation, Count, Site, Protein
+from tqdm import tqdm
 
 counters = {}
 
@@ -238,6 +239,13 @@ class Statistics:
 
 
 def count_mutated_sites(site_type, model=None):
+    filters = [
+        Mutation.protein_id == Protein.id,
+        Site.protein_id == Protein.id,
+        Mutation.precomputed_is_ptm
+    ]
+    if site_type:
+        filters.append(Site.type.like('%' + site_type + '%'))
     query = (
         db.session.query(
             func.count(distinct(case(
@@ -255,17 +263,24 @@ def count_mutated_sites(site_type, model=None):
                 else_=literal_column('NULL')
             )))
         )
-        .filter(and_(
-            Mutation.protein_id == Protein.id,
-            Site.protein_id == Protein.id,
-            Site.type.like('%' + site_type + '%'),
-            Mutation.precomputed_is_ptm
-        ))
+        .filter(and_(*filters))
         .join(Mutation, Site.protein_id == Mutation.protein_id)
     )
     if model:
         query = query.filter(Statistics.get_filter_by_sources([model]))
     return query.scalar()
+
+
+def all_mutated_sites():
+    mutated_sites = {}
+    site_type_queries = [
+        # ',',    # multiple
+        ''  # any
+    ]
+    site_type_queries.extend(Site.types)
+    for site_type in tqdm(site_type_queries):
+        mutated_sites[site_type] = count_mutated_sites(site_type)
+    print(mutated_sites)
 
 
 def generate_source_specific_summary_table():
@@ -298,12 +313,11 @@ def generate_source_specific_summary_table():
         )
 
         site_type_queries = [
-            ',',    # multiple
+            # ',',    # multiple
             ''  # any
         ]
         site_type_queries.extend(Site.types)
 
-        from tqdm import tqdm
         for site_type in tqdm(site_type_queries):
             mutated_sites[name][site_type] = count_mutated_sites(site_type, model)
 
