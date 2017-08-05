@@ -456,19 +456,30 @@ class Protein(BioModel):
 
     @has_ptm_mutations.expression
     def has_ptm_mutations(cls):
+        return cls.has_ptm_mutations_in_dataset()
+
+    @classmethod
+    def has_ptm_mutations_in_dataset(cls, dataset=None):
+        criteria = [
+            Site.protein_id == cls.id,
+            Mutation.protein_id == cls.id,
+            Mutation.is_confirmed == True,
+            Site.position.between(
+                Mutation.position - 7,
+                Mutation.position + 7
+            )
+        ]
+        if dataset:
+            from statistics import Statistics
+            criteria.append(
+                Statistics.get_filter_by_sources([dataset])
+            )
         return (
             select([
                 case(
                     [(
                         exists()
-                        .where(and_(
-                            Site.protein_id == cls.id,
-                            Mutation.protein_id == cls.id,
-                            Site.position.between(
-                                Mutation.position - 7,
-                                Mutation.position + 7
-                            )
-                        )).correlate(cls),
+                        .where(and_(*criteria)).correlate(cls),
                         True
                     )],
                     else_=False,

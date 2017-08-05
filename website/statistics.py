@@ -5,7 +5,7 @@ from itertools import combinations
 from database import db, get_or_create
 from database import fast_count
 import models
-from sqlalchemy import and_, distinct, func, literal_column, case
+from sqlalchemy import and_, distinct, func, literal_column, case, text
 from sqlalchemy import or_
 from flask import current_app
 from models import Mutation, Count, Site, Protein
@@ -273,14 +273,46 @@ def count_mutated_sites(site_type, model=None):
 
 def all_mutated_sites():
     mutated_sites = {}
-    site_type_queries = [
-        # ',',    # multiple
-        ''  # any
-    ]
+    site_type_queries = ['']  # empty will match all sites
     site_type_queries.extend(Site.types)
     for site_type in tqdm(site_type_queries):
         mutated_sites[site_type] = count_mutated_sites(site_type)
     print(mutated_sites)
+
+
+def source_specific_proteins_with_ptm_mutations():
+
+    source_models = {'merged': None}
+
+    for name, source in Mutation.sources_dict.items():
+        if name == 'user':
+            continue
+        source_models[name] = Mutation.get_source_model(name)
+
+    proteins_with_ptm_muts = {}
+    kinases = {}
+    kinase_groups = {}
+    for name, model in source_models.items():
+        query = (
+            db.session.query(distinct(Protein.id))
+            .filter(Protein.has_ptm_mutations_in_dataset(model) == True)
+        )
+        proteins_with_ptm_muts[name] = query.count()
+        kinases[name] = (
+            db.session.query(distinct(models.Kinase.id))
+            .join(Protein)
+            .filter(Protein.has_ptm_mutations_in_dataset(model) == True)
+        ).count()
+        kinase_groups[name] = (
+            db.session.query(distinct(models.KinaseGroup.id))
+            .join(models.Kinase)
+            .join(Protein)
+            .filter(Protein.has_ptm_mutations_in_dataset(model) == True)
+        ).count()
+
+    print(proteins_with_ptm_muts)
+    print(kinases)
+    print(kinase_groups)
 
 
 def generate_source_specific_summary_table():
@@ -312,10 +344,7 @@ def generate_source_specific_summary_table():
             ).count()
         )
 
-        site_type_queries = [
-            # ',',    # multiple
-            ''  # any
-        ]
+        site_type_queries = ['']  # empty will match all sites
         site_type_queries.extend(Site.types)
 
         for site_type in tqdm(site_type_queries):
