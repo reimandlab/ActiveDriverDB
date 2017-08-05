@@ -237,6 +237,37 @@ class Statistics:
         )
 
 
+def count_mutated_sites(site_type, model=None):
+    query = (
+        db.session.query(
+            func.count(distinct(case(
+                [
+                    (
+                        (
+                            Mutation.position.between(
+                                Site.position - 7,
+                                Site.position + 7
+                            )
+                        ),
+                        Site.id
+                    )
+                ],
+                else_=literal_column('NULL')
+            )))
+        )
+        .filter(and_(
+            Mutation.protein_id == Protein.id,
+            Site.protein_id == Protein.id,
+            Site.type.like('%' + site_type + '%'),
+            Mutation.precomputed_is_ptm
+        ))
+        .join(Mutation, Site.protein_id == Mutation.protein_id)
+    )
+    if model:
+        query = query.filter(Statistics.get_filter_by_sources([model]))
+    return query.scalar()
+
+
 def generate_source_specific_summary_table():
 
     muts_in_ptm_sites = {}
@@ -274,32 +305,7 @@ def generate_source_specific_summary_table():
 
         from tqdm import tqdm
         for site_type in tqdm(site_type_queries):
-            mutated_sites[name][site_type] = (
-                db.session.query(
-                    func.count(distinct(case(
-                        [
-                            (
-                                (
-                                    Mutation.position.between(
-                                        Site.position - 7,
-                                        Site.position + 7
-                                    )
-                                ),
-                                Site.id
-                            )
-                        ],
-                        else_=literal_column('NULL')
-                    )))
-                )
-                .filter(and_(
-                    Mutation.protein_id == Protein.id,
-                    Site.protein_id == Protein.id,
-                    Site.type.like('%' + site_type + '%'),
-                    Mutation.precomputed_is_ptm
-                ))
-                .join(Mutation, Site.protein_id == Mutation.protein_id)
-                .filter(Statistics.get_filter_by_sources([model]))
-            ).scalar()
+            mutated_sites[name][site_type] = count_mutated_sites(site_type, model)
 
     print(mutated_sites)
 
