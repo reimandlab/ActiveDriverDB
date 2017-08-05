@@ -95,17 +95,6 @@ class NetworkRepresentation:
 
                 # KINASES NOT MAPPED TO PROTEINS ARE NOT SHOWN
 
-        # kinases = set(kinases_counts.keys())
-
-        sites = [
-            site
-            for site in sites
-            if (
-                self.get_site_kinases(site) or
-                self.get_site_kinase_groups(site)
-            )
-        ]
-
         protein_kinases_names = [kinase.name for kinase in kinases]
         kinase_gene_ids = [kinase.protein.gene_id for kinase in kinases if kinase.protein]
 
@@ -134,6 +123,15 @@ class NetworkRepresentation:
             kinase_reprs.append(json_repr)
 
         self.muts_by_site = divide_muts_by_sites(self.protein_mutations, sites)
+
+        sites = [
+            site
+            for site in sites
+            if (
+                self.get_site_kinases(site) or
+                self.get_site_kinase_groups(site)
+            )
+        ]
 
         data = {
             'kinases': kinase_reprs,

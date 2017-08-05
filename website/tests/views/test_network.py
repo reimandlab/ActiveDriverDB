@@ -30,12 +30,13 @@ class TestNetworkView(ViewTest):
         p = create_test_protein()
         db.session.add(p)
 
-        response = self.client.get('/network/representation/NM_0007')
-        assert response.status_code == 200
-        representation = response.json['network']
-        assert representation
-        assert representation['kinases'] == []
-        assert representation['protein']['name'] == 'Gene X'
+        for endpoint in ('representation', 'predicted_representation'):
+            response = self.client.get('/network/%s/NM_0007' % endpoint)
+            assert response.status_code == 200
+            representation = response.json['network']
+            assert representation
+            assert representation['kinases'] == []
+            assert representation['protein']['name'] == 'Gene X'
 
     def test_representation(self):
         p = create_test_protein()

@@ -292,7 +292,7 @@ def source_specific_proteins_with_ptm_mutations():
     proteins_with_ptm_muts = {}
     kinases = {}
     kinase_groups = {}
-    for name, model in source_models.items():
+    for name, model in tqdm(source_models.items()):
         query = (
             db.session.query(distinct(Protein.id))
             .filter(Protein.has_ptm_mutations_in_dataset(model) == True)
