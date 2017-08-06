@@ -1,8 +1,7 @@
 from collections import defaultdict
 from os.path import basename
 
-from database import make_snv_key
-from database import encode_csv
+from genomic_mappings import make_snv_key, encode_csv
 from helpers.bioinf import decode_mutation
 from helpers.bioinf import is_sequence_broken
 from helpers.parsers import read_from_gz_files

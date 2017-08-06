@@ -6,7 +6,7 @@ from models import Protein
 from models import Gene
 from database import db
 from database import bdb
-from database import make_snv_key
+from genomic_mappings import make_snv_key
 from miscellaneous import make_named_temp_file
 
 

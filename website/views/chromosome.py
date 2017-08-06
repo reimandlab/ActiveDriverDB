@@ -1,10 +1,11 @@
 from flask import request
 from flask_classful import FlaskView
 from flask import jsonify
+
+from database import bdb
 from models import Mutation
 from helpers.filters import FilterManager
 from ._global_filters import common_filters
-from ._commons import get_genomic_muts
 from ._commons import represent_mutation
 from operator import attrgetter
 from collections import OrderedDict
@@ -92,7 +93,7 @@ class ChromosomeView(FlaskView):
         if chrom.startswith('chr'):
             chrom = chrom[3:]
 
-        items = get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt)
+        items = bdb.get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt)
 
         raw_mutations = filter_manager.apply([
             item['mutation'] for

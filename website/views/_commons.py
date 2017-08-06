@@ -1,37 +1,8 @@
-from database import bdb, bdb_refseq
-from database import decode_csv
+from database import bdb_refseq
 from database import get_or_create
-from database import make_snv_key
 from helpers.bioinf import decode_raw_mutation
 from models import Mutation
 from models import Protein
-
-
-def get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt):
-
-    snv = make_snv_key(chrom, dna_pos, dna_ref, dna_alt)
-
-    items = [
-        decode_csv(item)
-        for item in bdb[snv]
-    ]
-
-    # this could be speed up by: itemgetters, accumulative queries and so on
-    for item in items:
-
-        protein = Protein.query.get(item['protein_id'])
-        item['protein'] = protein
-
-        mutation, created = get_or_create(
-            Mutation,
-            protein=protein,
-            protein_id=protein.id,
-            position=item['pos'],
-            alt=item['alt']
-        )
-        item['mutation'] = mutation
-        item['type'] = 'genomic'
-    return items
 
 
 def iterate_affected_isoforms(gene_name, ref, pos, alt):

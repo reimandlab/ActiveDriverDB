@@ -5,7 +5,7 @@ from itertools import combinations
 from database import db, get_or_create
 from database import fast_count
 import models
-from sqlalchemy import and_, distinct, func, literal_column, case, text
+from sqlalchemy import and_, distinct, func, literal_column, case
 from sqlalchemy import or_
 from flask import current_app
 from models import Mutation, Count, Site, Protein
@@ -280,14 +280,21 @@ def all_mutated_sites():
     print(mutated_sites)
 
 
-def source_specific_proteins_with_ptm_mutations():
-
-    source_models = {'merged': None}
+def mutation_sources():
+    sources = {}
 
     for name, source in Mutation.sources_dict.items():
         if name == 'user':
             continue
-        source_models[name] = Mutation.get_source_model(name)
+        sources[name] = Mutation.get_source_model(name)
+
+    return sources
+
+
+def source_specific_proteins_with_ptm_mutations():
+
+    source_models = mutation_sources()
+    source_models['merged'] = None
 
     proteins_with_ptm_muts = {}
     kinases = {}
@@ -315,17 +322,24 @@ def source_specific_proteins_with_ptm_mutations():
     print(kinase_groups)
 
 
+def source_specific_nucleotide_mappings():
+    from database import bdb
+    counts = defaultdict(int)
+    fields = Mutation.source_fields
+    for mutation in bdb.iterate_known_muts():
+        for field in fields:
+            if getattr(mutation, field):
+                counts[field] += 1
+    print(counts)
+
+
 def generate_source_specific_summary_table():
 
     muts_in_ptm_sites = {}
     mimp_muts = {}
     mutated_sites = defaultdict(dict)
 
-    sources = Mutation.sources_dict
-    for name, source in sources.items():
-        if name == 'user':
-            continue
-        model = Mutation.get_source_model(name)
+    for name, model in mutation_sources().items():
         count = (
             Mutation.query
             .filter_by(is_confirmed=True, is_ptm_distal=True)

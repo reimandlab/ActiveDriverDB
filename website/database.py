@@ -1,16 +1,18 @@
 from warnings import warn
 
-from sqlalchemy import func, MetaData
+from sqlalchemy import MetaData
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.sql.expression import func
-from flask_sqlalchemy import SQLAlchemy
+
 from berkley_db import BerkleyHashSet
+from flask_sqlalchemy import SQLAlchemy
+from genomic_mappings import GenomicMappings
 from helpers.parsers import chunked_list
 
 db = SQLAlchemy()
-bdb = BerkleyHashSet()
+bdb = GenomicMappings()
 bdb_refseq = BerkleyHashSet()
 
 
@@ -100,44 +102,6 @@ def get_autoincrement(model):
     ).scalar()
 
 
-def make_snv_key(chrom, pos, ref, alt):
-    """Makes a key for given `snv` (Single Nucleotide Variation)
-    to be used as a key in hashmap in snv -> csv mappings.
-
-    Args:
-        chrom:
-            str representing one of human chromosomes
-            (like '1', '22', 'X'), e.g. one of returned
-            by `helpers.bioinf.get_human_chromosomes`
-        pos:
-            int representing position of variation
-        ref:
-            char representing reference nucleotide
-        alt:
-            char representing alternative nucleotide
-    """
-    return ':'.join(
-        (chrom, '%x' % int(pos))
-    ) + ref.lower() + alt.lower()
-
-
-def decode_csv(encoded_data):
-    """Decode Coding Sequence Variant data from string made by encode_csv()."""
-    strand, ref, alt, is_ptm = encoded_data[:4]
-    cdna_pos, exon, protein_id = encoded_data[4:].split(':')
-    cdna_pos = int(cdna_pos, base=16)
-    return dict(zip(
-        (
-            'strand', 'ref', 'alt', 'pos',
-            'cdna_pos', 'exon', 'protein_id', 'is_ptm'
-        ),
-        (
-            strand, ref, alt, (cdna_pos - 1) // 3 + 1,
-            cdna_pos, exon, int(protein_id, base=16), bool(int(is_ptm))
-        )
-    ))
-
-
 def levenshtein_sorted(sql_query, column, query):
     from flask import current_app
     from sqlalchemy import desc
@@ -148,16 +112,6 @@ def levenshtein_sorted(sql_query, column, query):
             )
         )
     return sql_query
-
-
-def encode_csv(strand, ref, alt, pos, exon, protein_id, is_ptm):
-    """Encode a Coding Sequence Variants into a single, short string.
-
-    ref and alt are aminoacids, but pos is a position of mutation in cDNA, so
-    aminoacid positions can be derived simply applying: (int(pos) - 1) // 3 + 1
-    """
-    return strand + ref + alt + ('1' if is_ptm else '0') + ':'.join((
-        '%x' % int(pos), exon, '%x' % protein_id))
 
 
 def fast_count(query):

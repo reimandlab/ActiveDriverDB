@@ -115,8 +115,8 @@ class TestSearchView(ViewTest):
         test_query = 'chr20 14370 G A'
 
         from database import bdb
-        from database import make_snv_key
-        from database import encode_csv
+        from genomic_mappings import make_snv_key
+        from genomic_mappings import encode_csv
 
         # (those are fake data)
         csv = encode_csv('+', 'A', 'V', 13 * 3, 'EX1', p.id, True)

@@ -56,7 +56,7 @@ class BerkleyHashSet:
     def _create_path(self):
         """Returns path to a file containing the database.
 
-        The file is not guranted to exist, although the 'databases' directory
+        The file is not guaranteed to exist, although the 'databases' directory
         will be created (if it does not exist).
         """
         base_dir = abspath(dirname(__file__))

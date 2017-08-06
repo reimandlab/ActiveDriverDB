@@ -24,9 +24,8 @@ from sqlalchemy import and_, exists, or_
 from helpers.filters import FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
-from ._commons import get_genomic_muts
 from ._commons import get_protein_muts
-from database import db, levenshtein_sorted
+from database import db, levenshtein_sorted, bdb
 
 
 class GeneResult:
@@ -216,7 +215,7 @@ class MutationSearch:
             alts = alts.split(',')
             for alt in alts:
 
-                items = get_genomic_muts(chrom, pos, ref, alt)
+                items = bdb.get_genomic_muts(chrom, pos, ref, alt)
 
                 chrom = 'chr' + chrom
                 parsed_line = ' '.join((chrom, pos, ref, alt)) + '\n'
@@ -235,7 +234,7 @@ class MutationSearch:
                 chrom, pos, ref, alt = data
                 chrom = chrom[3:]
 
-                items = get_genomic_muts(chrom, pos, ref, alt)
+                items = bdb.get_genomic_muts(chrom, pos, ref, alt)
 
             elif len(data) == 2:
                 gene, mut = [x.upper() for x in data]
@@ -651,7 +650,7 @@ def autocomplete_mutation(query, limit=None):
         chrom = chrom[3:]
 
         try:
-            items = get_genomic_muts(chrom, pos, ref, alt)
+            items = bdb.get_genomic_muts(chrom, pos, ref, alt)
         except ValueError:
             return json_message(
                 'Did you mean to search for mutation with <code>{chrom} {pos} {ref} {alt}</code> format?'
