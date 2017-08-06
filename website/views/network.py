@@ -323,7 +323,7 @@ class PredictedNetworkRepresentation(NetworkRepresentation):
                 sites.add(mimp.site)
                 kinases.add(mimp.kinase)
                 groups.add(mimp.kinase_group)
-        return sites, list_without_nones(kinases), list_without_nones(groups)
+        return list_without_nones(sites), list_without_nones(kinases), list_without_nones(groups)
 
     def get_site_kinases(self, site):
         site_mutations = self.muts_by_site[site]
