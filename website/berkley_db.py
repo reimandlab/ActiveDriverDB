@@ -83,6 +83,7 @@ class BerkleyHashSet:
         """key: has to be str"""
 
         key = bytes(key, 'utf-8')
+
         try:
             items = filter(
                 bool,
@@ -95,6 +96,20 @@ class BerkleyHashSet:
             items,
             lambda new_set: self.__setitem__(key, new_set)
         )
+
+    def items(self):
+        for key, value in self.db.iteritems():
+            try:
+                yield key, filter(bool, value.decode('utf-8').split('|'))
+            except (KeyError, AttributeError):
+                pass
+
+    def values(self):
+        for key, value in self.db.iteritems():
+            try:
+                yield filter(bool, value.decode('utf-8').split('|'))
+            except (KeyError, AttributeError):
+                pass
 
     def update(self, key, value):
         key = bytes(key, 'utf-8')

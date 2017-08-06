@@ -322,11 +322,42 @@ def source_specific_proteins_with_ptm_mutations():
     print(kinase_groups)
 
 
-def source_specific_nucleotide_mappings():
+def iterate_known_muts_sources():
+    from database import bdb
+    from genomic_mappings import decode_csv
+    from models import Mutation
+    from tqdm import tqdm
+
+    mutations = {
+        (mutation.protein.id, mutation.position, mutation.alt): mutation.sources
+        for mutation in Mutation.query.filter_by(is_confirmed=True)
+        if mutation.sources
+    }
+
+    for value in tqdm(bdb.values(), total=len(bdb.db)):
+        for item in map(decode_csv, value):
+            sources = mutations.get((item['protein_id'], item['pos'], item['alt']))
+            if sources:
+                yield sources
+
+def source_specific_nucleotide_mappings_2():
     from database import bdb
     counts = defaultdict(int)
     fields = Mutation.source_fields
+    for sources in iterate_known_muts_sources():
+        for field in fields:
+            if field in sources:
+                print(field)
+                counts[field] += 1
+    print(counts)
+
+def source_specific_nucleotide_mappings():
+    from database import bdb
+    counts = defaultdict(int)
+    fields = ['meta_' + field for field in Mutation.source_fields]
     for mutation in bdb.iterate_known_muts():
+        if not mutation.is_confirmed:
+            continue
         for field in fields:
             if getattr(mutation, field):
                 counts[field] += 1
