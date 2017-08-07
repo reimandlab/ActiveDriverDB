@@ -18,10 +18,14 @@
     {% set pos = site.position - mutation.pos %}
     <tr>
       <td>
-        <a href="/mutation/show/{{ refseq }}/{{ mutation.pos }}/{{ mutation.alt }}">{{ mutation.pos }}{{ mutation.alt }}</a>
+        <a href="/mutation/show/{{ refseq }}/{{ mutation.pos }}/{{ mutation.alt }}"
+           title="Open summary of this mutation"
+        >{{ mutation.pos }}{{ mutation.alt }}</a>
       </td>
       <td>
-        <a href="/protein/show/{{ refseq }}#{{ mutation.pos }}{{ mutation.alt }}" class="sequence">
+        <a href="/protein/show/{{ refseq }}#{{ mutation.pos }}{{ mutation.alt }}"
+           title="Show this mutation in sequence view"
+           class="sequence">
           {% if pos < 7 -%}
             {{ site.sequence[:7 - pos] | join('') }}
           {%- endif -%}
