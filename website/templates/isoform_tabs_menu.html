@@ -15,7 +15,7 @@
       data-url-pattern="{{ url_for('NetworkView:show', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
     >
       <span class="glyphicon glyphicon-globe"></span>
-      Network view
+      Network view, experimental
     </a>
   <li role="presentation" class="{{ 'active' if active_tab == 'network-predicted' }}">
     <a
@@ -24,6 +24,6 @@
       data-url-pattern="{{ url_for('NetworkView:predicted', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
     >
       <span class="glyphicon glyphicon-globe"></span>
-      Network view, predicted
+      Network view, MIMP-predicted
     </a>
 </ul>
