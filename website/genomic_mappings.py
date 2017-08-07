@@ -35,8 +35,9 @@ class GenomicMappings(BerkleyHashSet):
 
     def iterate_known_muts(self):
         from models import Mutation
+        from tqdm import tqdm
 
-        for key, value in self.db.iteritems():
+        for value in tqdm(self.values(), total=len(self.db)):
             for item in map(decode_csv, value):
 
                 mutation = Mutation.query.filter_by(
