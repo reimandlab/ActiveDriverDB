@@ -6,7 +6,7 @@ from sqlalchemy import desc
 from sqlalchemy.exc import StatementError
 from sqlalchemy.ext.associationproxy import AssociationProxy
 from database import db, fast_count
-
+from helpers.filters import joined_query
 
 ordering_functions = {
     'desc': desc,
@@ -101,7 +101,7 @@ class AjaxTableView:
             if filters_class:
                 filters_manager = filters_class()
                 divided_filters = filters_manager.prepare_filters()
-                sql_filters, manual_filters = divided_filters
+                sql_filters, manual_filters, required_joins = divided_filters
                 if manual_filters:
                     raise ValueError(
                         'From query can only apply filters implementing'
@@ -109,11 +109,12 @@ class AjaxTableView:
                     )
             else:
                 sql_filters = []
+                required_joins = []
 
             if query_constructor:
-                query = query_constructor(sql_filters)
+                query = query_constructor(sql_filters, required_joins)
             else:
-                query = predefined_query
+                query = joined_query(predefined_query, required_joins)
                 if filters_class:
                     filters += sql_filters
 
@@ -133,9 +134,9 @@ class AjaxTableView:
                 )
 
             if count_query_constructor:
-                count_query = count_query_constructor(sql_filters)
+                count_query = count_query_constructor(sql_filters, required_joins)
             elif predefined_count_query:
-                count_query = predefined_count_query
+                count_query = joined_query(predefined_count_query, required_joins)
             else:
                 count_query = query
 

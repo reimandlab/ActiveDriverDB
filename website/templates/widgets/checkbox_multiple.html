@@ -14,7 +14,7 @@
     {% for value, label in widget.items %}
         <li class="checkbox">
             <label>
-                <input type="checkbox" name="{{ widget.target_name }}" value="{{ value | safe}}" id="{{ widget.target_name }}" {{ 'checked' if widget.value and value in widget.value }}>
+                <input type="checkbox" name="{{ widget.target_name }}" value="{{ value | safe }}" id="{{ widget.target_name }}" {{ 'checked' if widget.value and value in widget.value }}>
                 {{ label }}
             </label>
         </li>

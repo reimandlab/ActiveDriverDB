@@ -169,6 +169,8 @@ function advanced_searchbar_templator(mutation_template)
     }
 
     var cancer_template = 'Did you mean somatic cancer mutations of {{ name }} ({{ code }}) from TCGA?'
+    var disease_template = 'Did you mean {{ name }} mutations from ClinVar?'
+    var disease_in_protein_template = '{{ name }} mutations in {{ gene }} ({{ refseq }})'
 
     return (
         function (result)
@@ -210,7 +212,19 @@ function advanced_searchbar_templator(mutation_template)
             else if(type === 'cancer')
             {
                 var link = '<a href="' + result.url + '" class="list-group-item">'
-                link += format(cancer_template, result) + badge('cancer') + '</a>'
+                link += format(cancer_template, result) + badge('Cancer') + '</a>'
+                return link
+            }
+            else if(type === 'disease')
+            {
+                var link = '<a href="' + result.url + '" class="list-group-item">'
+                link += format(disease_template, result) + badge('Disease') + '</a>'
+                return link
+            }
+            else if(type === 'disease_in_protein')
+            {
+                var link = '<a href="' + result.url + '" class="list-group-item">'
+                link += format(disease_in_protein_template, result) + badge('Disease mutations') + '</a>'
                 return link
             }
             else if(type === 'see_more')

@@ -110,7 +110,7 @@ class PathwaysView(FlaskView):
     def significant_data(self, gene_list_id):
         gene_list = GeneList.query.get(gene_list_id)
 
-        def query_constructor(sql_filters):
+        def query_constructor(sql_filters, joins):
 
             significant_genes = (
                 db.session.query(

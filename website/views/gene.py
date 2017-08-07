@@ -5,7 +5,7 @@ from flask_classful import FlaskView
 from flask_classful import route
 from sqlalchemy.sql.elements import TextClause
 
-from models import Protein, MC3Mutation, Cancer
+from models import Protein, Cancer, InheritedMutation, Disease, ClinicalData
 from models import Mutation
 from models import Gene
 from models import Site
@@ -17,10 +17,11 @@ from sqlalchemy import case
 from sqlalchemy import literal_column
 from database import db
 from helpers.views import AjaxTableView
-from helpers.filters import FilterManager
+from helpers.filters import FilterManager, joined_query
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
-from ._global_filters import sources_to_sa_filter, create_dataset_labels, SourceDependentFilter
+from ._global_filters import sources_to_sa_filter, create_dataset_labels, source_dependent_filters, \
+    create_dataset_specific_widgets
 
 from sqlalchemy import and_
 import sqlalchemy
@@ -54,7 +55,7 @@ def select_filters(filters, models):
     return selected
 
 
-def prepare_subqueries(sql_filters):
+def prepare_subqueries(sql_filters, required_joins):
     """Return three sub-queries suitable for use in protein queries which are:
         - mutations count (muts_cnt),
         - PTM mutations count (ptm_muts_cnt),
@@ -64,11 +65,16 @@ def prepare_subqueries(sql_filters):
     """
 
     any_site_filters = select_filters(sql_filters, [Site])
-    any_muts_filters = select_filters(sql_filters, [Mutation])
+    any_muts_filters = select_filters(sql_filters, [Mutation, InheritedMutation, ClinicalData, Disease, Cancer])
 
     muts = (
-        db.session.query(func.count(Mutation.id))
-        .filter(Mutation.protein_id == Protein.id)
+        joined_query(
+            (
+                db.session.query(func.count(Mutation.id))
+                .filter(Mutation.protein_id == Protein.id)
+            ),
+            required_joins
+        )
         .filter(and_(*any_muts_filters))
     )
 
@@ -96,6 +102,9 @@ def prepare_subqueries(sql_filters):
                 Mutation.precomputed_is_ptm
             ))
             .join(Site, Site.protein_id == Mutation.protein_id)
+        )
+        ptm_muts = (
+            joined_query(ptm_muts, required_joins)
             .filter(and_(*select_filters(sql_filters, [Site, Mutation])))
         )
     else:
@@ -105,6 +114,9 @@ def prepare_subqueries(sql_filters):
                 Mutation.protein_id == Protein.id,
                 Mutation.precomputed_is_ptm
             ))
+        )
+        ptm_muts = (
+            joined_query(ptm_muts, required_joins)
             .filter(and_(*any_muts_filters))
         )
 
@@ -132,8 +144,6 @@ class GeneViewFilters(FilterManager):
 
     def __init__(self, **kwargs):
 
-        cancer_codes_mc3 = [row[0] for row in db.session.query(Cancer.code)]
-
         filters = [
             Filter(
                 Mutation, 'sources', comparators=['in'],
@@ -150,22 +160,17 @@ class GeneViewFilters(FilterManager):
                 Gene, 'has_ptm_muts',
                 comparators=['eq'],
                 as_sqlalchemy=lambda self, value: text('ptm_muts_cnt > 0') if value else text('true')
-            ),
-            SourceDependentFilter(
-                [Mutation, MC3Mutation], 'mc3_cancer_code',
-                comparators=['in'],
-                choices=cancer_codes_mc3,
-                default=cancer_codes_mc3, nullable=False,
-                source='MC3',
-                multiple='any',
-                as_sqlalchemy=True
-            ),
+            )
+        ] + [
+            filter
+            for filter in source_dependent_filters()
+            if filter.has_sqlalchemy    # filters without sqlalchemy interface are not supported for table views
         ]
         super().__init__(filters)
         self.update_from_request(request)
 
 
-def make_widgets(filter_manager, cancer=False):
+def make_widgets(filter_manager, include_dataset_specific=False):
     base_widgets = {
         'dataset': FilterWidget(
             'Mutation dataset', 'radio',
@@ -185,24 +190,19 @@ def make_widgets(filter_manager, cancer=False):
             labels=['Genes with PTM mutations only']
         ),
     }
-    if cancer:
-        base_widgets['dataset_specific'] = [
-            FilterWidget(
-               'Cancer type', 'checkbox_multiple',
-               filter=filter_manager.filters['Mutation.mc3_cancer_code'],
-               labels={
-                   cancer.code: '%s (%s)' % (cancer.name, cancer.code)
-                   for cancer in Cancer.query
-               },
-               all_selected_label='All cancer types'
-            )
-        ]
+    if include_dataset_specific:
+        dataset_specific = create_dataset_specific_widgets(
+            None,
+            filter_manager.filters,
+            population_widgets=False
+        )
+        base_widgets['dataset_specific'] = dataset_specific
     return base_widgets
 
 
-def ajax_query(sql_filters):
+def ajax_query(sql_filters, joins):
 
-    muts, ptm_muts, sites = prepare_subqueries(sql_filters)
+    muts, ptm_muts, sites = prepare_subqueries(sql_filters, joins)
 
     textutal_filters = select_textual_filters(sql_filters)
     query = (
@@ -260,8 +260,8 @@ class GeneView(FlaskView):
     def list_data(self, list_name):
         gene_list = GeneList.query.filter_by(name=list_name).first_or_404()
 
-        def query_constructor(sql_filters):
-            muts, ptm_muts, sites = prepare_subqueries(sql_filters)
+        def query_constructor(sql_filters, joins):
+            muts, ptm_muts, sites = prepare_subqueries(sql_filters, joins)
 
             textutal_filters = select_textual_filters(sql_filters)
             textutal_filters.append(text('muts_cnt > 0'))
@@ -284,8 +284,8 @@ class GeneView(FlaskView):
                 .having(and_(*textutal_filters))
             )
 
-        def count_query_constructor(sql_filters):
-            muts, ptm_muts, sites = prepare_subqueries(sql_filters)
+        def count_query_constructor(sql_filters, joins):
+            muts, ptm_muts, sites = prepare_subqueries(sql_filters, joins)
 
             textutal_filters = select_textual_filters(sql_filters)
             textutal_filters.append(text('muts_cnt > 0'))

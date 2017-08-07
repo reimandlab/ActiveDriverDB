@@ -15,15 +15,16 @@ from flask_login import current_user
 from Levenshtein import distance
 from sqlalchemy.orm.exc import NoResultFound
 
-from models import Protein, Pathway, Cancer, GeneList, MC3Mutation
+from models import Protein, Pathway, Cancer, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData
 from models import Gene
 from models import Mutation
 from models import UsersMutationsDataset
 from models import UserUploadedMutation
-from sqlalchemy import and_, exists, or_
-from helpers.filters import FilterManager
+from sqlalchemy import and_, exists, or_, text
+from helpers.filters import FilterManager, quote_if_needed
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
+from views.gene import prepare_subqueries
 from ._commons import get_protein_muts
 from database import db, levenshtein_sorted, bdb
 
@@ -61,7 +62,7 @@ def search_proteins(phase, limit=None, filter_manager=None):
 
     if filter_manager:
         divided_filters = filter_manager.prepare_filters(Protein)
-        sql_filters, manual_filters = divided_filters
+        sql_filters, manual_filters, required_joins = divided_filters
         if manual_filters:
             raise ValueError(
                 'From query can apply only use filters with'
@@ -475,7 +476,11 @@ class SearchView(FlaskView):
             REAC:{pathway_reactome_id}
 
             Genes with mutations detected in cancer samples:
-            {cancer name}
+            {cancer name} -> cancer genes list
+
+            Proteins with mutations related to given disease:
+            {disease} -> clinvar gene list
+            {disease} in {protein} -> sequence view
         """
 
         query = unquote(request.args.get('q')) or ''
@@ -483,7 +488,7 @@ class SearchView(FlaskView):
         items = []
 
         if ' ' in query:
-            # TODO: use exceptions for mmessaging essaging control?
+            # TODO: use exceptions for messaging control?
             mutation_result = autocomplete_mutation(query)
             if type(mutation_result) is tuple:
                 mutations, are_there_more_muts = mutation_result
@@ -514,6 +519,9 @@ class SearchView(FlaskView):
 
         cancers = suggest_matching_cancers(query)
 
+        diseases = suggest_matching_diseases(query)
+        items.extend(diseases)
+
         items.extend(pathways)
         items.extend(cancers)
 
@@ -521,12 +529,12 @@ class SearchView(FlaskView):
 
 
 def suggest_matching_cancers(query, count=2):
-    cancers = Cancer.query.filter(
+    cancers = levenshtein_sorted(Cancer.query.filter(
         or_(
             Cancer.code.ilike(query + '%'),
             Cancer.name.ilike('%' + query + '%'),
         )
-    ).limit(count)
+    ), Cancer.name, query).limit(count)
 
     tcga_list = GeneList.query.filter_by(mutation_source_name=MC3Mutation.name).one()
 
@@ -547,6 +555,125 @@ def suggest_matching_cancers(query, count=2):
         }
         for cancer in cancers
     ]
+
+
+def suggest_matching_diseases(q, count=3):
+
+    items = []
+
+    potential_disease = None
+
+    if q.endswith(' i'):
+        potential_disease = q[:-2]
+    if q.endswith(' '):
+        potential_disease = q[:-1]
+
+    if potential_disease:
+        disease = (
+            levenshtein_sorted(
+                Disease.query.filter(Disease.name.ilike('%' + potential_disease + '%')),
+                Disease.name,
+                potential_disease
+            )
+         ).first()
+        if disease:
+            return json_message(
+                'Do you wish to search for <i>%s</i> mutations? '
+                'Please specify gene, using: <code>{disease} in {gene}</code> schema'
+                % disease.name
+            )
+
+    if q.endswith(' in'):
+        q += ' '
+
+    if ' in ' in q:
+        disease_name, protein_name = q.split(' in ')
+
+        if protein_name.isnumeric():
+            protein_name = 'NM_' + protein_name
+
+        disease_like = Disease.name.ilike('%' + disease_name + '%')
+        disease = Disease.query.filter(disease_like).first()
+
+        if disease:
+            muts, _, _, = prepare_subqueries(
+                [
+                    disease_like,
+                    ClinicalData.sig_code.in_(ClinicalData.significance_codes.keys()),
+                    Mutation.is_confirmed == True
+                ],
+                [[InheritedMutation, ClinicalData, Disease]]
+            )
+
+            query = (
+                db.session.query(
+                    Disease.name,
+                    Gene.name,
+                    Protein.refseq,
+                    muts
+                )
+                .select_from(Gene)
+                .join(Protein, Protein.id == Gene.preferred_isoform_id)
+                .join(Mutation, Mutation.protein_id == Protein.id)
+                .join(InheritedMutation).join(ClinicalData).join(Disease).
+                filter(disease_like)
+            )
+            if protein_name.upper().startswith('NM_'):
+                query = query.filter(Protein.refseq.ilike(protein_name + '%'))
+            else:
+                query = query.filter(Gene.name.ilike('%' + protein_name + '%'))
+
+            query = query.group_by(Gene).having(text('muts_cnt > 0'))
+
+            query = levenshtein_sorted(query, Disease.name, disease_name)
+
+            query = query.limit(count)
+
+            items += [
+                {
+                    'name': disease,
+                    'gene': gene,
+                    'refseq': refseq,
+                    'type': 'disease_in_protein',
+                    'url': url_for(
+                        'SequenceView:show',
+                        refseq=refseq,
+                        filters=(
+                            'Mutation.sources:in:%s' % InheritedMutation.name
+                            +
+                            ';Mutation.disease_name:in:%s' % quote_if_needed(disease)
+                        )
+                    )
+                }
+                for disease, gene, refseq, muts in query
+            ]
+
+    diseases = levenshtein_sorted(Disease.query.filter(
+        or_(
+            Disease.name.ilike('%' + q + '%'),
+        )
+    ), Disease.name, q).limit(count)
+
+    clinvar_list = GeneList.query.filter_by(mutation_source_name=InheritedMutation.name).first()
+
+    items += [
+        {
+            'name': disease.name,
+            'type': 'disease',
+            'url': url_for(
+                'GeneView:list',
+                list_name=clinvar_list.name,
+                filters=(
+                    'Mutation.sources:in:%s' % clinvar_list.mutation_source_name
+                    +
+                    ';Mutation.disease_name:in:%s' % disease.name
+                )
+            )
+        }
+        for disease in diseases
+    ]
+
+    return items
 
 
 def suggest_matching_pathways(query, count=2):
@@ -638,7 +765,8 @@ def autocomplete_mutation(query, limit=None):
             gene = data[0].strip()
 
             if not gene_exists(gene):
-                return json_message('Gene %s not found in the database' % gene)
+                # return json_message('Gene %s not found in the database' % gene)
+                return []
 
             return json_message('Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
 
@@ -674,7 +802,8 @@ def autocomplete_mutation(query, limit=None):
         try:
             gene_obj = Gene.query.filter_by(name=gene).one()
         except NoResultFound:
-            return json_message('No isoforms for %s found' % gene)
+            # return json_message('No isoforms for %s found' % gene)
+            return []
 
         all_parts = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)(?P<alt>\D)', mut)
         ref_and_pos = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)', mut)

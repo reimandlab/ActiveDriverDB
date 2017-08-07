@@ -76,11 +76,13 @@ class Filter:
         self, targets, attribute, default=None, nullable=True,
         comparators='__all__', choices=None,
         default_comparator=None, multiple=False,
-        is_attribute_a_method=False, as_sqlalchemy=False, type=None
+        is_attribute_a_method=False, as_sqlalchemy=False, type=None,
+        skip_if_default=False
     ):
         if comparators == '__all__':
             comparators = self.possible_comparators.keys()
 
+        self.skip_if_default = skip_if_default
         self._check_comparators(comparators)
 
         if not default_comparator and len(comparators) == 1:
@@ -130,7 +132,7 @@ class Filter:
             'lt': '__lt__',
             'eq': '__eq__',
             'in': 'in_',
-            'ni': 'notin_',
+            'ni': 'notin_'
         }
 
         join_operators = {
@@ -139,10 +141,10 @@ class Filter:
         }
 
         if self.value is None:
-            return None
+            return None, []
 
         if type(self._as_sqlalchemy) is FunctionType:
-            return self._as_sqlalchemy(self, target)
+            return self._as_sqlalchemy(self, target), []
 
         path = self.attribute.split('.')
 
@@ -152,19 +154,34 @@ class Filter:
 
         if type(field) is AnnotatedSelect:
             if self.comparator == 'eq':
-                return field
+                return field, []
 
         if type(field) is AssociationProxy:
-            if self.comparator == 'in':
-                func = getattr(field, 'contains')
+            # additional joins may be needed when using proxies
 
-                comp_func = join_operators[self.multiple](
-                    *[
-                        func(sub_value)
-                        for sub_value in self.value
-                    ]
-                )
-                return comp_func
+            joins = []
+
+            while type(field) is AssociationProxy:
+                joins.append(field.target_class)
+                field = field.remote_attr
+
+            if self.comparator == 'in':
+
+                if self.multiple == 'any':
+                    # this wont give expected result for for 'all'
+                    func = getattr(field, comparators[self.comparator])
+                    return func(self.value), joins
+                else:
+                    # this works for 'any' too (but it's uglier)
+                    func = getattr(field, '__eq__')
+
+                    comp_func = join_operators[self.multiple](
+                        *[
+                            func(sub_value)
+                            for sub_value in self.value
+                        ]
+                    )
+                    return comp_func, joins
 
         if len(path) == 2:
             if self.comparator == 'in':
@@ -178,15 +195,15 @@ class Filter:
                         for sub_value in values
                     ]
                 )
-                return comp_func
+                return comp_func, []
 
         if (
             self.comparator == 'in' and
             type(field.property.columns[0].type) is Text
         ):
-            return getattr(field, 'like')('%' + self.value + '%')
+            return getattr(field, 'like')('%' + self.value + '%'), []
 
-        return getattr(field, comparators[self.comparator])(self.value)
+        return getattr(field, comparators[self.comparator])(self.value), []
 
     @property
     def primary_target(self):
@@ -395,6 +412,16 @@ def unqoute(value):
     return value
 
 
+def joined_query(query, required_joins):
+    already_joined = set()
+    for joins in required_joins:
+        for join in joins:
+            if join not in already_joined:
+                query = query.join(join)
+                already_joined.add(join)
+    return query
+
+
 class FilterManager:
     """Main class used to parse & apply filters' data specified by request.
 
@@ -436,21 +463,23 @@ class FilterManager:
 
         to_apply_manually = []
         query_filters = []
+        all_required_joins = []
 
-        for the_filter in self._get_active(target):
+        for the_filter in self._get_non_trivial_active(target):
 
             if the_filter.has_sqlalchemy:
 
                 the_target = target if target else the_filter.targets[0]
 
-                as_sqlalchemy = the_filter.as_sqlalchemy(the_target)
+                as_sqlalchemy, required_joins = the_filter.as_sqlalchemy(the_target)
                 if as_sqlalchemy is not None:
                     query_filters.append(as_sqlalchemy)
+                    all_required_joins.append(required_joins)
 
             else:
                 to_apply_manually.append(the_filter)
 
-        return query_filters, to_apply_manually
+        return query_filters, to_apply_manually, all_required_joins
 
     def build_query(self, target, custom_filter=None, query_modifier=None):
         """There are two strategies of using filter manager:
@@ -460,14 +489,15 @@ class FilterManager:
             - you can build a query and move some job to the database;
               not always it is possible though.
         """
-        query_filters, to_apply_manually = self.prepare_filters(target)
+        query_filters, to_apply_manually, required_joins = self.prepare_filters(target)
 
         query_filters_sum = and_(*query_filters)
 
         if custom_filter:
             query_filters_sum = custom_filter(query_filters_sum)
 
-        query = target.query.filter(query_filters_sum)
+        query = joined_query(target.query, required_joins)
+        query = query.filter(query_filters_sum)
 
         if query_modifier:
             query = query_modifier(query)
@@ -516,12 +546,20 @@ class FilterManager:
         if filters_subset is not None:
             filters = filters_subset
         else:
-            filters = self._get_active(target_type)
+            filters = self._get_non_trivial_active(target_type)
 
         for filter_ in filters:
             elements = filter_.apply(elements, itemgetter)
 
         return list(elements)
+
+    def _get_non_trivial_active(self, target=None):
+        non_trivial_filters = []
+        for filter_ in self._get_active(target):
+            if filter_.skip_if_default and set(filter_.default) == set(filter_.value):
+                continue
+            non_trivial_filters.append(filter_)
+        return non_trivial_filters
 
     def _get_active(self, target=None):
         """Return filters which are active & target the same type of objects"""

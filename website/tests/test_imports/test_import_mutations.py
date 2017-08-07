@@ -159,6 +159,9 @@ class TestImport(DatabaseTest):
             assert clinvar.sig_code == [0, 0]
             assert clinvar.disease_name == ['Li-Fraumeni syndrome', 'Tumor predisposition syndrome']
 
+            assert first_row_mutation.sig_code == [0, 0]
+            assert first_row_mutation.disease_name == ['Li-Fraumeni syndrome', 'Tumor predisposition syndrome']
+
             third_row_mutation = proteins['NM_000546'].mutations[0]
             assert third_row_mutation.meta_ClinVar.disease_name == ['Li-Fraumeni syndrome']
 

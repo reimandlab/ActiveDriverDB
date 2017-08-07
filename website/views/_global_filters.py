@@ -1,11 +1,11 @@
-from models import MC3Mutation, DrugGroup, Drug
+from models import MC3Mutation, DrugGroup, Drug, Disease
 from models import Cancer
 from models import Mutation
 from models import Site
 from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
 from models import ClinicalData
-from database import has_or_any
+from database import has_or_any, db
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 
@@ -82,6 +82,7 @@ class CachedQueries:
         """
         self.drug_groups = sorted([group.name for group in DrugGroup.query])
 
+        self.all_disease_names = [disease.name for disease in Disease.query]
         self.all_cancer_codes_mc3 = [cancer.code for cancer in Cancer.query]
         self.all_cancer_names = {
             cancer.code: '%s (%s)' % (cancer.name, cancer.code)
@@ -99,13 +100,6 @@ def common_filters(
     source_nullable=False,
     custom_datasets_ids=[]
 ):
-    cancer_codes_mc3 = protein.cancer_codes(MC3Mutation) if protein else []
-
-    # Python 3.4: cast keys() to list
-    populations_1kg = list(The1000GenomesMutation.populations.values())
-    populations_esp = list(ExomeSequencingMutation.populations.values())
-    significances = list(ClinicalData.significance_codes.keys())
-    disease_names = protein.disease_names if protein else []
 
     return [
         Filter(
@@ -135,7 +129,25 @@ def common_filters(
             Site, 'type', comparators=['in'],
             choices=Site.types,
             as_sqlalchemy=True
-        ),
+        )
+    ] + source_dependent_filters(protein)
+
+
+def source_dependent_filters(protein=None):
+
+    if protein:
+        cancer_codes_mc3 = protein.cancer_codes(MC3Mutation)
+        disease_names = protein.disease_names
+    else:
+        cancer_codes_mc3 = cached_queries.all_cancer_codes_mc3
+        disease_names = cached_queries.all_disease_names
+
+    # Python 3.4: cast keys() to list
+    populations_1kg = list(The1000GenomesMutation.populations.values())
+    populations_esp = list(ExomeSequencingMutation.populations.values())
+    significances = list(ClinicalData.significance_codes.keys())
+
+    return [
         SourceDependentFilter(
             [Mutation, MC3Mutation], 'mc3_cancer_code',
             comparators=['in'],
@@ -143,7 +155,8 @@ def common_filters(
             default=cancer_codes_mc3, nullable=False,
             source='MC3',
             multiple='any',
-            as_sqlalchemy=True
+            as_sqlalchemy=True,
+            skip_if_default=True
         ),
         SourceDependentFilter(
             Mutation, 'populations_1KG', comparators=['in'],
@@ -157,47 +170,38 @@ def common_filters(
             choices=populations_esp,
             default=populations_esp, nullable=False,
             source='ESP6500',
-            multiple='any',
+            multiple='any'
         ),
         SourceDependentFilter(
             [Mutation, ClinicalData], 'sig_code', comparators=['in'],
             choices=significances,
             default=significances, nullable=False,
             source='ClinVar',
-            multiple='any'
+            multiple='any',
+            as_sqlalchemy=True,
         ),
         SourceDependentFilter(
             [Mutation, ClinicalData], 'disease_name', comparators=['in'],
             choices=disease_names,
             default=disease_names, nullable=False,
             source='ClinVar',
-            multiple='any'
+            multiple='any',
+            as_sqlalchemy=True,
+            skip_if_default=True
         )
     ]
 
 
-def create_dataset_specific_widgets(protein, filters_by_id):
+def create_dataset_specific_widgets(protein, filters_by_id, population_widgets=True):
     cancer_codes_mc3 = protein.cancer_codes(MC3Mutation) if protein else []
 
-    return [
+    widgets = [
         FilterWidget(
             'Cancer type', 'checkbox_multiple',
             filter=filters_by_id['Mutation.mc3_cancer_code'],
             labels=cached_queries.all_cancer_names,
             choices=cancer_codes_mc3,
             all_selected_label='Any cancer type'
-        ),
-        FilterWidget(
-            'Ethnicity', 'checkbox_multiple',
-            filter=filters_by_id['Mutation.populations_1KG'],
-            labels=populations_labels(The1000GenomesMutation.populations),
-            all_selected_label='Any ethnicity'
-        ),
-        FilterWidget(
-            'Ethnicity', 'checkbox_multiple',
-            filter=filters_by_id['Mutation.populations_ESP6500'],
-            labels=populations_labels(ExomeSequencingMutation.populations),
-            all_selected_label='Any ethnicity'
         ),
         FilterWidget(
             'Clinical significance', 'checkbox_multiple',
@@ -211,6 +215,22 @@ def create_dataset_specific_widgets(protein, filters_by_id):
             all_selected_label='Any disease name'
         )
     ]
+    if population_widgets:
+        widgets += [
+            FilterWidget(
+                'Ethnicity', 'checkbox_multiple',
+                filter=filters_by_id['Mutation.populations_1KG'],
+                labels=populations_labels(The1000GenomesMutation.populations),
+                all_selected_label='Any ethnicity'
+            ),
+            FilterWidget(
+                'Ethnicity', 'checkbox_multiple',
+                filter=filters_by_id['Mutation.populations_ESP6500'],
+                labels=populations_labels(ExomeSequencingMutation.populations),
+                all_selected_label='Any ethnicity'
+            )
+        ]
+    return widgets
 
 
 def create_widgets(protein, filters_by_id, custom_datasets_names=None):
