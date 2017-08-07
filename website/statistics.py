@@ -322,46 +322,61 @@ def source_specific_proteins_with_ptm_mutations():
     print(kinase_groups)
 
 
-def iterate_known_muts_sources():
+def source_specific_nucleotide_mappings():
     from database import bdb
     from genomic_mappings import decode_csv
     from models import Mutation
     from tqdm import tqdm
+    from gc import collect
 
-    mutations = {
-        (mutation.protein.id, mutation.position, mutation.alt): mutation.sources
-        for mutation in Mutation.query.filter_by(is_confirmed=True)
-        if mutation.sources
-    }
+    mutations = defaultdict(str)
 
-    for value in tqdm(bdb.values(), total=len(bdb.db)):
-        for item in map(decode_csv, value):
-            sources = mutations.get((item['protein_id'], item['pos'], item['alt']))
-            if sources:
-                yield sources
+    sources_map = {str(i): model for i, model in enumerate(mutation_sources().values())}
 
-def source_specific_nucleotide_mappings_2():
-    from database import bdb
+    print('Loading mutations from sources:')
+    for i, model in tqdm(sources_map.items(), total=len(sources_map)):
+        query = (
+            db.session.query(Mutation.protein_id, Mutation.alt, Mutation.position)
+            .filter(Statistics.get_filter_by_sources([model]))
+            #.filter(Mutation.is_confirmed==True)   # if it is in source of interest, it is confirmed (I won't count MIMPs here)
+            .yield_per(5000)
+        )
+        for mutation in tqdm(query, total=query.count()):
+            mutations[str(mutation[0]) + mutation[1] + str(mutation[2])] += i
+
+    # add merged
+    i = str(len(sources_map))
+    sources_map[i] = 'merged'
+    print('Loading merged mutations:')
+
+    query = (
+        db.session.query(Mutation.protein_id, Mutation.alt, Mutation.position)
+        .filter(Mutation.is_confirmed==True)
+        .yield_per(5000)
+    )
+    for mutation in tqdm(query, total=query.count()):
+        mutations[str(mutation[0]) + mutation[1] + str(mutation[2])] += i
+
+    print('Mutations loaded')
+    collect()
+
+    def iterate_known_muts_sources():
+        for value in tqdm(bdb.values(), total=len(bdb.db)):
+            for item in map(decode_csv, value):
+                sources = mutations.get(str(item['protein_id']) + item['alt'] + str(item['pos']))
+                if sources:
+                    yield sources
+
     counts = defaultdict(int)
-    fields = Mutation.source_fields
+    fields_ids = [source_id for source_id in sources_map.keys()]
+
     for sources in iterate_known_muts_sources():
-        for field in fields:
+        for field in fields_ids:
             if field in sources:
-                print(field)
                 counts[field] += 1
-    print(counts)
 
-def source_specific_nucleotide_mappings():
-    from database import bdb
-    counts = defaultdict(int)
-    fields = ['meta_' + field for field in Mutation.source_fields]
-    for mutation in bdb.iterate_known_muts():
-        if not mutation.is_confirmed:
-            continue
-        for field in fields:
-            if getattr(mutation, field):
-                counts[field] += 1
-    print(counts)
+    for key, value in counts.items():
+        print(sources_map[key], value)
 
 
 def generate_source_specific_summary_table():
