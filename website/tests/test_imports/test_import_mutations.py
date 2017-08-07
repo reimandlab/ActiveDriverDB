@@ -1,7 +1,7 @@
 import gzip
 from imports.mutations import MutationImportManager
 from database_testing import DatabaseTest
-from models import Protein
+from models import Protein, InheritedMutation, Disease
 from models import MC3Mutation
 from database import db
 from miscellaneous import make_named_temp_file
@@ -31,6 +31,22 @@ mc3_mutations_updated = """\
 11	124489539	124489539	G	T	exonic	PANX3	.	nonsynonymous SNV	PANX3:NM_052959:exon4:c.G887T:p.R296L	TCGA-02-0003-01A-01D-1490-08
 """
 
+
+clinvar_mutations = """\
+Chr	Start	End	Ref	Alt	Func.refGene	Gene.refGene	GeneDetail.refGene	ExonicFunc.refGene	AAChange.refGene	V11	V12	V13	V14	V15	V16	V17	V18	V19	V20	V21
+17	7572973	7572973	C	A	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon7:c.G740T:p.R247L,TP53:NM_001276697:exon7:c.G659T:p.R220L,TP53:NM_001126118:exon10:c.G1019T:p.R340L,TP53:NM_000546:exon11:c.G1136T:p.R379L,TP53:NM_001126112:exon11:c.G1136T:p.R379L,TP53:NM_001276760:exon11:c.G1019T:p.R340L,TP53:NM_001276761:exon11:c.G1019T:p.R340L	.	.	.	17	7572973	rs863224682	C	A	.	.	RS=863224682;RSPOS=7572973;RV;dbSNPBuildID=146;SSR=0;SAO=1;VP=0x050060800a05000002100100;GENEINFO=TP53:7157;WGT=1;VC=SNV;PM;NSM;REF;U3;ASP;LSD;CLNALLE=1;CLNHGVS=NC_000017.10:g.7572973C>A;CLNSRC=.;CLNORIGIN=1;CLNSRCID=.;CLNSIG=0|0;CLNDSDB=MedGen:Orphanet:SNOMED_CT|MedGen:OMIM:ORPHA;CLNDSDBID=C0085390:ORPHA524:428850001|C3280492:614327:289539;CLNDBN=Li-Fraumeni_syndrome|Tumor_predisposition_syndrome;CLNREVSTAT=single|single;CLNACC=RCV000199273.1|RCV000219990.1
+17	7573987	7573987	G	T	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon6:c.C644A:p.A215D,TP53:NM_001276697:exon6:c.C563A:p.A188D,TP53:NM_001126118:exon9:c.C923A:p.A308D,TP53:NM_000546:exon10:c.C1040A:p.A347D,TP53:NM_001126112:exon10:c.C1040A:p.A347D,TP53:NM_001276760:exon10:c.C923A:p.A308D,TP53:NM_001276761:exon10:c.C923A:p.A308D	.	.	.	17	7573987	rs397516434	G	T	.	.	RS=397516434;RSPOS=7573987;RV;dbSNPBuildID=138;SSR=0;SAO=1;VP=0x050060800a05000002100100;GENEINFO=TP53:7157;WGT=1;VC=SNV;PM;NSM;REF;U3;ASP;LSD;CLNALLE=1;CLNHGVS=NC_000017.10:g.7573987G>T;CLNSRC=.;CLNORIGIN=1;CLNSRCID=.;CLNSIG=0;CLNDSDB=MedGen;CLNDSDBID=CN169374;CLNDBN=not_specified;CLNREVSTAT=no_criteria;CLNACC=RCV000036529.2
+17	7576914	7576914	T	C	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon5:c.A536G:p.N179S,TP53:NM_001126116:exon5:c.A536G:p.N179S,TP53:NM_001126117:exon5:c.A536G:p.N179S,TP53:NM_001276697:exon5:c.A455G:p.N152S,TP53:NM_001276698:exon5:c.A455G:p.N152S,TP53:NM_001276699:exon5:c.A455G:p.N152S,TP53:NM_001126118:exon8:c.A815G:p.N272S,TP53:NM_000546:exon9:c.A932G:p.N311S,TP53:NM_001126112:exon9:c.A932G:p.N311S,TP53:NM_001126113:exon9:c.A932G:p.N311S,TP53:NM_001126114:exon9:c.A932G:p.N311S,TP53:NM_001276695:exon9:c.A815G:p.N272S,TP53:NM_001276696:exon9:c.A815G:p.N272S,TP53:NM_001276760:exon9:c.A815G:p.N272S,TP53:NM_001276761:exon9:c.A815G:p.N272S	.	.	.	17	7576914	rs56184981	T	C,G	.	.	RS=56184981;RSPOS=7576914;dbSNPBuildID=129;SSR=0;SAO=1;VP=0x050268000a05000002100100;GENEINFO=TP53:7157;WGT=1;VC=SNV;PM;PMC;S3D;NSM;REF;ASP;LSD;CLNALLE=2;CLNHGVS=NC_000017.10:g.7576914T>G;CLNSRC=.;CLNORIGIN=1;CLNSRCID=.;CLNSIG=0;CLNDSDB=MedGen:Orphanet:SNOMED_CT;CLNDSDBID=C0085390:ORPHA524:428850001;CLNDBN=Li-Fraumeni_syndrome;CLNREVSTAT=single;CLNACC=RCV000205077.1
+"""
+
+
+def create_proteins(data):
+    return {
+        refseq_nm: Protein(refseq=refseq_nm, sequence=sequence)
+        for refseq_nm, sequence in data.items()
+    }
+
+
 class TestImport(DatabaseTest):
 
     def test_tcga_import(self):
@@ -56,10 +72,7 @@ class TestImport(DatabaseTest):
             'NM_005467': 'MAESRGRLYLWMCLAAALASFLMGFMVGWFIKPLKETTTSVRYHQSIRWKLVSEMKAENIKSFLRSFTKLPHLAGTEQNFLLAKKIQTQWKKFGLDSAKLVHYDVLLSYPNETNANYISIVDEHETEIFKTSYLEPPPDGYENVTNIVPPYNAFSAQGMPEGDLVYVNYARTEDFFKLEREMGINCTGKIVIARYGKIFRGNKVKNAMLAGAIGIILYSDPADYFAPEVQPYPKGWNLPGTAAQRGNVLNLNGAGDPLTPGYPAKEYTFRLDVEEGVGIPRIPVHPIGYNDAEILLRYLGGIAPPDKSWKGALNVSYSIGPGFTGSDSFRKVRMHVYNINKITRIYNVVGTIRGSVEPDRYVILGGHRDSWVFGAIDPTSGVAVLQEIARSFGKLMSKGWRPRRTIIFASWDAEEFGLLGSTEWAEENVKILQERSIAYINSDSSIEGNYTLRVDCTPLLYQLVYKLTKEIPSPDDGFESKSLYESWLEKDPSPENKNLPRINKLGSGSDFEAYFQRLGIASGRARYTKNKKTDKYSSYPVYHTIYETFELVEKFYDPTFKKQLSVAQLRGALVYELVDSKIIPFNIQDYAEALKNYAASIYNLSKKHDQQLTDHGVSFDSLFSAVKNFSEAASDFHKRLIQVDLNNPIAVRMMNDQLMLLERAFIDPLGLPGKLFYRHIIFAPSSHNKYAGESFPGIYDAIFDIENKANSRLAWKEVKKHISIAAFTIQAAAGTLKEVL'
         }
 
-        proteins = {
-            refseq_nm: Protein(refseq=refseq_nm, sequence=sequence)
-            for refseq_nm, sequence in protein_data.items()
-        }
+        proteins = create_proteins(protein_data)
 
         with self.app.app_context():
             source_name = 'mc3'
@@ -105,6 +118,49 @@ class TestImport(DatabaseTest):
             assert new_mutation.alt == 'L'
             new_mc3_mutation = first_row_mutation.meta_MC3[0]
             assert new_mc3_mutation.samples == 'TCGA-02-0003-01A-01D-1490-08'
+
+    def test_clinvar_import(self):
+        muts_filename = make_named_temp_file(
+            data=clinvar_mutations.encode(),
+            mode='wb',
+            opener=gzip.open
+        )
+        protein_data = {
+            'NM_000546': 'MEEPQSDPSVEPPLSQETFSDLWKLLPENNVLSPLPSQAMDDLMLSPDDIEQWFTEDPGPDEAPRMPEAAPPVAPAPAAPTPAAPAPAPSWPLSSSVPSQKTYQGSYGFRLGFLHSGTAKSVTCTYSPALNKMFCQLAKTCPVQLWVDSTPPPGTRVRAMAIYKQSQHMTEVVRRCPHHERCSDSDGLAPPQHLIRVEGNLRVEYLDDRNTFRHSVVVPYEPPEVGSDCTTIHYNYMCNSSCMGGMNRRPILTIITLEDSSGNLLGRNSFEVRVCACPGRDRRTEEENLRKKGEPHHELPPGSTKRALPNNTSSSPQPKKKPLDGEYFTLQIRGRERFEMFRELNEALELKDAQAGKEPGGSRAHSSHLKSKKGQSTSRHKKLMFKTEGPDSD*'
+        }
+        proteins = create_proteins(protein_data)
+
+        with self.app.app_context():
+            source_name = 'clinvar'
+            # let's pretend that we already have some proteins in our db
+            db.session.add_all(proteins.values())
+            db.session.commit()
+
+            muts_import_manager.perform(
+                'load', proteins, [source_name], {source_name: muts_filename}
+            )
+
+            mutations = InheritedMutation.query.all()
+            # the second mutations has "not_specified" disease, should be skipped
+            assert len(mutations) == 2
+
+            first_row_mutation = proteins['NM_000546'].mutations[1]
+            assert first_row_mutation.position == 379
+            assert first_row_mutation.alt == 'L'
+
+            diseases = Disease.query.all()
+            assert len(diseases) == 2
+
+            clinvar = first_row_mutation.meta_ClinVar
+            assert clinvar.db_snp_id == 863224682  # rs863224682
+            assert not clinvar.is_validated
+            assert not clinvar.is_low_freq_variation
+
+            assert clinvar.sig_code == [0, 0]
+            assert clinvar.disease_name == ['Li-Fraumeni syndrome', 'Tumor predisposition syndrome']
+
+            third_row_mutation = proteins['NM_000546'].mutations[0]
+            assert third_row_mutation.meta_ClinVar.disease_name == ['Li-Fraumeni syndrome']
 
 
 tss_cancer_map_text = """\

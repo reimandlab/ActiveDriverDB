@@ -8,7 +8,7 @@ from models import Cancer
 from models import Gene
 from models import Mutation
 from models import MC3Mutation
-from models import InheritedMutation
+from models import InheritedMutation, Disease
 from models import ClinicalData
 from models import Site, Kinase
 from database import db
@@ -23,7 +23,7 @@ def create_test_models():
     mutation = Mutation(protein=protein, position=1, alt='E')
 
     MC3Mutation(mutation=mutation, cancer=Cancer(code='CAN'), samples='Some sample')
-    InheritedMutation(mutation=mutation, clin_data=[ClinicalData(disease_name='Some disease')])
+    InheritedMutation(mutation=mutation, clin_data=[ClinicalData(disease=Disease(name='Some disease'))])
 
     protein_kinase = Protein(refseq='NM_0002', gene=Gene(name='OTHERGENE'), sequence='ABCD')
     kinase = Kinase(name='Kinase name', protein=protein_kinase)

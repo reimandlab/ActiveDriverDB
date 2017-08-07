@@ -1,7 +1,7 @@
 from urllib.parse import urlparse, urlunparse
 
 from view_testing import ViewTest
-from models import Protein
+from models import Protein, Disease
 from models import Gene
 from models import Mutation
 from models import Cancer
@@ -44,11 +44,11 @@ def create_test_mutations():
             meta_ClinVar=InheritedMutation(
                 clin_data=[
                     ClinicalData(
-                        disease_name='Disease X',
+                        disease=Disease(name='Disease X'),
                         sig_code=1
                     ),
                     ClinicalData(
-                        disease_name='Disease Y',
+                        disease=Disease(name='Disease Y'),
                         sig_code=1
                     )
                 ]

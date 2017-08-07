@@ -1,7 +1,7 @@
 from collections import OrderedDict
 from collections import UserList
 
-from sqlalchemy import and_
+from sqlalchemy import and_, distinct
 from sqlalchemy import case
 from sqlalchemy import func
 from sqlalchemy import or_
@@ -642,22 +642,21 @@ class Protein(BioModel):
     @property
     def disease_names(self):
         query = (
-            db.session.query(ClinicalData.disease_name).
-            distinct(ClinicalData.disease_name).
-            join(InheritedMutation).
-            join(Mutation).
-            filter(Mutation.protein == self)
+            db.session.query(distinct(Disease.name))
+            .join(ClinicalData)
+            .join(InheritedMutation)
+            .join(Mutation)
+            .filter(Mutation.protein == self)
         )
         return [row[0] for row in query]
 
     def cancer_codes(self, mutation_details_model):
         query = (
-            db.session.query(Cancer.code).
-                distinct(Cancer.code).
-                join(mutation_details_model).
-                join(Mutation).
-                filter(Mutation.protein == self).
-                order_by(Cancer.name)
+            db.session.query(distinct(Cancer.code))
+            .join(mutation_details_model)
+            .join(Mutation)
+            .filter(Mutation.protein == self)
+            .order_by(Cancer.name)
         )
         return [row[0] for row in query]
 
@@ -1110,6 +1109,12 @@ class InheritedMutation(MutationDetails, BioModel):
         ))
 
 
+class Disease(BioModel):
+
+    # CLNDBN: Variant disease name
+    name = db.Column(db.Text, nullable=False, unique=True, index=True)
+
+
 class ClinicalData(BioModel):
 
     inherited_id = db.Column(db.Integer, db.ForeignKey('inheritedmutation.id'))
@@ -1130,7 +1135,9 @@ class ClinicalData(BioModel):
     sig_code = db.Column(db.Integer)
 
     # CLNDBN: Variant disease name
-    disease_name = db.Column(db.Text)
+    disease_id = db.Column(db.Integer, db.ForeignKey('disease.id'))
+    disease = db.relationship('Disease')
+    disease_name = association_proxy('disease', 'name')
 
     @property
     def significance(self):

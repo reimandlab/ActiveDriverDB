@@ -65,6 +65,8 @@ def get_highest_id(model):
 
     For _some_ neat cases it's the same as `model.query.count()` but if at
     least one record was manually removed the latter loses accuracy.
+
+    Warning: this function may emit a rollback. Commit your changes before use!
     """
     try:
         # let's try to fetch the autoincrement value. Since not all databases

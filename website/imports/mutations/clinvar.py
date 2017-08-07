@@ -1,10 +1,12 @@
-from models import InheritedMutation
+from collections import OrderedDict
+
+from models import InheritedMutation, Disease
 from models import ClinicalData
 from imports.mutations import MutationImporter
 from imports.mutations import make_metadata_ordered_dict
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import gzip_open_text
-from database import restart_autoincrement
+from database import restart_autoincrement, get_or_create, get_highest_id
 from database import bulk_ORM_insert
 from database import db
 
@@ -33,6 +35,7 @@ class Importer(MutationImporter):
     def parse(self, path):
         clinvar_mutations = []
         clinvar_data = []
+        new_diseases = OrderedDict()
 
         clinvar_keys = (
             'RS',
@@ -44,7 +47,10 @@ class Importer(MutationImporter):
             'CLNREVSTAT',
         )
 
+        highest_disease_id = get_highest_id(Disease)
+
         def clinvar_parser(line):
+            nonlocal highest_disease_id
 
             metadata = line[20].split(';')
 
@@ -80,7 +86,7 @@ class Importer(MutationImporter):
                     if statuses and statuses[i] == 'no_criteria':
                         statuses[i] = None
                 except IndexError:
-                    print('Malformed row (wrong count of subentries):')
+                    print('Malformed row (wrong count of subentries) on %s-th entry:' % i)
                     print(line)
                     return False
 
@@ -105,14 +111,28 @@ class Importer(MutationImporter):
                 )
 
                 for i in range(sub_entries_cnt):
+                    name = names[i]
+
                     # we don't won't _uninteresting_ data
-                    if names[i] in ('not_specified', 'not provided'):
+                    if name in ('not_specified', 'not provided'):
                         continue
+
+                    if name in new_diseases:
+                        disease_id = new_diseases[name]
+                    else:
+                        disease, created = get_or_create(Disease, name=name)
+                        if created:
+                            highest_disease_id += 1
+                            new_diseases[name] = highest_disease_id
+                            disease_id = highest_disease_id
+                        else:
+                            disease_id = disease.id
+
                     clinvar_data.append(
                         (
                             len(clinvar_mutations),
-                            int(significances[i]) if significances else None,
-                            names[i],
+                            int(significances[i]) if significances is not None else None,
+                            disease_id,
                             statuses[i] if statuses else None,
                         )
                     )
@@ -124,10 +144,10 @@ class Importer(MutationImporter):
             file_opener=gzip_open_text
         )
 
-        return clinvar_mutations, clinvar_data
+        return clinvar_mutations, clinvar_data, new_diseases.keys()
 
     def insert_details(self, details):
-        clinvar_mutations, clinvar_data = details
+        clinvar_mutations, clinvar_data, new_diseases = details
         self.insert_list(clinvar_mutations)
 
         bulk_ORM_insert(
@@ -135,10 +155,15 @@ class Importer(MutationImporter):
             (
                 'inherited_id',
                 'sig_code',
-                'disease_name',
+                'disease_id',
                 'rev_status',
             ),
             clinvar_data
+        )
+        bulk_ORM_insert(
+            Disease,
+            ('name',),
+            [(disease,) for disease in new_diseases]
         )
 
     def restart_autoincrement(self, model):
@@ -150,7 +175,10 @@ class Importer(MutationImporter):
 
     def raw_delete_all(self, model):
         assert self.model == model
-        # first - remove clinical data
+
+        # remove diseases
+        Disease.query.delete()
+        # remove clinical data
         ClinicalData.query.delete()
         # then mutations
         count = self.model.query.delete()
