@@ -18,6 +18,8 @@ DEFAULT_HOST = '0.0.0.0'
 DEFAULT_PORT = 5000
 JSONIFY_PRETTYPRINT_REGULAR = False
 JSON_SORT_KEYS = False
+# Maximum allowed upload file is 25MB
+MAX_CONTENT_LENGTH = 25 * 1024 * 1024
 
 # -Relational database settings
 SQLALCHEMY_BINDS = {

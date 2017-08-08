@@ -5,6 +5,7 @@ from flask import redirect
 from flask import url_for
 from flask import jsonify
 from flask import render_template as template
+from flask_login import current_user
 
 from models import Protein, Mutation, Drug, Gene
 from helpers.filters import Filter
@@ -381,6 +382,8 @@ class NetworkView(AbstractProteinView):
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
+        user_datasets = current_user.datasets_names_by_uri()
+
         filter_manager = NetworkViewFilters(protein)
         filters_by_id = filter_manager.filters
 
@@ -388,7 +391,11 @@ class NetworkView(AbstractProteinView):
             'network/show.html', protein=protein,
             filters=filter_manager,
             option_widgets=self._create_option_widgets(filter_manager),
-            widgets=create_widgets(protein, filters_by_id),
+            widgets=create_widgets(
+                protein,
+                filters_by_id,
+                custom_datasets_names=user_datasets.values()
+            ),
             mutation_types=Mutation.types,
             predicted_interactions=predicted_interactions
         )

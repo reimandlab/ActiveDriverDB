@@ -1,3 +1,5 @@
+{% from "text_entry.html" import text with context %}
+
 {% if results or without_mutations %}
   <button class="btn btn-default run-again" onclick="$('.search-form').removeClass('hidden');$(this).hide()">
     <span class="glyphicon glyphicon-pencil"></span>
@@ -57,7 +59,7 @@
       {%- endif -%}
     </textarea>
     <span class="help-block">
-      You can provide a VCF file and plain-text mutation lines above at once, so result for both will be shown on one page.
+      {{ text('search-mutations') }}
     </span>
   </div>
   <input type="hidden" name="fallback" value="True">
