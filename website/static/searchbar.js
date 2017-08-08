@@ -123,6 +123,13 @@ var SearchBar = function ()
                     results_div.find('.list-group-item').first().focus()
                     return false
                 }
+                if(e.which == 13)
+                {
+                    // pressing enter is equivalent to clicking on a first result,
+                    // as requested in #124
+                    results_div.find('.list-group-item').first().get(0).click()
+                    return false
+                }
             })
 
             add_dropdown_navigation(results_div)
