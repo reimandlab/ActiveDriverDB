@@ -413,24 +413,40 @@ def generate_source_specific_summary_table():
     print(mutated_sites)
 
 
-def hypermutated_mc3_samples():
-    samples_counts = Counter()
+def hypermutated_samples(path, threshold=900):
+    from helpers.parsers import parse_tsv_file
+    from helpers.parsers import gzip_open_text
+    from collections import Counter
+    samples_cnt = Counter()
+    muts = defaultdict(set)
     total = 0
-    for samples in db.session.query(MC3Mutation.samples).yield_per(500):
-        for sample in samples[0].split(','):
-            samples_counts[sample] += 1
-            total += 1
+
+    def parser(line):
+        nonlocal muts, total
+        total += 1
+        muts[','.join([line[0], '%x' % int(line[1]), '%x' % int(line[2]), line[3], line[4]])].add(line[10][5:])
+
+    parse_tsv_file(
+        path,
+        parser,
+        file_header=None,
+        file_opener=gzip_open_text
+    )
+
+    for samples in muts.values():
+        for sample in samples:
+            samples_cnt[sample] += 1
 
     hypermutated = {}
-    for sample, count in samples_counts.most_common():
-        if count > 900:
+    for sample, count in samples_cnt.most_common():
+        if count > threshold:
             hypermutated[sample] = count
         else:
             break
 
-    print(', '.join(hypermutated.keys()))
     print('There are %s hypermutated samples.' % len(hypermutated))
-    print('Hypermutated samples represent %s percent of total mutations.' % (sum(hypermutated.values()) / total * 100))
+    print('Hypermutated samples represent %s percent of analysed mutations.' % (sum(hypermutated.values()) / total * 100))
+    return hypermutated
 
 
 def count_mutated_potential_sites():
