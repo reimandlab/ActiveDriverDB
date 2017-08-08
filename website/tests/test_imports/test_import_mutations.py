@@ -39,6 +39,15 @@ Chr	Start	End	Ref	Alt	Func.refGene	Gene.refGene	GeneDetail.refGene	ExonicFunc.re
 17	7576914	7576914	T	C	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon5:c.A536G:p.N179S,TP53:NM_001126116:exon5:c.A536G:p.N179S,TP53:NM_001126117:exon5:c.A536G:p.N179S,TP53:NM_001276697:exon5:c.A455G:p.N152S,TP53:NM_001276698:exon5:c.A455G:p.N152S,TP53:NM_001276699:exon5:c.A455G:p.N152S,TP53:NM_001126118:exon8:c.A815G:p.N272S,TP53:NM_000546:exon9:c.A932G:p.N311S,TP53:NM_001126112:exon9:c.A932G:p.N311S,TP53:NM_001126113:exon9:c.A932G:p.N311S,TP53:NM_001126114:exon9:c.A932G:p.N311S,TP53:NM_001276695:exon9:c.A815G:p.N272S,TP53:NM_001276696:exon9:c.A815G:p.N272S,TP53:NM_001276760:exon9:c.A815G:p.N272S,TP53:NM_001276761:exon9:c.A815G:p.N272S	.	.	.	17	7576914	rs56184981	T	C,G	.	.	RS=56184981;RSPOS=7576914;dbSNPBuildID=129;SSR=0;SAO=1;VP=0x050268000a05000002100100;GENEINFO=TP53:7157;WGT=1;VC=SNV;PM;PMC;S3D;NSM;REF;ASP;LSD;CLNALLE=2;CLNHGVS=NC_000017.10:g.7576914T>G;CLNSRC=.;CLNORIGIN=1;CLNSRCID=.;CLNSIG=0;CLNDSDB=MedGen:Orphanet:SNOMED_CT;CLNDSDBID=C0085390:ORPHA524:428850001;CLNDBN=Li-Fraumeni_syndrome;CLNREVSTAT=single;CLNACC=RCV000205077.1
 """
 
+# Mocked: for test simplicity hypermutated sample is the one more than two mutations.
+# The first three mutations are from the same sample, the last one is from different one.
+with_hypermutated_samples = """\
+11	124489539	124489539	G	A	exonic	PANX3	.	nonsynonymous SNV	PANX3:NM_052959:exon4:c.G887A:p.R296Q	TCGA-02-0003-01A-01D-1490-08
+11	47380512	47380512	G	T	exonic;exonic	SPI1	.	nonsynonymous SNV;nonsynonymous SNV	SPI1:NM_001080547:exon4:c.C379A:p.P127T,SPI1:NM_003120:exon4:c.C376A:p.P126T	TCGA-02-0003-01A-01D-1490-08
+11	89868837	89868837	C	T	exonic;exonic	NAALAD2	.	nonsynonymous SNV;nonsynonymous SNV	NAALAD2:NM_001300930:exon2:c.C193T:p.R65C,NAALAD2:NM_005467:exon2:c.C193T:p.R65C	TCGA-02-0003-01A-01D-1490-08
+1	17418969	17418969	C	T	exonic	PADI2	.	nonsynonymous SNV	PADI2:NM_007365:exon6:c.G589A:p.G197R	TCGA-04-1349-01A-01W-0492-08
+"""
+
 
 def create_proteins(data):
     return {
@@ -118,6 +127,21 @@ class TestImport(DatabaseTest):
             assert new_mutation.alt == 'L'
             new_mc3_mutation = first_row_mutation.meta_MC3[0]
             assert new_mc3_mutation.samples == 'TCGA-02-0003-01A-01D-1490-08'
+
+    def test_hypermutated_finder(self):
+        from statistics import hypermutated_samples
+        muts_filename = make_named_temp_file(
+            data=with_hypermutated_samples.encode(),
+            mode='wb',
+            opener=gzip.open
+        )
+        samples = hypermutated_samples(muts_filename, threshold=2)
+        # there should be one hypermutated sample
+        assert len(samples) == 1
+
+        sample, count = samples.popitem()
+        assert sample == 'TCGA-02-0003-01A-01D-1490-08'
+        assert count == 3
 
     def test_clinvar_import(self):
         muts_filename = make_named_temp_file(

@@ -4,9 +4,8 @@ from database import get_or_create
 from models import Cancer
 from models import TCGAMutation
 from imports.mutations import MutationImporter
-from helpers.parsers import parse_tsv_file
+from helpers.parsers import iterate_tsv_gz_file
 from helpers.parsers import chunked_list
-from helpers.parsers import gzip_open_text
 from sqlalchemy.orm.exc import NoResultFound
 
 
@@ -18,6 +17,7 @@ class Importer(MutationImporter):
         'Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
         'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'V11'
     ]
+    samples_to_skip = set()
 
     def decode_line(self, line):
         assert line[10].startswith('comments: ')
@@ -28,8 +28,11 @@ class Importer(MutationImporter):
 
         mutations = defaultdict(lambda: [0, set()])
 
-        def cancer_parser(line):
+        for line in iterate_tsv_gz_file(path, file_header=self.header):
             cancer_name, sample_name = self.decode_line(line)
+
+            if sample_name in self.samples_to_skip:
+                continue
 
             cancer, created = get_or_create(Cancer, name=cancer_name)
 
@@ -42,13 +45,6 @@ class Importer(MutationImporter):
 
                 mutations[key][0] += 1
                 mutations[key][1].add(sample_name)
-
-        parse_tsv_file(
-            path,
-            cancer_parser,
-            file_header=self.header,
-            file_opener=gzip_open_text
-        )
 
         return mutations
 

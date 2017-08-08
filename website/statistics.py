@@ -414,24 +414,16 @@ def generate_source_specific_summary_table():
 
 
 def hypermutated_samples(path, threshold=900):
-    from helpers.parsers import parse_tsv_file
-    from helpers.parsers import gzip_open_text
+    from helpers.parsers import iterate_tsv_gz_file
     from collections import Counter
+
     samples_cnt = Counter()
     muts = defaultdict(set)
     total = 0
 
-    def parser(line):
-        nonlocal muts, total
+    for line in iterate_tsv_gz_file(path):
         total += 1
-        muts[','.join([line[0], '%x' % int(line[1]), '%x' % int(line[2]), line[3], line[4]])].add(line[10][5:])
-
-    parse_tsv_file(
-        path,
-        parser,
-        file_header=None,
-        file_opener=gzip_open_text
-    )
+        muts[','.join([line[0], '%x' % int(line[1]), '%x' % int(line[2]), line[3], line[4]])].add(line[10])
 
     for samples in muts.values():
         for sample in samples:
@@ -445,7 +437,11 @@ def hypermutated_samples(path, threshold=900):
             break
 
     print('There are %s hypermutated samples.' % len(hypermutated))
-    print('Hypermutated samples represent %s percent of analysed mutations.' % (sum(hypermutated.values()) / total * 100))
+    print(
+        'Hypermutated samples represent %s percent of analysed mutations.'
+        %
+        (sum(hypermutated.values()) / total * 100)
+    )
     return hypermutated
 
 
