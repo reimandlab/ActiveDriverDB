@@ -119,7 +119,11 @@ def import_aminoacid_mutation_refseq_mappings(
     bdb_refseq.open(bdb_dir + basename(current_app.config['BDB_GENE_TO_ISOFORM_PATH']))
 
     for line in read_from_gz_files(mappings_dir, mappings_file_pattern):
-        chrom, pos, ref, alt, prot = line.rstrip().split('\t')
+        try:
+            chrom, pos, ref, alt, prot = line.rstrip().split('\t')
+        except ValueError:
+            print('Import error: not enough values for "tab" split')
+            print(line)
 
         assert chrom.startswith('chr')
         chrom = chrom[3:]
@@ -130,7 +134,7 @@ def import_aminoacid_mutation_refseq_mappings(
             try:
                 name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
             except ValueError:
-                print('Import error:')
+                print('Import error: not enough values for ":" split')
                 print(line, dest)
 
             assert refseq.startswith('NM_')
