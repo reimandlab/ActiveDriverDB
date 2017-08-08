@@ -11,6 +11,14 @@ def css_bundle(name, *args):
     )
 
 
+def js_bundle(name, *args):
+    return Bundle(
+        *args,
+        filters=['yui_js'],
+        output='min/' + name + '.js'
+    )
+
+
 class Resource(ABC):
     """Represents a resource which could be fetched from a content
     delivery network (cdn) or from a local static directory."""
@@ -177,20 +185,19 @@ class DependencyManager:
 
 
 bundles = {
-    'js_search_bar': Bundle(
+    'js_search_bar': js_bundle(
+        'searchbar',
         'common.js',
         'searchbar.js',
-        filters='rjsmin',
-        output='min/searchbar.js'
     ),
-    'js_search': Bundle(
+    'js_search': js_bundle(
+        'search',
         'common.js',
         'widgets.js',
         'search.js',
-        filters='rjsmin',
-        output='min/search.js'
     ),
-    'js_protein_view': Bundle(
+    'js_protein_view': js_bundle(
+        'proteinView',
         'common.js',
         'filters.js',
         'widgets.js',
@@ -201,36 +208,31 @@ bundles = {
         'tracks.js',
         'export.js',
         'short_url.js',
-        filters='rjsmin',
-        output='min/proteinView.js'
     ),
-    'js_mutation_view': Bundle(
+    'js_mutation_view': js_bundle(
+        'mutationView',
         'common.js',
         'tooltip.js',
         'kinase_tooltip.js',
         'export.js',
         'short_url.js',
-        filters='rjsmin',
-        output='min/mutationView.js'
     ),
-    'js_gene_view': Bundle(
+    'js_gene_view': js_bundle(
+        'geneView',
         'common.js',
         'widgets.js',
-        filters='rjsmin',
-        output='min/geneView.js'
     ),
-    'js_inline_edit': Bundle(
+    'js_inline_edit': js_bundle(
+        'inlineEdit',
         'common.js',
         'inline_edit.js',
-        filters='rjsmin',
-        output='min/inlineEdit.js'
     ),
-    'js_utilities': Bundle(
+    'js_utilities': js_bundle(
+        'utilities',
         'common.js',
-        filters='rjsmin',
-        output='min/utilities.js'
     ),
-    'js_network_view': Bundle(
+    'js_network_view': js_bundle(
+        'networkView',
         'common.js',
         'filters.js',
         'widgets.js',
@@ -240,13 +242,11 @@ bundles = {
         'network.js',
         'export.js',
         'short_url.js',
-        filters='rjsmin',
-        output='min/networkView.js'
     ),
-    'js_cms_editor': Bundle(
+    'js_cms_editor': js_bundle(
+        'editor',
         'common.js',
         'cms_editor.js',
-        output='min/editor.js'
     ),
     'css_common': css_bundle(
         'style',

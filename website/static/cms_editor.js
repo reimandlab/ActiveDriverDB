@@ -13,7 +13,7 @@ function init_tinymce(config)
         plugins : 'anchor advlist autolink link image lists charmap print preview fullscreen table imagetools textcolor colorpicker searchreplace code codesample autoresize visualblocks',
         toolbar: 'undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | codesample visualblocks',
         table_default_attributes: {
-            class: 'table table-bordered table-hover'
+            'class': 'table table-bordered table-hover'
         },
         autoresize_max_height: 600,
         table_class_list: [
