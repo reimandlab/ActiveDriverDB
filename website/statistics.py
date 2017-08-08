@@ -1,4 +1,4 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
 from functools import lru_cache
 from itertools import combinations
 
@@ -8,7 +8,7 @@ import models
 from sqlalchemy import and_, distinct, func, literal_column, case
 from sqlalchemy import or_
 from flask import current_app
-from models import Mutation, Count, Site, Protein
+from models import Mutation, Count, Site, Protein, MC3Mutation
 from tqdm import tqdm
 
 counters = {}
@@ -411,6 +411,26 @@ def generate_source_specific_summary_table():
             mutated_sites[name][site_type] = count_mutated_sites(site_type, model)
 
     print(mutated_sites)
+
+
+def hypermutated_mc3_samples():
+    samples_counts = Counter()
+    total = 0
+    for samples in db.session.query(MC3Mutation.samples).yield_per(500):
+        for sample in samples[0].split(','):
+            samples_counts[sample] += 1
+            total += 1
+
+    hypermutated = {}
+    for sample, count in samples_counts.most_common():
+        if count > 900:
+            hypermutated[sample] = count
+        else:
+            break
+
+    print(', '.join(hypermutated.keys()))
+    print('There are %s hypermutated samples.' % len(hypermutated))
+    print('Hypermutated samples represent %s percent of total mutations.' % (sum(hypermutated.values()) / total * 100))
 
 
 def count_mutated_potential_sites():
