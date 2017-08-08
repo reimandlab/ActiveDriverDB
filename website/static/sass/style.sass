@@ -42,6 +42,38 @@ $search-box-width: 300px
 .navbar-default .navbar-toggle:focus, .navbar-default .navbar-toggle:hover
   background: $secondary_bg
 
+.panel-default>.panel-heading, .breadcrumb
+  background: $secondary_bg
+  border-color: $secondary_bg
+  color: #fff
+  a:hover, .btn-link:hover
+    color: #fff
+
+.panel-default
+  border-color: $secondary_bg
+
+.fixed-table-container
+  border-color: $secondary_bg!important
+
+.bootstrap-table .fixed-table-container .table
+  &, td, tr
+    border-color: $secondary_bg!important
+  th
+    color: #fff
+    border-color: $secondary_bg
+    background: $secondary_bg
+
+.breadcrumb
+  &>.active
+    color: #fff
+
+a, .btn-link
+  color: $main_bg
+
+.btn-primary
+  background-color: $main_bg
+  color: #fff
+
 #navbar
   .search-box
     float: right
@@ -196,7 +228,7 @@ h3
 
   .source-acknowledgement
     font-style: italic
-    color: gray
+    color: #eee
 
   .panel-body
     padding: 5px 15px
