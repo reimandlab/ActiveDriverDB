@@ -1,5 +1,4 @@
 @import "variables"
-@import "colors"
 
 #content
   position: relative
@@ -13,19 +12,21 @@
   top: 10px
   left: 0
 
+$breadcrumb_padding: 14px
+
 .minor-top-navigation
   position: relative
   .breadcrumb
-    padding: 14px
+    padding: $breadcrumb_padding
 
 .user-menu
   position: absolute
-  top: 4px
-  right: 6px
+  top: $breadcrumb_padding / 2
+  right: $breadcrumb_padding / 2
 
 .welcome-user
   display: inline-block
-  padding: 7px 13px
+  padding: 0 13px
   margin-bottom: 0
   font-size: 14px
   font-weight: 400
@@ -36,43 +37,7 @@
 
 $search-box-width: 300px
 
-.navbar-default .navbar-toggle .icon-bar
-  background-color: #fff
-
-.navbar-default .navbar-toggle:focus, .navbar-default .navbar-toggle:hover
-  background: $secondary_bg
-
-.panel-default>.panel-heading, .breadcrumb
-  background: $secondary_bg
-  border-color: $secondary_bg
-  color: #fff
-  a:hover, .btn-link:hover
-    color: #fff
-
-.panel-default
-  border-color: $secondary_bg
-
-.fixed-table-container
-  border-color: $secondary_bg!important
-
-.bootstrap-table .fixed-table-container .table
-  &, td, tr
-    border-color: $secondary_bg!important
-  th
-    color: #fff
-    border-color: $secondary_bg
-    background: $secondary_bg
-
-.breadcrumb
-  &>.active
-    color: #fff
-
-a, .btn-link
-  color: $main_bg
-
-.btn-primary
-  background-color: $main_bg
-  color: #fff
+@import "color_schema"
 
 #navbar
   .search-box
@@ -420,15 +385,9 @@ a.list-expand
     &:active
       background: none!important
       box-shadow: none
-      .glyphicon
-        color: #d70e00
-
-    &:hover .glyphicon, &:focus .glyphicon
-      color: #c30e00
 
     span.glyphicon
       font-size: 124%
-      color: #777
 
     &.help-widget
       float: right
@@ -445,12 +404,9 @@ a.list-expand
     .help-btn
       background: none!important
       box-shadow: none
-      .glyphicon
-        color: #000000
 
   .content
     line-height: 140%
-    color: #555
 
 
 .table-borderless
