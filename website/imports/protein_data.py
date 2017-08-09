@@ -970,7 +970,7 @@ def active_driver_gene_lists(
         lists=(
             ListData(
                 name='Cancer (TCGA PanCancerAtlas)',
-                path='data/mc3.v0.2.8.activedriver.txt',
+                path='data/mc3.activedriver.2017-08-09.txt',
                 mutations_source=MC3Mutation
             ),
             ListData(

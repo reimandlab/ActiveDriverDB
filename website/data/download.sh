@@ -78,6 +78,8 @@ rm PTM_site_table.rsav
 wget https://www.dropbox.com/s/wdxnyvf7lkbihnp/biomart_protein_domains_20072016.txt
 wget https://www.dropbox.com/s/pjf7nheutez3w6r/curated_kinase_IDs.txt
 
+wget https://www.dropbox.com/s/d0uf5j0z9ft75b7/mc3.activedriver.2017-08-09.txt
+
 echo 'Downloading mutations:'
 
 mkdir -p mutations
