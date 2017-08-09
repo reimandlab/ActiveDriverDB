@@ -1,7 +1,7 @@
 // TODO: Inheritance from form to implement Form interface (show/hide/etc)
 // That's very hard to do cross-browser in pure JS
 
-var multlinePlaceholderPolyfill = (function()
+var multilinePlaceholderPolyfill = (function()
 {
     // allows to use multiline placeholders if textarea is given as field,
     // or imitates normal placeholders if an input is given as field
@@ -69,12 +69,9 @@ var multlinePlaceholderPolyfill = (function()
 
 var ProteinForm = (function ()
 {
-    var element
+    var element, search_button
     var empty_indicator, no_results_indicator, waiting_indicator
-    var result_ul
-    var recent_value
-    var search_button
-    var url_base
+    var result_ul, recent_value, url_base
 
     function get_url()
     {
@@ -201,7 +198,7 @@ var ProteinForm = (function ()
             no_results_indicator = $(result_box).find('.no-results')
             waiting_indicator = $(result_box).find('.waiting')
 
-            var placeholder_manager = multlinePlaceholderPolyfill()
+            var placeholder_manager = multilinePlaceholderPolyfill()
             placeholder_manager.init(
                 protein_search,
                 protein_search.attr('placeholder')
@@ -227,10 +224,10 @@ var ProteinForm = (function ()
 
 var MutationForm = (function ()
 {
-    var element
-    var textarea
-    var placeholder_manager
-    var url_base
+    var element,
+        textarea,
+        placeholder_manager,
+        url_base
 
     function getPlaceholder()
     {
@@ -252,9 +249,9 @@ var MutationForm = (function ()
         {
             element = dom_element
             url_base = _url_base
-            textarea = element.find('textarea')
+            textarea = element.find('.muts-textarea')
 
-            placeholder_manager = multlinePlaceholderPolyfill()
+            placeholder_manager = multilinePlaceholderPolyfill()
             placeholder_manager.init(textarea, getPlaceholder())
 
             element.find('.set-example').on('click', setExample)
@@ -280,14 +277,15 @@ var MutationForm = (function ()
 
 var SearchManager = (function ()
 {
-    var target = ''
-    var form_area
-    var switches
-    var forms = []
-    var form_constructor = {
-        proteins: ProteinForm,
-        mutations: MutationForm
-    }
+    var target = '',
+        url_base,
+        form_area,
+        switches,
+        forms = [],
+        form_constructor = {
+            proteins: ProteinForm,
+            mutations: MutationForm
+        }
 
     function get_form(name)
     {

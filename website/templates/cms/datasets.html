@@ -36,12 +36,19 @@
       </tr>
     {% else %}
       <tr>
-        <td colspan="4">
+        <td colspan="5">
           No datasets created yet.
           <a href="{{ url_for('SearchView:mutations') }}">Click here to upload your first mutations dataset.</a>
         </td>
       </tr>
     {% endfor %}
+    {% if datasets %}
+      <tr>
+        <td colspan="5">
+          <a href="{{ url_for('SearchView:mutations') }}">Click here to upload a new mutations dataset.</a>
+        </td>
+      </tr>
+    {% endif %}
     </table>
   </div>
 {% endblock %}
