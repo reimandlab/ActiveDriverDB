@@ -32,6 +32,7 @@ var AsyncFiltersHandler = function()
     var config;
     var form;
     var old_filters_query;
+    var current_state_checksum;
 
     /**
      * Generate checksum string for given query string.
@@ -118,6 +119,18 @@ var AsyncFiltersHandler = function()
     }
 
     /**
+     * Prevents concurrency issue of accepting two or more consecutive
+     * responses, which all pass "is_response_actual" test.
+     * It prevents effect of duplicated visualisations as shown in #121 issue.
+     * @param {FiltersData} data
+     * @returns {boolean} is different with currently set value?
+     */
+    function does_response_differ_from_current_state(data)
+    {
+        return current_state_checksum != data.checksum
+    }
+
+    /**
      * Replace filters form with relevant (updated) content:
      * - set up dataset-specific widgets if dataset has changed
      *   (we do not want to filter by cancer type in ESP6500 dataset)
@@ -175,11 +188,12 @@ var AsyncFiltersHandler = function()
     {
         var filters_data = data.filters;
 
-        if (!is_response_actual(filters_data) && !from_future)
+        if (!(is_response_actual(filters_data) && does_response_differ_from_current_state(filters_data)) && !from_future)
         {
             console.log('Skipping not actual response');
             return
         }
+        current_state_checksum = filters_data.checksum
 
         config.data_handler(data.representation, filters_data);
 
@@ -215,6 +229,7 @@ var AsyncFiltersHandler = function()
     function apply(filters_query, do_not_save, from_future)
     {
         config.on_loading_start();
+        current_state_checksum = null;
         var history_action;
 
         if (!do_not_save) {
