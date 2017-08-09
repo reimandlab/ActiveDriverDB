@@ -49,9 +49,16 @@ def create_contact_form():
     )
 
 
+def render_help_entry(entry_id, entry_class=''):
+    template = current_app.jinja_env.get_template('help.html')
+    module = template.make_module({'current_user': current_user})
+    return module.help(entry_id, entry_class)
+
+
 USER_ACCESSIBLE_VARIABLES = {
     'stats': STATISTICS,
-    'contact_form': create_contact_form
+    'contact_form': create_contact_form,
+    'help': render_help_entry
 }
 
 

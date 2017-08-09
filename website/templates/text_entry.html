@@ -7,9 +7,6 @@
         </button>
       </div>
     {% endif %}
-
-    <div class="content">{{ text_entry(id) | safe | substitute_allowed_variables | safe }}</div>
-
     {% if current_user.is_moderator %}
       <div class="alert alert-warning feedback" role="alert"></div>
 
@@ -27,6 +24,9 @@
         </div>
       </div>
     {% endif %}
+
+    <div class="content">{{ text_entry(id) | safe | substitute_allowed_variables | safe }}</div>
+
   </div>
 
 {% endmacro %}

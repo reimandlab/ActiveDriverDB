@@ -160,8 +160,13 @@
       {% include 'protein/summary.html' %}
 
       {# table #}
-      <div id="table-wrapper">
-        {# The table will be filled with HTML over AJAX request for mutations details #}
+      <div class="table-outer-wrapper">
+        <div class="table-help-btn hidden">
+          {{ help('mutations-table-help-btn') }}
+        </div>
+        <div id="table-wrapper">
+          {# The table will be filled with HTML over AJAX request for mutations details #}
+        </div>
       </div>
 
       {# references #}
@@ -363,6 +368,7 @@
         },
         on_loading_end: function(){
             $table_wrapper.removeClass('loading');
+            $('.table-help-btn').removeClass('hidden');
             // spinner will be hidden after needle_plot initialization
             Widgets.init($('#filters_form'), function(){});
         },
