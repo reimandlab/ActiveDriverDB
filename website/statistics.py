@@ -268,6 +268,8 @@ def count_mutated_sites(site_type, model=None):
     )
     if model:
         query = query.filter(Statistics.get_filter_by_sources([model]))
+    else:
+        query = query.filter(Mutation.is_confirmed == True)
     return query.scalar()
 
 
@@ -277,6 +279,7 @@ def all_mutated_sites():
     site_type_queries.extend(Site.types)
     for site_type in tqdm(site_type_queries):
         mutated_sites[site_type] = count_mutated_sites(site_type)
+    print('PTM sites affected by mutations - merged')
     print(mutated_sites)
 
 
@@ -317,8 +320,11 @@ def source_specific_proteins_with_ptm_mutations():
             .filter(Protein.has_ptm_mutations_in_dataset(model) == True)
         ).count()
 
+    print('Proteisn with PTM muts:')
     print(proteins_with_ptm_muts)
+    print('Kinases with PTM muts:')
     print(kinases)
+    print('Kinase groups with PTM muts:')
     print(kinase_groups)
 
 
@@ -379,7 +385,7 @@ def source_specific_nucleotide_mappings():
         print(sources_map[key], value)
 
 
-def generate_source_specific_summary_table():
+def source_specific_mutated_sites():
 
     muts_in_ptm_sites = {}
     mimp_muts = {}
@@ -410,7 +416,26 @@ def generate_source_specific_summary_table():
         for site_type in tqdm(site_type_queries):
             mutated_sites[name][site_type] = count_mutated_sites(site_type, model)
 
+    print('Mutations - in PTM sites')
+    print(muts_in_ptm_sites)
+    print('Mutations - with network-rewiring effect')
+    print(mimp_muts)
+    print('PTM sites affected by mutations - source specific')
     print(mutated_sites)
+
+
+def generate_source_specific_summary_table():
+    from gc import collect
+
+    counters = [
+        source_specific_proteins_with_ptm_mutations,
+        all_mutated_sites,
+        source_specific_mutated_sites,
+        source_specific_nucleotide_mappings
+    ]
+    for counter in counters:
+        counter()
+        collect()
 
 
 def hypermutated_samples(path, threshold=900):
