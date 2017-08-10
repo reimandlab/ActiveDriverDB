@@ -30,3 +30,17 @@ class SiteTest(ModelTest):
         with pytest.raises(ValidationError):
             Site(position=-5, protein=p)
 
+    def test_sequence(self):
+
+        p = Protein(refseq='NM_007', id=1, sequence='ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+        db.session.add(p)
+
+        data = {
+            0: '-------ABCDEFGH',
+            10: 'DEFGHIJKLMNOPQR',
+            25: 'STUVWXYZ-------'
+        }
+
+        for position, expected_sequence in data.items():
+            site = Site(position=position + 1, type='methylation', residue=p.sequence[position], protein=p)
+            assert site.sequence == expected_sequence

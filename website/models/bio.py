@@ -720,7 +720,7 @@ class Site(BioModel):
         return (
             '-' * -min(0, left) +
             protein.sequence[max(0, left):min(right, protein.length)] +
-            '-' * (max(protein.length, left) - protein.length)
+            '-' * max(0, right - protein.length)
         )
 
     @hybrid_property
