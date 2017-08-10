@@ -20,6 +20,8 @@ class DatabaseTest(TestCase):
     SQL_LEVENSTHEIN = False
     USE_LEVENSTHEIN_MYSQL_UDF = False
 
+    SECRET_KEY = 'test_key'
+
     @property
     def config(self):
         return {
@@ -58,6 +60,32 @@ class DatabaseTest(TestCase):
     def setUp(self):
         self.logged_user = None
         db.create_all()
+
+        old_client_post = self.client.post
+
+        # this may be written with session_transaction instead,
+        # but then I would have to nest three or five contexts
+        # (app, login, session) in each test which is not DRY.
+        @self.app.route('/get_testing_csrf_token')
+        def testing_csrf():
+            from flask import render_template_string
+            return render_template_string('{{ csrf_token() }}')
+
+        # add csrf token if requested
+        def client_post(*args, with_csrf_token=True, **kwargs):
+
+            if with_csrf_token:
+                response = self.client.get('/get_testing_csrf_token')
+                token = response.data
+
+                if 'headers' not in kwargs:
+                    kwargs['headers'] = {}
+
+                kwargs['headers']['X-Csrftoken'] = token
+
+            return old_client_post(*args, **kwargs)
+
+        self.client.post = client_post
 
     def tearDown(self):
 

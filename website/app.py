@@ -2,6 +2,8 @@ import os
 from flask import Flask
 from flask_assets import Environment
 from flask_login import LoginManager
+
+import csrf
 from database import db, get_engine
 from database import bdb
 from database import bdb_refseq
@@ -129,9 +131,8 @@ def create_app(config_filename='config.py', config_override={}):
     from jinja2_pluralize import pluralize
     import json
 
-    # csrf adds hooks in before_request to validate tokens, needs app context
-    with app.app_context():
-        import csrf
+    # csrf adds hooks in before_request to validate token
+    app.before_request(csrf.csrf_protect)
 
     app.jinja_env.trim_blocks = True
     app.jinja_env.lstrip_blocks = True

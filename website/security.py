@@ -23,4 +23,4 @@ def verify_secret(secret, user_hash):
 
 
 def generate_csrf_token():
-    return random_base64(size=25)
+    return random_base64(size=25).decode('utf-8')
