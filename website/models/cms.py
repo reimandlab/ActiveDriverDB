@@ -107,7 +107,8 @@ class UsersMutationsDataset(CMSModel):
     name = db.Column(db.String(256))
     uri = db.Column(db.String(256), unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_on = db.Column(db.DateTime, server_default=utc_now())
+    # as we get newer MySQL version, use of server_default would be preferable
+    created_on = db.Column(db.DateTime, default=utc_now())
     # using default, not server_default as MySQL cannot handle functions as defaults, see:
     # https://dba.stackexchange.com/questions/143953/how-can-i-set-timestamps-default-to-future-date
     store_until = db.Column(db.DateTime, default=utc_days_after(7))
