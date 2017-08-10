@@ -591,7 +591,10 @@ class ContentManagementSystem(FlaskView):
         if filename and filename.split('.')[-1] in current_app.config['UPLOAD_ALLOWED_EXTENSIONS']:
 
             directory = Path(current_app.config['UPLOAD_FOLDER'])
-            directory.mkdir(exist_ok=True)
+
+            if not directory.exists:
+                directory.mkdir()   # exists_ok in 3.5 >
+
             path = directory / filename
             file_object.save(str(path))
             return jsonify({'location': '/' + str(path)})
