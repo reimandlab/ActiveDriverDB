@@ -46,7 +46,7 @@ def represent_mutations(mutations, filter_manager):
             metadata = {
                 source_name: field.to_json(data_filter)
             }
-            needle['summary'] = field.summary
+            needle['summary'] = field.summary()
             needle['value'] = field.get_value(data_filter)
 
         else:
