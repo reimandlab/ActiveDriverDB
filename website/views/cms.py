@@ -247,7 +247,7 @@ class ContentManagementSystem(FlaskView):
             return empty
         return help_entry.content
 
-    @admin_only
+    @moderator_or_admin
     def link_list(self):
         pages = Page.query
         return jsonify([{'title': page.title, 'value': page.url} for page in pages])
