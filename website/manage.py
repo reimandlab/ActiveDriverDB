@@ -113,26 +113,27 @@ def basic_auto_migrate_relational_db(app, bind):
                 definition = ddl.get_column_specification(column)
                 add_column(engine, table.name, definition)
 
-            sql = 'SHOW CREATE TABLE `%s`' % table.name
-            table_definition = engine.execute(sql)
-            columns_definitions = {}
+            if engine.dialect.name == 'mysql':
+                sql = 'SHOW CREATE TABLE `%s`' % table.name
+                table_definition = engine.execute(sql)
+                columns_definitions = {}
 
-            to_replace = {
-                'TINYINT(1)': 'BOOL',   # synonymous for MySQL and SQLAlchemy
-                'INT(11)': 'INTEGER',
-                'DOUBLE': 'FLOAT(53)',
-                ' DEFAULT NULL': ''
-            }
-            for definition in table_definition.first()[1].split('\n'):
-                match = re.match('\s*`(?P<name>.*?)` (?P<definition>[^,]*),?', definition)
-                if match:
-                    name = match.group('name')
-                    definition_string = match.group('definition').upper()
+                to_replace = {
+                    'TINYINT(1)': 'BOOL',   # synonymous for MySQL and SQLAlchemy
+                    'INT(11)': 'INTEGER',
+                    'DOUBLE': 'FLOAT(53)',
+                    ' DEFAULT NULL': ''
+                }
+                for definition in table_definition.first()[1].split('\n'):
+                    match = re.match('\s*`(?P<name>.*?)` (?P<definition>[^,]*),?', definition)
+                    if match:
+                        name = match.group('name')
+                        definition_string = match.group('definition').upper()
 
-                    for mysql_explicit_definition, implicit_sqlalchemy in to_replace.items():
-                        definition_string = definition_string.replace(mysql_explicit_definition, implicit_sqlalchemy)
+                        for mysql_explicit_definition, implicit_sqlalchemy in to_replace.items():
+                            definition_string = definition_string.replace(mysql_explicit_definition, implicit_sqlalchemy)
 
-                    columns_definitions[name] = name + ' ' + definition_string
+                        columns_definitions[name] = name + ' ' + definition_string
 
             columns_to_update = []
             for column_name in existing_columns:
