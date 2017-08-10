@@ -380,12 +380,9 @@ class NetworkView(AbstractProteinView):
     def show(self, refseq, predicted_interactions=False):
         """Show a protein network visualisation"""
 
-        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
+        protein, filter_manager = self.get_protein_and_manager(refseq)
 
         user_datasets = current_user.datasets_names_by_uri()
-
-        filter_manager = NetworkViewFilters(protein)
-        filters_by_id = filter_manager.filters
 
         return template(
             'network/show.html', protein=protein,
@@ -393,7 +390,7 @@ class NetworkView(AbstractProteinView):
             option_widgets=self._create_option_widgets(filter_manager),
             widgets=create_widgets(
                 protein,
-                filters_by_id,
+                filter_manager.filters,
                 custom_datasets_names=user_datasets.values()
             ),
             mutation_types=Mutation.types,
@@ -408,8 +405,7 @@ class NetworkView(AbstractProteinView):
 
     def download(self, refseq, format, include_mimp_gain_kinases=False):
 
-        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-        filter_manager = NetworkViewFilters(protein)
+        protein, filter_manager = self.get_protein_and_manager(refseq)
 
         Formatter = namedtuple('Formatter', 'get_content mime_type extension')
 
@@ -453,8 +449,7 @@ class NetworkView(AbstractProteinView):
     def representation(self, refseq, include_mimp_gain_kinases=False):
         """Representation (of network) exposed to an API user"""
 
-        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-        filter_manager = NetworkViewFilters(protein)
+        protein, filter_manager = self.get_protein_and_manager(refseq)
 
         representation = create_representation(protein, filter_manager, include_mimp_gain_kinases)
 
@@ -468,8 +463,7 @@ class NetworkView(AbstractProteinView):
     def data(self, refseq, include_mimp_gain_kinases=False):
         """Internal endpoint used for network rendering and asynchronous updates"""
 
-        protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-        filter_manager = NetworkViewFilters(protein)
+        protein, filter_manager = self.get_protein_and_manager(refseq)
 
         representation = create_representation(protein, filter_manager, include_mimp_gain_kinases)
 
