@@ -4,7 +4,9 @@ from sqlalchemy import MetaData
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import func
+from sqlalchemy.sql.expression import func, select, FunctionElement, text
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.types import DateTime
 
 from berkley_db import BerkleyHashSet
 from flask_sqlalchemy import SQLAlchemy
@@ -82,7 +84,7 @@ def restart_autoincrement(model):
     """Restarts autoincrement counter"""
     engine = get_engine(model.__bind_key__)
     db.session.close()
-    if db.session.bind.dialect.name == 'sqlite':
+    if engine.dialect.name == 'sqlite':
         warn(UserWarning('Sqlite increment reset is not supported'))
         return
     engine.execute(
@@ -216,7 +218,72 @@ def count_expression(parent_model, child_model, join_column=None):
     if join_column:
         query = query.join(parent_aliased, join_column)
     return (
-        query.
-            filter(parent_aliased.id == parent_model.id).
-            statement.with_only_columns([func.count()]).order_by(None)
+        query
+        .filter(parent_aliased.id == parent_model.id)
+        .statement.with_only_columns([func.count()]).order_by(None)
     )
+
+
+class utc_now(FunctionElement):
+    """This is based on a template provided by SQLAlchemy documentation. Please see:
+    http://docs.sqlalchemy.org/en/latest/core/compiler.html#utc-timestamp-function
+    """
+    type = DateTime()
+
+
+@compiles(utc_now, 'mysql')
+def mysql_utc_now(element, compiler, **kwargs):
+    """
+    This is not UTC but is stored internally as UTC.
+    I lost several hours trying to use UTC_TIMESTAMP
+    but it appears that it is not possible to set is as default:
+    https://dba.stackexchange.com/questions/20217/mysql-set-utc-time-as-default-timestamp
+    """
+    return 'CURRENT_TIMESTAMP'
+
+
+@compiles(utc_now, 'sqlite')
+def sqlite_utc_now(element, compiler, **kwargs):
+    return "(datetime('now'))"
+
+
+class utc_days_after(FunctionElement):
+    type = DateTime()
+    name = 'utc_days_after'
+
+
+@compiles(utc_days_after, 'mysql')
+def mysql_utc_after(element, compiler, **kwargs):
+    days, = list(element.clauses)
+    return compiler.process(func.date_add(utc_now(), text('interval %s day' % days.value)))
+
+
+@compiles(utc_days_after, 'sqlite')
+def sqlite_utc_after(element, compiler, **kwargs):
+    days, = list(element.clauses)
+    return "(datetime('now', '+%s day'))" % days.value
+
+
+def update(model, **kwargs):
+    db.session.query(model.__class__).filter_by(id=model.id).update(kwargs, synchronize_session=False)
+
+
+def add_column(engine, table_name, definition):
+    sql = 'ALTER TABLE `%s` ADD %s' % (table_name, definition)
+    engine.execute(sql)
+
+
+def drop_column(engine, table_name, column_name):
+    sql = (
+        'ALTER TABLE `%s` DROP `%s`'
+        % (table_name, column_name)
+    )
+    engine.execute(sql)
+
+
+def update_column(engine, table_name, column_definition):
+    sql = (
+        'ALTER TABLE `%s` MODIFY COLUMN %s'
+        % (table_name, column_definition)
+    )
+    engine.execute(sql)

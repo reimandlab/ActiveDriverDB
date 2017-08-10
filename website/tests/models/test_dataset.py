@@ -1,8 +1,11 @@
-from database import db
+import time
+from datetime import timedelta
+
 from model_testing import ModelTest
+
+from database import db, utc_now, update
 from models import User
 from models import UsersMutationsDataset
-
 
 test_query = """\
 HTR3E I183823756M
@@ -51,5 +54,19 @@ class DatasetTest(ModelTest):
 
         assert dataset.name == 'test'
 
-        from datetime import timedelta
         assert dataset.life_expectancy < timedelta(days=7)
+
+        assert not dataset.is_expired
+
+        update(dataset, store_until=utc_now())
+        db.session.commit()
+
+        time.sleep(2)
+
+        assert dataset.is_expired
+        d = UsersMutationsDataset.query.filter_by(is_expired=True).one()
+
+        assert d == dataset
+
+        u = User.query.filter_by(email='user@domain').one()
+        assert u.datasets == []

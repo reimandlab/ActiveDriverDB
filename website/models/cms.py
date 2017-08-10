@@ -1,15 +1,18 @@
-import pickle
 import os
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm import validates
-from werkzeug.utils import cached_property
-from database import db
-from models import Model
-from sqlalchemy.ext.hybrid import hybrid_property
-import security
+import pickle
 from datetime import datetime
 from datetime import timedelta
+
+from sqlalchemy import and_, not_
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import validates
+from werkzeug.utils import cached_property
+
+import security
+from database import db, utc_now, utc_days_after
 from exceptions import ValidationError
+from models import Model
 
 
 class CMSModel(Model):
@@ -98,10 +101,135 @@ class AnonymousUser:
         return None
 
 
+class UsersMutationsDataset(CMSModel):
+    mutations_dir = 'user_mutations'
+
+    name = db.Column(db.String(256))
+    uri = db.Column(db.String(256), unique=True, index=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_on = db.Column(db.DateTime, server_default=utc_now())
+    # using default, not server_default as MySQL cannot handle functions as defaults, see:
+    # https://dba.stackexchange.com/questions/143953/how-can-i-set-timestamps-default-to-future-date
+    store_until = db.Column(db.DateTime, default=utc_days_after(7))
+
+    def __init__(self, *args, **kwargs):
+        data = kwargs.pop('data')
+        super().__init__(*args, **kwargs)
+        self.data = data
+
+    @property
+    def data(self):
+        if not hasattr(self, '_data'):
+            self._data = self._load_from_file()
+            self._bind_to_session()
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._data = data
+        uri = self._save_to_file(data, self.uri)
+        self.uri = uri
+
+    def _save_to_file(self, data, uri=None):
+        """Saves data to a file identified by uri argument.
+
+        If no uri is given, new unique file is created and new uri returned.
+        Returned uri is unique so it can serve as a kind of a randomized id to
+        prevent malicious software from iteration over all entries.
+        """
+        import base64
+        from tempfile import NamedTemporaryFile
+
+        os.makedirs(self.mutations_dir, exist_ok=True)
+
+        encoded_name = str(
+            base64.urlsafe_b64encode(bytes(self.name, 'utf-8')),
+            'utf-8'
+        )
+
+        if uri:
+            file_name = uri + '.db'
+            path = os.path.join(self.mutations_dir, file_name)
+            db_file = open(path, 'wb')
+        else:
+            db_file = NamedTemporaryFile(
+                dir=self.mutations_dir,
+                prefix=encoded_name,
+                suffix='.db',
+                delete=False
+            )
+
+        pickle.dump(data, db_file, protocol=4)
+
+        uri_code = os.path.basename(db_file.name)[:-3]
+
+        return uri_code
+
+    def _load_from_file(self):
+        from urllib.parse import unquote
+
+        file_name = unquote(self.uri) + '.db'
+        path = os.path.join(self.mutations_dir, file_name)
+
+        if os.path.exists(path):
+            with open(path, 'rb') as f:
+                data = pickle.load(f)
+        return data
+
+    @hybrid_property
+    def is_expired(self):
+        return self.life_expectancy < timedelta(0)
+
+    @is_expired.expression
+    def is_expired(self):
+        return UsersMutationsDataset.store_until < utc_now()
+
+    @hybrid_property
+    def life_expectancy(self):
+        """How much time is left for this dataset before removal."""
+        return self.store_until - datetime.utcnow()
+
+    @property
+    def query_size(self):
+        new_lines = self.data.query.count('\n')
+        return new_lines + 1 if new_lines else 0
+
+    @property
+    def mutations(self):
+        mutations = []
+        results = self.data.results
+        for results in results.values():
+            for result in results:
+                mutations.append(result['mutation'])
+        return mutations
+
+    def get_mutation_details(self, protein, pos, alt):
+        for mutation in self.mutations:
+            if (
+                mutation.protein == protein and
+                mutation.position == pos and
+                mutation.alt == alt
+            ):
+                return mutation.meta_user
+
+    def _bind_to_session(self):
+        results = self.data.results
+        proteins = {}
+        for name, results in results.items():
+            for result in results:
+                protein = result['protein']
+                if protein.refseq not in proteins:
+                    proteins[protein.refseq] = db.session.merge(result['protein'])
+
+                result['protein'] = proteins[protein.refseq]
+                result['mutation'] = db.session.merge(result['mutation'])
+
+
 class User(CMSModel):
     """Model for use with Flask-Login"""
 
     # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
+    id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(254), unique=True)
     access_level = db.Column(db.Integer, default=0)
     pass_hash = db.Column(db.Text())
@@ -109,7 +237,9 @@ class User(CMSModel):
     # only datasets
     datasets = db.relationship(
         'UsersMutationsDataset',
-        primaryjoin='and_(User.id==UsersMutationsDataset.owner_id, UsersMutationsDataset.is_expired==False)'
+        # beware: the expression will fail if put into quotation marks;
+        # it is somehow related to late evaluation of hybrid attributes
+        primaryjoin=and_(id == UsersMutationsDataset.owner_id, not_(UsersMutationsDataset.is_expired))
     )
     all_datasets = db.relationship('UsersMutationsDataset', backref='owner')
 
@@ -324,124 +454,3 @@ class TextEntry(CMSModel):
     name = db.Column(db.String(256), nullable=False, unique=True, index=True)
     content = db.Column(db.Text())
 
-
-class UsersMutationsDataset(CMSModel):
-    mutations_dir = 'user_mutations'
-
-    name = db.Column(db.String(256))
-    uri = db.Column(db.String(256), unique=True, index=True)
-    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_on = db.Column(db.DateTime, default=datetime.utcnow)
-    store_until = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(days=7))
-
-    def __init__(self, *args, **kwargs):
-        data = kwargs.pop('data')
-        super().__init__(*args, **kwargs)
-        self.data = data
-
-    @property
-    def data(self):
-        if not hasattr(self, '_data'):
-            self._data = self._load_from_file()
-            self._bind_to_session()
-        return self._data
-
-    @data.setter
-    def data(self, data):
-        self._data = data
-        uri = self._save_to_file(data, self.uri)
-        self.uri = uri
-
-    def _save_to_file(self, data, uri=None):
-        """Saves data to a file identified by uri argument.
-
-        If no uri is given, new unique file is created and new uri returned.
-        Returned uri is unique so it can serve as a kind of a randomized id to
-        prevent malicious software from iteration over all entries.
-        """
-        import base64
-        from tempfile import NamedTemporaryFile
-
-        os.makedirs(self.mutations_dir, exist_ok=True)
-
-        encoded_name = str(
-            base64.urlsafe_b64encode(bytes(self.name, 'utf-8')),
-            'utf-8'
-        )
-
-        if uri:
-            file_name = uri + '.db'
-            path = os.path.join(self.mutations_dir, file_name)
-            db_file = open(path, 'wb')
-        else:
-            db_file = NamedTemporaryFile(
-                dir=self.mutations_dir,
-                prefix=encoded_name,
-                suffix='.db',
-                delete=False
-            )
-
-        pickle.dump(data, db_file, protocol=4)
-
-        uri_code = os.path.basename(db_file.name)[:-3]
-
-        return uri_code
-
-    def _load_from_file(self):
-        from urllib.parse import unquote
-
-        file_name = unquote(self.uri) + '.db'
-        path = os.path.join(self.mutations_dir, file_name)
-
-        if os.path.exists(path):
-            with open(path, 'rb') as f:
-                data = pickle.load(f)
-        return data
-
-    @hybrid_property
-    def is_expired(self):
-        return self.life_expectancy < timedelta(0)
-
-    @is_expired.expression
-    def is_expired(self):
-        return UsersMutationsDataset.store_until < datetime.utcnow()
-
-    @hybrid_property
-    def life_expectancy(self):
-        """How much time is left for this dataset before removal."""
-        return self.store_until - datetime.utcnow()
-
-    @property
-    def query_size(self):
-        new_lines = self.data.query.count('\n')
-        return new_lines + 1 if new_lines else 0
-
-    @property
-    def mutations(self):
-        mutations = []
-        results = self.data.results
-        for results in results.values():
-            for result in results:
-                mutations.append(result['mutation'])
-        return mutations
-
-    def get_mutation_details(self, protein, pos, alt):
-        for mutation in self.mutations:
-            if (
-                mutation.protein == protein and
-                mutation.position == pos and
-                mutation.alt == alt
-            ):
-                return mutation.meta_user
-
-    def _bind_to_session(self):
-        results = self.data.results
-        proteins = {}
-        for name, results in results.items():
-            for result in results:
-                protein = result['protein']
-                if protein.refseq not in proteins:
-                    proteins[protein.refseq] = db.session.merge(result['protein'])
-
-                result['protein'] = proteins[protein.refseq]
-                result['mutation'] = db.session.merge(result['mutation'])
