@@ -135,34 +135,34 @@ def basic_auto_migrate_relational_db(app, bind):
 
                         columns_definitions[name] = name + ' ' + definition_string
 
-            columns_to_update = []
-            for column_name in existing_columns:
+                columns_to_update = []
+                for column_name in existing_columns:
 
-                column = getattr(table.c, column_name)
-                old_definition = columns_definitions[column_name]
-                new_definition = ddl.get_column_specification(column)
+                    column = getattr(table.c, column_name)
+                    old_definition = columns_definitions[column_name]
+                    new_definition = ddl.get_column_specification(column)
 
-                if old_definition != new_definition:
-                    columns_to_update.append([column_name, old_definition, new_definition])
+                    if old_definition != new_definition:
+                        columns_to_update.append([column_name, old_definition, new_definition])
 
-            if columns_to_update:
-                print(
-                    '\nFollowing columns in `%s` table differ in definitions '
-                    'from those in specified in models:' % table.name
-                )
-            for column, old_definition, new_definition in columns_to_update:
-                answer = get_answer(
-                    'Column: `%s`\n'
-                    'Old definition: %s\n'
-                    'New definition: %s\n'
-                    'Update column definition?'
-                    % (column, old_definition, new_definition)
-                )
-                if answer == 'y':
-                    update_column(engine, table.name, new_definition)
-                    print('Updated %s column definition' % column)
-                else:
-                    print('Skipped %s column' % column)
+                if columns_to_update:
+                    print(
+                        '\nFollowing columns in `%s` table differ in definitions '
+                        'from those in specified in models:' % table.name
+                    )
+                for column, old_definition, new_definition in columns_to_update:
+                    answer = get_answer(
+                        'Column: `%s`\n'
+                        'Old definition: %s\n'
+                        'New definition: %s\n'
+                        'Update column definition?'
+                        % (column, old_definition, new_definition)
+                    )
+                    if answer == 'y':
+                        update_column(engine, table.name, new_definition)
+                        print('Updated %s column definition' % column)
+                    else:
+                        print('Skipped %s column' % column)
 
             if unused_columns:
                 print(
