@@ -86,10 +86,7 @@ class NetworkRepresentation:
         for kinase in kinases:
             if kinase.protein:
 
-                count = filter_manager.query_count(
-                    Mutation,
-                    lambda q: and_(q, Mutation.protein == kinase.protein)
-                )
+                count = get_raw_mutations(kinase.protein, filter_manager, count=True)
 
                 # related discussion: #72
                 kinases_counts[kinase] = count
