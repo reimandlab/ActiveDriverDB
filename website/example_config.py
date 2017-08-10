@@ -38,6 +38,8 @@ BDB_GENE_TO_ISOFORM_PATH = 'databases/berkley_hash_refseq.db'
 LOAD_STATS = True
 CONTACT_LIST = ['some_maintainer@domain.org', 'other_maintainer@domain.org']
 USE_CONTENT_DELIVERY_NETWORK = True
+UPLOAD_FOLDER = 'static/uploaded/'
+UPLOAD_ALLOWED_EXTENSIONS = ['png', 'pdf', 'jpg', 'jpeg', 'gif']
 
 # Requires PostgresSQL or Levenshtein-MySQL-UDF
 SQL_LEVENSTHEIN = False

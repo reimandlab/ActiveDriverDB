@@ -1,6 +1,8 @@
 from functools import wraps
+from pathlib import Path
 from types import FunctionType
 
+import os
 from flask import current_app, jsonify
 from flask import flash
 from flask import render_template as template
@@ -17,6 +19,7 @@ from flask_login import logout_user
 from flask_login import login_required
 from jinja2 import TemplateSyntaxError
 from flask import render_template_string
+from werkzeug.utils import secure_filename
 
 from models import Page, HelpEntry, TextEntry
 from models import Menu
@@ -578,6 +581,20 @@ class ContentManagementSystem(FlaskView):
                 page = page_new_data
 
         return self._template('admin/edit_page', page=page)
+
+    @moderator_or_admin
+    @route('/admin/upload/image', methods=['POST'])
+    def upload_image(self):
+        file_object = request.files['file']
+        filename = secure_filename(file_object.filename)
+
+        if filename and filename.split('.')[-1] in current_app.config['UPLOAD_ALLOWED_EXTENSIONS']:
+
+            directory = Path(current_app.config['UPLOAD_FOLDER'])
+            directory.mkdir(exist_ok=True)
+            path = directory / filename
+            file_object.save(str(path))
+            return jsonify({'location': '/' + str(path)})
 
     @route('/remove_page/<path:address>/')
     @moderator_or_admin

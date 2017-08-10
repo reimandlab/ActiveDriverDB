@@ -7,6 +7,37 @@ function init_tinymce(config)
             '/static/min/page.css',
             'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css'
         ],
+        images_upload_url: '/admin/upload/image',
+        file_picker_types: 'file image',
+        file_picker_callback: function (callback, value, meta) {
+            var input = document.createElement('input');
+            input.setAttribute('type', 'file');
+            input.setAttribute('accept', 'image/*, application/pdf');
+
+            input.onchange = function() {
+
+                var file = this.files[0];
+
+                var form_data = new FormData();
+                form_data.append('file', file);
+                console.log(file)
+
+                $.ajax({
+                    url: '/admin/upload/image',
+                    type: 'POST',
+                    data: form_data,
+                    async: true,
+                    success: function (response) {
+                        callback(response.location, {title: file.name});
+                    },
+                    cache: false,
+                    contentType: false,
+                    processData: false
+                });
+            }
+
+            input.click()
+        },
         height: 260,
         branding: false,
         browser_spellcheck: true,
