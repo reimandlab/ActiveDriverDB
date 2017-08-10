@@ -41,7 +41,7 @@ class AbstractProteinView(FlaskView):
         return protein, filter_manager
 
 
-def get_raw_mutations(protein, filter_manager):
+def get_raw_mutations(protein, filter_manager, count=False):
 
     custom_dataset = filter_manager.get_value('UserMutations.sources')
 
@@ -58,7 +58,9 @@ def get_raw_mutations(protein, filter_manager):
             Mutation.id.in_([m.id for m in dataset.mutations])
         )
 
-    raw_mutations = filter_manager.query_all(
+    getter = filter_manager.query_count if count else filter_manager.query_all
+
+    raw_mutations = getter(
         Mutation,
         lambda q: and_(q, and_(*mutation_filters))
     )
