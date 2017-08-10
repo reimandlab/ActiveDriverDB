@@ -34,6 +34,11 @@ rm -rf flask-sqlalchemy
 
 ### Backend
 
+#### Prerequisites
+
+To create a basic local copy of ActiveDriverDB you need a machine with at least 4 GB of RAM memory.
+If you wish to import genomic mappings for genome variants annotation you will more than 10 GB of RAM (recommended 16 GB).
+
 #### Database creation & configuration
 
 For full deployment two MySQL databases will be needed: one for biological data and one for CMS.
