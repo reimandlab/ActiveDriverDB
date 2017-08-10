@@ -20,7 +20,6 @@ function init_tinymce(config)
 
                 var form_data = new FormData();
                 form_data.append('file', file);
-                console.log(file)
 
                 $.ajax({
                     url: '/admin/upload/image',

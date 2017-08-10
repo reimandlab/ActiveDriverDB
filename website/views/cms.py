@@ -1,8 +1,8 @@
+from os import path
 from functools import wraps
 from pathlib import Path
 from types import FunctionType
 
-import os
 from flask import current_app, jsonify
 from flask import flash
 from flask import render_template as template
@@ -589,15 +589,17 @@ class ContentManagementSystem(FlaskView):
         filename = secure_filename(file_object.filename)
 
         if filename and filename.split('.')[-1] in current_app.config['UPLOAD_ALLOWED_EXTENSIONS']:
+            base = Path(path.dirname(path.dirname(path.realpath(__file__))))
 
-            directory = Path(current_app.config['UPLOAD_FOLDER'])
+            directory = base / Path(current_app.config['UPLOAD_FOLDER'])
 
-            if not directory.exists:
+            if not directory.exists():
                 directory.mkdir()   # exists_ok in 3.5 >
 
-            path = directory / filename
-            file_object.save(str(path))
-            return jsonify({'location': '/' + str(path)})
+            file_path = directory / filename
+            file_object.save(str(file_path))
+
+            return jsonify({'location': '/' + str(file_path.relative_to(base))})
 
     @route('/remove_page/<path:address>/')
     @moderator_or_admin
