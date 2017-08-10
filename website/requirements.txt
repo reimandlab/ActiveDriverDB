@@ -1,7 +1,7 @@
-Flask==0.12
+Flask==0.12.2
 Flask-Assets==0.12
-Flask-Classful==0.13.0
-Flask-SQLAlchemy==2.1
+Flask-Classful==0.13.1
+Flask-SQLAlchemy==2.2
 passlib==1.6.5
 webassets==0.12.1
 mysqlclient
