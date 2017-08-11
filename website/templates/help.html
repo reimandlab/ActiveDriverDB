@@ -11,11 +11,9 @@
             <span class="glyphicon glyphicon-pencil"></span>
           </button>
         </div>
-      {% endif %}
 
-      <div class="content">{{ inline_help(id) | replace('\n', '<br class="automatic">') | safe }}</div>
+        <div class="content">{{ inline_help(id) | replace('\n', '<br class="automatic">') | safe }}</div>
 
-      {% if current_user and current_user.is_moderator %}
         <div class="alert alert-warning feedback" role="alert"></div>
 
         <div class="edit-form">
@@ -31,6 +29,8 @@
             </button>
           </div>
         </div>
+      {% else %}
+        <div class="content">{{ inline_help(id) | replace('\n', '<br>') | safe }}</div>
       {% endif %}
     </div>
   </div>
