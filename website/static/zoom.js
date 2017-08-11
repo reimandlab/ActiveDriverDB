@@ -238,10 +238,11 @@ function choose_best_zoom()
     var is_edge = agent.indexOf('Edge') > -1;
     var is_safari = agent.indexOf('Safari') > -1;
     var is_chrome = agent.indexOf('Chrome') > -1;
+    var is_opera = agent.indexOf('Opera') > -1;
     if (is_safari && is_chrome)
         is_safari = false;
 
-    if(is_safari || is_edge || is_ie)
+    if(is_safari || is_edge || is_ie || is_opera)
         return Zoom;
     else
         return CSSZoom;
