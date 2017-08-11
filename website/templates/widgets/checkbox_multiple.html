@@ -11,12 +11,7 @@
             </label>
         </li>
     {% endif %}
-    {% for value, label in widget.items %}
-        <li class="checkbox">
-            <label>
-                <input type="checkbox" name="{{ widget.target_name }}" value="{{ value | safe }}" id="{{ widget.target_name }}" {{ 'checked' if widget.value and value in widget.value }}>
-                {{ label }}
-            </label>
-        </li>
-    {% endfor %}
+    {% for value, label in widget.items -%}
+      <li class="checkbox"><label><input type="checkbox" name="{{ widget.target_name }}" value="{{ value | safe }}" {{ 'checked' if widget.value and value in widget.value }}>{{ label }}</label>
+    {%- endfor %}
 </ul>
