@@ -191,10 +191,29 @@
                   </div>
                 </div>
                 <div class="name">
-                  Loss of interaction predicted: some mutation causes disruption of a binding motif
+                  Loss of interaction predicted
                   {{ help('legend-network-interaction-loss', 'small-top') }}
                 </div>
               </div>
+              {% if predicted_interactions %}
+              <div class="swatch">
+                <div class="interaction gain">
+                  <div class="link">
+                    <div class="color"></div>
+                  </div>
+                  <div class="kinase">
+                    <div class="color"></div>
+                  </div>
+                  <div class="site network-rewiring">
+                    <div class="color"></div>
+                  </div>
+                </div>
+                <div class="name">
+                  Gain of interaction predicted
+                  {{ help('legend-network-interaction-gain', 'small-top') }}
+                </div>
+              </div>
+              {% endif %}
             </div>
 
           </div>
