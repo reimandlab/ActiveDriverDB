@@ -1089,8 +1089,8 @@ var Network = function ()
 
         vis = svg.append('g')
 
-        zoom = Zoom()
-        zoom = zoom.init({
+        zoom = (choose_best_zoom())()
+        zoom.init({
             element: svg,
             inner_element: vis,
             min: config.min_zoom,
