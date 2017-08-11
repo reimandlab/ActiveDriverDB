@@ -1,9 +1,10 @@
+import re
 from io import BytesIO
 
 from view_testing import ViewTest
 
 from database import db
-from models import Gene, Pathway, GeneList, MC3Mutation
+from models import Gene, Pathway, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData
 from models import Protein
 from models import UsersMutationsDataset
 from models import Site
@@ -46,6 +47,19 @@ def mock_proteins_and_genes(count):
         p = Protein(refseq='NM_000%s' % i, gene=g)
         g.preferred_isoform = p
         db.session.add(g)
+
+
+def get_entry_and_check_type(response, type_name):
+    """For use when exactly one result of given type is expected"""
+    entries = response.json['entries']
+    assert len(entries) == 1
+    assert entries[0]['type'] == type_name
+    return entries[0]
+
+
+def entries_with_type(response, type_name):
+    """For use when more than one result of given type is expected"""
+    return list(filter(lambda entry: entry['type'] == type_name, response.json['entries']))
 
 
 class TestSearchView(ViewTest):
@@ -179,9 +193,13 @@ class TestSearchView(ViewTest):
     def test_autocomplete_all(self):
 
         # MC3 GeneList is required as a target (a href for links) where users will be pointed
-        # after clicking of cancer autocomplete suggestion
-        gene_list = GeneList(name='TCGA', mutation_source_name=MC3Mutation.name)
-        db.session.add(gene_list)
+        # after clicking of cancer autocomplete suggestion. Likewise with the ClinVar list.
+        db.session.add_all([
+            GeneList(name=name, mutation_source_name=detail_class.name)
+            for name, detail_class in [
+                ('TCGA', MC3Mutation), ('ClinVar', InheritedMutation)
+            ]
+        ])
 
         g = Gene(name='BR')
         p = Protein(refseq='NM_007', gene=g, sequence='XXXXXV')
@@ -189,20 +207,13 @@ class TestSearchView(ViewTest):
         mut = Mutation(protein=p, position=6, alt='E')
         db.session.add_all([mut, p, g])
 
-        def get_entry_and_check_type(response, type_name):
-            entries = response.json['entries']
-            print(response.json)
-            assert len(entries) == 1
-            assert entries[0]['type'] == type_name
-            return entries[0]
-
         def autocomplete(query):
-            return self.client.get(
-                '/search/autocomplete_all/?q=' + query
-            )
+            return self.client.get('/search/autocomplete_all/?q=' + query)
 
         from database import bdb_refseq
         bdb_refseq['BR V6E'] = ['NM_007']  # required for mutation search
+
+        # Gene and mutations
 
         response = autocomplete('BR V6E')
         entry = get_entry_and_check_type(response, 'aminoacid mutation')
@@ -218,6 +229,8 @@ class TestSearchView(ViewTest):
         response = autocomplete('B')
         entry = get_entry_and_check_type(response, 'gene')
         assert 'BR' == entry['name']
+
+        # Pathways
 
         pathways = [
             Pathway(description='Activation of RAS in B cells', reactome=1169092),
@@ -246,15 +259,59 @@ class TestSearchView(ViewTest):
         # check if "search more pathways is displayed
         response = autocomplete('cell')    # cell occurs in all four of added pathways;
         # as a limit of pathways shown is 3, we should get a "show more" link
-        links = list(filter(lambda entry: entry['type'] == 'see_more', response.json['entries']))
+        links = entries_with_type(response, 'see_more')
         assert len(links) == 1
         assert links[0]['name'] == 'Show all pathways matching <i>cell</i>'
 
         # test case insensitive text search
         response = autocomplete('AMNIOTIC STEM')
-        pathways = list(filter(lambda entry: entry['type'] == 'pathway', response.json['entries']))
+        pathways = entries_with_type(response, 'pathway')
         assert len(pathways) == 1
         assert pathways[0]['name'] == 'amniotic stem cell differentiation'
+
+        # Disease
+        disease_names = ['Cystic fibrosis', 'Polycystic kidney disease 2', 'Frontotemporal dementia']
+        diseases = {name: Disease(name=name) for name in disease_names}
+        db.session.add_all(diseases.values())
+
+        response = autocomplete('cystic')
+        cystic_matching = entries_with_type(response, 'disease')
+        # both 'Cystic fibrosis' and PKD2 should match
+        assert len(cystic_matching) == 2
+
+        # Gene mutation in disease
+
+        # test suggestions
+        response = autocomplete('cystic ')
+        entry = entries_with_type(response, 'message')[0]
+        assert re.match('Do you wish to search for (.*?) mutations\?', entry['name'])
+
+        # currently there are no mutations associated with any disease
+        # so the auto-completion should not return any results
+        response = autocomplete('cystic in ')
+        assert not response.json['entries']
+
+        # let's add a mutation
+        m = Mutation(protein=p, position=1, alt='Y')
+        bdb_refseq['BR X1Y'] = ['NM_007']
+        # note: sig_code is required here
+        data = ClinicalData(disease=diseases['Cystic fibrosis'], sig_code=1)
+        disease_mutation = InheritedMutation(mutation=m, clin_data=[data])
+        db.session.add_all([m, data, disease_mutation])
+
+        # should return '.. in BR' suggestion now.
+        response = autocomplete('cystic in ')
+        result = get_entry_and_check_type(response, 'disease_in_protein')
+        assert result['gene'] == 'BR'
+        assert result['name'] == 'Cystic fibrosis'
+
+        # both gene search and refseq search should yield the same, non-empty results
+        response = autocomplete('cystic in BR')
+        gene_result = get_entry_and_check_type(response, 'disease_in_protein')
+        response = autocomplete('cystic in NM_007')
+        refseq_result = get_entry_and_check_type(response, 'disease_in_protein')
+        assert gene_result == refseq_result and gene_result
+
 
     def test_save_search(self):
         test_query = 'chr18 19282310 T C'
