@@ -734,18 +734,19 @@ var Network = function ()
 
     function collide_nodes(nodes, padding, constant_radius)
     {
+        var collide_node
         nodes = nodes.data()
         if(constant_radius)
         {
             var min_dist = 2 * constant_radius + padding
             var min_dist_squared = Math.pow(min_dist, 2)
 
-            function collide_node(node)
+            collide_node = function(node)
             {
                 for(var i = 0; i < nodes.length; i++)
                 {
                     var other_node = nodes[i]
-                    if(node != other_node)
+                    if(node !== other_node)
                     {
                         collide(node, other_node, min_dist, min_dist_squared)
                     }
@@ -754,12 +755,12 @@ var Network = function ()
         }
         else
         {
-            function collide_node(node)
+            collide_node = function(node)
             {
                 for(var i = 0; i < nodes.length; i++)
                 {
                     var other_node = nodes[i]
-                    if(node != other_node)
+                    if(node !== other_node)
                     {
                         var min_dist = node.r + other_node.r + padding
                         collide(node, other_node, min_dist, min_dist * min_dist)
