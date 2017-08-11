@@ -86,6 +86,13 @@ var Zoom = function()
         ]
     }
 
+    /** Trim the new_scale to pre-set limit (min & max) */
+    function trim_scale(new_scale)
+    {
+        zoom.scale(new_scale);
+        return zoom.scale();
+    }
+
     /**
      * Configuration object for Zoom.
      * @typedef {Object} Config
@@ -138,9 +145,7 @@ var Zoom = function()
         {
             var old_scale = zoom.scale();
 
-            // trim the new_scale to pre-set limit (min & max)
-            zoom.scale(new_scale);
-            new_scale = zoom.scale();
+            new_scale = trim_scale(new_scale)
 
             // keep the focus in the same place as it was before zooming
             var translate = zoom.translate();
@@ -158,6 +163,8 @@ var Zoom = function()
             animation_speed = (typeof animation_speed === 'undefined') ? 750: animation_speed;
 
             var scale = Math.min(viewport_size[0], viewport_size[1]) / radius;
+
+            scale = trim_scale(scale)
 
             position[0] *= -scale;
             position[1] *= -scale;
@@ -218,6 +225,13 @@ var ZoomFallback = function()
         svg.style('transform-origin', 'top left');
     }
 
+    /** Trim the new_scale to pre-set limit (min & max) */
+    function trim_scale(new_scale)
+    {
+        zoom.scale(new_scale);
+        return zoom.scale();
+    }
+
     return {
         init: function (user_config) {
 
@@ -239,8 +253,7 @@ var ZoomFallback = function()
         set_viewport_size: set_viewport_size,
         set_zoom: function(new_scale)
         {
-            zoom.scale(new_scale);
-            new_scale = zoom.scale();
+            new_scale = trim_scale(new_scale)
 
             var translate = zoom.translate();
 
@@ -252,6 +265,8 @@ var ZoomFallback = function()
             animation_speed = (typeof animation_speed === 'undefined') ? 750: animation_speed;
 
             var scale = Math.min(viewport_size[0], viewport_size[1]) / radius;
+
+            scale = trim_scale(scale)
 
             position[0] *= -scale;
             position[1] *= -scale;
