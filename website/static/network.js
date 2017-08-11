@@ -1217,9 +1217,11 @@ var Network = function ()
             y += y_change
             points.push([x, y])
 
-            var l = outscribed_triangle_edge / 2 - x_change
-            x += l
-            y += Math.sin((radians(180) - ich_outer_angle) / 2 + ich_inner_angle) * edge
+            var lx = outscribed_triangle_edge / 2 - x_change
+            var ly = Math.sin((radians(180) - ich_outer_angle) / 2 + ich_inner_angle) * edge
+
+            x += lx
+            y += ly
             points.push([x, y])
 
             x -= y_change
@@ -1230,8 +1232,8 @@ var Network = function ()
             y += x_change
             points.push([x, y])
 
-            x += l
-            y -= Math.sin((radians(180) - ich_outer_angle) / 2 + ich_inner_angle) * edge
+            x += lx
+            y -= ly
             points.push([x, y])
 
             return points
@@ -1329,8 +1331,6 @@ var Network = function ()
                 return fitTextIntoCircle(d, this) * 0.35 + 'px'
             })
 
-        publicSpace.zoom_fit(0)    // grasp everything without animation (avoids repeating zoom lags if they occur)
-
         force_manager.start()
 
         function kinase_site_with_mimp_effect(effect)
@@ -1398,6 +1398,8 @@ var Network = function ()
         force_manager.on('tick', ticker);
         ticker();
 
+        publicSpace.zoom_fit(0)    // grasp everything without animation (avoids repeating zoom lags if they occur)
+        window.setTimeout(publicSpace.zoom_fit, 1 * 1000)
         config.onload()
     }
 
@@ -1420,9 +1422,17 @@ var Network = function ()
         zoom_out: function(){
             zoom.set_zoom(zoom.get_zoom() / 1.25)
         },
-        zoom_fit: function(animation_speed){
+        show_central: function(animation_speed)
+        {
             var radius = get_max_radius();
             focusOn(central_node, radius, animation_speed)
+        },
+        zoom_fit: function(animation_speed){
+            var bbox = vis.node().getBBox();
+            var w = bbox.width
+            var h = bbox.height
+            var scale = Math.max(w * config.ratio, h)
+            zoom.center_on([bbox.x + w / 2, bbox.y + h / 2], scale, animation_speed)
         },
         destroy: function()
         {
