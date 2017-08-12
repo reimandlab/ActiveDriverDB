@@ -316,17 +316,21 @@ class TestSearchView(ViewTest):
         db.session.add_all([m, data, disease_mutation])
 
         # should return '.. in BR' suggestion now.
-        response = autocomplete('cystic in ')
-        result = get_entry_and_check_type(response, 'disease_in_protein')
-        assert result['gene'] == 'BR'
-        assert result['name'] == 'Cystic fibrosis'
+        for query in ['cystic in', 'cystic in ']:
+            response = autocomplete(query)
+            result = get_entry_and_check_type(response, 'disease_in_protein')
+            assert result['gene'] == 'BR'
+            assert result['name'] == 'Cystic fibrosis'
 
         # both gene search and refseq search should yield the same, non-empty results
-        response = autocomplete('cystic in BR')
-        gene_result = get_entry_and_check_type(response, 'disease_in_protein')
-        response = autocomplete('cystic in NM_007')
-        refseq_result = get_entry_and_check_type(response, 'disease_in_protein')
-        assert gene_result == refseq_result and gene_result
+        results = []
+
+        for query in ['cystic in BR', 'cystic in NM_007', 'cystic in 007']:
+            response = autocomplete(query)
+            result = get_entry_and_check_type(response, 'disease_in_protein')
+            results.append(result)
+
+        assert all(r == result for r in results) and result
 
     def test_save_search(self):
         test_query = 'chr18 19282310 T C'
