@@ -749,27 +749,102 @@ def autocomplete_gene(query, limit=5):
     return items[:limit], len(entries) > limit
 
 
+def match_aa_mutation(gene, mut, query):
+    import re
+    try:
+        gene_obj = Gene.query.filter_by(name=gene).one()
+    except NoResultFound:
+        # return json_message('No isoforms for %s found' % gene)
+        return []
+
+    all_parts = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)(?P<alt>\D)', mut)
+    ref_and_pos = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)', mut)
+
+    if all_parts:
+        mut_data = all_parts.groupdict()
+
+    if ref_and_pos:
+        mut_data = ref_and_pos.groupdict()
+
+    if all_parts or ref_and_pos:
+        ref = mut_data['ref']
+        try:
+            pos = int(mut_data['pos'])
+        except ValueError:
+            return json_message(
+                'Did you mean to search for mutation with <code>{gene} {ref}{pos}{alt}</code> format?'
+                ' The <code>{pos}</code> should be an integer.'
+            )
+
+        # validate if ref is correct
+        valid = False
+        for isoform in gene_obj.isoforms:
+            try:
+                if isoform.sequence[pos - 1] == ref:
+                    valid = True
+                    break
+            except IndexError:
+                # not in range of this isoform, nothing scary.
+                pass
+
+        if not valid:
+            return json_message(
+                'Given reference residue <code>%s</code> does not match any of %s isoforms of %s gene at position <code>%s</code>'
+                %
+                (ref, len(gene_obj.isoforms), gene, pos)
+            )
+
+    if ref_and_pos:
+        # if ref is correct and ask user to specify alt
+        return json_message('Awaiting for <code>{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+
+    only_ref = re.fullmatch('(?P<ref>\D)', mut)
+    if only_ref:
+        # prompt user to write more
+        return json_message('Awaiting for <code>{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+
+    try:
+        items = get_protein_muts(gene, mut)
+    except ValueError:
+        return json_message(
+            'Did you mean to search for mutation with <code>{gene} {ref}{pos}{alt}</code> format?'
+            ' The <code>{pos}</code> should be an integer.'
+        )
+    return prepare_items(items, query, 'aminoacid mutation')
+
+
+def prepare_items(items, query, value_type):
+    for item in items:
+        item['protein'] = item['protein'].to_json()
+        item['mutation'] = item['mutation'].to_json()
+        item['input'] = query
+        item['type'] = value_type
+    return items
+
+
 def autocomplete_mutation(query, limit=None):
     """Returns: (autocompletion_mutation_results, are_there_more)"""
-    import re
     # TODO: rewriting this into regexp-based set of function may increase readability
     # TODO: use limit to restrict queries
 
     query = query.upper().strip()
     data = query.split()
 
+    items = []
+    messages = []
+
     if len(data) == 1:
 
         if query.startswith('CHR'):
-            return json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
+            messages += json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
+
+        gene = data[0].strip()
+
+        if gene_exists(gene):
+            messages += json_message('Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
         else:
-            gene = data[0].strip()
-
-            if not gene_exists(gene):
-                # return json_message('Gene %s not found in the database' % gene)
-                return []
-
-            return json_message('Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+            # return json_message('Gene %s not found in the database' % gene)
+            pass
 
     elif len(data) == 4:
         chrom, pos, ref, alt = data
@@ -781,13 +856,12 @@ def autocomplete_mutation(query, limit=None):
 
         try:
             items = bdb.get_genomic_muts(chrom, pos, ref, alt)
+            items = prepare_items(items, query, 'nucleotide mutation')
         except ValueError:
             return json_message(
                 'Did you mean to search for mutation with <code>{chrom} {pos} {ref} {alt}</code> format?'
                 ' The <code>{pos}</code> should be an integer.'
             )
-
-        value_type = 'nucleotide mutation'
 
     elif len(data) == 3:
         if not query.startswith('CHR'):
@@ -798,80 +872,13 @@ def autocomplete_mutation(query, limit=None):
     elif len(data) == 2:
         gene, mut = data
 
-        if gene.startswith('CHR'):
-            return json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
+        result = match_aa_mutation(gene, mut, query)
+        items = [r for r in result if r['type'] != 'message']
+        messages = [r for r in result if r['type'] == 'message']
 
-        try:
-            gene_obj = Gene.query.filter_by(name=gene).one()
-        except NoResultFound:
-            # return json_message('No isoforms for %s found' % gene)
-            return []
-
-        all_parts = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)(?P<alt>\D)', mut)
-        ref_and_pos = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)', mut)
-
-        if all_parts:
-            mut_data = all_parts.groupdict()
-
-        if ref_and_pos:
-            mut_data = ref_and_pos.groupdict()
-
-        if all_parts or ref_and_pos:
-            ref = mut_data['ref']
-            try:
-                pos = int(mut_data['pos'])
-            except ValueError:
-                return json_message(
-                    'Did you mean to search for mutation with <code>{gene} {ref}{pos}{alt}</code> format?'
-                    ' The <code>{pos}</code> should be an integer.'
-                )
-
-            # validate if ref is correct
-            valid = False
-            for isoform in gene_obj.isoforms:
-                try:
-                    if isoform.sequence[pos - 1] == ref:
-                        valid = True
-                        break
-                except IndexError:
-                    # not in range of this isoform, nothing scary.
-                    pass
-
-            if not valid:
-                return json_message(
-                    'Given reference residue <code>%s</code> does not match any of %s isoforms of %s gene at position <code>%s</code>'
-                    %
-                    (ref, len(gene_obj.isoforms), gene, pos)
-                )
-
-        if ref_and_pos:
-            # if ref is correct and ask user to specify alt
-            return json_message('Awaiting for <code>{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
-
-        only_ref = re.fullmatch('(?P<ref>\D)', mut)
-        if only_ref:
-            # prompt user to write more
-            return json_message('Awaiting for <code>{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
-
-        try:
-            items = get_protein_muts(gene, mut)
-        except ValueError:
-            return json_message(
-                'Did you mean to search for mutation with <code>{gene} {ref}{pos}{alt}</code> format?'
-                ' The <code>{pos}</code> should be an integer.'
-            )
-
-        value_type = 'aminoacid mutation'
-    else:
-        items = []
-        value_type = 'incomplete mutation'
-
-    for item in items:
-        item['protein'] = item['protein'].to_json()
-        item['mutation'] = item['mutation'].to_json()
-        item['input'] = query
-        item['type'] = value_type
+        if query.startswith('CHR'):
+            messages += json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
 
     if not limit:
         limit = len(items)
-    return items[:limit], len(items) > limit
+    return items[:limit] + messages, len(items) > limit
