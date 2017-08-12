@@ -52,6 +52,9 @@ class TestPathwaysView(ViewTest):
         db.session.add(gene_list)
         db.session.commit()
 
+        response = self.client.get('/pathways/with_significant_genes/')
+        assert response.status_code == 200
+
         response = self.client.get('/pathways/significant_data/%s' % gene_list.id)
 
         # only one pathway has more than 10 genes with at least 5 of them significant
@@ -67,3 +70,20 @@ class TestPathwaysView(ViewTest):
         }
         for key, value in expected_values.items():
             assert pathway[key] == value
+
+    def test_any_pathway(self):
+        create_pathways()
+        db.session.commit()
+
+        response = self.client.get('/pathways/all/')
+        assert response.status_code == 200
+
+        # all pathways should be selected
+        response = self.client.get('/pathways/all_data/')
+        assert response.json['total'] == 3
+
+        # is search working?
+        response = self.client.get('/pathways/all_data/?search=Ras protein')
+        assert response.json['total'] == 1
+        pathway = response.json['rows'].pop()
+        assert pathway['description'] == 'Ras protein signal transduction'
