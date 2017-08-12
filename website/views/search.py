@@ -876,7 +876,7 @@ def autocomplete_mutation(query, limit=None):
         items = [r for r in result if r['type'] != 'message']
         messages = [r for r in result if r['type'] == 'message']
 
-        if query.startswith('CHR'):
+        if query.startswith('CHR') and len(mut) < 2:
             messages += json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
 
     if not limit:
