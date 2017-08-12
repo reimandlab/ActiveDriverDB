@@ -11,7 +11,8 @@ from helpers.views import AjaxTableView
 from models import Mutation
 from models import Protein
 from .abstract_protein import AbstractProteinView, get_raw_mutations
-from .sequence import represent_needles, SequenceViewFilters, prepare_sites
+from .sequence import SequenceViewFilters, prepare_sites
+from .chromosome import represent_mutations
 
 
 class ProteinView(AbstractProteinView):
@@ -76,7 +77,6 @@ class ProteinView(AbstractProteinView):
 
     def mutation(self, refseq, position, alt):
         """REST API endpoint"""
-        from .chromosome import represent_mutations
         from database import get_or_create
 
         protein, filter_manager = self.get_protein_and_manager(
@@ -96,11 +96,15 @@ class ProteinView(AbstractProteinView):
 
         raw_mutations = filter_manager.apply([mutation])
 
-        assert len(raw_mutations) == 1
+        if len(raw_mutations) > 1:
+            return jsonify(
+                'Error: Too many mutations found. This seems to be a serious problem. '
+                'Please let us know about it.'
+            )
 
         if not raw_mutations:
             return jsonify(
-                'There is a mutation, but it does not satisfy given filters'
+                'Warning: There is a mutation, but it does not satisfy given filters'
             )
 
         parsed_mutations = represent_mutations(
@@ -112,11 +116,15 @@ class ProteinView(AbstractProteinView):
     def known_mutations(self, refseq):
         """REST API endpoint"""
 
-        protein, filter_manager = self.get_protein_and_manager(refseq)
+        protein, filter_manager = self.get_protein_and_manager(
+            refseq,
+            default_source=None,
+            source_nullable=False
+        )
 
         raw_mutations = get_raw_mutations(protein, filter_manager)
 
-        parsed_mutations = represent_needles(
+        parsed_mutations = represent_mutations(
             raw_mutations,
             filter_manager
         )

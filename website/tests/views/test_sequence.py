@@ -1,5 +1,3 @@
-from urllib.parse import urlparse, urlunparse
-
 from view_testing import ViewTest
 from models import Protein, Disease
 from models import Gene
@@ -10,7 +8,6 @@ from models import InheritedMutation
 from models import ClinicalData
 from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
-from models import Site
 from database import db
 
 
@@ -107,40 +104,6 @@ class TestSequenceView(ViewTest):
         # no sites were given
         assert len(representation['sites']) == 0
 
-    def test_browse(self):
-        p = Protein(**test_protein_data())
-        db.session.add(p)
-
-        response = self.client.get('/protein/browse', follow_redirects=True)
-
-        assert response.status_code == 200
-
-    def test_sites(self):
-
-        p = Protein(**test_protein_data())
-
-        sites = [
-            Site(position=3, residue='R', type='phosphorylation'),
-            Site(position=4, residue='T', type='methylation')
-        ]
-        db.session.add(p)
-        p.sites = sites
-
-        response = self.client.get('/protein/sites/NM_000123')
-
-        assert response.status_code == 200
-        assert response.content_type == 'application/json'
-
-        assert len(response.json) == 2
-
-        phospo_site_repr = None
-
-        for site_repr in response.json:
-            if site_repr['type'] == 'phosphorylation':
-                phospo_site_repr = site_repr
-
-        assert phospo_site_repr
-
     def test_details(self):
 
         p = Protein(**test_protein_data())
@@ -165,14 +128,3 @@ class TestSequenceView(ViewTest):
             assert json_response['refseq'] == 'NM_000123'
             assert set(json_response['meta']) == set(expected_meta)
             assert json_response['muts_count'] == 1
-
-    def test_redirect(self):
-
-        p = Protein(**test_protein_data())
-        db.session.add(p)
-
-        response = self.client.get('/protein/show/NM_000123?filters=Mutation.sources:in:MC3')
-        assert response.status_code == 302
-        url = urlparse(response.location)
-        without_net_location = urlunparse(['', '', url.path, url.params, url.query, url.fragment])
-        assert without_net_location == '/sequence/show/NM_000123?filters=Mutation.sources:in:MC3'

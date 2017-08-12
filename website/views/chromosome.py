@@ -105,7 +105,3 @@ class ChromosomeView(FlaskView):
         )
 
         return jsonify(parsed_mutations)
-
-    def mutations(self, start, end):
-        # TODO
-        pass
