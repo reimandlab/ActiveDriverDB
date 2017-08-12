@@ -353,7 +353,6 @@ class TestCMS(ViewTest):
         )
         assert response.status_code == 200
 
-        print(CustomMenuEntry.query.all())
         entries = CustomMenuEntry.query.filter_by(menu_id=menu.id).all()
         assert len(entries) == 1
         assert entries[0].title == 'ActiveDriverDB repository'

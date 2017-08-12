@@ -1,5 +1,5 @@
 from view_testing import ViewTest
-from models import Protein, KinaseGroup, Drug, DrugType, DrugGroup
+from models import Protein, KinaseGroup, Drug, DrugGroup, MIMPMutation
 from models import Gene
 from models import Site
 from models import Kinase
@@ -18,17 +18,17 @@ def create_test_protein():
 
 def create_network():
     p = create_test_protein()
+    cancer = Cancer(name='Ovarian', code='OV')
 
     name = 'Kinase Y'
     refseq = 'NM_0009'
+
     kinase_gene = Gene(id=1, name='Gene of ' + name)
 
-    mutation = Mutation(
+    kinase_mutation = Mutation(
         position=1,
         alt='T',
-        meta_MC3=[MC3Mutation(
-            cancer=Cancer(name='Ovarian', code='OV')
-        )]
+        meta_MC3=[MC3Mutation(cancer=cancer)]
     )
 
     interactor = Kinase(
@@ -36,7 +36,7 @@ def create_network():
         protein=Protein(
             refseq=refseq,
             gene=kinase_gene,
-            mutations=[mutation]
+            mutations=[kinase_mutation]
         )
     )
 
@@ -65,7 +65,17 @@ def create_network():
         kinase_groups=[group]
     )
     p.sites = [s, s2]
+
+    protein_mutation = Mutation(
+        position=2,
+        alt='T',
+        meta_MC3=[MC3Mutation(cancer=cancer)],
+        meta_MIMP=[MIMPMutation(pwm=name, effect=False, site=s, probability=0.1, position_in_motif=1)]
+    )
+
+    p.mutations = [protein_mutation]
     db.session.add_all([p, drug])
+    db.session.commit()
 
 
 class TestNetworkView(ViewTest):
@@ -94,6 +104,9 @@ class TestNetworkView(ViewTest):
 
         create_network()
 
+        from website.views._global_filters import cached_queries
+        cached_queries.reload()
+
         response = self.client.get('/network/representation/NM_0007')
         assert response.status_code == 200
         representation = response.json['network']
@@ -117,6 +130,11 @@ class TestNetworkView(ViewTest):
         assert len(representation['kinase_groups']) == 1
         assert 'Group of kinases' == representation['kinase_groups'][0]['name']
 
+        # representation returned in internal endpoint 'data'
+        # should be the same as the one expose publicly
+        response = self.client.get('/network/data/NM_0007')
+        assert response.json['representation']['network'] == representation
+
     def test_tsv_export(self):
 
         create_network()
@@ -132,10 +150,10 @@ class TestNetworkView(ViewTest):
 
         expected_site_kinase_rows = {
             # row essential data: was_found?
-            # site, site type, max impact, kinase or group, drug (only for kinases)
-            ('1,T', 'phosphorylation', 'none', 'Kinase Y', 'Drug targeting Kinase Y'): False,
-            ('1,T', 'phosphorylation', 'none', 'Group of kinases'): False,
-            ('2,R', 'phosphorylation', 'none', 'Group of kinases'): False
+            # site, site type, max impact, kinase or group, drugs
+            ('1,T', 'phosphorylation', 'network-rewiring', 'Kinase Y', 'Drug targeting Kinase Y'): False,
+            ('1,T', 'phosphorylation', 'proximal', 'Group of kinases', ''): False,
+            ('2,R', 'phosphorylation', 'direct', 'Group of kinases', ''): False
         }
 
         for line in lines[1:]:

@@ -176,6 +176,7 @@ class NetworkRepresentation:
 
     def prepare_site(self, site):
         site_mutations = self.muts_by_site[site]
+
         mutations = [
             {
                 'ref': mutation.ref,
@@ -278,28 +279,48 @@ class NetworkRepresentation:
 
         network = self.data
 
-        for site in network['sites']:
-            target_site = '%s,%s' % (site['position'], site['residue'])
+        def choose_impact(mutations, site, kinase_name, mimp_list):
+            return self.most_significant_impact(set(
+                mutation.impact_on_specific_ptm(site, ignore_mimp=kinase_name not in mimp_list)
+                for mutation in mutations
+            ))
+
+        sites, kinases, kinase_groups = self.get_sites_and_kinases()
+
+        for site in sites:
+            parsed_site = self.prepare_site(site)
+
+            site_mutations = self.muts_by_site[site]
+
+            target_site = '%s,%s' % (site.position, site.residue)
             protein_and_site = [
                 self.protein.gene_name,
                 self.protein.refseq,
                 target_site,
-                site['ptm_type'],
-                site['impact']
+                site.type
             ]
 
-            for kinase_name in site['kinases']:
+            site_mimp_kinases = [
+                mimp.pwm for mutation in site_mutations for mimp in mutation.meta_MIMP
+            ]
+            site_mimp_kinases_families = [
+                mimp.pwm_family for mutation in site_mutations for mimp in mutation.meta_MIMP
+            ]
+
+            for kinase_name in parsed_site['kinases']:
                 try:
                     kinase = list(filter(lambda k: k['name'] == kinase_name, network['kinases']))[0]
                 except IndexError:
                     continue
+                impact = choose_impact(site_mutations, site, kinase_name, site_mimp_kinases)
                 drugs = kinase['drugs_targeting_kinase_gene']
                 drugs = ','.join([drug['name'] for drug in drugs]) or ''
-                row = protein_and_site + [kinase_name, drugs]
+                row = protein_and_site + [impact, kinase_name, drugs]
                 content.append('\t'.join(row))
 
-            for kinase_group in site['kinase_groups']:
-                row = protein_and_site + [kinase_group]
+            for kinase_group in parsed_site['kinase_groups']:
+                impact = choose_impact(site_mutations, site, kinase_group, site_mimp_kinases_families)
+                row = protein_and_site + [impact, kinase_group, '']
                 content.append('\t'.join(row))
 
         return '\n'.join(content)
