@@ -71,12 +71,25 @@ var ProteinForm = (function ()
 {
     var element, search_button
     var empty_indicator, no_results_indicator, waiting_indicator
-    var result_ul, recent_value, url_base
+    var result_ul, recent_value, url_base, protein_search
+    var only_proteins_with_ptm_muts = false
+
+    function url_params()
+    {
+        var params = get_url_params()
+
+        if(only_proteins_with_ptm_muts)
+            params.filters = 'Protein.has_ptm_mutations:eq:True'
+        else
+            delete params.filters
+
+        return params
+    }
 
     function get_url()
     {
         var href = url_base + 'proteins'
-        var params = get_url_params()
+        var params = url_params()
         if(recent_value !== undefined && recent_value !== '')
         {
             params.proteins = recent_value
@@ -96,7 +109,7 @@ var ProteinForm = (function ()
 
     function autocomplete(query)
     {
-        var params = get_url_params()
+        var params = url_params()
         params.q = encodeURIComponent(query)
         result_ul.innerHTML = ''
         $.ajax({
@@ -130,17 +143,17 @@ var ProteinForm = (function ()
         })
     }
 
-    function onChangeHandler(event)
+    function onChangeHandler(force)
     {
-        var query = $(event.target).val()
+        var query = protein_search.val()
 
-        if(query === recent_value)
+        if(query === recent_value && force !== true)
             return
 
         if(query)
         {
             no_results_indicator.addClass('hidden')
-            if(query.length >= 3)
+            if(query.length >= 1)
             {
                 empty_indicator.addClass('hidden')
                 waiting_indicator.removeClass('hidden')
@@ -159,7 +172,6 @@ var ProteinForm = (function ()
         recent_value = query
 
         history.replaceState(history.state, null, get_url())
-
     }
 
     function ToggleAlternativeIsoforms()
@@ -170,7 +182,7 @@ var ProteinForm = (function ()
 
     function setEventsForResults(result_box)
     {
-        $(result_box).on('click', '.show-alt', function(event)
+        result_box.on('click', '.show-alt', function(event)
         {
             $(this).siblings('.alt-isoforms').toggleClass('js-hidden')
             $(this).toggleClass('js-shown')
@@ -185,18 +197,18 @@ var ProteinForm = (function ()
     var publicSpace = {
         init: function(dom_element, _url_base)
         {
-            element = dom_element
+            element = $(dom_element)
             url_base = _url_base
-            search_button = $(element).find('button[type="submit"].search-button')
-            var protein_search = $(element).find('#protein_search')
+            search_button = element.find('button[type="submit"].search-button')
+            protein_search = element.find('#protein_search')
             // handle all edge cases like dragging the text into the input
             protein_search.on('change mouseup drop input', onChangeHandler)
-            var result_box = $(element).find('.results')[0]
-            result_ul = $(result_box).find('ul')[0]
-            $(result_box).removeClass('hidden')
-            empty_indicator = $(result_box).find('.empty')
-            no_results_indicator = $(result_box).find('.no-results')
-            waiting_indicator = $(result_box).find('.waiting')
+            var result_box = $(element.find('.results')[0])
+            result_ul = result_box.find('ul')[0]
+            result_box.removeClass('hidden')
+            empty_indicator = result_box.find('.empty')
+            no_results_indicator = result_box.find('.no-results')
+            waiting_indicator = result_box.find('.waiting')
 
             var placeholder_manager = multilinePlaceholderPolyfill()
             placeholder_manager.init(
@@ -204,18 +216,27 @@ var ProteinForm = (function ()
                 protein_search.attr('placeholder')
             )
 
-            setEventsForResults(result_box)
+            recent_value = protein_search.val()
+            var ptm_checkbox = $(element).find('[name="filter[Protein.has_ptm_mutations]"]')
+            ptm_checkbox.on(
+                'change', function(event){
 
+                    only_proteins_with_ptm_muts = event.target.checked
+                    onChangeHandler(true)
+                }
+            )
+            only_proteins_with_ptm_muts = ptm_checkbox.get().checked
+
+            setEventsForResults(result_box)
 
         },
         show: function()
         {
-            $(element).show()
-            // TODO show/hide animations
+            element.show()
         },
         hide: function()
         {
-            $(element).hide()
+            element.hide()
         },
         get_url: get_url
     }
@@ -336,7 +357,7 @@ var SearchManager = (function ()
         target = new_target
 
         // update switches
-        var activator =    switches.filter('.' + target)    // because switch is reserved word
+        var activator = switches.filter('.' + target)    // because switch is reserved word
         switches.not(activator).removeClass('active')
         $(activator).addClass('active')
 
