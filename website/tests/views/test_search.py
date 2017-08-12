@@ -241,9 +241,16 @@ class TestSearchView(ViewTest):
 
         db.session.add_all(pathways)
 
-        response = autocomplete('Activation')
-        entry = get_entry_and_check_type(response, 'pathway')
-        assert entry['name'] == 'Activation of RAS in B cells'
+        # test partial matching and Reactome id pathways search
+        for ras_activation_query in ['Activation', 'REAC:1', 'REAC:1169092']:
+            response = autocomplete(ras_activation_query)
+            entry = get_entry_and_check_type(response, 'pathway')
+            assert entry['name'].startswith('Activation of RAS in B cells')
+
+        # test Gene Ontology search:
+        response = autocomplete('GO:33')
+        go_pathway = get_entry_and_check_type(response, 'pathway')
+        assert go_pathway['name'] == 'abortive mitotic cell cycle (GO:33277)'
 
         # check if multiple pathways are returned
         response = autocomplete('differentiation')
@@ -256,7 +263,7 @@ class TestSearchView(ViewTest):
         names = [entry['name'] for entry in entries]
         assert all([name in names for name in ['BR', 'abortive mitotic cell cycle']])
 
-        # check if "search more pathways is displayed
+        # check if "search more pathways" is displayed
         response = autocomplete('cell')    # cell occurs in all four of added pathways;
         # as a limit of pathways shown is 3, we should get a "show more" link
         links = entries_with_type(response, 'see_more')

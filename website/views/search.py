@@ -701,9 +701,9 @@ def suggest_matching_pathways(query, count=2):
     def display_name(pathway):
         name = pathway.description
         if go:
-            name += ' (GO:' + pathway.gene_ontology + ')'
+            name += ' (GO:%s)' % pathway.gene_ontology
         if reactome:
-            name += ' (REAC:' + pathway.reactome + ')'
+            name += ' (REAC:%s)' % pathway.reactome
 
         return name
 
