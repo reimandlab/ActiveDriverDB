@@ -71,6 +71,13 @@ class TestPathwaysView(ViewTest):
         for key, value in expected_values.items():
             assert pathway[key] == value
 
+    def test_show_pathway(self):
+        create_pathways()
+        response = self.client.get('/pathways/reactome/6796648/')
+        assert response.status_code == 200
+        html = response.data
+        assert b'TP53 Regulates Transcription of DNA Repair Genes' in html
+
     def test_any_pathway(self):
         create_pathways()
         db.session.commit()
