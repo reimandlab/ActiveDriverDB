@@ -227,10 +227,17 @@ class TestSearchView(ViewTest):
         entry = get_entry_and_check_type(response, 'gene')
         assert 'BR' == entry['name']
 
+        # genomic mutation
         response = autocomplete('chr1 10000 T C')
-        print(response.json)
         entry = get_entry_and_check_type(response, 'nucleotide mutation')
         assert entry
+
+        prompt = 'Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format'
+
+        for prompt_invoking_query in ['chr1', 'chr1 ', 'chr1 40', 'chr1 40 ', 'chr1 40 T']:
+            response = autocomplete(prompt_invoking_query)
+            entry = get_entry_and_check_type(response, 'message')
+            assert entry['name'] == prompt
 
         # Pathways
 

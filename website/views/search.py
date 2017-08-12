@@ -487,7 +487,7 @@ class SearchView(FlaskView):
 
         items = []
 
-        if ' ' in query:
+        if ' ' in query or query.upper().startswith('CHR'):
             # TODO: use exceptions for messaging control?
             mutation_result = autocomplete_mutation(query)
             if type(mutation_result) is tuple:
@@ -755,7 +755,8 @@ def autocomplete_mutation(query, limit=None):
     # TODO: rewriting this into regexp-based set of function may increase readability
     # TODO: use limit to restrict queries
 
-    data = query.upper().strip().split()
+    query = query.upper().strip()
+    data = query.split()
 
     if len(data) == 1:
 
@@ -773,7 +774,7 @@ def autocomplete_mutation(query, limit=None):
     elif len(data) == 4:
         chrom, pos, ref, alt = data
 
-        if not chrom.startswith('CHR'):
+        if not query.startswith('CHR'):
             return []
 
         chrom = chrom[3:]
