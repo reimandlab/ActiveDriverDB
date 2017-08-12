@@ -1,5 +1,5 @@
 from view_testing import ViewTest
-from models import Protein, KinaseGroup
+from models import Protein, KinaseGroup, Drug, DrugType, DrugGroup
 from models import Gene
 from models import Site
 from models import Kinase
@@ -21,6 +21,7 @@ def create_network():
 
     name = 'Kinase Y'
     refseq = 'NM_0009'
+    kinase_gene = Gene(id=1, name='Gene of ' + name)
 
     mutation = Mutation(
         position=1,
@@ -34,10 +35,19 @@ def create_network():
         name=name,
         protein=Protein(
             refseq=refseq,
-            gene=Gene(name='Gene of ' + name),
+            gene=kinase_gene,
             mutations=[mutation]
         )
     )
+
+    drug = Drug(
+        name='Drug targeting ' + name,
+        drug_bank_id='DB01',
+        target_genes=[kinase_gene],
+        # by default only approved drugs are shown
+        groups={DrugGroup(name='approved')}
+    )
+
     group = KinaseGroup(
         name='Group of kinases',
     )
@@ -55,7 +65,7 @@ def create_network():
         kinase_groups=[group]
     )
     p.sites = [s, s2]
-    db.session.add(p)
+    db.session.add_all([p, drug])
 
 
 class TestNetworkView(ViewTest):
@@ -87,15 +97,30 @@ class TestNetworkView(ViewTest):
         response = self.client.get('/network/representation/NM_0007')
         assert response.status_code == 200
         representation = response.json['network']
+
+        # test kinases
         assert ['Kinase Y'] == representation['protein']['kinases']
-        assert 'Kinase Y' == representation['kinases'][0]['name']
+        kinase = representation['kinases'][0]
+        assert kinase['name'] == 'Kinase Y'
+
+        # test kinase drugs
+        drugs = kinase['drugs_targeting_kinase_gene']
+        assert len(drugs) == 1
+        drug = drugs[0]
+        assert drug['name'] == 'Drug targeting Kinase Y'
+        assert drug['drugbank'] == 'DB01'
+
+        # test sites
         assert len(representation['sites']) == 2
+
+        # test groups
         assert len(representation['kinase_groups']) == 1
         assert 'Group of kinases' == representation['kinase_groups'][0]['name']
 
     def test_tsv_export(self):
 
         create_network()
+        db.session.commit()
 
         response = self.client.get('/network/download/NM_0007/tsv')
         content = response.data.decode('utf-8')
@@ -108,7 +133,7 @@ class TestNetworkView(ViewTest):
         expected_site_kinase_rows = {
             # row essential data: was_found?
             # site, site type, max impact, kinase or group, drug (only for kinases)
-            ('1,T', 'phosphorylation', 'none', 'Kinase Y', ''): False,
+            ('1,T', 'phosphorylation', 'none', 'Kinase Y', 'Drug targeting Kinase Y'): False,
             ('1,T', 'phosphorylation', 'none', 'Group of kinases'): False,
             ('2,R', 'phosphorylation', 'none', 'Group of kinases'): False
         }

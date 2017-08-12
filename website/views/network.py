@@ -7,7 +7,7 @@ from flask import jsonify
 from flask import render_template as template
 from flask_login import current_user
 
-from models import Protein, Mutation, Drug, Gene
+from models import Mutation, Drug, Gene
 from helpers.filters import Filter
 from helpers.filters import FilterManager
 from helpers.widgets import FilterWidget
