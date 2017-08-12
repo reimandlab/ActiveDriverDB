@@ -1,3 +1,8 @@
+function append(destination, new_content)
+{
+    Array.prototype.push.apply(destination, new_content)
+}
+
 function update_object(modified_obj, modifying_obj)
 {
     for(var key in modifying_obj)

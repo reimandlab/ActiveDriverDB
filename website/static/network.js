@@ -1,8 +1,3 @@
-function append(destination, new_content)
-{
-    Array.prototype.push.apply(destination, new_content)
-}
-
 function assert(condition)
 {
     if(!condition)
