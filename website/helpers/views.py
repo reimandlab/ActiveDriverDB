@@ -37,7 +37,6 @@ class AjaxTableView:
     def from_model(model, **kwargs):
 
         def prepare_for_sorting(query, sorted_field_name):
-            print(sorted_field_name)
             sorted_field = getattr(model, sorted_field_name)
 
             if type(sorted_field) is AssociationProxy:
@@ -53,7 +52,7 @@ class AjaxTableView:
         return AjaxTableView.from_query(
             query=model.query,
             prepare_for_sorting=prepare_for_sorting,
-            count_query=ModelCounter(model),
+            count_query_constructor=lambda sql_filters, required_joins: ModelCounter(model),
             **kwargs
         )
 
