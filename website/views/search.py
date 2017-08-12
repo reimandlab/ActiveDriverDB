@@ -771,10 +771,11 @@ def autocomplete_mutation(query, limit=None):
             return json_message('Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
 
     elif len(data) == 4:
-        if not query.startswith('CHR'):
+        chrom, pos, ref, alt = data
+
+        if not chrom.startswith('CHR'):
             return []
 
-        chrom, pos, ref, alt = data
         chrom = chrom[3:]
 
         try:

@@ -118,7 +118,7 @@ class TestSearchView(ViewTest):
     def test_search_mutations(self):
 
         s = Site(position=13, type='methylation')
-        p = Protein(refseq='NM_007', id=7, sites=[s])
+        p = Protein(refseq='NM_007', id=7, sites=[s], sequence='XXXXXXXXXXXXV')
 
         m_in_site = Mutation(protein=p, position=13, alt='V')
         m_out_site = Mutation(protein=p, position=50, alt='K')
@@ -129,15 +129,10 @@ class TestSearchView(ViewTest):
         test_query = 'chr20 14370 G A'
 
         from database import bdb
-        from genomic_mappings import make_snv_key
-        from genomic_mappings import encode_csv
-
-        # (those are fake data)
-        csv = encode_csv('+', 'A', 'V', 13 * 3, 'EX1', p.id, True)
 
         # map the first genomic mutation from VCF_FILE_CONTENT
         # to some (mocked) protein mutation
-        bdb[make_snv_key('20', 14370, 'G', 'A')].add(csv)
+        bdb.add_genomic_mut('20', 14370, 'G', 'A', m_in_site, is_ptm=True)
 
         #
         # basic test - is appropriate mutation in results?
@@ -202,7 +197,7 @@ class TestSearchView(ViewTest):
         ])
 
         g = Gene(name='BR')
-        p = Protein(refseq='NM_007', gene=g, sequence='XXXXXV')
+        p = Protein(id=1, refseq='NM_007', gene=g, sequence='XXXXXV')
         g.preferred_isoform = p     # required for gene search to work - genes without preferred isoforms are ignored
         mut = Mutation(protein=p, position=6, alt='E')
         db.session.add_all([mut, p, g])
@@ -210,13 +205,15 @@ class TestSearchView(ViewTest):
         def autocomplete(query):
             return self.client.get('/search/autocomplete_all/?q=' + query)
 
-        from database import bdb_refseq
+        from database import bdb_refseq, bdb
         bdb_refseq['BR V6E'] = ['NM_007']  # required for mutation search
+        bdb.add_genomic_mut('1', 10000, 'T', 'C', mut)
 
         # Gene and mutations
 
         response = autocomplete('BR V6E')
         entry = get_entry_and_check_type(response, 'aminoacid mutation')
+        assert entry
 
         response = autocomplete('BR V6')
         entry = get_entry_and_check_type(response, 'message')
@@ -229,6 +226,11 @@ class TestSearchView(ViewTest):
         response = autocomplete('B')
         entry = get_entry_and_check_type(response, 'gene')
         assert 'BR' == entry['name']
+
+        response = autocomplete('chr1 10000 T C')
+        print(response.json)
+        entry = get_entry_and_check_type(response, 'nucleotide mutation')
+        assert entry
 
         # Pathways
 
@@ -318,7 +320,6 @@ class TestSearchView(ViewTest):
         response = autocomplete('cystic in NM_007')
         refseq_result = get_entry_and_check_type(response, 'disease_in_protein')
         assert gene_result == refseq_result and gene_result
-
 
     def test_save_search(self):
         test_query = 'chr18 19282310 T C'

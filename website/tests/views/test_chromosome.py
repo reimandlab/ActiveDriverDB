@@ -16,18 +16,12 @@ class TestChromosomeView(ViewTest):
         db.session.add(p)
 
         from database import bdb
-        from genomic_mappings import make_snv_key
-        from genomic_mappings import encode_csv
 
-        muts = [(13, 14370), (15, 14376)]
+        muts = {13: 14370, 15: 14376}
 
-        for aa_pos, dna_pos in muts:
-            # (those are fake data)
-            csv = encode_csv('+', 'A', 'V', aa_pos * 3, 'EX1', p.id, True)
-
-            # map the first genomic mutation from VCF_FILE_CONTENT
-            # to some (mocked) protein mutation
-            bdb[make_snv_key('20', dna_pos, 'G', 'A')].add(csv)
+        for aa_pos, dna_pos in muts.items():
+            muts[aa_pos] = Mutation(protein=p, position=aa_pos, alt='V')
+            bdb.add_genomic_mut('20', dna_pos, 'G', 'A', muts[aa_pos], is_ptm=True)
 
         query_url = '/chromosome/mutation/{chrom}/{pos}/{ref}/{alt}'
 
@@ -53,7 +47,7 @@ class TestChromosomeView(ViewTest):
         ]
 
         # well let's look on a known mutation:
-        m = Mutation(position=15, protein=p, alt='V')
+        m = muts[15]
         mc3 = MC3Mutation(mutation=m, cancer=Cancer(name='BRCA'), count=1)
         esp = ExomeSequencingMutation(mutation=m, maf_all=0.02, maf_aa=0.02)
 

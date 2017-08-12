@@ -4,7 +4,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.sql.expression import func, select, FunctionElement, text
+from sqlalchemy.sql.expression import func, FunctionElement, text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.types import DateTime
 
