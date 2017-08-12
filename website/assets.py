@@ -231,6 +231,11 @@ bundles = {
         'utilities',
         'common.js',
     ),
+    'js_pathways': js_bundle(
+        'pathways',
+        'common.js',
+        'pathways.js',
+    ),
     'js_network_view': js_bundle(
         'networkView',
         'common.js',
