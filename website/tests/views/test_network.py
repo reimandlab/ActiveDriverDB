@@ -16,6 +16,48 @@ def create_test_protein():
     return p
 
 
+def create_network():
+    p = create_test_protein()
+
+    name = 'Kinase Y'
+    refseq = 'NM_0009'
+
+    mutation = Mutation(
+        position=1,
+        alt='T',
+        meta_MC3=[MC3Mutation(
+            cancer=Cancer(name='Ovarian', code='OV')
+        )]
+    )
+
+    interactor = Kinase(
+        name=name,
+        protein=Protein(
+            refseq=refseq,
+            gene=Gene(name='Gene of ' + name),
+            mutations=[mutation]
+        )
+    )
+    group = KinaseGroup(
+        name='Group of kinases',
+    )
+    s = Site(
+        position=1,
+        type='phosphorylation',
+        residue='T',
+        kinases=[interactor],
+        kinase_groups=[group]
+    )
+    s2 = Site(
+        position=2,
+        type='phosphorylation',
+        residue='R',
+        kinase_groups=[group]
+    )
+    p.sites = [s, s2]
+    db.session.add(p)
+
+
 class TestNetworkView(ViewTest):
 
     def test_show(self):
@@ -39,48 +81,8 @@ class TestNetworkView(ViewTest):
             assert representation['protein']['name'] == 'Gene X'
 
     def test_representation(self):
-        p = create_test_protein()
 
-        name = 'Kinase Y'
-        refseq = 'NM_0009'
-
-        # having a mutation (from MC3 here as this is the default mutations'
-        # subset) is right now required if we want to have a kinase returned
-        # in network representation, although this may not be desired; see #72
-        mutation = Mutation(
-            position=1,
-            alt='T',
-            meta_MC3=[MC3Mutation(
-                cancer=Cancer(name='Ovarian', code='OV')
-            )]
-        )
-
-        interactor = Kinase(
-            name=name,
-            protein=Protein(
-                refseq=refseq,
-                gene=Gene(name='Gene of ' + name),
-                mutations=[mutation]
-            )
-        )
-        group = KinaseGroup(
-            name='Group of kinases',
-        )
-        s = Site(
-            position=1,
-            type='phosphorylation',
-            residue='T',
-            kinases=[interactor],
-            kinase_groups=[group]
-        )
-        s2 = Site(
-            position=2,
-            type='phosphorylation',
-            residue='R',
-            kinase_groups=[group]
-        )
-        p.sites = [s, s2]
-        db.session.add(p)
+        create_network()
 
         response = self.client.get('/network/representation/NM_0007')
         assert response.status_code == 200
@@ -90,6 +92,34 @@ class TestNetworkView(ViewTest):
         assert len(representation['sites']) == 2
         assert len(representation['kinase_groups']) == 1
         assert 'Group of kinases' == representation['kinase_groups'][0]['name']
+
+    def test_tsv_export(self):
+
+        create_network()
+
+        response = self.client.get('/network/download/NM_0007/tsv')
+        content = response.data.decode('utf-8')
+
+        lines = content.split('\n')
+
+        # is header included?
+        assert lines[0].startswith('#')
+
+        expected_site_kinase_rows = {
+            # row essential data: was_found?
+            # site, site type, max impact, kinase or group, drug (only for kinases)
+            ('1,T', 'phosphorylation', 'none', 'Kinase Y', ''): False,
+            ('1,T', 'phosphorylation', 'none', 'Group of kinases'): False,
+            ('2,R', 'phosphorylation', 'none', 'Group of kinases'): False
+        }
+
+        for line in lines[1:]:
+            essential_data = line.split('\t')[2:]
+            key = tuple(essential_data)
+            assert key in expected_site_kinase_rows.keys()
+            expected_site_kinase_rows[key] = True
+
+        assert all(expected_site_kinase_rows.values())
 
     def test_divide_muts_by_sites(self):
         from views.network import divide_muts_by_sites
