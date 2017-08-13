@@ -11,7 +11,7 @@ from models import Mutation, Drug, Gene
 from helpers.filters import Filter
 from helpers.filters import FilterManager
 from helpers.widgets import FilterWidget
-from views.abstract_protein import AbstractProteinView, get_raw_mutations
+from views.abstract_protein import AbstractProteinView, get_raw_mutations, GracefulFilterManager
 from ._global_filters import common_filters, filters_data_view
 from ._global_filters import create_widgets
 
@@ -27,7 +27,7 @@ def js_toggle(name, default=True):
     )
 
 
-class NetworkViewFilters(FilterManager):
+class NetworkViewFilters(GracefulFilterManager):
 
     def __init__(self, protein, **kwargs):
 
@@ -41,7 +41,7 @@ class NetworkViewFilters(FilterManager):
         ]
 
         super().__init__(filters)
-        self.update_from_request(request)
+        self.update_from_request_gracefully(request)
 
 
 def divide_muts_by_sites(mutations, sites):
