@@ -1,6 +1,7 @@
 from operator import attrgetter
 
-from flask import jsonify
+import flask
+from flask import jsonify, flash
 from flask import redirect
 from flask import render_template as template
 from flask import request
@@ -110,9 +111,34 @@ def prepare_representation_data(protein, filter_manager):
 class SequenceViewFilters(FilterManager):
 
     def __init__(self, protein, **kwargs):
+
         filters = common_filters(protein, **kwargs)
         super().__init__(filters)
-        self.update_from_request(request)
+
+        # sometimes user comes with a disease which is not associated
+        # with any of mutations in given protein. We do not want to
+        # raise ValidationError for the user, but rather just skip
+        # the faulty filter value and let the user know of that.
+
+        # Example:
+        # /protein/show/NM_001042351?filters=Mutation.disease_name:in:%27Cataract,%20nuclear%20total%27,G6PD%20SPLIT;Mutation.sources:in:ClinVar
+        skipped_filters, rejected_values_by_filters = self.update_from_request(request, raise_on_forbidden=False)
+
+        for filter_id, rejected_values in rejected_values_by_filters.items():
+            filtered_property = filter_id.split('.')[-1].replace('_', ' ')
+
+            message = (
+                '<i>%s</i> %s not occur in <i>%s</i> for this protein '
+                'and therefore it was left out.'
+                %
+                (
+                    ','.join(rejected_values),
+                    'does' if len(rejected_values) == 1 else 'do',
+                    filtered_property
+                )
+            )
+
+            flash(message, category='warning')
 
 
 def prepare_sites(protein, filter_manager):

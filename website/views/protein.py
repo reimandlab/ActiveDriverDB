@@ -1,6 +1,6 @@
 from operator import attrgetter
 
-from flask import jsonify
+from flask import jsonify, session
 from flask import redirect
 from flask import request
 from flask import render_template as template
@@ -21,6 +21,9 @@ class ProteinView(AbstractProteinView):
     filter_class = SequenceViewFilters
 
     def show(self, refseq):
+        # what flashed here will flash again after redirect anyway
+        session['_flashes'] = []
+
         return redirect(
             url_for('SequenceView:show', refseq=refseq) +
             '?' + request.query_string.decode('utf-8')

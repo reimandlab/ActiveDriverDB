@@ -213,7 +213,7 @@ class Filter:
     def id(self):
         return self.primary_target.__name__ + '.' + self.attribute
 
-    def _verify_value(self, value):
+    def _verify_value(self, value, raise_on_forbidden=True):
         if not (
                 self.nullable or
                 value
@@ -235,10 +235,13 @@ class Filter:
                     value in self.choices
                 )
         ):
-            raise ValidationError(
-                'Filter %s received forbidden value: %s. Allowed: %s. '
-                'Check types.' % (self.id, value, self.choices)
-            )
+            if raise_on_forbidden:
+                raise ValidationError(
+                    'Filter %s received forbidden value: %s. Allowed: %s. '
+                    'Check types.' % (self.id, value, self.choices)
+                )
+            else:
+                return self.choices
 
     def _verify_comparator(self, comparator):
         if comparator not in self.allowed_comparators:
@@ -251,7 +254,14 @@ class Filter:
         self._verify_value(value)
         self._verify_comparator(comparator)
 
-    def update(self, value, comparator=None):
+    def update(self, value, comparator=None, raise_on_forbidden=True):
+        """Update filter with given value and (optionally) comparator.
+
+        If given value (or part of it) is not allowed on the filter
+        it will be either returned as rejected or a ValidationError
+        will be raise - depending on raise_on_forbidden value.
+        """
+        rejected = set()
         if comparator:
             self._verify_comparator(comparator)
             self._comparator = comparator
@@ -264,8 +274,17 @@ class Filter:
                 value = [self.type(sub_value) for sub_value in value]
             else:
                 value = self.type(value)
-        self._verify_value(value)
+        accepted_values = self._verify_value(value, raise_on_forbidden)
+        if not raise_on_forbidden and accepted_values:
+            if self.multiple:
+                retained = set(value).intersection(accepted_values)
+                rejected = set(value) - retained
+                value = list(retained)
+            # raise if we cannot fix it
+            self._verify_value(value, True)
         self._value = value
+
+        return rejected
 
     def get_multiple_function(self):
         if self.multiple and is_iterable_but_not_str(self.value):
@@ -576,28 +595,40 @@ class FilterManager:
         """Return value of filter with specified identifier."""
         return self.filters[filter_id].value
 
-    def update_from_request(self, request):
+    def update_from_request(self, request, raise_on_forbidden=True):
         """Set states of child filters to match those specified in request.
 
         The query part of request will be looked upon to get filter's data, in
         one of two available formats: modern or fallback.
-        Updates for unrecognized filters will be returned as feedback.
 
         For details see _parse_request() method in this class.
+
+        Returns:
+            tuple: skipped, rejected
+
+            skipped: updates skipped, from unrecognized filters
+            rejected: updates skipped, from forbidden values (if raise_on_forbidden was False)
         """
         filter_updates = self._parse_request(request)
 
         skipped = []
+        rejected = defaultdict(list)
+
         for update in filter_updates:
             if update.id not in self.filters:
                 skipped.append(update)
                 continue
-            self.filters[update.id].update(
+
+            rejected_updates = self.filters[update.id].update(
                 self._parse_value(update.value),
                 self._parse_comparator(update.comparator),
+                raise_on_forbidden=raise_on_forbidden
             )
 
-        return skipped
+            if rejected_updates:
+                rejected[update.id].extend(rejected_updates)
+
+        return skipped, rejected
 
     @staticmethod
     def _parse_fallback_query(args):

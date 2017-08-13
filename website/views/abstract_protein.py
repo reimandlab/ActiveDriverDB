@@ -1,3 +1,4 @@
+import flask
 from flask import request
 from flask_classful import FlaskView
 from flask_login import current_user
@@ -11,7 +12,6 @@ class AbstractProteinView(FlaskView):
     filter_class = None
 
     def before_request(self, name, *args, **kwargs):
-
         user_datasets = current_user.datasets_names_by_uri()
         refseq = kwargs.get('refseq', None)
         protein = (
@@ -24,21 +24,22 @@ class AbstractProteinView(FlaskView):
             protein,
             custom_datasets_ids=user_datasets.keys()
         )
+
+        flask.g.filter_manager = filter_manager
+
         endpoint = self.build_route_name(name)
 
         return filter_manager.reformat_request_url(
             request, endpoint, *args, **kwargs
         )
 
+    @property
+    def filter_manager(self):
+        return flask.g.filter_manager
+
     def get_protein_and_manager(self, refseq, **kwargs):
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-        user_datasets = current_user.datasets_names_by_uri()
-        filter_manager = self.filter_class(
-            protein,
-            custom_datasets_ids=user_datasets.keys(),
-            **kwargs
-        )
-        return protein, filter_manager
+        return protein, self.filter_manager
 
 
 def get_raw_mutations(protein, filter_manager, count=False):
