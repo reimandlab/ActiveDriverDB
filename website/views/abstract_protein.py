@@ -72,7 +72,18 @@ class AbstractProteinView(FlaskView):
 
     def get_protein_and_manager(self, refseq, **kwargs):
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
-        return protein, self.filter_manager
+
+        if kwargs:
+            user_datasets = current_user.datasets_names_by_uri()
+            filter_manager = self.filter_class(
+                protein,
+                custom_datasets_ids=user_datasets.keys(),
+                **kwargs
+            )
+        else:
+            filter_manager = self.filter_manager
+
+        return protein, filter_manager
 
 
 def get_raw_mutations(protein, filter_manager, count=False):
