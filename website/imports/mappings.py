@@ -102,6 +102,7 @@ def import_genome_proteome_mappings(
 
     return broken_seq
 
+
 def import_aminoacid_mutation_refseq_mappings(
     proteins,
     mappings_dir='data/200616/all_variants/playground',
