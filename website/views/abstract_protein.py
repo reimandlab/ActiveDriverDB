@@ -23,14 +23,17 @@ class GracefulFilterManager(FilterManager):
         for filter_id, rejected_values in rejected_values_by_filters.items():
             filtered_property = filter_id.split('.')[-1].replace('_', ' ')
 
+            plural = len(rejected_values) > 1
+
             message = (
                 '<i>%s</i> %s not occur in <i>%s</i> for this protein '
-                'and therefore it was left out.'
+                'and therefore %s left out.'
                 %
                 (
                     ', '.join(rejected_values),
-                    'does' if len(rejected_values) == 1 else 'do',
-                    filtered_property
+                    'do' if plural else 'does',
+                    filtered_property,
+                    'they were' if plural else 'it was'
                 )
             )
 
