@@ -64,6 +64,12 @@ def entries_with_type(response, type_name):
 
 class TestSearchView(ViewTest):
 
+    def visit_returned_urls(self, response):
+        for entry in response.json['entries']:
+            if 'url' in entry:
+                r = self.client.get(entry['url'])
+                assert r.status_code == 200
+
     def test_search_proteins(self):
         from views.search import search_proteins
 
@@ -203,7 +209,9 @@ class TestSearchView(ViewTest):
         db.session.add_all([mut, p, g])
 
         def autocomplete(query):
-            return self.client.get('/search/autocomplete_all/?q=' + query)
+            r = self.client.get('/search/autocomplete_all/?q=' + query)
+            self.visit_returned_urls(r)
+            return r
 
         from database import bdb_refseq, bdb
         bdb_refseq['BR V6E'] = ['NM_007']  # required for mutation search
@@ -286,7 +294,10 @@ class TestSearchView(ViewTest):
         assert pathways[0]['name'] == 'amniotic stem cell differentiation'
 
         # Disease
-        disease_names = ['Cystic fibrosis', 'Polycystic kidney disease 2', 'Frontotemporal dementia']
+        disease_names = [
+            'Cystic fibrosis', 'Polycystic kidney disease 2',
+            'Frontotemporal dementia', 'Cataract, nuclear total'
+        ]
         diseases = {name: Disease(name=name) for name in disease_names}
         db.session.add_all(diseases.values())
 
@@ -294,6 +305,11 @@ class TestSearchView(ViewTest):
         cystic_matching = entries_with_type(response, 'disease')
         # both 'Cystic fibrosis' and PKD2 should match
         assert len(cystic_matching) == 2
+
+        # is comma containing disease name properly linked?
+        response = autocomplete('Cataract')
+        cataract = get_entry_and_check_type(response, 'disease')
+        assert cataract['name'] == 'Cataract, nuclear total'
 
         # Gene mutation in disease
 

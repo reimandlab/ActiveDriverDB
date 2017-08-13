@@ -666,7 +666,7 @@ def suggest_matching_diseases(q, count=3):
                 filters=(
                     'Mutation.sources:in:%s' % clinvar_list.mutation_source_name
                     +
-                    ';Mutation.disease_name:in:%s' % disease.name
+                    ';Mutation.disease_name:in:%s' % quote_if_needed(disease.name)
                 )
             )
         }
