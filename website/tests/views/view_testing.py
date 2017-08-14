@@ -48,6 +48,6 @@ class ViewTest(DatabaseTest):
     @staticmethod
     def assert_flashed(flashes, content=None, category=None):
         for flash in flashes:
-            if (not content or flash.content == content) and (not category or flash.category == category):
+            if (content is None or flash.content == content) and (category is None or flash.category == category):
                 return True
         raise AssertionError('No flash: %s, %s. Recent flashes: %s.' % (content, category, flashes))
