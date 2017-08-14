@@ -9,7 +9,6 @@ from flask_login import current_user
 
 from models import Mutation, Drug, Gene
 from helpers.filters import Filter
-from helpers.filters import FilterManager
 from helpers.widgets import FilterWidget
 from views.abstract_protein import AbstractProteinView, get_raw_mutations, GracefulFilterManager
 from ._global_filters import common_filters, filters_data_view
@@ -41,7 +40,7 @@ class NetworkViewFilters(GracefulFilterManager):
         ]
 
         super().__init__(filters)
-        self.update_from_request_gracefully(request)
+        self.update_from_request(request)
 
 
 def divide_muts_by_sites(mutations, sites):

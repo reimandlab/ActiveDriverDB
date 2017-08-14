@@ -1,3 +1,5 @@
+from warnings import warn
+
 import flask
 from flask import request, flash
 from flask_classful import FlaskView
@@ -10,7 +12,11 @@ from models import Protein, Mutation, UsersMutationsDataset
 
 class GracefulFilterManager(FilterManager):
 
-    def update_from_request_gracefully(self, request):
+    def update_from_request(self, request, **kwargs):
+        if kwargs:
+            warn(
+                UserWarning('GracefulFilterManager does not support raise_on_forbidden adjustment')
+             )
         # sometimes user comes with a disease which is not associated
         # with any of mutations in given protein. We do not want to
         # raise ValidationError for the user, but rather just skip
@@ -18,7 +24,7 @@ class GracefulFilterManager(FilterManager):
 
         # Example:
         # /protein/show/NM_001042351?filters=Mutation.disease_name:in:%27Cataract,%20nuclear%20total%27,G6PD%20SPLIT;Mutation.sources:in:ClinVar
-        skipped_filters, rejected_values_by_filters = self.update_from_request(request, raise_on_forbidden=False)
+        skipped_filters, rejected_values_by_filters = super().update_from_request(request, raise_on_forbidden=False)
 
         for filter_id, rejected_values in rejected_values_by_filters.items():
             filtered_property = filter_id.split('.')[-1].replace('_', ' ')

@@ -1,4 +1,3 @@
-from contextlib import contextmanager
 from urllib.parse import quote
 
 from view_testing import ViewTest
@@ -9,19 +8,14 @@ from models import PageMenuEntry
 from database import db
 
 
-class Flash:
-    def __init__(self, content, category):
-        self.content = content
-        self.category = category
-
-    def __repr__(self):
-        return '<Flash %s: %s>' % (self.category, self.content)
-
-
 class TestCMS(ViewTest):
 
     invalid_addresses = ['/test/', ' test/', 'test//', '/', '/test']
     weird_addresses = ['test/test', ' /test', ' test', 'test ']
+
+    def view_module(self):
+        from website.views import cms
+        return cms
 
     def login_as_admin(self):
         self.login(email='admin@domain.org', create=True, admin=True)
@@ -41,36 +35,6 @@ class TestCMS(ViewTest):
         if response.status_code != 401:
             return False
         return True
-
-    @contextmanager
-    def collect_flashes(self):
-        flashes = []
-        from website.views import cms
-
-        original_flash = cms.flash
-
-        def flash_collector(*args):
-            collected_flash = Flash(*args)
-            flashes.append(collected_flash)
-            original_flash(*args)
-
-        cms.flash = flash_collector
-
-        yield flashes
-
-        cms.flash = original_flash
-
-    @contextmanager
-    def assert_flashes(self, *args, **kwargs):
-        with self.collect_flashes() as flashes:
-            yield
-            assert self.assert_flashed(flashes, *args, **kwargs)
-
-    def assert_flashed(self, flashes, content=None, category=None):
-        for flash in flashes:
-            if (not content or flash.content == content) and (not category or flash.category == category):
-                return True
-        raise AssertionError('No flash: %s, %s. Recent flashes: %s.' % (content, category, flashes))
 
     def test_admin_only_protection(self):
         from views.cms import admin_only

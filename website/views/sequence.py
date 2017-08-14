@@ -112,7 +112,7 @@ class SequenceViewFilters(GracefulFilterManager):
 
         filters = common_filters(protein, **kwargs)
         super().__init__(filters)
-        self.update_from_request_gracefully(request)
+        self.update_from_request(request)
 
 
 def prepare_sites(protein, filter_manager):

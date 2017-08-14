@@ -59,8 +59,10 @@ class DatabaseTest(TestCase):
 
     def setUp(self):
         self.logged_user = None
+        self.add_csrf_to_default_post()
         db.create_all()
 
+    def add_csrf_to_default_post(self):
         old_client_post = self.client.post
 
         # this may be written with session_transaction instead,
