@@ -16,14 +16,23 @@ def create_test_protein():
     return p
 
 
+def create_test_kinase(name, refseq):
+
+    interactor = Kinase(name=name)
+
+    kinase_gene = Gene(name='Gene of ' + interactor.name)
+    kinase_protein = Protein(refseq=refseq, gene=kinase_gene)
+
+    interactor.protein = kinase_protein
+
+    return interactor
+
+
 def create_network():
     p = create_test_protein()
     cancer = Cancer(name='Ovarian', code='OV')
 
-    name = 'Kinase Y'
-    refseq = 'NM_0009'
-
-    kinase_gene = Gene(id=1, name='Gene of ' + name)
+    known_interactor_of_x = create_test_kinase('Kinase Y', 'NM_0009')
 
     kinase_mutation = Mutation(
         position=1,
@@ -31,19 +40,12 @@ def create_network():
         meta_MC3=[MC3Mutation(cancer=cancer)]
     )
 
-    interactor = Kinase(
-        name=name,
-        protein=Protein(
-            refseq=refseq,
-            gene=kinase_gene,
-            mutations=[kinase_mutation]
-        )
-    )
+    known_interactor_of_x.protein.mutations = [kinase_mutation]
 
     drug = Drug(
-        name='Drug targeting ' + name,
+        name='Drug targeting ' + known_interactor_of_x.name,
         drug_bank_id='DB01',
-        target_genes=[kinase_gene],
+        target_genes=[known_interactor_of_x.protein.gene],
         # by default only approved drugs are shown
         groups={DrugGroup(name='approved')}
     )
@@ -55,7 +57,7 @@ def create_network():
         position=1,
         type='phosphorylation',
         residue='T',
-        kinases=[interactor],
+        kinases=[known_interactor_of_x],
         kinase_groups=[group]
     )
     s2 = Site(
@@ -66,16 +68,25 @@ def create_network():
     )
     p.sites = [s, s2]
 
+    predicted_interactor = create_test_kinase('Kinase Z', 'NM_0002')
+
     protein_mutation = Mutation(
         position=2,
         alt='T',
         meta_MC3=[MC3Mutation(cancer=cancer)],
-        meta_MIMP=[MIMPMutation(pwm=name, effect=False, site=s, probability=0.1, position_in_motif=1)]
+        meta_MIMP=[
+            MIMPMutation(pwm=known_interactor_of_x.name, effect='loss', site=s, probability=0.1, position_in_motif=1),
+            MIMPMutation(pwm=predicted_interactor.name, effect='gain', site=s, probability=0.1, position_in_motif=1)
+        ]
     )
 
     p.mutations = [protein_mutation]
-    db.session.add_all([p, drug])
+    db.session.add_all([p, drug, predicted_interactor])
     db.session.commit()
+
+    # a new cancer was added, reload is necessary (this should not happen during normal app usage)
+    from website.views._global_filters import cached_queries
+    cached_queries.reload()
 
 
 class TestNetworkView(ViewTest):
@@ -101,17 +112,13 @@ class TestNetworkView(ViewTest):
             assert representation['protein']['name'] == 'Gene X'
 
     def test_representation(self):
-
         create_network()
-
-        from website.views._global_filters import cached_queries
-        cached_queries.reload()
 
         response = self.client.get('/network/representation/NM_0007')
         assert response.status_code == 200
         representation = response.json['network']
 
-        # test kinases
+        # test kinases: only interaction with Kinase Y is known (the one with Kinase X is predicted!)
         assert ['Kinase Y'] == representation['protein']['kinases']
         kinase = representation['kinases'][0]
         assert kinase['name'] == 'Kinase Y'
@@ -135,10 +142,23 @@ class TestNetworkView(ViewTest):
         response = self.client.get('/network/data/NM_0007')
         assert response.json['representation']['network'] == representation
 
-    def test_tsv_export(self):
-
+    def test_predicted_representation(self):
         create_network()
-        db.session.commit()
+
+        response = self.client.get('/network/predicted_representation/NM_0007')
+        assert response.status_code == 200
+        representation = response.json['network']
+
+        # there are two predicted interactions: with Kinase Y and with Kinase Z
+        assert set(representation['protein']['kinases']) == {'Kinase Y', 'Kinase Z'}
+
+        # there is only one site for which there are predictions
+        assert len(representation['sites']) == 1
+
+        assert representation['sites'][0]['impact'] == 'network-rewiring'
+
+    def test_tsv_export(self):
+        create_network()
 
         response = self.client.get('/network/download/NM_0007/tsv')
         content = response.data.decode('utf-8')

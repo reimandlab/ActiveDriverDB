@@ -1289,6 +1289,17 @@ class MIMPMutation(MutationDetails, BioModel):
     # gain = +1, loss = -1
     effect = db.Column(db.Boolean)
 
+    effect_map = {
+        'gain': 1,
+        'loss': 0
+    }
+
+    def __init__(self, **kwargs):
+        effect = kwargs.get('effect', None)
+        if effect in self.effect_map:
+            kwargs['effect'] = self.effect_map[effect]
+        super().__init__(**kwargs)
+
     @property
     def is_gain(self):
         return self.effect
