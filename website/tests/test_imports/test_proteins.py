@@ -1,7 +1,10 @@
+import gzip
+
 from imports.protein_data import get_proteins
 from imports.protein_data import proteins_and_genes
 from imports.protein_data import select_preferred_isoform
 from imports.protein_data import sequences as load_sequences
+from imports.protein_data import protein_summaries
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
 from database import db
@@ -35,10 +38,23 @@ MRLAGPLRIVVLVVSVGVTWIVVSILLGGPGSGFPRIQQLFTSPESSVTAAPRARKYKCGLPQPCPEEHLAFRVVSGAAN
 MTPGTQSPFFLLLLLTVLTATTAPKPATVVTGSGHASSTPGGEKETSATQRSSVPSSTEKNAIYKQGGFLGLSNIKFRPGSVVVQLTLAFREGTINVHDVETQFNQYKTEAASRYNLTISDVSVSDVPFPFSAQSGAGVPGWGIALLVLVCVLVALAIVYLIALAVCQCRRKNYGQLDIFPARDTYHPMSEYPTYHTHGRYVPPSSTDRSPYEKVSAGNGGSSLSYTNPAVAATSANL*\
 """
 
+# selection of data/refseq_summary.tsv.gz, trimmed for test purposes
+summaries_data = """\
+#mrnaAcc	completeness	summary
+NM_153081	Complete3End	
+NM_010410	Complete3End	This gene encodes a hypothalamic neuropeptide precursor [...]
+NR_132735	Complete3End	
+NM_182751	Complete3End	The protein encoded by this gene is one of the highly [...]
+NR_029833	Unknown	microRNAs (miRNAs) are short (20-24 nt) non-coding RNAs that are [...]
+"""
+
 
 class TestImport(DatabaseTest):
 
     def test_proteins_and_genes(self):
+
+        # reset cache
+        get_proteins(reload_cache=True)
 
         filename = make_named_temp_file(protein_data)
 
@@ -63,7 +79,6 @@ class TestImport(DatabaseTest):
             new_proteins = proteins_and_genes(path=second_filename)
 
         assert len(new_proteins) == 1
-        db.session.add_all(new_proteins)
 
         protein = list(new_proteins)[0]
         assert protein.refseq == 'NM_182962'
@@ -110,3 +125,18 @@ class TestImport(DatabaseTest):
         isoform = select_preferred_isoform(gene)
         assert isoform
         assert isoform.refseq == preferred_refseq
+
+    def test_protein_summaries(self):
+
+        filename = make_named_temp_file(summaries_data, mode='wt', opener=gzip.open)
+
+        proteins = get_proteins(reload_cache=True)
+
+        with self.app.app_context():
+            for refseq in ['NM_010410', 'NM_182751']:
+                proteins[refseq] = Protein(refseq=refseq)
+
+            protein_summaries(path=filename)
+
+        assert proteins['NM_010410'].summary == 'This gene encodes a hypothalamic neuropeptide precursor [...]'
+        assert proteins['NM_182751'].summary == 'The protein encoded by this gene is one of the highly [...]'
