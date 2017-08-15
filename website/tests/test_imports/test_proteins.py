@@ -5,6 +5,7 @@ from imports.protein_data import proteins_and_genes
 from imports.protein_data import select_preferred_isoform
 from imports.protein_data import sequences as load_sequences
 from imports.protein_data import disorder as load_disorder
+from imports.protein_data import full_gene_names as load_full_gene_names
 from imports.protein_data import protein_summaries
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
@@ -57,6 +58,14 @@ NM_010410	Complete3End	This gene encodes a hypothalamic neuropeptide precursor [
 NR_132735	Complete3End	
 NM_182751	Complete3End	The protein encoded by this gene is one of the highly [...]
 NR_029833	Unknown	microRNAs (miRNAs) are short (20-24 nt) non-coding RNAs that are [...]
+"""
+
+# one gene in db, one gene not in db, one gene without full name
+full_gene_names = """\
+#tax_id	GeneID	Symbol	LocusTag	Synonyms	dbXrefs	chromosome	map_location	description	type_of_gene	Symbol_from_nomenclature_authority	Full_name_from_nomenclature_authority	Nomenclature_status	Other_designations	Modification_date	Feature_type
+9606	7157	TP53	-	BCC7|LFS1|P53|TRP53	MIM:191170|HGNC:HGNC:11998|Ensembl:ENSG00000141510|Vega:OTTHUMG00000162125	17	17p13.1	tumor protein p53	protein-coding	TP53	tumor protein p53	O	cellular tumor antigen p53|antigen NY-CO-13|mutant tumor protein 53|p53 tumor suppressor|phosphoprotein p53|transformation-related protein 53|tumor protein 53|tumor supressor p53	20170710	-
+9606	1	A1BG	-	A1B|ABG|GAB|HYST2477	MIM:138670|HGNC:HGNC:5|Ensembl:ENSG00000121410|Vega:OTTHUMG00000183507	19	19q13.43	alpha-1-B glycoprotein	protein-coding	A1BG	alpha-1-B glycoprotein	O	alpha-1B-glycoprotein|HEL-S-163pA|epididymis secretory sperm binding protein Li 163pA	20170709	-
+9606	628	BEVI	-	-	MIM:109180	6	-	baboon M7 virus integration site	unknown	-	-	-	Baboon M7 virus replication	20170408	-
 """
 
 
@@ -165,3 +174,14 @@ class TestImport(DatabaseTest):
 
         assert proteins['NM_010410'].summary == 'This gene encodes a hypothalamic neuropeptide precursor [...]'
         assert proteins['NM_182751'].summary == 'The protein encoded by this gene is one of the highly [...]'
+
+    def test_gene_full_name(self):
+
+        gene = Gene(name='TP53', entrez_id=7157)
+        db.session.add(gene)
+
+        filename = make_named_temp_file(full_gene_names, mode='wt', opener=gzip.open)
+
+        load_full_gene_names(filename)
+
+        assert gene.full_name == 'tumor protein p53'
