@@ -38,8 +38,6 @@ def import_genome_proteome_mappings(
         assert chrom in chromosomes
         ref = ref.rstrip()
 
-        snv = make_snv_key(chrom, pos, ref, alt)
-
         # new Coding Sequence Variants to be added to those already
         # mapped from given `snv` (Single Nucleotide Variation)
         new_variants = set()
@@ -84,6 +82,8 @@ def import_genome_proteome_mappings(
                 continue
 
             is_ptm_related = protein.has_sites_in_range(aa_pos - 7, aa_pos + 7)
+
+            snv = make_snv_key(chrom, pos, cdna_ref, cdna_alt)
 
             # add new item, emulating set update
             item = encode_csv(
