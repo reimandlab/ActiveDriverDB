@@ -103,7 +103,7 @@
           <h3 class="panel-title">Clinical Information</h3>
         </div>
         <div class="panel-body">
-          <h4>Cancer types: <span class="source">(MC3)</span></h4>
+          <h4>Cancer types: <span class="source">(TCGA MC3)</span></h4>
           <div class="clinical-data">
             {% if mutation.meta_MC3 %}
               {{ mutation.meta_MC3.summary() | join(', ') }}
