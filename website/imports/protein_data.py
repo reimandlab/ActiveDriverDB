@@ -571,7 +571,7 @@ def domains(path='data/biomart_protein_domains_20072016.txt'):
             # - at least 75% of common coverage for shorter occurrence of domain
             (
                 (min(domain.end, end) - max(domain.start, start))
-                / max(len(domain), end - start)
+                / min(len(domain), end - start)
                 > 0.75
             )
         ]

@@ -85,11 +85,9 @@ class TestImport(DatabaseTest):
 
     def test_sequences(self):
 
-        refseqs = ('NM_002749', 'NM_021806', 'NM_001204289')
-
         proteins = get_proteins(reload_cache=True)
 
-        for refseq in refseqs:
+        for refseq in ('NM_002749', 'NM_021806', 'NM_001204289'):
             proteins[refseq] = Protein(refseq=refseq)
 
         filename = make_named_temp_file(fasta_sequences)
