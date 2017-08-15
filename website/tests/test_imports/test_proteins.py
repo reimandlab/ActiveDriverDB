@@ -1,6 +1,7 @@
 import gzip
 
 from imports.protein_data import get_proteins
+from imports.protein_data import clean_from_wrong_proteins
 from imports.protein_data import proteins_and_genes
 from imports.protein_data import select_preferred_isoform
 from imports.protein_data import sequences as load_sequences
@@ -185,3 +186,36 @@ class TestImport(DatabaseTest):
         load_full_gene_names(filename)
 
         assert gene.full_name == 'tumor protein p53'
+
+    def test_remove_unwanted_proteins(self):
+
+        sequences = {
+            'NM_1': 'MAKS*',   # all right
+            'NM_2': 'MKFR',    # lack of stop codon
+            'NM_3': 'MK*A',    # premature stop codon
+        }
+
+        proteins = create_test_proteins(['NM_1', 'NM_2', 'NM_3'])
+
+        gene = Gene(
+            isoforms=list(proteins.values()),
+            preferred_isoform=proteins['NM_3']
+        )
+
+        db.session.add_all(proteins.values())
+        db.session.add(gene)
+
+        for fake_refseq, protein in proteins.items():
+            protein.sequence = sequences[fake_refseq]
+
+        clean_from_wrong_proteins()
+
+        # NM_2 and NM_3 should be removed, NM_1 should still be there
+        assert len(proteins) == 1
+        assert 'NM_1' in proteins
+
+        for refseq in ['NM_2', 'NM_3']:
+            assert refseq not in proteins
+
+        # NM_1 should become a preferred isoform of gene (in place of NM_3)
+        assert gene.preferred_refseq == 'NM_1'
