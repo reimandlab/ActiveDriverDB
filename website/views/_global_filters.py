@@ -82,7 +82,7 @@ class CachedQueries:
         """
         self.drug_groups = sorted([group.name for group in DrugGroup.query])
 
-        self.all_disease_names = [disease.name for disease in Disease.query]
+        self.all_disease_names = sorted([disease.name for disease in Disease.query], key=str.lower)
         self.all_cancer_codes_mc3 = [cancer.code for cancer in Cancer.query]
         self.all_cancer_names = {
             cancer.code: '%s (%s)' % (cancer.name, cancer.code)
