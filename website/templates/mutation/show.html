@@ -193,7 +193,7 @@
 
                     {% if effect_count > 1 %}
                       <div>
-                        {{ weaker_predictions(annotations_with_effect, effect_count) | safe }}
+                        {{ weaker_predictions(annotations_with_effect, effect_count, effect) | safe }}
                       </div>
                     {% endif %}
                     </div>

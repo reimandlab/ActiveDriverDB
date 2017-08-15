@@ -909,7 +909,7 @@ class MIMPMetaManager(UserList):
         losses = []
 
         for mimp in self.data:
-            if mimp.effect:
+            if mimp.is_gain:
                 gains.append(mimp)
             else:
                 losses.append(mimp)
@@ -1313,7 +1313,7 @@ class MIMPMutation(MutationDetails, BioModel):
 
     def to_json(self, filter=lambda x: x):
         return {
-            'effect': 'gain' if self.effect else 'loss',
+            'effect': 'gain' if self.is_gain else 'loss',
             'pwm': self.pwm,
             'pos_in_motif': self.position_in_motif,
             'pwm_family': self.pwm_family,

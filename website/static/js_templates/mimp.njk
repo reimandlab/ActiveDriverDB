@@ -8,7 +8,7 @@
   </ul>
 {% endmacro %}
 
-{% macro weaker_predictions(annotations_with_effect, effect_count, header) %}
+{% macro weaker_predictions(annotations_with_effect, effect_count, effect, header) %}
   {% if header %}<h4>{% endif %}
   {% set plural = effect_count > 2 %}
   There {{ 'are' if plural else 'is' }} {{ effect_count - 1 }} other predicted
@@ -40,7 +40,7 @@
       {{ represent_mimp(best) }}
       {% if effect_count > 1 %}
       <ul>
-        <li>{{ weaker_predictions(annotations_with_effect, effect_count) }}
+        <li>{{ weaker_predictions(annotations_with_effect, effect_count, effect) }}
       </ul>
       {% endif %}
     {% endif %}
