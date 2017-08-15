@@ -4,6 +4,7 @@ from imports.protein_data import get_proteins
 from imports.protein_data import proteins_and_genes
 from imports.protein_data import select_preferred_isoform
 from imports.protein_data import sequences as load_sequences
+from imports.protein_data import disorder as load_disorder
 from imports.protein_data import protein_summaries
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
@@ -38,6 +39,16 @@ MRLAGPLRIVVLVVSVGVTWIVVSILLGGPGSGFPRIQQLFTSPESSVTAAPRARKYKCGLPQPCPEEHLAFRVVSGAAN
 MTPGTQSPFFLLLLLTVLTATTAPKPATVVTGSGHASSTPGGEKETSATQRSSVPSSTEKNAIYKQGGFLGLSNIKFRPGSVVVQLTLAFREGTINVHDVETQFNQYKTEAASRYNLTISDVSVSDVPFPFSAQSGAGVPGWGIALLVLVCVLVALAIVYLIALAVCQCRRKNYGQLDIFPARDTYHPMSEYPTYHTHGRYVPPSSTDRSPYEKVSAGNGGSSLSYTNPAVAATSANL*\
 """
 
+# excerpt from data/all_RefGene_disorder.fa
+disorder_data = """\
+>NM_002749
+111111111111111111111111111111110000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000000
+>NM_000600
+111111111111010000000000000000111111111111111000000000000000
+00000000000000000000000000000000
+"""
+
 # selection of data/refseq_summary.tsv.gz, trimmed for test purposes
 summaries_data = """\
 #mrnaAcc	completeness	summary
@@ -49,12 +60,21 @@ NR_029833	Unknown	microRNAs (miRNAs) are short (20-24 nt) non-coding RNAs that a
 """
 
 
+def create_test_proteins(refseqs):
+    # reset cache
+    proteins = get_proteins(reload_cache=True)
+
+    for refseq in refseqs:
+        proteins[refseq] = Protein(refseq=refseq)
+
+    return proteins
+
+
 class TestImport(DatabaseTest):
 
     def test_proteins_and_genes(self):
 
-        # reset cache
-        get_proteins(reload_cache=True)
+        create_test_proteins([])
 
         filename = make_named_temp_file(protein_data)
 
@@ -85,10 +105,7 @@ class TestImport(DatabaseTest):
 
     def test_sequences(self):
 
-        proteins = get_proteins(reload_cache=True)
-
-        for refseq in ('NM_002749', 'NM_021806', 'NM_001204289'):
-            proteins[refseq] = Protein(refseq=refseq)
+        proteins = create_test_proteins(['NM_002749', 'NM_021806', 'NM_001204289'])
 
         filename = make_named_temp_file(fasta_sequences)
 
@@ -98,6 +115,18 @@ class TestImport(DatabaseTest):
         protein = proteins['NM_021806']
         assert protein.sequence == 'MRLAGPLRIVVLVVSVGVTWIVVSILLGGPGSGFPRIQQLFTSPESSVTAAPRARKYKCGLPQPCPEEHLAFRVVSGAANVIGPKICLEDKMLMSSVKDNVGRGLNIALVNGVSGELIEARAFDMWAGDVNDLLKFIRPLHEGTLVFVASYDDPATKMNEETRKLFSELGSRNAKELAFRDSWVFVGAKGVQNKSPFEQHVKNSKHSNKYEGWPEALEMEGCIPRRSTAS*'
         assert protein.length == len('MRLAGPLRIVVLVVSVGVTWIVVSILLGGPGSGFPRIQQLFTSPESSVTAAPRARKYKCGLPQPCPEEHLAFRVVSGAANVIGPKICLEDKMLMSSVKDNVGRGLNIALVNGVSGELIEARAFDMWAGDVNDLLKFIRPLHEGTLVFVASYDDPATKMNEETRKLFSELGSRNAKELAFRDSWVFVGAKGVQNKSPFEQHVKNSKHSNKYEGWPEALEMEGCIPRRSTAS')
+
+    def test_disorder(self):
+
+        proteins = create_test_proteins(['NM_002749', 'NM_000600'])
+
+        filename = make_named_temp_file(disorder_data)
+
+        with self.app.app_context():
+            load_disorder(filename)
+
+        assert proteins['NM_002749'].disorder_map == '111111111111111111111111111111110000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+        assert proteins['NM_000600'].disorder_map == '11111111111101000000000000000011111111111111100000000000000000000000000000000000000000000000'
 
     def test_select_preferred_isoform(self):
         proteins_data = [
@@ -126,13 +155,11 @@ class TestImport(DatabaseTest):
 
     def test_protein_summaries(self):
 
+        proteins = create_test_proteins(['NM_010410', 'NM_182751'])
+
         filename = make_named_temp_file(summaries_data, mode='wt', opener=gzip.open)
 
-        proteins = get_proteins(reload_cache=True)
-
         with self.app.app_context():
-            for refseq in ['NM_010410', 'NM_182751']:
-                proteins[refseq] = Protein(refseq=refseq)
 
             protein_summaries(path=filename)
 

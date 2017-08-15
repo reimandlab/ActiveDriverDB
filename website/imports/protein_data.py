@@ -3,7 +3,7 @@ from collections import OrderedDict, defaultdict, namedtuple
 from tqdm import tqdm
 from database import db, yield_objects
 from database import get_or_create
-from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file, fast_gzip_read
+from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
 from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType
@@ -172,22 +172,22 @@ def sequences(path='data/all_RefGene_proteins.fa'):
 
     overwritten = 0
     new_count = 0
-    refseq = None
 
-    def parser(line):
-        nonlocal refseq, overwritten, new_count
-        if line.startswith('>'):
-            refseq = line[1:].rstrip()
-            assert refseq in proteins
-            if proteins[refseq].sequence:
-                proteins[refseq].sequence = ''
-                overwritten += 1
-            else:
-                new_count += 1
+    def on_header(refseq):
+        nonlocal overwritten, new_count
+
+        assert refseq in proteins
+
+        if proteins[refseq].sequence:
+            proteins[refseq].sequence = ''
+            overwritten += 1
         else:
-            proteins[refseq].sequence += line.rstrip()
+            new_count += 1
 
-    parse_fasta_file(path, parser)
+    def on_sequence(refseq, line):
+        proteins[refseq].sequence += line
+
+    parse_fasta_file(path, on_header, on_sequence)
 
     print('%s sequences overwritten' % overwritten)
     print('%s new sequences saved' % new_count)
@@ -474,17 +474,13 @@ def disorder(path='data/all_RefGene_disorder.fa'):
     print('Loading disorder data:')
     proteins = get_proteins()
 
-    name = None
+    def on_header(header):
+        assert header in proteins
 
-    def parser(line):
-        nonlocal name
-        if line.startswith('>'):
-            name = line[1:].rstrip()
-            assert name in proteins
-        else:
-            proteins[name].disorder_map += line.rstrip()
+    def on_sequence(name, line):
+        proteins[name].disorder_map += line
 
-    parse_fasta_file(path, parser)
+    parse_fasta_file(path, on_header, on_sequence)
 
     for protein in proteins.values():
         assert len(protein.sequence) == protein.length
@@ -664,7 +660,7 @@ def domains_hierarchy(path='data/ParentChildTreeFile.txt'):
 
 @importer
 def domains_types(path='data/interpro.xml.gz'):
-    import xml.etree.ElementTree as ElementTree
+    from xml.etree import ElementTree
     import gzip
 
     print('Loading extended InterPro annotations:')

@@ -165,16 +165,23 @@ def parse_text_file(filename, parser, file_header=None, file_opener=open):
             parser(line)
 
 
-def parse_fasta_file(filename, parser, file_opener=open):
+def parse_fasta_file(filename, on_header, on_sequence, file_opener=open):
     """Utility function wrapping Fasta file parser.
 
     For each line parser will be called.
 
     Progress bar is embedded.
     """
+    header = None
+
     with file_opener(filename) as f:
         for line in tqdm(f, total=count_lines(f), unit=' lines'):
-            parser(line)
+            line = line.rstrip()
+            if line.startswith('>'):
+                header = line[1:]
+                on_header(header)
+            else:
+                on_sequence(header, line)
 
 
 def chunked_list(full_list, chunk_size=10000):
