@@ -40,7 +40,6 @@ def import_genome_proteome_mappings(
 
         # new Coding Sequence Variants to be added to those already
         # mapped from given `snv` (Single Nucleotide Variation)
-        new_variants = set()
 
         for dest in filter(bool, prot.split(',')):
             name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
@@ -96,9 +95,7 @@ def import_genome_proteome_mappings(
                 is_ptm_related
             )
 
-            new_variants.add(item)
-
-        bdb.update(snv, new_variants)
+            bdb.add(snv, item)
 
     return broken_seq
 
