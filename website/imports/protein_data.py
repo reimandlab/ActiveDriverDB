@@ -902,6 +902,12 @@ def kinase_classification(path='data/regphos_kinome_scraped_clean.txt'):
 
 @importer
 def clean_from_wrong_proteins(soft=True):
+    """Removes proteins with premature or lacking stop codon.
+
+    Args:
+        soft: use if the faulty proteins were not committed yet (expunge instead of delete)
+
+    """
     print('Removing proteins with misplaced stop codons:')
     from database import remove
 
