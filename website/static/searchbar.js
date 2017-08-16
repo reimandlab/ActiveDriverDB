@@ -136,6 +136,11 @@ var SearchBar = function ()
                     // pressing enter is equivalent to clicking on a first result,
                     // as requested in #124
                     results_div.find('.list-group-item').first().get(0).click()
+
+                    // blur the input so user will need to click on it to type
+                    // (and it will show up again in case if it was hidden due to click() action)
+                    input.blur()
+
                     return false
                 }
             })
