@@ -15,6 +15,7 @@ from flask_login import current_user
 from Levenshtein import distance
 from sqlalchemy.orm.exc import NoResultFound
 
+from helpers.bioinf import complement
 from models import Protein, Pathway, Cancer, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData
 from models import Gene
 from models import Mutation
@@ -856,6 +857,12 @@ def autocomplete_mutation(query, limit=None):
 
         try:
             items = bdb.get_genomic_muts(chrom, pos, ref, alt)
+
+            # maybe an interesting mutation is located on the other strand
+            if not items:
+                query = 'Complement of ' + query
+                items = bdb.get_genomic_muts(chrom, pos, complement(ref), complement(alt))
+
             items = prepare_items(items, query, 'nucleotide mutation')
         except ValueError:
             return json_message(
