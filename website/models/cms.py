@@ -10,7 +10,7 @@ from sqlalchemy.orm import validates
 from werkzeug.utils import cached_property
 
 import security
-from database import db, utc_now, utc_days_after
+from database import db, utc_now, utc_days_after, update
 from exceptions import ValidationError
 from models import Model
 
@@ -118,6 +118,10 @@ class UsersMutationsDataset(CMSModel):
         super().__init__(*args, **kwargs)
         self.data = data
 
+    @classmethod
+    def by_uri(cls, uri):
+        return cls.query.filter_by(uri=uri).one()
+
     @property
     def data(self):
         if not hasattr(self, '_data'):
@@ -130,6 +134,11 @@ class UsersMutationsDataset(CMSModel):
         self._data = data
         uri = self._save_to_file(data, self.uri)
         self.uri = uri
+
+    def remove(self):
+        os.remove(self._path)
+        update(self, store_until=utc_now())
+        del self._data
 
     def _save_to_file(self, data, uri=None):
         """Saves data to a file identified by uri argument.
@@ -166,15 +175,19 @@ class UsersMutationsDataset(CMSModel):
 
         return uri_code
 
-    def _load_from_file(self):
+    @property
+    def _path(self):
         from urllib.parse import unquote
 
         file_name = unquote(self.uri) + '.db'
-        path = os.path.join(self.mutations_dir, file_name)
+        return os.path.join(self.mutations_dir, file_name)
 
-        if os.path.exists(path):
-            with open(path, 'rb') as f:
-                data = pickle.load(f)
+    def _load_from_file(self):
+
+        assert os.path.exists(self.path)
+
+        with open(self.path, 'rb') as f:
+            data = pickle.load(f)
         return data
 
     @hybrid_property

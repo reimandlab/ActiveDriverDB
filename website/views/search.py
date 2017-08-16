@@ -2,7 +2,7 @@ import json
 from operator import itemgetter
 from urllib.parse import unquote
 
-from flask import make_response, redirect
+from flask import make_response, redirect, abort
 from flask import render_template as template
 from flask import request
 from flask import jsonify
@@ -330,9 +330,7 @@ class SearchView(FlaskView):
 
         filter_manager = SearchViewFilters()
 
-        dataset = UsersMutationsDataset.query.filter_by(
-            uri=uri
-        ).one()
+        dataset = UsersMutationsDataset.by_uri(uri)
 
         if dataset.owner and dataset.owner != current_user:
             current_app.login_manager.unauthorized()
@@ -348,6 +346,22 @@ class SearchView(FlaskView):
             dataset=dataset
         ))
         return response
+
+    @route('remove_saved/<uri>', methods=['DELETE'])
+    def remove_user_mutations(self, uri):
+        dataset = UsersMutationsDataset.by_uri(uri)
+
+        if not dataset.owner or dataset.owner != current_user:
+            current_app.login_manager.unauthorized()
+
+        try:
+            dataset.remove()
+        except Exception as e:
+            print('Failed to remove dataset identified %s' % uri)
+            print(e)
+            raise abort(500)
+
+        return '', 200
 
     @route('/mutations', methods=['POST', 'GET'])
     def mutations(self):

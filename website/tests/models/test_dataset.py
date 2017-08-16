@@ -45,6 +45,7 @@ class DatasetTest(ModelTest):
         d = UsersMutationsDataset.query.filter_by(uri=public_id).one()
 
         assert d == dataset
+        assert UsersMutationsDataset.by_uri(public_id) == dataset
 
         assert dataset.data
         assert dataset.query_size == 3
@@ -70,3 +71,13 @@ class DatasetTest(ModelTest):
 
         u = User.query.filter_by(email='user@domain').one()
         assert u.datasets == []
+
+    def test_remove(self):
+        user = User('user@domain', 'password')
+
+        dataset = create_test_dataset(owner=user)
+
+        dataset.remove()
+
+        assert dataset.is_expired
+        assert dataset.data is None
