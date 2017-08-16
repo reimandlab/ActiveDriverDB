@@ -243,7 +243,7 @@ class TestSearchView(ViewTest):
         # is the search falling back to the other strand?
         response = autocomplete('chr1 10000 A G')
         entry = get_entry_and_check_type(response, 'nucleotide mutation')
-        assert entry and entry['input'] == 'Complement of CHR1 10000 A G'
+        assert entry and entry['input'] == 'complement of CHR1 10000 A G'
 
         prompt = 'Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format'
 
