@@ -32,7 +32,7 @@
 {% block body %}
 
   {% set login_or_profile %}
-    {% if current_user %}
+    {% if current_user.is_authenticated %}
       <li><a href="{{ url_for('ContentManagementSystem:login') }}">Login</a>
     {% else %}
       <li><a href="{{ url_for('ContentManagementSystem:my_datasets') }}">My datasets</a>
