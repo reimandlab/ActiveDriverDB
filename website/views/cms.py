@@ -189,7 +189,6 @@ def send_message(**kwargs):
 
     try:
         mail.send(msg)
-        flash('Message sent!', 'success')
         return True
     except ConnectionRefusedError:
         flash(
@@ -346,12 +345,15 @@ class ContentManagementSystem(FlaskView):
             flash('Provided email address is not correct', 'warning')
             return redirection
 
-        send_message(
+        success = send_message(
             subject=subject,
             body=content,
             recipients=current_app.config['CONTACT_LIST'],
             reply_to='{0} <{1}>'.format(name, email),
         )
+
+        if success:
+            flash('Message sent!', 'success')
 
         return redirection
 
