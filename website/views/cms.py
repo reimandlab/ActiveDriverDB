@@ -14,6 +14,7 @@ from flask import Markup
 from flask import abort
 from flask_classful import FlaskView
 from flask_classful import route
+from flask_limiter.util import get_remote_address
 from flask_login import current_user
 from flask_login import login_user
 from flask_login import logout_user
@@ -32,7 +33,7 @@ from models import Setting
 from models import User
 from database import db
 from database import get_or_create
-from app import login_manager, recaptcha
+from app import login_manager, recaptcha, limiter
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import IntegrityError, OperationalError
@@ -132,6 +133,10 @@ def get_page(address, operation=''):
             'danger'
         )
     return None
+
+
+def get_form_email_or_ip():
+    return request.form.get('email', get_remote_address())
 
 
 def update_obj_with_dict(instance, dictionary):
@@ -325,6 +330,7 @@ class ContentManagementSystem(FlaskView):
         return self._template('page', page=page)
 
     @route('/send_message/', methods=['POST'])
+    @limiter.limit('60/day,30/hour,5/minute')
     def send_message(self):
         go_to = request.form.get('after_success', '/')
         redirection = redirect(go_to)
@@ -645,6 +651,7 @@ class ContentManagementSystem(FlaskView):
         return redirect(url_for('ContentManagementSystem:list_pages'))
 
     @route('/login/', methods=['GET', 'POST'])
+    @limiter.limit('200/day,100/hour,20/minute', key_func=get_form_email_or_ip, per_method=True)
     def login(self):
         if request.method == 'GET':
             return self._template('login')
@@ -688,6 +695,7 @@ class ContentManagementSystem(FlaskView):
             raise abort(404)
 
     @route('/register/', methods=['GET', 'POST'])
+    @limiter.limit('50/hour,10/minute')
     def sign_up(self):
         if request.method == 'GET':
             return self._template('register')

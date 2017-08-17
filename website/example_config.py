@@ -50,3 +50,8 @@ USE_LEVENSTHEIN_MYSQL_UDF = False
 RECAPTCHA_ENABLED = False
 RECAPTCHA_SITE_KEY = 'put_your_public_key_here'
 RECAPTCHA_SECRET_KEY = 'put_your_private_key_here'
+
+# - Request limiting: as we do not want to be flooded with requests here are default the requests limits (per IP)
+RATELIMIT_ENABLED = True
+RATELIMIT_DEFAULT = '500/hour,20/minute'
+RATELIMIT_STRATEGY = 'fixed-window-elastic-expiry'

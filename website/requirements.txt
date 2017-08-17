@@ -13,3 +13,4 @@ Flask-Mail
 jinja2_pluralize
 yuicompressor
 flask-recaptcha
+flask-limiter

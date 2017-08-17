@@ -3,6 +3,9 @@ from flask import Flask
 from flask_assets import Environment
 from flask_login import LoginManager
 from flask_recaptcha import ReCaptcha
+from flask_mail import Mail
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 import csrf
 from database import db, get_engine
@@ -10,11 +13,12 @@ from database import bdb
 from database import bdb_refseq
 from assets import bundles
 from assets import DependencyManager
-from flask_mail import Mail
+
 
 login_manager = LoginManager()
 mail = Mail()
 recaptcha = ReCaptcha()
+limiter = Limiter(key_func=get_remote_address)
 
 
 def create_app(config_filename='config.py', config_override={}):
@@ -41,6 +45,9 @@ def create_app(config_filename='config.py', config_override={}):
 
     # ReCaptcha
     recaptcha.init_app(app)
+
+    # Limiter
+    limiter.init_app(app)
 
     #
     # Error logging
