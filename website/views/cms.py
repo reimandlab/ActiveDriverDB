@@ -712,7 +712,7 @@ class ContentManagementSystem(FlaskView):
                 '<p>{email_sign_up_message}</p>'
             ).format(
                 user=new_user,
-                email_sign_up_message=get_system_setting('email_sign_up_message') or '',
+                email_sign_up_message=self._system_setting('email_sign_up_message') or '',
                 activation_link=url_for(
                     'ContentManagementSystem:activate_account',
                     token=new_user.verification_token,
