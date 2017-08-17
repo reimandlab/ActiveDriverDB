@@ -362,7 +362,9 @@ class TestCMS(ViewTest):
         assert not user.authenticate(data['password'])
 
         parsed_url = urlparse(activation_link)
-        path = urlunparse(('', '', *parsed_url[2:]))
+        relative_url = ['', '']
+        relative_url.extend(parsed_url[2:])
+        path = urlunparse(relative_url)
 
         # invalid token should not activate the account
         replaced_token_path = re.sub('token=.*?(&|$)', 'token=some_dummy_token&', path)
