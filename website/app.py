@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from flask_assets import Environment
 from flask_login import LoginManager
+from flask_recaptcha import ReCaptcha
 
 import csrf
 from database import db, get_engine
@@ -13,6 +14,7 @@ from flask_mail import Mail
 
 login_manager = LoginManager()
 mail = Mail()
+recaptcha = ReCaptcha()
 
 
 def create_app(config_filename='config.py', config_override={}):
@@ -36,6 +38,9 @@ def create_app(config_filename='config.py', config_override={}):
 
     for key, value in config_override.items():
         app.config[key] = value
+
+    # ReCaptcha
+    recaptcha.init_app(app)
 
     #
     # Error logging

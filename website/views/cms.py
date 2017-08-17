@@ -32,7 +32,7 @@ from models import Setting
 from models import User
 from database import db
 from database import get_or_create
-from app import login_manager
+from app import login_manager, recaptcha
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import IntegrityError, OperationalError
@@ -685,6 +685,10 @@ class ContentManagementSystem(FlaskView):
     @route('/register/', methods=['GET', 'POST'])
     def sign_up(self):
         if request.method == 'GET':
+            return self._template('register')
+
+        if not recaptcha.verify():
+            flash('ReCaptcha verification failed. Please contact use if the message reappears.', 'danger')
             return self._template('register')
 
         consent = request.form.get('consent', False)
