@@ -31,8 +31,9 @@
 
 {% block body %}
 
+  {% set user = current_user %}
   {% set login_or_profile %}
-    {% if current_user.is_authenticated %}
+    {% if not user.is_authenticated %}
       <li><a href="{{ url_for('ContentManagementSystem:login') }}">Login</a>
     {% else %}
       <li><a href="{{ url_for('ContentManagementSystem:my_datasets') }}">My datasets</a>
@@ -40,7 +41,7 @@
   {% endset %}
 
   {% with without_searchbar = True, additional_menu_items=login_or_profile %}
-    {% include "navbar.html" %}
+    {% include "navbar.html" with context %}
   {% endwith %}
 
   <div class="front-page-content page-content main-container">
