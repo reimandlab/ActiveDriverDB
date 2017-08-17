@@ -706,7 +706,7 @@ class ContentManagementSystem(FlaskView):
 
             html_message = (
                 'Welcome {user.username},\n\n'
-                '<p>Thank you for your interest in ActiveDriverDB.'
+                '<p>Thank you for your interest in ActiveDriverDB.<br>\n'
                 'Please use the following link to activate your account:</p>\n\n'
                 '<p><a href="{activation_link}" title="Activate your account">{activation_link}</a></p>\n\n'
                 '<p>{email_sign_up_message}</p>'

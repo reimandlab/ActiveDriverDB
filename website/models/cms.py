@@ -439,7 +439,7 @@ class Menu(CMSModel):
 class Setting(CMSModel):
 
     name = db.Column(db.String(256), nullable=False, unique=True, index=True)
-    value = db.Column(db.String(256))
+    value = db.Column(db.Text())
 
     @property
     def int_value(self):
