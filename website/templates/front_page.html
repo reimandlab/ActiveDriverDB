@@ -31,7 +31,15 @@
 
 {% block body %}
 
-  {% with without_searchbar = True %}
+  {% set login_or_profile %}
+    {% if current_user %}
+      <li><a href="{{ url_for('ContentManagementSystem:login') }}">Login</a>
+    {% else %}
+      <li><a href="{{ url_for('ContentManagementSystem:my_datasets') }}">My datasets</a>
+    {% endif %}
+  {% endset %}
+
+  {% with without_searchbar = True, additional_menu_items=login_or_profile %}
     {% include "navbar.html" %}
   {% endwith %}
 
