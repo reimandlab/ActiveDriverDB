@@ -17,6 +17,7 @@ from flask_login import current_user
 from flask_login import login_user
 from flask_login import logout_user
 from flask_login import login_required
+from flask_mail import Message
 from jinja2 import TemplateSyntaxError
 from flask import render_template_string
 from werkzeug.utils import secure_filename
@@ -38,9 +39,19 @@ from statistics import STATISTICS
 from exceptions import ValidationError
 
 
-BUILT_IN_SETTINGS = ['website_name', 'is_maintenance_mode_active', 'maintenace_text']
+BUILT_IN_SETTINGS = ['website_name', 'is_maintenance_mode_active', 'maintenace_text', 'email_sign_up_message']
 
 MENU_SLOT_NAMES = ['footer_menu', 'top_menu', 'side_menu']
+
+SIGNED_UP_OR_ALREADY_USER_MSG = (
+    '<b>Your account has been created successfully</b><br>'
+    '<p>(Unless you already created an account using this email address: '
+    'in such a case your existing account remains intact.<br>'
+    'We show the same message for either case in order to protect your privacy and avoid email disclosure)</p>'
+    '<p><strong>We sent you a verification email. '
+    'Please use a hyperlink included in the email message to activate your account.</strong></p>'
+)
+ACCOUNT_ACTIVATED_MESSAGE = 'Your account has been successfully activated. You can login in using the form below:'
 
 
 def create_contact_form():
@@ -164,6 +175,28 @@ def get_system_setting(name):
 
 def thousand_separated_number(x):
     return '{:,}'.format(int(x))
+
+
+def send_message(**kwargs):
+    from app import mail
+
+    msg = Message(
+        subject='[ActiveDriverDB] ' + kwargs.pop('subject', 'Message'),
+        sender='ActiveDriverDB <contact-bot@activedriverdb.org>',
+        **kwargs
+    )
+
+    try:
+        mail.send(msg)
+        flash('Message sent!', 'success')
+        return True
+    except ConnectionRefusedError:
+        flash(
+            'Could not sent the message. '
+            'Email server refuses connection. '
+            'We apologize for the inconvenience.',
+            'danger'
+        )
 
 
 class ContentManagementSystem(FlaskView):
@@ -312,27 +345,12 @@ class ContentManagementSystem(FlaskView):
             flash('Provided email address is not correct', 'warning')
             return redirection
 
-        from flask_mail import Message
-        from app import mail
-
-        msg = Message(
-            subject='[ActiveDriverDB] ' + subject,
+        send_message(
+            subject=subject,
             body=content,
-            sender='ActiveDriverDB <contact-bot@activedriverdb.org>',
-            reply_to='{0} <{1}>'.format(name, email),
             recipients=current_app.config['CONTACT_LIST'],
+            reply_to='{0} <{1}>'.format(name, email),
         )
-
-        try:
-            mail.send(msg)
-            flash('Message sent!', 'success')
-        except ConnectionRefusedError:
-            flash(
-                'Could not sent the message. '
-                'Email server refuses connection. '
-                'We apologize for the inconvenience.',
-                'danger'
-            )
 
         return redirection
 
@@ -629,16 +647,37 @@ class ContentManagementSystem(FlaskView):
 
         user = User.query.filter_by(email=email).first()
 
-        if user is None:
-            flash('Invalid or unregistered email', 'danger')
-            return redirect(url_for('ContentManagementSystem:login'))
-
-        if user.authenticate(password):
+        if user and user.authenticate(password):
             login_user(user, remember=remember_me)
             return redirect(url_for('ContentManagementSystem:my_datasets'))
         else:
-            flash('Password is invalid', 'danger')
+            flash('Incorrect email or password or unverified account.', 'danger')
             return redirect(url_for('ContentManagementSystem:login'))
+
+    def activate_account(self):
+        args = request.args
+
+        user_id = args['user']
+        token = args['token']
+
+        if not (user_id and token):
+            raise abort(404)
+
+        user = User.query.get(user_id)
+
+        if token == user.verification_token:
+
+            if user.is_verified:
+                flash('You account is already active.', category='warning')
+            else:
+                user.is_verified = True
+                db.session.commit()
+
+                flash(ACCOUNT_ACTIVATED_MESSAGE, category='success')
+
+            return redirect(url_for('ContentManagementSystem:login'))
+        else:
+            raise abort(404)
 
     @route('/register/', methods=['GET', 'POST'])
     def sign_up(self):
@@ -657,16 +696,37 @@ class ContentManagementSystem(FlaskView):
         email = request.form.get('email', '')
         password = request.form.get('password', '')
 
+        claim_success = False
+
         try:
             new_user = User(email, password, access_level=0)
             db.session.add(new_user)
             db.session.commit()
-            flash(
-                'Your account has been created successfully! '
-                'Now you can login with the form below:',
-                'success'
+
+            sent = send_message(
+                subject='Your account activation link',
+                recipients=[new_user.email],
+                body=(
+                    'Welcome {user.username},'
+                    '<p>Thank you for your interest in ActiveDriverDB.'
+                    'Please use the following link to activate your account:</p>'
+                    '<p><a href="{activation_link}" title="Activate your account">{activation_link}</a></p>'
+                    '<p>{email_sign_up_message}</p>'
+                ).format(
+                    user=new_user,
+                    email_sign_up_message=get_system_setting('email_sign_up_message') or '',
+                    activation_link=url_for(
+                        'ContentManagementSystem:activate_account',
+                        token=new_user.verification_token,
+                        user=new_user.id,
+                        _external=True
+                    )
+                )
             )
-            return redirect(url_for('ContentManagementSystem:login'))
+
+            if sent:
+                claim_success = True
+
         except ValidationError as e:
             flash(e.message, 'danger')
             return self._template('register')
@@ -676,17 +736,18 @@ class ContentManagementSystem(FlaskView):
         already_a_user = User.query.filter_by(email=email).count()
 
         if already_a_user:
-            flash(
-                'This email is already used for an account. '
-                'If you do not remember your password, please contact us.',
-                'warning'
-            )
+            claim_success = True
         else:
             flash(
-                'Something gone wrong when creating your account. '
+                'Something went wrong when creating your account. '
                 'If the problem reoccurs please contact us.',
                 'danger'
             )
+
+        if claim_success:
+            flash(SIGNED_UP_OR_ALREADY_USER_MSG, 'success')
+            # TODO: create a dedicated "Thank you, but activate your account now" page?
+            return redirect(url_for('ContentManagementSystem:login'))
 
         return self._template('register')
 

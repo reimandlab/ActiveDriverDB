@@ -3,7 +3,7 @@ import base64
 import os
 
 """
-On deplyment, always make sure, that passlib is installed in secure place,
+On deployment, always make sure, that passlib is installed in secure place,
 and that the installation of the package is valid.
 """
 
@@ -23,4 +23,8 @@ def verify_secret(secret, user_hash):
 
 
 def generate_csrf_token():
-    return random_base64(size=25).decode('utf-8')
+    return generate_random_token()
+
+
+def generate_random_token(size=25):
+    return random_base64(size=size).decode('utf-8')

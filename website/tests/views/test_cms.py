@@ -1,4 +1,5 @@
-from urllib.parse import quote
+import re
+from urllib.parse import quote, urlparse, urlunparse
 
 from view_testing import ViewTest
 from models import Page, User, HelpEntry, Setting
@@ -343,7 +344,48 @@ class TestCMS(ViewTest):
     def test_modify_menu(self):
         assert self.is_only_for_admins('/list_menus/')
 
+    def activation_test(self, user, activation_mail, data):
+        from views.cms import ACCOUNT_ACTIVATED_MESSAGE
+
+        activation_links = re.search('<a href="(.*?)" title="Activate your account">(.*?)</a>', activation_mail.body)
+
+        assert activation_links
+        activation_link = activation_links.group(1)
+
+        # activation link should be an external URL, no relative one
+        assert activation_link.startswith('http')
+
+        # is the user not verified yet?
+        assert not user.is_verified
+
+        # user should NOT be able to log-in before verifying their account:
+        assert not user.authenticate(data['password'])
+
+        parsed_url = urlparse(activation_link)
+        path = urlunparse(('', '', *parsed_url[2:]))
+
+        # invalid token should not activate the account
+        replaced_token_path = re.sub('token=.*?(&|$)', 'token=some_dummy_token&', path)
+        response = self.client.get(replaced_token_path, follow_redirects=True)
+        assert response.status_code == 404
+        assert not user.is_verified
+
+        # is the activation link working?
+        with self.assert_flashes(ACCOUNT_ACTIVATED_MESSAGE, category='success'):
+            self.client.get(path, follow_redirects=True)
+        assert user.is_verified
+
+        # user should be able to log-in now:
+        assert user.authenticate(data['password'])
+
+        # user should be notified if they attempt to activate their account again
+        with self.assert_flashes('You account is already active.'):
+            self.client.get(path, follow_redirects=True)
+
     def test_sign_up(self):
+        from website.views.cms import SIGNED_UP_OR_ALREADY_USER_MSG
+        from app import mail
+
         response = self.client.get('/register/')
         required_fields = ('email', 'password', 'consent')
         for field in required_fields:
@@ -354,27 +396,91 @@ class TestCMS(ViewTest):
             'password': 'strongPassword',
             'consent': True
         }
-        with self.assert_flashes(category='success'):
-            self.client.post('/register/', data=data, follow_redirects=True)
 
+        with mail.record_messages() as outbox:
+            with self.assert_flashes(SIGNED_UP_OR_ALREADY_USER_MSG, category='success'):
+                self.client.post('/register/', data=data, follow_redirects=True)
+
+        # was verification email send?
+        assert len(outbox) == 1
+
+        sent_mail = outbox[0]
+        assert sent_mail.recipients == [data['email']]
+
+        # was a new user created?
         user = User.query.filter_by(email='user@gmail.com').one()
         assert user
         assert not user.is_admin
 
-        # lets try again
-        with self.assert_flashes(
-                'This email is already used for an account. '
-                'If you do not remember your password, please contact us.'
-        ):
+        # there is a one new user
+        assert User.query.count() == 1
+
+        self.activation_test(user, sent_mail, data)
+
+        # Test registration attempt using an email address that already exists in database
+
+        old_password = data['password']
+        data['password'] = 'otherPassword2'
+
+        # using an email that exists in our database should not reveal such a fact
+        with self.assert_flashes(SIGNED_UP_OR_ALREADY_USER_MSG, category='success'):
             self.client.post('/register/', data=data, follow_redirects=True)
 
-        data['email'] = 'other@some.org'
+        # nor a new account should be created
+        assert User.query.count() == 1
+
+        # nor the old account should be changed
+        assert not user.authenticate(data['password'])
+        assert user.authenticate(old_password)
+
+        # Test registration without consent
         del data['consent']
         with self.assert_flashes('Data policy consent is required to proceed.'):
             self.client.post('/register/', data=data, follow_redirects=True)
 
     def test_login(self):
-        pass
+        # using an email that exists in our database should not reveal such a fact
+        incorrect_login_message = (
+            'Incorrect email or password or unverified account.'
+        )
+        user = User(email='user@gmail.com', password='strongPassword')
+        db.session.add(user)
+        db.session.commit()
+
+        data = {'email': 'user@gmail.com', 'password': 'strongPassword'}
+
+        from flask_login import current_user
+
+        # Test unverified user
+        with self.assert_flashes(incorrect_login_message):
+            with self.client:
+                self.client.post('/login/', data=data, follow_redirects=True)
+                assert current_user != user
+
+        # Test successful login
+        user.is_verified = True
+
+        with self.collect_flashes() as flashes:
+            with self.client:
+                response = self.client.post('/login/', data=data, follow_redirects=True)
+                assert response.status_code == 200
+                assert not flashes
+                assert current_user == user
+
+        # Test logout
+        with self.client:
+            self.client.get('/logout/', follow_redirects=True)
+            assert current_user != user
+
+        # Test incorrect password
+        data['password'] = 'strong'
+        with self.assert_flashes(incorrect_login_message):
+            self.client.post('/login/', data=data, follow_redirects=True)
+
+        # Test incorrect email
+        data = {'email': 'u@g.com', 'password': 'strongPassword'}
+        with self.assert_flashes(incorrect_login_message):
+            self.client.post('/login/', data=data, follow_redirects=True)
 
     def test_get_page(self):
         from website.views.cms import get_page
