@@ -4,7 +4,7 @@
     <div class="form-group">
       <label for="name" class="col-sm-2 control-label">Name</label>
       <div class="col-sm-10">
-        <input type="text" class="form-control" id="name" placeholder="Your name" name="name">
+        <input class="form-control" id="name" placeholder="Your name" name="name">
       </div>
     </div>
 
@@ -19,7 +19,6 @@
       <label for="subject" class="col-sm-2 control-label">Subject</label>
       <div class="col-sm-10">
         <input
-          type="text"
           class="form-control"
           id="subject"
           placeholder="e.g. Regarding protein TP53 - NM_000456"
@@ -40,6 +39,10 @@
 
   <input type="hidden" value="{{ request.path }}" name="after_success">
   <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+
+  <div class="captcha">
+    {{ recaptcha }}
+  </div>
 
   <button type="submit" class="btn btn-primary">Submit</button>
 

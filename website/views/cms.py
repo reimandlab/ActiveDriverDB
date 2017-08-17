@@ -53,6 +53,7 @@ SIGNED_UP_OR_ALREADY_USER_MSG = (
     'Please use a hyperlink included in the email message to activate your account.</strong></p>'
 )
 ACCOUNT_ACTIVATED_MESSAGE = 'Your account has been successfully activated. You can login in using the form below:'
+CAPTCHA_FAILED = 'ReCaptcha verification failed. Please contact use if the message reappears.'
 
 
 def create_contact_form():
@@ -327,6 +328,10 @@ class ContentManagementSystem(FlaskView):
     def send_message(self):
         go_to = request.form.get('after_success', '/')
         redirection = redirect(go_to)
+
+        if not recaptcha.verify():
+            flash(CAPTCHA_FAILED, 'danger')
+            return redirection
 
         try:
             name = request.form['name']
@@ -688,7 +693,7 @@ class ContentManagementSystem(FlaskView):
             return self._template('register')
 
         if not recaptcha.verify():
-            flash('ReCaptcha verification failed. Please contact use if the message reappears.', 'danger')
+            flash(CAPTCHA_FAILED, 'danger')
             return self._template('register')
 
         consent = request.form.get('consent', False)
