@@ -1,3 +1,4 @@
+import re
 from os import path
 from functools import wraps
 from pathlib import Path
@@ -703,25 +704,28 @@ class ContentManagementSystem(FlaskView):
             db.session.add(new_user)
             db.session.commit()
 
+            html_message = (
+                'Welcome {user.username},\n\n'
+                '<p>Thank you for your interest in ActiveDriverDB.'
+                'Please use the following link to activate your account:</p>\n\n'
+                '<p><a href="{activation_link}" title="Activate your account">{activation_link}</a></p>\n\n'
+                '<p>{email_sign_up_message}</p>'
+            ).format(
+                user=new_user,
+                email_sign_up_message=get_system_setting('email_sign_up_message') or '',
+                activation_link=url_for(
+                    'ContentManagementSystem:activate_account',
+                    token=new_user.verification_token,
+                    user=new_user.id,
+                    _external=True
+                )
+            )
+
             sent = send_message(
                 subject='Your account activation link',
                 recipients=[new_user.email],
-                body=(
-                    'Welcome {user.username},'
-                    '<p>Thank you for your interest in ActiveDriverDB.'
-                    'Please use the following link to activate your account:</p>'
-                    '<p><a href="{activation_link}" title="Activate your account">{activation_link}</a></p>'
-                    '<p>{email_sign_up_message}</p>'
-                ).format(
-                    user=new_user,
-                    email_sign_up_message=get_system_setting('email_sign_up_message') or '',
-                    activation_link=url_for(
-                        'ContentManagementSystem:activate_account',
-                        token=new_user.verification_token,
-                        user=new_user.id,
-                        _external=True
-                    )
-                )
+                html=html_message,
+                body=re.sub(r'<[^>]*>', '', html_message)
             )
 
             if sent:

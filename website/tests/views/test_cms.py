@@ -347,13 +347,18 @@ class TestCMS(ViewTest):
     def activation_test(self, user, activation_mail, data):
         from views.cms import ACCOUNT_ACTIVATED_MESSAGE
 
-        activation_links = re.search('<a href="(.*?)" title="Activate your account">(.*?)</a>', activation_mail.body)
+        # take the link from html version of message:
+        activation_links = re.search('<a href="(.*?)" title="Activate your account">(.*?)</a>', activation_mail.html)
 
         assert activation_links
         activation_link = activation_links.group(1)
 
         # activation link should be an external URL, no relative one
         assert activation_link.startswith('http')
+
+        # compare with link from html-stripped, plain version
+        plain_link = re.search(r'(http://.*?)\s', activation_mail.body).group(1)
+        assert plain_link == activation_link
 
         # is the user not verified yet?
         assert not user.is_verified
