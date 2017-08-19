@@ -10,6 +10,6 @@
     <a href="{{ activation_link }}" title="Activate your account" style="{{ button_inline_css }}">Activate your account</a>
   </p>
 
-  <p>{{ email_sign_up_message }}</p>
+  <p>{{ email_sign_up_message | safe }}</p>
 
 {% endblock %}
