@@ -1,0 +1,15 @@
+{% extends 'email/base.html' %}
+
+{% block content %}
+  <p>
+    Thank you for your interest in ActiveDriverDB.<br>
+    Please use the following link to activate your account:
+  </p>
+
+  <p>
+    <a href="{{ activation_link }}" title="Activate your account" style="{{ button_inline_css }}">Activate your account</a>
+  </p>
+
+  <p>{{ email_sign_up_message }}</p>
+
+{% endblock %}

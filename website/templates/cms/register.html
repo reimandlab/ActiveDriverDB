@@ -3,7 +3,7 @@
 
 {% block head %}
   {% assets "css_page" %}
-  <link href="{{ ASSET_URL }}" rel="stylesheet" />
+    <link href="{{ ASSET_URL }}" rel="stylesheet" />
   {% endassets %}
 {% endblock %}
 
@@ -16,7 +16,7 @@
   <h3>New account</h3>
 
   <div>
-    <form method="POST" >
+    <form method="POST">
 	  <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 	  <div class="form-group">
 		<label for="email">email</label>

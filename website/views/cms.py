@@ -4,6 +4,7 @@ from functools import wraps
 from pathlib import Path
 from types import FunctionType
 
+from bs4 import BeautifulSoup
 from flask import current_app, jsonify
 from flask import flash
 from flask import render_template as template
@@ -24,6 +25,7 @@ from jinja2 import TemplateSyntaxError
 from flask import render_template_string
 from werkzeug.utils import secure_filename
 
+import security
 from models import Page, HelpEntry, TextEntry
 from models import Menu
 from models import MenuEntry
@@ -55,6 +57,10 @@ SIGNED_UP_OR_ALREADY_USER_MSG = (
 )
 ACCOUNT_ACTIVATED_MESSAGE = 'Your account has been successfully activated. You can login in using the form below:'
 CAPTCHA_FAILED = 'ReCaptcha verification failed. Please contact use if the message reappears.'
+PASSWORD_RESET_MAIL_SENT = (
+    'If an account connected to this email address exists (and is verified), '
+    'you will receive a password reset message soon'
+)
 
 
 def create_contact_form():
@@ -64,6 +70,11 @@ def create_contact_form():
         'cms/contact_form.html',
         **{key: args.get(key, '') for key in pass_args}
     )
+
+
+def render_raw_template(template_name, *args, **kwargs):
+    template = current_app.jinja_env.get_template(template_name)
+    return template.render(*args, **kwargs)
 
 
 def render_help_entry(entry_id, entry_class=''):
@@ -187,9 +198,20 @@ def thousand_separated_number(x):
 def send_message(**kwargs):
     from app import mail
 
+    body = kwargs.pop('body', None)
+    html = kwargs.pop('html', None)
+
+    if html and not body:
+        soup = BeautifulSoup(html)
+        for link in soup.select('a'):
+            link.append(': ' + link.attrs['href'])
+            link.unwrap()
+        body = soup.get_text()
+
     msg = Message(
         subject='[ActiveDriverDB] ' + kwargs.pop('subject', 'Message'),
         sender='ActiveDriverDB <contact-bot@activedriverdb.org>',
+        body=body, html=html,
         **kwargs
     )
 
@@ -669,6 +691,86 @@ class ContentManagementSystem(FlaskView):
             flash('Incorrect email or password or unverified account.', 'danger')
             return redirect(url_for('ContentManagementSystem:login'))
 
+    @route('/reset_password/', methods=['GET', 'POST'])
+    @limiter.limit('200/day,100/hour,20/minute', key_func=get_form_email_or_ip, per_method=True)
+    def reset_password(self):
+        if request.method == 'GET':
+            return self._template('reset_password')
+
+        if not recaptcha.verify():
+            flash(CAPTCHA_FAILED, 'danger')
+            return self._template('reset_password')
+
+        user = User.query.filter_by(email=request.form['email']).first()
+
+        if user and user.is_verified:
+            user.verification_token = security.generate_random_token()
+            db.session.commit()
+
+            send_message(
+                subject='Your password reset request',
+                recipients=[user.email],
+                html=render_raw_template(
+                    'email/password_reset_request.html',
+                    user=user,
+                    password_reset_link=url_for(
+                        'ContentManagementSystem:confirm_password_reset',
+                        token=user.verification_token,
+                        user=user.id,
+                        _external=True
+                    )
+                )
+            )
+
+        flash(PASSWORD_RESET_MAIL_SENT, category='success')
+        return redirect(url_for('ContentManagementSystem:login'))
+
+    @route('/confirm_password_reset/', methods=['GET', 'POST'])
+    def confirm_password_reset(self):
+        args = request.args
+
+        user_id = args['user']
+        token = args['token']
+
+        if not (user_id and token):
+            raise abort(404)
+
+        user = User.query.get(user_id)
+
+        if user and token == user.verification_token:
+
+            if request.method == 'GET':
+                flash('Your request has been correctly verified. Please set a new password now:', category='success')
+                return self._template('set_password')
+            else:
+                password = request.form['password']
+                confirm_password = request.form['confirm_password']
+
+                if not password or not confirm_password:
+                    flash('Both fields are required.', category='danger')
+                    return self._template('set_password')
+
+                if password != confirm_password:
+                    flash('Provided passwords do not match!', category='danger')
+                    return self._template('set_password')
+
+                if not user.is_password_strong(password):
+                    flash(
+                        'Provided password is too weak. Please try a different one.',
+                        category='danger'
+                    )
+                    return self._template('set_password')
+
+                user.pass_hash = security.generate_secret_hash(password)
+                # invalidate token
+                user.verification_token = None
+                db.session.commit()
+                flash('Your new password has been set successfully!', category='success')
+
+                return redirect(url_for('ContentManagementSystem:login'))
+        else:
+            raise abort(404)
+
     def activate_account(self):
         args = request.args
 
@@ -680,7 +782,7 @@ class ContentManagementSystem(FlaskView):
 
         user = User.query.get(user_id)
 
-        if token == user.verification_token:
+        if user and token == user.verification_token:
 
             if user.is_verified:
                 flash('You account is already active.', category='warning')
@@ -723,13 +825,8 @@ class ContentManagementSystem(FlaskView):
             db.session.add(new_user)
             db.session.commit()
 
-            html_message = (
-                'Welcome {user.username},\n\n'
-                '<p>Thank you for your interest in ActiveDriverDB.<br>\n'
-                'Please use the following link to activate your account:</p>\n\n'
-                '<p><a href="{activation_link}" title="Activate your account">{activation_link}</a></p>\n\n'
-                '<p>{email_sign_up_message}</p>'
-            ).format(
+            html_message = render_raw_template(
+                'email/registration.html',
                 user=new_user,
                 email_sign_up_message=self._system_setting('email_sign_up_message') or '',
                 activation_link=url_for(
@@ -743,8 +840,7 @@ class ContentManagementSystem(FlaskView):
             sent = send_message(
                 subject='Your account activation link',
                 recipients=[new_user.email],
-                html=html_message,
-                body=re.sub(r'<[^>]*>', '', html_message)
+                html=html_message
             )
 
             if sent:

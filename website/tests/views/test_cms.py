@@ -1,12 +1,33 @@
 import re
 from urllib.parse import quote, urlparse, urlunparse
 
+from bs4 import BeautifulSoup
+
+from app import mail
 from view_testing import ViewTest
 from models import Page, User, HelpEntry, Setting
 from models import Menu
 from models import CustomMenuEntry
 from models import PageMenuEntry
 from database import db
+
+
+def find_links(html, **attrs):
+    soup = BeautifulSoup(html)
+    return soup.findAll('a', attrs=attrs)
+
+
+def extract_relative_url(activation_link):
+    parsed_url = urlparse(activation_link)
+    relative_url = ['', '']
+    relative_url.extend(parsed_url[2:])
+    path = urlunparse(relative_url)
+    return path
+
+
+def replace_token(path, new_token='some_dummy_token'):
+    replaced_token_path = re.sub('token=.*?(&|$)', 'token=%s&' % new_token, path)
+    return replaced_token_path
 
 
 class TestCMS(ViewTest):
@@ -348,10 +369,10 @@ class TestCMS(ViewTest):
         from views.cms import ACCOUNT_ACTIVATED_MESSAGE
 
         # take the link from html version of message:
-        activation_links = re.search('<a href="(.*?)" title="Activate your account">(.*?)</a>', activation_mail.html)
+        activation_links = find_links(activation_mail.html, title='Activate your account')
 
-        assert activation_links
-        activation_link = activation_links.group(1)
+        assert len(activation_links) == 1
+        activation_link = activation_links[0].attrs['href']
 
         # activation link should be an external URL, no relative one
         assert activation_link.startswith('http')
@@ -366,13 +387,10 @@ class TestCMS(ViewTest):
         # user should NOT be able to log-in before verifying their account:
         assert not user.authenticate(data['password'])
 
-        parsed_url = urlparse(activation_link)
-        relative_url = ['', '']
-        relative_url.extend(parsed_url[2:])
-        path = urlunparse(relative_url)
+        path = extract_relative_url(activation_link)
 
         # invalid token should not activate the account
-        replaced_token_path = re.sub('token=.*?(&|$)', 'token=some_dummy_token&', path)
+        replaced_token_path = replace_token(path)
         response = self.client.get(replaced_token_path, follow_redirects=True)
         assert response.status_code == 404
         assert not user.is_verified
@@ -391,7 +409,6 @@ class TestCMS(ViewTest):
 
     def test_sign_up(self):
         from website.views.cms import SIGNED_UP_OR_ALREADY_USER_MSG
-        from app import mail
 
         response = self.client.get('/register/')
         required_fields = ('email', 'password', 'consent')
@@ -458,7 +475,7 @@ class TestCMS(ViewTest):
 
         from flask_login import current_user
 
-        # Test unverified user
+        # Test unverified user (users by default should be unverified)
         with self.assert_flashes(incorrect_login_message):
             with self.client:
                 self.client.post('/login/', data=data, follow_redirects=True)
@@ -500,3 +517,72 @@ class TestCMS(ViewTest):
             get_page('not-existing-page')
             assert len(flashes) == 1
             assert 'no such a page' in flashes[0].content
+
+    def test_password_reset(self):
+        from views.cms import PASSWORD_RESET_MAIL_SENT
+        user = User(email='user@gmail.com', password='strongPassword')
+        db.session.add(user)
+        db.session.commit()
+
+        data = {'email': 'user@gmail.com'}
+
+        # is the form working? does it include email input?
+        response = self.client.get('/reset_password/')
+        assert response.status_code == 200
+        assert BeautifulSoup(response.data).select_one('input[name="email"]')
+
+        # the user is unverified but wait, we don't want to disclose that they even exists!
+        # we should claim that mail was sent (but it should not be sent)
+        with self.assert_flashes(PASSWORD_RESET_MAIL_SENT):
+            with mail.record_messages() as outbox:
+                self.client.post('/reset_password/', data=data, follow_redirects=True)
+                assert not outbox
+
+        # the same - but for verified user - should result in actual mail being sent
+        user.is_verified = True
+        with self.assert_flashes(PASSWORD_RESET_MAIL_SENT):
+            with mail.record_messages() as outbox:
+                self.client.post('/reset_password/', data=data, follow_redirects=True)
+                reset_mail = outbox[0]
+                assert reset_mail
+
+        # and the user should be able to reset password, using a link provided in email message:
+        link = find_links(reset_mail.html, title='Reset password')[0].attrs['href']
+        path = extract_relative_url(link)
+
+        # fake token should not work (for both: password setting [post] and form request [get])
+        replaced_token_path = replace_token(path)
+        for method in [self.client.get, self.client.post]:
+            response = method(replaced_token_path, follow_redirects=True)
+            assert response.status_code == 404
+
+        # correct token should result in form generation
+        response = self.client.get(path, follow_redirects=True)
+        for field_name in ['password', 'confirm_password']:
+            assert BeautifulSoup(response.data).select_one('input[name="%s"]' % field_name)
+
+        data_validation = {
+            'Provided passwords do not match!': ['someStrongPassword', 'ehmIAlreadyForgot..'],
+            'Both fields are required.': ['', ''],
+            'Provided password is too weak. Please try a different one.': ['so', 'so'],
+        }
+
+        # and, as long as 'password' and 'confirm_password' exists, match and are strong enough,
+        for expected_flash, data in data_validation.items():
+            password, confirmation = data
+            data = {'password': password, 'confirm_password': confirmation}
+
+            with self.assert_flashes(expected_flash):
+                self.client.post(path, data=data, follow_redirects=True)
+                # authentication with the wrong password should not be possible
+                assert not user.authenticate(password)
+                # token is still there
+                assert user.verification_token
+
+        data = {'password': 'MySuperStrongPassword', 'confirm_password': 'MySuperStrongPassword'}
+
+        # the user's response should result in password change and token invalidation
+        with self.assert_flashes('Your new password has been set successfully!'):
+            self.client.post(path, data=data, follow_redirects=True)
+        assert user.authenticate(data['password'])
+        assert not user.verification_token
