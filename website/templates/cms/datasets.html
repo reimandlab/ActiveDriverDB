@@ -5,6 +5,9 @@
   {% assets "css_page" %}
   <link href="{{ ASSET_URL }}" rel="stylesheet" />
   {% endassets %}
+
+  {{ dependency('bootstrap_table') }}
+  {{ dependency('bootstrap_table_css') }}
 {% endblock %}
 
 
@@ -15,15 +18,28 @@
 
   <h3>My datasets</h3>
 
+  <div id="toolbar">
+    <a href="{{ url_for('SearchView:mutations') }}" class="btn btn-default">Upload a new mutations dataset</a>
+  </div>
+
   <div>
-    <table class="table">
-    <tr>
-      <th>Name</th>
-      <th>Created on</th>
-      <th>Days until removal</th>
-      <th>Queries</th>
-      <th>Results</th>
-    </tr>
+    <table class="table" data-toggle="table"
+       data-search="true"
+       data-toolbar="#toolbar"
+       data-show-columns="true"
+       data-minimum-count-columns="2"
+    >
+    <thead>
+      <tr>
+        <th data-sortable=true>Name (click to open)</th>
+        <th data-sortable=true>Created on</th>
+        <th data-sortable=true>Days until removal</th>
+        <th data-sortable=true>Queries</th>
+        <th data-sortable=true>Results</th>
+        <th>Remove now</th>
+      </tr>
+    </thead>
+    <tbody>
     {% for dataset in datasets %}
       <tr>
         <td>
@@ -33,22 +49,22 @@
         <td>{{ dataset.life_expectancy }}</td>
         <td>{{ dataset.query_size }}</td>
         <td>{{ dataset.mutations | length }}</td>
+        <td>
+          <a href="{{ url_for('SearchView:remove_user_mutations', uri=dataset.uri) }}">
+            <span class="glyphicon glyphicon-trash" title="Remove this dataset"></span>
+            Remove
+          </a>
+        </td>
       </tr>
     {% else %}
       <tr>
-        <td colspan="5">
+        <td colspan="6">
           No datasets created yet.
           <a href="{{ url_for('SearchView:mutations') }}">Click here to upload your first mutations dataset.</a>
         </td>
       </tr>
     {% endfor %}
-    {% if datasets %}
-      <tr>
-        <td colspan="5">
-          <a href="{{ url_for('SearchView:mutations') }}">Click here to upload a new mutations dataset.</a>
-        </td>
-      </tr>
-    {% endif %}
+    </tbody>
     </table>
   </div>
 {% endblock %}

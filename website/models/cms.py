@@ -1,5 +1,6 @@
 import os
 import pickle
+from contextlib import suppress
 from datetime import datetime
 from datetime import timedelta
 
@@ -120,13 +121,18 @@ class UsersMutationsDataset(CMSModel):
 
     @classmethod
     def by_uri(cls, uri):
-        return cls.query.filter_by(uri=uri).one()
+        return cls.query.filter_by(uri=uri.rstrip('/')).one()
 
     @property
     def data(self):
         if not hasattr(self, '_data'):
-            self._data = self._load_from_file()
-            self._bind_to_session()
+            try:
+                self._data = self._load_from_file()
+                self._bind_to_session()
+            except FileNotFoundError:
+                # None if associated file was deleted.
+                # Be aware of this line when debugging.
+                return
         return self._data
 
     @data.setter
@@ -136,9 +142,21 @@ class UsersMutationsDataset(CMSModel):
         self.uri = uri
 
     def remove(self):
-        os.remove(self._path)
+        # hard delete of data is the first priority
+        with suppress(FileNotFoundError):
+            os.remove(self._path)
+
+        # soft delete associated entry
         update(self, store_until=utc_now())
-        del self._data
+        db.session.commit()
+
+        # prompt python interpreter to remove data from memory
+        with suppress(AttributeError):
+            del self._data
+
+        # and delete from session
+        db.session.delete(self)
+        db.session.commit()
 
     def _save_to_file(self, data, uri=None):
         """Saves data to a file identified by uri argument.
@@ -184,9 +202,7 @@ class UsersMutationsDataset(CMSModel):
 
     def _load_from_file(self):
 
-        assert os.path.exists(self.path)
-
-        with open(self.path, 'rb') as f:
+        with open(self._path, 'rb') as f:
             data = pickle.load(f)
         return data
 

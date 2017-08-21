@@ -325,7 +325,7 @@ class SearchView(FlaskView):
             query=query
         )
 
-    @route('saved/<uri>')
+    @route('saved/<path:uri>')
     def user_mutations(self, uri):
 
         filter_manager = SearchViewFilters()
@@ -347,9 +347,11 @@ class SearchView(FlaskView):
         ))
         return response
 
-    @route('remove_saved/<uri>', methods=['DELETE'])
+    @route('remove_saved/<path:uri>')
     def remove_user_mutations(self, uri):
+
         dataset = UsersMutationsDataset.by_uri(uri)
+        name = dataset.name
 
         if not dataset.owner or dataset.owner != current_user:
             current_app.login_manager.unauthorized()
@@ -357,11 +359,14 @@ class SearchView(FlaskView):
         try:
             dataset.remove()
         except Exception as e:
-            print('Failed to remove dataset identified %s' % uri)
-            print(e)
+            message = 'Failed to remove dataset <b>%s</b> (%s).' % (name, uri)
+            print(message, e)
+            message += '<br>If the message reappears, please contact us.'
+            flash(message, category='danger')
             raise abort(500)
 
-        return '', 200
+        flash('Successfully removed <b>%s</b> dataset.' % name, category='success')
+        return redirect(url_for('ContentManagementSystem:my_datasets'))
 
     @route('/mutations', methods=['POST', 'GET'])
     def mutations(self):

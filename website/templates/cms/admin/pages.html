@@ -44,19 +44,19 @@
         <tr>
             <td>
               <a href="{{ url_for('ContentManagementSystem:edit_page', address=entry.address) }}">
-                  <span class="glyphicon glyphicon-pencil" aria-hidden="true" title="Edit"></span>
+                  <span class="glyphicon glyphicon-pencil" title="Edit"></span>
                   {{ entry.title }}
               </a>
             </td>
             <td>
                 <a href="{{ url_for('ContentManagementSystem:page', address=entry.address) }}">
-                  <span class="glyphicon glyphicon-globe" aria-hidden="true" title="Visit the page"></span>
+                  <span class="glyphicon glyphicon-globe" title="Visit the page"></span>
                   /{{ entry.address }}
               </a>
             </td>
             <td>
               <a href="{{ url_for('ContentManagementSystem:remove_page', address=entry.address) }}">
-                  <span class="glyphicon glyphicon-trash" aria-hidden="true" title="Remove"></span>
+                  <span class="glyphicon glyphicon-trash" title="Remove"></span>
                   Remove
               </a>
             </td>

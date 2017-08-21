@@ -64,6 +64,10 @@ def entries_with_type(response, type_name):
 
 class TestSearchView(ViewTest):
 
+    def view_module(self):
+        from website.views import search
+        return search
+
     def visit_returned_urls(self, response):
         for entry in response.json['entries']:
             if 'url' in entry:
@@ -354,15 +358,9 @@ class TestSearchView(ViewTest):
         assert all(r == result for r in results) and result
 
     def test_save_search(self):
-        test_query = 'chr18 19282310 T C'
-
         self.login('user@domain.org', 'password', create=True)
 
-        save_response = self.search_mutations(
-            mutations=test_query,
-            store_on_server=True,
-            dataset_name='Test Dataset'
-        )
+        save_response, test_query, dataset = self.basic_save_search()
 
         assert save_response.status_code == 200
 
@@ -372,7 +370,6 @@ class TestSearchView(ViewTest):
         assert b'Test Dataset' in browse_response.data
 
         # and it should be accessible directly
-        dataset = UsersMutationsDataset.query.filter_by(name='Test Dataset').one()
         browse_response = self.client.get('search/saved/%s' % dataset.uri)
         assert browse_response.status_code == 200
         assert b'Test Dataset' in browse_response.data
@@ -384,7 +381,7 @@ class TestSearchView(ViewTest):
         assert browse_response.status_code == 401
 
         # forbidden for strangers
-        self.login('onther_user@domain.org', 'password', create=True)
+        self.login('other_user@domain.org', 'password', create=True)
         browse_response = self.client.get('search/saved/%s' % dataset.uri)
         assert browse_response.status_code == 401
         self.logout()
@@ -398,3 +395,38 @@ class TestSearchView(ViewTest):
         )
 
         assert unauthorized_save_response.status_code == 200
+
+    def basic_save_search(self, name='Test Dataset', query='chr18 19282310 T C'):
+        save_response = self.search_mutations(
+            mutations=query,
+            store_on_server=True,
+            dataset_name=name
+        )
+        dataset = UsersMutationsDataset.query.filter_by(name=name).one()
+        return save_response, query, dataset
+
+    def test_remove_dataset(self):
+        self.login('user@domain.org', 'password', create=True)
+
+        # login a user and add a basic dataset
+        _, _, dataset = self.basic_save_search()
+
+        # the user who added the dataset is allowed to delete it
+        with self.assert_flashes('Successfully removed <b>%s</b> dataset.' % dataset.name):
+            response = self.client.get('search/remove_saved/%s' % dataset.uri, follow_redirects=True)
+            assert response.status_code == 200
+
+        # so we should be able to create the dataset again now
+        response, _, dataset = self.basic_save_search()
+        assert response.status_code == 200
+
+        # but a stranger should not be able to remove it
+        self.logout()
+        response = self.client.get('search/remove_saved/%s' % dataset.uri, follow_redirects=True)
+        assert response.status_code == 401
+
+        # nor a different user
+        self.login('other_user@domain.org', 'password', create=True)
+        response = self.client.get('search/remove_saved/%s' % dataset.uri, follow_redirects=True)
+        assert response.status_code == 401
+
