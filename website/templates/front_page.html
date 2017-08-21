@@ -31,8 +31,17 @@
 
 {% block body %}
 
-  {% with without_searchbar = True %}
-    {% include "navbar.html" %}
+  {% set user = current_user %}
+  {% set login_or_profile %}
+    {% if not user.is_authenticated %}
+      <li><a href="{{ url_for('ContentManagementSystem:login') }}">Login</a>
+    {% else %}
+      <li><a href="{{ url_for('ContentManagementSystem:my_datasets') }}">My datasets</a>
+    {% endif %}
+  {% endset %}
+
+  {% with without_searchbar = True, additional_menu_items=login_or_profile %}
+    {% include "navbar.html" with context %}
   {% endwith %}
 
   <div class="front-page-content page-content main-container">
@@ -66,7 +75,7 @@
               <input
                 name="query"
                 class="form-control search-input"
-                placeholder="TP53, NM_000345, TP53 R282W or chr12 57490358 C A"
+                placeholder="TP53 or NM_000345 or TP53 R282W or chr12 57490358 C A (hg19/GRCh37) or dementia in MAPT"
                 autocomplete="off"
               >
               <span class="input-icon glyphicon glyphicon-search"></span>
@@ -112,12 +121,14 @@
         </div>
       </div>
     </div>
-  <div class="row row-about">
-    <div class="col-md-10 col-md-offset-1">
-      <div class="strip text-based-strip">
-        {{ text('front-page-about') }}
+    <div class="row row-about">
+      <div class="col-md-10 col-md-offset-1">
+        <div class="strip text-based-strip">
+          {{ text('front-page-about') }}
+        </div>
       </div>
     </div>
+
   </div>
 {% endblock %}
 

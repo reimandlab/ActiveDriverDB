@@ -246,6 +246,8 @@ class User(CMSModel):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(254), unique=True)
     access_level = db.Column(db.Integer, default=0)
+    is_verified = db.Column(db.Boolean, default=False)
+    verification_token = db.Column(db.Text, default=security.generate_random_token)
     pass_hash = db.Column(db.Text())
 
     # only datasets
@@ -328,7 +330,7 @@ class User(CMSModel):
         return False
 
     def authenticate(self, password):
-        return security.verify_secret(password, str(self.pass_hash))
+        return self.is_verified and security.verify_secret(password, str(self.pass_hash))
 
     @cached_property
     def username(self):
@@ -450,7 +452,7 @@ class Menu(CMSModel):
 class Setting(CMSModel):
 
     name = db.Column(db.String(256), nullable=False, unique=True, index=True)
-    value = db.Column(db.String(256))
+    value = db.Column(db.Text())
 
     @property
     def int_value(self):

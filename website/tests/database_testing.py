@@ -33,6 +33,7 @@ class DatabaseTest(TestCase):
     def login(self, email='user@domain.org', password='strong-password', create=False, admin=False):
         if create:
             user = User(email, password, 10 if admin else 0)
+            user.is_verified = True
             db.session.add(user)
             self.logged_user = user
 

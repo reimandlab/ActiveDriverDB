@@ -1,3 +1,4 @@
+beautifulsoup4
 Flask==0.12.2
 Flask-Assets==0.12
 Flask-Classful==0.13.1
@@ -12,3 +13,5 @@ bsddb3
 Flask-Mail
 jinja2_pluralize
 yuicompressor
+flask-recaptcha
+flask-limiter

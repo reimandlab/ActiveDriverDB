@@ -874,7 +874,7 @@ def autocomplete_mutation(query, limit=None):
 
             # maybe an interesting mutation is located on the other strand
             if not items:
-                query = 'Complement of ' + query
+                query = 'complement of ' + query
                 items = bdb.get_genomic_muts(chrom, pos, complement(ref), complement(alt))
 
             items = prepare_items(items, query, 'nucleotide mutation')

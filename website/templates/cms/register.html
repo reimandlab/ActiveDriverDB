@@ -3,7 +3,7 @@
 
 {% block head %}
   {% assets "css_page" %}
-  <link href="{{ ASSET_URL }}" rel="stylesheet" />
+    <link href="{{ ASSET_URL }}" rel="stylesheet" />
   {% endassets %}
 {% endblock %}
 
@@ -16,11 +16,11 @@
   <h3>New account</h3>
 
   <div>
-    <form method="POST" >
+    <form method="POST">
 	  <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 	  <div class="form-group">
 		<label for="email">email</label>
-		<input type="text" name="email" class="form-control" id="email" placeholder="email">
+		<input type="email" name="email" class="form-control" id="email" placeholder="email">
 	  </div>
 	  <div class="form-group">
 		<label for="password">password</label>
@@ -36,6 +36,9 @@
           </ol>
 		</label>
 	  </div>
+    <div class="captcha">
+      {{ recaptcha }}
+    </div>
 	  <button type="submit" class="btn btn-success">Create my account</button>
     </form>
   </div>

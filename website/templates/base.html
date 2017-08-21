@@ -93,6 +93,10 @@
               <span class="glyphicon glyphicon-log-out"></span>
               My datasets
             </a>
+            <a href="{{ url_for('ContentManagementSystem:set_password') }}" class="btn btn-default">
+              <span class="glyphicon glyphicon-lock"></span>
+              Change password
+            </a>
             <a href="{{ url_for('ContentManagementSystem:logout') }}" class="btn btn-default">
               <span class="glyphicon glyphicon-log-out"></span>
               Logout
@@ -199,5 +203,6 @@
   {% endif %}
 </script>
 {% endblock %}
+  {% include 'analytics.html' %}
 </body>
 </html>
