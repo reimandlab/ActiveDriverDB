@@ -738,38 +738,45 @@ class ContentManagementSystem(FlaskView):
         user = User.query.get(user_id)
 
         if user and token == user.verification_token:
-
-            if request.method == 'GET':
-                flash('Your request has been correctly verified. Please set a new password now:', category='success')
-                return self._template('set_password')
-            else:
-                password = request.form['password']
-                confirm_password = request.form['confirm_password']
-
-                if not password or not confirm_password:
-                    flash('Both fields are required.', category='danger')
-                    return self._template('set_password')
-
-                if password != confirm_password:
-                    flash('Provided passwords do not match!', category='danger')
-                    return self._template('set_password')
-
-                if not user.is_password_strong(password):
-                    flash(
-                        'Provided password is too weak. Please try a different one.',
-                        category='danger'
-                    )
-                    return self._template('set_password')
-
-                user.pass_hash = security.generate_secret_hash(password)
-                # invalidate token
-                user.verification_token = None
-                db.session.commit()
-                flash('Your new password has been set successfully!', category='success')
-
-                return redirect(url_for('ContentManagementSystem:login'))
+            login_user(user)
+            flash('Your request has been correctly verified. Please set a new password now:', category='success')
+            return self.set_password()
         else:
             raise abort(404)
+
+    @route('/set_password/', methods=['GET', 'POST'])
+    @login_required
+    def set_password(self):
+        user = current_user
+
+        if request.method == 'GET':
+            return self._template('set_password')
+        else:
+            password = request.form['password']
+            confirm_password = request.form['confirm_password']
+
+            if not password or not confirm_password:
+                flash('Both fields are required.', category='danger')
+                return self._template('set_password')
+
+            if password != confirm_password:
+                flash('Provided passwords do not match!', category='danger')
+                return self._template('set_password')
+
+            if not user.is_password_strong(password):
+                flash(
+                    'Provided password is too weak. Please try a different one.',
+                    category='danger'
+                )
+                return self._template('set_password')
+
+            user.pass_hash = security.generate_secret_hash(password)
+            # invalidate token
+            user.verification_token = None
+            db.session.commit()
+            flash('Your new password has been set successfully!', category='success')
+
+            return redirect(url_for('ContentManagementSystem:login'))
 
     def activate_account(self):
         args = request.args

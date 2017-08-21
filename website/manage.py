@@ -211,6 +211,7 @@ class CMS(CommandTarget):
                     'you type due to security reasons): '
                 )
                 root = User(email, password, access_level=10)
+                root.is_verified = True
                 correct = True
             except ValidationError as e:
                 print('Root credentials are incorrect: ', e.message)

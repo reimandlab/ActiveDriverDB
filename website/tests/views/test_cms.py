@@ -30,6 +30,13 @@ def replace_token(path, new_token='some_dummy_token'):
     return replaced_token_path
 
 
+def create_fresh_test_user():
+    user = User(email='user@gmail.com', password='strongPassword')
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
 class TestCMS(ViewTest):
 
     invalid_addresses = ['/test/', ' test/', 'test//', '/', '/test']
@@ -467,9 +474,7 @@ class TestCMS(ViewTest):
         incorrect_login_message = (
             'Incorrect email or password or unverified account.'
         )
-        user = User(email='user@gmail.com', password='strongPassword')
-        db.session.add(user)
-        db.session.commit()
+        user = create_fresh_test_user()
 
         data = {'email': 'user@gmail.com', 'password': 'strongPassword'}
 
@@ -518,11 +523,48 @@ class TestCMS(ViewTest):
             assert len(flashes) == 1
             assert 'no such a page' in flashes[0].content
 
+    def assert_form_not_accessible(self, faulty_path):
+        for method in [self.client.get, self.client.post]:
+            response = method(faulty_path, follow_redirects=True)
+            assert response.status_code != 200
+
+    def assert_set_password_form_works(self, user, path, check_token=False):
+        # correct token should result in form generation
+        response = self.client.get(path, follow_redirects=True)
+        for field_name in ['password', 'confirm_password']:
+            assert BeautifulSoup(response.data).select_one('input[name="%s"]' % field_name)
+
+        data_validation = {
+            'Provided passwords do not match!': ['someStrongPassword', 'ehmIAlreadyForgot..'],
+            'Both fields are required.': ['', ''],
+            'Provided password is too weak. Please try a different one.': ['so', 'so'],
+        }
+
+        # and, as long as 'password' and 'confirm_password' exists, match and are strong enough,
+        for expected_flash, data in data_validation.items():
+            password, confirmation = data
+            data = {'password': password, 'confirm_password': confirmation}
+
+            with self.assert_flashes(expected_flash):
+                self.client.post(path, data=data, follow_redirects=True)
+                # authentication with the wrong password should not be possible
+                assert not user.authenticate(password)
+                # token is still there
+                if check_token:
+                    assert user.verification_token
+
+        data = {'password': 'MySuperStrongPassword', 'confirm_password': 'MySuperStrongPassword'}
+
+        # the user's response should result in password change and token invalidation
+        with self.assert_flashes('Your new password has been set successfully!'):
+            self.client.post(path, data=data, follow_redirects=True)
+        assert user.authenticate(data['password'])
+        if check_token:
+            assert not user.verification_token
+
     def test_password_reset(self):
         from views.cms import PASSWORD_RESET_MAIL_SENT
-        user = User(email='user@gmail.com', password='strongPassword')
-        db.session.add(user)
-        db.session.commit()
+        user = create_fresh_test_user()
 
         data = {'email': 'user@gmail.com'}
 
@@ -552,37 +594,19 @@ class TestCMS(ViewTest):
 
         # fake token should not work (for both: password setting [post] and form request [get])
         replaced_token_path = replace_token(path)
-        for method in [self.client.get, self.client.post]:
-            response = method(replaced_token_path, follow_redirects=True)
-            assert response.status_code == 404
+        self.assert_form_not_accessible(replaced_token_path)
 
-        # correct token should result in form generation
-        response = self.client.get(path, follow_redirects=True)
-        for field_name in ['password', 'confirm_password']:
-            assert BeautifulSoup(response.data).select_one('input[name="%s"]' % field_name)
+        self.assert_set_password_form_works(user, path, check_token=True)
 
-        data_validation = {
-            'Provided passwords do not match!': ['someStrongPassword', 'ehmIAlreadyForgot..'],
-            'Both fields are required.': ['', ''],
-            'Provided password is too weak. Please try a different one.': ['so', 'so'],
-        }
+    def test_change_password(self):
+        user = create_fresh_test_user()
 
-        # and, as long as 'password' and 'confirm_password' exists, match and are strong enough,
-        for expected_flash, data in data_validation.items():
-            password, confirmation = data
-            data = {'password': password, 'confirm_password': confirmation}
+        user.is_verified = True
 
-            with self.assert_flashes(expected_flash):
-                self.client.post(path, data=data, follow_redirects=True)
-                # authentication with the wrong password should not be possible
-                assert not user.authenticate(password)
-                # token is still there
-                assert user.verification_token
+        # unauthenticated user should not be allowed
+        self.assert_form_not_accessible('/set_password/')
 
-        data = {'password': 'MySuperStrongPassword', 'confirm_password': 'MySuperStrongPassword'}
+        self.login(email=user.email, password='strongPassword')
 
-        # the user's response should result in password change and token invalidation
-        with self.assert_flashes('Your new password has been set successfully!'):
-            self.client.post(path, data=data, follow_redirects=True)
-        assert user.authenticate(data['password'])
-        assert not user.verification_token
+        # for authenticated user the form should work
+        self.assert_set_password_form_works(user, '/set_password/', check_token=False)
