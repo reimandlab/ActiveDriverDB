@@ -290,11 +290,12 @@ $frame_h: 390px
   .example
     @media #{$pc}
       height: 110px
-      strong
-        height: 80px
-      p
-        height: 30px
+    @media #{$hd}
+      height: 70px
     text-align: center
     strong
       overflow: auto
       display: block
+      height: 70%
+    p
+      height: 30%
