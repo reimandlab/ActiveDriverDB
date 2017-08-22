@@ -70,7 +70,8 @@ $frame_h: 390px
     font-size: 27px
 
 .strip-top
-  height: $top_height
+  min-height: $top_height
+  height: 100%
   position: relative
 
   a
@@ -93,11 +94,13 @@ $frame_h: 390px
       font-size: 58px
 
   .background
-    height: $top_height
+    min-height: $top_height
+    height: 100%
     position: absolute
     width: 100%
     #particles-js
-      height: $top_height
+      min-height: $top_height
+      height: 100%
 
   .strip-content
     padding-top: 112px
