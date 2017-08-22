@@ -195,10 +195,13 @@ $frame_h: 390px
 
   @media #{$under-tablet}
     .table-outer-border
+      tr
+        display: flex
       td
-        display: inline-block
+        display: inline
+        order: 2
       td:nth-child(2)
-        float: left
+        order: 1
         margin-right: 1ch
 
 .text-based-strip
