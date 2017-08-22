@@ -1,14 +1,14 @@
-{% set button_inline_css %}font-weight:bold;border:2px solid #2fa7c1;border-radius:4px;padding:6px 12px{% endset %}
+{% set button_inline_css %}font-weight:bold;border:2px solid #2fa7c1;border-radius:4px;padding:6px 12px;text-decoration:none{% endset %}
 
 {% block salutation %}
-  <p>Welcome {{ user.username }}</p>
+  <p>Welcome {{ user.username }},</p>
 {% endblock %}
 
 {% block content %}
 {% endblock %}
 
 {% block closing %}
-  <p>
+  <p style="margin-top:1em">
     Thank you,<br>
     <i>ActiveDriverDB development team</i>
   </p>
