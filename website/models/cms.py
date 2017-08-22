@@ -141,14 +141,19 @@ class UsersMutationsDataset(CMSModel):
         uri = self._save_to_file(data, self.uri)
         self.uri = uri
 
-    def remove(self):
+    def remove(self, commit=True):
+        """Performs hard-delete of dataset.
+
+        Current session won't be committed if commit=False is provided.
+        """
         # hard delete of data is the first priority
         with suppress(FileNotFoundError):
             os.remove(self._path)
 
         # soft delete associated entry
         update(self, store_until=utc_now())
-        db.session.commit()
+        if commit:
+            db.session.commit()
 
         # prompt python interpreter to remove data from memory
         with suppress(AttributeError):
@@ -156,7 +161,8 @@ class UsersMutationsDataset(CMSModel):
 
         # and delete from session
         db.session.delete(self)
-        db.session.commit()
+        if commit:
+            db.session.commit()
 
     def _save_to_file(self, data, uri=None):
         """Saves data to a file identified by uri argument.

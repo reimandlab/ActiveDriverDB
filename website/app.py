@@ -1,5 +1,6 @@
 import os
 from flask import Flask
+from flask_apscheduler import APScheduler
 from flask_assets import Environment
 from flask_login import LoginManager
 from flask_recaptcha import ReCaptcha
@@ -19,6 +20,7 @@ login_manager = LoginManager()
 mail = Mail()
 recaptcha = ReCaptcha()
 limiter = Limiter(key_func=get_remote_address)
+scheduler = APScheduler()
 
 
 def create_app(config_filename='config.py', config_override={}):
@@ -48,6 +50,10 @@ def create_app(config_filename='config.py', config_override={}):
 
     # Limiter
     limiter.init_app(app)
+
+    # Scheduler
+    scheduler.init_app(app)
+    scheduler.start()
 
     #
     # Error logging

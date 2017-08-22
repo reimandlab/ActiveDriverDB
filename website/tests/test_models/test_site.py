@@ -1,6 +1,6 @@
 import pytest
 from database import db
-from model_testing import ModelTest
+from .model_testing import ModelTest
 
 from exceptions import ValidationError
 from models import Protein

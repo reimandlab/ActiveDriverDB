@@ -1,7 +1,7 @@
 import time
 from datetime import timedelta
 
-from model_testing import ModelTest
+from .model_testing import ModelTest
 
 from database import db, utc_now, update
 from models import User

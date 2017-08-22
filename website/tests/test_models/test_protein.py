@@ -1,4 +1,4 @@
-from model_testing import ModelTest
+from .model_testing import ModelTest
 from models import Protein, Site
 
 

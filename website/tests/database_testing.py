@@ -1,5 +1,5 @@
 from flask_testing import TestCase
-from app import create_app
+from app import create_app, scheduler
 from database import db
 from database import bdb
 from database import bdb_refseq
@@ -96,3 +96,4 @@ class DatabaseTest(TestCase):
         db.drop_all()
         bdb.drop()
         bdb_refseq.drop()
+        scheduler.shutdown()

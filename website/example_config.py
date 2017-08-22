@@ -55,3 +55,14 @@ RECAPTCHA_SECRET_KEY = 'put_your_private_key_here'
 RATELIMIT_ENABLED = True
 RATELIMIT_DEFAULT = '500/hour,20/minute'
 RATELIMIT_STRATEGY = 'fixed-window-elastic-expiry'
+
+# - Scheduler configuration
+SCHEDULER_API_ENABLED = True
+JOBS = [
+    {
+        'id': 'hard_delete_expired_datasets',
+        'func': 'jobs:hard_delete_expired_datasets',
+        'trigger': 'interval',
+        'hours': 6
+    }
+]

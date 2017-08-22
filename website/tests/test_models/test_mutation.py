@@ -1,5 +1,5 @@
 from database import db
-from model_testing import ModelTest
+from .model_testing import ModelTest
 from models import Mutation
 from models import Protein
 from models import Site
