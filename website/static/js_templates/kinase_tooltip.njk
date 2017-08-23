@@ -1,8 +1,7 @@
 <h5>{{ kinase.gene_name }}</h5>
 <i>{{ kinase.refseq }}</i>
 <p>
-Interacts with {{ site }} PTM site (among others),<br>
-which is affected by mutation represented in this row.
+Interacts with {{ site }} PTM site (among others), which is affected by this mutation.
 </p>
 If the same filters as active are applied to this protein, then it has:
 <div>
@@ -15,5 +14,5 @@ If the same filters as active are applied to this protein, then it has:
         {% endif %}
     </ul>
 
-    <a href="{{ kinase.refseq }}">Show protein view</a>
+    <a href="/sequence/show/{{ kinase.refseq }}">Show sequence view</a>
 </div>

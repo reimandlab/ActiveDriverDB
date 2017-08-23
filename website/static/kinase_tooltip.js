@@ -21,7 +21,7 @@ function initializeKinaseTooltips()
     kinase_tooltip.init({
         id: 'kinase',
         preprocess_data: function (d, render_template_cb) {
-            context = this
+            var context = this
             $.ajax({
                 url: get_protein_details_url(
                     $(this).data('refseq')
