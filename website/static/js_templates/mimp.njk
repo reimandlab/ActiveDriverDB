@@ -32,6 +32,7 @@
 
 {% macro as_list_items(mimp_meta) %}
   {% for effect in ['gain', 'loss'] %}
+
     {% if mimp_meta[effect] | length %}
       {% set annotations_with_effect = mimp_meta[effect] %}
       {% set effect_count = annotations_with_effect | length %}

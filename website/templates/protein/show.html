@@ -352,12 +352,13 @@
         tracks.setNeedlePlotInstance(needle_plot);
     }
 
-    Widgets.init($('#filters_form'), function(){});
+    var initial_widgets_form = $('#filters_form')
+    Widgets.init(initial_widgets_form, function(){});
 
     var filters_handler = AsyncFiltersHandler();
 
     filters_handler.init({
-        form: $('#filters_form'),
+        form: initial_widgets_form,
         data_handler: load_data,
         representation_url: "{{ url_for('SequenceView:representation_data', refseq=protein.refseq) }}",
         on_loading_start: function (){

@@ -773,12 +773,22 @@ class Site(BioModel):
             self.position
         )
 
-    def to_json(self):
-        return {
+    def to_json(self, with_kinases=False):
+        data = {
             'position': self.position,
             'type': self.type,
             'residue': self.residue
         }
+        if with_kinases:
+            data['kinases'] = [
+                kinase.to_json()
+                for kinase in self.kinases
+            ]
+            data['kinase_groups'] = [
+                {'name': group.name}
+                for group in self.kinase_groups
+            ]
+        return data
 
     types = [
         'phosphorylation', 'acetylation',

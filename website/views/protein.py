@@ -2,17 +2,18 @@ from operator import attrgetter
 
 from flask import jsonify, session
 from flask import redirect
-from flask import request
 from flask import render_template as template
+from flask import request
 from flask import url_for
 from flask_classful import route
+from sqlalchemy import and_
 
 from helpers.views import AjaxTableView
-from models import Mutation
+from models import Mutation, Site
 from models import Protein
 from .abstract_protein import AbstractProteinView, get_raw_mutations
-from .sequence import SequenceViewFilters, prepare_sites
 from .chromosome import represent_mutations
+from .sequence import SequenceViewFilters, prepare_sites
 
 
 class ProteinView(AbstractProteinView):
@@ -66,7 +67,7 @@ class ProteinView(AbstractProteinView):
             def summary_getter(meta_column):
                 return meta_column.summary()
 
-        for mutation in filter_manager.apply(protein.mutations):
+        for mutation in get_raw_mutations(protein, filter_manager):
             meta_column = getattr(mutation, source_column)
             if not meta_column:
                 continue
@@ -75,6 +76,7 @@ class ProteinView(AbstractProteinView):
             )
 
         json['meta'] = list(meta)
+        json['drugs'] = [drug.to_json() for drug in protein.gene.drugs]
 
         return jsonify(json)
 
@@ -139,6 +141,11 @@ class ProteinView(AbstractProteinView):
 
         protein, filter_manager = self.get_protein_and_manager(refseq)
 
-        response = prepare_sites(protein, filter_manager)
+        sites = filter_manager.query_all(
+            Site,
+            lambda q: and_(q, Site.protein == protein)
+        )
+
+        response = prepare_sites(sites)
 
         return jsonify(response)

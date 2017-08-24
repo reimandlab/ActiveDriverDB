@@ -1,7 +1,9 @@
+from collections import defaultdict
+
 from database import bdb_refseq
 from database import get_or_create
 from helpers.bioinf import decode_raw_mutation
-from models import Mutation
+from models import Mutation, Drug, Gene
 from models import Protein
 
 
@@ -90,21 +92,6 @@ def represent_mutation(mutation, data_filter, representation_type=dict):
 
     affected_sites = mutation.get_affected_ptm_sites(data_filter)
 
-    def repr_site(site):
-        d = {
-            'kinases': [
-                kinase.to_json()
-                for kinase in site.kinases
-                ],
-            'kinase_groups': [
-                {'name': group.name}
-                for group in site.kinase_groups
-                ],
-        }
-        for k, v in site.to_json().items():
-            d[k] = v
-        return d
-
     return representation_type(
         (
             ('pos', mutation.position),
@@ -112,10 +99,27 @@ def represent_mutation(mutation, data_filter, representation_type=dict):
             ('ref', mutation.ref),
             ('cnt_ptm', len(affected_sites)),
             ('sites', [
-                repr_site(site)
+                site.to_json(with_kinases=True)
                 for site in affected_sites
             ])
         )
     )
 
 
+def drugs_interacting_with_kinases(filter_manager, kinases):
+    from sqlalchemy import and_
+
+    kinase_gene_ids = [kinase.protein.gene_id for kinase in kinases if kinase.protein]
+    drugs = filter_manager.query_all(
+        Drug,
+        lambda q: and_(
+            q,
+            Gene.id.in_(kinase_gene_ids)
+        ),
+        lambda query: query.join(Drug.target_genes)
+    )
+    drugs_by_kinase = defaultdict(set)
+    for drug in drugs:
+        for target_gene in drug.target_genes:
+            drugs_by_kinase[target_gene].add(drug)
+    return drugs_by_kinase

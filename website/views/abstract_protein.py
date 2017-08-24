@@ -117,3 +117,59 @@ def get_raw_mutations(protein, filter_manager, count=False):
     )
 
     return raw_mutations
+
+
+class ProteinRepresentation:
+
+    def __init__(self, protein, filter_manager, include_kinases_from_groups=False):
+        self.protein = protein
+        self.filter_manager = filter_manager
+        self.include_kinases_from_groups = include_kinases_from_groups
+        self.protein_mutations = get_raw_mutations(protein, filter_manager)
+        self.json_data = None
+
+    def get_sites_and_kinases(self, only_sites_with_kinases=True):
+        from models import Site
+        from sqlalchemy import and_
+        from sqlalchemy import or_
+
+        additional_criteria = []
+
+        if only_sites_with_kinases:
+            additional_criteria.append(
+                or_(
+                    Site.kinases.any(),
+                    Site.kinase_groups.any()
+                )
+            )
+
+        sites = [
+            site
+            for site in self.filter_manager.query_all(
+                Site,
+                lambda q: and_(
+                    q,
+                    Site.protein == self.protein,
+                    *additional_criteria
+                )
+            )
+        ]
+
+        kinases = set(
+            kinase
+            for site in sites
+            for kinase in (
+                site.kinases +
+                (site.kinase_groups if self.include_kinases_from_groups else [])
+            )
+        )
+
+        groups = set()
+
+        for site in sites:
+            groups.update(site.kinase_groups)
+
+        return sites, kinases, groups
+
+    def as_json(self):
+        return self.json_data

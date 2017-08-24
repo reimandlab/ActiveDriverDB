@@ -142,13 +142,13 @@ var Tooltip = function()
                 callback = config.callback
 
             d3.select('body')
-                .on('click.' + config.id, publicSpace.unstick)
+                .on('mouseup.' + config.id, publicSpace.unstick)
 
             // create a close button
             wrapper.append('button')
                 .attr('class', 'close')
                 .html('x')
-                .on('mouseup', publicSpace.unstick)
+                .on('click', publicSpace.unstick)
 
             if(config.viewport)
                 viewport = config.viewport
@@ -265,7 +265,19 @@ var Tooltip = function()
 
             // do not close the tooltip when selecting
             tooltip
-                .on('click', function(){ d3.event.stopPropagation() })
+                .on('mouseup', function(){ d3.event.stopPropagation() })
+
+            // update size and position if clicked (assuming that a click is only action which can change size,
+            // e.g. while clicking on "more" or "less" buttons.
+            tooltip
+                .on('click', function(){
+                    // after size-changing handler execution
+                    setTimeout(function() {
+                        _update_tooltip_size()
+                        publicSpace.moveToElement()
+                    }, 0)
+                })
+
 
         }
     }

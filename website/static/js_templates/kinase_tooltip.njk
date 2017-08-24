@@ -7,12 +7,25 @@ If the same filters as active are applied to this protein, then it has:
 <div>
     <ul>
         <li> {{ kinase.muts_count }} mutations
-             ({{ kinase.ptm_muts }} PTM muts)
+             ({{ kinase.ptm_muts }} PTM mutations)
         <li> {{ kinase.sites_count }} PTM sites
         {% if kinase.meta.length %}
             <li> {{ kinase.meta | join('; ') }}
         {% endif %}
     </ul>
-
-    <a href="/sequence/show/{{ kinase.refseq }}">Show sequence view</a>
 </div>
+{% if kinase.drugs | length %}
+  {% set many = kinase.drugs | length > 4 %}
+  <p>Following drugs interact with this kinase:</p>
+    <div{{ ' class=list-collapsed' if many else '' }}>
+      <ul>
+        {% for drug in kinase.drugs %}
+          <li>{{ drug.name }}
+        {% endfor %}
+      </ul>
+      {% if many %}
+        <a href="#" class="list-expand">more</a>
+      {% endif %}
+    </div>
+{% endif %}
+<a href="/sequence/show/{{ kinase.refseq }}">Show sequence view</a>

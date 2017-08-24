@@ -1,16 +1,17 @@
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 
-from flask import request, abort, Response, json
-from flask import redirect
-from flask import url_for
 from flask import jsonify
+from flask import redirect
 from flask import render_template as template
+from flask import request, abort, Response, json
+from flask import url_for
 from flask_login import current_user
 
-from models import Mutation, Drug, Gene
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
-from views.abstract_protein import AbstractProteinView, get_raw_mutations, GracefulFilterManager
+from models import Mutation
+from views._commons import drugs_interacting_with_kinases
+from views.abstract_protein import AbstractProteinView, get_raw_mutations, GracefulFilterManager, ProteinRepresentation
 from ._global_filters import common_filters, filters_data_view
 from ._global_filters import create_widgets
 
@@ -70,17 +71,14 @@ def divide_muts_by_sites(mutations, sites):
     return muts_by_site
 
 
-class NetworkRepresentation:
+class NetworkRepresentation(ProteinRepresentation):
 
     def __init__(self, protein, filter_manager, include_kinases_from_groups=False):
-        self.protein = protein
-        self.filter_manager = filter_manager
-        self.include_kinases_from_groups = include_kinases_from_groups
-        self.protein_mutations = get_raw_mutations(protein, filter_manager)
+
+        super().__init__(protein, filter_manager, include_kinases_from_groups)
 
         sites, kinases, kinase_groups = self.get_sites_and_kinases()
 
-        from sqlalchemy import and_
         kinases_counts = dict()
         for kinase in kinases:
             if kinase.protein:
@@ -93,20 +91,8 @@ class NetworkRepresentation:
                 # KINASES NOT MAPPED TO PROTEINS ARE NOT SHOWN
 
         protein_kinases_names = [kinase.name for kinase in kinases]
-        kinase_gene_ids = [kinase.protein.gene_id for kinase in kinases if kinase.protein]
 
-        drugs = filter_manager.query_all(
-            Drug,
-            lambda q: and_(
-                q,
-                Gene.id.in_(kinase_gene_ids)
-            ),
-            lambda query: query.join(Drug.target_genes)
-        )
-        drugs_by_kinase = defaultdict(set)
-        for drug in drugs:
-            for target_gene in drug.target_genes:
-                drugs_by_kinase[target_gene].add(drug)
+        drugs_by_kinase = drugs_interacting_with_kinases(filter_manager, kinases)
 
         kinase_reprs = []
         for kinase, count in kinases_counts.items():
@@ -157,7 +143,7 @@ class NetworkRepresentation:
                 for group in kinase_groups
             ]
         }
-        self.data = data
+        self.json_data = data
 
     @staticmethod
     def most_significant_impact(impacts):
@@ -188,7 +174,7 @@ class NetworkRepresentation:
 
         site_kinases = self.get_site_kinases(site)
         site_kinase_groups = self.get_site_kinase_groups(site)
-
+        # TODO: do not iterate over mutations times mimp four times
         return {
             'position': site.position,
             'residue': site.residue,
@@ -229,44 +215,6 @@ class NetworkRepresentation:
             ))
         }
 
-    def as_json(self):
-        return self.data
-
-    def get_sites_and_kinases(self):
-        from models import Site
-        from sqlalchemy import and_
-        from sqlalchemy import or_
-        sites = [
-            site
-            for site in self.filter_manager.query_all(
-                Site,
-                lambda q: and_(
-                    q,
-                    Site.protein == self.protein,
-                    or_(
-                        Site.kinases.any(),
-                        Site.kinase_groups.any()
-                    )
-                )
-            )
-        ]
-
-        kinases = set(
-            kinase
-            for site in sites
-            for kinase in (
-                site.kinases +
-                (site.kinase_groups if self.include_kinases_from_groups else [])
-            )
-        )
-
-        groups = set()
-
-        for site in sites:
-            groups.update(site.kinase_groups)
-
-        return sites, kinases, groups
-
     def as_tsv(self):
         header = [
             'target_protein', 'target_protein_refseq',
@@ -276,7 +224,7 @@ class NetworkRepresentation:
         ]
         content = ['#' + '\t'.join(header)]
 
-        network = self.data
+        network = self.json_data
 
         def choose_impact(mutations, site, kinase_name, mimp_list):
             return self.most_significant_impact(set(
