@@ -208,6 +208,8 @@
   {% endif %}
 </script>
 {% endblock %}
-  {% include 'analytics.html' %}
+  {% if not is_debug_mode %}
+    {% include 'analytics.html' %}
+  {% endif %}
 </body>
 </html>
