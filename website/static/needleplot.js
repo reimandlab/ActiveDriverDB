@@ -93,7 +93,8 @@ var NeedlePlot = function ()
         },
         // templates for tooltips
         needle_tooltip: null,
-        site_tooltip: null,
+        needle_tooltip_callback: null,
+        site_tooltip: null
     }
 
     function _adjustPlotDimensions()
@@ -435,7 +436,8 @@ var NeedlePlot = function ()
         var needle_tooltip = Tooltip()
         needle_tooltip.init({
             id: 'needle',
-            template: config.needle_tooltip
+            template: config.needle_tooltip,
+            callback: config.needle_tooltip_callback
         })
 
         needles = create_needles(vis, needle_tooltip)

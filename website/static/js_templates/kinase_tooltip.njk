@@ -1,8 +1,10 @@
 <h5>{{ kinase.gene_name }}</h5>
 <i>{{ kinase.refseq }}</i>
-<p>
-Interacts with {{ site }} PTM site (among others), which is affected by this mutation.
-</p>
+{% if site %}
+    <p>
+    Interacts with {{ site }} PTM site (among others), which is affected by this mutation.
+    </p>
+{% endif %}
 If the same filters as active are applied to this protein, then it has:
 <div>
     <ul>
@@ -16,7 +18,7 @@ If the same filters as active are applied to this protein, then it has:
 </div>
 {% if kinase.drugs | length %}
   {% set many = kinase.drugs | length > 4 %}
-  <p>Following drugs interact with this kinase:</p>
+  <div>Following drugs interact with this kinase:</div>
     <div{{ ' class=list-collapsed' if many else '' }}>
       <ul>
         {% for drug in kinase.drugs %}

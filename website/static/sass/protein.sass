@@ -94,9 +94,11 @@ rect, path
 
   ul.minor_mimp_kinases, ul.kinases
     li::after
-      content: ', '
+      content: ','
+      margin-right: 1ch
     li:last-of-type::after
       content: ''
+      margin-right: 0
 
   ul.kinases
     padding-left: 1ch
@@ -110,3 +112,6 @@ rect, path
       display: inline
 
 @import "protein_summary"
+
+.kinase
+  border-bottom: 1px dashed #999

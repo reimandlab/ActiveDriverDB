@@ -8,6 +8,14 @@
   </ul>
 {% endmacro %}
 
+{% macro kinase_link(mimp) %}
+  {% if mimp.kinase %}
+    <span data-refseq="{{ mimp.kinase.refseq }}" class="kinase">{{ mimp.pwm }}</span>
+  {% else %}
+    {{ mimp.pwm }}
+  {% endif %}
+{% endmacro %}
+
 {% macro weaker_predictions(annotations_with_effect, effect_count, effect, header) %}
   {% if header %}<h4>{% endif %}
   {% set plural = effect_count > 2 %}
@@ -21,13 +29,14 @@
   <ul class="minor_mimp_kinases">
   {% for i in range(1, effect_count) %}
     {% set mimp = annotations_with_effect[i] %}
-    <li> {{ mimp.pwm }} (p={{ mimp.probability | round(3) }})</li>
+    <li> {{ kinase_link(mimp) }}
+    (p={{ mimp.probability | round(3) }})
   {% endfor %}
   </ul>
 {% endmacro %}
 
 {% macro best_prediction(best, effect) %}
-  {{ best.pwm }} (probability p={{ best.probability | round(3) }})
+  {{ kinase_link(best) }} (probability p={{ best.probability | round(3) }})
 {% endmacro %}
 
 {% macro as_list_items(mimp_meta) %}

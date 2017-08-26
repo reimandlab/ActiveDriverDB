@@ -335,6 +335,10 @@
                     }
                 )
             },
+            needle_tooltip_callback: function(node)
+            {
+                initializeKinaseTooltips(d3.select(node).selectAll('.kinase'))
+            },
             legends: {
                 x: null,
                 y: data.value_type + ' of mutations in {{ protein.gene.name }} {{ protein.refseq }}'

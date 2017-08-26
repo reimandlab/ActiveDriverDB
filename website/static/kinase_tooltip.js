@@ -15,7 +15,7 @@ function get_protein_details_url(refseq)
     return href
 }
 
-function initializeKinaseTooltips()
+function initializeKinaseTooltips(selection)
 {
     var kinase_tooltip = Tooltip()
     kinase_tooltip.init({
@@ -41,6 +41,8 @@ function initializeKinaseTooltips()
             )
         }
     })
-    d3.selectAll('.kinase')
+    if(!selection)
+        selection = d3.selectAll('.kinase')
+    selection
         .call(kinase_tooltip.bind)
 }

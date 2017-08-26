@@ -81,10 +81,11 @@ var MutationTable = function ()
         },
         expandRow: function(mutation_id)
         {
-            element.bootstrapTable(
+            var expanded_row = element.bootstrapTable(
                 'expandRow',
                 getMutationRow(mutation_id).data('index')
             )
+            initializeKinaseTooltips(d3.select(expanded_row.get(0)).selectAll('.kinase'))
         },
         showMutation: showMutation
     }
