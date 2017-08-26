@@ -12,7 +12,9 @@ def hard_delete_expired_datasets():
 
     try:
         db.session.commit()
-        print('Scheduled hard delete job performed successfully, removed %s datasets' % removed)
+        # log removed entries count, but only if anything was removed
+        if removed:
+            print('Scheduled hard delete job performed successfully, removed %s datasets' % removed)
     except SQLAlchemyError:
         db.session.rollback()
         print('Error: Datasets hard delete commit failed')
