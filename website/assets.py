@@ -155,12 +155,13 @@ class DependencyManager:
     def __init__(self, app):
         self.app = app
         self.use_cdn = self.app.config.get('USE_CONTENT_DELIVERY_NETWORK', True)
+        self.force_local = self.app.config.get('FORBID_CONTENT_DELIVERY_NETWORK', False)
 
     def get_dependency(self, name):
 
         resource = self.third_party[name]
 
-        if self.use_cdn or resource.only_cdn:
+        if (self.use_cdn or resource.only_cdn) and not self.force_local:
             return resource.build_markup(check_integrity=True)
         else:
             return self.build_local_markup(resource)

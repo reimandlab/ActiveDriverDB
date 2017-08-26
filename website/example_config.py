@@ -37,7 +37,12 @@ BDB_GENE_TO_ISOFORM_PATH = 'databases/berkley_hash_refseq.db'
 # quite slow. It is helpful to turn stats generation off to speed up debugging.
 LOAD_STATS = True
 CONTACT_LIST = ['some_maintainer@domain.org', 'other_maintainer@domain.org']
+
+# Should the system load local copies of third party dependencies or use content delivery networks?
+#
 USE_CONTENT_DELIVERY_NETWORK = True
+FORBID_CONTENT_DELIVERY_NETWORK = False
+
 UPLOAD_FOLDER = 'static/uploaded/'
 UPLOAD_ALLOWED_EXTENSIONS = ['png', 'pdf', 'jpg', 'jpeg', 'gif']
 
