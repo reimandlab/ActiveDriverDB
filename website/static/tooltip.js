@@ -178,20 +178,20 @@ var Tooltip = function()
             {
                 // `d` provides data whereas `this` gives the DOM element
                 element = this
-                // re-render template only on if the element has changed
+                // re-render template only if the element has changed
                 render_template(d)
 
                 if(callback)
                     callback(tooltip_content.node())
             }
 
+            visible = true
+
             publicSpace.moveToPointer()
 
             tooltip.transition()
                 .duration(50)
                 .style('opacity', 1)
-
-            visible = true
         },
         hide: function(keep_element)
         {
@@ -236,6 +236,9 @@ var Tooltip = function()
             publicSpace.hide(true)
             tooltip.style('pointer-events', 'none')
         },
+        /**
+        Moves tooltip to pointer if the tooltip is visible and not stuck
+         */
         moveToPointer: function()
         {
             if(stuck || !visible)
