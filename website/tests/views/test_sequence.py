@@ -1,5 +1,5 @@
 from view_testing import ViewTest
-from models import Protein, Disease
+from models import Protein, Disease, MIMPMutation, Kinase
 from models import Gene
 from models import Mutation
 from models import Cancer
@@ -49,7 +49,12 @@ def create_test_mutations():
                         sig_code=1
                     )
                 ]
-            )
+            ),
+            meta_MIMP=[
+                MIMPMutation(pwm='Kinase with protein', probability=0.1),
+                MIMPMutation(pwm='Kinase without protein', probability=0.1),
+                MIMPMutation(pwm='Unknown kinase', probability=0.1)
+            ]
         ),
         Mutation(
             position=3,
@@ -77,6 +82,11 @@ class TestSequenceView(ViewTest):
 
         p = Protein(**test_protein_data())
         p.mutations = create_test_mutations()
+        kinases = [
+            Kinase(name='Kinase with protein', protein=Protein(refseq='NM_0001')),
+            Kinase(name='Kinase without protein')
+        ]
+        db.session.add_all(kinases)
         db.session.add(p)
 
         from website.views._global_filters import cached_queries
@@ -103,6 +113,12 @@ class TestSequenceView(ViewTest):
 
         # no sites were given
         assert len(representation['sites']) == 0
+
+        # let's check clinvar source
+        response = self.client.get('/sequence/representation_data/NM_000123?filters=Mutation.sources:in:ClinVar')
+        muts = response.json['representation']['mutations']
+        assert len(muts) == 1
+        assert len(muts[0]['meta']['MIMP']) == 3
 
     def test_details(self):
 

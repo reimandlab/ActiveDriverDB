@@ -1325,10 +1325,10 @@ class MIMPMutation(MutationDetails, BioModel):
         return {
             'effect': 'gain' if self.is_gain else 'loss',
             'pwm': self.pwm,
-            'kinase': {'refseq': self.kinase.protein.refseq} if self.kinase else {},
+            'kinase': {'refseq': self.kinase.protein.refseq} if self.kinase and self.kinase.protein else {},
             'pos_in_motif': self.position_in_motif,
             'pwm_family': self.pwm_family,
-            'site': self.site.to_json(),
+            'site': self.site.to_json() if self.site else None,
             'probability': self.probability
         }
 
