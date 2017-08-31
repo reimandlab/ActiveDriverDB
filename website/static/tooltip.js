@@ -256,6 +256,7 @@ var Tooltip = function()
             if(!element || !visible)
                 return
 
+            // Note: known bug in Firefox: https://bugzilla.mozilla.org/show_bug.cgi?id=1066435
             var size = element.getBoundingClientRect()
             _move(size.left + pointerOffsetX, size.top + pointerOffsetY)
         },
