@@ -89,8 +89,10 @@ def create_app(config_filename='config.py', config_override={}):
     db.init_app(app)
     db.create_all(bind='__all__')
 
-    bdb.open(app.config['BDB_DNA_TO_PROTEIN_PATH'])
-    bdb_refseq.open(app.config['BDB_GENE_TO_ISOFORM_PATH'])
+    mode = app.config.get('BDB_MODE', 'c')
+    print(mode)
+    bdb.open(app.config['BDB_DNA_TO_PROTEIN_PATH'], mode=mode)
+    bdb_refseq.open(app.config['BDB_GENE_TO_ISOFORM_PATH'], mode=mode)
 
     if app.config['USE_LEVENSTHEIN_MYSQL_UDF']:
         with app.app_context():

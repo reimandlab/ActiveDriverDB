@@ -476,6 +476,9 @@ class SearchView(FlaskView):
         elif task_id:
             celery_task = celery.AsyncResult(task_id)
             mutation_search = celery_task.result
+            for items in mutation_search.results.values():
+                for item in items:
+                    db.session.add(item['mutation'])
         else:
             mutation_search = MutationSearch()
 
