@@ -39,3 +39,12 @@ sudo npm install -g autoprefixer postcss-cli nunjucks
 # to be replaced with 'clean-css clean-css-cli' after a new release of webassets:
 # currently integration fails for new versions but the fix seems to be already implemented on master branch
 sudo npm install -g clean-css@3.4.24
+
+# install broker for celery (note: command is Debian/Ubuntu specific)
+sudo apt-get install rabbitmq-server
+
+# generate keys (for testing only!)
+mkdir -p celery
+cd celery
+ssh-keygen -t rsa -f worker.key -N 'Password for testing only'
+cd ..

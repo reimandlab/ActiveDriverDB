@@ -14,6 +14,7 @@ from database import bdb
 from database import bdb_refseq
 from assets import bundles
 from assets import DependencyManager
+from flask_celery import Celery
 
 
 login_manager = LoginManager()
@@ -21,6 +22,7 @@ mail = Mail()
 recaptcha = ReCaptcha()
 limiter = Limiter(key_func=get_remote_address)
 scheduler = APScheduler()
+celery = Celery()
 
 
 def create_app(config_filename='config.py', config_override={}):
@@ -52,8 +54,15 @@ def create_app(config_filename='config.py', config_override={}):
     limiter.init_app(app)
 
     # Scheduler
+    if scheduler.running:
+        scheduler.shutdown()
     scheduler.init_app(app)
     scheduler.start()
+
+    # Celery
+    celery.init_app(app)
+    from celery.security import setup_security
+    setup_security()
 
     #
     # Error logging

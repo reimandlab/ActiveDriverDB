@@ -14,7 +14,9 @@ from flask_classful import route
 from flask_login import current_user
 from Levenshtein import distance
 from sqlalchemy.orm.exc import NoResultFound
+from werkzeug.datastructures import FileStorage
 
+from app import celery
 from helpers.bioinf import complement
 from models import Protein, Pathway, Cancer, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData
 from models import Gene
@@ -148,6 +150,15 @@ class MutationSearch:
         self.without_mutations = []
         self.badly_formatted = []
         self.hidden_results_cnt = 0
+        self._progress = 0
+        self._total = 0
+        if vcf_file:
+            if type(vcf_file) is FileStorage:
+                # as bad as it can be, but usually the vcf file will be a list of lines already
+                vcf_file = vcf_file.readlines()
+            self._total += len(vcf_file)
+        if text_query:
+            self._total += sum(1 for _ in text_query.splitlines())
 
         if filter_manager:
             def data_filter(elements):
@@ -172,7 +183,17 @@ class MutationSearch:
         # like filter_manager so any instance of this class can be pickled.
         self.data_filter = None
 
+    def progress(self):
+        self._progress += 1
+        if celery.current_task:
+            celery.current_task.update_state(
+                state='PROGRESS',
+                meta={'progress': self._progress / self._total}
+            )
+
     def add_mutation_items(self, items, query_line):
+
+        self.progress()
 
         if not items:
             self.without_mutations.append(query_line)
@@ -292,6 +313,12 @@ def make_widgets(filter_manager):
     }
 
 
+@celery.task
+def search_task(vcf_file, textarea_query, filter_manager):
+    m = MutationSearch(vcf_file, textarea_query, filter_manager)
+    return m
+
+
 class SearchView(FlaskView):
     """Enables searching in any of registered database models."""
 
@@ -337,7 +364,6 @@ class SearchView(FlaskView):
 
         response = make_response(template(
             'search/dataset.html',
-            target='mutations',
             results=dataset.data.results,
             widgets=make_widgets(filter_manager),
             without_mutations=dataset.data.without_mutations,
@@ -368,23 +394,44 @@ class SearchView(FlaskView):
         flash('Successfully removed <b>%s</b> dataset.' % name, category='success')
         return redirect(url_for('ContentManagementSystem:my_datasets'))
 
+    def progress(self, task_id):
+
+        celery_task = celery.AsyncResult(task_id)
+        status = celery_task.status
+
+        if status == 'SUCCESS':
+            return redirect(url_for('SearchView:mutations', task_id=task_id))
+
+        progress = celery_task.result.get('progress', 0) if status == 'PROGRESS' else 0
+
+        return make_response(template(
+            'search/progress.html',
+            task=celery_task,
+            progress=int(progress * 100),
+            status=status
+        ))
+
     @route('/mutations', methods=['POST', 'GET'])
     def mutations(self):
         """Render search form and results (if any) for proteins or mutations"""
-
+        task_id = request.args.get('task_id', None)
+        use_celery = current_app.config.get('USE_CELERY', False)
         filter_manager = SearchViewFilters()
 
         if request.method == 'POST':
             textarea_query = request.form.get('mutations', False)
             vcf_file = request.files.get('vcf-file', False)
-
-            mutation_search = MutationSearch(
-                vcf_file,
-                textarea_query,
-                filter_manager
-            )
-
             store_on_server = request.form.get('store_on_server', False)
+
+            if use_celery:
+                mutation_search = search_task.delay(
+                    # vcf_file is not serializable but list of lines is
+                    vcf_file.readlines() if vcf_file else None,
+                    textarea_query,
+                    filter_manager
+                )
+            else:
+                mutation_search = MutationSearch(vcf_file, textarea_query, filter_manager)
 
             if store_on_server:
                 name = request.form.get('dataset_name', None)
@@ -422,6 +469,13 @@ class SearchView(FlaskView):
                     '<a href="' + url + '">' + url + '</a></p>',
                     'success'
                 )
+
+            if use_celery:
+                return redirect(url_for('SearchView:progress', task_id=mutation_search.task_id))
+
+        elif task_id:
+            celery_task = celery.AsyncResult(task_id)
+            mutation_search = celery_task.result
         else:
             mutation_search = MutationSearch()
 

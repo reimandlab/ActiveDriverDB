@@ -123,6 +123,29 @@ cd website/static/js_templates
 ```
 And you are done. When `DEBUG = False`, precompiled templates will be loaded automatically.
 
+### Task distribution
+
+
+#### Cyclic, maintenance tasks
+
+For cyclic tasks a CRON-like package [Advanced Python Scheduler](https://apscheduler.readthedocs.io/en/latest/) is used;
+it is fully integrated with application code and no additional setup is required.
+
+The jobs functions are defined in `jobs.py` file and scheduling information is stored in `config.py`, in `JOBS` variable.
+
+#### User jobs
+
+To manage and execute user provided mutation search [Celery Distributed Task Queue](http://docs.celeryproject.org/en/latest/index.html) is used,
+with the broker and backend being RabbitMQ.
+Both RabitMQ and Celery need to be run as services and set up properly, as described in [Celery](http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html#broker-rabbitmq).
+On Debian-based machines RabitMQ may be installed as a service directly from repositories.
+
+To run celery worker use following command:
+
+```
+celery -A celery_worker.celery worker
+```
+
 ### Serving
 
 #### Serving with Werkzeug

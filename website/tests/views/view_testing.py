@@ -15,6 +15,7 @@ class ViewTest(DatabaseTest):
 
     RECAPTCHA_ENABLED = False
     RATELIMIT_ENABLED = False
+    USE_CELERY = False
 
     def view_module(self):
         """Required to be defined in subclasses in order to use flash assertions"""

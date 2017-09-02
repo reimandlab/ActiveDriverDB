@@ -16,3 +16,5 @@ yuicompressor
 flask-recaptcha
 flask-limiter
 flask_apscheduler
+celery
+amqp

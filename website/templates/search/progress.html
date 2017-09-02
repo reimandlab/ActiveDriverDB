@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+
+{% block head %}
+  {% if status in ['PENDING', 'PROGRESS'] %}
+   <meta http-equiv="refresh" content="5">
+  {% endif %}
+{% endblock %}
+
+
+{% block content %}
+  {% if status == 'PENDING' %}
+    <p>Your search is queued. Please wait. The page will refresh itself every 5 seconds.</p>
+  {% elif status == 'PROGRESS' %}
+    <p>Your search is running: <span id="progress-percent">{{ progress }}</span>%</p>
+  {% elif status == "FAILED" %}
+    <p>The search failed</p>
+  {% endif %}
+
+  <div class="progress">
+    <div class="progress-bar progress-bar-striped active" id="progress-bar" role="progressbar"
+         aria-valuenow="{{ progress }}" aria-valuemin="0" aria-valuemax="100" style="width:{{ progress }}%">
+    </div>
+  </div>
+{% endblock %}
