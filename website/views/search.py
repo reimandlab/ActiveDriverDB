@@ -316,10 +316,7 @@ def make_widgets(filter_manager):
 @celery.task
 def search_task(vcf_file, textarea_query, filter_manager, dataset_uri=None):
     mutation_search = MutationSearch(vcf_file, textarea_query, filter_manager)
-    if dataset_uri:
-        dataset = UsersMutationsDataset.query.filter_by(uri=dataset_uri).one()
-        dataset.data = mutation_search
-    return mutation_search
+    return mutation_search, dataset_uri
 
 
 class SearchView(FlaskView):
@@ -403,6 +400,10 @@ class SearchView(FlaskView):
         status = celery_task.status
 
         if status == 'SUCCESS':
+            mutation_search, dataset_uri = celery_task.result
+            if dataset_uri:
+                dataset = UsersMutationsDataset.query.filter_by(uri=dataset_uri).one()
+                dataset.data = mutation_search
             return redirect(url_for('SearchView:mutations', task_id=task_id))
 
         progress = celery_task.result.get('progress', 0) if status == 'PROGRESS' else 0
@@ -453,9 +454,24 @@ class SearchView(FlaskView):
                 db.session.add(dataset)
                 db.session.commit()
 
+            if use_celery:
+                mutation_search = search_task.delay(
+                    # vcf_file is not serializable but list of lines is
+                    vcf_file.readlines() if vcf_file else None,
+                    textarea_query,
+                    filter_manager,
+                    dataset.uri if store_on_server else None
+                )
+
+                return redirect(url_for('SearchView:progress', task_id=mutation_search.task_id))
+
+        elif task_id:
+            celery_task = celery.AsyncResult(task_id)
+            mutation_search, dataset_uri = celery_task.result
+            if dataset_uri:
                 url = url_for(
                     'SearchView:user_mutations',
-                    uri=dataset.uri,
+                    uri=dataset_uri,
                     _external=True
                 )
 
@@ -465,20 +481,7 @@ class SearchView(FlaskView):
                     '<a href="' + url + '">' + url + '</a></p>',
                     'success'
                 )
-            if use_celery:
-                mutation_search = search_task.delay(
-                    # vcf_file is not serializable but list of lines is
-                    vcf_file.readlines() if vcf_file else None,
-                    textarea_query,
-                    filter_manager,
-                    dataset.uri
-                )
 
-                return redirect(url_for('SearchView:progress', task_id=mutation_search.task_id))
-
-        elif task_id:
-            celery_task = celery.AsyncResult(task_id)
-            mutation_search = celery_task.result
             for items in mutation_search.results.values():
                 for item in items:
                     db.session.add(item['mutation'])

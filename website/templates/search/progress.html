@@ -13,8 +13,10 @@
     <p>Your search is queued. Please wait. The page will refresh itself every 5 seconds.</p>
   {% elif status == 'PROGRESS' %}
     <p>Your search is running: <span id="progress-percent">{{ progress }}</span>%</p>
-  {% elif status == "FAILED" %}
-    <p>The search failed</p>
+  {% elif status == 'FAILURE' %}
+    <p>The search failed. We apologize for the inconvenience. Please try again and let us know if the problem reoccurs.</p>
+  {% else %}
+    <p>Status: {{ status }}</p>
   {% endif %}
 
   <div class="progress">
