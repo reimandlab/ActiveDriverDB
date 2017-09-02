@@ -65,6 +65,8 @@ sudo chown root:root /etc/init.d/celeryd
 cd ..
 rm -r temp
 
+sudo apt-get install acl
+
 setfacl -m u:celery:rwx website
 setfacl -m u:celery:rwx website/logs
 setfacl -m u:celery:rwx website/logs/app.log
