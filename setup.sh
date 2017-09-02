@@ -56,5 +56,9 @@ sudo useradd -g celery celery
 echo "Please modify /etc/default/celeryd script to provide absolute paths to celery executable and website dir"
 sudo cp celeryd /etc/default/celeryd
 
+mkdir temp -p
+cd temp
 wget https://raw.githubusercontent.com/celery/celery/3.1/extra/generic-init.d/celeryd
 sudo mv celeryd /etc/init.d/celeryd
+cd ..
+rm -r temp
