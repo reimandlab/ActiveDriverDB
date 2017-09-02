@@ -48,3 +48,15 @@ mkdir -p celery
 cd celery
 ssh-keygen -t rsa -f worker.key -N 'Password for testing only'
 cd ..
+
+# create celery user
+sudo groupadd celery
+sudo useradd -g celery celery
+
+cd website
+echo "Please modify /etc/default/celeryd script to provide absolute paths to celery executable and website dir"
+sudo cp celeryd /etc/default/celeryd
+cd ..
+
+wget https://raw.githubusercontent.com/celery/celery/3.1/extra/generic-init.d/celeryd
+sudo mv celeryd /etc/init.d/celeryd

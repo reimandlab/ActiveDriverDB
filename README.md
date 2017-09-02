@@ -140,10 +140,18 @@ with the broker and backend being RabbitMQ.
 Both RabitMQ and Celery need to be run as services and set up properly, as described in [Celery](http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html#broker-rabbitmq).
 On Debian-based machines RabitMQ may be installed as a service directly from repositories.
 
-To run celery worker use following command:
+To run celery worker as a script please use the following command:
 
 ```
 celery -A celery_worker.celery worker
+```
+
+For deployment it should be started as a service.
+A major part of configuration will be performed by `setup.sh` automatically but one need to amend configuration file (`celeryd`) so all paths are absolute and correct.
+To start the service use `init.d` script:
+
+```
+/etc/init.d/celeryd {start|stop|restart|status}
 ```
 
 ### Serving
