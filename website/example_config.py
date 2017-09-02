@@ -76,7 +76,7 @@ JOBS = [
 # - Celery (turned off by default as it requires Celery manual configuration)
 USE_CELERY = False
 CELERY_BROKER_URL = 'amqp://guest@localhost//'
-CELERY_RESULT_BACKEND = 'amqp://guest@localhost//'
+CELERY_RESULT_BACKEND = 'redis://'
 CELERY_TASK_SERIALIZER = 'pickle'
 CELERY_RESULT_SERIALIZER = 'pickle'
 CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'application/json']

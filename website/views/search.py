@@ -467,6 +467,12 @@ class SearchView(FlaskView):
 
         elif task_id:
             celery_task = celery.AsyncResult(task_id)
+            if celery_task.status == 'PENDING':
+                flash(
+                    'This search either expired or does not exist. Please try specifying a new one',
+                    'warning'
+                )
+                return redirect(url_for('SearchView:mutations'))
             mutation_search, dataset_uri = celery_task.result
             if dataset_uri:
                 url = url_for(
@@ -485,6 +491,7 @@ class SearchView(FlaskView):
             for items in mutation_search.results.values():
                 for item in items:
                     db.session.add(item['mutation'])
+            celery_task.forget()
         else:
             mutation_search = MutationSearch()
 

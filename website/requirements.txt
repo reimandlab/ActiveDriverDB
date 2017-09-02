@@ -18,3 +18,4 @@ flask-limiter
 flask_apscheduler
 celery
 amqp
+redis

@@ -72,3 +72,6 @@ setfacl -m u:celery:rwx website/logs/app.log
 setfacl -m u:celery:rwx website/databases
 setfacl -m u:celery:rwx website/databases/berkley_hash_refseq.db
 setfacl -m u:celery:rwx website/databases/berkley_hash.db
+
+# redis
+sudo apt-get install redis-server
