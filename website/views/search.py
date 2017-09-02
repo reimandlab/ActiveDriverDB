@@ -314,9 +314,12 @@ def make_widgets(filter_manager):
 
 
 @celery.task
-def search_task(vcf_file, textarea_query, filter_manager):
-    m = MutationSearch(vcf_file, textarea_query, filter_manager)
-    return m
+def search_task(vcf_file, textarea_query, filter_manager, dataset_uri=None):
+    mutation_search = MutationSearch(vcf_file, textarea_query, filter_manager)
+    if dataset_uri:
+        dataset = UsersMutationsDataset.query.filter_by(uri=dataset_uri).one()
+        dataset.data = mutation_search
+    return mutation_search
 
 
 class SearchView(FlaskView):
@@ -423,14 +426,7 @@ class SearchView(FlaskView):
             vcf_file = request.files.get('vcf-file', False)
             store_on_server = request.form.get('store_on_server', False)
 
-            if use_celery:
-                mutation_search = search_task.delay(
-                    # vcf_file is not serializable but list of lines is
-                    vcf_file.readlines() if vcf_file else None,
-                    textarea_query,
-                    filter_manager
-                )
-            else:
+            if not use_celery:
                 mutation_search = MutationSearch(vcf_file, textarea_query, filter_manager)
 
             if store_on_server:
@@ -450,7 +446,7 @@ class SearchView(FlaskView):
 
                 dataset = UsersMutationsDataset(
                     name=name,
-                    data=mutation_search,
+                    data=mutation_search if not use_celery else None,
                     owner=user
                 )
 
@@ -469,8 +465,15 @@ class SearchView(FlaskView):
                     '<a href="' + url + '">' + url + '</a></p>',
                     'success'
                 )
-
             if use_celery:
+                mutation_search = search_task.delay(
+                    # vcf_file is not serializable but list of lines is
+                    vcf_file.readlines() if vcf_file else None,
+                    textarea_query,
+                    filter_manager,
+                    dataset.uri
+                )
+
                 return redirect(url_for('SearchView:progress', task_id=mutation_search.task_id))
 
         elif task_id:
