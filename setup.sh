@@ -60,5 +60,15 @@ mkdir temp -p
 cd temp
 wget https://raw.githubusercontent.com/celery/celery/3.1/extra/generic-init.d/celeryd
 sudo mv celeryd /etc/init.d/celeryd
+sudo chmod 755 /etc/init.d/celeryd
+sudo chown root:root /etc/init.d/celeryd
 cd ..
 rm -r temp
+
+setfacl -m u:celery:rwx website
+setfacl -m u:celery:rwx website/logs
+setfacl -m u:celery:rwx website/logs/app.log
+
+setfacl -m u:celery:rwx website/databases
+setfacl -m u:celery:rwx website/databases/berkley_hash_refseq.db
+setfacl -m u:celery:rwx website/databases/berkley_hash.db
