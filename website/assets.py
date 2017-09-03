@@ -254,6 +254,10 @@ bundles = {
         'common.js',
         'cms_editor.js',
     ),
+    'js_search_progress': js_bundle(
+        'progress',
+        'progress.js'
+    ),
     'css_common': css_bundle(
         'style',
         'sass/style.css'

@@ -394,6 +394,18 @@ class SearchView(FlaskView):
         flash('Successfully removed <b>%s</b> dataset.' % name, category='success')
         return redirect(url_for('ContentManagementSystem:my_datasets'))
 
+    def raw_progress(self, task_id):
+        celery_task = celery.AsyncResult(task_id)
+        status = celery_task.status
+
+        progress = 0
+        if status == 'SUCCESS':
+            progress = 100
+        elif status == 'PROGRESS':
+            progress = celery_task.result.get('progress', 0)
+
+        return jsonify({'status': status, 'progress': int(progress * 100)})
+
     def progress(self, task_id):
 
         celery_task = celery.AsyncResult(task_id)
