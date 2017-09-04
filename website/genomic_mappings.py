@@ -23,6 +23,8 @@ class GenomicMappings(BerkleyHashSet):
         There may be several mutations with the same genomic coordinates and alleles,
         as there are many splicing isoforms produced from a single gene.
 
+        Stop codon mutations are not considered.
+
         Args:
             chrom: chromosome number or identifier, without 'chr' prefix
             dna_pos: genomic position

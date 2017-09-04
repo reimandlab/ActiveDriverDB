@@ -87,6 +87,8 @@ class ChromosomeView(FlaskView):
         return filters, filter_manager
 
     def mutation(self, chrom, dna_pos, dna_ref, dna_alt):
+        """Rest API endpoint.
+        Stop codon mutations are not considered."""
 
         _, filter_manager = self._make_filters()
 

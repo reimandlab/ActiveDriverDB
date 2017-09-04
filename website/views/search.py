@@ -143,8 +143,18 @@ def search_proteins(phase, limit=None, filter_manager=None):
 class MutationSearch:
 
     def __init__(self, vcf_file=None, text_query=None, filter_manager=None):
-        # note: entries from both file and textarea will be merged
+        """Performs search for known and novel mutations from provided VCF file and/or text query.
 
+        Stop codon mutations are not considered.
+
+        Args:
+            vcf_file: a file object containing data in Variant Call Format
+            text_query: a string of multiple lines, where each line represents either:
+                 - a genomic mutation (e.g. chr12 57490358 C A) or
+                 - a protein mutation (e.g. STAT6 W737C)
+                Entries from both VCF file and text input will be merged.
+            filter_manager: FilterManager instance used to filter out unwanted mutations
+        """
         self.query = ''
         self.results = {}
         self.without_mutations = []
