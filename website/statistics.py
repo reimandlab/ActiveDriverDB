@@ -32,11 +32,95 @@ def mutations_counter(func):
     return counter(func, name='mutations_' + func.__name__)
 
 
-class Statistics:
+def get_methods(instance):
+
+    def is_method(member):
+        name, value = member
+        return not name.startswith('_') and callable(value)
+
+    all_members = {name: getattr(instance, name) for name in dir(instance)}
+
+    return filter(is_method, all_members.items())
+
+
+class CountStore:
 
     @property
     def counters(self):
         return counters
+
+    def calc_all(self):
+        for name, counter in self.counters.items():
+            model, new = get_or_create(Count, name=name)
+            if hasattr(counter, '__self__'):
+                value = counter()
+            else:
+                value = counter(self)
+            model.value = value
+            print(name, value)
+            if new:
+                db.session.add(model)
+
+    def get_all(self):
+
+        counts = {
+            counter_name: db.session.query(Count.value).filter(Count.name == counter_name).scalar() or 0
+            for counter_name in self.counters.keys()
+        }
+
+        return counts
+
+
+class Statistics(CountStore):
+    """This module calculates, stores and retrieves counts of data in database.
+
+    On initialization any instance of Statistics class can be used to calculate
+    counts of various data entities which are hard-coded in the class methods.
+
+        stats = Statistics()                # initialize a new instance
+
+    If accessed directly after initialization, each counter's method will
+    be executed at run time, which may cause delayed response:
+
+        proteins_cnt = stats.proteins()     # this may take a few seconds now
+        print(proteins_cnt)
+
+    You can compute all counts at once, so those can be saved to database afterwards:
+
+        stats.calc_all()                    # this will take several minutes
+        db.session.commit()                 # save results in database
+
+    After using 'calc_all()', the results can be obtained from database:
+
+        counts = stats.get_all()
+
+    You can access the pre-defined counts instantly, with no delay now.
+
+        print(counts['muts']['ClinVar'])
+        print(counts['proteins'])
+    """
+
+    def get_all(self):
+        """Retrieves data counts from database in form of dict,
+        where keys are model names and values are entity counts.
+
+        Mutations counts are accessible in sub-dict called 'muts'.
+        """
+        all_counts = super().get_all()
+
+        counts = {}
+        mutation_counts = {}
+
+        for counter_name, value in all_counts.items():
+            if counter_name.startswith('mutations_'):
+                counter_name = counter_name[10:]    # strip off "mutations_"
+                mutation_counts[counter_name] = value
+            else:
+                counts[counter_name] = value
+
+        counts['muts'] = mutation_counts
+
+        return counts
 
     @staticmethod
     def get_filter_by_sources(sources):
@@ -60,16 +144,6 @@ class Statistics:
             self.get_filter_by_sources(sources)
         ).count()
 
-    def get_methods(self):
-
-        def is_method(member):
-            name, value = member
-            return not name.startswith('_') and callable(value)
-
-        all_members = {name: getattr(self, name) for name in dir(self)}
-
-        return filter(is_method, all_members.items())
-
     def __init__(self):
 
         for model in Mutation.source_specific_data:
@@ -87,39 +161,9 @@ class Statistics:
 
             self.__dict__[name] = models_counter(model)
 
-        for name, method in self.get_methods():
+        for name, method in get_methods(self):
             if hasattr(method, 'to_be_registered'):
                 self.__dict__[name] = counter(method, name)
-
-    def calc_all(self):
-        for name, counter in self.counters.items():
-            model, new = get_or_create(Count, name=name)
-            if hasattr(counter, '__self__'):
-                value = counter()
-            else:
-                value = counter(self)
-            model.value = value
-            print(name, value)
-            if new:
-                db.session.add(model)
-
-    def get_all(self):
-
-        mutation_counts = {
-            counter_name[10:]: db.session.query(Count.value).filter(Count.name == counter_name).scalar() or 0
-            for counter_name in self.counters.keys()
-            if counter_name.startswith('mutations_')
-        }
-
-        counts = {
-            counter_name: db.session.query(Count.value).filter(Count.name == counter_name).scalar() or 0
-            for counter_name in self.counters.keys()
-            if not counter_name.startswith('mutations_')
-        }
-
-        counts['muts'] = mutation_counts
-
-        return counts
 
     @mutations_counter
     def all(self):
