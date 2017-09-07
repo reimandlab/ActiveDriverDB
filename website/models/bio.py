@@ -960,11 +960,9 @@ class MIMPMetaManager(UserList):
 class MutationDetails:
     """Base for tables defining detailed metadata for specific mutations"""
 
-    details_manager = None
-
     @declared_attr
     def mutation_id(cls):
-        return db.Column(db.Integer, db.ForeignKey('mutation.id'))
+        return db.Column(db.Integer, db.ForeignKey('mutation.id'), unique=True)
 
     def get_value(self, filter=lambda x: x):
         """Return number representing value to be used in needleplot"""
@@ -1001,6 +999,21 @@ class MutationDetails:
         raise NotImplementedError
 
 
+class ManagedMutationDetails(MutationDetails):
+    """For use when one mutation is related to many mutation details entries."""
+
+    @property
+    def details_manager(self):
+        """List-like class (e.g. deriving from UserList) which will aggregate
+        results from all the mutation details (per mutation). It has to implement
+        to_json, summary and get_value from MutationDetails interface."""
+        raise NotImplementedError
+
+    @declared_attr
+    def mutation_id(cls):
+        return db.Column(db.Integer, db.ForeignKey('mutation.id'))
+
+
 class UserUploadedMutation(MutationDetails, BioModel):
 
     name = 'user'
@@ -1024,7 +1037,7 @@ class UserUploadedMutation(MutationDetails, BioModel):
         return self.query
 
 
-class CancerMutation(MutationDetails):
+class CancerMutation(ManagedMutationDetails):
 
     samples = db.Column(db.Text())
     value_type = 'count'
@@ -1269,7 +1282,7 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
     """
 
 
-class MIMPMutation(MutationDetails, BioModel):
+class MIMPMutation(ManagedMutationDetails, BioModel):
     """Metadata for MIMP mutation"""
 
     name = 'MIMP'
@@ -1340,6 +1353,10 @@ def details_proxy(target_class, key):
     return association_proxy('meta_' + target_class.name, key)
 
 
+def are_details_managed(model):
+    return ManagedMutationDetails in model.mro()
+
+
 def mutation_details_relationship(model, use_list=False, **kwargs):
     return db.relationship(
         model,
@@ -1392,7 +1409,7 @@ class Mutation(BioModel):
     source_data_relationships = {
         'meta_' + model.name: (
             managed_mutation_details_relationship(model)
-            if model.details_manager else
+            if are_details_managed(model) else
             mutation_details_relationship(model)
         )
         for model in source_specific_data

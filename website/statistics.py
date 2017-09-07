@@ -8,7 +8,7 @@ import models
 from sqlalchemy import and_, distinct, func, literal_column, case
 from sqlalchemy import or_
 from flask import current_app
-from models import Mutation, Count, Site, Protein, MC3Mutation
+from models import Mutation, Count, Site, Protein, MC3Mutation, are_details_managed
 from tqdm import tqdm
 
 counters = {}
@@ -129,7 +129,7 @@ class Statistics(CountStore):
             (
                 (
                     Mutation.get_relationship(source).any()
-                    if source.details_manager else
+                    if are_details_managed(source) else
                     Mutation.get_relationship(source).has()
                 )
                 for source in sources
@@ -147,7 +147,7 @@ class Statistics(CountStore):
     def __init__(self):
 
         for model in Mutation.source_specific_data:
-            # dirty trick: 1KGenomes is not valid name in python
+            # dirty trick: 1KGenomes is not a valid name in Python
             name = 'mutations_' + model.name.replace('1', 'T')
 
             def muts_counter(self, model=model):
@@ -156,7 +156,7 @@ class Statistics(CountStore):
 
             self.__dict__[name] = muts_counter
 
-        for model in filter(lambda model: model.details_manager, Mutation.source_specific_data):
+        for model in filter(lambda model: are_details_managed(model), Mutation.source_specific_data):
             name = 'mutations_' + model.name + '_annotations'
 
             self.__dict__[name] = models_counter(model)
@@ -220,7 +220,7 @@ class Statistics(CountStore):
         return db.session.query(model).count()
 
     def count_mutations(self, mutation_class):
-        if mutation_class.details_manager is not None:
+        if are_details_managed(mutation_class):
             return db.session.query(Mutation).filter(
                 self.get_filter_by_sources([mutation_class])
             ).count()
