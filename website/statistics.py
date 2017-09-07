@@ -204,11 +204,11 @@ class Statistics(CountStore):
         sources = [
             model
             for model in Mutation.source_specific_data
-            if model != models.MIMPMutation
+            if model != models.MIMPMutation and model != models.UserUploadedMutation
         ]
         count = 0
 
-        for i in range(2, len(sources) - 1):
+        for i in range(2, len(sources) + 1):
             sign = 1 if i % 2 == 0 else -1
             for combination in combinations(sources, i):
                 count += sign * self.count_by_source(combination)
