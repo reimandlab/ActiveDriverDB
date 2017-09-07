@@ -220,12 +220,9 @@ class Statistics(CountStore):
         return db.session.query(model).count()
 
     def count_mutations(self, mutation_class):
-        if are_details_managed(mutation_class):
-            return db.session.query(Mutation).filter(
-                self.get_filter_by_sources([mutation_class])
-            ).count()
-        else:
-            return self.count(mutation_class)
+        return db.session.query(Mutation).filter(
+            self.get_filter_by_sources([mutation_class])
+        ).count()
 
     @counter
     def proteins(self):
