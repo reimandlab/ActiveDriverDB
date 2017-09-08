@@ -1091,7 +1091,7 @@ class InheritedMutation(MutationDetails, BioModel):
     value_type = 'count'
 
     # RS: dbSNP ID (i.e. rs number)
-    db_snp_id = db.Column(db.Integer)
+    db_snp_ids = db.Column(db.PickleType)
 
     # MUT: Is mutation (journal citation, explicit fact):
     # a low frequency variation that is cited
@@ -1115,7 +1115,7 @@ class InheritedMutation(MutationDetails, BioModel):
 
     def to_json(self, filter=lambda x: x):
         return {
-            'dbSNP id': 'rs' + str(self.db_snp_id),
+            'dbSNP id': ','.join(['rs%s' % snp_id for snp_id in self.db_snp_ids]),
             'Is validated': bool(self.is_validated),
             'Is low frequency variation': bool(self.is_low_freq_variation),
             'Is in PubMed Central': bool(self.is_in_pubmed_central),

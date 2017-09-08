@@ -176,7 +176,7 @@ class TestImport(DatabaseTest):
             assert len(diseases) == 2
 
             clinvar = first_row_mutation.meta_ClinVar
-            assert clinvar.db_snp_id == 863224682  # rs863224682
+            assert clinvar.db_snp_ids == [863224682]  # rs863224682
             assert not clinvar.is_validated
             assert not clinvar.is_low_freq_variation
 

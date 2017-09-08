@@ -22,7 +22,7 @@ class Importer(MutationImporter):
     ]
     insert_keys = (
         'mutation_id',
-        'db_snp_id',
+        'db_snp_ids',
         'is_low_freq_variation',
         'is_validated',
         'is_in_pubmed_central',
@@ -100,20 +100,48 @@ class Importer(MutationImporter):
 
             for mutation_id in self.preparse_mutations(line):
 
+                # take care of duplicates
                 duplicated = self.look_after_duplicates(mutation_id, clinvar_mutations, values[:4])
                 if duplicated:
                     duplicates += 1
                     continue
 
+                # take care of nearly-duplicates
+                same_mutation_pointers = self.mutations_details_pointers_grouped_by_unique_mutations[mutation_id]
+                assert len(same_mutation_pointers) <= 1
+                if same_mutation_pointers:
+                    pointer = same_mutation_pointers[0]
+                    old = self.data_as_dict(clinvar_mutations[pointer])
+                    new = self.data_as_dict(values, mutation_id=mutation_id)
+
+                    if old['db_snp_ids'] != [new['db_snp_ids']]:
+                        clinvar_mutations[pointer][1].append(new['db_snp_ids'])
+
+                    # if either of the dbSNP entries is validated, the mutation is validated
+                    # (the same with presence in PubMed)
+                    for key in ['is_validated', 'is_in_pubmed_central']:
+                        if old[key] != new[key] and new[key]:
+                            index = self.insert_keys.index(key)
+                            clinvar_mutations[pointer][index] = True
+
+                    print(
+                        'Merged details referring to the same mutation (%s): %s into %s'
+                        %
+                        (mutation_id, values, clinvar_mutations[pointer])
+                    )
+                    continue
+
+                self.protect_from_duplicates(mutation_id, clinvar_mutations)
+
                 # Python 3.5 makes it easy: **values (but is not available)
                 clinvar_mutations.append(
-                    (
+                    [
                         mutation_id,
-                        values[0],
+                        [values[0]],
                         values[1],
                         values[2],
                         values[3],
-                    )
+                    ]
                 )
 
                 for i in range(sub_entries_cnt):
@@ -156,8 +184,13 @@ class Importer(MutationImporter):
 
     def insert_details(self, details):
         clinvar_mutations, clinvar_data, new_diseases = details
-        self.insert_list(clinvar_mutations)
 
+        bulk_ORM_insert(
+            Disease,
+            ('name',),
+            [(disease,) for disease in new_diseases]
+        )
+        self.insert_list(clinvar_mutations)
         bulk_ORM_insert(
             ClinicalData,
             (
@@ -167,11 +200,6 @@ class Importer(MutationImporter):
                 'rev_status',
             ),
             clinvar_data
-        )
-        bulk_ORM_insert(
-            Disease,
-            ('name',),
-            [(disease,) for disease in new_diseases]
         )
 
     def restart_autoincrement(self, model):

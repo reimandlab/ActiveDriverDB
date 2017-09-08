@@ -374,6 +374,13 @@ class MutationImporter(ABC):
 
             yield mutation_id
 
+    def data_as_dict(self, data, mutation_id=None):
+        if mutation_id:
+            with_mutation = [mutation_id]
+            with_mutation.extend(data)
+            data = with_mutation
+        return dict(zip(self.insert_keys, data))
+
     def look_after_duplicates(self, mutation_id, mutations_details, values):
         """To prevent inclusion of duplicate data use this function to check for duplicates
         before adding any data to mutations_details insertion list.
@@ -392,8 +399,9 @@ class MutationImporter(ABC):
 
                 clinvar_mutations.append((mutation_id, *values))
 
+                self.protect_from_duplicates(mutation_id, clinvar_mutations)
+
         """
-        new_pointer = len(mutations_details)
 
         if mutation_id in self.mutations_details_pointers_grouped_by_unique_mutations:
             pointers = self.mutations_details_pointers_grouped_by_unique_mutations[mutation_id]
@@ -401,13 +409,16 @@ class MutationImporter(ABC):
                 # first value in mutations_details store is used to keep mutation_id
                 old_values = mutations_details[pointer][1:]
                 if tuple(values) == tuple(old_values):
-                    data = dict(zip(self.insert_keys, mutations_details[pointer]))
+                    data = self.data_as_dict(mutations_details[pointer])
                     print(
                         'The row with: %s is a duplicate of another row '
                         '(with respect to the considered values).' % data
                     )
                     return True
 
+    def protect_from_duplicates(self, mutation_id, mutations_details):
+        """Use in tandem with look_after_duplicates method"""
+        new_pointer = len(mutations_details)
         self.mutations_details_pointers_grouped_by_unique_mutations[mutation_id].append(new_pointer)
 
 
