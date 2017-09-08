@@ -397,10 +397,9 @@ class MutationImporter(ABC):
                 if duplicated:
                     continue
 
-                clinvar_mutations.append((mutation_id, *values))
-
                 self.protect_from_duplicates(mutation_id, clinvar_mutations)
 
+                clinvar_mutations.append((mutation_id, *values))
         """
 
         if mutation_id in self.mutations_details_pointers_grouped_by_unique_mutations:

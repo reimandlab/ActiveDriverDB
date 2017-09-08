@@ -176,7 +176,7 @@ class TestImport(DatabaseTest):
             assert len(diseases) == 2
 
             clinvar = first_row_mutation.meta_ClinVar
-            assert clinvar.db_snp_ids == [863224682]  # rs863224682
+            assert clinvar.db_snp_ids == ['863224682']  # rs863224682
             assert not clinvar.is_validated
             assert not clinvar.is_low_freq_variation
 
@@ -207,6 +207,7 @@ class TestImport(DatabaseTest):
             if not is_duplicated:
                 details_with_id = [mutation_id]
                 details_with_id.extend(details)
+                importer.protect_from_duplicates(mutation_id, mutation_details)
                 mutation_details.append(details_with_id)
             return is_duplicated
 
