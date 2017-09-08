@@ -111,6 +111,7 @@ class MutationImporter(ABC):
     model = None
 
     def __init__(self, proteins=None):
+        self.mutations_details_pointers_grouped_by_unique_mutations = defaultdict(list)
         if not proteins:
             proteins = get_proteins()
         self.proteins = proteins
@@ -372,6 +373,42 @@ class MutationImporter(ABC):
             )
 
             yield mutation_id
+
+    def look_after_duplicates(self, mutation_id, mutations_details, values):
+        """To prevent inclusion of duplicate data use this function to check for duplicates
+        before adding any data to mutations_details insertion list.
+
+        For example, assuming that clinvar_mutations is an insertion list use:
+
+            values = get_data_from_line(line)
+
+            for mutation_id in self.preparse_mutations(line):
+
+                duplicated = self.look_after_duplicates(mutation_id, clinvar_mutations, values)
+
+                # skip unwanted duplicate
+                if duplicated:
+                    continue
+
+                clinvar_mutations.append((mutation_id, *values))
+
+        """
+        new_pointer = len(mutations_details)
+
+        if mutation_id in self.mutations_details_pointers_grouped_by_unique_mutations:
+            pointers = self.mutations_details_pointers_grouped_by_unique_mutations[mutation_id]
+            for pointer in pointers:
+                # first value in mutations_details store is used to keep mutation_id
+                old_values = mutations_details[pointer][1:]
+                if tuple(values) == tuple(old_values):
+                    data = dict(zip(self.insert_keys, mutations_details[pointer]))
+                    print(
+                        'The row with: %s is a duplicate of another row '
+                        '(with respect to the considered values).' % data
+                    )
+                    return True
+
+        self.mutations_details_pointers_grouped_by_unique_mutations[mutation_id].append(new_pointer)
 
 
 class MutationImportManager:

@@ -35,6 +35,7 @@ class Importer(MutationImporter):
     def parse(self, path):
         clinvar_mutations = []
         clinvar_data = []
+        duplicates = 0
         new_diseases = OrderedDict()
 
         clinvar_keys = (
@@ -50,7 +51,7 @@ class Importer(MutationImporter):
         highest_disease_id = get_highest_id(Disease)
 
         def clinvar_parser(line):
-            nonlocal highest_disease_id
+            nonlocal highest_disease_id, duplicates
 
             metadata = line[20].split(';')
 
@@ -99,6 +100,11 @@ class Importer(MutationImporter):
 
             for mutation_id in self.preparse_mutations(line):
 
+                duplicated = self.look_after_duplicates(mutation_id, clinvar_mutations, values[:4])
+                if duplicated:
+                    duplicates += 1
+                    continue
+
                 # Python 3.5 makes it easy: **values (but is not available)
                 clinvar_mutations.append(
                     (
@@ -143,6 +149,8 @@ class Importer(MutationImporter):
             self.header,
             file_opener=gzip_open_text
         )
+
+        print('%s duplicates found' % duplicates)
 
         return clinvar_mutations, clinvar_data, new_diseases.keys()
 

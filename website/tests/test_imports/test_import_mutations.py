@@ -1,5 +1,5 @@
 import gzip
-from imports.mutations import MutationImportManager
+from imports.mutations import MutationImportManager, MutationImporter
 from database_testing import DatabaseTest
 from models import Protein, InheritedMutation, Disease
 from models import MC3Mutation
@@ -188,6 +188,40 @@ class TestImport(DatabaseTest):
 
             third_row_mutation = proteins['NM_000546'].mutations[0]
             assert third_row_mutation.meta_ClinVar.disease_name == ['Li-Fraumeni syndrome']
+
+    def test_duplicates_finder(self):
+
+        # make a simple, dummy and concrete Importer
+        class Importer(MutationImporter):
+            insert_keys = ['effect', 'some_db_id']
+
+            def insert_details(self, data): pass
+
+            def parse(self, path): pass
+
+        importer = Importer()
+        mutation_details = []
+
+        def add_if_not_duplicate(mutation_id, details):
+            is_duplicated = importer.look_after_duplicates(mutation_id, mutation_details, details)
+            if not is_duplicated:
+                details_with_id = [mutation_id]
+                details_with_id.extend(details)
+                mutation_details.append(details_with_id)
+            return is_duplicated
+
+        # let's add a simple mutation details for mutation with id 1 and with id 2:
+        for mutation_id in [1, 2]:
+            duplicated = add_if_not_duplicate(mutation_id, ['motif_lost', 11])
+            assert not duplicated
+
+        # will we catch a duplicate?
+        duplicated = add_if_not_duplicate(2, ['motif_lost', 11])
+        assert duplicated
+
+        # what about different mutation details? Will it be allowed (as it differs from the one already stored)?
+        duplicated = add_if_not_duplicate(2, ['motif_gain', 22])
+        assert not duplicated
 
 
 tss_cancer_map_text = """\
