@@ -477,7 +477,8 @@ def run_shell(args):
     app = create_app()
     if args.command:
         print('Executing supplied command: "%s"' % args.command)
-        eval(args.command)
+        import statistics
+        exec(args.command)
     print('You can access current application using "app" variable.')
     print('Database, models and statistics modules are pre-loaded.')
     try:
