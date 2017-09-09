@@ -10,7 +10,6 @@ from sqlalchemy import and_
 
 from helpers.tracks import DomainsTrack
 from helpers.tracks import MutationsTrack
-from helpers.tracks import PositionTrack
 from helpers.tracks import SequenceTrack
 from helpers.tracks import Track
 from helpers.tracks import TrackElement
@@ -29,7 +28,6 @@ def prepare_tracks(protein, raw_mutations):
         TrackElement(*region) for region in protein.disorder_regions
     ]
     tracks = [
-        PositionTrack(protein.length, 25),
         SequenceTrack(protein),
         Track('disorder', disorder),
         DomainsTrack(

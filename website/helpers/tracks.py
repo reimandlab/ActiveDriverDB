@@ -252,18 +252,3 @@ class MutationsTrack(Track):
 
         return grouped
 
-
-class PositionTrack(Track):
-
-    def __init__(self, length, step):
-
-        element_size = len(str(length))
-
-        if step < element_size:
-            raise Exception('Position strings will overlap with current step')
-
-        elements = [
-            TrackElement(i - 1, element_size, i)
-            for i in range(step, length, step)
-        ]
-        super().__init__('position', elements)

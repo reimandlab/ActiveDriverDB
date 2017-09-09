@@ -11,7 +11,7 @@ var Tracks = function ()
 
     var config = {
         animation: 'swing',
-        animations_speed: 200,
+        animations_speed: 100,
         box: null,
         min_zoom: 1,
         max_zoom: 10
@@ -251,37 +251,35 @@ var Tracks = function ()
             scalableArea = tracks.find('.scalable')
             scalableElem = scalableArea.get(0)
 
-            sequence = tracks.find('.sequence')
+            var sequence = tracks.find('.sequence')
             sequence_elements = sequence.children('.elements')
 
             config.sequenceLength = getSequenceLength()
             config.char_size = getCharSize()
 
-            var buttons = box.find('.scroll-left')
+            var controls = $($.find('.tracks-controls'))
+
+            var buttons = controls.find('.scroll-left')
             initButtons(buttons, scrollLeft, scrollArea)
 
-            buttons = box.find('.scroll-right')
+            buttons = controls.find('.scroll-right')
             initButtons(buttons, scrollRight, scrollArea)
 
             var innerDiv = box.children('.inner')
 
-            buttons = box.find('.zoom-out')
+            buttons = controls.find('.zoom-out')
             initButtons(buttons, zoomOut, innerDiv)
 
-            buttons = box.find('.zoom-in')
+            buttons = controls.find('.zoom-in')
             initButtons(buttons, zoomIn, innerDiv)
 
-            buttons = box.find('.scroll-to')
+            buttons = controls.find('.scroll-to')
             initButtons(buttons, scrollToCallback)
 
-            buttons = box.find('.scroll-to-input')
+            buttons = controls.find('.scroll-to-input')
             initFields(buttons, scrollToCallback)
 
-            var controls = box.find('.controls')
-            for(var j = 0; j < controls.length; j++)
-            {
-                $(controls[j]).show()
-            }
+            controls.removeClass('transparent')
             publicSpace.refreshScaleFactor()
 
             _setZoom(1)

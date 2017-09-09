@@ -69,7 +69,7 @@ var NeedlePlot = function ()
     var config = {
         use_log: false, // should logarithmic (base 10) scale by used instead of linear?
         site_height: 10,
-        animations_speed: 200,
+        animations_speed: 100,
         // 90 is width of description
         paddings: {bottom: 40, top: 30, left: 89, right: 1},
         y_scale: 'auto',
