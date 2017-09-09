@@ -1,7 +1,7 @@
 import gzip
 from imports.mutations import MutationImportManager, MutationImporter
 from database_testing import DatabaseTest
-from models import Protein, InheritedMutation, Disease
+from models import Protein, InheritedMutation, Disease, ExomeSequencingMutation
 from models import MC3Mutation
 from database import db
 from miscellaneous import make_named_temp_file
@@ -39,6 +39,18 @@ Chr	Start	End	Ref	Alt	Func.refGene	Gene.refGene	GeneDetail.refGene	ExonicFunc.re
 17	7576914	7576914	T	C	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon5:c.A536G:p.N179S,TP53:NM_001126116:exon5:c.A536G:p.N179S,TP53:NM_001126117:exon5:c.A536G:p.N179S,TP53:NM_001276697:exon5:c.A455G:p.N152S,TP53:NM_001276698:exon5:c.A455G:p.N152S,TP53:NM_001276699:exon5:c.A455G:p.N152S,TP53:NM_001126118:exon8:c.A815G:p.N272S,TP53:NM_000546:exon9:c.A932G:p.N311S,TP53:NM_001126112:exon9:c.A932G:p.N311S,TP53:NM_001126113:exon9:c.A932G:p.N311S,TP53:NM_001126114:exon9:c.A932G:p.N311S,TP53:NM_001276695:exon9:c.A815G:p.N272S,TP53:NM_001276696:exon9:c.A815G:p.N272S,TP53:NM_001276760:exon9:c.A815G:p.N272S,TP53:NM_001276761:exon9:c.A815G:p.N272S	.	.	.	17	7576914	rs56184981	T	C,G	.	.	RS=56184981;RSPOS=7576914;dbSNPBuildID=129;SSR=0;SAO=1;VP=0x050268000a05000002100100;GENEINFO=TP53:7157;WGT=1;VC=SNV;PM;PMC;S3D;NSM;REF;ASP;LSD;CLNALLE=2;CLNHGVS=NC_000017.10:g.7576914T>G;CLNSRC=.;CLNORIGIN=1;CLNSRCID=.;CLNSIG=0;CLNDSDB=MedGen:Orphanet:SNOMED_CT;CLNDSDBID=C0085390:ORPHA524:428850001;CLNDBN=Li-Fraumeni_syndrome;CLNREVSTAT=single;CLNACC=RCV000205077.1
 """
 
+
+esp_mutations = """\
+Chr	Start	End	Ref	Alt	Func.refGene	Gene.refGene	GeneDetail.refGene	ExonicFunc.refGene	AAChange.refGene	V11	V12	V13	V14	V15	V16	V17	V18	V19	V20	V21
+17	7573948	7573948	C	G	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon6:c.G683C:p.G228A,TP53:NM_001276697:exon6:c.G602C:p.G201A,TP53:NM_001126118:exon9:c.G962C:p.G321A,TP53:NM_000546:exon10:c.G1079C:p.G360A,TP53:NM_001126112:exon10:c.G1079C:p.G360A,TP53:NM_001276760:exon10:c.G962C:p.G321A,TP53:NM_001276761:exon10:c.G962C:p.G321A	.	.	44	17	7573948	rs35993958	C	G	.	PASS	DBSNP=dbSNP_126;EA_AC=1,8599;AA_AC=3,4403;TAC=4,13002;MAF=0.0116,0.0681,0.0308;GTS=GG,GC,CC;EA_GTC=0,1,4299;AA_GTC=0,3,2200;GTC=0,4,6499;DP=44;GL=TP53;CP=0.0;CG=0.9;AA=C;CA=.;EXOME_CHIP=no;GWAS_PUBMED=.;FG=NM_001126118.1:missense,NM_001126117.1:utr-3,NM_001126116.1:utr-3,NM_001126115.1:missense,NM_001126114.2:utr-3,NM_001126113.2:utr-3,NM_001126112.2:missense,NM_000546.5:missense;HGVS_CDNA_VAR=NM_001126118.1:c.962G>C,NM_001126117.1:c.*2589G>C,NM_001126116.1:c.*2677G>C,NM_001126115.1:c.683G>C,NM_001126114.2:c.*2677G>C,NM_001126113.2:c.*2589G>C,NM_001126112.2:c.1079G>C,NM_000546.5:c.1079G>C;HGVS_PROTEIN_VAR=NM_001126118.1:p.(G321A),.,.,NM_001126115.1:p.(G228A),.,.,NM_001126112.2:p.(G360A),NM_000546.5:p.(G360A);CDS_SIZES=NM_001126118.1:1065,NM_001126117.1:645,NM_001126116.1:630,NM_001126115.1:786,NM_001126114.2:1026,NM_001126113.2:1041,NM_001126112.2:1182,NM_000546.5:1182;GS=60,.,.,60,.,.,60,60;PH=benign:0.0,.,.,benign:0.0,.,.,benign:0.0,benign:0.0;EA_AGE=1.2+/-3.3;AA_AGE=4.2+/-10.8;GRCh38_POSITION=17:7670630
+17	7574000	7574000	C	G	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon6:c.G631C:p.E211Q,TP53:NM_001276697:exon6:c.G550C:p.E184Q,TP53:NM_001126118:exon9:c.G910C:p.E304Q,TP53:NM_000546:exon10:c.G1027C:p.E343Q,TP53:NM_001126112:exon10:c.G1027C:p.E343Q,TP53:NM_001276760:exon10:c.G910C:p.E304Q,TP53:NM_001276761:exon10:c.G910C:p.E304Q	.	.	54	17	7574000	rs375573770	C	G	.	PASS	DBSNP=dbSNP_138;EA_AC=0,8600;AA_AC=1,4405;TAC=1,13005;MAF=0.0,0.0227,0.0077;GTS=GG,GC,CC;EA_GTC=0,0,4300;AA_GTC=0,1,2202;GTC=0,1,6502;DP=54;GL=TP53;CP=0.0;CG=0.1;AA=C;CA=.;EXOME_CHIP=no;GWAS_PUBMED=.;FG=NM_001126118.1:missense,NM_001126117.1:utr-3,NM_001126116.1:utr-3,NM_001126115.1:missense,NM_001126114.2:utr-3,NM_001126113.2:utr-3,NM_001126112.2:missense,NM_000546.5:missense;HGVS_CDNA_VAR=NM_001126118.1:c.910G>C,NM_001126117.1:c.*2537G>C,NM_001126116.1:c.*2625G>C,NM_001126115.1:c.631G>C,NM_001126114.2:c.*2625G>C,NM_001126113.2:c.*2537G>C,NM_001126112.2:c.1027G>C,NM_000546.5:c.1027G>C;HGVS_PROTEIN_VAR=NM_001126118.1:p.(E304Q),.,.,NM_001126115.1:p.(E211Q),.,.,NM_001126112.2:p.(E343Q),NM_000546.5:p.(E343Q);CDS_SIZES=NM_001126118.1:1065,NM_001126117.1:645,NM_001126116.1:630,NM_001126115.1:786,NM_001126114.2:1026,NM_001126113.2:1041,NM_001126112.2:1182,NM_000546.5:1182;GS=29,.,.,29,.,.,29,29;PH=benign:0.238,.,.,benign:0.238,.,.,benign:0.238,benign:0.238;EA_AGE=.;AA_AGE=2.1+/-5.4;GRCh38_POSITION=17:7670682
+"""
+
+tp53 = {
+    'NM_000546': 'MEEPQSDPSVEPPLSQETFSDLWKLLPENNVLSPLPSQAMDDLMLSPDDIEQWFTEDPGPDEAPRMPEAAPPVAPAPAAPTPAAPAPAPSWPLSSSVPSQKTYQGSYGFRLGFLHSGTAKSVTCTYSPALNKMFCQLAKTCPVQLWVDSTPPPGTRVRAMAIYKQSQHMTEVVRRCPHHERCSDSDGLAPPQHLIRVEGNLRVEYLDDRNTFRHSVVVPYEPPEVGSDCTTIHYNYMCNSSCMGGMNRRPILTIITLEDSSGNLLGRNSFEVRVCACPGRDRRTEEENLRKKGEPHHELPPGSTKRALPNNTSSSPQPKKKPLDGEYFTLQIRGRERFEMFRELNEALELKDAQAGKEPGGSRAHSSHLKSKKGQSTSRHKKLMFKTEGPDSD*'
+}
+
+
 # Mocked: for test simplicity hypermutated sample is the one more than two mutations.
 # The first three mutations are from the same sample, the last one is from different one.
 with_hypermutated_samples = """\
@@ -50,27 +62,29 @@ with_hypermutated_samples = """\
 
 
 def create_proteins(data):
-    return {
+    proteins = {
         refseq_nm: Protein(refseq=refseq_nm, sequence=sequence)
         for refseq_nm, sequence in data.items()
     }
+    db.session.add_all(proteins.values())
+    db.session.commit()
+    return proteins
+
+
+def to_gzipped_temp_file(data):
+    return make_named_temp_file(
+        data=data.encode(),
+        mode='wb',
+        opener=gzip.open
+    )
 
 
 class TestImport(DatabaseTest):
 
     def test_tcga_import(self):
 
-        muts_filename = make_named_temp_file(
-            data=mc3_mutations.encode(),
-            mode='wb',
-            opener=gzip.open
-        )
-
-        update_filename = make_named_temp_file(
-            data=mc3_mutations_updated.encode(),
-            mode='wb',
-            opener=gzip.open
-        )
+        muts_filename = to_gzipped_temp_file(mc3_mutations)
+        update_filename = to_gzipped_temp_file(mc3_mutations_updated)
 
         # create proteins from first three data rows
         protein_data = {
@@ -81,12 +95,11 @@ class TestImport(DatabaseTest):
             'NM_005467': 'MAESRGRLYLWMCLAAALASFLMGFMVGWFIKPLKETTTSVRYHQSIRWKLVSEMKAENIKSFLRSFTKLPHLAGTEQNFLLAKKIQTQWKKFGLDSAKLVHYDVLLSYPNETNANYISIVDEHETEIFKTSYLEPPPDGYENVTNIVPPYNAFSAQGMPEGDLVYVNYARTEDFFKLEREMGINCTGKIVIARYGKIFRGNKVKNAMLAGAIGIILYSDPADYFAPEVQPYPKGWNLPGTAAQRGNVLNLNGAGDPLTPGYPAKEYTFRLDVEEGVGIPRIPVHPIGYNDAEILLRYLGGIAPPDKSWKGALNVSYSIGPGFTGSDSFRKVRMHVYNINKITRIYNVVGTIRGSVEPDRYVILGGHRDSWVFGAIDPTSGVAVLQEIARSFGKLMSKGWRPRRTIIFASWDAEEFGLLGSTEWAEENVKILQERSIAYINSDSSIEGNYTLRVDCTPLLYQLVYKLTKEIPSPDDGFESKSLYESWLEKDPSPENKNLPRINKLGSGSDFEAYFQRLGIASGRARYTKNKKTDKYSSYPVYHTIYETFELVEKFYDPTFKKQLSVAQLRGALVYELVDSKIIPFNIQDYAEALKNYAASIYNLSKKHDQQLTDHGVSFDSLFSAVKNFSEAASDFHKRLIQVDLNNPIAVRMMNDQLMLLERAFIDPLGLPGKLFYRHIIFAPSSHNKYAGESFPGIYDAIFDIENKANSRLAWKEVKKHISIAAFTIQAAAGTLKEVL'
         }
 
+        # let's pretend that we already have some proteins in our db
         proteins = create_proteins(protein_data)
 
         with self.app.app_context():
             source_name = 'mc3'
-            # let's pretend that we already have some proteins in our db
-            db.session.add_all(proteins.values())
 
             muts_import_manager.perform(
                 'load', proteins, [source_name], {source_name: muts_filename}
@@ -130,11 +143,8 @@ class TestImport(DatabaseTest):
 
     def test_hypermutated_finder(self):
         from statistics import hypermutated_samples
-        muts_filename = make_named_temp_file(
-            data=with_hypermutated_samples.encode(),
-            mode='wb',
-            opener=gzip.open
-        )
+        muts_filename = to_gzipped_temp_file(with_hypermutated_samples)
+
         samples = hypermutated_samples(muts_filename, threshold=2)
         # there should be one hypermutated sample
         assert len(samples) == 1
@@ -144,21 +154,11 @@ class TestImport(DatabaseTest):
         assert count == 3
 
     def test_clinvar_import(self):
-        muts_filename = make_named_temp_file(
-            data=clinvar_mutations.encode(),
-            mode='wb',
-            opener=gzip.open
-        )
-        protein_data = {
-            'NM_000546': 'MEEPQSDPSVEPPLSQETFSDLWKLLPENNVLSPLPSQAMDDLMLSPDDIEQWFTEDPGPDEAPRMPEAAPPVAPAPAAPTPAAPAPAPSWPLSSSVPSQKTYQGSYGFRLGFLHSGTAKSVTCTYSPALNKMFCQLAKTCPVQLWVDSTPPPGTRVRAMAIYKQSQHMTEVVRRCPHHERCSDSDGLAPPQHLIRVEGNLRVEYLDDRNTFRHSVVVPYEPPEVGSDCTTIHYNYMCNSSCMGGMNRRPILTIITLEDSSGNLLGRNSFEVRVCACPGRDRRTEEENLRKKGEPHHELPPGSTKRALPNNTSSSPQPKKKPLDGEYFTLQIRGRERFEMFRELNEALELKDAQAGKEPGGSRAHSSHLKSKKGQSTSRHKKLMFKTEGPDSD*'
-        }
-        proteins = create_proteins(protein_data)
+        muts_filename = to_gzipped_temp_file(clinvar_mutations)
+        proteins = create_proteins(tp53)
 
         with self.app.app_context():
             source_name = 'clinvar'
-            # let's pretend that we already have some proteins in our db
-            db.session.add_all(proteins.values())
-            db.session.commit()
 
             muts_import_manager.perform(
                 'load', proteins, [source_name], {source_name: muts_filename}
@@ -188,6 +188,20 @@ class TestImport(DatabaseTest):
 
             third_row_mutation = proteins['NM_000546'].mutations[0]
             assert third_row_mutation.meta_ClinVar.disease_name == ['Li-Fraumeni syndrome']
+
+    def test_esp_import(self):
+
+        muts_filename = to_gzipped_temp_file(esp_mutations)
+        proteins = create_proteins(tp53)
+
+        with self.app.app_context():
+            source_name = 'esp6500'
+
+            muts_import_manager.perform(
+                'load', proteins, [source_name], {source_name: muts_filename}
+            )
+            mutations = ExomeSequencingMutation.query.all()
+            assert len(mutations) == 2
 
     def test_duplicates_finder(self):
 
