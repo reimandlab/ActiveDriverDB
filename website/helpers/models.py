@@ -12,7 +12,7 @@ def generic_aggregator(attribute, flatten=False, is_callable=False):
             getattr(datum, attribute)(data_filter) if is_callable else getattr(datum, attribute)
             for datum in data
         ]
-        if flatten:
+        if aggregated and flatten:
             return reduce(operator.add, aggregated)
         else:
             return aggregated
