@@ -1156,8 +1156,12 @@ class InheritedMutation(MutationDetails, BioModel):
 
 class Disease(BioModel):
 
+    __table_args__ = (
+      db.Index('idx_name', 'name', mysql_length=1024),
+    )
+
     # CLNDBN: Variant disease name
-    name = db.Column(db.Text, nullable=False, unique=True, index=True)
+    name = db.Column(db.Text, nullable=False, unique=True)
 
 
 class ClinicalData(BioModel):
