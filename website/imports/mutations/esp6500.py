@@ -13,7 +13,7 @@ class Importer(MutationImporter):
         'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'V11',
         'V12', 'V13', 'V14', 'V15', 'V16', 'V17', 'V18', 'V19', 'V20', 'V21'
     ]
-    insert_keys = ('maf_ea', 'maf_aa', 'maf_all', 'mutation_id')
+    insert_keys = ('mutation_id', 'maf_ea', 'maf_aa', 'maf_all')
 
     def parse(self, path):
         esp_mutations = []
@@ -31,21 +31,21 @@ class Importer(MutationImporter):
 
             for mutation_id in self.preparse_mutations(line):
 
-                duplicated = self.look_after_duplicates(mutation_id, thousand_genomes_mutations, values)
+                values = (
+                    mutation_id,
+                    maf_ea,
+                    maf_aa,
+                    maf_all
+                )
+
+                duplicated = self.look_after_duplicates(mutation_id, esp_mutations, values)
                 if duplicated:
                     duplicates += 1
                     continue
 
-                self.protect_from_duplicates(mutation_id, thousand_genomes_mutations)
+                self.protect_from_duplicates(mutation_id, esp_mutations)
 
-                esp_mutations.append(
-                    (
-                        maf_ea,
-                        maf_aa,
-                        maf_all,
-                        mutation_id
-                    )
-                )
+                esp_mutations.append(values)
 
         parse_tsv_file(
             path, esp_parser,
