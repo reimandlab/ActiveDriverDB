@@ -159,18 +159,24 @@ def source_dependent_filters(protein=None):
             skip_if_default=True
         ),
         SourceDependentFilter(
-            Mutation, 'populations_1KG', comparators=['in'],
+            [Mutation, The1000GenomesMutation], 'populations_1KG',
+            comparators=['in'],
             choices=populations_1kg,
             default=populations_1kg, nullable=False,
             source='1KGenomes',
-            multiple='any'
+            as_sqlalchemy=True,
+            multiple='any',
+            skip_if_default=True
         ),
         SourceDependentFilter(
-            Mutation, 'populations_ESP6500', comparators=['in'],
+            [Mutation, ExomeSequencingMutation], 'populations_ESP6500',
+            comparators=['in'],
             choices=populations_esp,
             default=populations_esp, nullable=False,
             source='ESP6500',
-            multiple='any'
+            as_sqlalchemy=True,
+            multiple='any',
+            skip_if_default=True
         ),
         SourceDependentFilter(
             [Mutation, ClinicalData], 'sig_code', comparators=['in'],

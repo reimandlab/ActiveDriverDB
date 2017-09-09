@@ -48,7 +48,7 @@ class TestChromosomeView(ViewTest):
 
         # well let's look on a known mutation:
         m = muts[15]
-        mc3 = MC3Mutation(mutation=m, cancer=Cancer(name='BRCA'), count=1)
+        mc3 = MC3Mutation(mutation=m, cancer=Cancer(name='Breast invasive carcinoma', code='BRCA'), count=1)
         esp = ExomeSequencingMutation(mutation=m, maf_all=0.02, maf_aa=0.02)
 
         db.session.add_all([m, mc3, esp])
@@ -58,7 +58,7 @@ class TestChromosomeView(ViewTest):
         response = self.client.get(mutation_a15v_query)
 
         metadata = {
-            'MC3': {'MC3metadata': [{'Cancer': 'BRCA', 'Value': 1}]},
+            'MC3': {'MC3metadata': [{'Cancer': 'Breast invasive carcinoma', 'Value': 1}]},
             'ESP6500': {'MAF': 0.02, 'MAF AA': 0.02, 'MAF EA': None}
         }
 
@@ -72,3 +72,13 @@ class TestChromosomeView(ViewTest):
             json = response.json[0]
             assert json['in_datasets'] == {source: meta}
             assert json['value'] == expected_values[source]
+
+        response = self.client.get(mutation_a15v_query + '?filters=Mutation.sources:in:MC3;Mutation.mc3_cancer_code:in:BRCA')
+        assert response.json
+
+        response = self.client.get(mutation_a15v_query + '?filters=Mutation.sources:in:ESP6500;Mutation.populations_ESP6500:in:African American')
+        assert response.json
+
+        response = self.client.get(mutation_a15v_query + '?filters=Mutation.sources:in:ESP6500;Mutation.populations_ESP6500:in:European American')
+        assert not response.json
+

@@ -59,17 +59,17 @@ def create_test_mutations():
         Mutation(
             position=3,
             alt='K',
-            meta_1KGenomes=The1000GenomesMutation(
+            meta_1KGenomes=[The1000GenomesMutation(
                 maf_afr=0.5,
                 maf_eur=0.2
-            )
+            )]
         ),
         Mutation(
             position=4,
             alt='K',
-            meta_ESP6500=ExomeSequencingMutation(
+            meta_ESP6500=[ExomeSequencingMutation(
                 maf_ea=0.5
-            )
+            )]
         )
     ]
 
@@ -134,9 +134,11 @@ class TestSequenceView(ViewTest):
             'ESP6500': ['European American']
         }
 
+        uri = '/protein/details/NM_000123'
+
         for source, expected_meta in expected_source_meta.items():
             response = self.client.get(
-                '/protein/details/NM_000123?filters=Mutation.sources:in:%s' % source
+                uri + '?filters=Mutation.sources:in:%s' % source
             )
             assert response.status_code == 200
             assert response.content_type == 'application/json'
@@ -144,3 +146,9 @@ class TestSequenceView(ViewTest):
             assert json_response['refseq'] == 'NM_000123'
             assert set(json_response['meta']) == set(expected_meta)
             assert json_response['muts_count'] == 1
+
+        response = self.client.get(uri + '?filters=Mutation.sources:in:ESP6500;Mutation.populations_ESP6500:in:African American')
+        assert response.json['muts_count'] == 0
+
+        response = self.client.get(uri + '?filters=Mutation.sources:in:ESP6500;Mutation.populations_ESP6500:in:European American')
+        assert response.json['muts_count'] == 1

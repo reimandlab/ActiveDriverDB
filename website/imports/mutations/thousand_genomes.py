@@ -21,7 +21,7 @@ class Importer(MutationImporter):
     @staticmethod
     # TODO: there are some issues with this function
     def find_af_subfield_number(line):
-        """Get subfield number in 1000 Genoms VCF-originating metadata,
+        """Get subfield number in 1000 Genomes VCF-originating metadata,
 
         where allele frequencies for given mutations are located.
 
@@ -36,7 +36,8 @@ class Importer(MutationImporter):
         return [seq[0] for seq in line[17].split(',')].index(dna_mut)
 
     def parse(self, path):
-        thousand_genoms_mutations = []
+        thousand_genomes_mutations = []
+        duplicates = 0
 
         maf_keys = (
             'AF',
@@ -66,11 +67,18 @@ class Importer(MutationImporter):
 
             for mutation_id in self.preparse_mutations(line):
 
-                thousand_genoms_mutations.append(
+                duplicated = self.look_after_duplicates(mutation_id, thousand_genomes_mutations, values)
+                if duplicated:
+                    duplicates += 1
+                    continue
+
+                self.protect_from_duplicates(mutation_id, thousand_genomes_mutations)
+
+                thousand_genomes_mutations.append(
                     (
                         mutation_id,
                         # Python 3.5 makes it easy:
-                        # **values, but is not avaialable
+                        # **values, but is not available
                         values[0],
                         values[1],
                         values[2],
@@ -79,7 +87,10 @@ class Importer(MutationImporter):
                         values[5],
                     )
                 )
-        return thousand_genoms_mutations
 
-    def insert_details(self, thousand_genoms_mutations):
-        self.insert_list(thousand_genoms_mutations)
+        print('%s duplicates found' % duplicates)
+
+        return thousand_genomes_mutations
+
+    def insert_details(self, thousand_genomes_mutations):
+        self.insert_list(thousand_genomes_mutations)

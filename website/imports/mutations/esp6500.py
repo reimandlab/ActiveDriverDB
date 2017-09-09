@@ -17,8 +17,10 @@ class Importer(MutationImporter):
 
     def parse(self, path):
         esp_mutations = []
+        duplicates = 0
 
         def esp_parser(line):
+            nonlocal duplicates
 
             metadata = line[20].split(';')
 
@@ -28,6 +30,13 @@ class Importer(MutationImporter):
             maf_ea, maf_aa, maf_all = map(float, metadata[4][4:].split(','))
 
             for mutation_id in self.preparse_mutations(line):
+
+                duplicated = self.look_after_duplicates(mutation_id, thousand_genomes_mutations, values)
+                if duplicated:
+                    duplicates += 1
+                    continue
+
+                self.protect_from_duplicates(mutation_id, thousand_genomes_mutations)
 
                 esp_mutations.append(
                     (
@@ -43,6 +52,8 @@ class Importer(MutationImporter):
             self.header,
             file_opener=gzip_open_text
         )
+
+        print('%s duplicates found' % duplicates)
 
         return esp_mutations
 

@@ -1,3 +1,4 @@
+from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from collections import UserList
 
@@ -7,9 +8,9 @@ from sqlalchemy import func
 from sqlalchemy import or_
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.ext.hybrid import hybrid_method
+from sqlalchemy.ext.hybrid import hybrid_method, Comparator
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref
+from sqlalchemy.orm import backref, synonym
 from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
 from werkzeug.utils import cached_property
@@ -17,6 +18,7 @@ from werkzeug.utils import cached_property
 from database import db, count_expression
 from database import fast_count
 from exceptions import ValidationError
+from helpers.models import generic_aggregator, association_table_super_factory
 from models import Model
 
 
@@ -30,19 +32,7 @@ class BioModel(Model):
     __bind_key__ = 'bio'
 
 
-def make_association_table(fk1, fk2):
-    """Create an association table basing on names of two given foreign keys.
-
-    From keys: `site.id` and `kinase.id` a table named: site_kinase_association
-    will be created and it will contain two columns: `site_id` and `kinase_id`.
-    """
-    table_name = '%s_%s_association' % (fk1.split('.')[0], fk2.split('.')[0])
-    return db.Table(
-        table_name, db.metadata,
-        db.Column(fk1.replace('.', '_'), db.Integer, db.ForeignKey(fk1, ondelete='cascade')),
-        db.Column(fk2.replace('.', '_'), db.Integer, db.ForeignKey(fk2, ondelete='cascade')),
-        info={'bind_key': 'bio'}    # use 'bio' database
-    )
+make_association_table = association_table_super_factory(bind='bio')
 
 
 class GeneListEntry(BioModel):
@@ -869,9 +859,42 @@ class Domain(BioModel):
 mutation_site_association = make_association_table('site.id', 'mutation.id')
 
 
+class MutationDetailsManager(UserList, metaclass=ABCMeta):
+    """Groups (by a unique mutation) mutation details from a given source"""
+
+    @property
+    @abstractmethod
+    def name(self):
+        """Internal name which has to remain unchanged, used in relationships"""
+        pass
+
+    @property
+    @abstractmethod
+    def value_type(self):
+        """What is the value returned by 'get_value'.
+
+        It can be 'count', 'frequency' or 'probability'.
+        """
+        pass
+
+    @abstractmethod
+    def to_json(self):
+        pass
+
+    def get_value(self, filter=lambda x: x):
+        return sum(
+            (
+                data.get_value()
+                for data in filter(self.data)
+            )
+        )
+
+    summary = generic_aggregator('summary', is_callable=True)
+
+
 def create_cancer_meta_manager(meta_name):
 
-    class CancerMetaManager(UserList):
+    class CancerMetaManager(MutationDetailsManager):
         name = meta_name
         value_type = 'count'
 
@@ -889,22 +912,21 @@ def create_cancer_meta_manager(meta_name):
                 datum.summary()
                 for datum in self.data
                 # one could use:
-                # datum.summary()
+
                 # for datum in filter(self.data)
-                # but I think that there is no need for that now
+
+                # so only the cancer data from currently selected cancer type are show,
+                # but then the user may think that the mutation is specific for this
+                # type of cancer
             ]
 
-        def get_value(self, filter=lambda x: x):
-            return sum(
-                (
-                    data.get_value()
-                    for data in filter(self.data)
-                )
-            )
     return CancerMetaManager
 
 
-class MIMPMetaManager(UserList):
+class MIMPMetaManager(MutationDetailsManager):
+
+    name = 'MIMP'
+    value_type = 'probability'
 
     @staticmethod
     def sort_by_probability(mimps):
@@ -1004,9 +1026,9 @@ class ManagedMutationDetails(MutationDetails):
 
     @property
     def details_manager(self):
-        """List-like class (e.g. deriving from UserList) which will aggregate
-        results from all the mutation details (per mutation). It has to implement
-        to_json, summary and get_value from MutationDetails interface."""
+        """Collection class (deriving from MutationDetailsManager) which will
+        aggregate results from all the mutation details (per mutation).
+        """
         raise NotImplementedError
 
     @declared_attr
@@ -1184,7 +1206,59 @@ class ClinicalData(BioModel):
         }
 
 
-class PopulationMutation(MutationDetails):
+def population_manager(_name, _display_name):
+
+    class PopulationManager(MutationDetailsManager):
+        """Some population mutations annotations are provided in form of a several
+        separate records, where all the records relate to the same aminoacid mutation.
+
+        Assuming that the frequencies are summable, one could merge the annotations
+        at the time of import. However, the information about the distribution of
+        nucleotide mutation frequencies would be lost if merging at import time.
+
+        Aggregation of the mutations details in PopulationManager allows to have both
+        overall and nucleotide-mutation specific frequencies included."""
+        name = _name
+        display_name = _display_name
+        value_type = 'frequency'
+
+        affected_populations = property(generic_aggregator('affected_populations', flatten=True))
+
+        def to_json(self, filter=lambda x: x):
+            data = filter(self.data)
+            json = data[0].to_json()
+            for datum in data[1:]:
+                for k, v in datum.to_json().items():
+                    json[k] = str(json[k]) + ', ' + str(v)
+            return json
+
+    return PopulationManager
+
+
+class PopulationsComparator(Comparator):
+    """Given a population name, or list of population names,
+    determine if PopulationMutation include this population
+    (i.e. has non-zero frequency of occurrence in the population)
+    """
+
+    def __init__(self, cls):
+        self.populations_fields = cls.populations_fields()
+        self.cls = cls
+
+    def __eq__(self, population_name):
+        return getattr(self.cls, self.populations_fields[population_name]) > 0
+
+    def in_(self, population_names):
+
+        return or_(
+            *[
+                getattr(self.cls, self.populations_fields[population_name]) > 0
+                for population_name in population_names
+            ]
+        )
+
+
+class PopulationMutation(ManagedMutationDetails):
     """Metadata common for mutations from all population-wide studies
 
     MAF:
@@ -1193,6 +1267,10 @@ class PopulationMutation(MutationDetails):
     populations = {
         # place mappings here: field name -> population name
     }
+
+    @classmethod
+    def populations_fields(cls):
+        return {v: k for k, v in cls.populations.items()}
 
     maf_all = db.Column(db.Float)
 
@@ -1210,6 +1288,10 @@ class PopulationMutation(MutationDetails):
             if getattr(self, field)
         ]
 
+    @affected_populations.comparator
+    def affected_populations(cls):
+        return PopulationsComparator(cls)
+
 
 class ExomeSequencingMutation(PopulationMutation, BioModel):
     """Metadata for ESP 6500 mutation
@@ -1218,8 +1300,10 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
         EA - European American
         AA - African American
     """
+
     name = 'ESP6500'
     display_name = 'Population (ESP 6500)'
+    details_manager = population_manager(name, display_name)
 
     value_type = 'frequency'
 
@@ -1233,6 +1317,8 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
     maf_ea = db.Column(db.Float)
     maf_aa = db.Column(db.Float)
 
+    populations_ESP6500 = synonym('affected_populations')
+
     def to_json(self, filter=lambda x: x):
         return {
             'MAF': self.maf_all,
@@ -1245,6 +1331,7 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
     """Metadata for 1 KG mutation"""
     name = '1KGenomes'
     display_name = 'Population (1000 Genomes)'
+    details_manager = population_manager(name, display_name)
 
     value_type = 'frequency'
 
@@ -1275,11 +1362,7 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
             'MAF SAS': self.maf_sas,
         }
 
-    """
-    @hybrid_method
-    def affects(self, population_name):
-        return getattr(self, population_name) > 0
-    """
+    populations_1KG = synonym('affected_populations')
 
 
 class MIMPMutation(ManagedMutationDetails, BioModel):
@@ -1349,8 +1432,36 @@ class MIMPMutation(ManagedMutationDetails, BioModel):
         return '<MIMPMutation %s>' % self.id
 
 
-def details_proxy(target_class, key):
-    return association_proxy('meta_' + target_class.name, key)
+def details_proxy(target_class, key, managed=False):
+    """Creates an AssociationProxy targeting MutationDetails descendants.
+    The proxy enables easy filtering and retrieval of the otherwise deeply
+    hidden information and should be owned by (i.e. declared in) Mutation model.
+
+    Attributes:
+        managed: if True, a request for server side filtering system
+            (as opposite to database side filtering) to use attribute
+            of name 'key' from 'MutationDetailsManager' (instead of
+            the one from the MutationDetails itself) will be encoded
+            in the proxy function.
+
+    """
+
+    field_name = 'meta_' + target_class.name
+    proxy = association_proxy(field_name, key)
+
+    if managed:
+        def proxy_to_details_manager(object):
+            if type(object) is Mutation:
+                manager = getattr(object, field_name)
+            elif isinstance(object, ManagedMutationDetails):
+                manager = object.details_manager
+            else:
+                assert isinstance(object, MutationDetailsManager)
+                manager = object
+            return getattr(manager, key)
+        proxy.custom_attr_getter = proxy_to_details_manager
+
+    return proxy
 
 
 def are_details_managed(model):
@@ -1436,8 +1547,8 @@ class Mutation(BioModel):
         if model != MIMPMutation
     )
 
-    populations_1KG = details_proxy(The1000GenomesMutation, 'affected_populations')
-    populations_ESP6500 = details_proxy(ExomeSequencingMutation, 'affected_populations')
+    populations_1KG = details_proxy(The1000GenomesMutation, 'affected_populations', managed=True)
+    populations_ESP6500 = details_proxy(ExomeSequencingMutation, 'affected_populations', managed=True)
     mc3_cancer_code = details_proxy(MC3Mutation, 'mc3_cancer_code')
     sig_code = details_proxy(InheritedMutation, 'sig_code')
     disease_name = details_proxy(InheritedMutation, 'disease_name')

@@ -168,7 +168,7 @@ class Filter:
             if self.comparator == 'in':
 
                 if self.multiple == 'any':
-                    # this wont give expected result for for 'all'
+                    # this wont give expected result for 'all'
                     func = getattr(field, comparators[self.comparator])
                     return func(self.value), joins
                 else:
@@ -328,9 +328,15 @@ class Filter:
 
     def attr_getter(self):
         """Attrgetter that passes a value to an method-attribute if needed"""
+
+        # handle custom arguments getters
+        if hasattr(self.primary_target, self.attribute):
+            field = getattr(self.primary_target, self.attribute)
+            if hasattr(field, 'custom_attr_getter'):
+                return field.custom_attr_getter
+
         getter = operator.attrgetter(self.attribute)
         if self.is_attribute_a_method:
-
             def attr_get(element):
                 return getter(element)(self.manager)
         else:
@@ -550,7 +556,6 @@ class FilterManager:
         Only filters targeting the same model and being currently active will
         be applied. The target model will be deduced from passed elements.
         """
-
         try:
             tester = elements[0]
             if itemgetter:
