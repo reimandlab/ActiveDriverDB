@@ -76,12 +76,21 @@ $search-box-width: 300px
   /* width: $search-box-width */
   margin: 0 4px
 
+  .input-icon
+    position: absolute
+    right: 4.5%
+    top: 30%
+    color: lightblue
+
+  input:focus+.glyphicon-search
+    display: none
+
+  .glyphicon-search
+    color: #68696b
+
   .waiting-indicator
     display: none
     position: absolute
-    right: 10px
-    top: 11px
-    color: lightblue
 
   .list-group-item
 
