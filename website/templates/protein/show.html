@@ -136,7 +136,7 @@
         </div>
         <div class="panel-body">
 
-          <div class="tracks-controls transparent">
+          <div class="tracks-controls invisible">
 
             <div class="input-group">
               <div class="input-group-btn">
@@ -165,7 +165,7 @@
           <div id="protein_spinner" class="visualisation_spinner">
             <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>
           </div>
-          <div id="plot_area"></div>
+          <div id="plot_area" class="transparent"></div>
         </div>
       </div>
 
@@ -343,10 +343,7 @@
         var $table = $('#mutation_table');
 
         tracks_box.html(data.tracks);
-
-        tracks.init({
-            box: tracks_box.get(0)
-        });
+        tracks.init({box: tracks_box.get(0)});
 
         var max_zoom = tracks.adjustMaxZoom();
 
@@ -393,13 +390,19 @@
         data_handler: load_data,
         representation_url: "{{ url_for('SequenceView:representation_data', refseq=protein.refseq) }}",
         on_loading_start: function (){
+            if (tracks.isReady())
+                tracks.hide();
+            $('#plot_area').addClass('invisible');
             if (needle_plot)
                 needle_plot.destroy();
             $table_wrapper.addClass('loading');
+
             spinner.show();
         },
         on_loading_end: function(){
+            $('#plot_area').removeClass('invisible');
             $table_wrapper.removeClass('loading');
+
             $('.table-help-btn').removeClass('hidden');
             // spinner will be hidden after needle_plot initialization
             Widgets.init($('#filters_form'), function(){});

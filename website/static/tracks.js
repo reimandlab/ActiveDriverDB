@@ -8,10 +8,11 @@ var Tracks = function ()
     var first_scale_factor
     var sequence_elements, baseCharSize
     var is_ready = false
+    var controls, box
 
     var config = {
-        animation: 'swing',
-        animations_speed: 100,
+        zoom_speed: 100,
+        animations_speed: 300,
         box: null,
         min_zoom: 1,
         max_zoom: 10
@@ -235,7 +236,7 @@ var Tracks = function ()
         {
             configure(new_config)
 
-            var box = $(config.box)
+            box = $(config.box)
             tracks = box.find('.tracks')
 
             scrollArea = tracks.find('.scroll-area')
@@ -257,7 +258,7 @@ var Tracks = function ()
             config.sequenceLength = getSequenceLength()
             config.char_size = getCharSize()
 
-            var controls = $($.find('.tracks-controls'))
+            controls = $($.find('.tracks-controls'))
 
             var buttons = controls.find('.scroll-left')
             initButtons(buttons, scrollLeft, scrollArea)
@@ -279,7 +280,6 @@ var Tracks = function ()
             buttons = controls.find('.scroll-to-input')
             initFields(buttons, scrollToCallback)
 
-            controls.removeClass('transparent')
             publicSpace.refreshScaleFactor()
 
             _setZoom(1)
@@ -317,6 +317,8 @@ var Tracks = function ()
                 $('.' + track_name + ' .collapsible').toggleClass('hidden')
             })
 
+            publicSpace.show()
+
             is_ready = true;
         },
         setNeedlePlotInstance: function(instance)
@@ -340,6 +342,23 @@ var Tracks = function ()
         isReady: function()
         {
             return is_ready;
+        },
+        hide: function()
+        {
+            box.find('.tracks-box').addClass('invisible');
+            controls.addClass('invisible');
+
+            if(config.animations_speed)
+                box.animate({height: 0}, config.animations_speed);
+        },
+        show: function()
+        {
+            var internal_box = box.find('.tracks-box');
+            internal_box.removeClass('invisible');
+            controls.removeClass('invisible');
+
+            if(config.animations_speed)
+                box.animate({height: internal_box.height()}, config.animations_speed);
         }
 
     }
