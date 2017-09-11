@@ -361,7 +361,7 @@ def source_specific_proteins_with_ptm_mutations():
             .filter(Protein.has_ptm_mutations_in_dataset(model) == True)
         ).count()
 
-    print('Proteisn with PTM muts:')
+    print('Proteins with PTM muts:')
     print(proteins_with_ptm_muts)
     print('Kinases with PTM muts:')
     print(kinases)
@@ -385,7 +385,8 @@ def source_specific_nucleotide_mappings():
         query = (
             db.session.query(Mutation.protein_id, Mutation.alt, Mutation.position)
             .filter(Statistics.get_filter_by_sources([model]))
-            #.filter(Mutation.is_confirmed==True)   # if it is in source of interest, it is confirmed (I won't count MIMPs here)
+            # no need for '.filter(Mutation.is_confirmed==True)'
+            # (if it is in source of interest, it is confirmed - we do not count MIMPs here)
             .yield_per(5000)
         )
         for mutation in tqdm(query, total=query.count()):
@@ -398,7 +399,7 @@ def source_specific_nucleotide_mappings():
 
     query = (
         db.session.query(Mutation.protein_id, Mutation.alt, Mutation.position)
-        .filter(Mutation.is_confirmed==True)
+        .filter(Mutation.is_confirmed == True)
         .yield_per(5000)
     )
     for mutation in tqdm(query, total=query.count()):
