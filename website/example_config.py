@@ -62,7 +62,8 @@ RATELIMIT_DEFAULT = '500/hour,20/minute'
 RATELIMIT_STRATEGY = 'fixed-window-elastic-expiry'
 
 # - Scheduler configuration
-SCHEDULER_API_ENABLED = True
+SCHEDULER_ENABLED = True
+SCHEDULER_API_ENABLED = False
 JOBS = [
     {
         'id': 'hard_delete_expired_datasets',

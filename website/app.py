@@ -54,10 +54,11 @@ def create_app(config_filename='config.py', config_override={}):
     limiter.init_app(app)
 
     # Scheduler
-    if scheduler.running:
-        scheduler.shutdown()
-    scheduler.init_app(app)
-    scheduler.start()
+    if app.config.get('SCHEDULER_ENABLED', True):
+        if scheduler.running:
+            scheduler.shutdown()
+        scheduler.init_app(app)
+        scheduler.start()
 
     # Celery
     celery.init_app(app)
