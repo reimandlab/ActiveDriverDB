@@ -302,6 +302,10 @@ var NeedlePlot = function ()
 
                 var shift = width_per_head / 2 - width / 2
 
+                function transform(){
+                    return transform_needle_head(d, shift)
+                }
+
                 for(var i = 0; i < head_group.length; i++)
                 {
                     var needle_id = head_group[i]
@@ -313,9 +317,7 @@ var NeedlePlot = function ()
                         .transition()
                         .ease('quad')
                         .duration(config.animations_speed)
-                        .attr('transform', function(d) {
-                            return transform_needle_head(d, shift)
-                        })
+                        .attr('transform', transform)
 
                     shift += width_per_head
                 }
