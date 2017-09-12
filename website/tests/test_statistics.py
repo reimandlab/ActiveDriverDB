@@ -120,3 +120,9 @@ class StatisticsTest(DatabaseTest):
         assert kinases_covered == len(u_kinases_covered)
         assert kinase_groups_covered == len(u_kinase_groups_covered)
         assert proteins_covered == len(u_proteins_covered)
+
+    def test_table_generation(self):
+        from statistics import generate_source_specific_summary_table
+
+        table = generate_source_specific_summary_table()
+        assert table

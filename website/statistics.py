@@ -314,16 +314,6 @@ def count_mutated_sites(site_type, model=None):
     return query.scalar()
 
 
-def all_mutated_sites():
-    mutated_sites = {}
-    site_type_queries = ['']  # empty will match all sites
-    site_type_queries.extend(Site.types)
-    for site_type in tqdm(site_type_queries):
-        mutated_sites[site_type] = count_mutated_sites(site_type)
-    print('PTM sites affected by mutations - merged')
-    print(mutated_sites)
-
-
 def mutation_sources():
     sources = {}
 
@@ -361,12 +351,11 @@ def source_specific_proteins_with_ptm_mutations():
             .filter(Protein.has_ptm_mutations_in_dataset(model) == True)
         ).count()
 
-    print('Proteins with PTM muts:')
-    print(proteins_with_ptm_muts)
-    print('Kinases with PTM muts:')
-    print(kinases)
-    print('Kinase groups with PTM muts:')
-    print(kinase_groups)
+    return {
+        'Proteins with PTM muts': proteins_with_ptm_muts,
+        'Kinases with PTM muts': kinases,
+        'Kinase groups with PTM muts': kinase_groups
+    }
 
 
 def source_specific_nucleotide_mappings():
@@ -377,6 +366,10 @@ def source_specific_nucleotide_mappings():
     from gc import collect
 
     mutations = defaultdict(str)
+
+    def count_mutations(mutations_query):
+        for mutation in tqdm(mutations_query, total=mutations_query.count()):
+            mutations[str(mutation[0]) + mutation[1] + str(mutation[2])] += i
 
     sources_map = {str(i): model for i, model in enumerate(mutation_sources().values())}
 
@@ -389,8 +382,7 @@ def source_specific_nucleotide_mappings():
             # (if it is in source of interest, it is confirmed - we do not count MIMPs here)
             .yield_per(5000)
         )
-        for mutation in tqdm(query, total=query.count()):
-            mutations[str(mutation[0]) + mutation[1] + str(mutation[2])] += i
+        count_mutations(query)
 
     # add merged
     i = str(len(sources_map))
@@ -402,8 +394,7 @@ def source_specific_nucleotide_mappings():
         .filter(Mutation.is_confirmed == True)
         .yield_per(5000)
     )
-    for mutation in tqdm(query, total=query.count()):
-        mutations[str(mutation[0]) + mutation[1] + str(mutation[2])] += i
+    count_mutations(query)
 
     print('Mutations loaded')
     collect()
@@ -423,8 +414,12 @@ def source_specific_nucleotide_mappings():
             if field in sources:
                 counts[field] += 1
 
-    for key, value in counts.items():
-        print(sources_map[key], value)
+    return {
+        'Nucleotide mappings': {
+            sources_map[key]: value
+            for key, value in counts.items()
+        }
+    }
 
 
 def source_specific_mutated_sites():
@@ -432,6 +427,9 @@ def source_specific_mutated_sites():
     muts_in_ptm_sites = {}
     mimp_muts = {}
     mutated_sites = defaultdict(dict)
+
+    site_type_queries = ['']  # empty will match all sites
+    site_type_queries.extend(Site.types)
 
     for name, model in mutation_sources().items():
         count = (
@@ -452,32 +450,40 @@ def source_specific_mutated_sites():
             ).count()
         )
 
-        site_type_queries = ['']  # empty will match all sites
-        site_type_queries.extend(Site.types)
-
         for site_type in tqdm(site_type_queries):
             mutated_sites[name][site_type] = count_mutated_sites(site_type, model)
 
-    print('Mutations - in PTM sites')
-    print(muts_in_ptm_sites)
-    print('Mutations - with network-rewiring effect')
-    print(mimp_muts)
-    print('PTM sites affected by mutations - source specific')
-    print(mutated_sites)
+    all_mutated_sites = {}
+
+    for site_type in tqdm(site_type_queries):
+        all_mutated_sites[site_type] = count_mutated_sites(site_type)
+
+    mutated_sites['merged'] = all_mutated_sites
+
+    return {
+        'Mutations - in PTM sites': muts_in_ptm_sites,
+        'Mutations - with network-rewiring effect': mimp_muts,
+        'PTM sites affected by mutations': mutated_sites
+    }
 
 
 def generate_source_specific_summary_table():
     from gc import collect
 
-    counters = [
+    table_chunks = [
         source_specific_proteins_with_ptm_mutations,
-        all_mutated_sites,
         source_specific_mutated_sites,
         source_specific_nucleotide_mappings
     ]
-    for counter in counters:
-        counter()
+    table = {}
+    for table_chunk_generator in table_chunks:
+        chunk = table_chunk_generator()
+        table.update(chunk)
         collect()
+
+    print(table)
+
+    return table
 
 
 def hypermutated_samples(path, threshold=900):
