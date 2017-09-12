@@ -1,9 +1,9 @@
 {% macro represent_dict(dict, class='mappings') -%}
-    <div class="{{ class }}">
-    {% for key, value in dict.items() %}
-        {{ key }}: {{ value }}<br>
-    {% endfor %}
-    </div>
+  <div class="{{ class }}">
+  {%- for key, value in dict.items() -%}
+    {{ key }}: {{ value }}<br>
+  {%- endfor -%}
+  </div>
 {%- endmacro %}
 
 {% set source = filters.get_value('Mutation.sources') %}
@@ -85,7 +85,7 @@
       <td>{% include 'mutation/kinases.html' %}</td>
       {% for column in metadata.values() %}
         <td>
-          {% if column is sequence and column is not string %}
+          {%- if column is sequence and column is not string -%}
             {% for entry in column %}
               {% if entry is mapping %}
                 {{ represent_dict(entry, class='sub-cell') }}
@@ -93,18 +93,17 @@
                 {{ entry }}
               {% endif %}
             {% endfor %}
-          {% else %}
+          {%- else -%}
             {{ column }}
-          {% endif %}
+          {%- endif -%}
         </td>
       {% endfor %}
-      <td>
-        {% set summary = mutation.summary %}
-        {% if summary is sequence and summary is not string %}
+      <td>{% set summary = mutation.summary %}
+        {%- if summary is sequence and summary is not string -%}
           {{ summary | join(', ') }}
-        {% else %}
+        {%- else -%}
           {{ summary }}
-        {% endif %}
+        {%- endif -%}
         </td>
     </tr>
   {% endfor %}

@@ -1,16 +1,12 @@
 {% set comma = joiner(',') %}
-{% for site in mutation.sites %}
-  {% for group in site.kinase_groups %}
+{% for site in mutation.sites -%}
+  {%- for group in site.kinase_groups -%}
     {{ comma() }} {{ group.name }} group
   {%- endfor %}
   {%- for kinase in site.kinases -%}
     {{ comma() }}
     {% if kinase.protein -%}
-      <span
-        class="kinase"
-        data-site="{{ site.position }}{{ site.residue }}"
-        data-refseq="{{ kinase.protein.refseq }}"
-      >
-        {{ kinase.name }}</span>{%- else -%}{{ kinase.name }}{%- endif -%}
+      <span class="kinase" data-site="{{ site.position }}{{ site.residue }}" data-refseq="{{ kinase.protein.refseq }}">{{ kinase.name }}</span>
+    {%- else -%}{{ kinase.name }}{%- endif -%}
   {%- endfor -%}
 {%- endfor -%}
