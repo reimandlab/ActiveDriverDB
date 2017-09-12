@@ -171,14 +171,15 @@ var Tracks = function ()
 
         // - 1: sequence is 1 based but position is 0 based
         var user_input = $(input).val()
+        var pos
 
         if(user_input.indexOf('-') !== -1)
         {
             // get range
             var range = user_input.split('-')
-            range[0] = parseInt(range[0])
-            range[1] = parseInt(range[1])
-            var pos = range[0] - 1
+            range[0] = parseInt(range[0], 10)
+            range[1] = parseInt(range[1], 10)
+            pos = range[0] - 1
             // calculate zoom such that we will see only the desired range
             var len = range[1] - range[0]
             var zoom = config.min_zoom * config.sequenceLength / len
@@ -193,7 +194,7 @@ var Tracks = function ()
             _setZoom(config.max_zoom)
             // convert to int, make 0 based
             var visible_positions = config.min_zoom * config.sequenceLength / config.max_zoom
-            var pos = user_input - 1 - visible_positions / 2
+            pos = user_input - 1 - visible_positions / 2
         }
 
         _setAAPosition(pos, false, true)
@@ -231,6 +232,29 @@ var Tracks = function ()
         }
     }
 
+    function initControls()
+    {
+        var buttons = controls.find('.scroll-left')
+        initButtons(buttons, scrollLeft, scrollArea)
+
+        buttons = controls.find('.scroll-right')
+        initButtons(buttons, scrollRight, scrollArea)
+
+        var innerDiv = box.children('.inner')
+
+        buttons = controls.find('.zoom-out')
+        initButtons(buttons, zoomOut, innerDiv)
+
+        buttons = controls.find('.zoom-in')
+        initButtons(buttons, zoomIn, innerDiv)
+
+        buttons = controls.find('.scroll-to')
+        initButtons(buttons, scrollToCallback)
+
+        buttons = controls.find('.scroll-to-input')
+        initFields(buttons, scrollToCallback)
+    }
+
     var publicSpace = {
         init: function(new_config)
         {
@@ -260,25 +284,7 @@ var Tracks = function ()
 
             controls = $($.find('.tracks-controls'))
 
-            var buttons = controls.find('.scroll-left')
-            initButtons(buttons, scrollLeft, scrollArea)
-
-            buttons = controls.find('.scroll-right')
-            initButtons(buttons, scrollRight, scrollArea)
-
-            var innerDiv = box.children('.inner')
-
-            buttons = controls.find('.zoom-out')
-            initButtons(buttons, zoomOut, innerDiv)
-
-            buttons = controls.find('.zoom-in')
-            initButtons(buttons, zoomIn, innerDiv)
-
-            buttons = controls.find('.scroll-to')
-            initButtons(buttons, scrollToCallback)
-
-            buttons = controls.find('.scroll-to-input')
-            initFields(buttons, scrollToCallback)
+            initControls()
 
             publicSpace.refreshScaleFactor()
 
