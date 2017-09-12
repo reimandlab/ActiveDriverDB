@@ -43,20 +43,31 @@ function checkEquality(obj1, obj2)
 }
 
 
+/**
+ * If property of given 'name' in 'new_config' object is an URL string,
+ * perform asynchronous GET call to replace the property with JSON object
+ * returned by the endpoint defined by the URL string.
+ *
+ * Warning: current implementation assumes that all string values are URL strings.
+ *
+ * @param {Object} new_config
+ * @param {Object} name
+ * @param {function} callback - a function to be called after the data was loaded
+ * (or if there was no need to load additional data - i.e. the property was not an URL string)
+ */
 function get_remote_if_needed(new_config, name, callback)
 {
-    if(typeof new_config[name] === 'string')
+    var value = new_config[name]
+    if(typeof value === 'string')
     {
-		$.ajax({
-			url: new_config[name],
-			type: 'GET',
-			async: true,
+		$.get({
+			url: value,
 			success: function(data)
 			{
 				new_config[name] = data
                 if(callback)
                 {
-                    callback()
+                    return callback()
                 }
 			}
 		})
@@ -65,7 +76,7 @@ function get_remote_if_needed(new_config, name, callback)
     {
         if(callback)
         {
-            callback()
+            return callback()
         }
 
     }
