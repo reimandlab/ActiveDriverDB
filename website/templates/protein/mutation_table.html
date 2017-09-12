@@ -11,110 +11,102 @@
 <div id="toolbar"></div>
 
 <table
-    id="mutation_table"
-    class="table"
-    data-toolbar="#toolbar"
-    data-toggle="table"
-    data-search="true"
-    data-show-columns="true"
-    data-minimum-count-columns="2"
-    data-show-export="true"
-    data-detail-view="true"
-    data-sort-name="pos"
-    data-pagination="true"
-    data-page-list="[10, 25, 50, 100, ALL]"
-    data-page-size="25"
+  id="mutation_table"
+  class="table"
+  data-toolbar="#toolbar"
+  data-toggle="table"
+  data-search="true"
+  data-show-columns="true"
+  data-minimum-count-columns="2"
+  data-show-export="true"
+  data-detail-view="true"
+  data-sort-name="pos"
+  data-pagination="true"
+  data-page-list="[10, 25, 50, 100, ALL]"
+  data-page-size="25"
 >
-    <thead>
-        <tr>
-            <th
-              data-sortable=true
-              data-formatter="mutation_table.mutationURLFormatter"
-            >Mutation</th>
-            <th data-field="pos"
-                data-sortable=true
-                title="Position of mutation in protein">Pos</th>
-            <th data-field="ref" data-sortable=true
-                title="Reference amino acid residue in protein">Ref</th>
-            <th data-field="alt" data-sortable=true
-                title="Mutated amino acid residue in protein">Alt</th>
-            <th data-sortable=true
-                data-visible={{ (source not in ('1KGenomes', 'ESP6500')) | string | lower }}
-                data-switchable=true>{{ value_type }}</th>
-            <th data-sortable=true
-                data-sorter="mutation_table.impactSorter"
-                data-formatter="mutation_table.impactFormatter"
-                title="Impact on closest PTM site">PTM impact</th>
-            <th data-sortable=true
-                title="Number of adjacent PTMs affected">PTMs affected</th>
-            <th data-sortable=true
-                data-visible=false>Affected site(s)</th>
-            <th data-sortable=true
-                data-visible=true>Kinases</th>
-            {% if mutations %}
-            {% for metadata_colum in mutations[0].meta[source].keys() %}
-                <th data-sortable=true
-                    data-switchable=true
-                    {% if metadata_colum == 'dbSNP id' %}data-formatter="mutation_table.dbSNPFormatter"{% endif %}
-                    data-visible=false>{{ metadata_colum }}</th>
+  <thead>
+    <tr>
+      <th data-sortable=true
+          data-formatter="mutation_table.mutationURLFormatter">Mutation</th>
+      <th data-field="pos"
+          data-sortable=true
+          title="Position of mutation in protein">Pos</th>
+      <th data-field="ref" data-sortable=true
+          title="Reference amino acid residue in protein">Ref</th>
+      <th data-field="alt" data-sortable=true
+          title="Mutated amino acid residue in protein">Alt</th>
+      <th data-sortable=true
+          data-visible={{ (source not in ('1KGenomes', 'ESP6500')) | string | lower }}
+          data-switchable=true>{{ value_type }}</th>
+      <th data-sortable=true
+          data-sorter="mutation_table.impactSorter"
+          data-formatter="mutation_table.impactFormatter"
+          title="Impact on closest PTM site">PTM impact</th>
+      <th data-sortable=true
+          title="Number of adjacent PTMs affected">PTMs affected</th>
+      <th data-sortable=true
+          data-visible=false>Affected site(s)</th>
+      <th data-sortable=true
+          data-visible=true>Kinases</th>
+      {% if mutations %}
+      {% for metadata_colum in mutations[0].meta[source].keys() %}
+          <th data-sortable=true
+              data-switchable=true
+              {% if metadata_colum == 'dbSNP id' %}data-formatter="mutation_table.dbSNPFormatter"{% endif %}
+              data-visible=false>{{ metadata_colum }}</th>
+      {% endfor %}
+      <th data-sortable=true
+          data-switchable=true
+          title="Mutation summary (click on + for more info)">
+          {% if source in ('1KGenomes', 'ESP6500') %}
+            MAF
+          {% elif source in ('TCGA', 'MC3') %}
+            Cancer types
+          {% elif source == 'ClinVar' %}
+            Disease annotations
+          {% endif %}
+      </th>
+      {% endif %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for mutation in mutations or '' %}
+    {% set metadata = mutation.meta[source] %}
+    <tr id="{{ mutation.pos }}{{ mutation.alt }}">
+      <td>{{ protein.gene.name }} {{ mutation.ref }}{{ mutation.pos }}{{ mutation.alt }}</td>
+      <td>{{ mutation.pos }}</td>
+      <td>{{ mutation.ref }}</td>
+      <td>{{ mutation.alt }}</td>
+      <td>{{ mutation.value }}</td>
+      <td>{{ mutation.category or '' }}{% if mutation.category == 'network-rewiring' %} - motif {{ mutation.meta['MIMP'].effect }}{% endif %}</td>
+      <td>{{ mutation.cnt_ptm }}</td>
+      <td>{% for site in mutation.sites %} {{ site.position }}{{ site.residue }}{% endfor %}</td>
+      <td>{% include 'mutation/kinases.html' %}</td>
+      {% for column in metadata.values() %}
+        <td>
+          {% if column is sequence and column is not string %}
+            {% for entry in column %}
+              {% if entry is mapping %}
+                {{ represent_dict(entry, class='sub-cell') }}
+              {% else %}
+                {{ entry }}
+              {% endif %}
             {% endfor %}
-            <th data-sortable=true
-                data-switchable=true
-                title="Mutation summary (click on + for more info)">
-                {% if source in ('1KGenomes', 'ESP6500') %}
-                    MAF
-                {% elif source in ('TCGA', 'MC3') %}
-                    Cancer types
-                {% elif source == 'ClinVar' %}
-                    Disease annotations
-                {% endif %}
-            </th>
-            {% endif %}
-        </tr>
-    </thead>
-    <tbody>
-		{% for mutation in mutations or '' %}
-        {% set metadata = mutation.meta[source] %}
-        <tr id="{{ mutation.pos }}{{ mutation.alt }}">
-            <td>{{ protein.gene.name }} {{ mutation.ref }}{{ mutation.pos }}{{ mutation.alt }}</td>
-            <td>{{ mutation.pos }}</td>
-            <td>{{ mutation.ref }}</td>
-            <td>{{ mutation.alt }}</td>
-            <td>{{ mutation.value }}</td>
-            <td>{{ mutation.category or '' }}{% if mutation.category == 'network-rewiring' %} - motif {{ mutation.meta['MIMP'].effect }}{% endif %}</td>
-            <td>{{ mutation.cnt_ptm }}</td>
-            <td>{
-                {% for site in mutation.sites %}
-                  {{ site.position }}{{ site.residue }}
-                {% endfor %}
-            </td>
-            <td>
-              {% include 'mutation/kinases.html' %}
-            </td>
-            {% for column in metadata.values() %}
-                <td>
-                    {% if column is sequence and column is not string %}
-                        {% for entry in column %}
-                          {% if entry is mapping %}
-                            {{ represent_dict(entry, class='sub-cell') }}
-                          {% else %}
-                            {{ entry }}
-                          {% endif %}
-                        {% endfor %}
-                    {% else %}
-                        {{ column }}
-                    {% endif %}
-                </td>
-            {% endfor %}
-            <td>
-              {% set summary = mutation.summary %}
-                {% if summary is sequence and summary is not string %}
-                    {{ summary | join(', ') }}
-                {% else %}
-                    {{ summary }}
-                {% endif %}
-            </td>
-        </tr>
-		{% endfor %}
-    </tbody>
+          {% else %}
+            {{ column }}
+          {% endif %}
+        </td>
+      {% endfor %}
+      <td>
+        {% set summary = mutation.summary %}
+        {% if summary is sequence and summary is not string %}
+          {{ summary | join(', ') }}
+        {% else %}
+          {{ summary }}
+        {% endif %}
+        </td>
+    </tr>
+  {% endfor %}
+  </tbody>
 </table>
