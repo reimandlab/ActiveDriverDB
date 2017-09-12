@@ -1492,8 +1492,7 @@ def managed_mutation_details_relationship(model):
 class Mutation(BioModel):
     __table_args__ = (
         db.Index('mutation_index', 'alt', 'protein_id', 'position'),
-        # TODO: is constraint necessary?
-        # db.UniqueConstraint('alt', 'protein_id', 'position')
+        db.UniqueConstraint('alt', 'protein_id', 'position')
     )
 
     position = db.Column(db.Integer)
