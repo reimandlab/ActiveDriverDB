@@ -61,7 +61,7 @@ var MutationTable = function ()
     var publicSpace = {
         init: function(table_element, mutations_list, impacts, mutation_url)
         {
-            mutation_template = nunjucks.compile(decodeURIComponent(mutation_url))
+            mutation_template = decodeURIComponent(mutation_url)
 
             mutations = {}
             for(var i = 0; i < mutations_list.length; i++)
@@ -125,7 +125,7 @@ var MutationTable = function ()
         },
         mutationURLFormatter: function(value, row, index)
         {
-            return '<a href="' + mutation_template.render(row) + '">' + value + '</a>'
+            return '<a href="' + format(mutation_template, row) + '">' + value + '</a>'
         }
     }
 
