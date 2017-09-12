@@ -329,7 +329,7 @@
 
         var max_zoom = tracks.adjustMaxZoom();
 
-        mutation_table.init($table, data.mutations, {{ mutation_types | tojson }});
+        mutation_table.init($table, data.mutations, {{ mutation_types | tojson }}, "{{ url_for('MutationView:show', refseq=protein.refseq, position='{{ pos }}', alt='{{ alt }}') }}");
 
         var variable_config = {
             needle_tooltip: function(mutation) {

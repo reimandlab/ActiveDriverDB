@@ -6,6 +6,7 @@ var MutationTable = function ()
     var element
     var mutations
     var impact_importances = {}
+    var mutation_template
 
     function detailFormatter(index, row_data, element)
     {
@@ -58,8 +59,10 @@ var MutationTable = function ()
     }
 
     var publicSpace = {
-        init: function(table_element, mutations_list, impacts)
+        init: function(table_element, mutations_list, impacts, mutation_url)
         {
+            mutation_template = nunjucks.compile(decodeURIComponent(mutation_url))
+
             mutations = {}
             for(var i = 0; i < mutations_list.length; i++)
             {
@@ -84,6 +87,7 @@ var MutationTable = function ()
             {
                 impact_importances[impacts[j]] = j
             }
+
         },
         expandRow: function(mutation_id)
         {
@@ -118,6 +122,10 @@ var MutationTable = function ()
             }
 
             return results.join(', ')
+        },
+        mutationURLFormatter: function(value, row, index)
+        {
+            return '<a href="' + mutation_template.render(row) + '">' + value + '</a>'
         }
     }
 

@@ -29,6 +29,7 @@
         <tr>
             <th
               data-sortable=true
+              data-formatter="mutation_table.mutationURLFormatter"
             >Mutation</th>
             <th data-field="pos"
                 data-sortable=true
@@ -75,11 +76,7 @@
 		{% for mutation in mutations or '' %}
         {% set metadata = mutation.meta[source] %}
         <tr id="{{ mutation.pos }}{{ mutation.alt }}">
-            <td>
-              <a href="{{ url_for('MutationView:show', refseq=protein.refseq, position=mutation.pos, alt=mutation.alt) }}">
-                {{ protein.gene.name }} {{ mutation.ref }}{{ mutation.pos }}{{ mutation.alt }}
-              </a>
-            </td>
+            <td>{{ protein.gene.name }} {{ mutation.ref }}{{ mutation.pos }}{{ mutation.alt }}</td>
             <td>{{ mutation.pos }}</td>
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
