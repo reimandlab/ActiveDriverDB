@@ -3,6 +3,7 @@ import argparse
 import re
 from getpass import getpass
 
+from flask import current_app
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from app import create_app
@@ -27,7 +28,6 @@ from models import User
 
 muts_import_manager = MutationImportManager()
 database_binds = ('bio', 'cms')
-app = None
 
 
 def automigrate(args, app=None):
@@ -232,7 +232,7 @@ class CMS(CommandTarget):
 
     @command
     def remove(args):
-        reset_relational_db(app, bind='cms')
+        reset_relational_db(current_app, bind='cms')
 
 
 class ProteinRelated(CommandTarget):
@@ -319,7 +319,7 @@ class ProteinRelated(CommandTarget):
 
     @command
     def remove_all(args):
-        reset_relational_db(app, bind='bio')
+        reset_relational_db(current_app, bind='bio')
 
     @command
     def remove(args):
@@ -474,20 +474,21 @@ def new_subparser(subparsers, name, func, **kwargs):
 
 def run_shell(args):
     print('Starting interactive shell...')
-    app = create_app()
-    if args.command:
-        print('Executing supplied command: "%s"' % args.command)
-        import statistics
-        exec(args.command)
-    print('You can access current application using "app" variable.')
-    print('Database, models and statistics modules are pre-loaded.')
-    try:
-        from IPython import embed
-        embed()
-    except ImportError:
-        print('To use enhanced interactive shell install ipython3')
-        import code
-        code.interact(local=locals())
+    app = create_app(config_override={'SCHEDULER_ENABLED': False, 'USE_CELERY': False})
+    with app.app_context():
+        if args.command:
+            print('Executing supplied command: "%s"' % args.command)
+            import statistics
+            exec(args.command)
+        print('You can access current application using "app" variable.')
+        print('Database, models and statistics modules are pre-loaded.')
+        try:
+            from IPython import embed
+            embed()
+        except ImportError:
+            print('To use enhanced interactive shell install ipython3')
+            import code
+            code.interact(local=locals())
 
 
 def create_parser():
@@ -553,14 +554,14 @@ def create_parser():
     return parser
 
 
-def run_manage(parsed_args, my_app=None):
+def run_manage(parsed_args, app=None):
     if not hasattr(parsed_args, 'func'):
         print('Scripts loaded successfully, no tasks specified.')
         return
 
-    if not my_app:
+    if not app:
         try:
-            my_app = create_app(config_override={'LOAD_STATS': False})
+            app = create_app(config_override={'LOAD_STATS': False})
         except OperationalError as e:
             if e.orig.args[0] == 1071:
                 print('Please run: ')
@@ -570,8 +571,6 @@ def run_manage(parsed_args, my_app=None):
                 return
             else:
                 raise
-    global app
-    app = my_app
 
     with app.app_context():
         parsed_args.func(parsed_args)

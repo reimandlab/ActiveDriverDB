@@ -28,7 +28,7 @@ class ManageTest(DatabaseTest):
         parser = manage.create_parser()
         try:
             parsed_args = parser.parse_args(commands.split(' '))
-            manage.run_manage(parsed_args, my_app=self.app)
+            manage.run_manage(parsed_args, app=self.app)
         except SystemExit:
             if not allow_early_exit:
                 raise
