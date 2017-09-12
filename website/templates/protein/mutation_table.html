@@ -103,7 +103,11 @@
                 <td>
                     {% if column is sequence and column is not string %}
                         {% for entry in column %}
+                          {% if entry is mapping %}
                             {{ represent_dict(entry, class='sub-cell') }}
+                          {% else %}
+                            {{ entry }}
+                          {% endif %}
                         {% endfor %}
                     {% else %}
                         {{ column }}

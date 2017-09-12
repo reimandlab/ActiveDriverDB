@@ -56,7 +56,9 @@
           <div class="container-fluid">
             <div class="row">
               <div class="col-md-4">Isoform:</div>
-              <div class="col-md-8">{{ protein.refseq }}</div>
+              <div class="col-md-8">
+                <a href="{{ url_for('ProteinView:show', refseq=protein.refseq) }}">{{ protein.refseq }}</a>
+              </div>
             </div>
             <div class="row">
               <div class="col-md-4">Position:</div>
@@ -81,7 +83,7 @@
             </div>
             <div class="row">
               <div class="col-md-4">Kinases:</div>
-              <div class="col-md-8">{% include 'mutation/kinases.html' %} {# TODO: include kinase tooltip #}</div>
+              <div class="col-md-8">{% include 'mutation/kinases.html' %}</div>
             </div>
           </div>
 
@@ -223,7 +225,26 @@
 
   <div class="row">
     <div class="col-md-8">
-      {# External references ? #}
+      {% if mutation.meta_ClinVar and mutation.meta_ClinVar.db_snp_ids %}
+        <div class="panel panel-default site-summary">
+          <div class="panel-heading">
+            <h3 class="panel-title">External references</h3>
+          </div>
+          <div class="panel-body">
+            <div class="container-fluid">
+              <div class="row">
+                <div class="col-md-4">dbSNP:</div>
+                <div class="col-md-8">
+                  {% set comma = joiner() %}
+                  {% for db_snp in mutation.meta_ClinVar.db_snp_ids %}
+                    {{ comma() }} <a href="https://www.ncbi.nlm.nih.gov/snp/rs{{ db_snp }}" target="_blank">rs{{ db_snp }}</a>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
     </div>
     <div class="col-md-4">
       {% with feature='mutation', title=mutation.name %}
