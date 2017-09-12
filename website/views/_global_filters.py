@@ -44,6 +44,39 @@ class SourceDependentFilter(Filter):
         return self.manager.get_value('Mutation.sources') == self.source
 
 
+class MutationDetailsFilter(SourceDependentFilter):
+    """Mutation details restrict returned mutations to those
+    which have at least on MutationDetails passing given criteria.
+
+    Example mutation details attributes include:
+        disease_name, cancer_type, population_name and so on
+
+    As there may be hundreds of mutations per protein, to improve speed
+    of filtering, the MutationDetails filters must be defined in a way
+    which allows conversion to database-side SQL 'where' clauses.
+
+    This means that 'as_sqlalchemy' will be set to True by default and
+    it's strongly discouraged to turned it off; Still, one can overwrite
+    as_sqlalchemy with a function defining custom sqlalchemy filter.
+
+    Also the filters should be constructed in a way that the default
+    value is equivalent to having the filter disabled. If it is not
+    possible to achieve, one need to provide 'skip_if_default=False'
+    """
+
+    def __init__(
+        self, target_details_class, attribute,
+        nullable=False, as_sqlalchemy=True, skip_if_default=True,
+        **kwargs
+    ):
+        target = [Mutation, target_details_class]
+        super().__init__(
+            target, attribute,
+            nullable=nullable, as_sqlalchemy=as_sqlalchemy, skip_if_default=skip_if_default,
+            **kwargs
+        )
+
+
 def sources_to_sa_filter(filter, target):
     """TODO: refactor name to: source_filter_to_sa"""
     return source_to_sa_filter(filter.value, target)
@@ -148,52 +181,45 @@ def source_dependent_filters(protein=None):
     significances = list(ClinicalData.significance_codes.keys())
 
     return [
-        SourceDependentFilter(
-            [Mutation, MC3Mutation], 'mc3_cancer_code',
+        MutationDetailsFilter(
+            MC3Mutation, 'mc3_cancer_code',
             comparators=['in'],
             choices=cached_queries.all_cancer_codes_mc3,
-            default=cancer_codes_mc3, nullable=False,
+            default=cancer_codes_mc3,
             source='MC3',
             multiple='any',
-            as_sqlalchemy=True,
-            skip_if_default=True
         ),
-        SourceDependentFilter(
-            [Mutation, The1000GenomesMutation], 'populations_1KG',
+        MutationDetailsFilter(
+            The1000GenomesMutation, 'populations_1KG',
             comparators=['in'],
             choices=populations_1kg,
-            default=populations_1kg, nullable=False,
+            default=populations_1kg,
             source='1KGenomes',
-            as_sqlalchemy=True,
             multiple='any',
-            skip_if_default=True
         ),
-        SourceDependentFilter(
-            [Mutation, ExomeSequencingMutation], 'populations_ESP6500',
+        MutationDetailsFilter(
+            ExomeSequencingMutation, 'populations_ESP6500',
             comparators=['in'],
             choices=populations_esp,
-            default=populations_esp, nullable=False,
+            default=populations_esp,
             source='ESP6500',
-            as_sqlalchemy=True,
             multiple='any',
-            skip_if_default=True
         ),
-        SourceDependentFilter(
-            [Mutation, ClinicalData], 'sig_code', comparators=['in'],
+        MutationDetailsFilter(
+            ClinicalData, 'sig_code',
+            comparators=['in'],
             choices=significances,
-            default=significances, nullable=False,
+            default=significances,
             source='ClinVar',
             multiple='any',
-            as_sqlalchemy=True,
         ),
-        SourceDependentFilter(
-            [Mutation, ClinicalData], 'disease_name', comparators=['in'],
+        MutationDetailsFilter(
+            ClinicalData, 'disease_name',
+            comparators=['in'],
             choices=disease_names,
-            default=disease_names, nullable=False,
+            default=disease_names,
             source='ClinVar',
             multiple='any',
-            as_sqlalchemy=True,
-            skip_if_default=True
         )
     ]
 
