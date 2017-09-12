@@ -33,15 +33,16 @@
             <th data-field="pos"
                 data-sortable=true
                 title="Position of mutation in protein">Pos</th>
-            <th data-sortable=true
+            <th data-field="ref" data-sortable=true
                 title="Reference amino acid residue in protein">Ref</th>
-            <th data-sortable=true
+            <th data-field="alt" data-sortable=true
                 title="Mutated amino acid residue in protein">Alt</th>
             <th data-sortable=true
                 data-visible={{ (source not in ('1KGenomes', 'ESP6500')) | string | lower }}
                 data-switchable=true>{{ value_type }}</th>
             <th data-sortable=true
-                data-sorter="impact_sorter"
+                data-sorter="mutation_table.impactSorter"
+                data-formatter="mutation_table.impactFormatter"
                 title="Impact on closest PTM site">PTM impact</th>
             <th data-sortable=true
                 title="Number of adjacent PTMs affected">PTMs affected</th>
@@ -53,6 +54,7 @@
             {% for metadata_colum in mutations[0].meta[source].keys() %}
                 <th data-sortable=true
                     data-switchable=true
+                    {% if metadata_colum == 'dbSNP id' %}data-formatter="mutation_table.dbSNPFormatter"{% endif %}
                     data-visible=false>{{ metadata_colum }}</th>
             {% endfor %}
             <th data-sortable=true
@@ -82,16 +84,9 @@
             <td>{{ mutation.ref }}</td>
             <td>{{ mutation.alt }}</td>
             <td>{{ mutation.value }}</td>
-            <td>
-                <div class="{{ mutation.category or '' }} badge">
-                    {{ mutation.category or '' }}
-                    {% if mutation.category == 'network-rewiring' %}
-                        - motif {{ mutation.meta['MIMP'].effect }}
-                    {% endif %}
-                </div>
-            </td>
+            <td>{{ mutation.category or '' }}{% if mutation.category == 'network-rewiring' %} - motif {{ mutation.meta['MIMP'].effect }}{% endif %}</td>
             <td>{{ mutation.cnt_ptm }}</td>
-            <td>
+            <td>{
                 {% for site in mutation.sites %}
                   {{ site.position }}{{ site.residue }}
                 {% endfor %}

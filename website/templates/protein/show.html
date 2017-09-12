@@ -211,24 +211,6 @@
   {% endassets %}
   <script type="text/javascript">
 
-    var impacts = {{ mutation_types | tojson }}
-    var impact_importances = {}
-
-    for(var i = 0; i < impacts.length; i++)
-    {
-        impact_importances[impacts[i]] = i
-    }
-
-    function impact_sorter(a, b)
-    {
-        // TODO: how to make it better?
-        // use formatter and value sort?
-        a = a.split('"')[1].split(' ')[0]
-        b = b.split('"')[1].split(' ')[0]
-        if(impact_importances[a] < impact_importances[b]) return 1
-        if(impact_importances[a] > impact_importances[b]) return -1
-    }
-
     nunjucks.configure('/static/js_templates', {autoescape: true});
 
     affix($('#sticky_box'), $('footer'));
@@ -347,7 +329,7 @@
 
         var max_zoom = tracks.adjustMaxZoom();
 
-        mutation_table.init($table, data.mutations);
+        mutation_table.init($table, data.mutations, {{ mutation_types | tojson }});
 
         var variable_config = {
             needle_tooltip: function(mutation) {
