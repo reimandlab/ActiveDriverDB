@@ -57,7 +57,7 @@ var Tracks = function ()
 
     function _setAAPosition(new_position, stop_callback, update_zoom)
     {
-        position = calculate_position(new_position)
+        position = trim_position(new_position)
 
         scrollTo(position)
 
@@ -82,12 +82,15 @@ var Tracks = function ()
         return _setZoomAndMove(new_zoom, _getAAPosition(), stop_callback, true)
     }
 
-    function calculate_position(new_position, new_zoom)
+    function trim_position(new_position, new_zoom, skip_zoom_effect)
     {
         if(new_position < 0)
             return 0
         else {
-            var end = config.sequenceLength - _visibleAminoacidsCount(new_zoom)
+            var end = config.sequenceLength
+
+            if(!skip_zoom_effect)
+                end -= _visibleAminoacidsCount(new_zoom)
 
             if(new_position > end)
                 return end
@@ -98,7 +101,7 @@ var Tracks = function ()
 
     function _setZoomAndMove(new_zoom, new_pos, stop_callback, skip_animation, center_view)
     {
-        new_pos = calculate_position(new_pos, new_zoom)
+        new_pos = trim_position(new_pos, new_zoom)
 
         var styles = scalableElem.style;
 
@@ -193,7 +196,7 @@ var Tracks = function ()
     function scroll(direction, animate)
     {
         var new_pos_screen = _getAAPosition() + _visibleAminoacidsCount() * direction
-        new_pos_screen = calculate_position(new_pos_screen)
+        new_pos_screen = trim_position(new_pos_screen)
 
         if(new_pos_screen === position)
             return
@@ -255,38 +258,76 @@ var Tracks = function ()
         scrollArea.scrollLeft(new_position * config.char_size)
     }
 
+    function parsePosition(position_string)
+    {
+        return trim_position(parseInt(position_string, 10), undefined, true)
+    }
+
     function scrollToCallback()
     {
-        // TODO: for the first tme (after zooming?) it goes to a wrong location with even 100. Investigate
         var input = $(this).closest('.input-group').find('.scroll-to-input')
 
         // - 1: sequence is 1 based but position is 0 based
         var user_input = $(input).val()
+
         var pos
         var zoom
 
-        if(user_input.indexOf('-') !== -1)
+        var correct_expression = /^\s*(\d+)\s*([-|:]\s*(\d+))?\s*$/
+
+        var matched_range = user_input.match(correct_expression)
+        var feedback = $('.scroll-feedback')
+
+        function warn() {
+            feedback.html('<span class="glyphicon glyphicon-warning-sign"></span>')
+        }
+
+        if(matched_range)
         {
             // get range
-            var range = user_input.split('-')
-            range[0] = parseInt(range[0], 10)
-            range[1] = parseInt(range[1], 10)
+            var range = [matched_range[1], matched_range[3]]
+
+            // convert to int, trim if the values exceed protein length or 0
+            range.map(parsePosition)
+
+            // make first coordinate 0-based
             pos = range[0] - 1
-            // calculate zoom such that we will see only the desired range
-            var len = range[1] - range[0]
-            zoom = config.min_zoom * config.sequenceLength / len
-            // and trim it to max allowed zoom
-            zoom = Math.min(zoom, config.max_zoom)
+
+            // if we have both parts of expression (two numbers)
+            if(range[1] !== undefined)
+            {
+                var len = range[1] - range[0]
+
+                // if user provides range with the second value being smaller,
+                // it may be good to warn the user; moreover we do not want to
+                // divide by zero.
+                if(len < 1)
+                    return warn()
+
+                // calculate zoom such that we will see only the desired range
+                zoom = config.min_zoom * config.sequenceLength / len
+
+                // and trim it to max allowed zoom
+                zoom = Math.min(zoom, config.max_zoom)
+            }
+            else
+            {
+                // zoom in as close to the mutation as we can get
+                zoom = config.max_zoom
+
+                // move the position to the center
+                pos -= _visibleAminoacidsCount(zoom) / 2
+            }
+            // clear the feedback (the empty string is important!)
+            feedback.html('')
         }
         else
         {
-            // zoom in as close to the mutation as we can get
-            zoom = config.max_zoom
-            // convert to int, make 0 based
-            pos = parseInt(user_input, 10) - 1 - _visibleAminoacidsCount(zoom) / 2
-
+            // incorrect input
+            warn()
         }
 
+        // zoom and move: run callback, animate, do not attempt to center on given position
         _setZoomAndMove(zoom, pos, false, false, false)
     }
 
