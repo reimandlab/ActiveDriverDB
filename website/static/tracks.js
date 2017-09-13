@@ -9,10 +9,14 @@ var Tracks = function ()
     var sequence_elements, baseCharSize
     var is_ready = false
     var controls, box
+    var is_animation_running
 
     var config = {
+        scroll_step: 0.8, // how many screen (to left or right) should be scrolled after clicking scroll button
+        zoom_step: 2,
         zoom_speed: 100,
         animations_speed: 300,
+        animations_ease: 'quad',
         box: null,
         min_zoom: 1,
         max_zoom: 10
@@ -24,22 +28,22 @@ var Tracks = function ()
         update_object(config, new_config)
     }
 
-    function zoom(direction)
+    function calculate_zoom(direction)
     {
         // scale down slower toward 0
         var new_zoom = scale + direction * scale / 15;
 
         if(new_zoom > config.max_zoom)
         {
-            _setZoom(config.max_zoom)
+            return config.max_zoom
         }
         else if(new_zoom < config.min_zoom)
         {
-            _setZoom(config.min_zoom)
+            return config.min_zoom
         }
         else
         {
-            _setZoom(new_zoom)
+            return new_zoom
         }
     }
 
@@ -51,20 +55,17 @@ var Tracks = function ()
         return width / content_width
     }
 
-    function _setAAPosition(new_position, stop_callback)
+    function _setAAPosition(new_position, stop_callback, update_zoom)
     {
-        if(new_position < 0)
-            position = 0
-        else if(new_position > config.sequenceLength)
-            position = config.sequenceLength
-        else
-            position = new_position
+        position = calculate_position(new_position)
 
         scrollTo(position)
 
+        if(update_zoom)
+            _setZoom(scale, true)
+
         if(!stop_callback && needle_plot)
         {
-            _setZoom(scale, true)
             needle_plot.setAAPosition(position, true)
         }
         dispatch.zoomAndMove(this)
@@ -78,66 +79,155 @@ var Tracks = function ()
 
     function _setZoom(new_zoom, stop_callback)
     {
+        return _setZoomAndMove(new_zoom, _getAAPosition(), stop_callback, true)
+    }
+
+    function calculate_position(new_position, new_zoom)
+    {
+        if(new_position < 0)
+            return 0
+        else {
+            var end = config.sequenceLength - _visibleAminoacidsCount(new_zoom)
+
+            if(new_position > end)
+                return end
+            else
+                return new_position
+        }
+    }
+
+    function _setZoomAndMove(new_zoom, new_pos, stop_callback, skip_animation, center_view)
+    {
+        new_pos = calculate_position(new_pos, new_zoom)
+
         var styles = scalableElem.style;
-        $({scale: scale})
+
+        var invoke_callback = (!stop_callback && needle_plot)
+
+        var initial_scale = scale
+
+        var step = function(now, fx)
+        {
+            if(fx.prop === 'p')
+            {
+                if(center_view)
+                    return
+
+                position = now
+                scrollTo(position)
+                return
+            }
+
+            scale = now
+            config.char_size = getCharSize()
+
+            if(center_view)
+            {
+                // as I want the chosen aminoacid to remain in place when zooming:
+                // central = first_visible + visible_count / 2
+                // I use the central before zoom and central after zoom to find
+                // the first_visible_after_zoom which satisfies condition: central=const
+                // new_pos is the first visible aminoacid to be targeted,
+                // position is the first visible aminoacid to be shown in this step
+                position = new_pos + _visibleAminoacidsCount() / 2 * (1 - initial_scale / scale)
+            }
+
+            styles.transform = 'scaleX(' +  first_scale_factor * scale + ')'
+            scrollTo(position)
+
+            if(invoke_callback)
+                needle_plot.setZoomAndAAPosition(scale, position, true)
+
+        }
+
+        is_animation_running = true
+        $({s: scale, p: position})
             .animate(
-                {scale: new_zoom},
+                {s: new_zoom, p: new_pos},
                 {
-                    duration: config.animations_speed,
-                    step: function(now)
-                    {
-                        styles.transform = 'scaleX(' +  first_scale_factor * now + ')'
+                    duration: skip_animation ? 0 : config.zoom_speed,
+                    ease: config.animations_ease,
+                    queue: false,
+                    step: step,
+                    complete: function() {
+                        dispatch.zoomAndMove(this)
+                        is_animation_running = false
                     }
                 }
             )
 
-        scale = new_zoom
-        config.char_size = getCharSize()
-
-        if(!stop_callback && needle_plot)
-        {
-            _setAAPosition(position, true)
-            needle_plot.setZoom(scale, true)
-        }
-        dispatch.zoomAndMove(this)
-
     }
 
-    function _setZoomAndMove(new_zoom, new_pos, stop_callback)
+    function zoomKeepingCentral(direction)
     {
-        _setZoom(new_zoom, false)
-        _setAAPosition(new_pos, false)
-
-        dispatch.zoomAndMove(this)
+        var zoom = calculate_zoom(direction)
+        var first_visible_aa = _getAAPosition()
+        _setZoomAndMove(zoom, first_visible_aa, false, false, true)
     }
 
     function zoomIn()
     {
-        zoom(+1)
+        zoomKeepingCentral(+config.zoom_step)
     }
 
     function zoomOut()
     {
-        zoom(-1)
+        zoomKeepingCentral(-config.zoom_step)
     }
 
-    function scroll(direction)
+    function _getAAPosition()
     {
-        var old_screen_pos = scrollArea.scrollLeft()
-        var one_screen = scrollArea.width() * _getZoom()
-        var new_pos_screen = old_screen_pos + one_screen * direction
+        return position
+    }
 
-        _setAAPosition(new_pos_screen / config.char_size, false)
+    function _visibleAminoacidsCount(scale_to_use)
+    {
+        return config.min_zoom * config.sequenceLength / (scale_to_use ? scale_to_use : scale)
+    }
+
+    /**
+     * Move by one screen in given direction
+     * @param direction - move one screen right if +1, one screen left if -1
+     * @param {boolean} animate - should the scrolling be animated?
+     */
+    function scroll(direction, animate)
+    {
+        var new_pos_screen = _getAAPosition() + _visibleAminoacidsCount() * direction
+        new_pos_screen = calculate_position(new_pos_screen)
+
+        if(new_pos_screen === position)
+            return
+
+        is_animation_running = true
+        $({screen_position: position})
+            .animate(
+                {screen_position: new_pos_screen},
+                {
+                    duration: animate ? config.animations_speed : 0,
+                    ease: config.animations_ease,
+                    queue: false,
+                    step: function(now)
+                    {
+                        position = now
+                        scrollTo(now)
+                        needle_plot.setAAPosition(now, true)
+                        dispatch.zoomAndMove(this)
+                    },
+                    complete: function() {
+                        is_animation_running = false
+                    }
+                }
+            )
     }
 
     function scrollLeft()
     {
-        scroll(-1)
+        scroll(-config.scroll_step, true)
     }
 
     function scrollRight()
     {
-        scroll(+1)
+        scroll(+config.scroll_step, true)
     }
 
     function computeBaseCharSize()
@@ -162,16 +252,18 @@ var Tracks = function ()
 
     function scrollTo(new_position)
     {
-        scrollArea.scrollLeft(Math.round(new_position * config.char_size))
+        scrollArea.scrollLeft(new_position * config.char_size)
     }
 
     function scrollToCallback()
     {
+        // TODO: for the first tme (after zooming?) it goes to a wrong location with even 100. Investigate
         var input = $(this).closest('.input-group').find('.scroll-to-input')
 
         // - 1: sequence is 1 based but position is 0 based
         var user_input = $(input).val()
         var pos
+        var zoom
 
         if(user_input.indexOf('-') !== -1)
         {
@@ -182,22 +274,20 @@ var Tracks = function ()
             pos = range[0] - 1
             // calculate zoom such that we will see only the desired range
             var len = range[1] - range[0]
-            var zoom = config.min_zoom * config.sequenceLength / len
+            zoom = config.min_zoom * config.sequenceLength / len
             // and trim it to max allowed zoom
             zoom = Math.min(zoom, config.max_zoom)
-
-            _setZoom(zoom)
         }
         else
         {
             // zoom in as close to the mutation as we can get
-            _setZoom(config.max_zoom)
+            zoom = config.max_zoom
             // convert to int, make 0 based
-            var visible_positions = config.min_zoom * config.sequenceLength / config.max_zoom
-            pos = user_input - 1 - visible_positions / 2
+            pos = parseInt(user_input, 10) - 1 - _visibleAminoacidsCount(zoom) / 2
+
         }
 
-        _setAAPosition(pos, false, true)
+        _setZoomAndMove(zoom, pos, false, false, false)
     }
 
     function initButtons(buttons, func, context)
@@ -255,6 +345,16 @@ var Tracks = function ()
         initFields(buttons, scrollToCallback)
     }
 
+    function onManualScroll(event)
+    {
+        var scroll = $(event.target).scrollLeft()
+
+        if(!is_animation_running)
+        {
+            _setAAPosition(scroll / config.char_size, false)
+        }
+    }
+
     var publicSpace = {
         init: function(new_config)
         {
@@ -264,15 +364,7 @@ var Tracks = function ()
             tracks = box.find('.tracks')
 
             scrollArea = tracks.find('.scroll-area')
-            scrollArea.on('scroll', function(event)
-            {
-                var scroll = $(event.target).scrollLeft()
-                // is that a meaningful, non-programmatic scroll?
-                if(scroll !== Math.round(position * config.char_size))
-                {
-                    _setAAPosition(scroll / config.char_size)
-                }
-            })
+            scrollArea.on('scroll', onManualScroll)
             scalableArea = tracks.find('.scalable')
             scalableElem = scalableArea.get(0)
 

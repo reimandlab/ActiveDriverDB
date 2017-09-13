@@ -69,7 +69,7 @@ var NeedlePlot = function ()
     var config = {
         use_log: false, // should logarithmic (base 10) scale by used instead of linear?
         site_height: 10,
-        animations_speed: 100,
+        animations_speed: 300,
         // 90 is width of description
         paddings: {bottom: 40, top: 30, left: 89, right: 1},
         y_scale: 'auto',
@@ -205,13 +205,6 @@ var NeedlePlot = function ()
             legend.y.obj.attr('transform','translate(' + -(config.paddings.left - 15) + ' ' + config.height / 2 + ') rotate(-90)')
 
         adjustContent()
-    }
-
-    function append_group(selection, class_name)
-    {
-        selection
-            .append('g')
-            .attr('class', class_name)
     }
 
     function create_needles(vis, needle_tooltip)
@@ -500,12 +493,10 @@ var NeedlePlot = function ()
 
         if(!stop_callback && config.position_callback)
         {
-            var aa_position = xToPos(position)
+            var aa_position = publicSpace.getAAPosition()
             config.position_callback(aa_position, true)
         }
-
 	}
-
 
     function canvasAnimated(animate)
     {
@@ -605,51 +596,70 @@ var NeedlePlot = function ()
 
     function zoomAndMove()
     {
-		_setZoomAndMove(d3.event.scale, d3.event.translate[0])
+        // with callback, without animation
+        _setZoomAndMove(d3.event.scale, d3.event.translate[0], false, true)
     }
 
-    function _setZoomAndMove(new_scale, new_position, animate)
+    function _setZoomAndMove(new_scale, new_position, stop_callback, stop_animation, recalculate_position)
     {
-        _setPosition(new_position, true)
-        _setZoom(new_scale, true)
+        // zoom level restricts the leftmost and rightmost position which can be set,
+        // so setting zoom level needs to be evaluated first
 
-        if(config.zoomAndMove_callback)
+        var old_aa_pos = xToPos(new_position)
+
+        if(recalculate_position)
         {
-            var aa_position = xToPos(position)
-            config.zoomAndMove_callback(scale, aa_position, true)
+            _setZoom(new_scale, true)
+            new_position = _positionFromAAPosition(old_aa_pos)
+            _setPosition(new_position, true)
+        }
+        else
+        {
+            _setPosition(new_position, true)
+            _setZoom(new_scale, true)
         }
 
-        refresh(animate)
+        if(!stop_callback && config.zoomAndMove_callback)
+        {
+            var aa_position = xToPos(position)
+            config.zoomAndMove_callback(scale, aa_position, true, stop_animation)
+        }
+
+        refresh(!stop_animation)
         dispatch.zoomAndMove(this)
     }
 
-	function _setZoom(new_scale, stop_callback)
+	function _setZoom(new_scale, stop_callback, recalculate_position)
 	{
         if(scale === new_scale)
             return
 
+        var old_aa_pos = publicSpace.getAAPosition()
+
 		scale = new_scale
 
-        // if we have a callback, release it (unless explicitly asked to refrain)
+        // let d3 know that the zoom was changed
+        zoom.scale(scale)
+
+        // if we have a callback, call it (unless explicitly asked to refrain)
         if(!stop_callback && config.zoom_callback)
         {
             config.zoom_callback(scale, true)
         }
-        // if we are not issuing a callback, that the function was called by callback,
-        // then we want to assure that all related components are aware of zoom update
-        else
+
+        // recalculate position so we do not exceed boundaries
+        if(recalculate_position)
         {
-            // let d3 know that the zoom was changed
-			zoom.scale(scale)
+            var position_after_zoom = _positionFromAAPosition(old_aa_pos)
+            _setPosition(position_after_zoom, stop_callback)
 
-            // recalculate position so we do not exceed boundaries
-            _setPosition(position)
-
-            // adjust axes
-            refresh(true)
         }
-
 	}
+
+	function _positionFromAAPosition(aa_position)
+    {
+        return posToX(-aa_position) * scale
+    }
 
     var publicSpace = {
         init: function(new_config)
@@ -659,13 +669,31 @@ var NeedlePlot = function ()
             createPlot()
 
         },
-        setZoom: _setZoom,
-		setPosition: _setPosition,
+        setZoom: function(new_scale, stop_callback, recalculate_position, animate){
+            _setZoom(new_scale, stop_callback, recalculate_position)
+            // adjust axes
+            refresh(animate)
+        },
+        getZoom: function () {
+            return scale
+        },
+		setPosition: function(position, stop_callback, animate) {
+            _setPosition(position, stop_callback)
+            refresh(animate)
+        },
         setAAPosition: function(aa_position, stop_callback, animate)
         {
-            var converted_position = posToX(-aa_position) * scale
+            var converted_position = _positionFromAAPosition(aa_position)
             _setPosition(converted_position, stop_callback)
             refresh(animate)
+        },
+        setZoomAndAAPosition: function(new_zoom, aa_position, stop_callback, animate)
+        {
+            var converted_position = _positionFromAAPosition(aa_position)
+            _setZoomAndMove(new_zoom, converted_position, stop_callback, !animate, true)
+        },
+        getAAPosition: function () {
+            return xToPos(position)
         },
         setSize: function(width, height, max_zoom)
         {
@@ -677,8 +705,8 @@ var NeedlePlot = function ()
 
             _rescalePlot()
 
-            // refresh zoom and position with current values
-            _setZoomAndMove(scale, position, true)
+            // refresh zoom and position with current values, with callback and animation
+            _setZoomAndMove(scale, position, false, false)
         },
         destroy: function()
         {
