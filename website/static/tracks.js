@@ -260,6 +260,8 @@ var Tracks = function ()
 
     function parsePosition(position_string)
     {
+        if(position_string === undefined)
+            return undefined
         return trim_position(parseInt(position_string, 10), undefined, true)
     }
 
@@ -288,7 +290,7 @@ var Tracks = function ()
             var range = [matched_range[1], matched_range[3]]
 
             // convert to int, trim if the values exceed protein length or 0
-            range.map(parsePosition)
+            range = range.map(parsePosition)
 
             // make first coordinate 0-based
             pos = range[0] - 1
