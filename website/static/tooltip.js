@@ -174,7 +174,7 @@ var Tooltip = function()
             if(stuck)
                 return
 
-            if(element != this)
+            if(element !== this)
             {
                 // `d` provides data whereas `this` gives the DOM element
                 element = this

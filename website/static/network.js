@@ -1162,11 +1162,11 @@ var Network = function ()
                 return (
                     (
                         kinase.type == types.kinase &&
-                        site[effect_accessor].indexOf(kinase.name) != -1
+                        site[effect_accessor].indexOf(kinase.name) !== -1
                     ) ||
                     (
                         kinase.type == types.group &&
-                        site[effect_accessor + '_family'].indexOf(kinase.name) != -1
+                        site[effect_accessor + '_family'].indexOf(kinase.name) !== -1
                     )
                 )
             }
@@ -1193,7 +1193,7 @@ var Network = function ()
                         var mimp = site[accessor]
                         for(var i = 0; i < mimp.length; i++)
                         {
-                            count += (mimp[i] == kinase.name)
+                            count += (mimp[i] === kinase.name)
                         }
                         return count * 1.5
                     })

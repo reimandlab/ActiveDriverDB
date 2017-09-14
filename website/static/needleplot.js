@@ -5,7 +5,7 @@ var NeedlePlot = function ()
 	var position = 0
     var dispatch = d3.dispatch('zoomAndMove')
 
-    var paddings, needles, sites, site_boxes;
+    var paddings, needles, sites, site_boxes, leftPadding;
 
     var legend = {
         x:
@@ -319,36 +319,13 @@ var NeedlePlot = function ()
         return needles
     }
 
-    function createPlot()
+    function create_axes()
     {
-        zoom = prepareZoom(config.min_zoom, config.max_zoom, zoomAndMove)
-
-        svg = prepareSVG(config.element)
-            .call(zoom)
-
-        // we don't want to close tooltips after panning (which is set to emit
-        // stopPropagation on start what allows us to detect end-of-panning events)
-        svg.on('click', function(){
-            if(d3.event.defaultPrevented) d3.event.stopPropagation()
-        })
-
-		paddings = svg.append('g')
-			.attr('class', 'paddings')
-			.attr('transform', 'translate(' + config.paddings.left + ' , 0)')
-
-		vertical_scalable = paddings.append('g')
-			.attr('class', 'vertical scalable')
-
-        leftPadding = paddings.append('rect')
-            .attr('fill', 'white')
-            .attr('width', config.paddings.left)
-			.attr('transform', 'translate(-' + config.paddings.left + ' , 0)')
-
         if(config.use_log)
         {
             axes.y.scale = d3.scale.log()
                 .base(10)
-                // we have to avoid exact 0 on scale_min
+            // we have to avoid exact 0 on scale_min
             axes.y.setDomain(config.y_scale_min || Number.MIN_VALUE, config.y_scale_max)
         }
         else
@@ -390,7 +367,7 @@ var NeedlePlot = function ()
         }
         else
         {
-          format = d3.format('d')
+            format = d3.format('d')
         }
 
         axes.y.createObj('left')
@@ -406,6 +383,34 @@ var NeedlePlot = function ()
 
         axes.x.createObj('bottom')
         axes.x.createGroup('x')
+    }
+
+    function create_plot()
+    {
+        zoom = prepareZoom(config.min_zoom, config.max_zoom, zoomAndMove)
+
+        svg = prepareSVG(config.element)
+            .call(zoom)
+
+        // we don't want to close tooltips after panning (which is set to emit
+        // stopPropagation on start what allows us to detect end-of-panning events)
+        svg.on('click', function(){
+            if(d3.event.defaultPrevented) d3.event.stopPropagation()
+        })
+
+		paddings = svg.append('g')
+			.attr('class', 'paddings')
+			.attr('transform', 'translate(' + config.paddings.left + ' , 0)')
+
+		vertical_scalable = paddings.append('g')
+			.attr('class', 'vertical scalable')
+
+        leftPadding = paddings.append('rect')
+            .attr('fill', 'white')
+            .attr('width', config.paddings.left)
+			.attr('transform', 'translate(-' + config.paddings.left + ' , 0)')
+
+        create_axes()
 
         vis = vertical_scalable.append('g')
 
@@ -666,7 +671,7 @@ var NeedlePlot = function ()
         {
             configure(new_config)
 			scaleToNeedles()
-            createPlot()
+            create_plot()
 
         },
         setZoom: function(new_scale, stop_callback, recalculate_position, animate){
