@@ -114,6 +114,15 @@ var Zoom = function(css_zoom)
 
             transform(position, scale, animation_speed)
         },
+        fit_contents: function(animation_speed)
+        {
+            var bbox = svg_canvas.node().getBBox();
+            var w = bbox.width;
+            var h = bbox.height;
+            var ratio = viewport_size[1] / viewport_size[0];
+            var scale = Math.max(w * ratio, h);
+            public_space.center_on([bbox.x + w / 2, bbox.y + h / 2], scale, animation_speed);
+        },
         get_zoom: function(){
             return zoom.scale();
         }
