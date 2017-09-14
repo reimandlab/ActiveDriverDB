@@ -499,7 +499,16 @@ var Tracks = function ()
             controls.removeClass('invisible');
 
             if(config.animations_speed)
-                box.animate({height: internal_box.height()}, config.animations_speed);
+                box.animate(
+                    {height: internal_box.height()},
+                    {
+                        duration: config.animations_speed,
+                        complete: function () {
+                            // reset to original value (so domains can be expanded)
+                            box.css('height', '')
+                        }
+                    }
+                );
         }
 
     }
