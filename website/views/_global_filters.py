@@ -5,7 +5,7 @@ from models import Site
 from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
 from models import ClinicalData
-from database import has_or_any, db
+from database import has_or_any
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 
@@ -77,9 +77,9 @@ class MutationDetailsFilter(SourceDependentFilter):
         )
 
 
-def sources_to_sa_filter(filter, target):
-    """TODO: refactor name to: source_filter_to_sa"""
-    return source_to_sa_filter(filter.value, target)
+def source_filter_to_sqlalchemy(source_filter, target):
+    """Adapt mutation source filter to SQLAlchemy clause (for use in mutation query)"""
+    return source_to_sa_filter(source_filter.value, target)
 
 
 def source_to_sa_filter(source_name, target=Mutation):
@@ -139,7 +139,7 @@ def common_filters(
             Mutation, 'sources', comparators=['in'],
             choices=list(Mutation.source_fields.keys()),
             default=default_source, nullable=source_nullable,
-            as_sqlalchemy=sources_to_sa_filter
+            as_sqlalchemy=source_filter_to_sqlalchemy
         ),
         Filter(
             UserMutations, 'sources', comparators=['in'],

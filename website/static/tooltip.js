@@ -14,7 +14,6 @@ var Tooltip = function()
     // configurable
     var viewport
     var preprocess_data
-    var data_url    // from where additional data for tooltip should be fetched
     var callback
 
     // pointer offsets
