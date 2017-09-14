@@ -604,18 +604,33 @@ def domains(path='data/biomart_protein_domains_20072016.txt'):
 
 @importer
 def domains_hierarchy(path='data/ParentChildTreeFile.txt'):
+    """Add domains hierarchy basing on InterPro tree file.
+
+    Domains (precisely: instances of InterproDomain model) which
+    already exist in the database will be updated with 'parent'
+    (reference to the domain immediate above in hierarchy, None
+    if the domain is top-level) and 'level' (how deep in hierarchy
+    the domain lies?) properties.
+
+    If a domain is not in database, it will be created and added.
+
+    Existing domains are looked-up in database using InterPro id
+    If the domain retrieved using interpro accession has different
+    description in tree file than in database, it will be reported.
+    """
     from re import compile
 
     print('Loading InterPro hierarchy:')
 
     expr = compile('^(?P<dashes>-*)(?P<interpro_id>\w*)::(?P<desc>.*?)::$')
 
-    old_level = 0
+    previous_level = 0
+    previous_domain = None
     parent = None
     new_domains = []
 
     def parser(line):
-        nonlocal parent, old_level, new_domains
+        nonlocal parent, previous_domain, previous_level, new_domains
 
         result = expr.match(line)
 
@@ -627,10 +642,18 @@ def domains_hierarchy(path='data/ParentChildTreeFile.txt'):
         level = len(dashes) / 2
 
         # look out for "jumps" - we do not expect those
-        assert level - old_level <= 1 or level == 0
+        assert level - previous_level <= 1 or level == 0
 
-        if level == 0:
+        # this checks for jumps too
+        if level > previous_level:
+            # a level deeper! last seen domain has to be the parent!
+            parent = previous_domain
+        elif level == 0:
+            # we are at top level again - no parents here
             parent = None
+        else:
+            # the same level, siblings have the same parent, no need for change
+            assert level == previous_level
 
         domain, created = get_or_create(InterproDomain, accession=interpro_id)
         if created:
@@ -649,8 +672,8 @@ def domains_hierarchy(path='data/ParentChildTreeFile.txt'):
         domain.level = level
         domain.parent = parent
 
-        old_level = level
-        parent = domain
+        previous_domain = domain
+        previous_level = level
 
     parse_text_file(path, parser)
 

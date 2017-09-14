@@ -3,9 +3,8 @@ from collections import defaultdict
 from database import db
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
-from imports.protein_data import domains as load_domains
-from models import Protein, Gene
-
+from imports.protein_data import domains as load_domains, domains_hierarchy
+from models import Protein, Gene, InterproDomain
 
 # domain ranges slightly modified to test more combinations
 domains_data = """\
@@ -21,7 +20,41 @@ ENSG00000078043	ENST00000585916	ENSP00000465676	18	44388353	44500123	NM_004671	I
 """
 
 
+# head of data/ParentChildTreeFile.txt
+domains_hierarchy_data = """\
+IPR000008::C2 domain::
+--IPR002420::Phosphatidylinositol 3-kinase, C2 domain::
+--IPR014020::Tensin phosphatase, C2 domain::
+--IPR033884::Calpain C2 domain::
+IPR000010::Cystatin domain::
+--IPR025760::Fetuin-A-type cystatin domain::
+--IPR025764::Fetuin-B-type cystatin domain::
+--IPR027358::Kininogen-type cystatin domain::
+"""
+
+
 class TestImport(DatabaseTest):
+
+    def test_domains_hierarchy(self):
+        existing_top_level_domain = InterproDomain(accession='IPR000008', description='C2 domain')
+        existing_domain = InterproDomain(accession='IPR033884', description='Calpain C2 domain')
+
+        db.session.add_all([existing_top_level_domain, existing_domain])
+
+        filename = make_named_temp_file(domains_hierarchy_data)
+        new_domains = domains_hierarchy(filename)
+
+        assert len(new_domains) == 8 - 2
+
+        assert existing_top_level_domain.level == 0
+        assert existing_top_level_domain.parent is None
+
+        assert existing_domain.parent is existing_top_level_domain
+
+        new_domains = {domain.accession: domain for domain in new_domains}
+        assert 'IPR033884' not in new_domains
+        assert new_domains['IPR000010'].parent is None
+        assert new_domains['IPR025760'].parent is new_domains['IPR000010']
 
     def test_domains(self):
         proteins = [
