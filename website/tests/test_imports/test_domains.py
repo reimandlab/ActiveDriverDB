@@ -20,7 +20,7 @@ ENSG00000078043	ENST00000585916	ENSP00000465676	18	44388353	44500123	NM_004671	I
 """
 
 
-# head of data/ParentChildTreeFile.txt
+# head of data/ParentChildTreeFile.txt*
 domains_hierarchy_data = """\
 IPR000008::C2 domain::
 --IPR002420::Phosphatidylinositol 3-kinase, C2 domain::
@@ -30,6 +30,14 @@ IPR000010::Cystatin domain::
 --IPR025760::Fetuin-A-type cystatin domain::
 --IPR025764::Fetuin-B-type cystatin domain::
 --IPR027358::Kininogen-type cystatin domain::
+IPR000053::Thymidine/pyrimidine-nucleoside phosphorylase::
+--IPR013466::Thymidine phosphorylase/AMP phosphorylase::
+----IPR017713::AMP phosphorylase::
+----IPR028579::Putative thymidine phosphorylase::
+--IPR018090::Pyrimidine-nucleoside phosphorylase, bacterial/eukaryotic::
+----IPR013465::Thymidine phosphorylase::
+IPR000056::Ribulose-phosphate 3-epimerase-like::
+--IPR026019::Ribulose-phosphate 3-epimerase::
 """
 
 
@@ -44,7 +52,7 @@ class TestImport(DatabaseTest):
         filename = make_named_temp_file(domains_hierarchy_data)
         new_domains = domains_hierarchy(filename)
 
-        assert len(new_domains) == 8 - 2
+        assert len(new_domains) == 16 - 2
 
         assert existing_top_level_domain.level == 0
         assert existing_top_level_domain.parent is None
@@ -52,9 +60,24 @@ class TestImport(DatabaseTest):
         assert existing_domain.parent is existing_top_level_domain
 
         new_domains = {domain.accession: domain for domain in new_domains}
+
+        # this domain was already was in database
         assert 'IPR033884' not in new_domains
-        assert new_domains['IPR000010'].parent is None
-        assert new_domains['IPR025760'].parent is new_domains['IPR000010']
+
+        # does a new top level domain have a None parent?
+        expected_top_level_domains = ['IPR000010', 'IPR000056']
+
+        for domain in expected_top_level_domains:
+            assert new_domains[domain].parent is None
+
+        expected_parents = {
+            'IPR025760': 'IPR000010',   # had first-level domain assigned correct parent?
+            'IPR018090': 'IPR000053',   # is parent assignment working when going one level back?
+            'IPR026019': 'IPR000056'    # does going multiple levels higher back work?
+        }
+
+        for child, parent in expected_parents.items():
+            assert new_domains[child].parent is new_domains[parent]
 
     def test_domains(self):
         proteins = [

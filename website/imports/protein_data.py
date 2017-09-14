@@ -625,12 +625,11 @@ def domains_hierarchy(path='data/ParentChildTreeFile.txt'):
     expr = compile('^(?P<dashes>-*)(?P<interpro_id>\w*)::(?P<desc>.*?)::$')
 
     previous_level = 0
-    previous_domain = None
-    parent = None
+    domains_stack = []
     new_domains = []
 
     def parser(line):
-        nonlocal parent, previous_domain, previous_level, new_domains
+        nonlocal previous_level, new_domains, domains_stack
 
         result = expr.match(line)
 
@@ -639,26 +638,39 @@ def domains_hierarchy(path='data/ParentChildTreeFile.txt'):
         description = result.group('desc')
 
         # at each level deeper two dashes are added, starting from 0
-        level = len(dashes) / 2
+        level = len(dashes) // 2
+
+        assert len(dashes) % 2 == 0
 
         # look out for "jumps" - we do not expect those
         assert level - previous_level <= 1 or level == 0
-
-        # this checks for jumps too
-        if level > previous_level:
-            # a level deeper! last seen domain has to be the parent!
-            parent = previous_domain
-        elif level == 0:
-            # we are at top level again - no parents here
-            parent = None
-        else:
-            # the same level, siblings have the same parent, no need for change
-            assert level == previous_level
 
         domain, created = get_or_create(InterproDomain, accession=interpro_id)
         if created:
             domain.description = description
             new_domains.append(domain)
+
+        # we are on the top level: no parents here
+        if level == 0:
+            domains_stack = [domain]
+            parent = None
+        else:
+            # we need to go a level deeper
+            if level > len(domains_stack) - 1:
+                parent = domains_stack[-1]
+                domains_stack.append(domain)
+            # we either are on the same level or jump up in hierarchy
+            else:
+                # remove leaf
+                domains_stack.pop()
+
+                # go up in hierarchy if needed
+                while level != len(domains_stack):
+                    domains_stack.pop()
+
+                assert level == len(domains_stack)
+                parent = domains_stack[-1]
+                domains_stack.append(domain)
 
         if domain.description != description:
             print(
@@ -672,7 +684,6 @@ def domains_hierarchy(path='data/ParentChildTreeFile.txt'):
         domain.level = level
         domain.parent = parent
 
-        previous_domain = domain
         previous_level = level
 
     parse_text_file(path, parser)
