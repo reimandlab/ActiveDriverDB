@@ -1,3 +1,4 @@
+import gzip
 from tempfile import NamedTemporaryFile
 
 import pytest
@@ -20,6 +21,12 @@ def make_named_temp_file(data=None, mode='w', opener=open, **kwargs):
             f.write(data)
 
     return name
+
+
+def make_named_gz_file(data=None, **kwargs):
+    return make_named_temp_file(
+        data=data, mode='wt', opener=gzip.open, suffix='.gz', **kwargs
+    )
 
 
 use_fixture = pytest.fixture(autouse=True)

@@ -8,8 +8,7 @@ from database import db
 from database import bdb
 from database import bdb_refseq
 from genomic_mappings import make_snv_key
-from miscellaneous import make_named_temp_file
-
+from miscellaneous import make_named_gz_file
 
 # this is output of:
 # `zcat data/200616/all_variants/playground/annot_1.txt.gz | head`,
@@ -32,12 +31,7 @@ chr17	 19282227	t	a	MAPK7:NM_002749:exon2:c.T14A:p.A5Q,MAPK7:NM_139033:exon2:c.T
 
 def create_test_data():
 
-    mappings_filename = make_named_temp_file(
-        data=raw_mappings.encode(),
-        mode='wb',
-        opener=gzip.open,
-        suffix='.gz'
-    )
+    mappings_filename = make_named_gz_file(raw_mappings)
 
     # create proteins from first three data rows
     protein_data = [

@@ -2,8 +2,8 @@ from collections import defaultdict
 
 from database import db
 from database_testing import DatabaseTest
-from miscellaneous import make_named_temp_file
-from imports.protein_data import domains as load_domains, domains_hierarchy
+from miscellaneous import make_named_temp_file, make_named_gz_file
+from imports.protein_data import domains as load_domains, domains_hierarchy, domains_types
 from models import Protein, Gene, InterproDomain
 
 # domain ranges slightly modified to test more combinations
@@ -41,7 +41,42 @@ IPR000056::Ribulose-phosphate 3-epimerase-like::
 """
 
 
+minimal_interpro_xml = """\
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE interprodb SYSTEM "interpro.dtd">
+<interprodb>
+<release>
+  <dbinfo dbname="INTERPRO" entry_count="29700" file_date="03-NOV-16" version="60.0"/>
+</release>
+<interpro id="IPR000001" protein_count="3451" short_name="Kringle" type="Domain">
+  <name>Kringle</name>
+</interpro>
+<interpro id="IPR000003" protein_count="1285" short_name="Retinoid-X_rcpt/HNF4" type="Family">
+  <name>Retinoid X receptor/HNF4</name>
+</interpro>
+<interpro id="IPR000006" protein_count="604" short_name="Metalthion_vert" type="Family">
+  <name>Metallothionein, vertebrate</name>
+</interpro>
+</interprodb>\
+"""
+
+
 class TestImport(DatabaseTest):
+
+    def test_domains_types(self):
+        domain_one = InterproDomain(accession='IPR000001')
+        domain_three = InterproDomain(accession='IPR000003')
+        db.session.add_all([domain_one, domain_three])
+
+        filename = make_named_gz_file(minimal_interpro_xml)
+
+        new_objects = domains_types(filename)
+
+        assert domain_one.type == 'Domain'
+        assert domain_three.type == 'Family'
+
+        # no new domains should be created (there is no needed for it)
+        assert not new_objects
 
     def test_domains_hierarchy(self):
         existing_top_level_domain = InterproDomain(accession='IPR000008', description='C2 domain')

@@ -1,11 +1,9 @@
-import gzip
 from imports.mutations import MutationImportManager, MutationImporter
 from database_testing import DatabaseTest
 from models import Protein, InheritedMutation, Disease, ExomeSequencingMutation
 from models import MC3Mutation
 from database import db
-from miscellaneous import make_named_temp_file
-
+from miscellaneous import make_named_temp_file, make_named_gz_file
 
 muts_import_manager = MutationImportManager()
 
@@ -71,20 +69,12 @@ def create_proteins(data):
     return proteins
 
 
-def to_gzipped_temp_file(data):
-    return make_named_temp_file(
-        data=data.encode(),
-        mode='wb',
-        opener=gzip.open
-    )
-
-
 class TestImport(DatabaseTest):
 
     def test_tcga_import(self):
 
-        muts_filename = to_gzipped_temp_file(mc3_mutations)
-        update_filename = to_gzipped_temp_file(mc3_mutations_updated)
+        muts_filename = make_named_gz_file(mc3_mutations)
+        update_filename = make_named_gz_file(mc3_mutations_updated)
 
         # create proteins from first three data rows
         protein_data = {
@@ -143,7 +133,7 @@ class TestImport(DatabaseTest):
 
     def test_hypermutated_finder(self):
         from statistics import hypermutated_samples
-        muts_filename = to_gzipped_temp_file(with_hypermutated_samples)
+        muts_filename = make_named_gz_file(with_hypermutated_samples)
 
         samples = hypermutated_samples(muts_filename, threshold=2)
         # there should be one hypermutated sample
@@ -154,7 +144,7 @@ class TestImport(DatabaseTest):
         assert count == 3
 
     def test_clinvar_import(self):
-        muts_filename = to_gzipped_temp_file(clinvar_mutations)
+        muts_filename = make_named_gz_file(clinvar_mutations)
         proteins = create_proteins(tp53)
 
         with self.app.app_context():
@@ -191,7 +181,7 @@ class TestImport(DatabaseTest):
 
     def test_esp_import(self):
 
-        muts_filename = to_gzipped_temp_file(esp_mutations)
+        muts_filename = make_named_gz_file(esp_mutations)
         proteins = create_proteins(tp53)
 
         with self.app.app_context():
