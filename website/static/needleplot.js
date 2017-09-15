@@ -42,7 +42,7 @@ var NeedlePlot = function ()
         {
             this.start = start
             this.end = end
-            this.scale.domain([start, end])
+            this.scale.domain([start, end]).clamp(true)
         }
 
         this.getCoverage = function()
@@ -325,8 +325,18 @@ var NeedlePlot = function ()
         {
             axes.y.scale = d3.scale.log()
                 .base(10)
-            // we have to avoid exact 0 on scale_min
-            axes.y.setDomain(config.y_scale_min || Number.MIN_VALUE, config.y_scale_max)
+            // we have to avoid having exact 0 on scale_min
+            var min = config.y_scale_min
+            if(min === 0)
+            {
+                min = d3.min(
+                    config.data.mutations.filter(function(mutation) {return mutation.value !== 0}),
+                    function(mutation) {
+                        return mutation.value
+                    }
+                ) || Number.MIN_VALUE
+            }
+            axes.y.setDomain(min, config.y_scale_max)
         }
         else
         {
