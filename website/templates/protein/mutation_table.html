@@ -28,20 +28,21 @@
   <thead>
     <tr>
       <th data-sortable=true
-          data-formatter="mutation_table.mutationURLFormatter">Mutation</th>
-      <th data-field="pos"
+          data-formatter=mutation_table.URLFormatter>Mutation</th>
+      <th data-field=pos
           data-sortable=true
+          data-formatter=mutation_table.positionFormatter
           title="Position of mutation in protein">Pos</th>
-      <th data-field="ref" data-sortable=true
+      <th data-field=ref data-sortable=true
           title="Reference amino acid residue in protein">Ref</th>
-      <th data-field="alt" data-sortable=true
+      <th data-field=alt data-sortable=true
           title="Mutated amino acid residue in protein">Alt</th>
       <th data-sortable=true
           data-visible={{ (source not in ('1KGenomes', 'ESP6500')) | string | lower }}
           data-switchable=true>{{ value_type }}</th>
       <th data-sortable=true
-          data-sorter="mutation_table.impactSorter"
-          data-formatter="mutation_table.impactFormatter"
+          data-sorter=mutation_table.impactSorter
+          data-formatter=mutation_table.impactFormatter
           title="Impact on closest PTM site">PTM impact</th>
       <th data-sortable=true
           title="Number of adjacent PTMs affected">PTMs affected</th>
@@ -73,7 +74,7 @@
   <tbody>
   {% for mutation in mutations or '' %}
     {% set metadata = mutation.meta[source] %}
-    <tr id="{{ mutation.pos }}{{ mutation.alt }}">
+    <tr id={{ mutation.pos }}{{ mutation.alt }}>
       <td>{{ protein.gene.name }} {{ mutation.ref }}{{ mutation.pos }}{{ mutation.alt }}</td>
       <td>{{ mutation.pos }}</td>
       <td>{{ mutation.ref }}</td>

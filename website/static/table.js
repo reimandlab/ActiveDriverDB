@@ -123,9 +123,13 @@ var MutationTable = function ()
 
             return results.join(', ')
         },
-        mutationURLFormatter: function(value, row, index)
+        URLFormatter: function(value, row, index)
         {
-            return '<a href="' + format(mutation_template, row) + '">' + value + '</a>'
+            return '<a href="' + format(mutation_template, row) + '" title="Show mutation page">' + value.replace(' ', '&nbsp;') + '</a>'
+        },
+        positionFormatter: function (value, row, index) {
+            // Warning: this requires global "tracks" to be defined!
+            return '<a href="#" onclick="tracks.scrollTo(' + value + ')" title="Show in visualisation">' + value + '</a>'
         }
     }
 

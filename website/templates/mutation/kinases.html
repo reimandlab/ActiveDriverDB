@@ -6,7 +6,7 @@
   {%- for kinase in site.kinases -%}
     {{ comma() }}
     {% if kinase.protein -%}
-      <span class="kinase" data-site="{{ site.position }}{{ site.residue }}" data-refseq="{{ kinase.protein.refseq }}">{{ kinase.name }}</span>
+      <span class=kinase data-site={{ site.position }}{{ site.residue }} data-refseq={{ kinase.protein.refseq }}>{{ kinase.name }}</span>
     {%- else -%}{{ kinase.name }}{%- endif -%}
   {%- endfor -%}
 {%- endfor -%}

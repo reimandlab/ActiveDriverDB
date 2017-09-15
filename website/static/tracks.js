@@ -267,7 +267,7 @@ var Tracks = function ()
 
     function scrollToCallback()
     {
-        var input = $(this).closest('.input-group').find('.scroll-to-input')
+        var input = $('.scroll-to-input')
 
         // - 1: sequence is 1 based but position is 0 based
         var user_input = $(input).val()
@@ -509,6 +509,10 @@ var Tracks = function ()
                         }
                     }
                 );
+        },
+        scrollTo: function (position) {
+            $('.scroll-to-input').val(position)
+            scrollToCallback();
         }
 
     }
