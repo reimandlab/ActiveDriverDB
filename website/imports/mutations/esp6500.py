@@ -18,9 +18,10 @@ class Importer(MutationImporter):
     def parse(self, path):
         esp_mutations = []
         duplicates = 0
+        skipped = 0
 
         def esp_parser(line):
-            nonlocal duplicates
+            nonlocal duplicates, skipped
 
             metadata = line[20].split(';')
 
@@ -28,6 +29,10 @@ class Importer(MutationImporter):
             assert metadata[4].startswith('MAF=')
 
             maf_ea, maf_aa, maf_all = map(float, metadata[4][4:].split(','))
+
+            if maf_all == 0:
+                skipped += 1
+                return
 
             for mutation_id in self.preparse_mutations(line):
 
@@ -54,6 +59,7 @@ class Importer(MutationImporter):
         )
 
         print('%s duplicates found' % duplicates)
+        print('%s zero-frequency mutations skipped' % skipped)
 
         return esp_mutations
 

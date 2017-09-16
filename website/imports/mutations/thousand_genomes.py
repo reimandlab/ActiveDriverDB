@@ -1,3 +1,5 @@
+from os.path import basename, dirname
+
 from models import The1000GenomesMutation
 from imports.mutations import MutationImporter
 from imports.mutations import make_metadata_ordered_dict
@@ -7,7 +9,7 @@ from helpers.parsers import read_from_gz_files
 class Importer(MutationImporter):
 
     model = The1000GenomesMutation
-    default_path = 'data/mutations/G1000'
+    default_path = 'data/mutations/G1000/G1000_chr*.txt.gz'
     insert_keys = (
         'mutation_id',
         'maf_all',
@@ -38,6 +40,7 @@ class Importer(MutationImporter):
     def parse(self, path):
         thousand_genomes_mutations = []
         duplicates = 0
+        skipped = 0
 
         maf_keys = (
             'AF',
@@ -49,8 +52,8 @@ class Importer(MutationImporter):
         )
 
         for line in read_from_gz_files(
-            path,
-            'G1000_chr*.txt.gz',
+            dirname(path),
+            basename(path),
             skip_header=False
         ):
             line = line.rstrip().split('\t')
@@ -62,6 +65,11 @@ class Importer(MutationImporter):
                 metadata,
                 self.find_af_subfield_number(line)
             )
+
+            # ignore mutations with frequency equal to zero
+            if maf_data['AF'] == '0':
+                skipped += 1
+                continue
 
             values = list(maf_data.values())
 
@@ -89,6 +97,7 @@ class Importer(MutationImporter):
                 )
 
         print('%s duplicates found' % duplicates)
+        print('%s zero-frequency mutations skipped' % skipped)
 
         return thousand_genomes_mutations
 

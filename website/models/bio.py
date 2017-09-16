@@ -1020,6 +1020,14 @@ class MutationDetails:
         """
         raise NotImplementedError
 
+    def __repr__(self):
+        return '<{class_name} - details of {refseq}:{mutation} with summary: {summary}>'.format(
+            class_name=self.name,
+            refseq=self.mutation.protein.refseq,
+            mutation=self.mutation.short_name,
+            summary=self.summary()
+        )
+
 
 class ManagedMutationDetails(MutationDetails):
     """For use when one mutation is related to many mutation details entries."""
@@ -1431,9 +1439,6 @@ class MIMPMutation(ManagedMutationDetails, BioModel):
             'site': self.site.to_json() if self.site else None,
             'probability': self.probability
         }
-
-    def __repr__(self):
-        return '<MIMPMutation %s>' % self.id
 
 
 def details_proxy(target_class, key, managed=False):
