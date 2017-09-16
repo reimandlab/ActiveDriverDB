@@ -159,8 +159,14 @@ class BerkleyHashSet:
         return len(self.db)
 
     @require_open
-    def drop(self):
-        os.remove(self.path)
+    def drop(self, not_exists_ok=True):
+        try:
+            os.remove(self.path)
+        except FileNotFoundError:
+            if not_exists_ok:
+                pass
+            else:
+                raise
 
     @require_open
     def reset(self):
