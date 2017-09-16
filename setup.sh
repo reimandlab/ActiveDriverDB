@@ -80,7 +80,9 @@ setfacl -m u:celery:rwx website/databases
 setfacl -m u:celery:rwx website/databases/berkley_hash_refseq.db
 setfacl -m u:celery:rwx website/databases/berkley_hash.db
 
-sudo /etc/init.d/celeryd restart
-
 # redis
 sudo apt-get install redis-server
+
+# (re) start everything
+sudo /etc/init.d/celeryd restart
+sudo /etc/init.d/redis-server restart
