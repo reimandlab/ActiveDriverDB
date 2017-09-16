@@ -53,8 +53,13 @@ cd ..
 sudo groupadd celery
 sudo useradd -g celery celery
 
-echo "Please modify /etc/default/celeryd script to provide absolute paths to celery executable and website dir"
-sudo cp celeryd /etc/default/celeryd
+cp celeryd .autogen_celeryd
+
+sed "s|^CELERY_BIN=.*|CELERY_BIN=\"$(whereis celery | cut -f 2 -d ' ')\"|" .autogen_celeryd
+sed "s|^CELERYD_CHDIR=.*|CELERYD_CHDIR=\"$(pwd)\/website\"|" .autogen_celeryd
+
+echo "Please modify /etc/default/celeryd script to adjust absolute paths to celery executable and website dir"
+sudo cp .autogen_celeryd /etc/default/celeryd
 
 mkdir temp -p
 cd temp
@@ -74,6 +79,8 @@ setfacl -m u:celery:rwx website/logs/app.log
 setfacl -m u:celery:rwx website/databases
 setfacl -m u:celery:rwx website/databases/berkley_hash_refseq.db
 setfacl -m u:celery:rwx website/databases/berkley_hash.db
+
+sudo /etc/init.d/celeryd restart
 
 # redis
 sudo apt-get install redis-server
