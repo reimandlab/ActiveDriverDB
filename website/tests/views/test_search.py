@@ -1,7 +1,7 @@
 import re
 from io import BytesIO
 
-from view_testing import ViewTest
+from view_testing import ViewTest, relative_location
 
 from database import db
 from models import Gene, Pathway, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData
@@ -395,6 +395,33 @@ class TestSearchView(ViewTest):
         )
 
         assert unauthorized_save_response.status_code == 200
+
+    def test_save_search_with_celery(self):
+        self.app.config['USE_CELERY'] = True
+        self.login('user@domain.org', 'password', create=True)
+
+        save_response, test_query, dataset = self.basic_save_search()
+
+        location = relative_location(save_response)
+        assert save_response.status_code == 302
+        assert location.startswith('/search/progress/')
+
+        response = self.client.get(location, follow_redirects=True)
+        assert response.status_code == 200
+
+        raw_response = self.client.get(
+            location.replace('/progress/', '/raw_progress/'),
+            follow_redirects=True
+        )
+
+        assert raw_response.json['status'] == 'PENDING'
+        assert raw_response.json['progress'] == 0
+
+        # TODO: this test needs to include loading and final redirection
+        # attempts made so far failed, but pytest celery_session_worker
+        # and CELERY_TASK_ALWAYS_EAGER are the most promising ideas
+
+        self.app.config['USE_CELERY'] = False
 
     def basic_save_search(self, name='Test Dataset', query='chr18 19282310 T C'):
         save_response = self.search_mutations(

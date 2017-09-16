@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from tests.database_testing import DatabaseTest
+from urllib.parse import urlparse, urlunparse
 
 
 class Flash:
@@ -11,10 +12,17 @@ class Flash:
         return '<Flash %s: %s>' % (self.category, self.content)
 
 
+def relative_location(response):
+    url = urlparse(response.location)
+    return urlunparse(['', '', url.path, url.params, url.query, url.fragment])
+
+
 class ViewTest(DatabaseTest):
 
     RECAPTCHA_ENABLED = False
     RATELIMIT_ENABLED = False
+
+    # Do not use celery by default in tests
     USE_CELERY = False
 
     def view_module(self):

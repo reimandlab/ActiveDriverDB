@@ -1,6 +1,4 @@
-from urllib.parse import urlparse, urlunparse
-
-from view_testing import ViewTest
+from view_testing import ViewTest, relative_location
 from models import Protein
 from models import Site
 from database import db
@@ -24,9 +22,7 @@ class TestProteinView(ViewTest):
 
         response = self.client.get('/protein/show/NM_000123?filters=Mutation.sources:in:MC3')
         assert response.status_code == 302
-        url = urlparse(response.location)
-        without_net_location = urlunparse(['', '', url.path, url.params, url.query, url.fragment])
-        assert without_net_location == '/sequence/show/NM_000123?filters=Mutation.sources:in:MC3'
+        assert relative_location(response) == '/sequence/show/NM_000123?filters=Mutation.sources:in:MC3'
 
     def test_sites(self):
 
