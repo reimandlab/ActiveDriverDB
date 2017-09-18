@@ -26,7 +26,7 @@ cd ..
 # install sass gem
 gem install sass
 
-git clone https://github.com/krassowski/Levenshtein-MySQL-UDF
+git clone https://github.com/juanmirocks/Levenshtein-MySQL-UDF
 cd Levenshtein-MySQL-UDF
 gcc -o levenshtein.so -fPIC -shared levenshtein.c -I /usr/include/mysql/
 sudo cp levenshtein.so /usr/lib/mysql/plugin/
