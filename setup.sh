@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Install Berkley DB
-wget http://download.oracle.com/berkeley-db/db-6.2.23.NC.tar.gz
+mkdir downloads
+cd downloads
+wget -N http://download.oracle.com/berkeley-db/db-6.2.23.NC.tar.gz
 tar -xzf db-6.2.23.NC.tar.gz
 cd db-6.2.23.NC/build_unix
 sudo ../dist/configure
 sudo make
 sudo make install
+cd ..
 cd ../..
 
 # Get recent, patched version of flask-sqlalchemy

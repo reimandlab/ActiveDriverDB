@@ -1,7 +1,13 @@
 sudo: required
 dist: trusty
 language: python
-cache: pip
+cache:
+  timeout: 1800
+  pip: true
+  directories:
+    - node_modules
+    - downloads
+
 python:
   - 3.4
   - 3.5
@@ -11,6 +17,7 @@ install:
   - sudo apt-get install -y pigz npm
   - bash setup.sh
   - cd website
+  - pip install wheel
   - pip install -r requirements.txt
   - pip install -r tests/requirements.txt
   - sass --update .:.
