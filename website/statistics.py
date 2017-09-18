@@ -1,3 +1,4 @@
+import random
 from collections import defaultdict, Counter
 from functools import lru_cache
 from itertools import combinations
@@ -564,23 +565,26 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
     is_ptm = Mutation.precomputed_is_ptm
 
     # 1.
-    all_mutations = subset_query.count()                           # C
-    ptm_mutations = subset_query.filter(is_ptm).count()    # D
-    ptm_percentage = ptm_mutations / all_mutations * 100           # E
+    all_mutations = subset_query.count()                        # C
+    ptm_mutations = subset_query.filter(is_ptm).count()         # D
+    ptm_percentage = ptm_mutations / all_mutations * 100        # E
 
     print('Counting enrichment in random subsets of background.')
     print('All: %s, PTM: %s, %%: %s' % (all_mutations, ptm_mutations, ptm_percentage))
 
+    all_reference_mutations = reference_query.all()
+
     # 4.
     for _ in tqdm(range(iterations_count)):
         # 2.
-        random_reference = reference_query.order_by(func.rand()).limit(all_mutations)
+        random_reference = random.sample(all_reference_mutations, all_mutations)
 
-        assert all_mutations == random_reference.count()
         # 3.
-        all_in_iteration = all_mutations
-        ptm_in_iteration = random_reference.from_self().filter(is_ptm).count()      # P
-        iteration_percentage = ptm_in_iteration / all_in_iteration * 100        # Q
+        all_in_iteration = len(random_reference)
+        ptm_in_iteration = sum(1 for mutation in random_reference if mutation.precomputed_is_ptm)  # P
+        iteration_percentage = ptm_in_iteration / all_in_iteration * 100                           # Q
+
+        assert all_in_iteration == all_mutations
 
         # 5.
         if ptm_mutations > ptm_in_iteration:        # D > P
