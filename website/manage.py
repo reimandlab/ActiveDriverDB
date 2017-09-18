@@ -28,11 +28,12 @@ from models import User
 
 muts_import_manager = MutationImportManager()
 database_binds = ('bio', 'cms')
+CONFIG = {'LOAD_STATS': False, 'SCHEDULER_ENABLED': False, 'USE_CELERY': False}
 
 
 def automigrate(args, app=None):
     if not app:
-        app = create_app(config_override={'LOAD_STATS': False})
+        app = create_app(config_override=CONFIG)
     for database_bind in args.databases:
         basic_auto_migrate_relational_db(app, bind=database_bind)
     return True
@@ -40,7 +41,7 @@ def automigrate(args, app=None):
 
 def calc_statistics(args, app=None):
     if not app:
-        app = create_app(config_override={'LOAD_STATS': False})
+        app = create_app(config_override=CONFIG)
     with app.app_context():
         from statistics import Statistics
         statistics = Statistics()
@@ -474,7 +475,7 @@ def new_subparser(subparsers, name, func, **kwargs):
 
 def run_shell(args):
     print('Starting interactive shell...')
-    app = create_app(config_override={'SCHEDULER_ENABLED': False, 'USE_CELERY': False})
+    app = create_app(config_override=CONFIG)
     with app.app_context():
         if args.command:
             print('Executing supplied command: "%s"' % args.command)
@@ -561,7 +562,7 @@ def run_manage(parsed_args, app=None):
 
     if not app:
         try:
-            app = create_app(config_override={'LOAD_STATS': False})
+            app = create_app(config_override=CONFIG)
         except OperationalError as e:
             if e.orig.args[0] == 1071:
                 print('Please run: ')
