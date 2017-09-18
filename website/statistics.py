@@ -533,6 +533,85 @@ def count_mutated_potential_sites():
     print(count, total_length, count/total_length*100)
 
 
+def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, reference_query, iterations_count=10000):
+    """Perform tests according to proposed algorithm:
+
+    1. Count the number of all ClinVar mutations as C, PTM-associated ClinVar mutations as D=27071
+        and percentage of the latter as E=19%.
+    2. Randomly draw C mutations from 1,000 Genomes
+    3. Record the number and % of those N mutations that affect PTM sites, as P, Q
+    4. Repeat 2-3 for M=10,000 times
+    5. Count in how many of M iterations does D>P and E>Q. These percentages make up the permutation test p-values
+    6. Repeat with TCGA instead of ClinVar.
+
+
+    Args:
+        subset_query:
+            SQLAlchemy query yielding mutation dataset
+            to test (e.g. ClinVar or TCGA)
+
+        reference_query:
+            query yielding a population dataset to test
+            against (to be used as a reference distribution
+            e.g. 1000 Genomes)
+
+    Returns:
+        p-values for enrichment hypothesis: for absolute values and for percentage
+    """
+    ptm_enriched_absolute = 0
+    ptm_enriched_percentage = 0
+
+    is_ptm = Mutation.precomputed_is_ptm
+
+    # 1.
+    all_mutations = subset_query.count()                           # C
+    ptm_mutations = subset_query.filter(is_ptm).count()    # D
+    ptm_percentage = ptm_mutations / all_mutations * 100           # E
+
+    print('Counting enrichment in random subsets of background.')
+    print('All: %s, PTM: %s, %%: %s' % (all_mutations, ptm_mutations, ptm_percentage))
+
+    # 4.
+    for _ in tqdm(range(iterations_count)):
+        # 2.
+        random_reference = reference_query.order_by(func.rand()).limit(all_mutations)
+
+        assert all_mutations == random_reference.count()
+        # 3.
+        all_in_iteration = all_mutations
+        ptm_in_iteration = random_reference.from_self().filter(is_ptm).count()      # P
+        iteration_percentage = ptm_in_iteration / all_in_iteration * 100        # Q
+
+        # 5.
+        if ptm_mutations > ptm_in_iteration:        # D > P
+            ptm_enriched_absolute += 1
+        if ptm_percentage > iteration_percentage:   # E > Q
+            ptm_enriched_percentage += 1
+
+    return ptm_enriched_absolute / iterations_count, ptm_enriched_percentage / iterations_count
+
+
+def test_ptm_enrichment():
+
+    mutations = Mutation.query.filter_by(is_confirmed=True)
+
+    # reference
+    tkg_mutations = mutations.filter(
+        Statistics.get_filter_by_sources([models.The1000GenomesMutation])
+    )
+
+    # tested
+    tcga_mutations = mutations.filter(
+        Statistics.get_filter_by_sources([models.MC3Mutation])
+    )
+    clinvar_mutations = mutations.filter(
+        Statistics.get_filter_by_sources([models.InheritedMutation])
+    )
+
+    print(test_enrichment_of_ptm_mutations_among_mutations_subset(clinvar_mutations, tkg_mutations))
+    print(test_enrichment_of_ptm_mutations_among_mutations_subset(tcga_mutations, tkg_mutations))
+
+
 if current_app.config['LOAD_STATS']:
     stats = Statistics()
     print('Loading statistics')
