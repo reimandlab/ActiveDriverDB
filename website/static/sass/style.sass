@@ -492,10 +492,18 @@ $footer-height: 136px
 
 #top-nav
   $background_hover: rgba(67, 235, 255, 0.2)
+  li
+    &.dropdown.open, .dropdown-menu
+      background-color: rgba(67, 235, 255, 0.1)
+    .dropdown-menu
+      border: 0
+
   li a
     color: #fff
     text-shadow: 0 0 2px rgba(100, 100, 100, 0.5)
     text-transform: uppercase
+    background: transparent
+
     @media #{$pc}
       font-size: 18px
     //transition-duration: 0.4s

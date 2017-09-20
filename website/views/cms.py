@@ -173,7 +173,6 @@ def replace_allowed_object(match_obj):
 
 
 def substitute_variables(string):
-    import re
     pattern = '\{\{ (.*?) \}\}'
     try:
         return render_template_string(string, **USER_ACCESSIBLE_VARIABLES)
@@ -457,15 +456,39 @@ class ContentManagementSystem(FlaskView):
     @route('/menu/<menu_id>/edit', methods=['POST'])
     @admin_only
     def edit_menu(self, menu_id):
+
+        settings = {
+            # regexp => handler
+        }
+
+        def setting(handler):
+            name = handler.__name__
+            regex = re.compile(r'{0}\[(\d+)\]'.format(name))
+            settings[regex] = handler
+
+        @setting
+        def position(entry, value):
+            entry.position = float(value)
+
+        @setting
+        def parent(entry, value):
+            entry.parent = MenuEntry.query.get(value)
+
         try:
             menu = Menu.query.get(menu_id)
             for element, value in request.form.items():
-                if element.startswith('position['):
-                    entry_id = element[9:-1]
-                    entry = MenuEntry.query.get(entry_id)
-                    entry.position = float(value)
+                # menu-wise settings
                 if element == 'name':
                     menu.name = value
+                # element-wise settings
+                else:
+                    for regex, handler in settings.items():
+                        match = regex.match(element)
+                        if match:
+                            entry_id = match.group(1)
+                            entry = MenuEntry.query.get(entry_id)
+                            handler(entry, value)
+
             db.session.commit()
         except ValueError:
             flash('Wrong value for position', 'danger')

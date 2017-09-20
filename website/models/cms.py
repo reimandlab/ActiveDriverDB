@@ -414,6 +414,12 @@ class MenuEntry(CMSModel):
     menu_id = db.Column(db.Integer, db.ForeignKey('menu.id'))
     type = db.Column(db.String(32))
 
+    parent_id = db.Column(db.Integer, db.ForeignKey('menuentry.id'))
+    children = db.relationship(
+        'MenuEntry',
+        backref=db.backref('parent', remote_side='MenuEntry.id')
+    )
+
     @property
     def title(self):
         """Name of the link"""
@@ -447,6 +453,7 @@ class PageMenuEntry(MenuEntry):
 
     __mapper_args__ = {
         'polymorphic_identity': 'page_entry',
+        'inherit_condition': id == MenuEntry.id,
     }
 
 
@@ -458,17 +465,24 @@ class CustomMenuEntry(MenuEntry):
 
     __mapper_args__ = {
         'polymorphic_identity': 'custom_entry',
+        'inherit_condition': id == MenuEntry.id,
     }
 
 
 class Menu(CMSModel):
     """Model for groups of links used as menu"""
+    id = db.Column(db.Integer, primary_key=True)
 
     # name of the menu
     name = db.Column(db.String(256), nullable=False, unique=True, index=True)
 
     # list of all entries (links) in this menu
     entries = db.relationship('MenuEntry')
+
+    top_level_entries = db.relationship(
+        'MenuEntry',
+        primaryjoin=and_(id == MenuEntry.menu_id, MenuEntry.parent_id == None)
+    )
 
 
 class Setting(CMSModel):
