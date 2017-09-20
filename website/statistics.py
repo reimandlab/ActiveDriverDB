@@ -3,7 +3,7 @@ from collections import defaultdict, Counter
 from functools import lru_cache
 from itertools import combinations
 
-from database import db, get_or_create
+from database import db, get_or_create, join_unique
 from database import fast_count
 import models
 from sqlalchemy import and_, distinct, func, literal_column, case
@@ -596,24 +596,30 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
 
 
 def test_ptm_enrichment():
+    """Use only mutations from primary isoforms."""
+
+    def only_from_primary_isoforms(mutations_query):
+
+        mutations_query = join_unique(mutations_query, Protein)
+        return mutations_query.filter(Protein.is_preferred_isoform)
 
     mutations = Mutation.query.filter_by(is_confirmed=True)
+    mutations = only_from_primary_isoforms(mutations)
 
     # reference
     tkg_mutations = mutations.filter(
         Statistics.get_filter_by_sources([models.The1000GenomesMutation])
     )
+    tkg_mutations = only_from_primary_isoforms(tkg_mutations)
 
     # tested
-    tcga_mutations = mutations.filter(
-        Statistics.get_filter_by_sources([models.MC3Mutation])
-    )
     clinvar_mutations = mutations.filter(
         Statistics.get_filter_by_sources([models.InheritedMutation])
     )
+    clinvar_mutations = only_from_primary_isoforms(clinvar_mutations)
 
-    print(test_enrichment_of_ptm_mutations_among_mutations_subset(clinvar_mutations, tkg_mutations))
-    print(test_enrichment_of_ptm_mutations_among_mutations_subset(tcga_mutations, tkg_mutations))
+    p_values = test_enrichment_of_ptm_mutations_among_mutations_subset(clinvar_mutations, tkg_mutations)
+    print(p_values)
 
 
 if current_app.config['LOAD_STATS']:

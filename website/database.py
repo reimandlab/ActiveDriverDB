@@ -135,6 +135,13 @@ def yield_objects(base_query, step_size=1000):
         done = not obj
 
 
+def join_unique(query, model):
+    joined_tables = [mapper.class_ for mapper in query._join_entities]
+    if model not in joined_tables:
+        return query.join(model)
+    return query
+
+
 def raw_delete_all(model):
     count = model.query.delete()
     return count
