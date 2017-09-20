@@ -410,7 +410,7 @@ class Page(CMSModel):
 class MenuEntry(CMSModel):
     """Base for tables defining links in menu"""
 
-    position = db.Column(db.Float, default=0)
+    position = db.Column(db.Float, default=5)
     menu_id = db.Column(db.Integer, db.ForeignKey('menu.id'))
     type = db.Column(db.String(32))
 
