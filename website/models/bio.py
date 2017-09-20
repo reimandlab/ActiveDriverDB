@@ -545,9 +545,28 @@ class Protein(BioModel):
             )
         }
 
-    @cached_property
+    @hybrid_property
     def is_preferred_isoform(self):
         return self.gene.preferred_isoform == self
+
+    @is_preferred_isoform.expression
+    def is_preferred_isoform(self):
+        return (
+            select([
+                case(
+                    [(
+                        exists()
+                        .where(and_(
+                            Gene.preferred_isoform_id == self.id,
+                            Gene.id == self.gene_id
+                        )).correlate(self),
+                        True
+                    )],
+                    else_=False,
+                ).label('is_preferred_isoform')
+            ])
+            .label('is_preferred_isoform_select')
+        )
 
     @cached_property
     def length(self):

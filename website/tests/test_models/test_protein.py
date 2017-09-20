@@ -1,5 +1,6 @@
+from database import db
 from .model_testing import ModelTest
-from models import Protein, Site
+from models import Protein, Site, Gene
 
 
 class ProteinTest(ModelTest):
@@ -30,3 +31,19 @@ class ProteinTest(ModelTest):
             result = protein.has_sites_in_range(mutation_position - 7, mutation_position + 7)
             assert result == expected_result
 
+    def test_is_preferred_isoform(self):
+
+        proteins = [Protein(refseq='NM_%i' % i) for i in range(5)]
+        preferred = proteins[0]
+        g = Gene(name='XYZ', isoforms=proteins, preferred_isoform=preferred)
+        db.session.add(g)
+        db.session.commit()
+
+        # hybrid - python part
+        assert preferred.is_preferred_isoform
+
+        # hybrid - sql part
+        assert db.session.query(Protein).filter(Protein.is_preferred_isoform).one() == preferred
+
+        for i in range(1, 5):
+            assert not proteins[i].is_preferred_isoform
