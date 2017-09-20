@@ -43,7 +43,7 @@ class Importer(TCGAImporter):
         self.cancer_barcodes = load_tss_cancer_map(self.tss_cancer_map_path)
 
     def parse(self, path):
-        from statistics import hypermutated_samples
+        from stats import hypermutated_samples
 
         print(
             'Analyzing data to find hypermutated samples '

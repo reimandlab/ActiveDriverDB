@@ -39,7 +39,7 @@ from app import login_manager, recaptcha, limiter
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import IntegrityError, OperationalError
-from statistics import STATISTICS
+from stats import STATISTICS
 from exceptions import ValidationError
 
 

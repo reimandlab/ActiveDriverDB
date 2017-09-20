@@ -460,7 +460,7 @@ class Protein(BioModel):
             )
         ]
         if dataset:
-            from statistics import Statistics
+            from stats import Statistics
             criteria.append(
                 Statistics.get_filter_by_sources([dataset])
             )

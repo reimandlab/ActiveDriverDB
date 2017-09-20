@@ -151,7 +151,7 @@ class TestImport(DatabaseTest):
             assert new_mc3_mutation.samples == 'TCGA-02-0003-01A-01D-1490-08'
 
     def test_hypermutated_finder(self):
-        from statistics import hypermutated_samples
+        from stats import hypermutated_samples
         muts_filename = make_named_gz_file(with_hypermutated_samples)
 
         samples = hypermutated_samples(muts_filename, threshold=2)

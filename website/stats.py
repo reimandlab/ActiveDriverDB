@@ -1,7 +1,8 @@
 import random
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, namedtuple
 from functools import lru_cache
 from itertools import combinations
+from statistics import median
 
 from database import db, get_or_create, join_unique
 from database import fast_count
@@ -557,6 +558,7 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
             e.g. 1000 Genomes)
 
     Returns:
+        (median, percentage, p_values)
         p-values for enrichment hypothesis: for absolute values and for percentage
     """
     ptm_enriched_absolute = 0
@@ -573,6 +575,9 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
     print('All: %s, PTM: %s, %%: %s' % (all_mutations, ptm_mutations, ptm_percentage))
 
     all_reference_mutations = reference_query.all()
+
+    enriched_ptms = []
+    enriched_percentage = []
 
     # 4.
     for _ in tqdm(range(iterations_count)):
@@ -592,7 +597,20 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
         if ptm_percentage > iteration_percentage:   # E > Q
             ptm_enriched_percentage += 1
 
-    return ptm_enriched_absolute / iterations_count, ptm_enriched_percentage / iterations_count
+        enriched_ptms.append(ptm_enriched_absolute)
+        enriched_percentage.append(ptm_enriched_percentage)
+
+    median_ptms = median(enriched_ptms)
+    median_percentage = median(enriched_percentage)
+
+    result_tuple = namedtuple('EnrichmentAnalysisResult', 'median median_percentage, p_value, p_value_percentage')
+
+    return result_tuple(
+        median_ptms,
+        median_percentage,
+        ptm_enriched_absolute / iterations_count,
+        ptm_enriched_percentage / iterations_count
+    )
 
 
 def test_ptm_enrichment():
@@ -618,8 +636,9 @@ def test_ptm_enrichment():
     )
     clinvar_mutations = only_from_primary_isoforms(clinvar_mutations)
 
-    p_values = test_enrichment_of_ptm_mutations_among_mutations_subset(clinvar_mutations, tkg_mutations)
-    print(p_values)
+    result = test_enrichment_of_ptm_mutations_among_mutations_subset(clinvar_mutations, tkg_mutations)
+    print(result)
+    return result
 
 
 if current_app.config['LOAD_STATS']:

@@ -6,7 +6,7 @@ import models
 class StatisticsTest(DatabaseTest):
 
     def exposed_stats(self):
-        from statistics import Statistics
+        from stats import Statistics
         s = Statistics()
         s.calc_all()
         return s.get_all()
@@ -71,7 +71,7 @@ class StatisticsTest(DatabaseTest):
         metadata_2 = models.MC3Mutation(mutation=m)
         db.session.add_all([metadata_1, metadata_2])
 
-        from statistics import Statistics
+        from stats import Statistics
         statistics = Statistics()
 
         in_many_sources = statistics.from_more_than_one_source()
@@ -109,7 +109,7 @@ class StatisticsTest(DatabaseTest):
                 if kinases or kinase_groups:
                     u_proteins_covered.add(protein)
 
-        from statistics import Statistics
+        from stats import Statistics
         statistics = Statistics()
         all_interactions = statistics.interactions()
         kinases_covered = statistics.kinases_covered()
@@ -122,7 +122,7 @@ class StatisticsTest(DatabaseTest):
         assert proteins_covered == len(u_proteins_covered)
 
     def test_table_generation(self):
-        from statistics import generate_source_specific_summary_table
+        from stats import generate_source_specific_summary_table
 
         table = generate_source_specific_summary_table()
         assert table

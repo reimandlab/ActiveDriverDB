@@ -43,7 +43,7 @@ def calc_statistics(args, app=None):
     if not app:
         app = create_app(config_override=CONFIG)
     with app.app_context():
-        from statistics import Statistics
+        from stats import Statistics
         statistics = Statistics()
         statistics.calc_all()
         db.session.commit()
@@ -479,7 +479,7 @@ def run_shell(args):
     with app.app_context():
         if args.command:
             print('Executing supplied command: "%s"' % args.command)
-            import statistics
+            import stats
             exec(args.command)
         print('You can access current application using "app" variable.')
         print('Database, models and statistics modules are pre-loaded.')
