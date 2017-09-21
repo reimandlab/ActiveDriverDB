@@ -10,7 +10,7 @@ import models
 from sqlalchemy import and_, distinct, func, literal_column, case
 from sqlalchemy import or_
 from flask import current_app
-from models import Mutation, Count, Site, Protein, MC3Mutation, are_details_managed
+from models import Mutation, Count, Site, Protein, MC3Mutation, Gene, are_details_managed
 from tqdm import tqdm
 
 counters = {}
@@ -639,6 +639,103 @@ def test_ptm_enrichment():
     result = test_enrichment_of_ptm_mutations_among_mutations_subset(clinvar_mutations, tkg_mutations)
     print(result)
     return result
+
+
+def load_cancer_census(cancer_census_path='data/disease_muts_in_ptm_sites/census.tsv'):
+    """Load genes from cancer census.
+
+    Args:
+        cancer_census_path: this file needs to be downloaded from COSMIC
+    """
+
+    gene_names = set()
+    with open(cancer_census_path) as f:
+        for line in f:
+            gene_names.add(line.split('\t')[0])
+
+    gene_names.remove('Gene Symbol')
+
+    cancer_genes = set()
+
+    for name in gene_names:
+        g = Gene.query.filter_by(name=name).first()
+        if g:
+            cancer_genes.add(g)
+        else:
+            print('%s' % name)
+    return cancer_genes
+
+
+def get_genes_with_mutations_from_source(source):
+    return set(
+        db.session.query(Gene)
+        .join(Protein, Gene.preferred_isoform_id == Protein.id)
+        .join(Mutation)
+        .join(source)
+        .distinct()
+    )
+
+
+def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False):
+    """Counts mutations and PTM mutations from isoforms from given set of genes.
+
+    Args:
+        genes: a list of Gene
+        only_preferred_isoforms: should only one isoform per gene
+            (the preferred/primary one) be used when filtering mutations?
+        sources: a list of MutationDetails - only confirmed mutations from
+            sources identified by given MutationDetail classes will be counted
+    """
+    all_mutations_count = 0
+    ptm_mutations_count = 0
+
+    for gene in genes:
+        if only_preferred_isoforms:
+            proteins = [gene.preferred_isoform]
+        else:
+            proteins = gene.isoforms
+
+        mutations_filters = and_(
+            Mutation.protein_id.in_([p.id for p in proteins]),
+            Mutation.is_confirmed == True,
+            Statistics.get_filter_by_sources(sources)
+        )
+
+        all_mutations_count += (
+            Mutation.query
+            .filter(mutations_filters)
+            .distinct().count()
+        )
+
+        ptm_mutations_count += (
+            Mutation.query
+            .filter(and_(
+                Mutation.precomputed_is_ptm,
+                mutations_filters
+            )).distinct().count()
+        )
+
+    print(
+        all_mutations_count,
+        ptm_mutations_count,
+        ptm_mutations_count / all_mutations_count
+    )
+    return all_mutations_count, ptm_mutations_count
+
+
+def disease_muts_affecting_ptm_sites():
+    from models import InheritedMutation, MC3Mutation
+
+    cancer_genes = load_cancer_census()
+
+    clinvar_genes = get_genes_with_mutations_from_source(InheritedMutation)
+
+    for only_preferred_isoforms in [True, False]:
+        print('Only preferred isoforms:', only_preferred_isoforms)
+        print('ClinVar/ClinVar')
+        count_mutations_from_genes(clinvar_genes, [InheritedMutation], only_preferred_isoforms)
+        print('Cancer census/TCGA')
+        count_mutations_from_genes(cancer_genes, [MC3Mutation], only_preferred_isoforms)
 
 
 if current_app.config['LOAD_STATS']:
