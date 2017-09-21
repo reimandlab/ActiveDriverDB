@@ -538,7 +538,7 @@ def count_mutated_potential_sites():
     print(count, total_length, count/total_length*100)
 
 
-def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, reference_query, iterations_count=10000):
+def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, reference_query, iterations_count=100000):
     """Perform tests according to proposed algorithm:
 
     1. Count the number of all ClinVar mutations as C, PTM-associated ClinVar mutations as D=27071
@@ -600,15 +600,17 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
         if ptm_percentage > iteration_percentage:   # E > Q
             ptm_enriched_percentage += 1
 
-        enriched_ptms.append(ptm_enriched_absolute)
-        enriched_percentage.append(ptm_enriched_percentage)
+        enriched_ptms.append(ptm_in_iteration)
+        enriched_percentage.append(iteration_percentage)
 
     median_ptms = median(enriched_ptms)
     median_percentage = median(enriched_percentage)
+    print(median_percentage, median_ptms / all_mutations * 100)
 
-    result_tuple = namedtuple('EnrichmentAnalysisResult', 'median median_percentage, p_value, p_value_percentage')
+    result_tuple = namedtuple('EnrichmentAnalysisResult', 'ptms median median_percentage, p_value, p_value_percentage')
 
     return result_tuple(
+        enriched_ptms,
         median_ptms,
         median_percentage,
         ptm_enriched_absolute / iterations_count,
