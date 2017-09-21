@@ -660,9 +660,9 @@ def non_parametric_test_ptm_enrichment():
     def collect_ratios(source):
         ratios = []
         genes = get_genes_with_mutations_from_source(source)
-        for gene in genes:
+        for gene in tqdm(genes):
             protein = gene.preferred_isoform
-            filters = (
+            filters = and_(
                 Mutation.protein == protein,
                 Mutation.is_confirmed == True
             )
@@ -677,7 +677,6 @@ def non_parametric_test_ptm_enrichment():
     ratios_clinvar = collect_ratios(InheritedMutation)
     ratios_tkgenomes = collect_ratios(The1000GenomesMutation)
 
-    # From docs:
     result = mannwhitneyu(ratios_clinvar, ratios_tkgenomes, alternative='greater', use_continuity=True)
 
     print(result)
@@ -739,7 +738,8 @@ def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False, st
                 Mutation.alt,
                 Protein.id
             )
-            .select_from(Protein)
+            .select_from(Mutation)
+            .join(Protein)
         )
     else:
         base_query = Mutation.query
