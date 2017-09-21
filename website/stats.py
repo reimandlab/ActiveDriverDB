@@ -4,13 +4,16 @@ from functools import lru_cache
 from itertools import combinations
 from statistics import median
 
+from scipy.stats import mannwhitneyu
+
 from database import db, get_or_create, join_unique
 from database import fast_count
 import models
 from sqlalchemy import and_, distinct, func, literal_column, case
 from sqlalchemy import or_
 from flask import current_app
-from models import Mutation, Count, Site, Protein, MC3Mutation, Gene, are_details_managed
+from models import Count, Site, Protein, Gene, are_details_managed, The1000GenomesMutation
+from models import Mutation, InheritedMutation, MC3Mutation
 from tqdm import tqdm
 
 counters = {}
@@ -615,8 +618,7 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
     )
 
 
-def test_ptm_enrichment():
-    """Use only mutations from primary isoforms."""
+def get_confirmed_mutations(sources, only_preferred=True):
 
     def only_from_primary_isoforms(mutations_query):
 
@@ -626,19 +628,58 @@ def test_ptm_enrichment():
     mutations = Mutation.query.filter_by(is_confirmed=True)
     mutations = only_from_primary_isoforms(mutations)
 
+    selected_mutations = mutations.filter(Statistics.get_filter_by_sources(sources))
+    if only_preferred:
+        selected_mutations = only_from_primary_isoforms(selected_mutations)
+    return selected_mutations
+
+
+def parametric_test_ptm_enrichment():
+    """Uses only mutations from primary isoforms."""
+
     # reference
-    tkg_mutations = mutations.filter(
-        Statistics.get_filter_by_sources([models.The1000GenomesMutation])
-    )
-    tkg_mutations = only_from_primary_isoforms(tkg_mutations)
+    tkg_mutations = get_confirmed_mutations([models.The1000GenomesMutation])
 
     # tested
-    clinvar_mutations = mutations.filter(
-        Statistics.get_filter_by_sources([models.InheritedMutation])
-    )
-    clinvar_mutations = only_from_primary_isoforms(clinvar_mutations)
+    clinvar_mutations = get_confirmed_mutations([models.InheritedMutation])
 
     result = test_enrichment_of_ptm_mutations_among_mutations_subset(clinvar_mutations, tkg_mutations)
+    print(result)
+
+    return result
+
+
+def non_parametric_test_ptm_enrichment():
+    """Uses only mutations from primary isoforms.
+
+    Use equivalent of wilcox.test from R (so Wilcoxon/Mann-Whitney rank test)
+    to compare distributions of PTM affecting/all mutations between clinvar
+    and 1000 Genomes Project mutation datasets.
+    """
+
+    def collect_ratios(source):
+        ratios = []
+        genes = get_genes_with_mutations_from_source(source)
+        for gene in genes:
+            protein = gene.preferred_isoform
+            filters = (
+                Mutation.protein == protein,
+                Mutation.is_confirmed == True
+            )
+            number_of_all_mutations = Mutation.query.filter(filters).count()
+            number_of_ptm_mutations = Mutation.query.filter(and_(
+                filters,
+                Mutation.precomputed_is_ptm == True
+            )).count()
+            ratios.append(number_of_ptm_mutations/number_of_all_mutations)
+        return ratios
+
+    ratios_clinvar = collect_ratios(InheritedMutation)
+    ratios_tkgenomes = collect_ratios(The1000GenomesMutation)
+
+    # From docs:
+    result = mannwhitneyu(ratios_clinvar, ratios_tkgenomes, alternative='greater', use_continuity=True)
+
     print(result)
     return result
 
@@ -738,8 +779,6 @@ def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False, st
 
 
 def disease_muts_affecting_ptm_sites():
-    from models import InheritedMutation, MC3Mutation
-
     cancer_genes = load_cancer_census()
 
     clinvar_genes = get_genes_with_mutations_from_source(InheritedMutation)
