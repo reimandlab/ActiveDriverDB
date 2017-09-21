@@ -652,14 +652,22 @@ def parametric_test_ptm_enrichment():
 def non_parametric_test_ptm_enrichment():
     """Uses only mutations from primary isoforms.
 
-    Use equivalent of wilcox.test from R (so Wilcoxon/Mann-Whitney rank test)
-    to compare distributions of PTM affecting/all mutations between clinvar
+    Use close (but not exact) equivalent of wilcox.test from R
+    (so Wilcoxon/Mann-Whitney rank test) to compare distributions
+    of PTM affecting/all mutations between clinvar
     and 1000 Genomes Project mutation datasets.
     """
 
-    def collect_ratios(source):
+    def collect_ratios(source, only_genes_with_ptm_sites=False):
         ratios = []
         genes = get_genes_with_mutations_from_source(source)
+        if only_genes_with_ptm_sites:
+            genes = {
+                gene
+                for gene in genes
+                if gene.preferred_isoform.sites
+            }
+
         for gene in tqdm(genes):
             protein = gene.preferred_isoform
             filters = and_(
@@ -674,13 +682,22 @@ def non_parametric_test_ptm_enrichment():
             ratios.append(number_of_ptm_mutations/number_of_all_mutations)
         return ratios
 
-    ratios_clinvar = collect_ratios(InheritedMutation)
-    ratios_tkgenomes = collect_ratios(The1000GenomesMutation)
+    results = []
 
-    result = mannwhitneyu(ratios_clinvar, ratios_tkgenomes, alternative='greater', use_continuity=True)
+    for exclude_no_ptms in [True, False]:
+        print('Genes with no PTM sites excluded?', exclude_no_ptms)
 
-    print(result)
-    return result
+        ratios_clinvar = collect_ratios(InheritedMutation, exclude_no_ptms)
+        ratios_tkgenomes = collect_ratios(The1000GenomesMutation, exclude_no_ptms)
+
+        # TODO: mannwhitneyu uses ties correction but we should not
+        # (to have the same behaviour as R's wilcoxon.test)
+        result = mannwhitneyu(ratios_clinvar, ratios_tkgenomes, alternative='greater', use_continuity=True)
+        print(result)
+
+        results.append(result)
+
+    return results
 
 
 def load_cancer_census(cancer_census_path='data/disease_muts_in_ptm_sites/census.tsv'):
