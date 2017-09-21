@@ -1,3 +1,4 @@
+scipy
 beautifulsoup4
 Flask==0.12.2
 Flask-Assets==0.12
