@@ -678,7 +678,7 @@ def get_genes_with_mutations_from_source(source):
     )
 
 
-def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False):
+def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False, strict=True):
     """Counts mutations and PTM mutations from isoforms from given set of genes.
 
     Args:
@@ -691,7 +691,19 @@ def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False):
     all_mutations_count = 0
     ptm_mutations_count = 0
 
-    for gene in genes:
+    if strict:
+        base_query = (
+            db.session.query(
+                Mutation.position,
+                Mutation.alt,
+                Protein.id
+            )
+            .select_from(Protein)
+        )
+    else:
+        base_query = Mutation.query
+
+    for gene in tqdm(genes):
         if only_preferred_isoforms:
             proteins = [gene.preferred_isoform]
         else:
@@ -704,13 +716,13 @@ def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False):
         )
 
         all_mutations_count += (
-            Mutation.query
+            base_query
             .filter(mutations_filters)
             .distinct().count()
         )
 
         ptm_mutations_count += (
-            Mutation.query
+            base_query
             .filter(and_(
                 Mutation.precomputed_is_ptm,
                 mutations_filters
