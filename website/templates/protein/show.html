@@ -233,17 +233,26 @@
     {
         var needle_plot = NeedlePlot();
 
+        var site_tooltip = Tooltip()
+
+        site_tooltip.init({
+            id: 'site',
+            template: function(d){
+                return (d.start + 7) + ' ' + d.type
+            },
+            viewport: plot.parentNode
+        })
+
+
         var params = {
             element: plot,
+            site_tooltip: site_tooltip,
             sequenceLength: {{ protein.sequence | length }},
             name: '{{ protein.gene.name }}',
             zoom_callback: tracks.setZoom,
             position_callback: tracks.setAAPosition,
             zoomAndMove_callback: tracks.setZoomAndMove,
             width: tracks_box.width(),
-            site_tooltip: function(d){
-                return (d.start + 7) + ' ' + d.type
-            },
             mutations_color_map: {
                 'distal': 'yellow',
                 'network-rewiring': 'red',
@@ -334,8 +343,10 @@
             $table, data.mutations, {{ mutation_types | tojson }}, "{{ url_for('MutationView:show', refseq=protein.refseq, position='{{ pos }}', alt='{{ alt }}') }}"
         );
 
-        var variable_config = {
-            needle_tooltip: function(mutation) {
+        var needle_tooltip = Tooltip()
+        needle_tooltip.init({
+            id: 'needle',
+            template: function(mutation) {
                 return nunjucks.render(
                     'needle_tooltip.njk',
                     {
@@ -344,10 +355,14 @@
                     }
                 )
             },
-            needle_tooltip_callback: function(node)
+            callback: function(node)
             {
                 initializeKinaseTooltips(d3.select(node).selectAll('.kinase'))
-            },
+            }
+        })
+
+        var variable_config = {
+            needle_tooltip: needle_tooltip,
             legends: {
                 x: null,
                 y: data.value_type + ' of mutations in {{ protein.gene.name }} {{ protein.refseq }}'

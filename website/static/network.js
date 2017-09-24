@@ -1,3 +1,12 @@
+function prepareSVG(element)
+{
+    return d3
+        .select(element)
+        .append('svg')
+        .attr('preserveAspectRatio', 'xMinYMin meet')
+        .attr('class', 'svg-content-responsive')
+}
+
 function clone(object)
 {
     // this implementation won't handle functions and

@@ -5,33 +5,7 @@ function append(destination, new_content)
 
 function update_object(modified_obj, modifying_obj)
 {
-    for(var key in modifying_obj)
-    {
-        if(modifying_obj.hasOwnProperty(key))
-        {
-            modified_obj[key] = modifying_obj[key]
-        }
-    }
-}
-
-function prepareSVG(element)
-{
-    return d3
-        .select(element)
-        .append('svg')
-        .attr('preserveAspectRatio', 'xMinYMin meet')
-        .attr('class', 'svg-content-responsive')
-}
-
-function prepareZoom(min, max, callback)
-{
-    return d3.behavior.zoom()
-       .scaleExtent([min, max])
-       .on('zoom', callback)
-       // allows to differentiate between pan-related clicks and normal clicks
-       .on('zoomstart', function(){
-           if(d3.event.sourceEvent) d3.event.sourceEvent.stopPropagation()
-       })
+    $.extend(modified_obj, modifying_obj)
 }
 
 /**

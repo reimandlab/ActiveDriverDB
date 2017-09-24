@@ -17,6 +17,17 @@
  * CSSZoom and Zoom fallback should be merged into a class hierarchy in future when support for ES6 matures:
  * see: http://caniuse.com/es6-class. At time of writing classes are supported in browsers of 73.97% users.
  */
+function prepareZoom(min, max, callback)
+{
+    return d3.behavior.zoom()
+        .scaleExtent([min, max])
+        .on('zoom', callback)
+        // allows to differentiate between pan-related clicks and normal clicks
+        .on('zoomstart', function(){
+            if(d3.event.sourceEvent) d3.event.sourceEvent.stopPropagation()
+        })
+}
+
 var Zoom = function(css_zoom)
 {
     var svg;
