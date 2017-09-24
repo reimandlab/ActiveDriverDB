@@ -34,15 +34,6 @@ function prepareZoom(min, max, callback)
        })
 }
 
-function checkEquality(obj1, obj2)
-{
-    if(obj1.length !== obj2.length)
-        return false
-
-    return JSON.stringify(obj1) === JSON.stringify(obj2)
-}
-
-
 /**
  * If property of given 'name' in 'new_config' object is an URL string,
  * perform asynchronous GET call to replace the property with JSON object
