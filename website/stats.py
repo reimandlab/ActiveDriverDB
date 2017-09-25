@@ -658,9 +658,9 @@ def non_parametric_test_ptm_enrichment():
     and 1000 Genomes Project mutation datasets.
     """
 
-    def collect_ratios(source, only_genes_with_ptm_sites=False):
+    def collect_ratios(sources, only_genes_with_ptm_sites=False):
         ratios = []
-        genes = get_genes_with_mutations_from_source(source)
+        genes = get_genes_with_mutations_from_sources(sources)
         if only_genes_with_ptm_sites:
             genes = {
                 gene
@@ -687,14 +687,19 @@ def non_parametric_test_ptm_enrichment():
     for exclude_no_ptms in [True, False]:
         print('Genes with no PTM sites excluded?', exclude_no_ptms)
 
-        ratios_clinvar = collect_ratios(InheritedMutation, exclude_no_ptms)
-        ratios_tkgenomes = collect_ratios(The1000GenomesMutation, exclude_no_ptms)
+        ratios_clinvar = collect_ratios([InheritedMutation], exclude_no_ptms)
+        ratios_tkgenomes = collect_ratios([The1000GenomesMutation], exclude_no_ptms)
 
         # TODO: mannwhitneyu uses ties correction but we should not
         # (to have the same behaviour as R's wilcoxon.test)
         result = mannwhitneyu(ratios_clinvar, ratios_tkgenomes, alternative='greater', use_continuity=True)
-        print(result)
+        print('Clinvar / 1000Genomes', result)
 
+        results.append(result)
+
+        ratios_both = collect_ratios([InheritedMutation, The1000GenomesMutation], exclude_no_ptms)
+        result = mannwhitneyu(ratios_both, ratios_tkgenomes, alternative='greater', use_continuity=True)
+        print('1000Genomes & Clinvar / 100Genomes', result)
         results.append(result)
 
     return results
@@ -725,14 +730,15 @@ def load_cancer_census(cancer_census_path='data/disease_muts_in_ptm_sites/census
     return cancer_genes
 
 
-def get_genes_with_mutations_from_source(source):
-    return set(
+def get_genes_with_mutations_from_sources(sources):
+    query = (
         db.session.query(Gene)
         .join(Protein, Gene.preferred_isoform_id == Protein.id)
         .join(Mutation)
-        .join(source)
-        .distinct()
     )
+    for source in sources:
+        query = query.join(source)
+    return set(query.distinct())
 
 
 def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False, strict=True):
@@ -798,7 +804,7 @@ def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False, st
 def disease_muts_affecting_ptm_sites():
     cancer_genes = load_cancer_census()
 
-    clinvar_genes = get_genes_with_mutations_from_source(InheritedMutation)
+    clinvar_genes = get_genes_with_mutations_from_sources([InheritedMutation])
 
     for only_preferred_isoforms in [True, False]:
         print('Only preferred isoforms:', only_preferred_isoforms)
