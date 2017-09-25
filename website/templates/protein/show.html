@@ -247,7 +247,9 @@
         var params = {
             element: plot,
             site_tooltip: site_tooltip,
-            sequenceLength: {{ protein.sequence | length }},
+            sequence_length: {{ protein.sequence | length }},
+            paddings: {bottom: 40, top: 30, left: 89, right: 1},
+            head_size: 5.1,
             name: '{{ protein.gene.name }}',
             zoom_callback: tracks.setZoom,
             position_callback: tracks.setAAPosition,

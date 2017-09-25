@@ -24,31 +24,6 @@
 .invisible
   opacity: 0!important
 
-text
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif
-
-  &.label
-    font-weight: bold
-
-.site
-  rect, path
-    stroke: #555
-
-rect, path
-  .phosphorylation &
-    fill: rgb(67, 162, 202)
-
-  .acetylation &
-    fill: rgb(186, 228, 188)
-
-  .ubiquitination &
-    fill: rgb(123, 204, 196)
-
-  .methylation &
-    fill: rgb(240, 249, 232)
-
-  .multi_ptm &
-    fill: rgb(8, 104, 172)
 
 @import "_color_legend.sass"
 
@@ -66,25 +41,8 @@ rect, path
     border-right: 8px solid transparent
     border-bottom: 12px solid rgb(67, 162, 202)
 
-.axis
-  shape-rendering: crispEdges
-
-  .minor
-    stroke-opacity: .5
-
-  line, path
-    fill: none
-    stroke: #000
-
-.needle
-  line
-    stroke: black
-
-  *:hover
-    cursor: pointer
-
+@import "needleplot"
 @import "mimp"
-
 @import "mutation_table"
 
 .panel-needleplot

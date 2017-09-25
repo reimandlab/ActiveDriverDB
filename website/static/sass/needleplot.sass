@@ -1,0 +1,41 @@
+.axis
+  shape-rendering: crispEdges
+
+  .minor
+    stroke-opacity: .5
+
+  line, path
+    fill: none
+    stroke: #000
+
+.needle
+  line
+    stroke: black
+
+
+.site
+  rect, path
+    stroke: #555
+
+rect, path
+  .phosphorylation &
+    fill: rgb(67, 162, 202)
+
+  .acetylation &
+    fill: rgb(186, 228, 188)
+
+  .ubiquitination &
+    fill: rgb(123, 204, 196)
+
+  .methylation &
+    fill: rgb(240, 249, 232)
+
+  .multi_ptm &
+    fill: rgb(8, 104, 172)
+
+text
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif
+
+  &.label
+    font-weight: bold
+
