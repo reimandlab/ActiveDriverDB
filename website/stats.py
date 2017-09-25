@@ -4,8 +4,6 @@ from functools import lru_cache
 from itertools import combinations
 from statistics import median
 
-from scipy.stats import mannwhitneyu
-
 from database import db, get_or_create, join_unique
 from database import fast_count
 import models
@@ -652,11 +650,12 @@ def parametric_test_ptm_enrichment():
 def non_parametric_test_ptm_enrichment():
     """Uses only mutations from primary isoforms.
 
-    Use close (but not exact) equivalent of wilcox.test from R
-    (so Wilcoxon/Mann-Whitney rank test) to compare distributions
+    Use wilcox.test from R to compare distributions
     of PTM affecting/all mutations between clinvar
     and 1000 Genomes Project mutation datasets.
     """
+    from rpy2.robjects import r
+    from rpy2.robjects import FloatVector
 
     def collect_ratios(sources, only_genes_with_ptm_sites=False):
         ratios = []
@@ -667,6 +666,8 @@ def non_parametric_test_ptm_enrichment():
                 for gene in genes
                 if gene.preferred_isoform.sites
             }
+
+        print('Number of genes:', len(genes))
 
         for gene in tqdm(genes):
             protein = gene.preferred_isoform
@@ -680,9 +681,10 @@ def non_parametric_test_ptm_enrichment():
                 Mutation.precomputed_is_ptm == True
             )).count()
             ratios.append(number_of_ptm_mutations/number_of_all_mutations)
-        return ratios
+        return FloatVector(ratios)
 
     results = []
+    wilcox = r['wilcox.test']
 
     for exclude_no_ptms in [True, False]:
         print('Genes with no PTM sites excluded?', exclude_no_ptms)
@@ -690,15 +692,13 @@ def non_parametric_test_ptm_enrichment():
         ratios_clinvar = collect_ratios([InheritedMutation], exclude_no_ptms)
         ratios_tkgenomes = collect_ratios([The1000GenomesMutation], exclude_no_ptms)
 
-        # TODO: mannwhitneyu uses ties correction but we should not
-        # (to have the same behaviour as R's wilcoxon.test)
-        result = mannwhitneyu(ratios_clinvar, ratios_tkgenomes, alternative='greater', use_continuity=True)
+        result = wilcox(ratios_clinvar, ratios_tkgenomes, alternative='greater')
         print('Clinvar / 1000Genomes', result)
 
         results.append(result)
 
         ratios_both = collect_ratios([InheritedMutation, The1000GenomesMutation], exclude_no_ptms)
-        result = mannwhitneyu(ratios_both, ratios_tkgenomes, alternative='greater', use_continuity=True)
+        result = wilcox(ratios_both, ratios_tkgenomes, alternative='greater')
         print('1000Genomes & Clinvar / 100Genomes', result)
         results.append(result)
 
@@ -736,8 +736,7 @@ def get_genes_with_mutations_from_sources(sources):
         .join(Protein, Gene.preferred_isoform_id == Protein.id)
         .join(Mutation)
     )
-    for source in sources:
-        query = query.join(source)
+    query = query.filter(Statistics.get_filter_by_sources(sources))
     return set(query.distinct())
 
 
