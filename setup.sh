@@ -89,3 +89,6 @@ sudo apt-get install redis-server
 # (re) start everything
 sudo /etc/init.d/celeryd restart
 sudo /etc/init.d/redis-server restart
+
+# install R
+sudo apt-get install r-base
