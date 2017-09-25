@@ -12,8 +12,14 @@ python:
   - 3.4
   - 3.5
 
-install:
+
+before_install:
+  - sudo sh -c 'echo "deb https://cloud.r-project.org/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
+  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
   - sudo apt-get update
+
+
+install:
   - sudo apt-get install -y pigz npm
   - bash setup.sh
   - cd website
@@ -21,6 +27,7 @@ install:
   - pip install -r requirements.txt
   - pip install -r tests/requirements.txt
   - bash deploy.sh
+
 
 script:
   - python3 -m pytest -x -n 2 --cov=. -k 'not data_dependent'
