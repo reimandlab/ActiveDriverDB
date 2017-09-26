@@ -231,8 +231,6 @@
 
     function init_plot(variable_config)
     {
-        var needle_plot = NeedlePlot();
-
         var site_tooltip = Tooltip()
 
         site_tooltip.init({
@@ -267,7 +265,8 @@
 
         update_object(params, variable_config);
 
-        needle_plot.init(params);
+        var needle_plot = new NeedlePlot(params);
+
         return needle_plot;
     }
 
