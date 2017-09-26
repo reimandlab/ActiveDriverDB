@@ -616,7 +616,7 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
     )
 
 
-def get_confirmed_mutations(sources, only_preferred=True):
+def get_confirmed_mutations(sources, only_preferred=True, genes=None):
 
     def only_from_primary_isoforms(mutations_query):
 
@@ -626,22 +626,38 @@ def get_confirmed_mutations(sources, only_preferred=True):
     mutations = Mutation.query.filter_by(is_confirmed=True)
     mutations = only_from_primary_isoforms(mutations)
 
+    if genes:
+        mutations = mutations.filter(Protein.id.in_([g.preferred_isoform_id for g in genes]))
+
     selected_mutations = mutations.filter(Statistics.get_filter_by_sources(sources))
     if only_preferred:
         selected_mutations = only_from_primary_isoforms(selected_mutations)
     return selected_mutations
 
 
-def parametric_test_ptm_enrichment():
+def test_ptm_enrichment():
+    # TCGA against 1000Genomes
+    # TODO
+    tcga_result = None
+
+    # ClinVar against 1000Genomes
+    sources = [The1000GenomesMutation, InheritedMutation]
+    genes = get_genes_with_mutations_from_sources(sources, only_genes_with_ptm_sites=True)
+    clinvar_result = parametric_test_ptm_enrichment(sources[0], sources[1], genes)
+
+    return clinvar_result, tcga_result
+
+
+def parametric_test_ptm_enrichment(tested_source, reference_source, genes):
     """Uses only mutations from primary isoforms."""
 
-    # reference
-    tkg_mutations = get_confirmed_mutations([models.The1000GenomesMutation])
+    # e.g. 1000Genomes
+    reference_mutations = get_confirmed_mutations([reference_source], genes=genes)
 
-    # tested
-    clinvar_mutations = get_confirmed_mutations([models.InheritedMutation])
+    # e.g. ClinVar
+    tested_mutations = get_confirmed_mutations([tested_source], genes=genes)
 
-    result = test_enrichment_of_ptm_mutations_among_mutations_subset(clinvar_mutations, tkg_mutations)
+    result = test_enrichment_of_ptm_mutations_among_mutations_subset(tested_mutations, reference_mutations)
     print(result)
 
     return result
@@ -659,13 +675,7 @@ def non_parametric_test_ptm_enrichment():
 
     def collect_ratios(sources, only_genes_with_ptm_sites=False):
         ratios = []
-        genes = get_genes_with_mutations_from_sources(sources)
-        if only_genes_with_ptm_sites:
-            genes = {
-                gene
-                for gene in genes
-                if gene.preferred_isoform.sites
-            }
+        genes = get_genes_with_mutations_from_sources(sources, only_genes_with_ptm_sites)
 
         print('Number of genes:', len(genes))
 
@@ -730,14 +740,23 @@ def load_cancer_census(cancer_census_path='data/disease_muts_in_ptm_sites/census
     return cancer_genes
 
 
-def get_genes_with_mutations_from_sources(sources):
+def get_genes_with_mutations_from_sources(sources, only_genes_with_ptm_sites=False):
     query = (
         db.session.query(Gene)
         .join(Protein, Gene.preferred_isoform_id == Protein.id)
         .join(Mutation)
     )
     query = query.filter(Statistics.get_filter_by_sources(sources))
-    return set(query.distinct())
+
+    genes = set(query.distinct())
+
+    if only_genes_with_ptm_sites:
+        return {
+            gene
+            for gene in genes
+            if gene.preferred_isoform.sites
+        }
+    return genes
 
 
 def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False, strict=True):
