@@ -285,7 +285,8 @@ class PredictedNetworkRepresentation(NetworkRepresentation):
         kinases = set()
         groups = set()
         for mimp_mutation in mimp_mutations:
-            for mimp in mimp_mutation.meta_MIMP:
+            # filter by site:
+            for mimp in self.filter_manager.apply(mimp_mutation.meta_MIMP, itemgetter=lambda mimp: mimp.site):
                 sites.add(mimp.site)
                 kinases.add(mimp.kinase)
                 groups.add(mimp.kinase_group)
