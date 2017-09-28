@@ -559,8 +559,11 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
             e.g. 1000 Genomes)
 
     Returns:
-        (median, percentage, p_values)
-        p-values for enrichment hypothesis: for absolute values and for percentage
+        namedtuple with:
+            median,
+            median percentage,
+            p_value: 1 - p-value,
+            ptms: list of counts of PTM sites discovered in each of sampling iterations
     """
     ptm_enriched_absolute = 0
     ptm_enriched_percentage = 0
@@ -603,7 +606,6 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
 
     median_ptms = median(enriched_ptms)
     median_percentage = median(enriched_percentage)
-    print(median_percentage, median_ptms / all_mutations * 100)
 
     result_tuple = namedtuple('EnrichmentAnalysisResult', 'ptms median median_percentage, p_value, p_value_percentage')
 
@@ -636,26 +638,28 @@ def get_confirmed_mutations(sources, only_preferred=True, genes=None):
 
 
 def test_ptm_enrichment():
+    # 1000 Genomes
+    ref_genes = get_genes_with_mutations_from_sources([The1000GenomesMutation], only_genes_with_ptm_sites=True)
+
     # TCGA against 1000Genomes
-    # TODO
-    tcga_result = None
+    cancer_genes = load_cancer_census()
+    tcga_result = parametric_test_ptm_enrichment(MC3Mutation, The1000GenomesMutation, cancer_genes, ref_genes)
 
     # ClinVar against 1000Genomes
-    sources = [The1000GenomesMutation, InheritedMutation]
-    genes = get_genes_with_mutations_from_sources(sources, only_genes_with_ptm_sites=True)
-    clinvar_result = parametric_test_ptm_enrichment(sources[0], sources[1], genes)
+    tested_genes = get_genes_with_mutations_from_sources([InheritedMutation], only_genes_with_ptm_sites=True)
+    clinvar_result = parametric_test_ptm_enrichment(InheritedMutation, The1000GenomesMutation, tested_genes, ref_genes)
 
     return clinvar_result, tcga_result
 
 
-def parametric_test_ptm_enrichment(tested_source, reference_source, genes):
+def parametric_test_ptm_enrichment(tested_source, reference_source, tested_genes, ref_genes):
     """Uses only mutations from primary isoforms."""
 
     # e.g. 1000Genomes
-    reference_mutations = get_confirmed_mutations([reference_source], genes=genes)
+    reference_mutations = get_confirmed_mutations([reference_source], genes=ref_genes)
 
     # e.g. ClinVar
-    tested_mutations = get_confirmed_mutations([tested_source], genes=genes)
+    tested_mutations = get_confirmed_mutations([tested_source], genes=tested_genes)
 
     result = test_enrichment_of_ptm_mutations_among_mutations_subset(tested_mutations, reference_mutations)
     print(result)
