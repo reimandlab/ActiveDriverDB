@@ -421,10 +421,20 @@
         if(!data.network.kinases.length && !data.network.kinase_groups.length)
         {
             $('.temporary-alert').remove()
+            // For experimental network the reason why it is empty is always lack of
+            // interactions specific for given PTM site type (or all types).
+            // For predicted networks chosen mutation filters play a role too.
             flash(
                 'The network of {{ protein.refseq  }} is empty as there are ' +
-                'no defined PTM-specific interactions in the experimental database ' +
-                '(for ' + (site_type !== 'None' ? site_type : 'any of PTM') + ' sites).',
+                'no PTM-specific interaction' +
+                '{{
+                  ' changes predicted by MIMP'
+                  if predicted_interactions else
+                  's defined in the experimental database'
+                }}' +
+                ' (for ' + (site_type !== 'None' ? site_type : 'any of PTM') + ' sites' +
+                '{{ ' and mutations meeting filtering criteria' if predicted_interactions else '' }}' +
+                ').',
                 'warning temporary-alert'
             )
         }
