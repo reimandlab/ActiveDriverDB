@@ -253,6 +253,22 @@ var AsyncFiltersHandler = function()
     }
 
     /**
+     * Retrieve currently set value of a filter of given name.
+     *
+     * Returns undefined if there is no selected value or if
+     * the current value is default one and not explicitly set.
+     */
+    function get_value(filter_name)
+    {
+        var matched = form.serializeArray().filter(
+            function(o){ return o.name === 'filter[' + filter_name + ']' }
+        )
+        if(matched.length !== 1)
+            return undefined
+        return matched[0].value
+    }
+
+    /**
      * Configuration object for AsyncFiltersHandler.
      * @typedef {Object} Config
      * @property {jQuery} form
@@ -280,6 +296,7 @@ var AsyncFiltersHandler = function()
             old_filters_query = serialize_form(form);
             form.find('.save').hide()
         },
+        value: get_value,
         load: load,
         apply: apply,
         on_update: on_update

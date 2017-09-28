@@ -417,6 +417,17 @@
             ]
         );
 
+        var site_type = filters_handler.value('Site.type')
+        if(!data.network.kinases.length && !data.network.kinase_groups.length)
+        {
+            $('.temporary-alert').remove()
+            flash(
+                'The network of {{ protein.refseq  }} is empty as there are ' +
+                'no defined PTM-specific interactions in the experimental database ' +
+                '(for ' + (site_type !== 'None' ? site_type : 'any of PTM') + ' sites).',
+                'warning temporary-alert'
+            )
+        }
         init_network({
             data: data.network,
             show_sites: data.show_sites,

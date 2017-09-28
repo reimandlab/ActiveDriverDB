@@ -152,3 +152,9 @@ function decode_url_pattern(flask_url_pattern)
 {
     return decodeURIComponent(flask_url_pattern).replace(/\+/g, ' ');
 }
+
+function flash(message, category) {
+    if(!category)
+        category = 'warning'
+    $('.flashes').append('<div class="alert alert-' + category + '" role="alert">' + message + ' </div>')
+}
