@@ -476,7 +476,8 @@ def generate_source_specific_summary_table():
     table_chunks = [
         source_specific_proteins_with_ptm_mutations,
         source_specific_mutated_sites,
-        source_specific_nucleotide_mappings
+        source_specific_nucleotide_mappings,
+        sites_counts
     ]
     table = {}
     for table_chunk_generator in table_chunks:
@@ -487,6 +488,16 @@ def generate_source_specific_summary_table():
     print(table)
 
     return table
+
+
+def sites_counts():
+    counts = {}
+    site_types = ['']  # empty will match all sites
+    site_types.extend(Site.types)
+    for site_type in site_types:
+        count = Site.query.filter(Site.type.like('%' + site_type + '%')).count()
+        counts[site_type] = count
+    return {'PTM sites': counts}
 
 
 def hypermutated_samples(path, threshold=900):
