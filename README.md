@@ -4,6 +4,8 @@
 
 The project aims to create an interactive visualisation framework for genome mutations in gene and protein networks. The idea is to display information from co-developed database in the form of different interactive "views". Thanks to the possibility of quickly switching between the views, the user will be able to grasp an analysed gene or protein with it's context and interactions from different angles. It will also provide advanced filtering and interactive loading with AJAX requests.
 
+The needleplot visualisation is now available in a separate repository: [reimandlab/needleplot](https://github.com/reimandlab/needleplot).
+
 # Licence
 
 The application is Open Source and is licensed under the terms of [GNU Lesser General Public License](https://github.com/reimandlab/ActiveDriverDB/blob/master/LICENSE).
