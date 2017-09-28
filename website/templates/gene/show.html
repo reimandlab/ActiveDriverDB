@@ -98,7 +98,7 @@
                   {% endif %}
                 </div>
                 <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ uniprot.accession }}</a>{% if uniprot.isoform != 1 %},
-                <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}#{{ uniprot.accession }}-{{ uniprot.isoform }}" {{ target }}>isoform {{ uniprot.isoform }}</a>
+                <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}#{{ uniprot.accession }}-{{ uniprot.isoform }}" {{ target }}>isoform&nbsp;{{ uniprot.isoform }}</a>
               {% endif %}
           {% endfor %}
           </ul>
