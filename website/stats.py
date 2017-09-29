@@ -228,6 +228,16 @@ class Statistics(CountStore):
         ).count()
 
     @counter
+    def mc3_exomes(self):
+        return len(
+            {
+                sample.split('-')[2]
+                for m in MC3Mutation.query
+                for sample in m.samples.split(',')
+            }
+        )
+
+    @counter
     def proteins(self):
         return self.count(models.Protein)
 
