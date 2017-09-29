@@ -1088,7 +1088,7 @@ class UserUploadedMutation(MutationDetails, BioModel):
 
 class CancerMutation(ManagedMutationDetails):
 
-    samples = db.Column(db.Text())
+    samples = db.Column(db.Text(), default='')
     value_type = 'count'
     count = db.Column(db.Integer)
 
