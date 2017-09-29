@@ -31,6 +31,8 @@ $top_height: 655px
     color: #fff
     margin: 0 5px
     z-index: 5
+  .content
+    overflow: auto
 
 $frame_w: 571px
 $frame_h: 390px
@@ -223,8 +225,10 @@ $frame_h: 390px
 
 #top-nav
   li
-    &.dropdown.open, .dropdown-menu
+    &.dropdown.open
       background-color: rgba(67, 235, 255, 0.1)
+    .dropdown-menu
+      background-color: rgba(47,167,193, 0.75)
 
 .navbar-brand
   display: none
