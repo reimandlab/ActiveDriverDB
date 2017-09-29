@@ -227,7 +227,6 @@ class Statistics(CountStore):
             self.get_filter_by_sources([mutation_class])
         ).count()
 
-    @counter
     def mc3_exomes(self):
         return len(
             {
