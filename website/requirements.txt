@@ -1,3 +1,4 @@
+sqlalchemy
 beautifulsoup4
 rpy2
 Flask==0.12.2
