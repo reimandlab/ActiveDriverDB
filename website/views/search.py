@@ -35,7 +35,7 @@ from search.gene import search_features, GeneMatch
 
 def search_proteins(
         phase, limit=None, filter_manager=None,
-        features=('gene_symbol', 'refseq', 'gene_name')
+        features=('gene_symbol', 'refseq', 'gene_name', 'uniprot')
 ):
     """Search for a protein isoform or gene.
     Only genes which have a primary isoforms will be returned.

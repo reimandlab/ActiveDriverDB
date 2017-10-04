@@ -106,13 +106,13 @@ class GeneSearch(GeneOrProteinSearch):
 class IsoformBasedSearch(GeneOrProteinSearch):
 
     @staticmethod
-    def create_query(limit, filters, add_joins=lambda query: query):
+    def create_query(limit, filters, entities=(Gene, Protein), add_joins=lambda query: query):
         genes = (
             add_joins(
                 Gene.query
                 .join(Protein, Gene.isoforms)
-                .filter(and_(*filters))
             )
+            .filter(and_(*filters))
             .group_by(Gene)
         )
 
@@ -123,7 +123,7 @@ class IsoformBasedSearch(GeneOrProteinSearch):
 
         query = (
             add_joins(
-                db.session.query(Gene, Protein)
+                db.session.query(*entities)
                 .select_from(Gene)
                 .join(Protein, Gene.isoforms)
             )
@@ -212,10 +212,59 @@ class GeneNameSearch(GeneSearch):
     feature = 'full_name'
 
 
+class UniprotSearch(IsoformBasedSearch):
+    """
+
+    Targets: Protein.external_references.uniprot_entries
+    """
+
+    name = 'uniprot'
+
+    def search(self, phase, sql_filters=None, limit=None):
+        matches = []
+
+        filters = [UniprotEntry.accession.like(phase + '%')]
+
+        if sql_filters:
+            filters += sql_filters
+
+        def add_joins(q):
+            return q.join(ProteinReferences).join(UniprotEntry)
+
+        query = self.create_query(limit, filters, (Gene, Protein, UniprotEntry), add_joins)
+
+        # aggregate by genes
+        results_by_gene = defaultdict(set)
+
+        for gene, isoform, uniprot in query:
+            results_by_gene[gene].add((isoform, uniprot))
+
+        for gene, results in results_by_gene.items():
+            isoforms, uniprot_entries = zip(*results)
+
+            match = GeneMatch.from_feature(
+                gene,
+                self.name,
+                min(
+                    self.sort_key(uniprot, phase)
+                    for uniprot in uniprot_entries
+                ),
+                matched_isoforms=isoforms
+            )
+            matches.append(match)
+
+        return matches
+
+    @staticmethod
+    def sort_key(uniprot, phase):
+        return distance(uniprot.accession, phase)
+
+
 feature_engines = {
     RefseqGeneSearch,
     SymbolGeneSearch,
     GeneNameSearch,
+    UniprotSearch,
 }
 
 search_features = {

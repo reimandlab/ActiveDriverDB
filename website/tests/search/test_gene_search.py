@@ -1,7 +1,7 @@
 from database import db
 from database_testing import DatabaseTest
 from models import ProteinReferences, UniprotEntry, Protein, Gene
-from search.gene import GeneNameSearch
+from search.gene import GeneNameSearch, UniprotSearch
 from tests.miscellaneous import mock_proteins_and_genes
 
 
@@ -94,3 +94,18 @@ class TestGeneSearch(DatabaseTest):
 
         assert len(results) == 5
         assert results[0].full_name.startswith('Full name of gene')
+
+    def test_uniprot(self):
+
+        uniprot = UniprotEntry(accession='P04637')
+        references = ProteinReferences(uniprot_entries=[uniprot])
+        protein = Protein(refseq='NM_000546', external_references=references)
+        gene = Gene(name='TP53', isoforms=[protein])
+        db.session.add_all([gene, references, protein, uniprot])
+        db.session.commit()
+
+        search = UniprotSearch().search
+
+        results = search('P04637')
+        assert len(results) == 1
+        assert results[0].name == 'TP53'
