@@ -103,7 +103,35 @@ class GeneSearch(GeneOrProteinSearch):
         return distance(self.get_feature(gene), phrase)
 
 
+class SymbolGeneSearch(GeneSearch):
+    """Look up a gene by HGNC symbol
+
+    Targets: Gene.name
+    Example:
+        search for "TP53" should return TP53 (among others)
+    """
+
+    name = 'gene_symbol'
+    feature = 'name'
+
+
+class GeneNameSearch(GeneSearch):
+    """Look up a gene by full name, defined by HGNC
+
+    Targets: Gene.full_name
+    Example:
+        search for "tumour protein" should return TP53 (among others)
+    """
+
+    name = 'gene_name'
+    feature = 'full_name'
+
+
 class IsoformBasedSearch(GeneOrProteinSearch):
+    """Looks up a gene, based on a feature of its isoforms.
+
+    The matched isoforms are recorded in GeneMatch object.
+    """
 
     @staticmethod
     def create_query(limit, filters, entities=(Gene, Protein), add_joins=lambda query: query):
@@ -134,9 +162,10 @@ class IsoformBasedSearch(GeneOrProteinSearch):
 
 
 class RefseqGeneSearch(IsoformBasedSearch):
-    """Look up a gene by isoforms RefSeq (Protein.refseq).
+    """Look up a gene by isoforms RefSeq.
 
-    The matched isoforms are recorded in GeneMatch object.
+    Only numeric phrases and phrases starting with:
+    "NM_" or "nm_" will be evaluated.
 
     Targets: Protein.refseq
     Example:
@@ -188,32 +217,10 @@ class RefseqGeneSearch(IsoformBasedSearch):
         return distance(isoform.refseq, phrase)
 
 
-class SymbolGeneSearch(GeneSearch):
-    """Look up a gene by HGNC symbol
-
-    Targets: Gene.name
-    Example:
-        search for "TP53" should return TP53 (among others)
-    """
-
-    name = 'gene_symbol'
-    feature = 'name'
-
-
-class GeneNameSearch(GeneSearch):
-    """Look up a gene by full name, defined by HGNC
-
-    Targets: Gene.full_name
-    Example:
-        search for "tumour protein" should return TP53 (among others)
-    """
-
-    name = 'gene_name'
-    feature = 'full_name'
-
-
 class UniprotSearch(IsoformBasedSearch):
-    """
+    """Look up a gene by isoforms Uniprot accession.
+
+    Only phrases longer than 2 characters will be evaluated.
 
     Targets: Protein.external_references.uniprot_entries
     """
@@ -221,6 +228,10 @@ class UniprotSearch(IsoformBasedSearch):
     name = 'uniprot'
 
     def search(self, phrase, sql_filters=None, limit=None):
+
+        if len(phrase) < 3:
+            return []
+
         matches = []
 
         filters = [UniprotEntry.accession.like(phrase + '%')]
