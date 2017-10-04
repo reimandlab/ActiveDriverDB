@@ -8,7 +8,7 @@ def mock_proteins_and_genes(count):
     from database import db
     from models import Gene, Protein
     for i in range(count):
-        g = Gene(name='Gene_%s' % i)
+        g = Gene(name='Gene_%s' % i, full_name='Full name of gene %s' % i)
         p = Protein(refseq='NM_000%s' % i, gene=g)
         g.preferred_isoform = p
         db.session.add(g)
