@@ -61,7 +61,6 @@ class RefseqGeneSearch(GeneSearch):
 
         matches = []
 
-        # TODO: tests for lowercase
         filters = [Protein.refseq.like(phase + '%')]
 
         if sql_filters:
