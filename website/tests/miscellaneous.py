@@ -4,6 +4,16 @@ from tempfile import NamedTemporaryFile
 import pytest
 
 
+def mock_proteins_and_genes(count):
+    from database import db
+    from models import Gene, Protein
+    for i in range(count):
+        g = Gene(name='Gene_%s' % i)
+        p = Protein(refseq='NM_000%s' % i, gene=g)
+        g.preferred_isoform = p
+        db.session.add(g)
+
+
 def make_named_temp_file(data=None, mode='w', opener=open, **kwargs):
     """Create temporary file and return path to it.
 

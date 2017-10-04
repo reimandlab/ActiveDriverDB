@@ -281,7 +281,6 @@ var Tooltip = function()
                     }, 0)
                 })
 
-
         }
     }
 

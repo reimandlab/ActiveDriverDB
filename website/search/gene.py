@@ -77,7 +77,7 @@ class RefseqGeneSearch(GeneSearch):
             query = query.limit(limit * 20)
 
         for isoform in query:
-            if limit and len(matches) > limit:
+            if limit and len(matches) >= limit:
                 break
 
             gene = isoform.gene
@@ -103,7 +103,7 @@ class SymbolGeneSearch(GeneSearch):
 
     def search(self, phase, sql_filters=None, limit=None):
 
-        filters = [Gene.name.like(phase + '%')]
+        filters = [Gene.name.like(phase.strip() + '%')]
 
         if sql_filters:
             filters += sql_filters

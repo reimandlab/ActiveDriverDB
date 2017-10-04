@@ -2,6 +2,7 @@ import re
 from io import BytesIO
 
 from view_testing import ViewTest, relative_location
+from tests.miscellaneous import mock_proteins_and_genes
 
 from database import db
 from models import Gene, Pathway, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData
@@ -41,14 +42,6 @@ VCF_FILE_CONTENT = b"""\
 """
 
 
-def mock_proteins_and_genes(count):
-    for i in range(count):
-        g = Gene(name='Gene_%s' % i)
-        p = Protein(refseq='NM_000%s' % i, gene=g)
-        g.preferred_isoform = p
-        db.session.add(g)
-
-
 def get_entry_and_check_type(response, type_name):
     """For use when exactly one result of given type is expected"""
     entries = response.json['entries']
@@ -80,8 +73,10 @@ class TestSearchView(ViewTest):
         # create 15 genes and proteins
         mock_proteins_and_genes(15)
 
+        # control: do we start with the mocked proteins not others?
         assert not search_proteins('TP53')
 
+        # does respect limit? does symbol search work?
         results = search_proteins('Gene', 10)
 
         assert results
@@ -89,21 +84,21 @@ class TestSearchView(ViewTest):
 
         assert results[0].name.startswith('Gene')
 
-        # should not be case sensitive
-        results = search_proteins('gene', 1)
-        assert results
+        # are results sorted?
+        db.session.add_all([
+            Gene(name=name, preferred_isoform=Protein(refseq='NM_%s' % 20 * i))
+            for i, name in enumerate(['TPK', 'TPKK'])
+        ])
+        results = search_proteins('TPK', 2)
+        assert results[0].name == 'TPK'
+        assert results[0].best_score < results[1].best_score
 
-        # should ignore flanking whitespaces
-        for query in ('gene ', 'gene   ', ' gene', ' gene '):
-            assert search_proteins(query, 1)
-
-        # the same for refseq search
+        # does include both: refseq and symbol search?
         assert search_proteins('NM_0003', 1)
-        assert search_proteins('nm_0003', 1)
-        assert search_proteins('0003', 1)
 
-        # negative control
-        assert not search_proteins('9999', 1)
+        # can we change subset of searched features?
+        assert not search_proteins('NM_0003', 1, features=['gene_symbol'])
+        assert not search_proteins('Gene', 1, features=['refseq'])
 
     def test_autocomplete_proteins(self):
         mock_proteins_and_genes(15)
