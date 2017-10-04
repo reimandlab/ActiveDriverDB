@@ -32,8 +32,10 @@ class GeneMatch:
         assert self.gene == other.gene
 
         for feature, score in other.matches.items():
-            my_score = self.matches.get(feature, 0)
-            self.matches[feature] = min(my_score, score)
+            if feature in self.matches:
+                self.matches[feature] = min(self.matches[feature], score)
+            else:
+                self.matches[feature] = score
 
         self.matched_isoforms.extend(other.matched_isoforms)
 
@@ -101,7 +103,37 @@ class GeneSearch(GeneOrProteinSearch):
         return distance(self.get_feature(gene), phase)
 
 
-class RefseqGeneSearch(GeneOrProteinSearch):
+class IsoformBasedSearch(GeneOrProteinSearch):
+
+    @staticmethod
+    def create_query(limit, filters, add_joins=lambda query: query):
+        genes = (
+            add_joins(
+                Gene.query
+                .join(Protein, Gene.isoforms)
+                .filter(and_(*filters))
+            )
+            .group_by(Gene)
+        )
+
+        if limit:
+            genes = genes.limit(limit)
+
+        genes = genes.subquery('genes')
+
+        query = (
+            add_joins(
+                db.session.query(Gene, Protein)
+                .select_from(Gene)
+                .join(Protein, Gene.isoforms)
+            )
+            .filter(and_(*filters))
+            .filter(Gene.id == genes.c.id)
+        )
+        return query
+
+
+class RefseqGeneSearch(IsoformBasedSearch):
     """Look up a gene by isoforms RefSeq (Protein.refseq).
 
     The matched isoforms are recorded in GeneMatch object.
@@ -129,25 +161,7 @@ class RefseqGeneSearch(GeneOrProteinSearch):
         if sql_filters:
             filters += sql_filters
 
-        genes = (
-            Gene.query
-            .join(Protein, Gene.isoforms)
-            .filter(and_(*filters))
-            .group_by(Gene)
-        )
-
-        if limit:
-            genes = genes.limit(limit)
-
-        genes = genes.subquery('genes')
-
-        query = (
-            db.session.query(Gene, Protein)
-            .select_from(Gene)
-            .join(Protein, Gene.isoforms)
-            .filter(and_(*filters))
-            .filter(Gene.id == genes.c.id)
-        )
+        query = self.create_query(limit, filters)
 
         # aggregate by genes
         isoforms_by_gene = defaultdict(set)
