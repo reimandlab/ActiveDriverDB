@@ -40,14 +40,69 @@ class GeneMatch:
         return getattr(self.gene, key)
 
 
-class GeneSearch(ABC):
+class GeneOrProteinSearch(ABC):
 
     @abstractmethod
-    def search(self, phase, limit=None):
+    def search(self, phase, sql_filters=None, limit=None):
         pass
 
 
-class RefseqGeneSearch(GeneSearch):
+class GeneSearch(GeneOrProteinSearch):
+
+    @property
+    @abstractmethod
+    def name(self):
+        """Name of the GeneSearch descendant."""
+        pass
+
+    @property
+    @abstractmethod
+    def feature(self):
+        """Name of the feature analysed by this GeneSearch."""
+        return ''
+
+    def get_feature(self, gene):
+        return getattr(gene, self.feature)
+
+    def search(self, phase, sql_filters=None, limit=None):
+        """Perform look up for a gene using provided phase.
+
+        The default implementation uses `get_feature`
+        to perform search using the defined feature.
+
+        If isoform-level filters are applied, these will
+        be executed on the preferred_isoform of gene.
+        """
+
+        feature = self.get_feature(Gene)
+        filters = [feature.like(phase.strip() + '%')]
+
+        if sql_filters:
+            filters += sql_filters
+
+        orm_query = (
+            Gene.query
+                .join(Protein, Gene.preferred_isoform)   # to allow PTM filter
+                .filter(and_(*filters))
+        )
+
+        if limit:
+            orm_query = orm_query.limit(limit)
+
+        return [
+            GeneMatch.from_feature(gene, self.name, self.sort_key(gene, phase))
+            for gene in orm_query
+        ]
+
+    def sort_key(self, gene, phase):
+        return distance(self.get_feature(gene), phase)
+
+
+class RefseqGeneSearch(GeneOrProteinSearch):
+    """Look up a gene by isoforms RefSeq (Protein.refseq).
+
+    The matched isoforms are recorded in GeneMatch object.
+    """
 
     name = 'refseq'
 
@@ -98,38 +153,23 @@ class RefseqGeneSearch(GeneSearch):
 
 
 class SymbolGeneSearch(GeneSearch):
+    """Look up a gene by HGNC symbol (Gene.name)."""
 
     name = 'gene_symbol'
+    feature = 'name'
 
-    def search(self, phase, sql_filters=None, limit=None):
 
-        filters = [Gene.name.like(phase.strip() + '%')]
+class GeneNameSearch(GeneSearch):
+    """Look up a gene by full name, defined by HGNC (Gene.full_name)."""
 
-        if sql_filters:
-            filters += sql_filters
-
-        orm_query = (
-            Gene.query
-                .join(Protein, Gene.preferred_isoform)   # to allow PTM filter
-                .filter(and_(*filters))
-        )
-
-        if limit:
-            orm_query = orm_query.limit(limit)
-
-        return [
-            GeneMatch.from_feature(gene, self.name, self.sort_key(gene, phase))
-            for gene in orm_query
-        ]
-
-    @staticmethod
-    def sort_key(gene, phase):
-        return distance(gene.name, phase)
+    name = 'gene_name'
+    feature = 'full_name'
 
 
 feature_engines = {
     RefseqGeneSearch,
     SymbolGeneSearch,
+    GeneNameSearch,
 }
 
 search_features = {

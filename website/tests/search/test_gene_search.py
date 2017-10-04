@@ -1,14 +1,15 @@
 from database_testing import DatabaseTest
+from search.gene import GeneNameSearch
 from tests.miscellaneous import mock_proteins_and_genes
 
 
 class TestGeneSearch(DatabaseTest):
 
-    def test_refseq_search(self):
+    def test_refseq(self):
         from search.gene import RefseqGeneSearch
 
         # create 15 genes and proteins
-        mock_proteins_and_genes(15)
+        mock_proteins_and_genes(10)
 
         search = RefseqGeneSearch().search
 
@@ -17,8 +18,8 @@ class TestGeneSearch(DatabaseTest):
             assert not search(phase)
 
         # limiting
-        results = search('NM_', limit=10)
-        assert len(results) == 10
+        results = search('NM_', limit=5)
+        assert len(results) == 5
 
         assert results[0].name.startswith('Gene')
 
@@ -32,11 +33,11 @@ class TestGeneSearch(DatabaseTest):
             assert len(isoforms) == 1
             assert isoforms.pop().refseq == 'NM_0003'
 
-    def test_symbol_search(self):
+    def test_gene_symbol(self):
         from search.gene import SymbolGeneSearch
 
         # create 15 genes and proteins
-        mock_proteins_and_genes(15)
+        mock_proteins_and_genes(10)
 
         search = SymbolGeneSearch().search
 
@@ -45,8 +46,8 @@ class TestGeneSearch(DatabaseTest):
         assert not search('NM_0000')   # refseq not a symbol
 
         # limiting
-        results = search('Gene', limit=10)
-        assert len(results) == 10
+        results = search('Gene', limit=5)
+        assert len(results) == 5
 
         assert results[0].name.startswith('Gene')
 
@@ -57,3 +58,13 @@ class TestGeneSearch(DatabaseTest):
         # should ignore flanking whitespaces
         for query in ('gene ', 'gene   ', ' gene', ' gene '):
             assert search(query)
+
+    def test_gene_name(self):
+        # this is exactly the same as gene_symbol
+        mock_proteins_and_genes(6)
+
+        search = GeneNameSearch().search
+        results = search('Full name of gene', limit=5)
+
+        assert len(results) == 5
+        assert results[0].full_name.startswith('Full name of gene')

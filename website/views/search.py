@@ -33,7 +33,10 @@ from database import db, levenshtein_sorted, bdb
 from search.gene import search_features, GeneMatch
 
 
-def search_proteins(phase, limit=None, filter_manager=None, features=('gene_symbol', 'refseq')):
+def search_proteins(
+        phase, limit=None, filter_manager=None,
+        features=('gene_symbol', 'refseq', 'gene_name')
+):
     """Search for a protein isoform or gene.
     Only genes which have a primary isoforms will be returned.
     The query phrase will be trimmed on both ends as we do not
@@ -799,6 +802,7 @@ def json_message(msg):
 def autocomplete_gene(query, limit=5):
     """Returns: (autocompletion_gene_results, are_there_more)"""
     entries = search_proteins(query, limit + 1)
+
     items = [
         gene.to_json()
         for gene in entries
