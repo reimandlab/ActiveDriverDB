@@ -34,7 +34,7 @@ from search.gene import search_features, GeneMatch
 
 
 def search_proteins(
-        phase, limit=None, filter_manager=None,
+        phrase, limit=None, filter_manager=None,
         features=('gene_symbol', 'refseq', 'gene_name', 'uniprot')
 ):
     """Search for a protein isoform or gene.
@@ -43,7 +43,7 @@ def search_proteins(
     expect HGNC gene names nor RefSeq ids to contain spaces.
 
     Args:
-        phase:
+        phrase:
             a text phase to search for
         limit:
             number of genes to be returned (for limit=10 there
@@ -54,9 +54,9 @@ def search_proteins(
             an iterable collection of names of features to include in
             the search; must be a subset of search.gene.search_features
     """
-    phase = phase.strip()
+    phrase = phrase.strip()
 
-    if not phase:
+    if not phrase:
         return []
 
     sql_filters = None
@@ -74,7 +74,7 @@ def search_proteins(
 
     for feature in features:
         search_function = search_features[feature].search
-        results = search_function(phase, sql_filters, limit=limit)
+        results = search_function(phrase, sql_filters, limit=limit)
         matches.extend(results)
 
     results = defaultdict(GeneMatch)

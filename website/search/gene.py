@@ -48,7 +48,7 @@ class GeneMatch:
 class GeneOrProteinSearch(ABC):
 
     @abstractmethod
-    def search(self, phase, sql_filters=None, limit=None):
+    def search(self, phrase, sql_filters=None, limit=None):
         pass
 
 
@@ -69,8 +69,8 @@ class GeneSearch(GeneOrProteinSearch):
     def get_feature(self, gene):
         return getattr(gene, self.feature)
 
-    def search(self, phase, sql_filters=None, limit=None):
-        """Perform look up for a gene using provided phase.
+    def search(self, phrase, sql_filters=None, limit=None):
+        """Perform look up for a gene using provided phrase.
 
         The default implementation uses `get_feature`
         to perform search using the defined feature.
@@ -80,7 +80,7 @@ class GeneSearch(GeneOrProteinSearch):
         """
 
         feature = self.get_feature(Gene)
-        filters = [feature.like(phase.strip() + '%')]
+        filters = [feature.like(phrase.strip() + '%')]
 
         if sql_filters:
             filters += sql_filters
@@ -95,12 +95,12 @@ class GeneSearch(GeneOrProteinSearch):
             orm_query = orm_query.limit(limit)
 
         return [
-            GeneMatch.from_feature(gene, self.name, self.sort_key(gene, phase))
+            GeneMatch.from_feature(gene, self.name, self.sort_key(gene, phrase))
             for gene in orm_query
         ]
 
-    def sort_key(self, gene, phase):
-        return distance(self.get_feature(gene), phase)
+    def sort_key(self, gene, phrase):
+        return distance(self.get_feature(gene), phrase)
 
 
 class IsoformBasedSearch(GeneOrProteinSearch):
@@ -146,17 +146,17 @@ class RefseqGeneSearch(IsoformBasedSearch):
 
     name = 'refseq'
 
-    def search(self, phase, sql_filters=None, limit=None):
+    def search(self, phrase, sql_filters=None, limit=None):
 
-        if phase.isnumeric():
-            phase = 'NM_' + phase
+        if phrase.isnumeric():
+            phrase = 'NM_' + phrase
 
-        if not (phase.startswith('NM_') or phase.startswith('nm_')):
+        if not (phrase.startswith('NM_') or phrase.startswith('nm_')):
             return []
 
         matches = []
 
-        filters = [Protein.refseq.like(phase + '%')]
+        filters = [Protein.refseq.like(phrase + '%')]
 
         if sql_filters:
             filters += sql_filters
@@ -174,7 +174,7 @@ class RefseqGeneSearch(IsoformBasedSearch):
                 gene,
                 self.name,
                 min(
-                    self.sort_key(isoform, phase)
+                    self.sort_key(isoform, phrase)
                     for isoform in isoforms
                 ),
                 matched_isoforms=isoforms
@@ -184,8 +184,8 @@ class RefseqGeneSearch(IsoformBasedSearch):
         return matches
 
     @staticmethod
-    def sort_key(isoform, phase):
-        return distance(isoform.refseq, phase)
+    def sort_key(isoform, phrase):
+        return distance(isoform.refseq, phrase)
 
 
 class SymbolGeneSearch(GeneSearch):
@@ -220,10 +220,10 @@ class UniprotSearch(IsoformBasedSearch):
 
     name = 'uniprot'
 
-    def search(self, phase, sql_filters=None, limit=None):
+    def search(self, phrase, sql_filters=None, limit=None):
         matches = []
 
-        filters = [UniprotEntry.accession.like(phase + '%')]
+        filters = [UniprotEntry.accession.like(phrase + '%')]
 
         if sql_filters:
             filters += sql_filters
@@ -246,7 +246,7 @@ class UniprotSearch(IsoformBasedSearch):
                 gene,
                 self.name,
                 min(
-                    self.sort_key(uniprot, phase)
+                    self.sort_key(uniprot, phrase)
                     for uniprot in uniprot_entries
                 ),
                 matched_isoforms=isoforms
@@ -256,8 +256,8 @@ class UniprotSearch(IsoformBasedSearch):
         return matches
 
     @staticmethod
-    def sort_key(uniprot, phase):
-        return distance(uniprot.accession, phase)
+    def sort_key(uniprot, phrase):
+        return distance(uniprot.accession, phrase)
 
 
 feature_engines = {
