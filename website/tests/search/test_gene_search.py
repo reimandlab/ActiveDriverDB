@@ -1,4 +1,6 @@
+from database import db
 from database_testing import DatabaseTest
+from models import ProteinReferences, UniprotEntry, Protein, Gene
 from search.gene import GeneNameSearch
 from tests.miscellaneous import mock_proteins_and_genes
 
@@ -32,6 +34,30 @@ class TestGeneSearch(DatabaseTest):
             isoforms = results[0].matched_isoforms
             assert len(isoforms) == 1
             assert isoforms.pop().refseq == 'NM_0003'
+
+        db.session.add_all([
+            Gene(name='Gene X', isoforms=[
+                Protein(refseq='NM_000301'),
+                Protein(refseq='NM_000302'),
+            ]),
+            Gene(name='Gene Y', isoforms=[
+                Protein(refseq='NM_000309')
+            ])
+        ])
+
+        # so there are three genes with isoforms starting with NM_0003
+        # (those are Gene_3, Gene X, Gene Y). Let see if limiting work
+        # well when applied per-gene.
+
+        queries = {
+            'NM_0003': 2,
+            'NM_00030': 2,
+            'NM_000301': 1,
+            'NM_000302': 1
+        }
+
+        for query, expected_result in queries.items():
+            assert len(search(query, limit=2)) == expected_result
 
     def test_gene_symbol(self):
         from search.gene import SymbolGeneSearch

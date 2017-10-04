@@ -1,10 +1,12 @@
 from abc import ABC, abstractmethod
+from collections import defaultdict
 
 from Levenshtein import distance
-
-from models import Protein
-from models import Gene
 from sqlalchemy import and_
+
+from models import Protein, UniprotEntry, ProteinReferences
+from models import Gene
+from database import db
 
 
 class GeneMatch:
@@ -20,7 +22,8 @@ class GeneMatch:
 
     @property
     def best_score(self):
-        return max(self.matches.values())
+        """Score is based on edit distance. Less is better."""
+        return min(self.matches.values())
 
     def __iadd__(self, other):
         if not self.gene:
@@ -30,7 +33,7 @@ class GeneMatch:
 
         for feature, score in other.matches.items():
             my_score = self.matches.get(feature, 0)
-            self.matches[feature] = max(my_score, score)
+            self.matches[feature] = min(my_score, score)
 
         self.matched_isoforms.extend(other.matched_isoforms)
 
@@ -102,6 +105,11 @@ class RefseqGeneSearch(GeneOrProteinSearch):
     """Look up a gene by isoforms RefSeq (Protein.refseq).
 
     The matched isoforms are recorded in GeneMatch object.
+
+    Targets: Protein.refseq
+    Example:
+        search for "NM_00054" should return: TP53 [with matched
+        isoforms = Protein(refseq=NM_000546)] (among others)
     """
 
     name = 'refseq'
@@ -121,27 +129,41 @@ class RefseqGeneSearch(GeneOrProteinSearch):
         if sql_filters:
             filters += sql_filters
 
-        query = Protein.query.filter(and_(*filters))
+        genes = (
+            Gene.query
+            .join(Protein, Gene.isoforms)
+            .filter(and_(*filters))
+            .group_by(Gene)
+        )
 
         if limit:
-            # we want to display up to 'limit' genes;
-            # still it would be good to restrict isoforms
-            # query in such way then even when getting
-            # results where all isoforms match the same
-            # gene it still provides more than one gene
-            query = query.limit(limit * 20)
+            genes = genes.limit(limit)
 
-        for isoform in query:
-            if limit and len(matches) >= limit:
-                break
+        genes = genes.subquery('genes')
 
-            gene = isoform.gene
+        query = (
+            db.session.query(Gene, Protein)
+            .select_from(Gene)
+            .join(Protein, Gene.isoforms)
+            .filter(and_(*filters))
+            .filter(Gene.id == genes.c.id)
+        )
+
+        # aggregate by genes
+        isoforms_by_gene = defaultdict(set)
+        for gene, isoform in query:
+            isoforms_by_gene[gene].add(isoform)
+
+        for gene, isoforms in isoforms_by_gene.items():
 
             match = GeneMatch.from_feature(
                 gene,
                 self.name,
-                self.sort_key(isoform, phase),
-                matched_isoforms={isoform}
+                min(
+                    self.sort_key(isoform, phase)
+                    for isoform in isoforms
+                ),
+                matched_isoforms=isoforms
             )
             matches.append(match)
 
@@ -153,14 +175,24 @@ class RefseqGeneSearch(GeneOrProteinSearch):
 
 
 class SymbolGeneSearch(GeneSearch):
-    """Look up a gene by HGNC symbol (Gene.name)."""
+    """Look up a gene by HGNC symbol
+
+    Targets: Gene.name
+    Example:
+        search for "TP53" should return TP53 (among others)
+    """
 
     name = 'gene_symbol'
     feature = 'name'
 
 
 class GeneNameSearch(GeneSearch):
-    """Look up a gene by full name, defined by HGNC (Gene.full_name)."""
+    """Look up a gene by full name, defined by HGNC
+
+    Targets: Gene.full_name
+    Example:
+        search for "tumour protein" should return TP53 (among others)
+    """
 
     name = 'gene_name'
     feature = 'full_name'
