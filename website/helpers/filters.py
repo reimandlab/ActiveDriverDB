@@ -152,6 +152,9 @@ class Filter:
 
         field = getattr(target, path[0])
 
+        # Possible upgrade:
+        #   from sqlalchemy.orm.attributes import QueryableAttribute
+        #   if isinstance(field, QueryableAttribute):
         if type(field) is AnnotatedSelect:
             if self.comparator == 'eq':
                 return field, []

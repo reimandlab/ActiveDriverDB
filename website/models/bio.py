@@ -168,6 +168,10 @@ class Gene(BioModel):
     def isoforms_count(cls):
         return count_expression(cls, Protein)
 
+    @hybrid_property
+    def is_known_kinase(self):
+        return bool(self.preferred_isoform.kinase)
+
     def __repr__(self):
         return '<Gene {0}, with {1} isoforms>'.format(
             self.name,

@@ -56,6 +56,7 @@ class AjaxTableView:
             **kwargs
         )
 
+    # TODO: use `if callable` instead of `_constructor`
     @staticmethod
     def from_query(
         query=None, count_query=None,
