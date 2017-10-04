@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from operator import itemgetter
 from urllib.parse import unquote
 
@@ -12,7 +13,6 @@ from flask import current_app
 from flask_classful import FlaskView
 from flask_classful import route
 from flask_login import current_user
-from Levenshtein import distance
 from sqlalchemy.orm.exc import NoResultFound
 from werkzeug.datastructures import FileStorage
 
@@ -23,44 +23,39 @@ from models import Gene
 from models import Mutation
 from models import UsersMutationsDataset
 from models import UserUploadedMutation
-from sqlalchemy import and_, exists, or_, text
+from sqlalchemy import exists, or_, text
 from helpers.filters import FilterManager, quote_if_needed
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 from views.gene import prepare_subqueries
 from ._commons import get_protein_muts
 from database import db, levenshtein_sorted, bdb
+from search.gene import search_features, GeneMatch
 
 
-class GeneResult:
-
-    def __init__(self, gene, matched_isoforms=None):
-        self.gene = gene
-        if not matched_isoforms:
-            matched_isoforms = []
-        self.matched_isoforms = matched_isoforms
-
-    def __getattr__(self, key):
-        return getattr(self.gene, key)
-
-
-def search_proteins(phase, limit=None, filter_manager=None):
+def search_proteins(phase, limit=None, filter_manager=None, features=('gene_symbol', 'refseq')):
     """Search for a protein isoform or gene.
     Only genes which have a primary isoforms will be returned.
     The query phrase will be trimmed on both ends as we do not
     expect HGNC gene names nor RefSeq ids to contain spaces.
 
     Args:
-        'limit': number of genes to be returned (for limit=10 there
-                 may be 100 -or more- isoforms and 10 genes returned)
+        phase:
+            a text phase to search for
+        limit:
+            number of genes to be returned (for limit=10 there
+            may be 100 -or more- isoforms and 10 genes returned)
+        filter_manager:
+            a FilterManager with SQLAlchemy filters only
+        features:
+            an iterable collection of names of features to include in
+            the search; must be a subset of search.gene.search_features
     """
     phase = phase.strip()
 
     if not phase:
         return []
 
-    # find by gene name
-    filters = [Gene.name.like(phase + '%')]
     sql_filters = None
 
     if filter_manager:
@@ -72,72 +67,25 @@ def search_proteins(phase, limit=None, filter_manager=None):
                 ' sqlalchemy interface'
             )
 
-    if sql_filters:
-        filters += sql_filters
+    matches = []
 
-    orm_query = (
-        Gene.query
-        # join with proteins so PTM filter can be applied
-        .join(Protein, Gene.preferred_isoform)
-        .filter(and_(*filters))
+    for feature in features:
+        search_function = search_features[feature].search
+        results = search_function(phase, sql_filters, limit=limit)
+        matches.extend(results)
+
+    results = defaultdict(GeneMatch)
+
+    for match in matches:
+        # add matches and matched isoforms
+        results[match.gene.name] += match
+
+    results = sorted(
+        results.values(),
+        key=lambda result: result.best_score
     )
 
-    if limit:
-        orm_query = orm_query.limit(limit)
-
-    genes = {gene.name: GeneResult(gene) for gene in orm_query}
-
-    # looking up both by name and refseq is costly - perform it wisely
-    if phase.isnumeric():
-        phase = 'NM_' + phase
-    if phase.startswith('NM_') or phase.startswith('nm_'):
-
-        # TODO: tests for lowercase
-        filters = [Protein.refseq.like(phase + '%')]
-
-        if sql_filters:
-            filters += sql_filters
-
-        query = Protein.query.filter(and_(*filters))
-
-        if limit:
-            # we want to display up to 'limit' genes;
-            # still it would be good to restrict isoforms
-            # query in such way then even when getting
-            # results where all isoforms match the same
-            # gene it still provides more than one gene
-            query = query.limit(limit * 20)
-
-        for isoform in query:
-            if limit and len(genes) > limit:
-                break
-
-            gene = isoform.gene
-
-            # add isoform to promoted (matched) isoforms of the gene
-            if gene.name in genes:
-                if isoform not in genes[gene.name].matched_isoforms:
-                    genes[gene.name].matched_isoforms.add(isoform)
-            else:
-                genes[gene.name] = GeneResult(gene, matched_isoforms={isoform})
-
-        def sort_key(gene):
-            return min(
-                [
-                    distance(isoform.refseq, phase)
-                    for isoform in gene.matched_isoforms
-                ]
-            )
-
-    else:
-        # if the phrase is not numeric
-        def sort_key(gene):
-            return distance(gene.name, phase)
-
-    return sorted(
-        genes.values(),
-        key=sort_key
-    )
+    return results[:limit]
 
 
 class MutationSearch:
