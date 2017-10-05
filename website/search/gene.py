@@ -127,14 +127,21 @@ class GeneNameSearch(GeneSearch):
     feature = 'full_name'
 
 
-class IsoformBasedSearch(GeneOrProteinSearch):
+class ProteinSearch(GeneOrProteinSearch):
     """Looks up a gene, based on a feature of its isoforms.
 
     The matched isoforms are recorded in GeneMatch object.
     """
 
     @staticmethod
-    def create_query(limit, filters, entities=(Gene, Protein), add_joins=lambda query: query):
+    def create_query(
+            limit, filters, sql_filters, entities=(Gene, Protein),
+            add_joins=lambda query: query
+    ):
+
+        if sql_filters:
+            filters += sql_filters
+
         genes = (
             add_joins(
                 Gene.query
@@ -160,8 +167,54 @@ class IsoformBasedSearch(GeneOrProteinSearch):
         )
         return query
 
+    @staticmethod
+    @abstractmethod
+    def sort_key(result, phrase):
+        pass
 
-class RefseqGeneSearch(IsoformBasedSearch):
+    def parse_matches(self, query, phrase):
+        matches = []
+        # aggregate by genes
+        isoforms_by_gene = defaultdict(set)
+        for gene, isoform in query:
+            isoforms_by_gene[gene].add(isoform)
+
+        for gene, isoforms in isoforms_by_gene.items():
+
+            match = GeneMatch.from_feature(
+                gene,
+                self.name,
+                self.best_score(isoforms, phrase),
+                matched_isoforms=isoforms
+            )
+            matches.append(match)
+
+        return matches
+
+    def best_score(self, results, phrase):
+        return min(
+            self.sort_key(isoform, phrase)
+            for isoform in results
+        )
+
+
+class ProteinNameSearch(ProteinSearch):
+    name = 'protein_name'
+
+    def search(self, phrase, sql_filters=None, limit=None):
+
+        filters = [Protein.full_name.ilike(phrase + '%')]
+
+        query = self.create_query(limit, filters, sql_filters)
+
+        return self.parse_matches(query, phrase)
+
+    @staticmethod
+    def sort_key(isoform, phrase):
+        return distance(isoform.full_name, phrase)
+
+
+class RefseqGeneSearch(ProteinSearch):
     """Look up a gene by isoforms RefSeq.
 
     Only numeric phrases and phrases starting with:
@@ -183,41 +236,47 @@ class RefseqGeneSearch(IsoformBasedSearch):
         if not (phrase.startswith('NM_') or phrase.startswith('nm_')):
             return []
 
-        matches = []
-
         filters = [Protein.refseq.like(phrase + '%')]
 
-        if sql_filters:
-            filters += sql_filters
+        query = self.create_query(limit, filters, sql_filters)
 
-        query = self.create_query(limit, filters)
-
-        # aggregate by genes
-        isoforms_by_gene = defaultdict(set)
-        for gene, isoform in query:
-            isoforms_by_gene[gene].add(isoform)
-
-        for gene, isoforms in isoforms_by_gene.items():
-
-            match = GeneMatch.from_feature(
-                gene,
-                self.name,
-                min(
-                    self.sort_key(isoform, phrase)
-                    for isoform in isoforms
-                ),
-                matched_isoforms=isoforms
-            )
-            matches.append(match)
-
-        return matches
+        return self.parse_matches(query, phrase)
 
     @staticmethod
     def sort_key(isoform, phrase):
         return distance(isoform.refseq, phrase)
 
 
-class UniprotSearch(IsoformBasedSearch):
+class SummarySearch(ProteinSearch):
+    """Look up a gene by summary of isoforms.
+
+    This is full-text search and may be expensive.
+
+    Targets: Protein.summary
+    """
+
+    name = 'summary'
+
+    def __init__(self, minimal_length=3):
+        self.minimal_length = minimal_length
+
+    def search(self, phrase, sql_filters=None, limit=None):
+
+        if len(phrase) < self.minimal_length:
+            return []
+
+        filters = [Protein.summary.ilike('%' + phrase + '%')]
+
+        query = self.create_query(limit, filters, sql_filters)
+
+        return self.parse_matches(query, phrase)
+
+    @staticmethod
+    def sort_key(isoform, phrase):
+        return distance(isoform.summary, phrase)
+
+
+class UniprotSearch(ProteinSearch):
     """Look up a gene by isoforms Uniprot accession.
 
     Only phrases longer than 2 characters will be evaluated.
@@ -232,17 +291,21 @@ class UniprotSearch(IsoformBasedSearch):
         if len(phrase) < 3:
             return []
 
-        matches = []
-
         filters = [UniprotEntry.accession.like(phrase + '%')]
-
-        if sql_filters:
-            filters += sql_filters
 
         def add_joins(q):
             return q.join(ProteinReferences).join(UniprotEntry)
 
-        query = self.create_query(limit, filters, (Gene, Protein, UniprotEntry), add_joins)
+        query = self.create_query(
+            limit, filters, sql_filters,
+            (Gene, Protein, UniprotEntry), add_joins
+        )
+
+        return self.parse_matches(query, phrase)
+
+    def parse_matches(self, query, phrase):
+
+        matches = []
 
         # aggregate by genes
         results_by_gene = defaultdict(set)
@@ -256,10 +319,7 @@ class UniprotSearch(IsoformBasedSearch):
             match = GeneMatch.from_feature(
                 gene,
                 self.name,
-                min(
-                    self.sort_key(uniprot, phrase)
-                    for uniprot in uniprot_entries
-                ),
+                self.best_score(uniprot_entries, phrase),
                 matched_isoforms=isoforms
             )
             matches.append(match)
@@ -275,7 +335,9 @@ feature_engines = {
     RefseqGeneSearch,
     SymbolGeneSearch,
     GeneNameSearch,
+    ProteinNameSearch,
     UniprotSearch,
+    SummarySearch
 }
 
 search_features = {
