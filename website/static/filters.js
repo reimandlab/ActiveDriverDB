@@ -8,7 +8,7 @@
  * Server response for filtering query for given representation.
  * @typedef {Object} ServerResponse
  * @property {FiltersData} filters
- * @property {RepresentationData} representation - Representation specific data.
+ * @property content - Content to be passed to provided data_handler
  */
 
 /**
@@ -16,17 +16,16 @@
  * to update widgets if dataset has changed and so on.
  * @typedef {Object} FiltersData
  * @property {boolean} checksum - Semaphore-like checksum of filters handled
- * @property {html} dataset_specific_widgets - Widgets applicable only to selected dataset
+ * @property {html} dynamic_widgets - Widgets applicable only to selected dataset
  * @property {string} query - Value of query as to be used in 'filters={{value}}' URL query string.
  * @property {string} expanded_query - Like query but including default filters values.
  */
 
+
 /**
- * @abstract
- * @typedef {Object} RepresentationData
+ * @class
+ * @return {{init: init, value: get_value, load: load, apply: apply, on_update: on_update}}
  */
-
-
 var AsyncFiltersHandler = function()
 {
     var config;
@@ -52,7 +51,6 @@ var AsyncFiltersHandler = function()
      */
     function serialize_form($form)
     {
-
         var filters_query = $form.serialize();
         var checksum = make_checksum(filters_query);
 
@@ -132,8 +130,9 @@ var AsyncFiltersHandler = function()
 
     /**
      * Replace filters form with relevant (updated) content:
-     * - set up dataset-specific widgets if dataset has changed
-     *   (we do not want to filter by cancer type in ESP6500 dataset)
+     * - set up dynamic widgets (widgets which change, depending on
+     *   values of other filters, e.g. dataset-specific widgets: we
+     *   do not want to filter by cancer type in ESP6500 dataset)
      * - correctly selected checkboxes / inputs
      *   (when restoring to the old state with History API,
      *   those has to be replaced accordingly to old state)
@@ -142,7 +141,7 @@ var AsyncFiltersHandler = function()
      */
     function update_form_html(data, from_future)
     {
-        var html = $.parseHTML(data.dataset_specific_widgets);
+        var html = $.parseHTML(data.dynamic_widgets);
 
         if(from_future)
         {
@@ -150,13 +149,13 @@ var AsyncFiltersHandler = function()
             form.trigger('PotentialAffixChange');
         }
 
-        var dataset_widgets = $('.dataset-specific');
+        var dynamic_widgets = $('.dynamic-widgets');
 
         // do not replace if it's not needed - so expanded lists stay expanded
-        if(serialize_fragment(dataset_widgets) !== serialize_fragment($(html)))
+        if(serialize_fragment(dynamic_widgets) !== serialize_fragment($(html)))
         {
-            dataset_widgets.html(html);
-            dataset_widgets.trigger('PotentialAffixChange');
+            dynamic_widgets.html(html);
+            dynamic_widgets.trigger('PotentialAffixChange');
         }
     }
 
@@ -195,7 +194,7 @@ var AsyncFiltersHandler = function()
         }
         current_state_checksum = filters_data.checksum
 
-        config.data_handler(data.representation, filters_data);
+        config.data_handler(data.content, filters_data);
 
         update_form_html(filters_data, from_future);
 
@@ -222,7 +221,7 @@ var AsyncFiltersHandler = function()
      *  - ask server for data for those filters,
      *  - change URL,
      *  - record changes with History API.
-     * @param {string} filters_query - Query string as returned by {@link serialize_form}
+     * @param {string} filters_query - Query string as returned by {@see serialize_form}
      * @param {boolean} [do_not_save=false] - Should this modification be recorded in history?
      * @param {boolean} [from_future=false] - Was called on "popstate" History API event?
      */
@@ -243,7 +242,7 @@ var AsyncFiltersHandler = function()
         history_action(state, '', make_query_url(filters_query));
 
         $.ajax({
-            url: config.representation_url,
+            url: config.endpoint_url,
             type: 'GET',
             data: filters_query,
             success: function(data){ load(data, from_future) }
@@ -271,17 +270,20 @@ var AsyncFiltersHandler = function()
     /**
      * Configuration object for AsyncFiltersHandler.
      * @typedef {Object} Config
+     * @memberOf AsyncFiltersHandler
      * @property {jQuery} form
      * @property {function} data_handler
      * @property {function} on_loading_start
      * @property {function} on_loading_end
-     * @property {string} representation_url
      * @property {jQuery} links_to_update
+     * @property {string} endpoint_url - an URL of endpoint returning {@see ServerResponse}
+     *  the endpoint should accept checksum, (and return in {@see FiltersData})
      */
 
     return {
         /**
          * Initialize AsyncFiltersHandler
+         * @memberOf AsyncFiltersHandler
          * @param {Config} new_config
          */
         init: function(new_config)
@@ -290,7 +292,12 @@ var AsyncFiltersHandler = function()
             form = config.form;
             form.on(
                 'change',
-                'select, input:not(.programmatic)',
+                'select, input:not([type=text]):not(.programmatic)',
+                function() { on_update() }
+            );
+            form.on(
+                'input',
+                'input[type=text]:not(.programmatic)',
                 function() { on_update() }
             );
             old_filters_query = serialize_form(form);

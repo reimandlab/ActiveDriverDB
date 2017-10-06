@@ -54,6 +54,9 @@ def search_proteins(
             an iterable collection of names of features to include in
             the search; must be a subset of search.gene.search_features
     """
+    if isinstance(features, str):
+        features = [features]
+
     phrase = phrase.strip()
 
     if not phrase:
@@ -231,9 +234,22 @@ class MutationSearch:
             self.add_mutation_items(items, line)
 
 
+class Feature:
+    """Target class for feature filtering"""
+    pass
+
+
+class Search:
+    pass
+
+
 class SearchViewFilters(FilterManager):
 
     def __init__(self, **kwargs):
+
+        available_features = search_features.keys()
+        active_features = set(available_features) - {'summary'}
+
         filters = [
             # Why default = False? Due to used widget: checkbox.
             # It is not possible to distinguish between user not asking for
@@ -254,7 +270,15 @@ class SearchViewFilters(FilterManager):
             Filter(
                 Protein, 'has_ptm_mutations', comparators=['eq'],
                 as_sqlalchemy=True
-            )
+            ),
+            Filter(
+                Feature, 'name', comparators=['in'],
+                default=list(active_features),
+                choices=list(available_features),
+            ),
+            Filter(
+                Search, 'query', comparators=['eq'],
+            ),
         ]
         super().__init__(filters)
         self.update_from_request(request)
@@ -262,15 +286,30 @@ class SearchViewFilters(FilterManager):
 
 def make_widgets(filter_manager):
     return {
-        'is_ptm': FilterWidget(
-            'Show all mutations (by default only PTM mutations are shown)',
-            'checkbox',
-            filter=filter_manager.filters['Mutation.is_ptm']
-        ),
-        'at_least_one_ptm': FilterWidget(
-            'Show only proteins with PTM mutations', 'checkbox',
-            filter=filter_manager.filters['Protein.has_ptm_mutations']
-        )
+        'proteins': [
+            FilterWidget(
+                'Show only proteins with PTM mutations',
+                'checkbox',
+                filter=filter_manager.filters['Protein.has_ptm_mutations']
+            ),
+            FilterWidget(
+                'Search by', 'checkbox_multiple',
+                filter=filter_manager.filters['Feature.name'],
+                labels=[
+                    name.replace('_', ' ')
+                    for name in search_features.keys()
+                ],
+                all_selected_label='All features',
+                class_name='checkboxes-inline'
+            )
+        ],
+        'mutations': [
+            FilterWidget(
+                'Show all mutations (by default only PTM mutations are shown)',
+                'checkbox',
+                filter=filter_manager.filters['Mutation.is_ptm']
+            ),
+        ]
     }
 
 
@@ -301,9 +340,10 @@ class SearchView(FlaskView):
 
         filter_manager = SearchViewFilters()
 
-        query = request.args.get('proteins', '')
+        features = filter_manager.get_value('Feature.name')
+        query = filter_manager.get_value('Search.query') or ''
 
-        results = search_proteins(query, 20, filter_manager)
+        results = search_proteins(query, 20, filter_manager, features)
 
         return template(
             'search/index.html',
@@ -491,26 +531,35 @@ class SearchView(FlaskView):
         )
 
     def autocomplete_proteins(self, limit=20):
-        """Autocompletion API for search for proteins."""
+        """Autocompletion API for search Advanced Proteins Search."""
 
         filter_manager = SearchViewFilters()
-        # TODO: implement on client side pagination?
-        query = unquote(request.args.get('q')) or ''
 
-        entries = search_proteins(query, limit, filter_manager)
-        # page = request.args.get('page', 0)
-        # Pagination(Pathway.query)
-        # just pass pagination html too?
+        # TODO: implement on client side pagination?
+
+        features = filter_manager.get_value('Feature.name')
+        query = filter_manager.get_value('Search.query')
+
+        content = {}
+
+        if query:
+            entries = search_proteins(query, limit, filter_manager, features)
+            content = {
+                'query': query,
+                'results': [
+                    {
+                        'value': gene.name,
+                        'html': template('search/results/gene.html', gene=gene)
+                    }
+                    for gene in entries
+                ],
+            }
+
+        from views.filters import FiltersData
 
         response = {
-            'query': query,
-            'results': [
-                {
-                    'value': gene.name,
-                    'html': template('search/results/gene.html', gene=gene)
-                }
-                for gene in entries
-            ]
+            'content': content,
+            'filters': FiltersData(filter_manager).to_json()
         }
 
         return jsonify(response)

@@ -194,6 +194,7 @@ bundles = {
     'js_search': js_bundle(
         'search',
         'common.js',
+        'filters.js',
         'widgets.js',
         'search.js',
     ),

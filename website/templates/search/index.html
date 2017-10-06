@@ -12,6 +12,8 @@
 
 
 {% block head %}
+  {# For filters.js for proteins #}
+  {{ dependency('md5') }}
 
   {% assets "css_search" %}
   <link href="{{ ASSET_URL }}" rel="stylesheet" />

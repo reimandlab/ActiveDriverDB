@@ -103,11 +103,11 @@ class TestSearchView(ViewTest):
     def test_autocomplete_proteins(self):
         mock_proteins_and_genes(15)
 
-        for route in ('autocomplete_proteins?q=', 'proteins?proteins='):
+        for route in ('autocomplete_proteins', 'proteins'):
             for accepted_gene_2_query in ('Gene_2', 'Gene', 'gene', 'Gene_2 ', ' gene', 'gene%20'):
                 print(route, accepted_gene_2_query)
                 response = self.client.get(
-                    'search/%s%s' % (route, accepted_gene_2_query),
+                    'search/%s?filters=Search.query:eq:%s' % (route, accepted_gene_2_query),
                     follow_redirects=True
                 )
                 assert response.status_code == 200

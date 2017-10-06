@@ -69,86 +69,52 @@ var multilinePlaceholderPolyfill = (function()
 
 var ProteinForm = (function ()
 {
-    var element, search_button
+    var element
     var empty_indicator, no_results_indicator, waiting_indicator
     var result_ul, recent_value, url_base, protein_search
-    var only_proteins_with_ptm_muts = false
-
-    function url_params()
-    {
-        var params = get_url_params()
-
-        if(only_proteins_with_ptm_muts)
-            params.filters = 'Protein.has_ptm_mutations:eq:True'
-        else
-            delete params.filters
-
-        return params
-    }
+    var search_endpoint = '/search/autocomplete_proteins'
+    var filters_handler
 
     function get_url()
     {
+        // TODO
         var href = url_base + 'proteins'
-        var params = url_params()
-        if(recent_value !== undefined && recent_value !== '')
-        {
-            params.proteins = recent_value
-        }
-        else
-        {
-            delete params.proteins
-        }
 
-        var query_string = $.param(params)
-        if(query_string)
-        {
-            href += '?' + query_string
-        }
         return href
     }
 
-    function autocomplete(query)
+
+    var load_data = function(data)
     {
-        var params = url_params()
-        params.q = encodeURIComponent(query)
-        result_ul.innerHTML = ''
-        $.ajax({
-            url: '/search/autocomplete_proteins',
-            type: 'GET',
-            data: params,
-            success: function(response) {
+        var results = data.results
 
-                // do we still need this?
-                if(response.query !== recent_value)
-                    return
+        if(!results)
+            return
 
-                var results = response.results
-                // TODO add animation
+        // TODO add an animation
 
-                waiting_indicator.addClass('hidden')
-                if(!results.length)
-                {
-                    no_results_indicator.removeClass('hidden')
-                }
-                else
-                {
-                    no_results_indicator.addClass('hidden')
-                    for(var i = 0; i < results.length; i++)
-                    {
-                        result_ul.innerHTML += results[i].html
-                    }
-                }
-
+        waiting_indicator.addClass('hidden')
+        if(!results.length)
+        {
+            no_results_indicator.removeClass('hidden')
+        }
+        else
+        {
+            no_results_indicator.addClass('hidden')
+            for(var i = 0; i < results.length; i++)
+            {
+                result_ul.innerHTML += results[i].html
             }
-        })
+        }
     }
 
-    function onChangeHandler(force)
+    /**
+     * Show "loading" or "no results found"
+     */
+    var on_loading_start = function()
     {
         var query = protein_search.val()
-
-        if(query === recent_value && force !== true)
-            return
+        result_ul.innerHTML = ''
 
         if(query)
         {
@@ -157,27 +123,13 @@ var ProteinForm = (function ()
             {
                 empty_indicator.addClass('hidden')
                 waiting_indicator.removeClass('hidden')
-                search_button.hide()
-                autocomplete(query)
             }
             else
             {
-                search_button.show()
-                result_ul.innerHTML = ''
                 empty_indicator.removeClass('hidden')
                 waiting_indicator.addClass('hidden')
             }
         }
-
-        recent_value = query
-
-        history.replaceState(history.state, null, get_url())
-    }
-
-    function ToggleAlternativeIsoforms()
-    {
-        $('.alt-isoforms').toggleClass('hidden', true)
-        $('.show-alt').toggleClass('hidden', false)
     }
 
     function setEventsForResults(result_box)
@@ -186,58 +138,72 @@ var ProteinForm = (function ()
         {
             $(this).siblings('.alt-isoforms').toggleClass('js-hidden')
             $(this).toggleClass('js-shown')
+            return false
         })
 
         // "alt-isoforms" have also "js-hidden" class
         // (so they will be hidden by default if js is enabled)
         // similarly with "show-alt" (but reverse)
-
     }
 
     var publicSpace = {
+        /**
+         *
+         * @param dom_element - Form
+         * @param _url_base
+         */
         init: function(dom_element, _url_base)
         {
+            Widgets.init(dom_element, function(){})
+
             element = $(dom_element)
-            url_base = _url_base
-            search_button = element.find('button[type="submit"].search-button')
-            protein_search = element.find('#protein_search')
-            // handle all edge cases like dragging the text into the input
-            protein_search.on('change mouseup drop input', onChangeHandler)
+
+            protein_search = element.find('input[name="filter[Search.query]"]')
             var result_box = $(element.find('.results')[0])
             result_ul = result_box.find('ul')[0]
             result_box.removeClass('hidden')
             empty_indicator = result_box.find('.empty')
             no_results_indicator = result_box.find('.no-results')
             waiting_indicator = result_box.find('.waiting')
-
-            var placeholder_manager = multilinePlaceholderPolyfill()
-            placeholder_manager.init(
-                protein_search,
-                protein_search.attr('placeholder')
-            )
+            setEventsForResults(result_box)
+            // TODO input cannot accept ":"
 
             recent_value = protein_search.val()
-            var ptm_checkbox = $(element).find('[name="filter[Protein.has_ptm_mutations]"]')
-            ptm_checkbox.on(
-                'change', function(event){
 
-                    only_proteins_with_ptm_muts = event.target.checked
-                    onChangeHandler(true)
+            var ready = function(){
+                waiting_indicator.addClass('hidden')
+                Widgets.init($('#filters_form'), function(){});
+            }
+
+            ready()
+
+            filters_handler = AsyncFiltersHandler();
+
+            filters_handler.init({
+                form: dom_element,
+                data_handler: load_data,
+                endpoint_url: search_endpoint,
+                on_loading_start: on_loading_start,
+                on_loading_end: ready
+            })
+
+            var state_handlers = {
+                filters: filters_handler
+            };
+
+            // handle change in history
+            $(window).on('popstate', function(event) {
+                var state = event.originalEvent.state;
+                if(state)
+                {
+                    var handler = state_handlers[state.handler];
+                    handler.apply(state.filters_query, true, true)
                 }
-            )
-            only_proteins_with_ptm_muts = ptm_checkbox.get().checked
-
-            setEventsForResults(result_box)
+            });
 
         },
-        show: function()
-        {
-            element.show()
-        },
-        hide: function()
-        {
-            element.hide()
-        },
+        show: function() { element.show() },
+        hide: function() { element.hide() },
         get_url: get_url
     }
     return publicSpace
