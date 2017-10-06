@@ -229,7 +229,7 @@ To login to root account (created with `manage.py` script) visit `/login/` page 
 
 For proper compilation of some requirements, additional software will be needed on Debian-based servers. The required packages are:
 ```
-build-essential python3 libmysqlclient-dev python3-dev python-dev git python3-bsddb3 pigz
+build-essential python3 libmysqlclient-dev python3-dev git python3-bsddb3 pigz nodejs openjdk-7-jdk
 ```
 
 Alternative commands to create virtual environment (workaround for Debian not having some essential python3 packages installed):
