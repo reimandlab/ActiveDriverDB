@@ -172,7 +172,7 @@ For adjusting the port or IP address, check `-h` switch of the `run.py` script
 
 Deployment on Apache2 server is more powerful alternative to Werkzeug webserver.
 
-As you may want to have a virtual environment for this application, `website/app.wsgi` provides ready-to go activation script to use with Apache2 (assuming that the name of your virtual environment is `virtual_environment`).
+As you may want to have a virtual environment for this application, `website/app.wsgi` provides ready-to go activation script to use with Apache2 (assuming that the name of your virtual environment is `virtual_environment`). `mod_wsgi` extension is required (`apt-get install libapache2-mod-wsgi` for Debian/Ubuntu).
 
 Following extract from configuration file might be useful help for writing you own configuration:
 
