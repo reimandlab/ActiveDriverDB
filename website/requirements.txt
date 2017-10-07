@@ -1,6 +1,7 @@
 sqlalchemy
 beautifulsoup4
 rpy2
+Jinja2==2.9.6
 Flask==0.12.2
 Flask-Assets==0.12
 Flask-Classful==0.13.1
