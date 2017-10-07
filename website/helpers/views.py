@@ -50,7 +50,9 @@ class AjaxTableView:
             return query, sorted_field
 
         return AjaxTableView.from_query(
-            query=model.query,
+            # Workaround for FSA 2.3 which does something weird to Model.query
+            # query=model.query,
+            query_constructor=lambda f, r: joined_query(model.query, r),
             prepare_for_sorting=prepare_for_sorting,
             count_query_constructor=lambda sql_filters, required_joins: ModelCounter(model),
             **kwargs
