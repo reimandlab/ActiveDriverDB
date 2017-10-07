@@ -792,10 +792,13 @@ class FilterManager:
     def reformat_request_url(self, request, endpoint, *args, **kwargs):
         from flask import url_for
         from flask import redirect
+        from flask import current_app
 
         if request.args.get('fallback'):
 
-            url = url_for(endpoint, *args, **kwargs)
+            scheme = current_app.config.get('PREFERRED_URL_SCHEME', 'http')
+
+            url = url_for(endpoint, *args,  _external=True, _scheme=scheme, **kwargs)
 
             filters = self.url_string()
 
@@ -815,4 +818,5 @@ class FilterManager:
             # add other arguments
             if query_string:
                 url += '?' + query_string
+
             return redirect(url)
