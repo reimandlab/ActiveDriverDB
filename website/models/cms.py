@@ -435,8 +435,11 @@ class MenuEntry(CMSModel):
         'polymorphic_on': type
     }
 
-
+from sqlalchemy.ext.declarative import declared_attr
 class PageMenuEntry(MenuEntry):
+    @declared_attr
+    def __tablename__(self):
+        return 'page_menu_entry'
     id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
 
     page_id = db.Column(db.Integer, db.ForeignKey('page.id'))
@@ -458,6 +461,9 @@ class PageMenuEntry(MenuEntry):
 
 
 class CustomMenuEntry(MenuEntry):
+    @declared_attr
+    def __tablename__(self):
+        return 'custom_menu_entry'
     id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
 
     title = db.Column(db.String(256))
