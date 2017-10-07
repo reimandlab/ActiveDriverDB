@@ -343,11 +343,11 @@ class GeneView(FlaskView):
             )
 
         ajax_view = AjaxTableView.from_query(
-            query_constructor=query_constructor,
+            query=query_constructor,
             results_mapper=lambda row: row._asdict(),
             filters_class=GeneViewFilters,
             search_filter=lambda q: Gene.name.like(q + '%'),
-            count_query_constructor=count_query_constructor,
+            count_query=count_query_constructor,
             sort='fdr'
         )
         return ajax_view(self)
@@ -359,11 +359,11 @@ class GeneView(FlaskView):
 
     browse_data = route('browse_data')(
         AjaxTableView.from_query(
-            query_constructor=ajax_query,
+            query=ajax_query,
             results_mapper=lambda row: row._asdict(),
             filters_class=GeneViewFilters,
             search_filter=lambda q: Gene.name.like(q + '%'),
-            count_query_constructor=ajax_query_count,
+            count_query=ajax_query_count,
             sort='name'
         )
     )
