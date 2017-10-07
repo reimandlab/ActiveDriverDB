@@ -72,7 +72,7 @@ var ProteinForm = (function ()
     var element
     var empty_indicator, no_results_indicator, waiting_indicator
     var result_ul, recent_value, url_base, protein_search
-    var search_endpoint = '/search/autocomplete_proteins'
+    var search_endpoint = '/search/autocomplete_proteins/'
     var filters_handler
 
     function get_url()
