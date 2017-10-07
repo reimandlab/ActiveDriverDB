@@ -27,13 +27,6 @@ python3 -m pip install -r requirements.txt
 ```
 In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given. An additional requirement is `bsddb3` package, which is often easier to install system-wide with your package manager (on Debian named `python3-bsddb3`). You may need to add a symbolic link to the package inside of your virtual environment.
 
-Recently released version of flask-sqlalchemy (2.2, Feb 2017) fixed some important issues but introduced a regression bug [#470](https://github.com/mitsuhiko/flask-sqlalchemy/issues/470) which forces use of forked, patched version until it is fixed. To get patched version, you will need to clone [flask_sqlalchemy directory](https://github.com/krassowski/flask-sqlalchemy/flask_sqlalchemy) into `website` directory:
-```bash
-git clone https://github.com/krassowski/flask-sqlalchemy/
-mv flask-sqlalchemy/flask_sqlalchemy .
-rm -rf flask-sqlalchemy
-```
-
 ### Backend
 
 #### Prerequisites
@@ -172,7 +165,7 @@ For adjusting the port or IP address, check `-h` switch of the `run.py` script
 
 Deployment on Apache2 server is more powerful alternative to Werkzeug webserver.
 
-As you may want to have a virtual environment for this application, `website/app.wsgi` provides ready-to go activation script to use with Apache2 (assuming that the name of your virtual environment is `virtual_environment`).
+As you may want to have a virtual environment for this application, `website/app.wsgi` provides ready-to go activation script to use with Apache2 (assuming that the name of your virtual environment is `virtual_environment`). `mod_wsgi` extension is required (`apt-get install libapache2-mod-wsgi-py3` for Debian/Ubuntu).
 
 Following extract from configuration file might be useful help for writing you own configuration:
 
@@ -229,7 +222,7 @@ To login to root account (created with `manage.py` script) visit `/login/` page 
 
 For proper compilation of some requirements, additional software will be needed on Debian-based servers. The required packages are:
 ```
-build-essential python3 libmysqlclient-dev python3-dev python-dev git python3-bsddb3 pigz
+build-essential python3 libmysqlclient-dev python3-dev git python3-bsddb3 pigz nodejs openjdk-7-jdk
 ```
 
 Alternative commands to create virtual environment (workaround for Debian not having some essential python3 packages installed):

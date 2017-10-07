@@ -218,17 +218,39 @@ def bulk_raw_insert(table, keys, data, bind=None):
         db.session.flush()
 
 
-def count_expression(parent_model, child_model, join_column=None):
-    parent_aliased = aliased(parent_model)
+def create_hybrid_expression(sql_func):
 
-    query = db.session.query(child_model)
-    if join_column:
-        query = query.join(parent_aliased, join_column)
-    return (
-        query
-        .filter(parent_aliased.id == parent_model.id)
-        .statement.with_only_columns([func.count()]).order_by(None)
-    )
+    def expression(parent_model, child_model, join=None):
+        """
+        Args:
+            parent_model: owning entity (usually `cls`)
+            child_model: entity on which the func will be evaluated
+            join:
+                a column to be joined on (for join between `child_model`
+                and `parent_model`) or callable creating a join.
+                Note: The join goes from child to parent.
+
+        Returns:
+            sqlalchemy expression for use in hybrid_property
+        """
+        parent_aliased = aliased(parent_model)
+
+        query = db.session.query(child_model)
+
+        if join:
+            if callable(join):
+                query = join(query)
+            else:
+                query = query.join(parent_aliased, join)
+        return (
+            query
+            .filter(parent_aliased.id == parent_model.id)
+            .statement.with_only_columns([sql_func]).order_by(None)
+        )
+    return expression
+
+
+count_expression = create_hybrid_expression(func.count())
 
 
 class utc_now(FunctionElement):
