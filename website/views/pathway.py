@@ -19,7 +19,7 @@ def search_filter(query):
         return Pathway.description.like('%' + query + '%')
 
 
-def search_sort(query, q, sort_column):
+def search_sort(query, q, sort_column, order):
     if sort_column is None or sort_column in ['Pathway.description', 'description', Pathway.description]:
         return levenshtein_sorted(query, Pathway.description, q), True
     return query, False
@@ -147,10 +147,10 @@ class PathwaysView(FlaskView):
             return json
 
         ajax_view = AjaxTableView.from_query(
-            query_constructor=query_constructor,
+            query=query_constructor,
             results_mapper=mapper,
             search_filter=lambda q: Pathway.description.like(q + '%'),
-            default_search_sort=search_sort
+            search_sort=search_sort
         )
         """
         filters_class=GeneViewFilters,
