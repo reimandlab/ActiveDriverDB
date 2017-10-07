@@ -228,7 +228,7 @@ def ajax_query(sql_filters, joins):
         .select_from(Gene)
         .join(Protein, Protein.id == Gene.preferred_isoform_id)
         .filter(*protein_filters)
-        .group_by(Gene)
+        .group_by(Gene.id)
         .having(and_(*textutal_filters))
     )
     return query
@@ -240,14 +240,19 @@ def ajax_query_count(sql_filters, joins):
     protein_filters = select_filters(sql_filters, [Protein])
     textutal_filters = select_textual_filters(sql_filters)
 
-    return (
-        db.session.query(Gene.id, ptm_muts)
+    select = [Gene.id]
+    if textutal_filters:
+        select.append(ptm_muts)
+
+    query = (
+        db.session.query(*select)
         .select_from(Gene)
         .join(Protein, Protein.id == Gene.preferred_isoform_id)
         .filter(*protein_filters)
         .group_by(Gene.id)
         .having(and_(*textutal_filters))
     )
+    return query
 
 
 class GeneView(FlaskView):
