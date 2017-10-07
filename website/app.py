@@ -91,7 +91,6 @@ def create_app(config_filename='config.py', config_override={}):
     db.create_all(bind='__all__')
 
     mode = app.config.get('BDB_MODE', 'c')
-    print(mode)
     bdb.open(app.config['BDB_DNA_TO_PROTEIN_PATH'], mode=mode)
     bdb_refseq.open(app.config['BDB_GENE_TO_ISOFORM_PATH'], mode=mode)
 
