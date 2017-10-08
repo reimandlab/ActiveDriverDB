@@ -30,7 +30,6 @@ var AsyncFiltersHandler = function()
 {
     var config;
     var form;
-    var old_filters_query;
     var current_state_checksum;
 
     /**
@@ -190,7 +189,7 @@ var AsyncFiltersHandler = function()
 
         if (!(is_response_actual(filters_data) && does_response_differ_from_current_state(filters_data)) && !from_future)
         {
-            console.log('Skipping not actual response');
+            console.log('Skipping outdated response');
             return
         }
         current_state_checksum = filters_data.checksum
@@ -251,8 +250,6 @@ var AsyncFiltersHandler = function()
 
             }
         });
-
-        old_filters_query = filters_query;
     }
 
     /**
@@ -279,6 +276,7 @@ var AsyncFiltersHandler = function()
      * @property {function} data_handler
      * @property {function} on_loading_start
      * @property {function} on_loading_end
+     * @property {number} input_delay
      * @property {jQuery} links_to_update
      * @property {string} endpoint_url - an URL of endpoint returning {@see ServerResponse}
      *  the endpoint should accept checksum, (and return in {@see FiltersData})
@@ -299,12 +297,27 @@ var AsyncFiltersHandler = function()
                 'select, input:not([type=text]):not(.programmatic)',
                 function() { on_update() }
             );
+
+            var timer;
+
             form.on(
                 'input',
                 'input[type=text]:not(.programmatic)',
-                function() { on_update() }
+                function() {
+
+                    if(timer)
+                        window.clearTimeout(timer)
+
+                    timer = window.setTimeout(
+                        function(){
+                            timer = null
+                            on_update()
+                        },
+                        config.input_delay || 200
+                    )
+                }
             );
-            old_filters_query = serialize_form(form);
+
             form.find('.save').hide()
 
             update_history(window.location.search.substring(1), true)
