@@ -458,9 +458,12 @@ $footer-height: 136px
     margin-right: 2.5ch
   ul
     margin: 0
-  a
+  a, div
     color: white
-    line-height: $footer-height
+  div
+    position: relative
+    top: 50%
+    transform: translateY(-50%)
 
 .navbar
   background: $main_bg
