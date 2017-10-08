@@ -111,17 +111,14 @@ var ProteinForm = (function ()
         if(query)
         {
             no_results_indicator.addClass('hidden')
-            if(query.length >= 1)
-            {
+            if(query.length >= 1) {
                 empty_indicator.addClass('hidden')
                 waiting_indicator.removeClass('hidden')
-            }
-            else
-            {
-                empty_indicator.removeClass('hidden')
-                waiting_indicator.addClass('hidden')
+                return
             }
         }
+        empty_indicator.removeClass('hidden')
+        waiting_indicator.addClass('hidden')
     }
 
     function setEventsForResults(result_box)
