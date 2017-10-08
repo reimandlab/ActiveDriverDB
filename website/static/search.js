@@ -71,20 +71,11 @@ var ProteinForm = (function ()
 {
     var element
     var empty_indicator, no_results_indicator, waiting_indicator
-    var result_ul, recent_value, url_base, protein_search
+    var result_ul, recent_value, protein_search
     var search_endpoint = '/search/autocomplete_proteins/'
     var filters_handler
 
-    function get_url()
-    {
-        // TODO
-        var href = url_base + 'proteins'
-
-        return href
-    }
-
-
-    var load_data = function(data)
+    function load_data(data)
     {
         var results = data.results
 
@@ -94,6 +85,7 @@ var ProteinForm = (function ()
         // TODO add an animation
 
         waiting_indicator.addClass('hidden')
+
         if(!results.length)
         {
             no_results_indicator.removeClass('hidden')
@@ -150,9 +142,8 @@ var ProteinForm = (function ()
         /**
          *
          * @param dom_element - Form
-         * @param _url_base
          */
-        init: function(dom_element, _url_base)
+        init: function(dom_element)
         {
             Widgets.init(dom_element, function(){})
 
@@ -166,7 +157,6 @@ var ProteinForm = (function ()
             no_results_indicator = result_box.find('.no-results')
             waiting_indicator = result_box.find('.waiting')
             setEventsForResults(result_box)
-            // TODO input cannot accept ":"
 
             recent_value = protein_search.val()
 
@@ -201,10 +191,7 @@ var ProteinForm = (function ()
                 }
             });
 
-        },
-        show: function() { element.show() },
-        hide: function() { element.hide() },
-        get_url: get_url
+        }
     }
     return publicSpace
 }())
@@ -213,8 +200,7 @@ var MutationForm = (function ()
 {
     var element,
         textarea,
-        placeholder_manager,
-        url_base
+        placeholder_manager
 
     function getPlaceholder()
     {
@@ -231,11 +217,9 @@ var MutationForm = (function ()
         return false
     }
 
-    var publicSpace = {
-        init: function(dom_element, _url_base)
-        {
+    return {
+        init: function (dom_element) {
             element = dom_element
-            url_base = _url_base
             textarea = element.find('.muts-textarea')
 
             placeholder_manager = multilinePlaceholderPolyfill()
@@ -243,55 +227,17 @@ var MutationForm = (function ()
 
             element.find('.set-example').on('click', setExample)
 
-        },
-        show: function()
-        {
-            $(element).show()
-        },
-        hide: function()
-        {
-            $(element).hide()
-        },
-        get_url: function()
-        {
-            return url_base + 'mutations'
         }
     }
-
-    return publicSpace
 }())
 
 
 var SearchManager = (function ()
 {
-    var target = '',
-        url_base,
-        form_area,
-        switches,
-        forms = [],
-        form_constructor = {
+    var form_constructor = {
             proteins: ProteinForm,
             mutations: MutationForm
         }
-
-    function get_form(name)
-    {
-        $.ajax({
-            url: '/search/form/' + name,
-            type: 'GET',
-            async: false,
-            success: function(code)
-            {
-                add_form(code)
-                initialize_form(name)
-            }
-        })
-    }
-
-    function add_form(html_code)
-    {
-        $(form_area).after(html_code)
-    }
 
     function initialize_form(name)
     {
@@ -301,75 +247,13 @@ var SearchManager = (function ()
         {
             return
         }
-        forms[name] = form_constructor[name]
-        forms[name].init(dom_form, url_base)
+        var form = form_constructor[name]
+        form.init(dom_form)
     }
 
-    function switchFromAnchor()
-    {
-        // get new target
-        var href = this.href
-        target = href.substr(href.lastIndexOf('/') + 1)
-
-        switchTarget(target)
-
-        // prevent default
-        return false
-    }
-
-    function switchTarget(new_target, silent)
-    {
-        var old_target = target
-        target = new_target
-
-        // update switches
-        var activator = switches.filter('.' + target)    // because switch is reserved word
-        switches.not(activator).removeClass('active')
-        $(activator).addClass('active')
-
-        // fetch form if not loaded
-        if(!(target in forms))
-        {
-            get_form(target)
-        }
-
-        // switch forms
-        for(var key in forms)
-        {
-            if(forms.hasOwnProperty(key) && key !== target)
-            {
-                forms[key].hide()
-            }
-        }
-        forms[target].show()
-
-        // save the new address
-        if(!silent)
-        {
-            history.pushState({target: old_target}, null, forms[target].get_url())
+    return {
+        init: function (data) {
+            initialize_form(data.target)
         }
     }
-
-    var publicSpace = {
-        init: function(data)
-        {
-            form_area = data.form_area
-            target = data.active_target
-            url_base = decodeURIComponent(data.url_base)
-            switches = $('.target-switch a')
-
-            switches.on('click', switchFromAnchor)
-            initialize_form('proteins')
-            initialize_form('mutations')
-
-            // handle change in history
-            $(window).on('popstate', function(event) {
-                var state = event.originalEvent.state
-                switchTarget(state.target, true)
-            })
-
-        }
-    }
-
-    return publicSpace
 }())

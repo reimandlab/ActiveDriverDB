@@ -145,7 +145,8 @@ var AsyncFiltersHandler = function()
 
         if(from_future)
         {
-            form.html(history.state.form);
+            form.get(0).reset()
+            form.deserialize(history.state.form)
             form.trigger('PotentialAffixChange');
         }
 
@@ -198,12 +199,6 @@ var AsyncFiltersHandler = function()
 
         update_form_html(filters_data, from_future);
 
-        var filters_query = '';
-        if(filters_data.query)
-        {
-            filters_query += 'filters=' + filters_data.query;
-        }
-
         if(config.links_to_update)
         {
             config.links_to_update.each(function(){
@@ -212,8 +207,18 @@ var AsyncFiltersHandler = function()
         }
 
         config.on_loading_end();
+    }
 
-        history.replaceState(history.state, '', make_query_url(filters_query))
+    function update_history(query, replace)
+    {
+        var history_action = history.pushState;
+
+        if (replace)
+            history_action = history.replaceState;
+
+        var state = {filters_query: query, form: form.serialize(), handler: 'filters'};
+
+        history_action(state, '', make_query_url(query));
     }
 
     /**
@@ -229,23 +234,22 @@ var AsyncFiltersHandler = function()
     {
         config.on_loading_start();
         current_state_checksum = null;
-        var history_action;
-
-        if (!do_not_save) {
-            history_action = history.pushState;
-        }
-        else {
-            history_action = history.replaceState;
-        }
-
-        var state = {filters_query: filters_query, form: form.html(), handler: 'filters'};
-        history_action(state, '', make_query_url(filters_query));
 
         $.ajax({
             url: config.endpoint_url,
-            type: 'GET',
             data: filters_query,
-            success: function(data){ load(data, from_future) }
+            success: function(data){
+
+                var filters_query = ''
+
+                if(data.filters.query)
+                    filters_query += 'filters=' + data.filters.query
+
+                load(data, from_future)
+
+                update_history(filters_query, do_not_save)
+
+            }
         });
 
         old_filters_query = filters_query;
@@ -302,6 +306,8 @@ var AsyncFiltersHandler = function()
             );
             old_filters_query = serialize_form(form);
             form.find('.save').hide()
+
+            update_history(window.location.search.substring(1), true)
         },
         value: get_value,
         load: load,
