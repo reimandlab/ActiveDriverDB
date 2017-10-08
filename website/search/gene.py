@@ -353,12 +353,12 @@ class UniprotSearch(ProteinSearch):
         return distance(uniprot.accession, phrase)
 
 
-search_feature_engines = {
+search_feature_engines = [
     RefseqGeneSearch,
     SymbolGeneSearch,
     GeneNameSearch,
     ProteinNameSearch,
     UniprotSearch,
     SummarySearch
-}
+]
 

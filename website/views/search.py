@@ -19,7 +19,10 @@ from werkzeug.datastructures import FileStorage
 
 from app import celery
 from helpers.bioinf import complement
-from models import Protein, Pathway, Cancer, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData
+from models import (
+    Protein, Pathway, Cancer, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData,
+    OrderedDict,
+)
 from models import Gene
 from models import Mutation
 from models import UsersMutationsDataset
@@ -37,10 +40,10 @@ search_features = [engine.name for engine in search_feature_engines]
 
 
 def create_engines(options=None):
-    return {
-        engine.name: engine(options)
-        for engine in search_feature_engines
-    }
+    engines = OrderedDict()
+    for engine in search_feature_engines:
+        engines[engine.name] = engine(options)
+    return engines
 
 
 advanced_search_engines = create_engines()
