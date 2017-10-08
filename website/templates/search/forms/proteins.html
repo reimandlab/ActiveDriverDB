@@ -7,7 +7,7 @@
   id="proteins-form"
 >
   <div class="options">
-    {% with widgets=widgets.proteins %}
+    {% with widgets=[widgets.proteins['ptm']] %}
       {% include 'filters/bar.html' %}
     {% endwith %}
   </div>
@@ -20,6 +20,9 @@
       {% if query %} value="{{ query }}" {% endif %}
     >
   </div>
+  {% with widgets=[widgets.proteins['feature']] %}
+    {% include 'filters/bar.html' %}
+  {% endwith %}
   <div class="results panel panel-default {{ 'hidden' if not results }}">
     <ul>
     {% for result in results %}

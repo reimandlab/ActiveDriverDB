@@ -3,6 +3,7 @@ from collections import defaultdict
 
 from Levenshtein import distance
 from sqlalchemy import and_
+from werkzeug.utils import cached_property
 
 from models import Protein, UniprotEntry, ProteinReferences
 from models import Gene
@@ -47,18 +48,36 @@ class GeneMatch:
 
 class GeneOrProteinSearch(ABC):
 
-    @abstractmethod
-    def search(self, phrase, sql_filters=None, limit=None):
-        pass
-
-
-class GeneSearch(GeneOrProteinSearch):
+    def __init__(self, options=None):
+        self.options = options
 
     @property
     @abstractmethod
     def name(self):
-        """Name of the GeneSearch descendant."""
+        """Internal name; also a base for pretty name shown to the user."""
         pass
+
+    @cached_property
+    def pretty_name(self):
+        return self.name.replace('_', ' ').title()
+
+    @abstractmethod
+    def search(self, phrase, sql_filters=None, limit=None):
+        pass
+
+    @property
+    def base_query(self):
+        return Gene.query
+
+    @property
+    def query(self):
+        query = self.base_query
+        if self.options:
+            query = query.options(self.options)
+        return query
+
+
+class GeneSearch(GeneOrProteinSearch):
 
     @property
     @abstractmethod
@@ -86,7 +105,7 @@ class GeneSearch(GeneOrProteinSearch):
             filters += sql_filters
 
         orm_query = (
-            Gene.query
+            self.query
                 .join(Protein, Gene.preferred_isoform)   # to allow PTM filter
                 .filter(and_(*filters))
         )
@@ -95,7 +114,7 @@ class GeneSearch(GeneOrProteinSearch):
             orm_query = orm_query.limit(limit)
 
         return [
-            GeneMatch.from_feature(gene, self.name, self.sort_key(gene, phrase))
+            GeneMatch.from_feature(gene, self, self.sort_key(gene, phrase))
             for gene in orm_query
         ]
 
@@ -133,9 +152,8 @@ class ProteinSearch(GeneOrProteinSearch):
     The matched isoforms are recorded in GeneMatch object.
     """
 
-    @staticmethod
     def create_query(
-            limit, filters, sql_filters, entities=(Gene, Protein),
+            self, limit, filters, sql_filters, entities=(Gene, Protein),
             add_joins=lambda query: query
     ):
 
@@ -144,7 +162,7 @@ class ProteinSearch(GeneOrProteinSearch):
 
         genes = (
             add_joins(
-                Gene.query
+                self.query
                 .join(Protein, Gene.isoforms)
             )
             .filter(and_(*filters))
@@ -165,6 +183,8 @@ class ProteinSearch(GeneOrProteinSearch):
             .filter(and_(*filters))
             .filter(Gene.id == genes.c.id)
         )
+        if self.options:
+            query = query.options(self.options)
         return query
 
     @staticmethod
@@ -183,7 +203,7 @@ class ProteinSearch(GeneOrProteinSearch):
 
             match = GeneMatch.from_feature(
                 gene,
-                self.name,
+                self,
                 self.best_score(isoforms, phrase),
                 matched_isoforms=isoforms
             )
@@ -227,6 +247,7 @@ class RefseqGeneSearch(ProteinSearch):
     """
 
     name = 'refseq'
+    pretty_name = 'RefSeq'
 
     def search(self, phrase, sql_filters=None, limit=None):
 
@@ -257,7 +278,8 @@ class SummarySearch(ProteinSearch):
 
     name = 'summary'
 
-    def __init__(self, minimal_length=3):
+    def __init__(self, options=None, minimal_length=3):
+        super().__init__(options)
         self.minimal_length = minimal_length
 
     def search(self, phrase, sql_filters=None, limit=None):
@@ -318,7 +340,7 @@ class UniprotSearch(ProteinSearch):
 
             match = GeneMatch.from_feature(
                 gene,
-                self.name,
+                self,
                 self.best_score(uniprot_entries, phrase),
                 matched_isoforms=isoforms
             )
@@ -331,7 +353,7 @@ class UniprotSearch(ProteinSearch):
         return distance(uniprot.accession, phrase)
 
 
-feature_engines = {
+search_feature_engines = {
     RefseqGeneSearch,
     SymbolGeneSearch,
     GeneNameSearch,
@@ -340,7 +362,3 @@ feature_engines = {
     SummarySearch
 }
 
-search_features = {
-    engine.name: engine()
-    for engine in feature_engines
-}

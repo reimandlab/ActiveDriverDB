@@ -13,6 +13,7 @@ from flask import current_app
 from flask_classful import FlaskView
 from flask_classful import route
 from flask_login import current_user
+from sqlalchemy.orm import Load
 from sqlalchemy.orm.exc import NoResultFound
 from werkzeug.datastructures import FileStorage
 
@@ -30,12 +31,32 @@ from helpers.widgets import FilterWidget
 from views.gene import prepare_subqueries
 from ._commons import get_protein_muts
 from database import db, levenshtein_sorted, bdb
-from search.gene import search_features, GeneMatch
+from search.gene import GeneMatch, search_feature_engines
+
+search_features = [engine.name for engine in search_feature_engines]
+
+
+def create_engines(options=None):
+    return {
+        engine.name: engine(options)
+        for engine in search_feature_engines
+    }
+
+
+advanced_search_engines = create_engines()
+search_bar_search_engines = create_engines(
+    [
+
+        Load(Gene).defer('full_name').defer('strand').defer('chrom').defer('entrez_id'),
+        Load(Protein).defer('summary').defer('sequence').defer('disorder_map')
+    ]
+)
 
 
 def search_proteins(
         phrase, limit=None, filter_manager=None,
-        features=('gene_symbol', 'refseq', 'gene_name', 'uniprot')
+        features=('gene_symbol', 'refseq', 'gene_name', 'uniprot'),
+        engines=advanced_search_engines
 ):
     """Search for a protein isoform or gene.
     Only genes which have a primary isoforms will be returned.
@@ -53,6 +74,8 @@ def search_proteins(
         features:
             an iterable collection of names of features to include in
             the search; must be a subset of search.gene.search_features
+        engines:
+            mapping of engine name => engine instance of engines to use
     """
     if isinstance(features, str):
         features = [features]
@@ -76,7 +99,7 @@ def search_proteins(
     matches = []
 
     for feature in features:
-        search_function = search_features[feature].search
+        search_function = engines[feature].search
         results = search_function(phrase, sql_filters, limit=limit)
         matches.extend(results)
 
@@ -247,7 +270,7 @@ class SearchViewFilters(FilterManager):
 
     def __init__(self, **kwargs):
 
-        available_features = search_features.keys()
+        available_features = search_features
         active_features = set(available_features) - {'summary'}
 
         filters = [
@@ -274,7 +297,7 @@ class SearchViewFilters(FilterManager):
             Filter(
                 Feature, 'name', comparators=['in'],
                 default=list(active_features),
-                choices=list(available_features),
+                choices=available_features,
             ),
             Filter(
                 Search, 'query', comparators=['eq'],
@@ -286,28 +309,30 @@ class SearchViewFilters(FilterManager):
 
 def make_widgets(filter_manager):
     return {
-        'proteins': [
-            FilterWidget(
+        'proteins': {
+            'ptm': FilterWidget(
                 'Show only proteins with PTM mutations',
                 'checkbox',
-                filter=filter_manager.filters['Protein.has_ptm_mutations']
+                filter=filter_manager.filters['Protein.has_ptm_mutations'],
+                class_name='pull-right'
             ),
-            FilterWidget(
+            'feature': FilterWidget(
                 'Search by', 'checkbox_multiple',
                 filter=filter_manager.filters['Feature.name'],
                 labels=[
-                    name.replace('_', ' ')
-                    for name in search_features.keys()
+                    engine.pretty_name
+                    for engine in advanced_search_engines.values()
                 ],
                 all_selected_label='All features',
                 class_name='checkboxes-inline'
             )
-        ],
+        },
         'mutations': [
             FilterWidget(
                 'Show all mutations (by default only PTM mutations are shown)',
                 'checkbox',
-                filter=filter_manager.filters['Mutation.is_ptm']
+                filter=filter_manager.filters['Mutation.is_ptm'],
+                class_name='pull-right'
             ),
         ]
     }
@@ -849,8 +874,11 @@ def json_message(msg):
 
 
 def autocomplete_gene(query, limit=5):
-    """Returns: (autocompletion_gene_results, are_there_more)"""
-    entries = search_proteins(query, limit + 1)
+    """Gene auto-completion used in search bars.
+
+    Returns: (autocompletion_gene_results, are_there_more)
+    """
+    entries = search_proteins(query, limit + 1, engines=search_bar_search_engines)
 
     items = [
         gene.to_json()

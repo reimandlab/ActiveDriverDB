@@ -39,8 +39,8 @@
     </div>
     <div class="matched-features">
       {% for feature, score in gene.matches.items() %}
-        <span title="This gene was found based on {{ feature }} with {{ 1 / (1 + score) }} score">
-        {{ feature | replace('_', ' ') }}
+        <span title="This gene was found based on {{ feature.pretty_name }} with {{ 1 / (1 + score) }} score">
+        {{ feature.pretty_name }}
         </span>
       {% endfor %}
     </div>
