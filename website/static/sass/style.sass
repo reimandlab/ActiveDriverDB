@@ -460,10 +460,21 @@ $footer-height: 136px
     margin: 0
   a, div
     color: white
-  div
-    position: relative
-    top: 50%
-    transform: translateY(-50%)
+  @media #{$over-tablet}
+    div.col-md-5
+      position: relative
+      top: 50%
+      transform: translateY(-50%)
+  @media #{$over-phone}
+    div.inner-footer
+      position: relative
+      top: 50%
+      transform: translateY(-50%)
+  @media #{$phone}
+    height: inherit
+    min-height: $footer-height
+
+
 
 .navbar
   background: $main_bg
