@@ -1,5 +1,20 @@
-from helpers.tracks import SequenceTrack
+from helpers.tracks import SequenceTrack, TrackElement
 from models import Protein, Site
+
+
+def test_name_fitting():
+    cases = {
+        (10, None, None): '',
+        (10, 'Element', None): 'Element',
+        # name + description will not fit in to less than 10 chars
+        (10, 'Element', 'A long description'): 'Element',
+        (30, 'Element', 'A long description'): 'Element: A long description',
+        (40, 'Element', 'A long description'): 'Element: A long description (40 long)',
+
+    }
+    for (length, name, description), expected_text in cases.items():
+        element = TrackElement(start=0, length=length, name=name, description=description)
+        assert element.shown_name == expected_text
 
 
 def test_prepare_tracks():
