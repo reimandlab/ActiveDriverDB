@@ -2,7 +2,6 @@ import re
 from os import path
 from functools import wraps
 from pathlib import Path
-from types import FunctionType
 
 from bs4 import BeautifulSoup
 from flask import current_app, jsonify
@@ -69,21 +68,21 @@ PASSWORD_RESET_MAIL_SENT = (
 def create_contact_form():
     args = request.args
     pass_args = ['feature', 'title']
-    return template(
+    return Markup(template(
         'cms/contact_form.html',
         **{key: args.get(key, '') for key in pass_args}
-    )
+    ))
 
 
 def render_raw_template(template_name, *args, **kwargs):
-    template = current_app.jinja_env.get_template(template_name)
-    return template.render(*args, **kwargs)
+    jinja_template = current_app.jinja_env.get_template(template_name)
+    return jinja_template.render(*args, **kwargs)
 
 
 def render_help_entry(entry_id, entry_class=''):
-    template = current_app.jinja_env.get_template('help.html')
-    module = template.make_module({'current_user': current_user})
-    return module.help(entry_id, entry_class)
+    jinja_template = current_app.jinja_env.get_template('help.html')
+    jinja_module = jinja_template.make_module({'current_user': current_user})
+    return jinja_module.help(entry_id, entry_class)
 
 
 USER_ACCESSIBLE_VARIABLES = {
@@ -162,26 +161,8 @@ def dict_subset(dictionary, keys):
     return {k: v for k, v in dictionary.items() if k in keys}
 
 
-def replace_allowed_object(match_obj):
-    object_name = match_obj.group(1).strip()
-    element = USER_ACCESSIBLE_VARIABLES
-    for accessor in object_name.split('.'):
-        if accessor in element:
-            element = element[accessor]
-        else:
-            return '&lt;unknown variable: {}&gt;'.format(object_name)
-        if type(element) is FunctionType:
-            element = element()
-    return str(element)
-
-
 def substitute_variables(string):
-    pattern = '\{\{ (.*?) \}\}'
-    try:
-        return render_template_string(string, **USER_ACCESSIBLE_VARIABLES)
-    except TemplateSyntaxError as e:
-        print(e)
-        return re.sub(pattern, replace_allowed_object, string)
+    return render_template_string(string, **USER_ACCESSIBLE_VARIABLES)
 
 
 def link_to_page(page):
