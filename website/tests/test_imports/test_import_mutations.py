@@ -1,3 +1,5 @@
+import pytest
+
 from imports.mutations import MutationImportManager, MutationImporter
 from database_testing import DatabaseTest
 from models import (
@@ -60,10 +62,10 @@ mimp_mutations = """\
 gene	mut	psite_pos	mut_dist	wt	mt	score_wt	score_mt	log_ratio	pwm	pwm_fam	nseqs	prob	effect
 NM_000546	E17R	 20	-3	PLSQETFSDLWKLLP	PLSQRTFSDLWKLLP	0.08468512	0.75080687	 3.148261	CAMK2A	CAMK2	 69	0.8637680	gain
 NM_000546	R213F	215	-2	DRNTFRHSVVVPYEP	DRNTFFHSVVVPYEP	0.85887138	0.05732418	-3.905226	AURKB	Aur	106	0.8637532	loss
+NM_000546	D57K	 55	 2	DDIEQWFTEDPGPDE	DDIEQWFTEKPGPDE	0.25570183	0.11938079	-1.098892	CAMK2A	CAMK2	 69	0.8571140	loss
 NM_000546	P316R	315	 1	LPNNTSSSPQPKKKP	LPNNTSSSRQPKKKP	0.51341438	0.12971334	-1.984797	GSK3B	GSK	156	0.8644909	loss
 NM_000546	Q104R	106	-2	SQKTYQGSYGFRLGF	SQKTYRGSYGFRLGF	0.05741535	0.85896255	 3.903087	AURKB	Aur	106	0.8643607	gain
 """
-
 
 tp53 = {
     'NM_000546': 'MEEPQSDPSVEPPLSQETFSDLWKLLPENNVLSPLPSQAMDDLMLSPDDIEQWFTEDPGPDEAPRMPEAAPPVAPAPAAPTPAAPAPAPSWPLSSSVPSQKTYQGSYGFRLGFLHSGTAKSVTCTYSPALNKMFCQLAKTCPVQLWVDSTPPPGTRVRAMAIYKQSQHMTEVVRRCPHHERCSDSDGLAPPQHLIRVEGNLRVEYLDDRNTFRHSVVVPYEPPEVGSDCTTIHYNYMCNSSCMGGMNRRPILTIITLEDSSGNLLGRNSFEVRVCACPGRDRRTEEENLRKKGEPHHELPPGSTKRALPNNTSSSPQPKKKPLDGEYFTLQIRGRERFEMFRELNEALELKDAQAGKEPGGSRAHSSHLKSKKGQSTSRHKKLMFKTEGPDSD*'
@@ -232,7 +234,13 @@ class TestImport(DatabaseTest):
         ]
         db.session.add_all(sites)
 
-        self.run_importer('load', 'mimp', proteins, muts_filename)
+        with pytest.warns(
+                UserWarning,
+                contains='Skipping NM_000546: D57K (for site at position 55): '
+                         'MIMP site does not match match to the database - '
+                         'given site not found.'
+        ):
+            self.run_importer('load', 'mimp', proteins, muts_filename)
 
         mutations = MIMPMutation.query.all()
         assert len(mutations) == 4

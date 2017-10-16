@@ -65,15 +65,15 @@ class Importer(MutationImporter):
 
             if len(affected_sites) != 1:
                 warning = UserWarning(
-                    'MIMP site does not match to the database: ' +
-                    (
-                        'too many (%s) sites found. ' % len(affected_sites)
-                        if affected_sites else
-                        'given site not found. '
+                    'Skipping %s: %s%s%s (for site at position %s): ' % (
+                       refseq, ref, pos, alt, psite_pos
                     ) +
-                    ' '.join(map(str, (
-                        protein, refseq, ref, pos, alt, mutation_id, psite_pos
-                    )))
+                    'MIMP site does not match to the database - ' +
+                    (
+                        'too many (%s) sites found.' % len(affected_sites)
+                        if affected_sites else
+                        'given site not found.'
+                    )
                 )
                 print(warning)
                 warn(warning)
