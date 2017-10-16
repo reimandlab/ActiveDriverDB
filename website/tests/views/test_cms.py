@@ -247,6 +247,22 @@ class TestCMS(ViewTest):
         from views import ContentManagementSystem
         assert ContentManagementSystem._inline_help('my-helpful-hint') == help.content
 
+    def test_render_inline_help(self):
+        db.session.add(
+            HelpEntry(name='helpful-hint', content='Some explanation')
+        )
+
+        page = Page(
+            content='Some not so obvious statement {{ help("helpful-hint") }}',
+            address='test-help'
+        )
+        db.session.add(page)
+
+        response = self.client.get('/test-help/')
+
+        assert b'Some not so obvious statement' in response.data
+        assert b'Some explanation' in response.data
+
     def test_save_inline_help(self):
         assert self.is_only_for_admins('/admin/save_inline_help/', method='post')
 

@@ -20,7 +20,6 @@ from flask_login import login_user
 from flask_login import logout_user
 from flask_login import login_required
 from flask_mail import Message
-from jinja2 import TemplateSyntaxError
 from flask import render_template_string
 from werkzeug.utils import secure_filename
 
