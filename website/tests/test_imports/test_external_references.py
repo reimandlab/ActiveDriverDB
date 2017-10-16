@@ -86,7 +86,6 @@ class TestImport(DatabaseTest):
             'NM_011739',    # present in reference mappings
             'NM_001131572',    # present
             'NM_201200',    # present
-            'NM_000546',    # present
             'NM_0001'       # not present in reference mappings
         ]
 
@@ -96,9 +95,13 @@ class TestImport(DatabaseTest):
             for refseq_nm in refseqs
         }
 
+        tp53 = Gene(name='TP53')
+        tp53_protein = Protein(refseq='NM_000546', gene=tp53)
+
         with self.app.app_context():
             # let's pretend that we already have some proteins in our db
             db.session.add_all(proteins_we_have.values())
+            db.session.add(tp53_protein)
 
             references = load_external_references(uniprot_filename, refseq_filename, reflink_filename)
 
@@ -142,7 +145,6 @@ class TestImport(DatabaseTest):
 
             assert protein.external_references is None
 
-            # check the protein with refseq references
-            protein = proteins_we_have['NM_000546']
-            assert protein.external_references.refseq_np == 'NP_000537'
-            assert protein.gene.entrez_id == 7157
+            # check the protein with refseq references and gene with entrez id
+            assert tp53_protein.external_references.refseq_np == 'NP_000537'
+            assert tp53.entrez_id == 7157
