@@ -14,7 +14,7 @@ class MutationTest(ModelTest):
         mutations = {
             'none': Mutation(position=10),    # too far
             'distal': Mutation(position=8),
-            'proximal': Mutation(position=4),
+            'proximal': Mutation(position=3),
             'direct': Mutation(position=1)
         }
 
