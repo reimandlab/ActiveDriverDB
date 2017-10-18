@@ -261,8 +261,10 @@ function choose_best_zoom()
     var is_opera = agent.indexOf('Opera') > -1;
     if (is_safari && is_chrome)
         is_safari = false;
+    var match = navigator.userAgent.match(/Chrom(e|ium)\/([0-9]+)\./)
+    var old_chrome = match ? parseInt(match[2], 10) < 57 : false
 
-    if(is_safari || is_edge || is_ie || is_opera)
+    if(is_safari || is_edge || is_ie || is_opera || old_chrome)
         return Zoom;
     else
         return CSSZoom;

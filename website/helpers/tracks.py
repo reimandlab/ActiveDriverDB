@@ -55,7 +55,7 @@ class TrackElement(object):
     def shown_name(self):
         """Generates a name which will fit into a track."""
         if not self.description:
-            return self.name
+            return self.name or ''
 
         # names_to_try should be kept in descending length order
         names_to_try = (

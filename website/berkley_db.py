@@ -87,7 +87,7 @@ class BerkleyHashSet:
         try:
             items = filter(
                 bool,
-                self.db.get(key).decode('utf-8').split('|')
+                self.db.get(key).decode().split('|')
             )
         except (KeyError, AttributeError):
             items = []
@@ -98,16 +98,24 @@ class BerkleyHashSet:
         )
 
     def items(self):
+        """Yields (key, iterator over items from value set) tuples.
+
+        All atomic elements are returned as plain strings.
+        """
         for key, value in self.db.iteritems():
             try:
-                yield key, filter(bool, value.decode('utf-8').split('|'))
+                yield key.decode(), filter(bool, value.decode().split('|'))
             except (KeyError, AttributeError):
                 pass
 
     def values(self):
+        """Yields iterators over items from value set.
+
+        All atomic elements are returned as plain strings.
+        """
         for key, value in self.db.iteritems():
             try:
-                yield filter(bool, value.decode('utf-8').split('|'))
+                yield filter(bool, value.decode().split('|'))
             except (KeyError, AttributeError):
                 pass
 

@@ -7,10 +7,12 @@ $phone-e: 550
 $hd-s: 1600
 
 $phone: "only screen and (max-width: " + $phone-e + "px)"
+$over-phone: "only screen and (min-width: " + ($phone-e) + "px)"
 $big-phone: "only screen and (min-width: " + ($phone-e + 1) + "px) and (max-width: " + ($tablet-s - 1) + "px)"
 $tablet: "only screen and (min-width: " + ($tablet-s) + "px) and (max-width: " + $tablet-e + "px)"
 $over-tablet: "only screen and (min-width: " + ($tablet-s) + "px)"
 $under-tablet: "only screen and (max-width: " + ($tablet-s - 1) + "px)"
 $under-pc: "only screen and (max-width: " + $tablet-e + "px)"
 $pc: "only screen and (min-width: " + $tablet-e + "px)"
+$medium-pc: "only screen and (min-width: 1200px)"
 $hd: "only screen and (min-width: " + $hd-s + "px)"

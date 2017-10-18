@@ -1675,10 +1675,10 @@ class Mutation(BioModel):
     def is_ptm_proximal(self):
         """Check if the mutation is in close proximity of some PTM site.
 
-        Proximity is defined here as [pos - 3, pos + 3] span,
+        Proximity is defined here as [pos - 2, pos + 2] span,
         where pos is the position of a PTM site.
         """
-        return self.is_close_to_some_site(3, 3)
+        return self.is_close_to_some_site(2, 2)
 
     @hybrid_property
     def is_ptm_distal(self):

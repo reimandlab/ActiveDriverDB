@@ -63,29 +63,6 @@ def read_from_gz_files(directory, pattern, skip_header=True):
                 yield line
 
 
-def buffered_readlines(file_handle, line_count=5000):
-    """Works like a normal readline function but buffers reading operations.
-
-    The number of lines to read in once is specified by `line_count`.
-    """
-    is_eof = False
-    while not is_eof:
-        buffer = []
-        # read as much as line_count says
-        for _ in range(line_count):
-            line = file_handle.readline()
-
-            # stop if needed
-            if not line:
-                is_eof = True
-                break
-
-            buffer.append(line)
-        # release one row in a once from buffer
-        for line in buffer:
-            yield line
-
-
 def count_lines(file_object):
     """Returns number of lines in a given file."""
     count = sum(1 for _ in file_object)

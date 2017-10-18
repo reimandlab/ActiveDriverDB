@@ -779,7 +779,7 @@ def kinase_mappings(path='data/curated_kinase_IDs.txt'):
 
         if kinase_name in known_kinases:
             kinase = known_kinases[kinase_name]
-            if kinase.protein != protein:
+            if kinase.protein and kinase.protein != protein:
 
                 print(
                     'Overriding kinase-protein association for '
@@ -790,6 +790,8 @@ def kinase_mappings(path='data/curated_kinase_IDs.txt'):
                         protein.refseq
                     )
                 )
+            kinase.protein = protein
+
         else:
             new_kinases.append(
                 Kinase(name=kinase_name, protein=protein)

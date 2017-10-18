@@ -13,6 +13,9 @@
 
   {{ dependency('bootstrap_css') }}
 
+  {{ dependency('futura_fonts') }}
+  <script>try{Typekit.load({async:true})}catch(e){}</script>
+
   {# jQuery #}
   {{ dependency('jquery') }}
   {{ dependency('jquery_deserialize') }}
@@ -146,15 +149,17 @@
   {% endblock %}
 
 <footer class="footer">
-  <div class="col-md-6 col-md-offset-1">
-      <ul class="menu list-unstyled">
-          {% block footer %}
-              {{ system_menu('footer_menu').as_list }}
-          {% endblock %}
-      </ul>
-  </div>
-  <div class="col-md-4">
-    {{ system_setting('footer_text') or '' }}
+  <div class="inner-footer">
+    <div class="col-md-5 col-md-offset-1">
+        <ul class="menu list-unstyled">
+            {% block footer %}
+                {{ system_menu('footer_menu').as_list }}
+            {% endblock %}
+        </ul>
+    </div>
+    <div class="col-md-5">
+      {{ system_setting('footer_text') or '' }}
+    </div>
   </div>
 </footer>
 

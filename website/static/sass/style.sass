@@ -54,7 +54,7 @@ $search-box-width: 300px
     .search-box, .list-group-item
       width: 200px
 
-  @media #{$pc}
+  @media #{$medium-pc}
     .search-box, .list-group-item
       width: 300px
 
@@ -458,9 +458,22 @@ $footer-height: 136px
     margin-right: 2.5ch
   ul
     margin: 0
-  a
+  a, div
     color: white
-    line-height: $footer-height
+  @media #{$over-tablet}
+    div.col-md-5
+      position: relative
+      top: 50%
+      transform: translateY(-50%)
+  @media #{$over-phone}
+    div.inner-footer
+      position: relative
+      top: 50%
+      transform: translateY(-50%)
+  @media #{$phone}
+    height: inherit
+    min-height: $footer-height
+
 
 .navbar
   background: $main_bg
@@ -476,9 +489,17 @@ $footer-height: 136px
   margin-bottom: 20px
   border-radius: 0
 
+  ul, .navbar-brand
+    font-family: futura-pt, "Helvetica Neue",Helvetica,Arial,sans-serif
+
   .navbar-nav
     float: none
     display: inline-block
+
+  @media #{$over-tablet}
+    .navbar-header
+      width: 108px
+      height: 80px
 
   .navbar-brand
     color: #fff
