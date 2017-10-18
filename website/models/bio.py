@@ -1745,7 +1745,7 @@ class Mutation(BioModel):
             return 'direct'
         elif site in self.meta_MIMP.sites and not ignore_mimp:
             return 'network-rewiring'
-        elif abs(self.position - site.position) < 4:
+        elif abs(self.position - site.position) < 3:
             return 'proximal'
         elif abs(self.position - site.position) < 8:
             return 'distal'
@@ -1764,7 +1764,7 @@ class Mutation(BioModel):
             return 'direct'
         elif any(site in sites for site in self.meta_MIMP.sites):
             return 'network-rewiring'
-        elif self.is_close_to_some_site(3, 3, sites):
+        elif self.is_close_to_some_site(2, 2, sites):
             return 'proximal'
         elif self.is_close_to_some_site(7, 7, sites):
             return 'distal'

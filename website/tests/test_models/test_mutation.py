@@ -12,35 +12,41 @@ class MutationTest(ModelTest):
         # case 0: there are no sites in the protein
 
         mutations = {
-            'none': Mutation(position=10),    # too far
-            'distal': Mutation(position=8),
-            'proximal': Mutation(position=3),
-            'direct': Mutation(position=1)
+            Mutation(position=10): 'none',    # too far away
+            Mutation(position=9): 'none',
+            Mutation(position=8): 'distal',
+            Mutation(position=4): 'distal',
+            Mutation(position=3): 'proximal',
+            Mutation(position=2): 'proximal',
+            Mutation(position=1): 'direct'
         }
 
         protein = Protein(
             refseq='NM_00001',
-            mutations=mutations.values()
+            mutations=mutations.keys()
         )
 
         db.session.add(protein)
 
-        for mutation in mutations.values():
+        for mutation in mutations.keys():
             assert mutation.impact_on_ptm() == 'none'
 
         # case 1: there are some sites in the protein
 
         protein.sites = [Site(position=1), Site(position=50)]
+        site = protein.sites[0]
 
-        for impact, mutation in mutations.items():
+        for mutation, impact in mutations.items():
+            print(mutation)
             assert mutation.impact_on_ptm() == impact
+            assert mutation.impact_on_specific_ptm(site) == impact
 
         # case 2: there are some sites but all will be excluded by a site filter
 
         def site_filter(sites):
             return []
 
-        for mutation in mutations.values():
+        for mutation in mutations.keys():
             assert mutation.impact_on_ptm(site_filter=site_filter) == 'none'
 
     def test_sites(self):
