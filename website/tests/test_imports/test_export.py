@@ -55,8 +55,8 @@ class TestExport(DatabaseTest):
 
         with gzip.open(mc3_filename) as f:
             assert f.readlines() == [
-                b'gene\tisoform\tposition\twt_residue\tmut_residue\tcancer_type\tsample_id\n',
-                b'SOMEGENE\tNM_0001\t1\tA\tE\tCAN\tSome sample'
+                b'gene\tisoform\tposition\twt_residue\tmut_residue\tcancer_type\n',
+                b'SOMEGENE\tNM_0001\t1\tA\tE\tCAN'
             ]
 
         with gzip.open(clinvar_filename) as f:

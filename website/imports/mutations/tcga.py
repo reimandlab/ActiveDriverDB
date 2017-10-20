@@ -57,16 +57,11 @@ class Importer(MutationImporter):
         }
 
     def export_details_headers(self):
-        return ['cancer_type', 'sample_id']
+        return ['cancer_type']
 
     def export_details(self, mutation):
-        cancer = mutation.cancer.code
-        s = mutation.samples or ''
-        samples = s.split(',')
-
         return [
-            [cancer, sample]
-            for sample in samples
+            [mutation.cancer.code]
         ]
 
     def insert_details(self, mutations):

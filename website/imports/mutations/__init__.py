@@ -250,6 +250,11 @@ class MutationImporter(ABC):
         return [[]]
 
     def export(self, path=None, only_primary_isoforms=False):
+        """Export all mutations from this source in ActiveDriver compatible format.
+
+        Source specific data export can be implemented with export_details method,
+        while export_details_headers should provide names for respective headers.
+        """
         from datetime import datetime
         import os
         from tqdm import tqdm
