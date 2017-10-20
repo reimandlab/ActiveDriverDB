@@ -56,6 +56,19 @@ class Importer(MutationImporter):
             'count': data[0]
         }
 
+    def export_details_headers(self):
+        return ['cancer_type', 'sample_id']
+
+    def export_details(self, mutation):
+        cancer = mutation.cancer.code
+        s = mutation.samples or ''
+        samples = s.split(',')
+
+        return [
+            [cancer, sample]
+            for sample in samples
+        ]
+
     def insert_details(self, mutations):
         for chunk in chunked_list(mutations.items()):
             db.session.bulk_insert_mappings(

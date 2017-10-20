@@ -182,6 +182,15 @@ class Importer(MutationImporter):
 
         return clinvar_mutations, clinvar_data, new_diseases.keys()
 
+    def export_details_headers(self):
+        return ['disease']
+
+    def export_details(self, mutation):
+        return [
+            [d.disease_name]
+            for d in mutation.clin_data
+        ]
+
     def insert_details(self, details):
         clinvar_mutations, clinvar_data, new_diseases = details
 

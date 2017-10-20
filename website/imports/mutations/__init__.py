@@ -243,6 +243,12 @@ class MutationImporter(ABC):
         """Do not overwrite this function"""
         remove_model(self.model, self.raw_delete_all, self.restart_autoincrement)
 
+    def export_details_headers(self):
+        return []
+
+    def export_details(self, mutation):
+        return [[]]
+
     def export(self, path=None, only_primary_isoforms=False):
         from datetime import datetime
         import os
@@ -268,12 +274,7 @@ class MutationImporter(ABC):
 
         header = [
             'gene', 'isoform', 'position',  'wt_residue', 'mut_residue'
-        ]
-
-        if self.model_name in ('MC3Mutation', 'TCGAMutation'):
-            header += ['cancer_type', 'sample_id']
-        elif self.model_name == 'InheritedMutation':
-            header += ['disease']
+        ] + self.export_details_headers()
 
         with gzip.open(path, 'wt') as f:
             f.write('\t'.join(header))
@@ -286,22 +287,7 @@ class MutationImporter(ABC):
                 if only_primary_isoforms and not m.protein.is_preferred_isoform:
                     continue
 
-                if self.model_name in ('MC3Mutation', 'TCGAMutation'):
-                    cancer = mutation.cancer.code
-                    s = mutation.samples or ''
-                    samples = s.split(',')
-
-                    dataset_specific = [
-                        [cancer, sample]
-                        for sample in samples
-                    ]
-                elif self.model_name == 'InheritedMutation':
-                    dataset_specific = [
-                        [d.disease_name]
-                        for d in mutation.clin_data
-                    ]
-                else:
-                    dataset_specific = [[]]
+                dataset_specific = self.export_details(mutation)
 
                 try:
                     ref = m.ref
