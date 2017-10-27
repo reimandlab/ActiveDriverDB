@@ -377,6 +377,7 @@ class SearchView(FlaskView):
             if dataset_uri:
                 dataset = UsersMutationsDataset.query.filter_by(uri=dataset_uri).one()
                 dataset.data = mutation_search
+                db.session.commit()
             return redirect(url_for('SearchView:mutations', task_id=task_id))
 
         progress = celery_task.result.get('progress', 0) if status == 'PROGRESS' else 0

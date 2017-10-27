@@ -108,6 +108,9 @@ class UsersMutationsDataset(CMSModel):
     name = db.Column(db.String(256))
     uri = db.Column(db.String(256), unique=True, index=True)
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    query_count = db.Column(db.Integer)
+    results_count = db.Column(db.Integer)
     # as we get newer MySQL version, use of server_default would be preferable
     created_on = db.Column(db.DateTime, default=utc_now())
     # using default, not server_default as MySQL cannot handle functions as defaults, see:
@@ -140,6 +143,12 @@ class UsersMutationsDataset(CMSModel):
         self._data = data
         uri = self._save_to_file(data, self.uri)
         self.uri = uri
+
+        # to be refactored after November 3, when all datasets
+        # will aready have the following properties defined:
+        if data:
+            self.query_count = self.query_size
+            self.results_count = self.mutations_count
 
     def remove(self, commit=True):
         """Performs hard-delete of dataset.
@@ -227,8 +236,10 @@ class UsersMutationsDataset(CMSModel):
 
     @property
     def query_size(self):
-        new_lines = self.data.query.count('\n')
-        return new_lines + 1 if new_lines else 0
+        if self.query_count is None:
+            new_lines = self.data.query.count('\n')
+            return new_lines + 1 if new_lines else 0
+        return self.query_count
 
     @property
     def mutations(self):
@@ -238,6 +249,12 @@ class UsersMutationsDataset(CMSModel):
             for result in results:
                 mutations.append(result['mutation'])
         return mutations
+
+    @property
+    def mutations_count(self):
+        if self.results_count is None:
+            return len(self.mutations)
+        return self.results_count
 
     def get_mutation_details(self, protein, pos, alt):
         for mutation in self.mutations:

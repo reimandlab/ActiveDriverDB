@@ -48,7 +48,7 @@
         <td>{{ dataset.created_on }}</td>
         <td>{{ dataset.life_expectancy }}</td>
         <td>{{ dataset.query_size }}</td>
-        <td>{{ dataset.mutations | length }}</td>
+        <td>{{ dataset.mutations_count }}</td>
         <td>
           <a href="{{ url_for('SearchView:remove_user_mutations', uri=dataset.uri) }}">
             <span class="glyphicon glyphicon-trash" title="Remove this dataset"></span>
