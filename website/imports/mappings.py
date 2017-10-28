@@ -7,7 +7,6 @@ from helpers.bioinf import is_sequence_broken
 from helpers.parsers import read_from_gz_files
 from helpers.bioinf import get_human_chromosomes
 from helpers.bioinf import determine_strand
-from importlib import reload
 from flask import current_app
 from database import bdb, bdb_refseq
 
@@ -122,6 +121,7 @@ def import_aminoacid_mutation_refseq_mappings(
         except ValueError:
             print('Import error: not enough values for "tab" split')
             print(line)
+            continue
 
         assert chrom.startswith('chr')
         chrom = chrom[3:]
@@ -134,6 +134,7 @@ def import_aminoacid_mutation_refseq_mappings(
             except ValueError:
                 print('Import error: not enough values for ":" split')
                 print(line, dest)
+                continue
 
             assert refseq.startswith('NM_')
 
