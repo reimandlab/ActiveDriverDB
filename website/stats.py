@@ -583,7 +583,8 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
             median,
             median percentage,
             p_value: 1 - p-value,
-            ptms: list of counts of PTM sites discovered in each of sampling iterations
+            enriched_ptm_muts_in_iterations: list of counts of PTM sites discovered in each of sampling iterations,
+            expected_ptm_muts:  expected number of mutations associated with PTM sites
     """
     ptm_enriched_absolute = 0
     ptm_enriched_percentage = 0
@@ -627,14 +628,21 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
     median_ptms = median(enriched_ptms)
     median_percentage = median(enriched_percentage)
 
-    result_tuple = namedtuple('EnrichmentAnalysisResult', 'ptms median median_percentage, p_value, p_value_percentage')
+    result_tuple = namedtuple(
+        'EnrichmentAnalysisResult',
+        'enriched_ptm_muts_in_iterations, '
+        'median, median_percentage, '
+        'p_value, p_value_percentage, '
+        'expected_ptm_muts'
+    )
 
     return result_tuple(
         enriched_ptms,
         median_ptms,
         median_percentage,
         ptm_enriched_absolute / iterations_count,
-        ptm_enriched_percentage / iterations_count
+        ptm_enriched_percentage / iterations_count,
+        ptm_mutations
     )
 
 
@@ -682,7 +690,6 @@ def parametric_test_ptm_enrichment(tested_source, reference_source, tested_genes
     tested_mutations = get_confirmed_mutations([tested_source], genes=tested_genes)
 
     result = test_enrichment_of_ptm_mutations_among_mutations_subset(tested_mutations, reference_mutations)
-    print(result)
 
     return result
 
