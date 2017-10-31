@@ -477,19 +477,30 @@ def run_shell(args):
     print('Starting interactive shell...')
     app = create_app(config_override=CONFIG)
     with app.app_context():
+        import stats
+        import models
+
         if args.command:
             print('Executing supplied command: "%s"' % args.command)
-            import stats
             exec(args.command)
+
         print('You can access current application using "app" variable.')
         print('Database, models and statistics modules are pre-loaded.')
-        try:
-            from IPython import embed
-            embed()
-        except ImportError:
-            print('To use enhanced interactive shell install ipython3')
+
+        fallback = False
+        if not args.raw:
+            try:
+                from IPython import embed
+                embed()
+            except ImportError:
+                print('To use enhanced interactive shell install ipython3')
+                fallback = True
+
+        if fallback or args.raw:
             import code
-            code.interact(local=locals())
+            all_vars = locals()
+            all_vars.update(vars(models))
+            code.interact(local=all_vars)
 
 
 def create_parser():
@@ -521,6 +532,12 @@ def create_parser():
         subparsers,
         'shell',
         run_shell
+    )
+
+    shell_parser.add_argument(
+        '-r',
+        '--raw',
+        action='store_true'
     )
 
     shell_parser.add_argument(
