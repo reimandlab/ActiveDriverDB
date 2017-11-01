@@ -221,10 +221,12 @@ class Importer(MutationImporter):
     def raw_delete_all(self, model):
         assert self.model == model
 
-        # remove diseases
-        Disease.query.delete()
         # remove clinical data
         ClinicalData.query.delete()
+
+        # remove diseases
+        Disease.query.delete()
+
         # then mutations
         count = self.model.query.delete()
 
