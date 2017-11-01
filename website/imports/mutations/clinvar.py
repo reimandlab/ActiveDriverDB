@@ -222,10 +222,12 @@ class Importer(MutationImporter):
         assert self.model == model
 
         # remove clinical data
-        ClinicalData.query.delete()
+        data_cnt = ClinicalData.query.delete()
 
         # remove diseases
-        Disease.query.delete()
+        disease_cnt = Disease.query.delete()
+
+        print('%s diseases and %s clinical data entries removed' % (disease_cnt, data_cnt))
 
         # then mutations
         count = self.model.query.delete()
