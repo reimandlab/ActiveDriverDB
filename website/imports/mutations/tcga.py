@@ -17,6 +17,7 @@ class Importer(MutationImporter):
         'Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
         'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'V11'
     ]
+    export_samples = False
     samples_to_skip = set()
 
     def decode_line(self, line):
@@ -57,9 +58,17 @@ class Importer(MutationImporter):
         }
 
     def export_details_headers(self):
+        if self.export_samples:
+            return ['cancer_type', 'sample_id']
         return ['cancer_type']
 
     def export_details(self, mutation):
+        if self.export_samples:
+            return [
+                [mutation.cancer.code, sample]
+                for sample in (mutation.samples or '').split(',')
+            ]
+
         return [
             [mutation.cancer.code]
         ]
