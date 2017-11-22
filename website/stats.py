@@ -556,7 +556,7 @@ def count_mutated_potential_sites():
     print(count, total_length, count/total_length*100)
 
 
-def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, reference_query, iterations_count=100000):
+def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, reference_query, iterations_count=100000, subset_size=None, subset_ptms=None):
     """Perform tests according to proposed algorithm:
 
     1. Count the number of all ClinVar mutations as C, PTM-associated ClinVar mutations as D=27071
@@ -592,8 +592,14 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
     is_ptm = Mutation.precomputed_is_ptm
 
     # 1.
-    all_mutations = subset_query.count()                        # C
-    ptm_mutations = subset_query.filter(is_ptm).count()         # D
+    if subset_query:
+        all_mutations = subset_query.count()                        # C
+        ptm_mutations = subset_query.filter(is_ptm).count()         # D
+    else:
+        assert subset_size and subset_ptms
+        all_mutations = subset_size
+        ptm_mutations = subset_ptms
+
     ptm_percentage = ptm_mutations / all_mutations * 100        # E
 
     print('Counting enrichment in random subsets of background.')

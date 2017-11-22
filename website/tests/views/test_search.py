@@ -12,7 +12,7 @@ from models import Site
 from models import Mutation
 
 
-# base on example from specification in version 4.3:
+# base on example from VCF specification in version 4.3:
 # http://samtools.github.io/hts-specs/VCFv4.3.pdf
 VCF_FILE_CONTENT = b"""\
 ##fileformat=VCFv4.3
