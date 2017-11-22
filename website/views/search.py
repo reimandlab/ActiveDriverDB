@@ -516,6 +516,7 @@ class SearchView(FlaskView):
                 )
                 return redirect(url_for('SearchView:mutations'))
             mutation_search, dataset_uri = celery_task.result
+
             if dataset_uri:
                 url = url_for(
                     'SearchView:user_mutations',

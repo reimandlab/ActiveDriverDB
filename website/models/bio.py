@@ -1606,6 +1606,8 @@ class Mutation(BioModel):
         sources = {}
         for source_name, associated_field in self.source_fields.items():
             field_value = getattr(self, associated_field)
+            if source_name == 'user':
+                continue
             if field_value:
                 sources[source_name] = field_value
         return sources
