@@ -393,6 +393,7 @@ class SearchView(FlaskView):
 
         response = make_response(template(
             'search/dataset.html',
+            mutation_types=Mutation.types,
             results=dataset.data.results,
             widgets=make_widgets(filter_manager),
             without_mutations=dataset.data.without_mutations,
@@ -540,6 +541,7 @@ class SearchView(FlaskView):
         response = make_response(template(
             'search/index.html',
             target='mutations',
+            mutation_types=Mutation.types,
             hidden_results_cnt=mutation_search.hidden_results_cnt,
             results=mutation_search.results,
             widgets=make_widgets(filter_manager),

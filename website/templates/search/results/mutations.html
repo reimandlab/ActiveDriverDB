@@ -1,3 +1,7 @@
+{{ dependency('moment') }}
+{{ dependency('bootstrap_sortable') }}
+{{ dependency('bootstrap_sortable_css') }}
+
 {#
   Results should be in a form of a table where mappings are shown
   together with links to appropiate sites. Below the table information
@@ -5,16 +9,16 @@
 #}
 <h4>Results</h4>
 
-<table class="table table-rowspan-hover">
+<table class="table table-rowspan-hover sortable">
   <thead>
   <tr>
     {% set columns_count = 10 %}
     <th>User input</th>
-    <th>Gene</th>
-    <th>Refseq</th>
-    <th title="Reference amino acid residue in protein">Ref</th>
+    <th id='col_gene'>Gene</th>
+    <th id='col_refseq'>Refseq</th>
+    <th title="Reference amino acid residue in protein" id='col_ref'>Ref</th>
     <th title="Mutated amino acid residue in protein">Alt</th>
-    <th title="Position of mutation in protein">Position</th>
+    <th title="Position of mutation in protein" id='col_pos'>Position</th>
     <th>is PTM?</th>
     <th>Count</th>
     <th>Impact</th>
@@ -22,8 +26,8 @@
   </tr>
   </thead>
   {% if results %}
+    <tbody>
     {% for user_input, result_items in results.items() %}
-      <tbody>
       {% for result in result_items %}
         {% set mutation = result.mutation %}
         <tr>
@@ -60,7 +64,7 @@
           #}</td>
           <td>{{ mutation.meta_user.count }}</td>
           {% set impact = mutation.impact_on_ptm() %}
-          <td>
+          <td data-value={{ mutation_types.index(impact) }}>
             <div class="{{ impact or '' }} badge">
               {{ impact or '' }}
               {% if impact == 'network-rewiring' %}
@@ -79,8 +83,8 @@
           </td>
         </tr>
       {% endfor %}
-      </tbody>
     {% endfor %}
+    </tbody>
   {% endif %}
   <tfoot>
   {% if without_mutations %}

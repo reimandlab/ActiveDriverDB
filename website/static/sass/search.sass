@@ -100,7 +100,7 @@
     tbody:nth-child(odd)
       background: #f5f5f5
 
-  tbody:hover td[rowspan], tr:hover td
+  tr:hover td:not([rowspan])
     background: #f5f5f5
 
 @import "mutation_table"
@@ -118,7 +118,8 @@
 .filters-bar
   padding-right: 10px
 
-.btn.run-again
+.results-buttons
+  margin-top: 5px
   float: right
 
 h4.gene

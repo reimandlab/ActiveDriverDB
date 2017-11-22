@@ -109,6 +109,17 @@ class DependencyManager:
             'https://cdnjs.cloudflare.com/ajax/libs/nunjucks/3.0.1/nunjucks-slim.min.js',
             'sha256-tdB3uMy+X5YRM5JMGgy1oMtdSm1GwTEMmWb7q80e2+g='
         ),
+        'moment': JSResource(
+            # requirement for bootstrap_sortable
+            'https://cdn.jsdelivr.net/npm/moment@2.19.2/moment.min.js'
+        ),
+        'bootstrap_sortable': JSResource(
+            # bootstrap_sortable supports rowspan, bootstrap_table does not
+            'https://cdn.jsdelivr.net/gh/drvic10k/bootstrap-sortable@2.1.0/Scripts/bootstrap-sortable.min.js'
+        ),
+        'bootstrap_sortable_css': CSSResource(
+            'https://cdn.jsdelivr.net/gh/drvic10k/bootstrap-sortable@2.1.0/Contents/bootstrap-sortable.min.css'
+        ),
         'bootstrap_table': JSResource(
             'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js',
             'sha256-eXHLyyVI+v6X1wbfg9NB05IWqOqY4E9185nHZgeDIhg='
