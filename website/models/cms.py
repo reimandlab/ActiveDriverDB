@@ -6,6 +6,7 @@ from datetime import timedelta
 
 from sqlalchemy import and_, not_
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import validates
 from werkzeug.utils import cached_property
@@ -145,7 +146,7 @@ class UsersMutationsDataset(CMSModel):
         self.uri = uri
 
         # to be refactored after November 3, when all datasets
-        # will aready have the following properties defined:
+        # will already have the following properties defined:
         if data:
             self.query_count = self.query_size
             self.results_count = self.mutations_count
@@ -452,11 +453,13 @@ class MenuEntry(CMSModel):
         'polymorphic_on': type
     }
 
-from sqlalchemy.ext.declarative import declared_attr
+
 class PageMenuEntry(MenuEntry):
+
     @declared_attr
     def __tablename__(self):
         return 'page_menu_entry'
+
     id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
 
     page_id = db.Column(db.Integer, db.ForeignKey('page.id'))
@@ -478,9 +481,11 @@ class PageMenuEntry(MenuEntry):
 
 
 class CustomMenuEntry(MenuEntry):
+
     @declared_attr
     def __tablename__(self):
         return 'custom_menu_entry'
+
     id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
 
     title = db.Column(db.String(256))
