@@ -204,12 +204,12 @@ function advanced_searchbar_templator(mutation_template)
             switch(result.type)
             {
                 case 'gene':
-                    link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">'
+                    link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">' + result.name
 
                     if(result.isoforms_count > 1)
                         link += badge(result.isoforms_count + ' isoforms')
 
-                    return link + result.name + '</a>'
+                    return link + '</a>'
 
                 case 'aminoacid mutation':
                     name = result.mutation.name + ' (' + result.protein.refseq + ')';
@@ -223,12 +223,15 @@ function advanced_searchbar_templator(mutation_template)
                     return '<button type="button" class="list-group-item">' + result.name + '</button>'
 
                 case 'pathway':
+
+                    link += result.name
+
                     if(result.gene_ontology)
                         link += badge('Gene Ontology pathway')
                     if(result.reactome)
                         link += badge('Reactome pathway')
 
-                    return link + result.name + '</a>'
+                    return link + '</a>'
 
                 case 'cancer':
                     return link + format(cancer_template, result) + badge('Cancer') + '</a>'
