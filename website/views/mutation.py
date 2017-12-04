@@ -17,7 +17,7 @@ class MutationView(FlaskView):
             protein=protein,
             position=int(position),
             alt=alt
-        ).one()
+        ).first_or_404()
 
         # in case we also want to show also non-confirmed mutations:
         """
