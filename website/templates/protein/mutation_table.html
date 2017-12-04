@@ -39,7 +39,7 @@
           title="Mutated amino acid residue in protein">Alt</th>
       <th data-sortable=true
           data-visible={{ (source not in ('1KGenomes', 'ESP6500')) | string | lower }}
-          data-switchable=true>{{ value_type }}</th>
+          data-switchable=true>{{ value_type | title }}</th>
       <th data-sortable=true
           data-sorter=mutation_table.impactSorter
           data-formatter=mutation_table.impactFormatter
