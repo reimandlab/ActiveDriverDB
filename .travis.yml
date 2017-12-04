@@ -30,7 +30,7 @@ install:
 
 
 script:
-  - python3 -m pytest -x -n 2 --cov=. -k 'not data_dependent'
+  - python3 -m pytest -x -n 2 --cov=. -k 'not data_dependent' -v
 
 
 after_success:
