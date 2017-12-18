@@ -603,6 +603,9 @@ class FilterManager:
         """Return value of filter with specified identifier."""
         return self.filters[filter_id].value
 
+    def set_value(self, filter_id, value):
+        self.filters[filter_id]._value = value
+
     def update_from_request(self, request, raise_on_forbidden=True):
         """Set states of child filters to match those specified in request.
 

@@ -26,12 +26,17 @@ class FiltersData:
 
 class ProteinFiltersData(FiltersData):
 
-    def __init__(self, filter_manager, protein):
+    def __init__(self, filter_manager, protein, custom_widgets_creator=None):
         super().__init__(filter_manager)
         from flask import render_template
+        widgets = create_dataset_specific_widgets(protein, filter_manager.filters)
+
+        if custom_widgets_creator:
+            widgets += custom_widgets_creator(protein, filter_manager.filters)
+
         self.dynamic_widgets = render_template(
             'widgets/widget_list.html',
-            widgets=create_dataset_specific_widgets(protein, filter_manager.filters),
+            widgets=widgets,
             collapse=True
         )
 
