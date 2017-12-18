@@ -115,6 +115,12 @@ class SequenceRepresentation(ProteinRepresentation):
 
             if background:
                 needle['background'] = True
+            else:
+                # population badge
+                for population_source, field_source in POPULATION_FIELDS.items():
+                    population_field = getattr(mutation, field_source)
+                    if population_field:
+                        metadata[population_source] = population_field.to_json()
 
             needle['meta'] = metadata
             needle['value'] = get_value(field)
@@ -177,16 +183,19 @@ def background_widget(filters_by_id):
     )
 
 
+POPULATION_FIELDS = {
+    name: field
+    for name, field in Mutation.source_fields.items()
+    if issubclass(Mutation.get_source_model(name), PopulationMutation)
+}
+
+
 def background_filter():
 
     return SourceDependentFilter(
         Background, 'sources',
         comparators=['in'],
-        choices=[
-            name
-            for name in Mutation.sources_dict.keys()
-            if issubclass(Mutation.get_source_model(name), PopulationMutation)
-        ],
+        choices=list(POPULATION_FIELDS.keys()),
         default=[],
         nullable=True,
         source='MC3',
