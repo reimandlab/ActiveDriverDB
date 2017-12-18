@@ -281,6 +281,10 @@ var Tooltip = function()
                     }, 0)
                 })
 
+        },
+        remove: function()
+        {
+            tooltip.remove()
         }
     }
 

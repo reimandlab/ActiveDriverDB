@@ -45,4 +45,6 @@ function initializeKinaseTooltips(selection)
         selection = d3.selectAll('.kinase')
     selection
         .call(kinase_tooltip.bind)
+
+    return kinase_tooltip
 }

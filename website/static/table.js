@@ -7,6 +7,7 @@ var MutationTable = function ()
     var mutations
     var impact_importances = {}
     var mutation_template
+    var tooltips = []
 
     function detailFormatter(index, row_data, element)
     {
@@ -26,7 +27,8 @@ var MutationTable = function ()
 
     function initializeTooltips()
     {
-        initializeKinaseTooltips()
+        var tooltip = initializeKinaseTooltips()
+        tooltips.push(tooltip)
     }
 
     function showMutation(mutation_id)
@@ -95,7 +97,8 @@ var MutationTable = function ()
                 'expandRow',
                 getMutationRow(mutation_id).data('index')
             )
-            initializeKinaseTooltips(d3.select(expanded_row.get(0)).selectAll('.kinase'))
+            var tooltip = initializeKinaseTooltips(d3.select(expanded_row.get(0)).selectAll('.kinase'))
+            tooltips.push(tooltip)
         },
         showMutation: showMutation,
         impactFormatter: function(value, row, index)
@@ -130,6 +133,10 @@ var MutationTable = function ()
         positionFormatter: function (value, row, index) {
             // Warning: this requires global "tracks" to be defined!
             return '<a href="#" onclick="tracks.scrollTo(' + value + ')" title="Show in visualisation">' + value + '</a>'
+        },
+        destroy: function () {
+            var tooltip
+            while(tooltip = tooltips.pop()) tooltip.remove()
         }
     }
 

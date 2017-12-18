@@ -229,6 +229,8 @@
     var plot = document.getElementById('plot_area');
     var spinner = $('#protein_spinner');
 
+    var tooltips = [];
+
     function init_plot(variable_config)
     {
         var site_tooltip = Tooltip()
@@ -240,6 +242,8 @@
             },
             viewport: plot.parentNode
         })
+
+        tooltips.push(site_tooltip)
 
 
         var params = {
@@ -359,9 +363,11 @@
             },
             callback: function(node)
             {
-                initializeKinaseTooltips(d3.select(node).selectAll('.kinase'))
+                var kinase_tooltip = initializeKinaseTooltips(d3.select(node).selectAll('.kinase'))
+                tooltips.push(kinase_tooltip)
             }
         })
+        tooltips.push(needle_tooltip)
 
         var variable_config = {
             needle_tooltip: needle_tooltip,
@@ -395,10 +401,11 @@
             if (tracks.isReady())
                 tracks.hide();
             $('#plot_area').addClass('invisible');
-            if (needle_plot)
-                needle_plot.destroy();
+            var to_destroy = [needle_plot, tracks, mutation_table]
+            var obj, tooltip
+            while(obj = to_destroy.pop()) if (obj) obj.destroy();
+            while(tooltip = tooltips.pop()) tooltip.remove()
             $table_wrapper.addClass('loading');
-
             spinner.show();
         },
         on_loading_end: function(){

@@ -10,6 +10,7 @@ var Tracks = function ()
     var is_ready = false
     var controls, box
     var is_animation_running
+    var tooltip
 
     var config = {
         scroll_step: 0.8, // how many screen (to left or right) should be scrolled after clicking scroll button
@@ -426,7 +427,7 @@ var Tracks = function ()
             _setZoom(1)
 
             // initialize all popovers on tracks
-            var tooltip = Tooltip()
+            tooltip = Tooltip()
             tooltip.init({
                 id: 'tracks',
                 template: function(data){
@@ -513,6 +514,10 @@ var Tracks = function ()
         scrollTo: function (position) {
             $('.scroll-to-input').val(position)
             scrollToCallback();
+        },
+        destroy: function ()
+        {
+            if(tooltip) tooltip.remove()
         }
 
     }
