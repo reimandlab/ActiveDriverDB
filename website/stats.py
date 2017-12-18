@@ -869,8 +869,9 @@ def disease_muts_affecting_ptm_sites():
         count_mutations_from_genes(cancer_genes, [MC3Mutation], only_preferred_isoforms)
 
 
+stats = Statistics()
+
 if current_app.config['LOAD_STATS']:
-    stats = Statistics()
     print('Loading statistics')
     STATISTICS = stats.get_all()
 else:
