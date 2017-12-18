@@ -1,4 +1,4 @@
-<ul class="list-unstyled checkbox-list">
+<ul class="list-unstyled checkbox-list {{ 'nullable' if widget.nullable }}">
     {% if widget.labels | length > 4 %}
         <li class="checkbox check-all js-shown">
             <label>

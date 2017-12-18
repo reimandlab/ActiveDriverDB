@@ -91,7 +91,7 @@ var Widgets = (function () {
                 update
             );
 
-            checkbox_list(form.find('.widget .checkbox-list'));
+            checkbox_list(form.find('.widget .checkbox-list:not(.nullable)'));
         }
     };
 
