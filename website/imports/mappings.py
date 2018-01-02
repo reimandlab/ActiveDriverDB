@@ -2,7 +2,7 @@ from collections import defaultdict
 from os.path import basename
 
 from genomic_mappings import make_snv_key, encode_csv
-from helpers.bioinf import decode_mutation
+from helpers.bioinf import decode_mutation, DataInconsistencyError
 from helpers.bioinf import is_sequence_broken
 from helpers.parsers import read_from_gz_files
 from helpers.bioinf import get_human_chromosomes
@@ -29,7 +29,11 @@ def import_genome_proteome_mappings(
     bdb.open(bdb_dir + basename(current_app.config['BDB_DNA_TO_PROTEIN_PATH']))
 
     for line in read_from_gz_files(mappings_dir, mappings_file_pattern):
-        chrom, pos, ref, alt, prot = line.rstrip().split('\t')
+        try:
+            chrom, pos, ref, alt, prot = line.rstrip().split('\t')
+        except ValueError as e:
+            print(e, line)
+            continue
 
         assert chrom.startswith('chr')
         chrom = chrom[3:]
@@ -41,7 +45,11 @@ def import_genome_proteome_mappings(
         # mapped from given `snv` (Single Nucleotide Variation)
 
         for dest in filter(bool, prot.split(',')):
-            name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
+            try:
+                name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
+            except ValueError as e:
+                print(e, line)
+                continue
             assert refseq.startswith('NM_')
             # refseq = int(refseq[3:])
             # name and refseq are redundant with respect one to another
@@ -50,9 +58,17 @@ def import_genome_proteome_mappings(
             exon = exon[4:]
 
             assert cdna_mut.startswith('c')
-            cdna_ref, cdna_pos, cdna_alt = decode_mutation(cdna_mut)
+            try:
+                cdna_ref, cdna_pos, cdna_alt = decode_mutation(cdna_mut)
+            except ValueError as e:
+                print(e, line)
+                continue
 
-            strand = determine_strand(ref, cdna_ref, alt, cdna_alt)
+            try:
+                strand = determine_strand(ref, cdna_ref, alt, cdna_alt)
+            except DataInconsistencyError as e:
+                print(e, line)
+                continue
 
             assert prot_mut.startswith('p')
             # we can check here if a given reference nuc is consistent
