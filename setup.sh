@@ -2,14 +2,18 @@
 # Install Berkley DB
 mkdir downloads
 cd downloads
-wget -N http://download.oracle.com/berkeley-db/db-6.2.32.NC.tar.gz -O db.NC.tar.gz
+wget -N http://download.oracle.com/berkeley-db/db-6.2.23.NC.tar.gz -O db.NC.tar.gz
 tar -xzf db.NC.tar.gz
-cd db.NC/build_unix
+cd db-6.2.23.NC/build_unix
 sudo ../dist/configure
 sudo make
 sudo make install
 cd ..
 cd ../..
+
+export BERKELEYDB_DIR=/usr/local/BerkeleyDB.6.2
+export LD_LIBRARY_PATH=/usr/local/BerkeleyDB.6.2/lib:$LD_LIBRARY_PATH
+sudo pip3 install bsddb3 --berkeley-db=/usr/local/BerkeleyDB.6.2/include
 
 # Use examplar configuration for the beginning
 cd website
