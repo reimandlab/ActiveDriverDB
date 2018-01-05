@@ -171,7 +171,7 @@ def common_filters(
         ),
         Filter(
             Site, 'type', comparators=['in'],
-            choices=Site.types,
+            choices=Site.types(),
             as_sqlalchemy=True
         )
     ] + source_dependent_filters(protein)

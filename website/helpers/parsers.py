@@ -142,7 +142,7 @@ def parse_text_file(filename, parser, file_header=None, file_opener=open):
             parser(line)
 
 
-def parse_fasta_file(filename, on_header, on_sequence, file_opener=open):
+def parse_fasta_file(filename, on_sequence, on_header=lambda x: x, file_opener=open):
     """Utility function wrapping Fasta file parser.
 
     For each line parser will be called.

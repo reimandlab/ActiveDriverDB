@@ -1,7 +1,7 @@
 from database import db
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
-from imports.protein_data import sites as load_sites
+from imports.sites.ptm_var import PTMVarImporter
 from test_imports.test_proteins import create_test_proteins
 
 sites_data = """\
@@ -18,15 +18,18 @@ class TestImport(DatabaseTest):
         proteins = create_test_proteins(['NM_003955'])
         # Sequence is needed for validation. Validation is tested on model level.
         proteins['NM_003955'].sequence = 'MVTHSKFPAAGMSRPLDTSLRLKTFSSKSEYQLVVNAVRKLQESGFYWSAVTGGEANLLLSAEPAGTFLIRDSSDQRHFFTLSVKTQSGTKNLRIQCEGGSFSLQSDPRSTQPVPRFDCVLKLVHHYMPPPGAPSFPSPPTEPSSEVPEQPSAQPLPGSPPRRAYYIYSGGEKIPLVLSRPLSSNVATLQHLCRKTVNGHLDSYEKVTQLPGPIREFLDQYDAPL*'
+        db.session.add_all(proteins.values())
 
         filename = make_named_temp_file(sites_data)
 
-        sites = load_sites(filename)
+        importer = PTMVarImporter()
+
+        sites = importer.load_sites(filename)
 
         assert len(sites) == 3
         sites = {site.position: site for site in sites}
 
         assert sites[6].residue == 'K'
-        assert sites[6].type == 'ubiquitination'
+        assert sites[6].type == {'ubiquitination'}
 
         assert {kinase.name for kinase in sites[204].kinases} == {'JAK2', 'LCK'}

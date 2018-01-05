@@ -17,12 +17,11 @@ from helpers.commands import argument
 from helpers.commands import argument_parameters
 from helpers.commands import command
 from helpers.commands import create_command_subparsers
-from imports import import_all
+from imports import import_all, Importer
 from imports.mappings import import_aminoacid_mutation_refseq_mappings
 from imports.mappings import import_genome_proteome_mappings
 from imports.mutations import MutationImportManager
 from imports.mutations import get_proteins
-from imports.protein_data import IMPORTERS
 from models import Page
 from models import User
 
@@ -236,6 +235,9 @@ class CMS(CommandTarget):
         reset_relational_db(current_app, bind='cms')
 
 
+IMPORTERS = {importer.name: importer for importer in Importer.registry}
+
+
 class ProteinRelated(CommandTarget):
 
     description = (
@@ -251,9 +253,9 @@ class ProteinRelated(CommandTarget):
     def load(args):
         data_importers = IMPORTERS
         for importer_name in args.importers:
-            importer = data_importers[importer_name]
+            importer = data_importers[importer_name]()
             print('Running {name}:'.format(name=importer_name))
-            results = importer()
+            results = importer.load()
             if results:
                 db.session.add_all(results)
             db.session.commit()

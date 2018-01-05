@@ -131,7 +131,7 @@ class TestSearchView(ViewTest):
 
     def test_search_mutations(self):
 
-        s = Site(position=13, type='methylation')
+        s = Site(position=13, type={'methylation'})
         p = Protein(refseq='NM_007', id=7, sites=[s], sequence='XXXXXXXXXXXXV')
 
         m_in_site = Mutation(protein=p, position=13, alt='V')

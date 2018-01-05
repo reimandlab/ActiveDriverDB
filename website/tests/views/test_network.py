@@ -55,14 +55,14 @@ def create_network():
     )
     s = Site(
         position=1,
-        type='phosphorylation',
+        type={'phosphorylation'},
         residue='T',
         kinases=[known_interactor_of_x],
         kinase_groups=[group]
     )
     s2 = Site(
         position=2,
-        type='phosphorylation',
+        type={'phosphorylation'},
         residue='R',
         kinase_groups=[group]
     )

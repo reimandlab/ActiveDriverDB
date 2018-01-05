@@ -1,14 +1,16 @@
 from warnings import warn
 
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, TypeDecorator, inspect
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
+from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import func, FunctionElement, text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.types import DateTime
+from sqlalchemy.types import Text
 
-from berkley_db import BerkleyHashSet
+from berkley_db import BerkleyHashSet, SetWithCallback
 from flask_sqlalchemy import SQLAlchemy
 from genomic_mappings import GenomicMappings
 from helpers.parsers import chunked_list
@@ -316,3 +318,69 @@ def update_column(engine, table_name, column_definition):
         % (table_name, column_definition)
     )
     engine.execute(sql)
+
+
+class ScalarSet(TypeDecorator):
+
+    @property
+    def python_type(self):
+        return set
+
+    impl = Text()
+
+    def __init__(self, separator=','):
+        self.separator = separator
+
+    def process_bind_param(self, value, dialect):
+        if not value:
+            return ''
+        assert all([self.separator not in v for v in value])
+        return self.separator.join(value)
+
+    def process_result_value(self, value, dialect):
+        if not value:
+            return set()
+        return set(value.split(self.separator))
+
+
+class MutableSet(Mutable, SetWithCallback):
+
+    def __init__(self, items):
+        SetWithCallback.__init__(self, items, lambda s: self.changed())
+
+    @classmethod
+    def coerce(cls, key, value):
+        """Convert plain set to MutableSet."""
+
+        if not isinstance(value, MutableSet):
+            if isinstance(value, set):
+                return MutableSet(value)
+
+            # this call will raise ValueError
+            return Mutable.coerce(key, value)
+        else:
+            return value
+
+
+MutableSet.associate_with(ScalarSet)
+
+
+def call_if_needed(value_or_callable, *args, **kwargs):
+    if callable(value_or_callable):
+        return value_or_callable(*args, **kwargs)
+    else:
+        return value_or_callable
+
+
+def client_side_defaults(*columns):
+    def decorator(init_func):
+        def __init__(self, *args, **kwargs):
+            columns_definitions = inspect(self.__class__).columns
+            for key in columns:
+                # if the user did not provide an alternative to the default
+                if key not in kwargs:
+                    default = columns_definitions[key].default.arg
+                    kwargs[key] = call_if_needed(default, self)
+            init_func(self, *args, **kwargs)
+        return __init__
+    return decorator

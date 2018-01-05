@@ -1,11 +1,12 @@
 import gzip
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import defaultdict, namedtuple
 from tqdm import tqdm
 from database import db, yield_objects
 from database import get_or_create
 from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
+from imports.importer import importer
 from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType
 from models import Gene
 from models import InterproDomain
@@ -13,12 +14,10 @@ from models import Cancer
 from models import Kinase
 from models import KinaseGroup
 from models import Protein
-from models import Site
 from models import Pathway
 from models import BadWord
 from models import GeneList
 from models import GeneListEntry
-from helpers.commands import register_decorator
 from operator import attrgetter
 
 
@@ -34,11 +33,6 @@ def get_proteins(cached_proteins={}, reload_cache=False):
         for protein in Protein.query:
             cached_proteins[protein.refseq] = protein
     return cached_proteins
-
-
-IMPORTERS = OrderedDict()
-importer = register_decorator(IMPORTERS)
-# TODO: class with register? Should have fields as "parsed_count", "results"
 
 
 def create_key_model_dict(model, key, lowercase=False):
@@ -187,7 +181,7 @@ def sequences(path='data/all_RefGene_proteins.fa'):
     def on_sequence(refseq, line):
         proteins[refseq].sequence += line
 
-    parse_fasta_file(path, on_header, on_sequence)
+    parse_fasta_file(path, on_sequence, on_header)
 
     print('%s sequences overwritten' % overwritten)
     print('%s new sequences saved' % new_count)
@@ -480,7 +474,7 @@ def disorder(path='data/all_RefGene_disorder.fa'):
     def on_sequence(name, line):
         proteins[name].disorder_map += line
 
-    parse_fasta_file(path, on_header, on_sequence)
+    parse_fasta_file(path, on_sequence, on_header)
 
     for protein in proteins.values():
         assert len(protein.sequence) == protein.length
@@ -800,88 +794,6 @@ def kinase_mappings(path='data/curated_kinase_IDs.txt'):
     parse_tsv_file(path, parser)
 
     return new_kinases
-
-
-def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_groups):
-    """Create a subset of known kinases and known kinase groups based on given
-    list of kinases names ('chosen_kinases_names'). If no kinase or kinase group
-    of given name is known, it will be created.
-
-    Returns a tuple of sets:
-        kinases, groups
-    """
-    kinases, groups = set(), set()
-
-    for name in list(set(chosen_kinases_names)):
-
-        # handle kinases group
-        if name.endswith('_GROUP'):
-            name = name[:-6]
-            if name not in known_kinase_groups:
-                known_kinase_groups[name] = KinaseGroup(name=name)
-            groups.add(known_kinase_groups[name])
-        # if it's not a group, it surely is a kinase:
-        else:
-            if name not in known_kinases:
-                known_kinases[name] = Kinase(
-                    name=name,
-                    protein=get_preferred_gene_isoform(name)
-                )
-            kinases.add(known_kinases[name])
-
-    return kinases, groups
-
-
-@importer
-def sites(path='data/site_table.tsv'):
-    """Load sites from given file altogether with kinases which
-    interact with these sites - kinases already in database will
-    be reused, unknown kinases will be created
-
-    Args:
-        path: to tab-separated-values file with sites to load
-
-    Returns:
-        list of created sites
-    """
-    proteins = get_proteins()
-
-    print('Loading protein sites:')
-
-    header = ['gene', 'position', 'residue', 'enzymes', 'pmid', 'type']
-
-    sites = []
-
-    known_kinases = create_key_model_dict(Kinase, 'name')
-    known_groups = create_key_model_dict(KinaseGroup, 'name')
-
-    def parser(line):
-
-        refseq, position, residue, kinases_str, pmid, mod_type = line
-
-        site_kinase_names = filter(bool, kinases_str.split(','))
-
-        site_kinases, site_groups = get_or_create_kinases(
-            site_kinase_names,
-            known_kinases,
-            known_groups
-        )
-
-        site = Site(
-            position=int(position),
-            residue=residue,
-            pmid=pmid,
-            protein=proteins[refseq],
-            kinases=list(site_kinases),
-            kinase_groups=list(site_groups),
-            type=mod_type
-        )
-
-        sites.append(site)
-
-    parse_tsv_file(path, parser, header)
-
-    return sites
 
 
 @importer

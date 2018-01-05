@@ -10,7 +10,7 @@ class TestChromosomeView(ViewTest):
 
     def test_mutation(self):
 
-        s = Site(position=13, type='methylation')
+        s = Site(position=13, type={'methylation'})
         p = Protein(refseq='NM_007', id=1, sites=[s], sequence='A'*15, gene=Gene(name='SomeGene'))
 
         db.session.add(p)

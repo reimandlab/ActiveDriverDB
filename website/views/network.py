@@ -178,7 +178,7 @@ class NetworkRepresentation(ProteinRepresentation):
         return {
             'position': site.position,
             'residue': site.residue,
-            'ptm_type': site.type,
+            'ptm_type': ','.join(site.type),
             'kinases': [kinase.name for kinase in site_kinases],
             'kinase_groups': [group.name for group in site_kinase_groups],
             'kinases_count': len(site_kinases),
@@ -244,7 +244,7 @@ class NetworkRepresentation(ProteinRepresentation):
                 self.protein.gene_name,
                 self.protein.refseq,
                 target_site,
-                site.type
+                ','.join(site.type)
             ]
 
             site_mimp_kinases = [

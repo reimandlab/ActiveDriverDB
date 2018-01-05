@@ -153,7 +153,7 @@ class GeneViewFilters(FilterManager):
             ),
             Filter(
                 Site, 'type', comparators=['in'],
-                choices=Site.types,
+                choices=Site.types(),
                 as_sqlalchemy=True
             ),
             Filter(

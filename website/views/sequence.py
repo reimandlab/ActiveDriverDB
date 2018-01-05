@@ -48,7 +48,7 @@ def prepare_sites(sites):
         {
             'start': site.position - 7,
             'end': site.position + 7,
-            'type': str(site.type)
+            'type': ','.join(site.type)
         } for site in sites
     ]
 
@@ -175,6 +175,6 @@ class SequenceView(AbstractProteinView):
                 filter_manager.filters,
                 custom_datasets_names=user_datasets.values()
             ),
-            site_types=['multi_ptm'] + Site.types,
+            site_types=['multi_ptm'] + Site.types(),
             mutation_types=Mutation.types,
         )

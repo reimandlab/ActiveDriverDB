@@ -1,4 +1,5 @@
 from types import FunctionType
+from helpers.patterns import Register
 
 
 def register_decorator(register):
@@ -31,22 +32,6 @@ def argument(func):
     func.is_argument = True
     func.commands = 'all'
     return func
-
-
-class Register(type):
-
-    def __init__(cls, name, bases, newattrs):
-
-        super().__init__(name, bases, newattrs)
-
-        if not hasattr(cls, 'registry'):
-            cls.registry = set()
-
-        cls.registry.add(cls)
-        cls.registry -= set(bases)
-
-    def __iter__(cls):
-        return iter(cls.registry)
 
 
 class CommandTarget(metaclass=Register):

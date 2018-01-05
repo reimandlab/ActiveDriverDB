@@ -441,7 +441,7 @@ def source_specific_mutated_sites():
     mutated_sites = defaultdict(dict)
 
     site_type_queries = ['']  # empty will match all sites
-    site_type_queries.extend(Site.types)
+    site_type_queries.extend(Site.types())
 
     for name, model in mutation_sources().items():
         count = (
@@ -502,7 +502,7 @@ def generate_source_specific_summary_table():
 def sites_counts():
     counts = {}
     site_types = ['']  # empty will match all sites
-    site_types.extend(Site.types)
+    site_types.extend(Site.types())
     for site_type in site_types:
         count = Site.query.filter(Site.type.like('%' + site_type + '%')).count()
         counts[site_type] = count

@@ -1,6 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from collections import UserList
+from functools import lru_cache
 
 from sqlalchemy import and_, distinct
 from sqlalchemy import case
@@ -15,7 +16,7 @@ from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
 from werkzeug.utils import cached_property
 
-from database import db, count_expression
+from database import db, count_expression, ScalarSet, client_side_defaults
 from database import fast_count
 from exceptions import ValidationError
 from helpers.models import generic_aggregator, association_table_super_factory
@@ -429,11 +430,8 @@ class Protein(BioModel):
         backref='protein'
     )
 
+    @client_side_defaults('sequence', 'disorder_map')
     def __init__(self, **kwargs):
-        for key in ('sequence', 'disorder_map'):
-            if key not in kwargs:
-                kwargs[key] = ''
-
         super().__init__(**kwargs)
 
     def __repr__(self):
@@ -678,6 +676,8 @@ class Protein(BioModel):
 
 
 def default_residue(context):
+    if not hasattr(context, 'current_parameters'):
+        return
     params = context.current_parameters
 
     protein = params.get('protein')
@@ -696,19 +696,29 @@ def default_residue(context):
             return
 
 
+class SiteType(BioModel):
+    # this table can be pre-fetched into the application
+    # memory on start, as it is not supposed to change after
+    # the initial import
+    name = db.Column(db.String(16))
+
+
 class Site(BioModel):
     # Note: this position is 1-based
     position = db.Column(db.Integer, index=True)
 
     residue = db.Column(db.String(1), default=default_residue)
-    pmid = db.Column(db.Text)
-    # type is expected to be a spaceless string, one of following:
-    #   phosphorylation acetylation ubiquitination methylation
-    # or comma separated list consisting of such strings. Another
-    # implementation which should be tested would use relationships
-    # to 'site_types' table and it might be faster to query specific
-    # sites when having this implemented that way.
-    type = db.Column(db.Text)
+
+    pmid = db.Column(ScalarSet(separator=','), default=set)
+    type = db.Column(ScalarSet(separator=','), default=set)
+
+    # TODO: following ideas might be worth exploring:
+    # mapped = db.Column(db.Boolean)
+
+    # @property
+    # def type_string(self):
+    #      return ','.join(self.type)
+
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     kinases = db.relationship(
         'Kinase',
@@ -721,6 +731,7 @@ class Site(BioModel):
         backref='sites'
     )
 
+    @client_side_defaults('pmid', 'type')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -789,7 +800,7 @@ class Site(BioModel):
     def to_json(self, with_kinases=False):
         data = {
             'position': self.position,
-            'type': self.type,
+            'type': ','.join(self.type),
             'residue': self.residue
         }
         if with_kinases:
@@ -803,10 +814,10 @@ class Site(BioModel):
             ]
         return data
 
-    types = [
-        'phosphorylation', 'acetylation',
-        'ubiquitination', 'methylation'
-    ]
+    @classmethod
+    @lru_cache()
+    def types(cls):
+        return [site_type.name for site_type in SiteType.query]
 
 
 class Cancer(BioModel):
