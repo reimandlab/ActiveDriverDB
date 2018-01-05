@@ -703,6 +703,10 @@ class SiteType(BioModel):
     name = db.Column(db.String(16))
 
 
+class SiteSource(BioModel):
+    name = db.Column(db.String(16))
+
+
 class Site(BioModel):
     # Note: this position is 1-based
     position = db.Column(db.Integer, index=True)
@@ -720,14 +724,23 @@ class Site(BioModel):
     #      return ','.join(self.type)
 
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
+
+    sources = db.relationship(
+        'SiteSource',
+        secondary=make_association_table('site.id', 'sitesource.id'),
+        collection_class=set,
+        backref='sites'
+    )
     kinases = db.relationship(
         'Kinase',
         secondary=make_association_table('site.id', 'kinase.id'),
+        collection_class=set,
         backref='sites'
     )
     kinase_groups = db.relationship(
         'KinaseGroup',
         secondary=make_association_table('site.id', 'kinasegroup.id'),
+        collection_class=set,
         backref='sites'
     )
 
@@ -767,7 +780,7 @@ class Site(BioModel):
     def validate_position(self):
         position = self.position
         if self.protein:
-            if position > self.protein.length or position < 0:
+            if position > self.protein.length or position < 1:
                 raise ValidationError(
                     'Site is placed outside of protein sequence '
                     '(position: {0}, protein length: {1}) '

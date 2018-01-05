@@ -5,6 +5,8 @@ from imports.sites.site_importer import SiteImporter
 class PTMVarImporter(SiteImporter):
     """Imports from mapped list generated with PTMvar."""
 
+    source_name = 'PTMvar'
+
     site_types = [
         'phosphorylation', 'acetylation',
         'ubiquitination', 'methylation'

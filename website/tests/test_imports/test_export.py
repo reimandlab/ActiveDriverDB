@@ -27,7 +27,7 @@ def create_test_models():
 
     protein_kinase = Protein(refseq='NM_0002', gene=Gene(name='OTHERGENE'), sequence='ABCD')
     kinase = Kinase(name='Kinase name', protein=protein_kinase)
-    site = Site(protein=protein, position=1, residue='A', kinases=[kinase])
+    site = Site(protein=protein, position=1, residue='A', kinases={kinase})
     protein.sites = [site]
 
     return locals()

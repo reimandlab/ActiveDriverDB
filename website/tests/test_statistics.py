@@ -85,12 +85,12 @@ class StatisticsTest(DatabaseTest):
         p1 = Protein(
             sites=[
                 Site(),
-                Site(kinases=[Kinase()], kinase_groups=[KinaseGroup()])
+                Site(kinases={Kinase()}, kinase_groups={KinaseGroup()})
             ]
         )
         db.session.add(p1)
         p2 = Protein(
-            sites=[Site(kinases=[Kinase()])]
+            sites=[Site(kinases={Kinase()})]
         )
         db.session.add(p2)
 

@@ -13,6 +13,7 @@ class HPRDImporter(SiteImporter):
     requires = {importers.proteins_and_genes, importers.sequences}
     requires.update(SiteImporter.requires)
 
+    source_name = 'HPRD'
     site_types = ['phosphorylation', 'glycosylation', 'acetylation']
 
     def __init__(self, sequences_path='PROTEIN_SEQUENCES.txt', mappings_path='HPRD_ID_MAPPINGS.txt', dir_path='data/raw/HPRD/FLAT_FILES_072010/'):
@@ -102,20 +103,19 @@ class HPRDImporter(SiteImporter):
         ]
 
         # sites loaded so far were explicitly defined in HPRD files
-        explicit_sites = sites
+        mapped_sites = self.map_sites_to_isoforms(sites.itertuples(index=False))
 
-        inferred_sites = self.map_sites_to_isoforms(explicit_sites.iterrows())
-
-        sites = sites.append(inferred_sites)
+        # from now, only sites which really appear in isoform sequences
+        # in our database will be considered
 
         # forget about the sequence column (no longer need)
-        del sites['sequence']
-        del sites['left_sequence_offset']
+        mapped_sites.drop(columns=['sequence', 'left_sequence_offset'], inplace=True)
 
         site_objects = []
 
         print('Creating database objects:')
-        for site_data in tqdm(sites.itertuples(index=False), total=len(sites)):
+
+        for site_data in tqdm(mapped_sites.itertuples(index=False), total=len(mapped_sites)):
 
             site, new = self.add_site(*site_data)
 

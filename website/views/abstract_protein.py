@@ -1,3 +1,4 @@
+from itertools import chain
 from warnings import warn
 
 import flask
@@ -158,9 +159,9 @@ class ProteinRepresentation:
         kinases = set(
             kinase
             for site in sites
-            for kinase in (
-                site.kinases +
-                (site.kinase_groups if self.include_kinases_from_groups else [])
+            for kinase in chain(
+                site.kinases,
+                site.kinase_groups if self.include_kinases_from_groups else []
             )
         )
 

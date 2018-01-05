@@ -1,3 +1,7 @@
+from warnings import warn
+
+from pytest import warns
+
 from database import db
 from database_testing import DatabaseTest
 from imports.sites.hprd import HPRDImporter
@@ -64,7 +68,13 @@ class TestImport(DatabaseTest):
 
         assert len(importer.mappings) == 3
 
-        sites = importer.load_sites(path=make_named_temp_file(SITES))
+        with warns(None) as warnings:
+            sites = importer.load_sites(path=make_named_temp_file(SITES))
+
+        if warnings.list:
+            for warning in warnings.list:
+                warn(warning.message)
+            raise AssertionError
 
         # should have 3 pre-defined sites and one mapped (isoform NM_001204889)
         assert len(sites) == 3 + 1
