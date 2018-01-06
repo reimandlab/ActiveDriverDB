@@ -34,11 +34,10 @@ class HPRDImporter(SiteImporter):
     def load_sequences(path):
         sequences = defaultdict(str)
 
-        def append(header, line):
-            hprd_isoform_id = header.split('|')[1]
+        def append(hprd_isoform_id, line):
             sequences[hprd_isoform_id] += line
 
-        parse_fasta_file(path, append)
+        parse_fasta_file(path, append, on_header=lambda header: header.split('|')[1])
         return sequences
 
     def get_sequence_of_protein(self, site):

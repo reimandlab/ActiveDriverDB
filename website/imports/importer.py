@@ -7,6 +7,10 @@ from helpers.patterns import registry_metaclass_factory
 AbstractRegistry = registry_metaclass_factory(ABCMeta)
 
 
+class ImporterError(Exception):
+    pass
+
+
 class Importer(metaclass=AbstractRegistry):
 
     # TODO: what about fields like "parsed_count" and "results"?

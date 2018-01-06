@@ -178,6 +178,8 @@ def sequences(path='data/all_RefGene_proteins.fa'):
         else:
             new_count += 1
 
+        return refseq
+
     def on_sequence(refseq, line):
         proteins[refseq].sequence += line
 
@@ -470,6 +472,7 @@ def disorder(path='data/all_RefGene_disorder.fa'):
 
     def on_header(header):
         assert header in proteins
+        return header
 
     def on_sequence(name, line):
         proteins[name].disorder_map += line

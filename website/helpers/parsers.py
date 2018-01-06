@@ -155,8 +155,7 @@ def parse_fasta_file(filename, on_sequence, on_header=lambda x: x, file_opener=o
         for line in tqdm(f, total=count_lines(f), unit=' lines'):
             line = line.rstrip()
             if line.startswith('>'):
-                header = line[1:]
-                on_header(header)
+                header = on_header(line[1:])
             else:
                 on_sequence(header, line)
 

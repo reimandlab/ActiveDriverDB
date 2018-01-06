@@ -9,6 +9,7 @@ from tqdm import tqdm
 from database import get_or_create
 from imports import Importer, protein_data as importers
 # those should be moved somewhere else
+from imports.importer import ImporterError
 from imports.protein_data import get_preferred_gene_isoform, create_key_model_dict
 from models import KinaseGroup, Kinase, Protein, Site, SiteType, BioModel, SiteSource
 
@@ -148,7 +149,11 @@ class SiteImporter(Importer):
         offset = self.sequence_offset
         pos = site.position - 1
 
-        assert protein_sequence[pos] == site.residue
+        if protein_sequence[pos] != site.residue:
+            raise ImporterError(
+                f'Protein sequence at {pos} ({protein_sequence[pos]})'
+                f' differs from {site.residue} for site: {site}.'
+            )
 
         return protein_sequence[
            max(pos - offset, 0)

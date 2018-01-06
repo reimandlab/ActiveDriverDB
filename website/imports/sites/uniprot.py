@@ -1,5 +1,5 @@
 import gzip
-from collections import defaultdict
+from types import SimpleNamespace
 
 from pandas import read_table, Series, to_numeric, DataFrame, read_csv, concat
 from tqdm import tqdm
@@ -18,8 +18,7 @@ class UniprotImporter(SiteImporter):
 
     The sparql code is available in `uniprot.sparql` file.
 
-    All the spqrl-returned data are for canonical isoforms only,
-    particularly all positions are relative to canonical isoforms.
+    Only reviewed entries (SwissProt) are considered.
 
     Many thanks to the author of https://www.biostars.org/p/261823/
     for describing how to use sparql to export PTM data from UniProt.
@@ -32,46 +31,64 @@ class UniprotImporter(SiteImporter):
     site_types = ['glycosylation']
 
     def __init__(
-        self, sprot_path='data/uniprot_sprot.fasta.gz',
+        self, sprot_canonical_path='data/uniprot_sprot.fasta.gz',
+        sprot_splice_variants_path='uniprot_sprot_varsplic.fasta.gz',
         mappings_path='data/HUMAN_9606_idmapping.dat.gz'
     ):
 
         super().__init__()
         self.mappings = self.load_mappings(mappings_path)
-        self.sequences = self.load_sequences(sprot_path)
+        self.sequences = self.load_sequences(sprot_canonical_path, sprot_splice_variants_path)
 
     @staticmethod
-    def load_sequences(sprot_canonical_path):
+    def load_sequences(canonical_path, splice_variants_path):
 
-        sequences = defaultdict(str)
+        all_sequences = {}
 
-        def append_canonical(header, line):
-            protein_id = header.split('|')[1]
-            sequences[protein_id] += line
+        groups = {'canonical': canonical_path, 'splice': splice_variants_path}
 
-        parse_fasta_file(sprot_canonical_path, append_canonical, file_opener=gzip.open, mode='rt')
+        for isoform_group, path in groups.items():
+            sequences = {}
 
-        return sequences
+            def append(protein_id, line):
+                sequences[protein_id] += line
+
+            def on_header(header):
+                protein_id = header.split('|')[1]
+                sequences[protein_id] = ''
+                return protein_id
+
+            parse_fasta_file(path, append, on_header, file_opener=gzip.open, mode='rt')
+
+            all_sequences[isoform_group] = sequences
+
+        return SimpleNamespace(**all_sequences)
 
     def get_sequence_of_protein(self, site):
         """Return sequence of a protein on which the site is described.
 
-        All sites provided by UniProt are described on canonical
-        isoforms, and indexed with their primary accession.
+        Having no information describing which isoform is canonical
+        the best way to determine which isoform to use is to check if
+        an isoform is a splice variant; if it is not a splice variant,
+        we know that it has to be a canonical isoform.
         """
-        return self.sequences[site.primary_accession]
+        try:
+            return self.sequences.splice[site.sequence_accession]
+        except KeyError:
+            return self.sequences.canonical[site.primary_accession]
 
     @staticmethod
     def load_mappings(mappings_path):
 
         header = ['uniprot', 'type', 'refseq']
         mappings = read_table(mappings_path, names=header, converters={
-            # based on observations, if an accession is primary and has
-            # a canonical isoform variant = 1, the sequence-related
-            # mappings are identified just as ACCESSION; if the canonical
-            # splice variant is != 1, it's id is appended after a hyphen
-            # (e.g. ACCESSION-4). Following converter append '-1' to all
-            # accessions without a hyphen to make the mapping easier.
+            # based on observations, if an accession is primary and
+            # there is only one splice variant, the sequence-related
+            # mappings are identified just as ACCESSION; if there are many
+            # splice variants, the canonical variant version is appended
+            # after a hyphen # (e.g. ACCESSION-4).
+            # Following converter appends '-1' to all accessions
+            # that have no hyphen to make the mapping easier.
             'uniprot': lambda u: u if '-' in u else u + '-1'
         }).query('type == "RefSeq_NT"')
 
@@ -97,6 +114,7 @@ class UniprotImporter(SiteImporter):
 
         supported_aminoacids = '|'.join(aa_names)
 
+        # TODO: This pattern works for glycosylation sites only.
         extracted_data = sites.data.str.extract(
             r'(?P<link_type>S|N|C|O)-linked '
             r'\((?P<mod_type>[^)]*?)\)'
@@ -119,6 +137,8 @@ class UniprotImporter(SiteImporter):
 
         # TODO: amend sparql query to avoid manual re-assignment?
         # TODO: store the exact type data as 'site.details'?
+        # 'GlcNAc...' 'GalNAc...' 'Xyl...' 'HexNAc...' 'Gal...' 'Fuc...' 'GlcNAc'
+        # 'GalNAc' 'Man' 'Glc...' 'Hex...' 'Man6P...' 'Fuc' 'Hex' 'GlcA' 'GlcNAc6P'
         mod_type_map = {'GlcNAc...': 'glycosylation'}
         sites.mod_type = sites.mod_type.replace(mod_type_map)
 
