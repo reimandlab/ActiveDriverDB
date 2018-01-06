@@ -95,7 +95,7 @@ class SiteImporter(Importer):
 
     @property
     @abstractmethod
-    def source_name(self):
+    def source_name(self) -> str:
         """A name of the source used to import sites"""
 
     @property
@@ -104,6 +104,11 @@ class SiteImporter(Importer):
         """List of SiteTypes to be created (or re-used by the importer)"""
 
     def __init__(self):
+
+        print(f'Preparing {self.source_name} sites importer...')
+
+        # caching proteins and kinases allows for much faster
+        # import later on, though it takes some time to cache
         self.known_kinases = create_key_model_dict(Kinase, 'name')
         self.known_groups = create_key_model_dict(KinaseGroup, 'name')
         self.proteins = create_key_model_dict(Protein, 'refseq')
@@ -132,11 +137,11 @@ class SiteImporter(Importer):
     def load_sites(self, *args, **kwargs) -> List[Site]:
         """Return a list of sites to be added to the database"""
 
-    def get_sequence_of_protein(self, site):
+    def get_sequence_of_protein(self, site) -> str:
         protein = Protein.query.filter_by(refseq=site.refseq).one()
         return protein.sequence
 
-    def extract_site_surrounding_sequence(self, site):
+    def extract_site_surrounding_sequence(self, site) -> str:
         """site.position is always 1-based"""
         protein_sequence = self.get_sequence_of_protein(site)
 
@@ -151,7 +156,7 @@ class SiteImporter(Importer):
            min(pos + offset + 1, len(protein_sequence))
         ]
 
-    def determine_left_offset(self, site):
+    def determine_left_offset(self, site) -> int:
         """Return 0-based offset of the site position in extracted sequence fragment
 
         Example:
