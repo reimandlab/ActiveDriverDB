@@ -42,6 +42,9 @@ wget ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 wget ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/RefSeqGene/LRG_RefSeqGene
 wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping.dat.gz
 
+# uniprot sequences
+wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
+
 # pathway list
 wget http://biit.cs.ut.ee/gprofiler/gmt/gprofiler_hsapiens.NAME.gmt.zip
 unzip gprofiler_hsapiens.NAME.gmt.zip

@@ -234,13 +234,7 @@ class SiteImporter(Importer):
 
         return DataFrame(mapped_sites)
 
-    def add_site(self, refseq, position: int, residue, mod_type, pubmed_ids, kinases=None):
-
-        site_kinases, site_kinase_groups = get_or_create_kinases(
-            kinases,
-            self.known_kinases,
-            self.known_groups
-        )
+    def add_site(self, refseq, position: int, residue, mod_type, pubmed_ids=None, kinases=None):
 
         site, created = get_or_create(
             Site,
@@ -250,10 +244,18 @@ class SiteImporter(Importer):
         )
 
         site.type.add(mod_type)
-        site.pmid.update(pubmed_ids)
-
         site.sources.add(self.source)
-        site.kinases.update(site_kinases)
-        site.kinase_groups.update(site_kinase_groups)
+
+        if pubmed_ids:
+            site.pmid.update(pubmed_ids)
+
+        if kinases:
+            site_kinases, site_kinase_groups = get_or_create_kinases(
+                kinases,
+                self.known_kinases,
+                self.known_groups
+            )
+            site.kinases.update(site_kinases)
+            site.kinase_groups.update(site_kinase_groups)
 
         return site, created

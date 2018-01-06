@@ -4,6 +4,18 @@ IUPAC_mappings = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'U': 'A', 'Y': 'R',
                   'V': 'B', 'D': 'H', 'H': 'D', 'N': 'N'}
 
 
+# note: hydroxylysine mapped to K
+aa_symbols = (
+    'A', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'K'
+)
+aa_names = (
+    'alanine', 'cysteine', 'aspartic acid', 'glutamic acid', 'phenylalanine', 'glycine', 'histidine',
+    'isoleucine', 'lysine', 'leucine', 'methionine', 'asparagine', 'proline', 'glutamine', 'arginine',
+    'serine', 'threonine', 'valine', 'tryptophan', 'tyrosine', 'hydroxylysine'
+)
+aa_name_to_symbol = dict(zip(aa_names, aa_symbols))
+
+
 class DataInconsistencyError(Exception):
     pass
 

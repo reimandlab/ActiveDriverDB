@@ -9,6 +9,11 @@ from imports.sites.site_importer import SiteImporter
 
 
 class HPRDImporter(SiteImporter):
+    """Human Protein Reference Database site importer.
+
+    To use this importer one need to download HPRD: http://hprd.org/download
+    and place unpacked FLAT_FILES_072010 directory under data/sites/
+    """
 
     requires = {importers.proteins_and_genes, importers.sequences}
     requires.update(SiteImporter.requires)
@@ -16,7 +21,10 @@ class HPRDImporter(SiteImporter):
     source_name = 'HPRD'
     site_types = ['phosphorylation', 'glycosylation', 'acetylation']
 
-    def __init__(self, sequences_path='PROTEIN_SEQUENCES.txt', mappings_path='HPRD_ID_MAPPINGS.txt', dir_path='data/raw/HPRD/FLAT_FILES_072010/'):
+    def __init__(
+        self, sequences_path='PROTEIN_SEQUENCES.txt', mappings_path='HPRD_ID_MAPPINGS.txt',
+        dir_path='data/sites/HPRD/FLAT_FILES_072010/'
+    ):
 
         super().__init__()
         self.mappings = self.load_mappings(dir_path + mappings_path)
@@ -57,7 +65,7 @@ class HPRDImporter(SiteImporter):
 
         return sites
 
-    def load_sites(self, path='data/raw/HPRD/FLAT_FILES_072010/POST_TRANSLATIONAL_MODIFICATIONS.txt', **filters):
+    def load_sites(self, path='data/sites/HPRD/FLAT_FILES_072010/POST_TRANSLATIONAL_MODIFICATIONS.txt', **filters):
 
         header = (
             'substrate_hprd_id', 'substrate_gene_symbol', 'substrate_isoform_id', 'substrate_refseq_id', 'site',
