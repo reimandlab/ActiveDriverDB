@@ -50,9 +50,10 @@ ARTGRTCLVVTHRLSAIQNADLIVVLHNGKIKEQGTHQELLRNRDIYFKLVNAQSVQ
 """
 
 SITES = """\
-"P01889","P01889-1","HLA class I histocompatibility antigen, B-7 alpha chain","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
-"P01891","P01891-1","HLA class I histocompatibility antigen, A-68 alpha chain","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
-"Q2M3G0","Q2M3G0-4","ATP-binding cassette sub-family B member 5","1188"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000255",
+primary_accession,sequence_accession,position,data,eco,source
+"P01889","P01889-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
+"P01891","P01891-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
+"Q2M3G0","Q2M3G0-4","1188"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000255",
 """
 
 MAPPINGS = """\

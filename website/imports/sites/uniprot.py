@@ -16,11 +16,13 @@ class UniprotImporter(SiteImporter):
     The data can be exported and downloaded using sparql: http://sparql.uniprot.org
     Relevant terms definition are available at: http://www.uniprot.org/docs/ptmlist
 
+    The sparql code is available in `uniprot.sparql` file.
+
     All the spqrl-returned data are for canonical isoforms only,
     particularly all positions are relative to canonical isoforms.
 
     Many thanks to the author of https://www.biostars.org/p/261823/
-    for describing how to use sparql to export data from UniProt.
+    for describing how to use sparql to export PTM data from UniProt.
     """
 
     requires = {importers.proteins_and_genes, importers.sequences}
@@ -87,10 +89,9 @@ class UniprotImporter(SiteImporter):
         sites = sites.merge(self.mappings, left_on='sequence_accession', right_on='uniprot')
         return sites
 
-    def load_sites(self, path='data/sites/glycosylation_sites.sparql.csv', **filters):
+    def load_sites(self, path='data/sites/UniProt/glycosylation_sites.sparql.csv', **filters):
 
-        header = ['primary_accession', 'sequence_accession', 'name', 'position', 'data', 'eco', 'source']
-        sites = read_csv(path, names=header)
+        sites = read_csv(path)
 
         sites.position = to_numeric(sites.position.str.replace('\^.*', ''))
 
@@ -106,7 +107,7 @@ class UniprotImporter(SiteImporter):
         )
 
         # TODO: source -> PubMed
-        sites.drop(columns=['data', 'source', 'eco', 'name'], inplace=True)
+        sites.drop(columns=['data', 'source', 'eco'], inplace=True)
 
         sites = concat([sites, extracted_data], axis=1)
 

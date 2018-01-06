@@ -1,0 +1,39 @@
+# Following code is based on a great snippet provided by user "me" (https://www.biostars.org/u/10878/) at https://www.biostars.org/p/261823/#261882,
+# which (as all Biostars content) was published under the terms of the "Creative Commons Attribution 4.0 International License" (https://creativecommons.org/licenses/by/4.0/)
+
+PREFIX up:<http://purl.uniprot.org/core/>
+PREFIX taxon:<http://purl.uniprot.org/taxonomy/>
+PREFIX rdf:<http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX faldo:<http://biohackathon.org/resource/faldo#>
+SELECT
+       (SUBSTR(STR(?protein), 33) AS ?primary_accession)
+       (SUBSTR(STR(?sequence), 34) AS ?sequence_accession)
+       (?begin AS ?position)
+       ?data
+       (SUBSTR(STR(?evidence), 32) AS ?eco)
+       ?source
+WHERE
+{
+  ?protein a up:Protein ;
+         up:organism taxon:9606 ;
+         up:annotation ?annotation ;
+         rdfs:label ?name .
+  VALUES ?annotationType {
+       up:Glycosylation_Annotation
+       # up:Modified_Residue_Annotation
+  }
+  ?annotation a ?annotationType;
+            rdfs:comment ?data ;
+            up:range/faldo:begin
+            [ faldo:position ?begin ;
+                             faldo:reference ?sequence ] .
+OPTIONAL {
+    [] rdf:object ?annotation ;
+                  up:attribution ?attribution .
+        ?attribution up:evidence ?evidence .
+        OPTIONAL {
+            ?attribution up:source ?source
+        }
+    }
+}
+
