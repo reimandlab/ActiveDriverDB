@@ -3,7 +3,8 @@ from collections import namedtuple
 from typing import Iterable, List
 from warnings import warn
 
-from pandas import DataFrame
+from numpy import nan
+from pandas import DataFrame, Series
 from tqdm import tqdm
 
 from database import get_or_create
@@ -146,6 +147,9 @@ class SiteImporter(Importer):
         """site.position is always 1-based"""
         protein_sequence = self.get_sequence_of_protein(site)
 
+        if not protein_sequence:
+            return nan
+
         offset = self.sequence_offset
         pos = site.position - 1
 
@@ -170,7 +174,26 @@ class SiteImporter(Importer):
         """
         return min(site.position - 1, self.sequence_offset)
 
-    def map_sites_to_isoforms(self, sites: Iterable[namedtuple]) -> DataFrame:
+    def map_sites_to_isoforms(self, sites: DataFrame) -> DataFrame:
+        # additional "sequence" column is needed to map the site across isoforms
+        sequences = sites.apply(self.extract_site_surrounding_sequence, axis=1)
+        offsets = sites.apply(self.determine_left_offset, axis=1)
+        sites = sites.assign(sequence=Series(sequences), left_sequence_offset=Series(offsets))
+
+        sites.dropna(axis=1, inplace=True)
+
+        # sites loaded so far were explicitly defined in data files
+        mapped_sites = self._map_sites_by_sequence(sites.itertuples(index=False))
+
+        # from now, only sites which really appear in isoform sequences
+        # in our database will be considered
+
+        # forget about the sequence column (no longer need)
+        mapped_sites.drop(columns=['sequence', 'left_sequence_offset'], inplace=True, errors='ignore')
+
+        return mapped_sites
+
+    def _map_sites_by_sequence(self, sites: Iterable[namedtuple]) -> DataFrame:
         """Given a site with an isoform it should occur in,
         verify if the site really appears on the given position
         in this isoform and find where in all other isoforms

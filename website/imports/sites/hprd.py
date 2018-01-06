@@ -96,27 +96,10 @@ class HPRDImporter(SiteImporter):
 
         sites.rename(normalized_names, axis='columns', inplace=True)
 
-        # additional "sequence" column is needed to map the site across isoforms
-        sequences = sites.apply(self.extract_site_surrounding_sequence, axis=1)
-        offsets = sites.apply(self.determine_left_offset, axis=1)
-        sites = sites.assign(sequence=Series(sequences), left_sequence_offset=Series(offsets))
+        mapped_sites = self.map_sites_to_isoforms(sites)
 
-        # remove unwanted columns:
-        sites = sites[
-            [
-                'refseq', 'position', 'residue', 'mod_type',
-                'reference_id', 'kinases', 'sequence', 'left_sequence_offset'
-            ]
-        ]
-
-        # sites loaded so far were explicitly defined in HPRD files
-        mapped_sites = self.map_sites_to_isoforms(sites.itertuples(index=False))
-
-        # from now, only sites which really appear in isoform sequences
-        # in our database will be considered
-
-        # forget about the sequence column (no longer need)
-        mapped_sites.drop(columns=['sequence', 'left_sequence_offset'], inplace=True)
+        columns_to_import = ['refseq', 'position', 'residue', 'mod_type', 'reference_id', 'kinases']
+        mapped_sites = mapped_sites[columns_to_import]
 
         site_objects = []
 

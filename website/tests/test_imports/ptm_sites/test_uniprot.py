@@ -1,8 +1,11 @@
+from numpy import nan, isnan
+from pandas import DataFrame
 from pytest import warns
 
 from database import db
 from database_testing import DatabaseTest
-from imports.sites.uniprot import UniprotImporter
+from imports.sites.uniprot import OthersUniprotImporter
+from imports.sites.uniprot import GlycosylationUniprotImporter
 from miscellaneous import make_named_gz_file, make_named_temp_file
 from models import Protein
 from test_imports.ptm_sites.test_hprd import gene_from_isoforms
@@ -50,14 +53,16 @@ LPEKYNTQVGLKGAQLSGGQKQRLAIARALLQKPKILLLDEATSALDNDSEKVVQHALDK
 ARTGRTCLVVTHRLSAIQNADLIVVLHNGKIKEQGTHQELLRNRDIYFKLVNAQSVQ
 """
 
-SITES = """\
+GLYCOSYLATION_SITES = """\
 primary_accession,sequence_accession,position,data,eco,source
 "P01889","P01889-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
 "P01891","P01891-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
 "Q2M3G0","Q2M3G0-4","1188"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000255",
-"Q12797","Q12797-1","706"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000255",
-"Q12797","Q12797-1","452"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine",,
-"Q12797","Q12797-3","64"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine",,
+"""
+
+SIMPLE_SITES = """\
+primary_accession,sequence_accession,position,data,eco,source
+"Q12797","Q12797-1","14"^^<http://www.w3.org/2001/XMLSchema#int>,"Phosphoserine","ECO_0000244",http://purl.uniprot.org/citations/24275569
 """
 
 MAPPINGS = """\
@@ -109,9 +114,28 @@ Q12797-3	RefSeq_NT	NM_020164.4
 """
 
 
+def make_test_shared_proteins():
+
+    proteins = [
+        Protein(refseq='NM_004318', sequence='MAQRKNAKSSGNSSSSGSGSGSTSAGSSSPGARRETKHGGHKNGRKGGLSGTSFFTWFMVIALLGVWTSVAVVWFDLVDYEEVLGKLGIYDADGDGDFDVDDAKVLLGLKERSTSEPAVPPEEAEPHTEPEEQVPVEAEPQNIEDEAKEQIQSLLHEMVHAEHVEGEDLQQEDGPTGEPQQEDDEFLMATDVDDRFETLEPEVSHEETEHSYHVEETVSQDCNQDMEEMMSEQENPDSSEPVVEDERLHHDTDDVTYQVYEEQAVYEPLENEGIEITEVTAPPEDNPVEDSQVIVEEVSIFPVEEQQEVPPETNRKTDDPEQKAKVKKKKPKLLNKFDKTIKAELDAAEKLRKRGKIEEAVNAFKELVRKYPQSPRARYGKAQCEDDLAEKRRSNEVLRGAIETYQEVASLPDVPADLLKLSLKRRSDRQQFLGHMRGSLLTLQRLVQLFPNDTSLKNDLGVGYLLIGDNDNAKKVYEEVLSVTPNDGFAKVHYGFILKAQNKIAESIPYLKEGIESGDPGTDDGRFYFHLGDAMQRVGNKEAYKWYELGHKRGHFASVWQRSLYNVNGLKAQPWWTPKETGYTELVKSLERNWKLIRDEGLAVMDKAKGLFLPEDENLREKGDWSQFTLWQQGRRNENACKGAPKTCTLLEKFPETTGCRRGQIKYSIMHPGTHVWPHTGPTNCRLRMHLGLVIPKEGCKIRCANETKTWEEGKVLIFDDSFEHEVWQDASSFRLIFIVDVWHPELTPQQRRSLPAI*'),
+        Protein(refseq='NM_020164', sequence='MAEDKETKHGGHKNGRKGGLSGTSFFTWFMVIALLGVWTSVAVVWFDLVDYEEVLAKAKDFRYNLSEVLQGKLGIYDADGDGDFDVDDAKVLLEGPSGVAKRKTKAKVKELTKEELKKEKEKPESRKESKNEERKKGKKEDVRKDKKIADADLSRKESPKGKKDREKEKVDLEKSAKTKENRKKSTNMKDVSSKMASRDKDDRKESRSSTRYAHLTKGNTQKRNG*')
+    ]
+
+    db.session.add_all(proteins)
+
+    db.session.commit()
+
+
+test_data_with_splice_variants = (
+    make_named_gz_file(SEQUENCES_SPLICE_TEST_CANONICAL),
+    make_named_gz_file(SEQUENCES_SPLICE_TEST_SPLICE),
+    make_named_gz_file(MAPPINGS_SPLICE_TEST)
+)
+
+
 class TestImport(DatabaseTest):
 
-    def test_import(self):
+    def test_glycosylation_import(self):
         # P01891 is not mappable to refseq, we should be warned about that
         proteins = create_test_proteins(['NM_001163941', 'NM_005514', 'NM_178559'])
 
@@ -131,7 +155,7 @@ class TestImport(DatabaseTest):
         abcb5 = gene_from_isoforms(proteins, ['NM_001163941', 'NM_178559'])
         db.session.add(abcb5)
 
-        importer = UniprotImporter(
+        importer = GlycosylationUniprotImporter(
             make_named_gz_file(SEQUENCES),
             make_named_gz_file(''),
             make_named_gz_file(MAPPINGS)
@@ -140,12 +164,12 @@ class TestImport(DatabaseTest):
         assert len(importer.mappings) == 3
 
         expected_warning = (
-            r'This site .*NM_001163941.*1188.* was found on .*' 
+            r'This site .*NM_001163941.* was found on .*'
             r'quite far away from the position in original isoform.*'
         )
 
         with warns(UserWarning, match=expected_warning):
-            sites = importer.load_sites(path=make_named_temp_file(SITES))
+            sites = importer.load_sites(path=make_named_temp_file(GLYCOSYLATION_SITES))
 
         # should have 2 pre-defined sites (3 but one without refseq equivalent) and one mapped (isoform NM_178559)
         assert len(sites) == 2 + 1
@@ -157,19 +181,91 @@ class TestImport(DatabaseTest):
     def test_splice_variants_handling(self):
         """Verify import of sites from a multi-splice variants entry (here: Q12797)"""
 
-        proteins = [
-            Protein(refseq='NM_004318', sequence='MAQRKNAKSSGNSSSSGSGSGSTSAGSSSPGARRETKHGGHKNGRKGGLSGTSFFTWFMVIALLGVWTSVAVVWFDLVDYEEVLGKLGIYDADGDGDFDVDDAKVLLGLKERSTSEPAVPPEEAEPHTEPEEQVPVEAEPQNIEDEAKEQIQSLLHEMVHAEHVEGEDLQQEDGPTGEPQQEDDEFLMATDVDDRFETLEPEVSHEETEHSYHVEETVSQDCNQDMEEMMSEQENPDSSEPVVEDERLHHDTDDVTYQVYEEQAVYEPLENEGIEITEVTAPPEDNPVEDSQVIVEEVSIFPVEEQQEVPPETNRKTDDPEQKAKVKKKKPKLLNKFDKTIKAELDAAEKLRKRGKIEEAVNAFKELVRKYPQSPRARYGKAQCEDDLAEKRRSNEVLRGAIETYQEVASLPDVPADLLKLSLKRRSDRQQFLGHMRGSLLTLQRLVQLFPNDTSLKNDLGVGYLLIGDNDNAKKVYEEVLSVTPNDGFAKVHYGFILKAQNKIAESIPYLKEGIESGDPGTDDGRFYFHLGDAMQRVGNKEAYKWYELGHKRGHFASVWQRSLYNVNGLKAQPWWTPKETGYTELVKSLERNWKLIRDEGLAVMDKAKGLFLPEDENLREKGDWSQFTLWQQGRRNENACKGAPKTCTLLEKFPETTGCRRGQIKYSIMHPGTHVWPHTGPTNCRLRMHLGLVIPKEGCKIRCANETKTWEEGKVLIFDDSFEHEVWQDASSFRLIFIVDVWHPELTPQQRRSLPAI*'),
-            Protein(refseq='NM_020164', sequence='MAEDKETKHGGHKNGRKGGLSGTSFFTWFMVIALLGVWTSVAVVWFDLVDYEEVLAKAKDFRYNLSEVLQGKLGIYDADGDGDFDVDDAKVLLEGPSGVAKRKTKAKVKELTKEELKKEKEKPESRKESKNEERKKGKKEDVRKDKKIADADLSRKESPKGKKDREKEKVDLEKSAKTKENRKKSTNMKDVSSKMASRDKDDRKESRSSTRYAHLTKGNTQKRNG*')
-        ]
+        make_test_shared_proteins()
 
-        db.session.add_all(proteins)
-
-        importer = UniprotImporter(
-            make_named_gz_file(SEQUENCES_SPLICE_TEST_CANONICAL),
-            make_named_gz_file(SEQUENCES_SPLICE_TEST_SPLICE),
-            make_named_gz_file(MAPPINGS_SPLICE_TEST)
-        )
+        importer = GlycosylationUniprotImporter(*test_data_with_splice_variants)
 
         sites = importer.load_sites(path=make_named_temp_file(SITES_SPLICE_TEST))
 
         assert len(sites) == 3
+
+    def test_others_mapping(self):
+        # list of important cases:
+        # cat data/sites/UniProt/other_sites.csv | cut -d ',' -f 4 | sort | uniq
+        # full list of keywords:
+        # http://www.uniprot.org/docs/ptmlist
+
+        cases = {
+            'Phosphohistidine': ('H', 'phosphorylation', nan),
+            'Phosphoserine': ('S', 'phosphorylation', nan),
+            'Phosphoserine; alternate': ('S', 'phosphorylation', nan),
+            'Phosphoserine; by AURKB': ('S', 'phosphorylation', ['AURKB']),
+            'Phosphoserine; alternate; by AURKB': ('S', 'phosphorylation', ['AURKB']),
+            'Phosphoserine; by AMPK and RPS6KA1': ('S', 'phosphorylation', ['AMPK', 'RPS6KA1']),
+            'Phosphoserine; by CaMK2; in vitro': ('S', 'phosphorylation', ['CaMK2']),
+            'Phosphotyrosine; by ZAP70': ('Y', 'phosphorylation', ['ZAP70']),
+            'Phosphothreonine; in form 5-P': ('T', 'phosphorylation', nan),
+            'Phosphothreonine; by MAPK1 AND MAPK3': ('T', 'phosphorylation', ['MAPK1', 'MAPK3']),
+            'Phosphothreonine; by MAPK1 or MAPK3': ('T', 'phosphorylation', ['MAPK1', 'MAPK3']),
+            'Pros-phosphohistidine': ('H', 'phosphorylation', nan),
+            'N6-acetyllysine': ('K', 'acetylation', nan),
+            'N-acetylalanine; in Beta-crystallin B3': ('A', 'acetylation', nan),
+            'N-acetylaspartate': ('D', 'acetylation', nan),
+            'N-acetylcysteine; in intermediate form': ('C', 'acetylation', nan),
+            'N-acetylglutamate': ('E', 'acetylation', nan),
+            'N-acetylglycine; in Tyrosine--tRNA ligase': ('G', 'acetylation', nan),
+            'N-acetylmethionine; in peptidyl-prolyl cis-trans isomerase FKBP4; alternate': ('M', 'acetylation', nan),
+            'N-acetylproline': ('P', 'acetylation', nan),
+            'N-acetylvaline': ('V', 'acetylation', nan),
+            'O-acetylserine; by Yersinia yopJ; alternate': ('S', 'acetylation', ['Yersinia yopJ']),
+            'N2-acetylarginine': ('R', 'acetylation', nan),
+            'Symmetric dimethylarginine; alternate; by PRMT5': ('R', 'methylation', ['PRMT5']),
+            'Omega-N-methylated arginine; by CARM1; in vitro': ('R', 'methylation', ['CARM1']),
+            'N-methylglycine; alternate': ('G', 'methylation', nan),
+            'N6-methyllysine; by EHMT1 and EHMT2': ('K', 'methylation', ['EHMT1', 'EHMT2']),
+            'Dimethylated arginine; in A2780 ovarian carcinoma cell line': ('R', 'methylation', nan)
+        }
+
+        importer = OthersUniprotImporter(*test_data_with_splice_variants)
+
+        for site_data, (residue, ptm_type, kinases) in cases.items():
+            inferred = importer.extract_site_mod_type(DataFrame({'data': [site_data]}))
+
+            assert len(inferred) == 1
+
+            i = inferred.iloc[0]
+
+            assert i.residue == residue
+            assert i.mod_type == ptm_type
+            if kinases is not nan:
+                assert i.kinases == kinases
+
+    def test_others_import(self):
+
+        make_test_shared_proteins()
+
+        importer = OthersUniprotImporter(*test_data_with_splice_variants)
+
+        sites = importer.load_sites(path=make_named_temp_file(SIMPLE_SITES))
+
+        assert len(sites) == 1
+
+    def test_missing_sequence(self):
+        """Sometimes (though rarely) there is no sequence for given accession.
+
+        This happens when UniProt fasta files are not in sync with SPRQL API.
+        """
+
+        site_with_missing_sequence = (
+            'primary_accession,sequence_accession,position,data,eco,source\n'
+            '"B2RDS2","B2RDS2-1","79^","N-linked (GlcNAc...) asparagine","ECO_0000256",'
+        )
+
+        importer = GlycosylationUniprotImporter(
+            make_named_gz_file(''),
+            make_named_gz_file(''),
+            make_named_gz_file('B2RDS2	RefSeq_NT	NM_004823.1')
+        )
+
+        with warns(UserWarning, match='No sequence for .* found!'):
+            importer.load_sites(make_named_temp_file(site_with_missing_sequence))

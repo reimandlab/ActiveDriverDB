@@ -1,4 +1,8 @@
 from .hprd import HPRDImporter
-from .uniprot import UniprotImporter
+from .uniprot import GlycosylationUniprotImporter, OthersUniprotImporter
 
-__all__ = [HPRDImporter, UniprotImporter]
+__all__ = [
+    HPRDImporter,
+    GlycosylationUniprotImporter,
+    OthersUniprotImporter
+]
