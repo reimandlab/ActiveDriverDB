@@ -142,7 +142,7 @@ def parse_text_file(filename, parser, file_header=None, file_opener=open):
             parser(line)
 
 
-def parse_fasta_file(filename, on_sequence, on_header=lambda x: x, file_opener=open):
+def parse_fasta_file(filename, on_sequence, on_header=lambda x: x, file_opener=open, mode='r'):
     """Utility function wrapping Fasta file parser.
 
     For each line parser will be called.
@@ -151,7 +151,7 @@ def parse_fasta_file(filename, on_sequence, on_header=lambda x: x, file_opener=o
     """
     header = None
 
-    with file_opener(filename) as f:
+    with file_opener(filename, mode) as f:
         for line in tqdm(f, total=count_lines(f), unit=' lines'):
             line = line.rstrip()
             if line.startswith('>'):

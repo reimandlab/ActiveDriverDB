@@ -3,7 +3,7 @@ from pytest import warns
 from database import db
 from database_testing import DatabaseTest
 from imports.sites.uniprot import UniprotImporter
-from miscellaneous import make_named_temp_file
+from miscellaneous import make_named_gz_file, make_named_temp_file
 from test_imports.ptm_sites.test_hprd import gene_from_isoforms
 from test_imports.test_proteins import create_test_proteins
 
@@ -87,8 +87,8 @@ class TestImport(DatabaseTest):
         db.session.add(abcb5)
 
         importer = UniprotImporter(
-            make_named_temp_file(SEQUENCES),
-            make_named_temp_file(MAPPINGS)
+            make_named_gz_file(SEQUENCES),
+            make_named_gz_file(MAPPINGS)
         )
 
         assert len(importer.mappings) == 3

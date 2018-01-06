@@ -1,3 +1,4 @@
+import gzip
 from collections import defaultdict
 
 from pandas import read_table, Series, to_numeric, DataFrame, read_csv, concat
@@ -46,7 +47,7 @@ class UniprotImporter(SiteImporter):
             protein_id = header.split('|')[1]
             sequences[protein_id] += line
 
-        parse_fasta_file(sprot_canonical_path, append_canonical)
+        parse_fasta_file(sprot_canonical_path, append_canonical, file_opener=gzip.open, mode='rt')
 
         return sequences
 
@@ -141,7 +142,7 @@ class UniprotImporter(SiteImporter):
                 'sequence', 'left_sequence_offset'
             ]
         ]
-        # sites loaded so far were explicitly defined in HPRD files
+        # sites loaded so far were explicitly defined in UniProt files
         mapped_sites = self.map_sites_to_isoforms(sites.itertuples(index=False))
 
         # from now, only sites which really appear in isoform sequences
