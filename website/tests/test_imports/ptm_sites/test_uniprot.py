@@ -114,6 +114,14 @@ Q12797-3	RefSeq_NT	NM_020164.4
 """
 
 
+DUAL_MAPPING = """\
+P78423	RefSeq	NP_001291321.1
+P78423	RefSeq_NT	NM_001304392.1
+P78423	RefSeq	NP_002987.1
+P78423	RefSeq_NT	NM_002996.4
+"""
+
+
 def make_test_shared_proteins():
 
     proteins = [
@@ -163,13 +171,7 @@ class TestImport(DatabaseTest):
 
         assert len(importer.mappings) == 3
 
-        expected_warning = (
-            r'This site .*NM_001163941.* was found on .*'
-            r'quite far away from the position in original isoform.*'
-        )
-
-        with warns(UserWarning, match=expected_warning):
-            sites = importer.load_sites(path=make_named_temp_file(GLYCOSYLATION_SITES))
+        sites = importer.load_sites(path=make_named_temp_file(GLYCOSYLATION_SITES))
 
         # should have 2 pre-defined sites (3 but one without refseq equivalent) and one mapped (isoform NM_178559)
         assert len(sites) == 2 + 1
@@ -269,3 +271,17 @@ class TestImport(DatabaseTest):
 
         with warns(UserWarning, match='No sequence for .* found!'):
             importer.load_sites(make_named_temp_file(site_with_missing_sequence))
+
+    def test_refseq_mapping(self):
+
+        importer = GlycosylationUniprotImporter(
+            make_named_gz_file(''),
+            make_named_gz_file(''),
+            make_named_gz_file(DUAL_MAPPING),
+        )
+
+        sites = DataFrame(data={'sequence_accession': ['P78423-1']})
+
+        sites_with_refseq = importer.add_nm_refseq_identifiers(sites)
+
+        assert len(sites_with_refseq) == 2

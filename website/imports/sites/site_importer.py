@@ -74,7 +74,10 @@ def map_site_to_isoform(site, isoform: Protein) -> List[OneBasedPosition]:
 
     Returned positions are 1-based
     """
-    matches = find_all(isoform.sequence, site.sequence)
+    matches = [
+        m + 1 + site.left_sequence_offset
+        for m in find_all(isoform.sequence, site.sequence)
+    ]
 
     if len(matches) > 1:
         warn(f'More than one match for: {site}')
@@ -85,7 +88,7 @@ def map_site_to_isoform(site, isoform: Protein) -> List[OneBasedPosition]:
             f'original isoform: {site.position}.'
         )
 
-    return [m + 1 for m in matches]
+    return matches
 
 
 class SiteImporter(Importer):
@@ -180,7 +183,9 @@ class SiteImporter(Importer):
         offsets = sites.apply(self.determine_left_offset, axis=1)
         sites = sites.assign(sequence=Series(sequences), left_sequence_offset=Series(offsets))
 
-        sites.dropna(axis=1, inplace=True)
+        old_len = len(sites)
+        sites.dropna(axis=0, inplace=True, subset=['sequence', 'residue'])
+        print(f'Dropped {old_len - len(sites)} sites due to lack of sequence or residue')
 
         # sites loaded so far were explicitly defined in data files
         mapped_sites = self._map_sites_by_sequence(sites.itertuples(index=False))
@@ -206,7 +211,7 @@ class SiteImporter(Importer):
 
         Args:
             sites: data frame with sites, having (at least) following columns:
-                   'sequence', 'position', 'refseq', 'sequence_left_offset'
+                   'sequence', 'position', 'refseq', 'residue', 'sequence_left_offset'
 
         Returns:
             Data frame of sites mapped to isoforms in database,
@@ -216,13 +221,16 @@ class SiteImporter(Importer):
         print('Mapping sites to isoforms')
 
         mapped_sites = []
+        already_warned = set()
 
         for site in tqdm(sites):
 
-            site_id = f'{site.position}{site.residue}'
+            site_id = self.repr_site(site)
 
             if site.refseq not in self.proteins:
-                warn(f'No protein with {site.refseq}')
+                if site.refseq not in already_warned:
+                    warn(f'No protein with {site.refseq} for {site_id}')
+                    already_warned.add(site.refseq)
                 continue
 
             protein = self.proteins[site.refseq]
@@ -237,8 +245,7 @@ class SiteImporter(Importer):
 
             # find matches
             for isoform in isoforms_to_map:
-                sequence_matches = map_site_to_isoform(site, isoform)
-                positions[isoform] = [seq_start + site.left_sequence_offset for seq_start in sequence_matches]
+                positions[isoform] = map_site_to_isoform(site, isoform)
 
             original_isoform_matches = positions[protein]
 
@@ -292,3 +299,7 @@ class SiteImporter(Importer):
             site.kinase_groups.update(site_kinase_groups)
 
         return site, created
+
+    @staticmethod
+    def repr_site(site):
+        return f'{site.position}{site.residue}'

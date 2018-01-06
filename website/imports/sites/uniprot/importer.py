@@ -112,6 +112,7 @@ class UniprotImporter(SiteImporter):
     def add_nm_refseq_identifiers(self, sites: DataFrame):
 
         sites = sites.merge(self.mappings, left_on='sequence_accession', right_on='uniprot')
+
         return sites
 
     @abstractmethod
@@ -124,7 +125,10 @@ class UniprotImporter(SiteImporter):
     def filter_sites(self, sites: DataFrame) -> DataFrame:
         return sites
 
-    def load_sites(self, path=default_path, **filters):
+    def load_sites(self, path=None, **filters):
+
+        if not path:
+            path = self.default_path
 
         sites = read_csv(path)
 
@@ -167,3 +171,6 @@ class UniprotImporter(SiteImporter):
                 site_objects.append(site)
 
         return site_objects
+
+    def repr_site(self, site):
+        return f'{site.sequence_accession}: ' + super().repr_site(site)
