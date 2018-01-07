@@ -56,11 +56,11 @@ class TestImport(DatabaseTest):
 
     def test_map_site_to_isoform(self):
 
-        site = RawSite(sequence='FIN', position=6, sequence_left_offset=1)
+        site = RawSite(sequence='FIN', position=6, left_sequence_offset=1)
         protein = Protein(sequence='LKIQYTKIFINNEWHDSVSG')
 
         assert map_site_to_isoform(site, protein) == [10]
 
         with warns(UserWarning):
-            site = RawSite(sequence='KI', position=2, sequence_left_offset=0)
+            site = RawSite(sequence='KI', position=2, left_sequence_offset=0)
             assert map_site_to_isoform(site, protein) == [2, 7]
