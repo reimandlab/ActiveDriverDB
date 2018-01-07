@@ -6,7 +6,7 @@ from database import db
 from database_testing import DatabaseTest
 from imports.sites.hprd import HPRDImporter
 from miscellaneous import make_named_temp_file
-from models import Gene
+from models import Gene, Protein
 from test_imports.test_proteins import create_test_proteins
 
 SEQUENCES = """\
@@ -82,5 +82,49 @@ class TestImport(DatabaseTest):
         sites_by_isoform = {site.protein.refseq: site for site in sites}
 
         assert sites_by_isoform['NM_001204889'].residue == sites_by_isoform['NM_000690'].residue == 'S'
+        assert sites_by_isoform['NM_000689'].position == 2
 
+    def test_exceptions(self):
 
+        sites_data = (
+            # this odd case is real:
+            '02098	NONO	02098_1	NP_031389.3	0	Y	-	-	Acetylation	in vivo	19608861'
+            # there are 9 such cases in HPRD at the time of this test creation
+        )
+        mappings = '02098	NONO	NM_007363.4	NP_031389.3	4841	300084	Q15233,B7Z4C2	Non pou domain containing octamer binding protein'
+        sequences = (
+            '>02098|02098_1|NP_031389.3|Non pou domain containing octamer binding protein\n'
+            'MQSNKTFNLEKQNHTPRKHHQHHHQQQHHQQQQQQPPPPPIPANGQQASSQNEGLTIDLKNFRKPGEKTFTQRSRLFVG'
+            # the main part of the sequence was cut out as it is not needed
+            # but this is the important bit: it has 'Y' at the end:
+            'GTLGLTPPTTERFGQAATMEGIGAIGGTPPAFNRAAPGAEFAPNKRRRY'
+            # so having 1-based positioning system, after a naive conversion to 0-based:
+            # site.pos = -1; furthermore, sequence[site.pos] == 'Y' (!); this is probably
+            # why the pos = '0' had been saved in HPRD in the first place.
+        )
+        protein = Protein(
+            refseq='NM_007363',
+            sequence='MQSNKTFNLEKQNHTPRKHHQHHHQQQHHQQQQQQPPPPPIPANGQQASSQNEGLTIDLKNFRKPGEKTFTQRSRLFVG'
+                     'GTLGLTPPTTERFGQAATMEGIGAIGGTPPAFNRAAPGAEFAPNKRRRY'
+        )
+        db.session.add(protein)
+
+        importer = HPRDImporter(make_named_temp_file(sequences), make_named_temp_file(mappings), dir_path='')
+
+        # without a fix, it should warn and reject the faulty site
+        with warns(UserWarning, match='The site: 02098_1: 0Y is outside of the protein sequence'):
+            sites = importer.load_sites(path=make_named_temp_file(sites_data), pos_zero_means_last_aa=False)
+
+        assert len(sites) == 0
+
+        # and it should work when a workaround is applied
+        with warns(None) as warnings:
+            sites = importer.load_sites(path=make_named_temp_file(sites_data), pos_zero_means_last_aa=True)
+
+        assert not warnings.list
+        assert len(sites) == 1
+
+        site = sites[0]
+
+        assert site.position == 128
+        assert site.residue == 'Y'

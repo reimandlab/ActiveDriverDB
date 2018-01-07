@@ -1,4 +1,5 @@
 from collections import defaultdict
+from warnings import warn
 
 from pandas import read_table, Series, to_numeric, DataFrame
 from tqdm import tqdm
@@ -64,7 +65,43 @@ class HPRDImporter(SiteImporter):
 
         return sites
 
-    def load_sites(self, path='data/sites/HPRD/FLAT_FILES_072010/POST_TRANSLATIONAL_MODIFICATIONS.txt', **filters):
+    def map_zero_to_the_last_aa(self, site):
+        """For a site with 0 in the position field,
+        return the position of the last aminoacid
+        in the sequence of a relevant protein.
+
+        If the position is not zero, return this position.
+        """
+
+        if site.position != 0:
+            return site.position
+
+        protein_sequence = self.get_sequence_of_protein(site)
+
+        last = len(protein_sequence)
+        aa = protein_sequence[last - 1]
+
+        if aa != site.residue:
+            warn(
+                f'Mapping "0" positions failed due to residue mismatch: '
+                f'{aa} != {site.residue} (for {self.repr_site(site)}).'
+            )
+            return 0
+
+        return last
+
+    def load_sites(
+        self, path='data/sites/HPRD/FLAT_FILES_072010/POST_TRANSLATIONAL_MODIFICATIONS.txt',
+        pos_zero_means_last_aa=True
+    ):
+        """
+        Args:
+            path: path to the POST_TRANSLATIONAL_MODIFICATIONS.txt flat file
+            pos_zero_means_last_aa:
+                should a workaround for positions wrongly identified as '0'
+                (though these are really 'the last aminoacid') by applied?
+        """
+        print('Zero to last aa fix active:', pos_zero_means_last_aa)
 
         header = (
             'substrate_hprd_id', 'substrate_gene_symbol', 'substrate_isoform_id', 'substrate_refseq_id', 'site',
@@ -96,6 +133,9 @@ class HPRDImporter(SiteImporter):
 
         sites.rename(normalized_names, axis='columns', inplace=True)
 
+        if pos_zero_means_last_aa:
+            sites.position = sites.apply(self.map_zero_to_the_last_aa, axis=1)
+
         mapped_sites = self.map_sites_to_isoforms(sites)
 
         columns_to_import = ['refseq', 'position', 'residue', 'mod_type', 'reference_id', 'kinases']
@@ -113,3 +153,6 @@ class HPRDImporter(SiteImporter):
                 site_objects.append(site)
 
         return site_objects
+
+    def repr_site(self, site):
+        return f'{site.substrate_isoform_id}: ' + super().repr_site(site)

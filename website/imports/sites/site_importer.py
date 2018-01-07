@@ -153,6 +153,13 @@ class SiteImporter(Importer):
         offset = self.sequence_offset
         pos = site.position - 1
 
+        if pos < 0 or pos > len(protein_sequence):
+            warn(
+                f'The site: {self.repr_site(site)} is outside of the protein'
+                f' sequence (which is {len(protein_sequence)} long)'
+            )
+            return nan
+
         if protein_sequence[pos] != site.residue:
             warn(
                 f'Protein sequence at {pos} ({protein_sequence[pos]})'
@@ -184,6 +191,10 @@ class SiteImporter(Importer):
         old_len = len(sites)
         sites.dropna(axis=0, inplace=True, subset=['sequence', 'residue'])
         print(f'Dropped {old_len - len(sites)} sites due to lack of sequence or residue')
+
+        # nothing to map
+        if len(sites) == 0:
+            return sites
 
         # sites loaded so far were explicitly defined in data files
         mapped_sites = self._map_sites_by_sequence(sites.itertuples(index=False))
