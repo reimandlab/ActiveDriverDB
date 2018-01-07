@@ -309,6 +309,30 @@ class SiteImporter(Importer):
 
         return site, created
 
+    def create_site_objects(
+        self,
+        sites: DataFrame,
+        columns=['refseq', 'position', 'residue', 'mod_type', 'reference_id', 'kinases']
+    ) -> List[Site]:
+
+        if sites.empty:
+            return []
+
+        sites = sites[columns]
+
+        site_objects = []
+
+        print('Creating database objects:')
+
+        for site_data in tqdm(sites.itertuples(index=False), total=len(sites)):
+
+            site, new = self.add_site(*site_data)
+
+            if new:
+                site_objects.append(site)
+
+        return site_objects
+
     @staticmethod
     def repr_site(site):
         return f'{site.position}{site.residue}'

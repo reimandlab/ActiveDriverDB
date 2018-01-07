@@ -1,8 +1,7 @@
 from collections import defaultdict
 from warnings import warn
 
-from pandas import read_table, Series, to_numeric, DataFrame
-from tqdm import tqdm
+from pandas import read_table, to_numeric, DataFrame
 
 from helpers.parsers import parse_fasta_file
 import imports.protein_data as importers
@@ -13,7 +12,7 @@ class HPRDImporter(SiteImporter):
     """Human Protein Reference Database site importer.
 
     To use this importer one need to download HPRD: http://hprd.org/download
-    and place unpacked FLAT_FILES_072010 directory under data/sites/
+    and place unpacked FLAT_FILES_072010 directory under data/sites/HPRD/
     """
 
     requires = {importers.proteins_and_genes, importers.sequences}
@@ -138,21 +137,7 @@ class HPRDImporter(SiteImporter):
 
         mapped_sites = self.map_sites_to_isoforms(sites)
 
-        columns_to_import = ['refseq', 'position', 'residue', 'mod_type', 'reference_id', 'kinases']
-        mapped_sites = mapped_sites[columns_to_import]
-
-        site_objects = []
-
-        print('Creating database objects:')
-
-        for site_data in tqdm(mapped_sites.itertuples(index=False), total=len(mapped_sites)):
-
-            site, new = self.add_site(*site_data)
-
-            if new:
-                site_objects.append(site)
-
-        return site_objects
+        return self.create_site_objects(mapped_sites)
 
     def repr_site(self, site):
         return f'{site.substrate_isoform_id}: ' + super().repr_site(site)
