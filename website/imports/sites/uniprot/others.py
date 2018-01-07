@@ -37,8 +37,8 @@ class OthersUniprotImporter(UniprotImporter):
     }
 
     source_name = 'Uniprot'
-    site_types = list(modifiers_map.values())
-    default_path = 'data/sites/UniProt/other_sites.sparql.csv'
+    site_types = set(modifiers_map.values())
+    default_path = 'data/sites/UniProt/other_sites.csv'
 
     def filter_sites(self, sites):
 

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections import namedtuple
-from typing import Iterable, List
+from typing import Iterable, List, Set
 from warnings import warn
 
 from numpy import nan
@@ -10,7 +10,6 @@ from tqdm import tqdm
 from database import get_or_create
 from imports import Importer, protein_data as importers
 # those should be moved somewhere else
-from imports.importer import ImporterError
 from imports.protein_data import get_preferred_gene_isoform, create_key_model_dict
 from models import KinaseGroup, Kinase, Protein, Site, SiteType, BioModel, SiteSource
 
@@ -105,7 +104,7 @@ class SiteImporter(Importer):
 
     @property
     @abstractmethod
-    def site_types(self) -> List[str]:
+    def site_types(self) -> Set[str]:
         """List of SiteTypes to be created (or re-used by the importer)"""
 
     def __init__(self):
@@ -119,12 +118,10 @@ class SiteImporter(Importer):
         self.proteins = create_key_model_dict(Protein, 'refseq')
 
         # create site types
-        site_type_objects = [get_or_create(SiteType, name=name) for name in self.site_types]
-
-        self.types_map = {
-            site_type.name: site_type
-            for site_type, new in site_type_objects
-        }
+        site_type_objects = [
+            get_or_create(SiteType, name=name)
+            for name in set(self.site_types)
+        ]
 
         self.novel_site_types = [
             site_type for site_type, new in site_type_objects if new
@@ -157,10 +154,11 @@ class SiteImporter(Importer):
         pos = site.position - 1
 
         if protein_sequence[pos] != site.residue:
-            raise ImporterError(
+            warn(
                 f'Protein sequence at {pos} ({protein_sequence[pos]})'
                 f' differs from {site.residue} for site: {site}.'
             )
+            return nan
 
         return protein_sequence[
            max(pos - offset, 0)

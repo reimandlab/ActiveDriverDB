@@ -700,11 +700,11 @@ class SiteType(BioModel):
     # this table can be pre-fetched into the application
     # memory on start, as it is not supposed to change after
     # the initial import
-    name = db.Column(db.String(16))
+    name = db.Column(db.String(16), unique=True)
 
 
 class SiteSource(BioModel):
-    name = db.Column(db.String(16))
+    name = db.Column(db.String(16), unique=True)
 
 
 class Site(BioModel):
