@@ -7,6 +7,8 @@ from collections import Iterable
 from sqlalchemy import and_
 from sqlalchemy import or_
 
+from database import ScalarSet
+
 
 def is_iterable_but_not_str(obj):
     return isinstance(obj, Iterable) and not isinstance(obj, str)
@@ -202,7 +204,7 @@ class Filter:
 
         if (
             self.comparator == 'in' and
-            type(field.property.columns[0].type) is Text
+            type(field.property.columns[0].type) in [Text, ScalarSet]
         ):
             return getattr(field, 'like')('%' + self.value + '%'), []
 
