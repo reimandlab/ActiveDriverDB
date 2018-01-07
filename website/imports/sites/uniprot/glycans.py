@@ -25,12 +25,13 @@ class GlycosylationUniprotImporter(UniprotImporter):
 
         supported_aminoacids = '|'.join(aa_names)
 
-        extracted_data = sites.data.str.extract(
+        extracted = sites.data.str.extract(
             r'(?P<link_type>S|N|C|O)-linked '
             r'\((?P<exact_mod_type>[^)]*?)\)'
             r'(?: \((?P<sugar_modifier>[^)]*?)\))?'
             r'(?: (?P<residue>' + supported_aminoacids + '))?'
-            r'(?:; (?P<modifiers>.*))?',
+            r'(?:; (?!by )(?P<modifiers>[^;]*))?'
+            r'(?:; by (?P<kinases>[^;]*))?',
             expand=True
         )
         # TODO: store the exact_mod_type data as 'site.details'?
@@ -38,9 +39,18 @@ class GlycosylationUniprotImporter(UniprotImporter):
         # 'GlcNAc...' 'GalNAc...' 'Xyl...' 'HexNAc...' 'Gal...' 'Fuc...' 'GlcNAc'
         # 'GalNAc' 'Man' 'Glc...' 'Hex...' 'Man6P...' 'Fuc' 'Hex' 'GlcA' 'GlcNAc6P'
 
-        extracted_data['mod_type'] = Series('glycosylation' for _ in range(len(extracted_data)))
+        # all entries that are not glycations are glycosylations
+        extracted['mod_type'] = Series(
+            (
+                'glycation'
+                if site_details.sugar_modifier == 'glycation' else
+                'glycosylation'
+            )
+            for site_details in extracted.itertuples()
+        )
 
-        extracted_data.residue = extracted_data.residue.replace(aa_name_to_symbol)
+        extracted.kinases = self.split_kinases(extracted.kinases)
+        extracted.residue = extracted.residue.replace(aa_name_to_symbol)
 
-        return extracted_data
+        return extracted
 

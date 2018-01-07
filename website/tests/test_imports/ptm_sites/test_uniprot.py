@@ -141,6 +141,24 @@ test_data_with_splice_variants = (
 )
 
 
+def equal_or_both_nan(a, b):
+    return a == b or (isnan(a) and isnan(b))
+
+
+def verify_uniprot_importer_mappings(importer, cases):
+
+    for site_data, (residue, ptm_type, kinases) in cases.items():
+        inferred = importer.extract_site_mod_type(DataFrame({'data': [site_data]}))
+
+        assert len(inferred) == 1
+
+        i = inferred.iloc[0]
+
+        assert equal_or_both_nan(i.residue, residue)
+        assert i.mod_type == ptm_type
+        assert equal_or_both_nan(i.kinases, kinases)
+
+
 class TestImport(DatabaseTest):
 
     def test_glycosylation_import(self):
@@ -191,6 +209,20 @@ class TestImport(DatabaseTest):
 
         assert len(sites) == 3
 
+    def test_glycans_mapping(self):
+        cases = {
+            'O-linked (GlcNAc) tyrosine; by Photorhabdus PAU_02230': ('Y', 'glycosylation', ['Photorhabdus PAU_02230']),
+            'O-linked (Hex) serine': ('S', 'glycosylation', nan),
+            'O-linked (GalNAc...) serine; in variant S-874': ('S', 'glycosylation', nan),
+            'S-linked (Gal...) cysteine': ('C', 'glycosylation', nan),
+            'N-linked (GlcNAc...) asparagine': ('N', 'glycosylation', nan),
+            'N-linked (GlcNAc...)': (nan, 'glycosylation', nan),
+            'N-linked (Glc) (glycation) lysine': ('K', 'glycation', nan)
+        }
+        importer = GlycosylationUniprotImporter(*test_data_with_splice_variants)
+
+        verify_uniprot_importer_mappings(importer, cases)
+
     def test_others_mapping(self):
         # list of important cases:
         # cat data/sites/UniProt/other_sites.csv | cut -d ',' -f 4 | sort | uniq
@@ -230,17 +262,7 @@ class TestImport(DatabaseTest):
 
         importer = OthersUniprotImporter(*test_data_with_splice_variants)
 
-        for site_data, (residue, ptm_type, kinases) in cases.items():
-            inferred = importer.extract_site_mod_type(DataFrame({'data': [site_data]}))
-
-            assert len(inferred) == 1
-
-            i = inferred.iloc[0]
-
-            assert i.residue == residue
-            assert i.mod_type == ptm_type
-            if kinases is not nan:
-                assert i.kinases == kinases
+        verify_uniprot_importer_mappings(importer, cases)
 
     def test_others_import(self):
 

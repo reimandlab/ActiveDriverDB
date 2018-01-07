@@ -62,8 +62,7 @@ class OthersUniprotImporter(UniprotImporter):
 
         extracted['mod_type'] = extracted.exact_mod_type.map(self.modifiers_map)
 
-        extracted.kinases = extracted.kinases.str.split(' (?:and|AND|or|OR) ')
-
+        extracted.kinases = self.split_kinases(extracted.kinases)
         extracted.residue = extracted.residue.replace(aa_name_to_symbol)
 
         return extracted

@@ -174,3 +174,7 @@ class UniprotImporter(SiteImporter):
 
     def repr_site(self, site):
         return f'{site.sequence_accession}: ' + super().repr_site(site)
+
+    @staticmethod
+    def split_kinases(kinases):
+        return kinases.str.split(' (?:and|AND|or|OR) ')
