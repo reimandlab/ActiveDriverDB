@@ -4,7 +4,8 @@ from warnings import warn
 from pandas import DataFrame
 from tqdm import tqdm
 
-from models import Protein
+from database import create_key_model_dict
+from models import Protein, Gene
 
 
 def find_all(longer_string: str, sub_string: str):
@@ -30,6 +31,9 @@ class SiteMapper:
     def __init__(self, proteins, repr_site):
         self.proteins = proteins
         self.repr_site = repr_site
+        self.genes = create_key_model_dict(Gene, 'name')
+        self.has_gene_names = None
+        self.already_warned = None
 
     def map_sites_by_sequence(self, sites: DataFrame) -> DataFrame:
         """Given a site with an isoform it should occur in,
@@ -43,9 +47,13 @@ class SiteMapper:
         correct position (to overcome a potential sequence shift
         which might be a result of different sequence versions).
 
+        If there is no isoform with given refseq and there is
+        a gene column in provided sites DataFrame, all isoforms
+        of this gene will be used for mapping.
+
         Args:
             sites: data frame with sites, having (at least) following columns:
-                   'sequence', 'position', 'refseq', 'residue', 'sequence_left_offset'
+                   'sequence', 'position', 'refseq', 'residue', 'left_sequence_offset'
 
         Returns:
             Data frame of sites mapped to isoforms in database,
@@ -55,42 +63,23 @@ class SiteMapper:
         print('Mapping sites to isoforms')
 
         mapped_sites = []
-        already_warned = set()
+        self.already_warned = set()
+        self.has_gene_names = 'gene' in sites.columns
 
         for site in tqdm(sites.itertuples(index=False), total=len(sites)):
 
-            site_id = self.repr_site(site)
-
-            if site.refseq not in self.proteins:
-                if site.refseq not in already_warned:
-                    warn(f'No protein with {site.refseq} for {site_id}')
-                    already_warned.add(site.refseq)
-                # TODO: fallback to gene directly (if there is site.gene, try it)
-                continue
-
-            protein = self.proteins[site.refseq]
-
-            gene = protein.gene
-
-            if gene and gene.isoforms:
-                isoforms_to_map = {self.proteins[isoform.refseq] for isoform in gene.isoforms}
-            else:
-                isoforms_to_map = {protein}
-
+            protein = None
             positions = {}
+
+            isoforms_to_map = self.choose_isoforms_to_map(site)
 
             # find matches
             for isoform in isoforms_to_map:
                 positions[isoform] = self.map_site_to_isoform(site, isoform)
 
-            original_isoform_matches = positions[protein]
-
-            if not original_isoform_matches:
-                warn(f'The site: {site_id} was not found in {protein.refseq}, '
-                     f'though it should appear in this isoform according to provided sites data.')
-            elif all(match_pos != site.position for match_pos in original_isoform_matches):
-                warn(f'The site: {site_id} does not appear on the exact given position in '
-                     f'{protein.refseq} isoform, though it was re-mapped to: {original_isoform_matches}.')
+            if protein:
+                matches = positions[protein]
+                self.collate_matches_with_expectations(matches, site)
 
             # create rows with sites
             for isoform, matched_positions in positions.items():
@@ -136,3 +125,34 @@ class SiteMapper:
             )
 
         return matches
+
+    def choose_isoforms_to_map(self, site):
+        protein = None
+
+        if site.refseq not in self.proteins:
+            if site.refseq not in self.already_warned:
+                warn(f'No protein with {site.refseq} for {self.repr_site(site)}')
+                self.already_warned.add(site.refseq)
+            if self.has_gene_names and site.gene in self.genes:
+                gene = self.genes[site.gene]
+                warn(f'Using {gene} to map {self.repr_site(site)}')
+            else:
+                return []
+        else:
+            protein = self.proteins[site.refseq]
+            gene = protein.gene
+
+        if gene and gene.isoforms:
+            return {self.proteins[isoform.refseq] for isoform in gene.isoforms}
+        elif protein:
+            return {protein}
+        return []
+
+    def collate_matches_with_expectations(self, original_isoform_matches, site):
+
+        if not original_isoform_matches:
+            warn(f'The site: {self.repr_site(site)} was not found in {site.refseq}, '
+                 f'though it should appear in this isoform according to provided sites data.')
+        elif all(match_pos != site.position for match_pos in original_isoform_matches):
+            warn(f'The site: {self.repr_site(site)} does not appear on the exact given position in '
+                 f'{site.refseq} isoform, though it was re-mapped to: {original_isoform_matches}.')
