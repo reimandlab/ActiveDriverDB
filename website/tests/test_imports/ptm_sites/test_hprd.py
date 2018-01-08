@@ -128,3 +128,28 @@ class TestImport(DatabaseTest):
 
         assert site.position == 128
         assert site.residue == 'Y'
+
+
+"""
+Additional caveats:
+Sometimes HPRD positions are 1-based:
+
+>04715|04715_2|NP_001030178.1|Ribosomal protein L17
+MVRYSLDPENPTKSCKSRGSNLRVHFKNTRETAQAIKGMHIRKATKYLKDVT...
+   ||
+   45 (both are 1-based)
+
+04715	RPL17	04715_2	NP_001030178.1	4	Y	-	-	Phosphorylation	in vivo	18691976
+04715	RPL17	04715_2	NP_001030178.1	5	S	-	-	Phosphorylation	in vivo	18691976,19007248
+
+
+Sometimes are 0-based:
+
+>01812|01812_1|NP_003225.2|Transferrin receptor
+MMDQARSAFSNLFGGEPLSYTRFSLARQVDGDNSHVEMKLAVDEEENADNNTK...
+                  |              |
+                  19 (0-based)  34 (1-based)
+
+01812	TFRC	01812_1	NP_003225.2	19	Y	-	-	Phosphorylation	in vivo	17016520
+01812	TFRC	01812_1	NP_003225.2	34	S	-	-	Phosphorylation	in vivo	20068231
+"""
