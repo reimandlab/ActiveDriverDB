@@ -4,7 +4,9 @@ from pytest import warns
 
 from database import db
 from database_testing import DatabaseTest
-from imports.sites.site_importer import find_all, map_site_to_isoform, SiteImporter
+from imports.sites.site_importer import SiteImporter
+from imports.sites.site_mapper import find_all
+from imports.sites.site_mapper import SiteMapper
 from models import Protein
 
 
@@ -56,11 +58,13 @@ class TestImport(DatabaseTest):
 
     def test_map_site_to_isoform(self):
 
+        mapper = SiteMapper([], lambda s: f'{s.position}{s.sequence}')
+
         site = RawSite(sequence='FIN', position=6, left_sequence_offset=1)
         protein = Protein(sequence='LKIQYTKIFINNEWHDSVSG')
 
-        assert map_site_to_isoform(site, protein) == [10]
+        assert mapper.map_site_to_isoform(site, protein) == [10]
 
-        with warns(UserWarning):
+        with warns(UserWarning, match='More than one match for: 2KI'):
             site = RawSite(sequence='KI', position=2, left_sequence_offset=0)
-            assert map_site_to_isoform(site, protein) == [2, 7]
+            assert mapper.map_site_to_isoform(site, protein) == [2, 7]
