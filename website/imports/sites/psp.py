@@ -6,10 +6,10 @@ from pandas import read_table, to_numeric, DataFrame, concat, Series
 import imports.protein_data as importers
 from helpers.bioinf import aa_symbols
 from imports.sites.site_importer import SiteImporter
-from imports.sites.uniprot.importer import UniprotToRefSeqTrait, UniprotIsoformsTrait
+from imports.sites.uniprot.importer import UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait
 
 
-class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait):
+class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait):
     """PhosphoSitePlus(R) site importer.
 
     To use this importer one need to download relevant files from:
@@ -88,6 +88,8 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
         sites = read_table(path, converters={'SITE_+/-7_AA': str.upper}, skiprows=3)
 
+        sites.rename(columns={'ACC_ID': 'protein_accession'}, inplace=True)
+
         # there are four binary (1 or nan) columns describing the source of a site:
         # LT_LIT	MS_LIT	MS_CST	CST_CAT# ("CST_CAT." in R)
         # CST = "internal datasets" created by Cell Signaling Technology research group
@@ -131,20 +133,8 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
         return self.create_site_objects(mapped_sites, ['refseq', 'position', 'residue', 'mod_type'])
 
     def repr_site(self, site):
-        return f'{site.ACC_ID}: ' + super().repr_site(site)
+        return f'{site.protein_accession}: ' + super().repr_site(site)
 
     def load_kinases(self, kinases_path='Kinase_Substrate_Dataset.gz'):
         warn('Kinases handling not implemented for PSP')
         return []
-
-    def add_sequence_accession(self, sites):
-
-        self.mappings['is_canonical'] = self.mappings.uniprot.apply(self.is_isoform_canonical)
-
-        canonical_mapping = self.mappings.query('is_canonical == True')
-        canonical_mapping['protein_accession'], _ = canonical_mapping['uniprot'].str.split('-', 1).str
-
-        canonical_mapping.rename(columns={'uniprot': 'sequence_accession'}, inplace=True)
-        canonical_mapping.drop(columns=['refseq'], inplace=True)
-
-        return sites.merge(canonical_mapping, left_on='ACC_ID', right_on='protein_accession')

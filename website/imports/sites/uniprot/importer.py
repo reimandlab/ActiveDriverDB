@@ -91,6 +91,21 @@ class UniprotIsoformsTrait:
             return True
 
 
+class UniprotSequenceAccessionTrait:
+
+    def add_sequence_accession(self, sites):
+
+        self.mappings['is_canonical'] = self.mappings.uniprot.apply(self.is_isoform_canonical)
+
+        canonical_mapping = self.mappings.query('is_canonical == True')
+        canonical_mapping['protein_accession'], _ = canonical_mapping['uniprot'].str.split('-', 1).str
+
+        canonical_mapping.rename(columns={'uniprot': 'sequence_accession'}, inplace=True)
+        canonical_mapping.drop(columns=['refseq'], inplace=True)
+
+        return sites.merge(canonical_mapping, on='protein_accession')
+
+
 class UniprotImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait):
     """UniProt/SwissProt sites importer.
 
