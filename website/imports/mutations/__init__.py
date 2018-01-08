@@ -6,11 +6,10 @@ from collections import defaultdict
 
 from sqlalchemy.orm.exc import NoResultFound
 
-from database import db, yield_objects, remove_model, raw_delete_all
-from database import bulk_ORM_insert
+from database import db, yield_objects
 from database import fast_count
-from database import get_highest_id
-from database import restart_autoincrement
+from database.bulk import get_highest_id, bulk_orm_insert, restart_autoincrement
+from database.manage import raw_delete_all, remove_model
 from helpers.bioinf import decode_mutation
 from helpers.bioinf import is_sequence_broken
 from helpers.parsers import chunked_list
@@ -225,7 +224,7 @@ class MutationImporter(ABC):
             raise Exception(
                 'To use insert_list, you have to specify insert_keys'
             )
-        bulk_ORM_insert(self.model, self.insert_keys, data)
+        bulk_orm_insert(self.model, self.insert_keys, data)
 
     def raw_delete_all(self, model):
         """In subclasses you can overwrite this function

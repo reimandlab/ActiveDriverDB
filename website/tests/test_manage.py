@@ -1,5 +1,6 @@
 from argparse import Namespace
 
+import database.manage
 from database_testing import DatabaseTest
 from flask import current_app
 

@@ -6,8 +6,8 @@ from imports.mutations import MutationImporter
 from imports.mutations import make_metadata_ordered_dict
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import gzip_open_text
-from database import restart_autoincrement, get_or_create, get_highest_id
-from database import bulk_ORM_insert
+from database import get_or_create
+from database.bulk import get_highest_id, bulk_orm_insert, restart_autoincrement
 from database import db
 
 
@@ -194,13 +194,13 @@ class Importer(MutationImporter):
     def insert_details(self, details):
         clinvar_mutations, clinvar_data, new_diseases = details
 
-        bulk_ORM_insert(
+        bulk_orm_insert(
             Disease,
             ('name',),
             [(disease,) for disease in new_diseases]
         )
         self.insert_list(clinvar_mutations)
-        bulk_ORM_insert(
+        bulk_orm_insert(
             ClinicalData,
             (
                 'inherited_id',

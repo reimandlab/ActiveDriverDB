@@ -7,7 +7,7 @@ from collections import Iterable
 from sqlalchemy import and_
 from sqlalchemy import or_
 
-from database import ScalarSet
+from database.types import ScalarSet
 
 
 def is_iterable_but_not_str(obj):

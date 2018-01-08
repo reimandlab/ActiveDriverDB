@@ -3,7 +3,8 @@ from datetime import timedelta
 
 from .model_testing import ModelTest
 
-from database import db, utc_now, update
+from database import db, update
+from database.types import utc_now
 from models import User
 from models import UsersMutationsDataset
 

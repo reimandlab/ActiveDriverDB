@@ -7,10 +7,10 @@ from pandas import DataFrame, Series
 from sqlalchemy.orm import load_only, joinedload
 from tqdm import tqdm
 
-from database import get_or_create
+from database import get_or_create, create_key_model_dict
 from imports import Importer, protein_data as importers
 # those should be moved somewhere else
-from imports.protein_data import get_preferred_gene_isoform, create_key_model_dict
+from imports.protein_data import get_preferred_gene_isoform
 from models import KinaseGroup, Kinase, Protein, Site, SiteType, BioModel, SiteSource, Gene
 
 

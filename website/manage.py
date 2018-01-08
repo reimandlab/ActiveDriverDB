@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 import argparse
-import re
 from getpass import getpass
 
 from flask import current_app
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from app import create_app
-from database import bdb, remove_model, reset_relational_db, get_column_names, add_column, drop_column, update_column
+from database import bdb
 from database import bdb_refseq
 from database import db
+from database.manage import remove_model, reset_relational_db
+from database.migrate import basic_auto_migrate_relational_db
 from exceptions import ValidationError
 from exports.protein_data import EXPORTERS
 from helpers.commands import CommandTarget
@@ -30,14 +31,6 @@ database_binds = ('bio', 'cms')
 CONFIG = {'LOAD_STATS': False, 'SCHEDULER_ENABLED': False, 'USE_CELERY': False}
 
 
-def automigrate(args, app=None):
-    if not app:
-        app = create_app(config_override=CONFIG)
-    for database_bind in args.databases:
-        basic_auto_migrate_relational_db(app, bind=database_bind)
-    return True
-
-
 def calc_statistics(args, app=None):
     if not app:
         app = create_app(config_override=CONFIG)
@@ -46,6 +39,14 @@ def calc_statistics(args, app=None):
         statistics = Statistics()
         statistics.calc_all()
         db.session.commit()
+
+
+def automigrate(args, app=None):
+    if not app:
+        app = create_app(config_override=CONFIG)
+    for database_bind in args.databases:
+        basic_auto_migrate_relational_db(app, bind=database_bind)
+    return True
 
 
 def get_all_models(module_name='bio'):
@@ -59,125 +60,6 @@ def get_all_models(module_name='bio'):
         if not isinstance(model, _ModuleMarker) and model.__module__ == module_name
     ]
     return models
-
-
-def get_answer(question, choices=('y', 'n')):
-    while True:
-        answer = input('\n' + question + ' (y/n)? ')
-        if answer in choices:
-            return answer
-
-
-def basic_auto_migrate_relational_db(app, bind):
-    """Inspired with http://stackoverflow.com/questions/2103274/"""
-
-    from sqlalchemy import Table
-    from sqlalchemy import MetaData
-
-    print('Performing very simple automigration in', bind, 'database...')
-    db.session.commit()
-    db.reflect()
-    db.session.commit()
-    db.create_all(bind=bind)
-
-    with app.app_context():
-        engine = db.get_engine(app, bind)
-        tables = db.get_tables_for_bind(bind=bind)
-        metadata = MetaData()
-        metadata.engine = engine
-
-        ddl = engine.dialect.ddl_compiler(engine.dialect, None)
-
-        for table in tables:
-
-            db_table = Table(
-                table.name, metadata, autoload=True, autoload_with=engine
-            )
-            db_columns = get_column_names(db_table)
-
-            columns = get_column_names(table)
-            new_columns = columns - db_columns
-            unused_columns = db_columns - columns
-            existing_columns = columns.intersection(db_columns)
-
-            for column_name in new_columns:
-                column = getattr(table.c, column_name)
-                if column.constraints:
-                    print(
-                        'Column %s skipped due to existing constraints.'
-                        % column_name
-                    )
-                    continue
-                print('Creating column: %s' % column_name)
-
-                definition = ddl.get_column_specification(column)
-                add_column(engine, table.name, definition)
-
-            if engine.dialect.name == 'mysql':
-                sql = 'SHOW CREATE TABLE `%s`' % table.name
-                table_definition = engine.execute(sql)
-                columns_definitions = {}
-
-                to_replace = {
-                    'TINYINT(1)': 'BOOL',   # synonymous for MySQL and SQLAlchemy
-                    'INT(11)': 'INTEGER',
-                    'DOUBLE': 'FLOAT(53)',
-                    ' DEFAULT NULL': ''
-                }
-                for definition in table_definition.first()[1].split('\n'):
-                    match = re.match('\s*`(?P<name>.*?)` (?P<definition>[^,]*),?', definition)
-                    if match:
-                        name = match.group('name')
-                        definition_string = match.group('definition').upper()
-
-                        for mysql_explicit_definition, implicit_sqlalchemy in to_replace.items():
-                            definition_string = definition_string.replace(mysql_explicit_definition, implicit_sqlalchemy)
-
-                        columns_definitions[name] = name + ' ' + definition_string
-
-                columns_to_update = []
-                for column_name in existing_columns:
-
-                    column = getattr(table.c, column_name)
-                    old_definition = columns_definitions[column_name]
-                    new_definition = ddl.get_column_specification(column)
-
-                    if old_definition != new_definition:
-                        columns_to_update.append([column_name, old_definition, new_definition])
-
-                if columns_to_update:
-                    print(
-                        '\nFollowing columns in `%s` table differ in definitions '
-                        'from those in specified in models:' % table.name
-                    )
-                for column, old_definition, new_definition in columns_to_update:
-                    answer = get_answer(
-                        'Column: `%s`\n'
-                        'Old definition: %s\n'
-                        'New definition: %s\n'
-                        'Update column definition?'
-                        % (column, old_definition, new_definition)
-                    )
-                    if answer == 'y':
-                        update_column(engine, table.name, new_definition)
-                        print('Updated %s column definition' % column)
-                    else:
-                        print('Skipped %s column' % column)
-
-            if unused_columns:
-                print(
-                    '\nFollowing columns in `%s` table are no longer used '
-                    'and can be safely removed:' % table.name
-                )
-                for column in unused_columns:
-                    answer = get_answer('Column: `%s` - remove?' % column)
-                    if answer == 'y':
-                        drop_column(engine, table.name, column)
-                        print('Removed column %s.' % column)
-                    else:
-                        print('Keeping column %s.' % column)
-
-    print('Automigration of', bind, 'database completed.')
 
 
 class CMS(CommandTarget):
@@ -479,7 +361,6 @@ def run_shell(args):
     print('Starting interactive shell...')
     app = create_app(config_override=CONFIG)
     with app.app_context():
-        import stats
         import models
 
         if args.command:

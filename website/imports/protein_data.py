@@ -1,7 +1,7 @@
 import gzip
 from collections import defaultdict, namedtuple
 from tqdm import tqdm
-from database import db, yield_objects
+from database import db, yield_objects, create_key_model_dict
 from database import get_or_create
 from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file
 from helpers.parsers import parse_tsv_file
@@ -18,7 +18,6 @@ from models import Pathway
 from models import BadWord
 from models import GeneList
 from models import GeneListEntry
-from operator import attrgetter
 
 
 def get_proteins(cached_proteins={}, reload_cache=False):
@@ -33,44 +32,6 @@ def get_proteins(cached_proteins={}, reload_cache=False):
         for protein in Protein.query:
             cached_proteins[protein.refseq] = protein
     return cached_proteins
-
-
-def create_key_model_dict(model, key, lowercase=False, options=None, progress=True):
-    """Create 'entry.key: entry' dict mappings for all entries of given model.
-
-    If `key` is a list, tuple or other iterable (but not str),
-    a tuple of properties accessed with keys from such iterable
-    is used as a key.
-    """
-
-    if isinstance(key, str):
-        keys = [key]
-    else:
-        keys = list(key)
-
-    entities = [
-        getattr(model, key)
-        for key in keys
-    ]
-
-    entities.append(model)
-
-    query = db.session.query(*entities)
-
-    if options:
-        query = query.options(options)
-
-    if progress:
-        query = tqdm(query, total=query.count())
-
-    if len(keys) > 1:
-        assert not lowercase
-        return {tuple(k): m for *k, m in query}
-
-    if lowercase:
-        return {k.lower(): m for k, m in query}
-    else:
-        return {k: m for k, m in query}
 
 
 @importer
@@ -880,7 +841,7 @@ def clean_from_wrong_proteins(soft=True):
 
     """
     print('Removing proteins with misplaced stop codons:')
-    from database import remove
+    from database.manage import remove
 
     proteins = get_proteins()
 
@@ -1154,7 +1115,6 @@ def drugbank(path='data/drugbank/drugbank.tsv'):
         'BiotechDrug': 'biotech',
         'SmallMoleculeDrug': 'small molecule'
     }
-
 
     def parser(data):
         drug_id, gene_name, drug_name, drug_groups, drug_type_name = data

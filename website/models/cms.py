@@ -12,7 +12,8 @@ from sqlalchemy.orm import validates
 from werkzeug.utils import cached_property
 
 import security
-from database import db, utc_now, utc_days_after, update
+from database import db, update
+from database.types import utc_now, utc_days_after
 from exceptions import ValidationError
 from models import Model
 

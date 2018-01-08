@@ -16,8 +16,9 @@ from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
 from werkzeug.utils import cached_property
 
-from database import db, count_expression, ScalarSet, client_side_defaults
+from database import db, count_expression, client_side_defaults
 from database import fast_count
+from database.types import ScalarSet
 from exceptions import ValidationError
 from helpers.models import generic_aggregator, association_table_super_factory
 from models import Model
@@ -718,10 +719,6 @@ class Site(BioModel):
 
     # TODO: following ideas might be worth exploring:
     # mapped = db.Column(db.Boolean)
-
-    # @property
-    # def type_string(self):
-    #      return ','.join(self.type)
 
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
