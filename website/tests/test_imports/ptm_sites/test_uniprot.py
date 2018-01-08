@@ -194,6 +194,9 @@ class TestImport(DatabaseTest):
         # should have 2 pre-defined sites (3 but one without refseq equivalent) and one mapped (isoform NM_178559)
         assert len(sites) == 2 + 1
 
+        db.session.add_all(sites)
+        db.session.flush()
+
         sites_by_isoform = {site.protein.refseq: site for site in sites}
 
         assert sites_by_isoform['NM_001163941'].residue == sites_by_isoform['NM_178559'].residue == 'N'

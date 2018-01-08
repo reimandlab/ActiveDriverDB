@@ -35,22 +35,42 @@ def get_proteins(cached_proteins={}, reload_cache=False):
     return cached_proteins
 
 
-def create_key_model_dict(model, key, lowercase=False):
-    """Create 'entry.key: entry' dict mappings for all entries of given model."""
-    key_getter = attrgetter(key)
+def create_key_model_dict(model, key, lowercase=False, options=None, progress=True):
+    """Create 'entry.key: entry' dict mappings for all entries of given model.
+
+    If `key` is a list, tuple or other iterable (but not str),
+    a tuple of properties accessed with keys from such iterable
+    is used as a key.
+    """
+
+    if isinstance(key, str):
+        keys = [key]
+    else:
+        keys = list(key)
+
+    entities = [
+        getattr(model, key)
+        for key in keys
+    ]
+
+    entities.append(model)
+
+    query = db.session.query(*entities)
+
+    if options:
+        query = query.options(options)
+
+    if progress:
+        query = tqdm(query, total=query.count())
+
+    if len(keys) > 1:
+        assert not lowercase
+        return {tuple(k): m for *k, m in query}
 
     if lowercase:
-        make_lowercase = str.lower
-
-        def get_key(m):
-            return make_lowercase(key_getter(m))
+        return {k.lower(): m for k, m in query}
     else:
-        get_key = key_getter
-
-    return {
-        get_key(m): m
-        for m in model.query
-    }
+        return {k: m for k, m in query}
 
 
 @importer

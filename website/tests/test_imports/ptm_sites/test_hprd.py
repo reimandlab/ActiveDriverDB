@@ -79,6 +79,9 @@ class TestImport(DatabaseTest):
         # should have 3 pre-defined sites and one mapped (isoform NM_001204889)
         assert len(sites) == 3 + 1
 
+        db.session.add_all(sites)
+        db.session.commit()
+
         sites_by_isoform = {site.protein.refseq: site for site in sites}
 
         assert sites_by_isoform['NM_001204889'].residue == sites_by_isoform['NM_000690'].residue == 'S'

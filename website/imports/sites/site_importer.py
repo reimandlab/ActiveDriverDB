@@ -1,17 +1,17 @@
 from abc import abstractmethod
-from collections import namedtuple
-from typing import Iterable, List, Set
+from typing import List, Set
 from warnings import warn
 
 from numpy import nan
 from pandas import DataFrame, Series
+from sqlalchemy.orm import load_only, joinedload
 from tqdm import tqdm
 
 from database import get_or_create
 from imports import Importer, protein_data as importers
 # those should be moved somewhere else
 from imports.protein_data import get_preferred_gene_isoform, create_key_model_dict
-from models import KinaseGroup, Kinase, Protein, Site, SiteType, BioModel, SiteSource
+from models import KinaseGroup, Kinase, Protein, Site, SiteType, BioModel, SiteSource, Gene
 
 
 def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_groups):
@@ -24,7 +24,7 @@ def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_grou
     """
     kinases, groups = set(), set()
 
-    for name in list(set(chosen_kinases_names)):
+    for name in set(chosen_kinases_names):
 
         # handle kinases group
         if name.endswith('_GROUP'):
@@ -115,7 +115,21 @@ class SiteImporter(Importer):
         # import later on, though it takes some time to cache
         self.known_kinases = create_key_model_dict(Kinase, 'name')
         self.known_groups = create_key_model_dict(KinaseGroup, 'name')
-        self.proteins = create_key_model_dict(Protein, 'refseq')
+        self.known_sites = create_key_model_dict(
+            Site, ['protein_id', 'position', 'residue'],
+            options=(
+                joinedload(Site.sources).joinedload('*')
+            )
+        )
+        self.proteins = create_key_model_dict(
+            Protein, 'refseq',
+            options=(
+                load_only('refseq', 'sequence', 'id')
+                .joinedload(Protein.gene)
+                .joinedload(Gene.isoforms)
+                .load_only('refseq')
+            )
+        )
 
         # create site types
         site_type_objects = [
@@ -128,6 +142,8 @@ class SiteImporter(Importer):
         ]
 
         self.source, _ = get_or_create(SiteSource, name=self.source_name)
+
+        print(f'{self.source_name} importer ready.')
 
     def load(self, *args, **kwargs) -> List[BioModel]:
         """Return a list of sites and site types to be added to the database"""
@@ -197,7 +213,7 @@ class SiteImporter(Importer):
             return sites
 
         # sites loaded so far were explicitly defined in data files
-        mapped_sites = self._map_sites_by_sequence(sites.itertuples(index=False))
+        mapped_sites = self._map_sites_by_sequence(sites)
 
         # from now, only sites which really appear in isoform sequences
         # in our database will be considered
@@ -207,7 +223,7 @@ class SiteImporter(Importer):
 
         return mapped_sites
 
-    def _map_sites_by_sequence(self, sites: Iterable[namedtuple]) -> DataFrame:
+    def _map_sites_by_sequence(self, sites: DataFrame) -> DataFrame:
         """Given a site with an isoform it should occur in,
         verify if the site really appears on the given position
         in this isoform and find where in all other isoforms
@@ -232,7 +248,7 @@ class SiteImporter(Importer):
         mapped_sites = []
         already_warned = set()
 
-        for site in tqdm(sites):
+        for site in tqdm(sites.itertuples(index=False), total=len(sites)):
 
             site_id = self.repr_site(site)
 
@@ -240,13 +256,15 @@ class SiteImporter(Importer):
                 if site.refseq not in already_warned:
                     warn(f'No protein with {site.refseq} for {site_id}')
                     already_warned.add(site.refseq)
+                # TODO: fallback to gene directly (if there is site.gene, try it)
                 continue
 
             protein = self.proteins[site.refseq]
+
             gene = protein.gene
 
             if gene and gene.isoforms:
-                isoforms_to_map = gene.isoforms
+                isoforms_to_map = {self.proteins[isoform.refseq] for isoform in gene.isoforms}
             else:
                 isoforms_to_map = {protein}
 
@@ -285,12 +303,20 @@ class SiteImporter(Importer):
 
     def add_site(self, refseq, position: int, residue, mod_type, pubmed_ids=None, kinases=None):
 
-        site, created = get_or_create(
-            Site,
-            position=position,
-            residue=residue,
-            protein=self.proteins[refseq]
-        )
+        protein = self.proteins[refseq]
+        site_key = (protein.id, position, residue)
+
+        if site_key in self.known_sites:
+            site = self.known_sites[site_key]
+            created = False
+        else:
+            site = Site(
+                position=position,
+                residue=residue,
+                protein_id=protein.id
+            )
+            self.known_sites[site_key] = site
+            created = True
 
         site.type.add(mod_type)
         site.sources.add(self.source)
@@ -312,21 +338,21 @@ class SiteImporter(Importer):
     def create_site_objects(
         self,
         sites: DataFrame,
-        columns=['refseq', 'position', 'residue', 'mod_type', 'reference_id', 'kinases']
+        columns=['refseq', 'position', 'residue', 'mod_type', 'pub_med_ids', 'kinases']
     ) -> List[Site]:
 
         if sites.empty:
             return []
 
         sites = sites[columns]
-
         site_objects = []
+        add_site = self.add_site
 
         print('Creating database objects:')
 
         for site_data in tqdm(sites.itertuples(index=False), total=len(sites)):
 
-            site, new = self.add_site(*site_data)
+            site, new = add_site(*site_data)
 
             if new:
                 site_objects.append(site)

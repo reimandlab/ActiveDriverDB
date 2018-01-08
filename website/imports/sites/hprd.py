@@ -127,7 +127,8 @@ class HPRDImporter(SiteImporter):
             'refseq_nm': 'refseq',
             'site': 'position',
             'modification_type': 'mod_type',
-            'enzyme_name': 'kinases'
+            'enzyme_name': 'kinases',
+            'reference_id': 'pub_med_ids'
         }
 
         sites.rename(normalized_names, axis='columns', inplace=True)
