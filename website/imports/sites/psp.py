@@ -28,6 +28,7 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
     and should be placed under data/sites/PSP directory.
 
     # TODO: handle kinases
+    # TODO edge cases ('_') handling
     """
 
     requires = {importers.proteins_and_genes, importers.sequences}
@@ -45,7 +46,7 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
         'Acetylation': 'acetylation',
         'Methylation': 'methylation',
         'Phosphorylation': 'phosphorylation',
-        'ubiquitination': 'ubiquitination'
+        'Ubiquitination': 'ubiquitination'
     }
 
     def __init__(self, sprot_canonical=None, sprot_splice=None, mappings_path=None, dir_path='data/sites/PSP'):
@@ -124,8 +125,6 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
         sites = concat(sites_by_dataset)
 
         sites = self.add_sequence_accession(sites)
-
-        # map NP refseq to NM:
         sites = self.add_nm_refseq_identifiers(sites)
 
         mapped_sites = self.map_sites_to_isoforms(sites)
@@ -136,5 +135,10 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
         return f'{site.protein_accession}: ' + super().repr_site(site)
 
     def load_kinases(self, kinases_path='Kinase_Substrate_Dataset.gz'):
-        warn('Kinases handling not implemented for PSP')
-        return []
+
+        path = self.dir_path / kinases_path
+
+        kinases = read_table(path, converters={'SITE_+/-7_AA': str.upper}, skiprows=3)
+        kinases = kinases.query('KIN_ORGANISM == "human" and SUB_ORGANISM == "human"')
+
+        return kinases

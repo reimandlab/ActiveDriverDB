@@ -1,4 +1,5 @@
 import gzip
+from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from database import db
@@ -11,6 +12,7 @@ from models import Protein
 MAPPINGS = """\
 P01258	RefSeq_NT	NM_001741.2
 P01258	RefSeq_NT	NM_001033952.2
+P13796-1	RefSeq_NT	NM_002298.4
 """
 
 
@@ -19,6 +21,8 @@ CANONICAL = """\
 MGFQKFSPFLALSILVLLQAGSLHAAPFRSALESSPADPATLSEDEARLLLAALVQNYVQ
 MKASELEQEQEREGSSLDSPRSKRCGNLSTCMLGTYTQDFNKFHTFPQTAIGVGAPGKKR
 DMSSDLERDHRPHVSMPQNAN
+>sp|P13796|PLSL_HUMAN Plastin-2 OS=Homo sapiens GN=LCP1 PE=1 SV=6
+MARGSVSDEEMMELREAFAKVDTDGNGYISFNELNDLFKAACLPLPGYRVREITENLMAT
 """
 
 ALTERNATIVE = """\
@@ -26,6 +30,8 @@ ALTERNATIVE = """\
 MGFQKFSPFLALSILVLLQAGSLHAAPFRSALESSPADPATLSEDEARLLLAALVQNYVQ
 MKASELEQEQEREGSSLDSPRSKRCGNLSTCMLGTYTQDFNKFHTFPQTAIGVGAPGKKR
 DMSSDLERDHRPHNHCPEESL
+>sp|P13796-2|PLSL_HUMAN Isoform 2 of Plastin-2 OS=Homo sapiens GN=LCP1
+MCAEDGDSKFSMSISMNSPFLEILHLENCNYAVELGKNQAKFSLVGIGGQDLNEGNRTLT
 """
 
 
@@ -39,9 +45,18 @@ CALCA	CALCA	P01258	11p15.2	T109-ga	27911936	human	15.47	Calc_CGRP_IAPP	KFHtFPQtA
 """
 
 
+KINASES = """\
+110817
+Data extracted from PhosphoSitePlus(R), created by Cell Signaling Technology Inc. PhosphoSitePlus is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. Attribution must be given in written, oral and digital presentations to PhosphoSitePlus, www.phosphosite.org. Written documents should additionally cite Hornbeck PV, Kornhauser JM, Tkachev S, Zhang B, Skrzypek E, Murray B, Latham V, Sullivan M (2012) PhosphoSitePlus: a comprehensive resource for investigating the structure and function of experimentally determined post-translational modifications in man and mouse. Nucleic Acids Res. 40, D261�70.; www.phosphosite.org.
+
+GENE	KINASE	KIN_ACC_ID	KIN_ORGANISM	SUBSTRATE	SUB_GENE_ID	SUB_ACC_ID	SUB_GENE	SUB_ORGANISM	SUB_MOD_RSD	SITE_GRP_ID	SITE_+/-7_AA	DOMAIN	IN_VIVO_RXN	IN_VITRO_RXN	CST_CAT#
+PRKCD	PKCD	Q05655	human	L-plastin	3936	P13796	LCP1	human	S5	450852	___MARGsVsDEEMM		X	 	
+"""
+
+
 class TestImport(DatabaseTest):
 
-    def test_glycosylation_import(self):
+    def test_import(self):
         protein = Protein(
             refseq='NM_001741',
             sequence='MGFQKFSPFLALSILVLLQAGSLHAAPFRSALESSPADPATLSEDEARLLLAALVQNYVQMKASELEQEQEREGSSLDSPRSKRCGNLSTCMLGTYTQDFNKFHTFPQTAIGVGAPGKKRDMSSDLERDHRPHVSMPQNAN*'
@@ -50,9 +65,13 @@ class TestImport(DatabaseTest):
         db.session.add(protein)
 
         with TemporaryDirectory() as dir_path:
+            dir_path = Path(dir_path)
 
-            with gzip.open(dir_path + '/O-GalNAc_site_dataset.gz', 'wt') as f:
+            with gzip.open(dir_path / 'O-GalNAc_site_dataset.gz', 'wt') as f:
                 f.write(SITES)
+
+            with gzip.open(dir_path / 'Kinase_Substrate_Dataset.gz', 'wt') as f:
+                f.write(KINASES)
 
             importer = PhosphoSitePlusImporter(
                 make_named_gz_file(CANONICAL),

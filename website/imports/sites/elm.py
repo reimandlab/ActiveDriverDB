@@ -61,8 +61,6 @@ class PhosphoELMImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrai
         sites['mod_type'] = Series('phosphorylation' for _ in sites)
 
         sites = self.add_sequence_accession(sites)
-
-        # map NP refseq to NM:
         sites = self.add_nm_refseq_identifiers(sites)
 
         mapped_sites = self.map_sites_to_isoforms(sites)

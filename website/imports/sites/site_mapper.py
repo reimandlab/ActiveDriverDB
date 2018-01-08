@@ -27,6 +27,7 @@ class OneBasedPosition(int):
 
 
 class SiteMapper:
+    # TODO: enforce checking of edge-cases (^/$ and regex? it might be used conditionally [or always])
 
     def __init__(self, proteins, repr_site):
         self.proteins = proteins
