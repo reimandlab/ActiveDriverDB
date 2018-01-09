@@ -54,6 +54,17 @@ PRKCD	PKCD	Q05655	human	L-plastin	3936	P13796	LCP1	human	S5	450852	___MARGsVsDEE
 """
 
 
+# note: the real data would have no empty 'LT_LIT' column
+EDGE_SITES = """\
+110817
+PhosphoSitePlus(R) (PSP) was created by Cell Signaling Technology Inc. It is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License. When using PSP data or analyses in printed publications or in online resources, the following acknowledgements must be included: (a) the words "PhosphoSitePlus(R), www.phosphosite.org" must be included at appropriate places in the text or webpage, and (b) the following citation must be included in the bibliography: "Hornbeck PV, Zhang B, Murray B, Kornhauser JM, Latham V, Skrzypek E PhosphoSitePlus, 2014: mutations, PTMs and recalibrations. Nucleic Acids Res. 2015 43:D512-20. PMID: 25514926."
+
+GENE	PROTEIN	ACC_ID	HU_CHR_LOC	MOD_RSD	SITE_GRP_ID	ORGANISM	MW_kD	DOMAIN	SITE_+/-7_AA	LT_LIT	MS_LIT	MS_CST	CST_CAT#
+ADIRF	ADIRF	Q15847	10q23.2	S3-p	50772639	human	7.85		_____MAsKGLQDLK	1	2		
+ADIRF	ADIRF	Q15847	10q23.2	K70-ac	466659	human	7.85		DtFsGIGkkFGLLK_	1		75	
+"""
+
+
 class TestImport(DatabaseTest):
 
     def test_import(self):
@@ -88,3 +99,42 @@ class TestImport(DatabaseTest):
 
             assert sites_by_pos[105].residue == sites_by_pos[109].residue == 'T'
             assert sites_by_pos[105].type == {'glycosylation'}
+
+    def test_edge_cases(self):
+
+        protein = Protein(
+            refseq='NM_006829',
+            sequence='MASKGLQDLKQQVEGTAQEAVSAAGAAAQQVVDQATEAGQKAMDQLAKTTQETIDKTANQASDTFSGIGKKFGLLK*'
+        )
+
+        db.session.add(protein)
+
+        with TemporaryDirectory() as dir_path:
+            dir_path = Path(dir_path)
+
+            with gzip.open(dir_path / 'My_test_site_dataset.gz', 'wt') as f:
+                f.write(EDGE_SITES)
+
+            with gzip.open(dir_path / 'Kinase_Substrate_Dataset.gz', 'wt') as f:
+                f.write(KINASES)
+
+            importer = PhosphoSitePlusImporter(
+                make_named_gz_file(
+                    '>sp|Q15847|ADIRF_HUMAN Adipogenesis regulatory factor OS=Homo sapiens GN=ADIRF PE=1 SV=1\n'
+                    'MASKGLQDLKQQVEGTAQEAVSAAGAAAQQVVDQATEAGQKAMDQLAKTTQETIDKTANQASDTFSGIGKKFGLLK'
+                ),
+                make_named_gz_file(''),
+                make_named_gz_file('Q15847	RefSeq_NT	NM_006829.2'),
+                dir_path=dir_path
+            )
+
+            importer.site_datasets['My_test'] = 'mixed_type'
+
+            sites = importer.load_sites(site_datasets=['My_test'])
+
+            assert len(sites) == 2
+
+            sites_by_pos = {site.position: site for site in sites}
+
+            assert sites_by_pos[3].residue == 'S'
+            assert sites_by_pos[70].residue == 'K'

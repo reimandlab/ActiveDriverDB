@@ -1,3 +1,4 @@
+import re
 from typing import List
 from warnings import warn
 
@@ -9,7 +10,22 @@ from models import Protein, Gene
 
 
 def find_all(longer_string: str, sub_string: str):
-    """Returns positions of all overlapping matches"""
+    """Returns positions of all overlapping matches.
+
+    Allowed alphabet excludes '^' and '$' characters.
+
+    If sub_string starts with '^' or ends with '$'
+    an exact match (at front or at the end) will
+    be performed.
+    """
+    if sub_string.startswith('^'):
+        # there can be only one match
+        # (or otherwise we would be matching with
+        # less precision than declared earlier)
+        return [0] if longer_string.startswith(sub_string[1:]) else []
+    if sub_string.endswith('$'):
+        return [len(longer_string) - len(sub_string) + 1] if longer_string.endswith(sub_string[:-1]) else []
+
     position = -1
     matches = []
 
@@ -22,12 +38,29 @@ def find_all(longer_string: str, sub_string: str):
         matches.append(position)
 
 
+def find_all_regex(longer_string: str, sub_string: str):
+    """Should have the same effect as `find_all`,
+
+    but as it adds an overhead of creating match objects
+    and has to supports a lot of additional features, is
+    probably match slower than `find_all`
+    """
+
+    if not (sub_string.startswith('^') or sub_string.endswith('$')):
+        # positive lookahead to enable detection of overlapping matches
+        sub_string = '(?=' + sub_string + ')'
+
+    return [
+        match.start()
+        for match in re.finditer(sub_string, longer_string)
+    ]
+
+
 class OneBasedPosition(int):
     pass
 
 
 class SiteMapper:
-    # TODO: enforce checking of edge-cases (^/$ and regex? it might be used conditionally [or always])
 
     def __init__(self, proteins, repr_site):
         self.proteins = proteins
@@ -113,7 +146,9 @@ class SiteMapper:
         """
         matches = [
             m + 1 + site.left_sequence_offset
-            for m in find_all(isoform.sequence, site.sequence)
+            # asterisks (*) representing stop codon are removed for the time of mapping
+            # so expression like 'SOMECTERMINALSEQUENCE$' can be easily matched
+            for m in find_all(isoform.sequence.rstrip('*'), site.sequence)
         ]
 
         if len(matches) > 1:

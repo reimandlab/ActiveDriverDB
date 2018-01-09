@@ -29,7 +29,6 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
     Maps sites by isoform, falls back to gene name.
     # TODO: handle kinases
-    # TODO edge cases ('_') handling
     """
 
     requires = {importers.proteins_and_genes, importers.sequences}
@@ -60,7 +59,27 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
         self.kinases = self.load_kinases()
 
     def extract_site_surrounding_sequence(self, site) -> str:
-        return site['SITE_+/-7_AA']
+        sequence = site['SITE_+/-7_AA']
+
+        if sequence.startswith('_'):
+            sequence = '^' + sequence.lstrip('_')
+
+        if sequence.endswith('_'):
+            return sequence.rstrip('_') + '$'
+        else:
+            return sequence
+
+    def determine_left_offset(self, site) -> int:
+        padded_site = site['SITE_+/-7_AA']
+
+        if padded_site.startswith('_'):
+            length = 1
+
+            while padded_site[length] == '_':
+                length += 1
+
+            return self.sequence_offset - length
+        return self.sequence_offset
 
     def add_nm_refseq_identifiers(self, sites: DataFrame):
         return sites.merge(

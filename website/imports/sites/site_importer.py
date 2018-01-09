@@ -117,7 +117,15 @@ class SiteImporter(Importer):
         return protein.sequence
 
     def extract_site_surrounding_sequence(self, site) -> str:
-        """site.position is always 1-based"""
+        """Creates a pattern for site mapping using:
+
+            - ^ to indicate a site that is closer than 7 aa to N-terminal end (left end)
+            - $ to indicate a site that is closer than 7 aa to C-terminal end (right end)
+            - sequence of the protein retrieved with `get_sequence_of_protein` method,
+            limited to +/- 7 aa from the position of the site (determined by site.position).
+
+        The offset (default 7) can be adjusted changing `sequence_offset` class variable.
+        """
         protein_sequence = self.get_sequence_of_protein(site)
 
         if not protein_sequence:
@@ -140,11 +148,19 @@ class SiteImporter(Importer):
             )
             return nan
 
-        return protein_sequence[
-           max(pos - offset, 0)
-           :
-           min(pos + offset + 1, len(protein_sequence))
-        ]
+        left = pos - offset
+        right = pos + offset + 1
+
+        if left < 0:
+            left = 0
+            prefix = '^'
+        else:
+            prefix = ''
+
+        if right > len(protein_sequence):
+            return prefix + protein_sequence[left:] + '$'
+        else:
+            return prefix + protein_sequence[left:right]
 
     def determine_left_offset(self, site) -> int:
         """Return 0-based offset of the site position in extracted sequence fragment

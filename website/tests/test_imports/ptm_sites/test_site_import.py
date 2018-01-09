@@ -1,4 +1,6 @@
+from timeit import Timer
 from types import SimpleNamespace as RawSite
+from functools import partial
 
 from pandas import DataFrame
 from pytest import warns
@@ -6,23 +8,40 @@ from pytest import warns
 from database import db, create_key_model_dict
 from database_testing import DatabaseTest
 from imports.sites.site_importer import SiteImporter
-from imports.sites.site_mapper import find_all
+from imports.sites.site_mapper import find_all, find_all_regex
 from imports.sites.site_mapper import SiteMapper
 from models import Protein, Gene
 
 
 def test_find_all():
 
-    background = 'Lorem ipsum dololor'
+    background = 'Lorem ipsum dololor L'
 
     cases = {
-        'L': [0],
+        'L': [0, 20],
         'o': [1, 13, 15, 17],
-        'olo': [13, 15]
+        'olo': [13, 15],
+        '^L': [0],
+        '^Lorem': [0],
+        'L$': [20],
+        ' L$': [19],
+        'not matching': []
     }
 
     for query, expected_result in cases.items():
         assert find_all(background, query) == expected_result
+
+    for case in cases:
+
+        regexp_time = Timer(partial(find_all_regex, background, case)).timeit()
+        custom_time = Timer(partial(find_all, background, case)).timeit()
+
+        assert find_all_regex(background, case) == find_all(background, case)
+
+        assert custom_time < regexp_time
+        print(
+            f'find_all() was faster than find_all_regex() '
+            f'by {custom_time / regexp_time * 100}%')
 
 
 def create_importer(*args, offset=7, **kwargs):
@@ -53,7 +72,7 @@ class TestImport(DatabaseTest):
         importer = create_importer(offset=7)
 
         cases = [
-            [RawSite(position=2, refseq='NM_0001', residue='S'), 'MSSSGTPDL', 1],
+            [RawSite(position=2, refseq='NM_0001', residue='S'), '^MSSSGTPDL', 1],
             [RawSite(position=10, refseq='NM_0001', residue='P'), 'SSGTPDLPVLLTDLK', 7]
         ]
 
@@ -106,7 +125,15 @@ class TestImport(DatabaseTest):
             'gene', 'refseq', 'position', 'sequence', 'residue', 'left_sequence_offset'
         ]
 
-        mapped_sites = mapper.map_sites_by_sequence(sites)
+        warnings = {
+            'No protein with NM_03 for 10Y',
+            'Using <Gene B, with 1 isoforms> to map 10Y'
+        }
+        with warns(UserWarning) as recorded_warnings:
+            mapped_sites = mapper.map_sites_by_sequence(sites)
+
+        assert warnings.issubset({str(warning.message) for warning in recorded_warnings})
+
         sites_by_isoform = group_by_isoform(mapped_sites)
 
         # one from NM_01 (defined), from NM_02 (mapped), from NM_04 (mapped)
@@ -127,3 +154,35 @@ class TestImport(DatabaseTest):
 
         assert len(mapped_sites) == 2
         assert set(sites_by_isoform) == {'NM_01', 'NM_02'}
+
+    def test_edge_cases_mapping(self):
+
+        gene_t = Gene(name='T', isoforms=[
+            #                                 123456789
+            Protein(refseq='NM_01', sequence='AXAXAYAYA'),
+            # C-terminal part was trimmed
+            Protein(refseq='NM_02', sequence='AXAXA'),
+            # N-terminal part was trimmed
+            Protein(refseq='NM_03', sequence='AYAYA'),
+        ])
+        db.session.add(gene_t)
+        db.session.commit()
+
+        mapper = SiteMapper(
+            create_key_model_dict(Protein, 'refseq'),
+            lambda s: f'{s.position}{s.residue}'
+        )
+
+        # all sites in NM_01, the idea is to test
+        sites = DataFrame.from_dict(data={
+            'site at N-terminus edge': ('T', 'NM_01', 1, '^AX', 'A', 2),
+            'site at C-terminus edge': ('T', 'NM_01', 9, 'YA$', 'A', 2),
+        }, orient='index')
+
+        sites.columns = [
+            'gene', 'refseq', 'position', 'sequence', 'residue', 'left_sequence_offset'
+        ]
+
+        mapped_sites = mapper.map_sites_by_sequence(sites)
+
+        assert len(mapped_sites) == 4
