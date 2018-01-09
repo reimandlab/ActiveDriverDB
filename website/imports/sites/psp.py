@@ -27,6 +27,7 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
     and should be placed under data/sites/PSP directory.
 
+    Maps sites by isoform, falls back to gene name.
     # TODO: handle kinases
     # TODO edge cases ('_') handling
     """
@@ -89,7 +90,10 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
         sites = read_table(path, converters={'SITE_+/-7_AA': str.upper}, skiprows=3)
 
-        sites.rename(columns={'ACC_ID': 'protein_accession'}, inplace=True)
+        sites.rename(columns={
+            'ACC_ID': 'protein_accession',
+            'GENE': 'gene'
+        }, inplace=True)
 
         # there are four binary (1 or nan) columns describing the source of a site:
         # LT_LIT	MS_LIT	MS_CST	CST_CAT# ("CST_CAT." in R)

@@ -17,6 +17,7 @@ class PhosphoELMImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrai
 
     and placed under data/sites/ELM directory.
 
+    Maps sites by isoform, does not fall back to gene name.
     """
 
     requires = {importers.proteins_and_genes, importers.sequences}

@@ -13,6 +13,8 @@ class HPRDImporter(SiteImporter):
 
     To use this importer one need to download HPRD: http://hprd.org/download
     and place unpacked FLAT_FILES_072010 directory under data/sites/HPRD/
+
+    Maps sites by isoform, falls back to gene name.
     """
 
     requires = {importers.proteins_and_genes, importers.sequences}
@@ -46,7 +48,7 @@ class HPRDImporter(SiteImporter):
     @staticmethod
     def load_mappings(mappings_path):
         header = [
-            'hprd_id', 'geneSymbol', 'nucleotide_accession', 'protein_accession',
+            'hprd_id', 'gene', 'nucleotide_accession', 'protein_accession',
             'entrezgene_id', 'omim_id', 'swissprot_id', 'main_name'
         ]
         mappings = read_table(mappings_path, names=header).dropna(subset=['nucleotide_accession'])

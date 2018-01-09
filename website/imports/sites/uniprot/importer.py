@@ -118,6 +118,9 @@ class UniprotImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait):
 
     Many thanks to the author of https://www.biostars.org/p/261823/
     for describing how to use sparql to export PTM data from UniProt.
+
+    Maps sites by isoform; fallback to gene names
+    can be implemented by altering sparql query.
     """
 
     requires = {importers.proteins_and_genes, importers.sequences}
