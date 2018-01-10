@@ -187,6 +187,7 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
         kinases = read_table(path, converters={'SITE_+/-7_AA': str.upper}, skiprows=3)
         kinases = kinases.query('KIN_ORGANISM == "human" and SUB_ORGANISM == "human"')
+        kinases = kinases[['SUB_ACC_ID', 'SITE_+/-7_AA', 'KINASE']]
 
         kinases = kinases.groupby(['SUB_ACC_ID', 'SITE_+/-7_AA'], sort=False, squeeze=True)
 
