@@ -1,5 +1,4 @@
 from pathlib import Path
-from warnings import warn
 
 from pandas import read_table, to_numeric, DataFrame, concat, Series
 
@@ -28,7 +27,6 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
     and should be placed under data/sites/PSP directory.
 
     Maps sites by isoform, falls back to gene name.
-    # TODO: handle kinases
     """
 
     requires = {importers.proteins_and_genes, importers.sequences}
@@ -88,6 +86,21 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
             right_on='uniprot'
         )
 
+    def add_kinases(self, sites):
+        sites = sites.merge(
+            self.kinases,
+            left_on=['protein_accession', 'SITE_+/-7_AA'],
+            right_on=['SUB_ACC_ID', 'SITE_+/-7_AA'],
+            how='left'
+        )
+        # ideally would be to replace nan with None,
+        # but the signature of sites does not allow
+        # for that (passing value=None is understood
+        # as not passing any value); 0 is not so bad
+        # as it evaluates to False too.
+        sites.fillna(value=0, inplace=True)
+        return sites
+
     @staticmethod
     def extract_details(sites):
         supported_aminoacids = '|'.join(aa_symbols)
@@ -107,14 +120,16 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
         mod_type = self.site_datasets[dataset]
         path = self.dir_path / f'{dataset}_site_dataset.gz'
 
-        sites = read_table(path, converters={'SITE_+/-7_AA': str.upper}, skiprows=3)
+        sites = read_table(path, converters={
+            'SITE_+/-7_AA': str.upper
+        }, skiprows=3)
 
         sites.rename(columns={
             'ACC_ID': 'protein_accession',
             'GENE': 'gene'
         }, inplace=True)
 
-        # there are four binary (1 or nan) columns describing the source of a site:
+        # there are four numeric (a number or nan) columns describing the source of a site:
         # LT_LIT	MS_LIT	MS_CST	CST_CAT# ("CST_CAT." in R)
         # CST = "internal datasets" created by Cell Signaling Technology research group
         # LIT = based on literature reference
@@ -124,7 +139,7 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
         # (based on "Links to antibody and siRNA products
         # from cell signaling technology" https://doi.org/10.1093/nar/gkr1122)
         if only_literature:
-            sites = sites.query('MS_LIT == 1 or LT_LIT == 1')
+            sites = sites.dropna(subset=['MS_LIT', 'LT_LIT'], how='all')
 
         sites = sites.query('ORGANISM == "human"')
 
@@ -133,6 +148,14 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
         sites = concat([sites, extracted_data], axis=1)
 
         sites['mod_type'] = Series(mod_type for _ in sites)
+
+        sites['psp_ids'] = Series(
+            {site.MS_LIT, site.LT_LIT}
+            for site in sites.itertuples(index=False)
+        )
+        # TODO: it should be possible to retrieve PUB MED ids from from MS_LIT and LT_LIT
+        # TODO: (or alternatively link to relevant place on PSP website)
+        sites['pub_med_ids'] = Series(None for _ in sites)
 
         return sites
 
@@ -149,10 +172,11 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
         sites = self.add_sequence_accession(sites)
         sites = self.add_nm_refseq_identifiers(sites)
+        sites = self.add_kinases(sites)
 
         mapped_sites = self.map_sites_to_isoforms(sites)
 
-        return self.create_site_objects(mapped_sites, ['refseq', 'position', 'residue', 'mod_type'])
+        return self.create_site_objects(mapped_sites)
 
     def repr_site(self, site):
         return f'{site.protein_accession}: ' + super().repr_site(site)
@@ -163,5 +187,12 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
         kinases = read_table(path, converters={'SITE_+/-7_AA': str.upper}, skiprows=3)
         kinases = kinases.query('KIN_ORGANISM == "human" and SUB_ORGANISM == "human"')
+
+        kinases = kinases.groupby(['SUB_ACC_ID', 'SITE_+/-7_AA'], sort=False, squeeze=True)
+
+        kinases = kinases['KINASE'].apply(list).reset_index(name='kinases')
+
+        if kinases.empty:
+            return DataFrame(columns=['SUB_ACC_ID', 'SITE_+/-7_AA', 'kinases'])
 
         return kinases

@@ -1,5 +1,8 @@
 import gzip
+from abc import ABCMeta, abstractmethod
 from tempfile import NamedTemporaryFile
+from textwrap import dedent
+from warnings import warn
 
 import pytest
 
@@ -40,3 +43,25 @@ def make_named_gz_file(data=None, **kwargs):
 
 
 use_fixture = pytest.fixture(autouse=True)
+
+
+def abstract_property(func):
+    return property(abstractmethod(func))
+
+
+class DedentMeta(ABCMeta):
+    """Will dedent all class variables"""
+
+    def __new__(mcs, name, bases, namespace):
+        return super().__new__(mcs, name, bases, namespace)
+
+    def __init__(cls, name, bases, namespace):
+        super().__init__(name, bases, namespace)
+
+        for key, value in cls.__dict__.items():
+            if not key.startswith('_') and isinstance(value, str):
+                setattr(cls, key, dedent(value))
+
+
+class TestCaseData(metaclass=DedentMeta):
+    pass
