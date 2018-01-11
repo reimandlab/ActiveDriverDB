@@ -59,7 +59,7 @@ class PhosphoELMImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrai
         }, inplace=True)
 
         sites = sites.query('species == "Homo sapiens"')
-        sites['mod_type'] = Series('phosphorylation' for _ in sites)
+        sites['mod_type'] = 'phosphorylation'
 
         sites = self.add_sequence_accession(sites)
         sites = self.add_nm_refseq_identifiers(sites)

@@ -98,7 +98,7 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
         # for that (passing value=None is understood
         # as not passing any value); 0 is not so bad
         # as it evaluates to False too.
-        sites.fillna(value=0, inplace=True)
+        sites['kinases'] = sites['kinases'].fillna(value=0)
         return sites
 
     @staticmethod
@@ -147,7 +147,7 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
         sites = concat([sites, extracted_data], axis=1)
 
-        sites['mod_type'] = Series(mod_type for _ in sites)
+        sites['mod_type'] = mod_type
 
         sites['psp_ids'] = Series(
             {site.MS_LIT, site.LT_LIT}
@@ -155,7 +155,7 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
         )
         # TODO: it should be possible to retrieve PUB MED ids from from MS_LIT and LT_LIT
         # TODO: (or alternatively link to relevant place on PSP website)
-        sites['pub_med_ids'] = Series(None for _ in sites)
+        sites['pub_med_ids'] = None
 
         return sites
 
@@ -163,7 +163,8 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
         sites_by_dataset = []
 
-        for dataset in site_datasets:
+        for i, dataset in enumerate(site_datasets, 1):
+            print(f'Loading {dataset} dataset ({i} of {len(site_datasets)})')
 
             sites = self.load_dataset(dataset)
             sites_by_dataset.append(sites)

@@ -8,7 +8,7 @@ from database import db
 from database_testing import DatabaseTest
 from imports.sites.psp import PhosphoSitePlusImporter
 from miscellaneous import make_named_gz_file, TestCaseData, abstract_property
-from models import Protein
+from models import Protein, Site
 
 
 class PSPCaseData(TestCaseData):
@@ -171,6 +171,13 @@ class TestImport(DatabaseTest):
             assert sites_by_pos[105].residue == sites_by_pos[109].residue == 'T'
             assert sites_by_pos[105].type == {'glycosylation'}
 
+        # check re-loading
+        db.session.add_all(sites)
+        db.session.commit()
+
+        site = Site.query.filter_by(position=105).one()
+        assert site.type == {'glycosylation'}
+
     def test_edge_cases(self):
 
         protein = Protein(
@@ -209,4 +216,5 @@ class TestImport(DatabaseTest):
             assert len(sites) == 1
 
             site = sites[0]
+            assert site.type == {'phosphorylation'}
             assert {kinase.name for kinase in site.kinases} == {'Src', 'Abl', 'Fyn'}
