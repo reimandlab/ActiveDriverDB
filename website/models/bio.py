@@ -714,7 +714,7 @@ class Site(BioModel):
 
     residue = db.Column(db.String(1), default=default_residue)
 
-    pmid = db.Column(ScalarSet(separator=','), default=set)
+    pmid = db.Column(ScalarSet(separator=',', element_type=int), default=set)
     type = db.Column(ScalarSet(separator=','), default=set)
 
     # TODO: following ideas might be worth exploring:

@@ -1,5 +1,7 @@
-import database
 import genomic_mappings
+from database import db
+from database_testing import DatabaseTest
+from models import Model, ScalarSet
 
 
 def test_make_snv_key():
@@ -34,3 +36,34 @@ def test_decode_csv():
     for encoded_csv, correct_result in test_data:
         result = genomic_mappings.decode_csv(encoded_csv)
         assert result == dict(zip(keys, correct_result))
+
+
+class TestTypes(DatabaseTest):
+
+    def test_scalar_set(self):
+
+        class TestModel(Model):
+            properties = db.Column(ScalarSet(separator=','), default=set)
+            citations = db.Column(ScalarSet(separator=',', element_type=int), default=set)
+
+        db.create_all()
+
+        a = TestModel(properties={'green', 'durable'}, citations={1, 4})
+
+        db.session.add(a)
+        db.session.commit()
+
+        a_loaded = TestModel.query.one()
+        assert a_loaded.properties == {'green', 'durable'}
+        assert a_loaded.citations == {1, 4}
+
+        # test tracking of mutations
+        b = TestModel(properties={'red'})
+        b.properties.add('volatile')
+
+        db.session.add(b)
+        db.session.commit()
+
+        # test filtering
+        b_loaded = TestModel.query.filter(TestModel.properties.contains('red')).one()
+        assert b_loaded.properties == {'red', 'volatile'}
