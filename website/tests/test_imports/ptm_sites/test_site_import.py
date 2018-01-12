@@ -125,14 +125,7 @@ class TestImport(DatabaseTest):
             'gene', 'refseq', 'position', 'sequence', 'residue', 'left_sequence_offset'
         ]
 
-        warnings = {
-            'No protein with NM_03 for 10Y',
-            'Using <Gene B, with 1 isoforms> to map 10Y'
-        }
-        with warns(UserWarning) as recorded_warnings:
-            mapped_sites = mapper.map_sites_by_sequence(sites)
-
-        assert warnings.issubset({str(warning.message) for warning in recorded_warnings})
+        mapped_sites = mapper.map_sites_by_sequence(sites)
 
         sites_by_isoform = group_by_isoform(mapped_sites)
 
