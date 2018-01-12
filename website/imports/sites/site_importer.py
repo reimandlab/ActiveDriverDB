@@ -147,6 +147,7 @@ class SiteImporter(Importer):
         protein_sequence = self.get_sequence_of_protein(site)
 
         if not protein_sequence:
+            self.issues_counter['no sequence'] += 1
             return nan
 
         offset = self.sequence_offset

@@ -55,7 +55,7 @@ class UniprotIsoformsTrait:
         sprot_splice_variants_path=None,
     ):
         self.sequences = self.load_sequences(
-            sprot_canonical_path or self.default_path_splice,
+            sprot_canonical_path or self.default_path_canonical,
             sprot_splice_variants_path or self.default_path_splice
         )
 
