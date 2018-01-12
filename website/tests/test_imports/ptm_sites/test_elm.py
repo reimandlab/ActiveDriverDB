@@ -65,4 +65,7 @@ class TestImport(DatabaseTest):
             assert sites_by_pos[236].residue == sites_by_pos[242].residue == 'S'
             assert sites_by_pos[236].type == sites_by_pos[242].type == {'phosphorylation'}
 
-            assert sites_by_pos[236].pmid == {'17360704'}
+            assert sites_by_pos[236].pmid == {17360704}
+
+            # N.N. should be ignored
+            assert sites_by_pos[242].pmid == {18669648}

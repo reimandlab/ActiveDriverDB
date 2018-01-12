@@ -112,7 +112,7 @@ class HPRDImporter(SiteImporter):
         all_sites = read_table(path, names=header, converters={
             'site': lambda pos: pos.rstrip(';-'),
             'modification_type': str.lower,
-            'reference_id': lambda ref: str(ref).split(',')
+            'reference_id': lambda ref: [int(x) for x in str(ref).split(',')]
         })
 
         # only chosen site types

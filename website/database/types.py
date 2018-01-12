@@ -54,14 +54,17 @@ class ScalarSet(TypeDecorator):
 
     impl = Text()
 
-    def __init__(self, *args, separator=',', element_type=str, **kwargs):
+    def __init__(self, *args, separator=',', element_type=str, empty_indicator='{}', **kwargs):
         super().__init__(*args, **kwargs)
         self.separator = separator
         self.type = element_type
+        self.empty_indicator = empty_indicator
 
     def process_bind_param(self, value, dialect):
         if not value:
-            return ''
+            return self.empty_indicator
+
+        assert all(isinstance(v, self.type) for v in value)
 
         if not isinstance(self.type, str):
             value = list(map(str, value))
@@ -71,7 +74,7 @@ class ScalarSet(TypeDecorator):
         return self.separator.join(value)
 
     def process_result_value(self, value, dialect):
-        if not value:
+        if not value or value == self.empty_indicator:
             return set()
         return set(map(self.type, value.split(self.separator)))
 

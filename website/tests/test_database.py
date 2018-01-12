@@ -67,3 +67,6 @@ class TestTypes(DatabaseTest):
         # test filtering
         b_loaded = TestModel.query.filter(TestModel.properties.contains('red')).one()
         assert b_loaded.properties == {'red', 'volatile'}
+
+        # test load of empty set:
+        assert b_loaded.citations == set()
