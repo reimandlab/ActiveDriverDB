@@ -198,7 +198,8 @@ class SiteImporter(Importer):
 
         old_len = len(sites)
         sites.dropna(axis=0, inplace=True, subset=['sequence', 'residue'])
-        print(f'Dropped {old_len - len(sites)} sites due to lack of sequence or residue')
+        diff = old_len - len(sites)
+        print(f'Dropped {diff} ({diff/old_len * 100}%) sites due to lack of sequence or residue')
 
         # nothing to map
         if sites.empty:

@@ -100,12 +100,14 @@ class SiteMapper:
         """
         print('Mapping sites to isoforms')
 
+        mapped_cnt = 0
         mapped_sites = []
         self.already_warned = set()
         self.has_gene_names = 'gene' in sites.columns
 
         for site in tqdm(sites.itertuples(index=False), total=len(sites)):
 
+            was_mapped = False
             protein = None
             positions = {}
 
@@ -122,9 +124,6 @@ class SiteMapper:
             # create rows with sites
             for isoform, matched_positions in positions.items():
 
-                if not matched_positions:
-                    continue
-
                 for position in matched_positions:
 
                     # _replace() returns new namedtuple with replaced values;
@@ -134,6 +133,15 @@ class SiteMapper:
                         position=position
                     )
                     mapped_sites.append(new_site)
+                    was_mapped = True
+
+            if was_mapped:
+                mapped_cnt += 1
+
+        print(
+            f'Successfully mapped {mapped_cnt} '
+            f'({mapped_cnt / len(sites) * 100}%) sites'
+        )
 
         return DataFrame(mapped_sites)
 
