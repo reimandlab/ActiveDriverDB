@@ -6,6 +6,7 @@ from database import db
 from database_testing import DatabaseTest
 from imports.sites.uniprot import OthersUniprotImporter
 from imports.sites.uniprot import GlycosylationUniprotImporter
+from imports.sites.uniprot.importer import UniprotIsoformsTrait
 from miscellaneous import make_named_gz_file, make_named_temp_file, TestCaseData, abstract_property
 from models import Protein
 from test_imports.ptm_sites.test_hprd import gene_from_isoforms
@@ -347,3 +348,19 @@ class TestImport(DatabaseTest):
         sites_with_refseq = importer.add_nm_refseq_identifiers(sites)
 
         assert len(sites_with_refseq) == 2
+
+    def test_isoforms_trait(self):
+
+        trait = UniprotIsoformsTrait(
+            make_named_gz_file(ASPHCaseData.canonical),
+            make_named_gz_file(ASPHCaseData.alternative),
+        )
+
+        cases = {
+            'Q12797-1': True,
+            'Q12797-2': None,   # unknown isoform = no certainty
+            'Q12797-3': False
+        }
+
+        for isoform, result in cases.items():
+            assert trait.is_isoform_canonical(isoform) is result

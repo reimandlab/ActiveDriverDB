@@ -25,7 +25,6 @@ TSKSESSQK
 ALTERNATIVE = ''
 
 
-# just a combination
 SITES = """\
 acc	sequence	position	code	pmids	kinases	source	species	entry_date
 P62753	MKLNISFPATGCQKLIEVDDERKLRTFYEKRMATEVAADALGEEWKGYVVRISGGNDKQGFPMKQGVLTHGRVRLLLSKGHSCYRPRRTGERKRKSVRGCIVDANLSVLNLVIVKKGEKDIPGLTDTTVPRRLGPKRASRIRKLFNLSKEDDVRQYVVRKPLNKEGKKPRTKAPKIQRLVTPRVLQHKRRRIALKKQRTKKNKEEAAEYAKLLAKRMKEAKEKRQEQIAKRRRLSSLRASTSKSESSQK	236	S	17360704	RSK_group	LTP	Homo sapiens	2004-12-31 00:00:00+01
@@ -69,3 +68,6 @@ class TestImport(DatabaseTest):
 
             # N.N. should be ignored
             assert sites_by_pos[242].pmid == {18669648}
+
+            assert {kinase.name for kinase in sites_by_pos[236].kinases} == {'P70S6K'}
+            assert {group.name for group in sites_by_pos[236].kinase_groups} == {'RSK'}

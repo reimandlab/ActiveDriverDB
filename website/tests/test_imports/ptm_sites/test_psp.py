@@ -217,4 +217,4 @@ class TestImport(DatabaseTest):
 
             site = sites[0]
             assert site.type == {'phosphorylation'}
-            assert {kinase.name for kinase in site.kinases} == {'Src', 'Abl', 'Fyn'}
+            assert {kinase.name for kinase in site.kinases} == {'SRC', 'ABL1', 'FYN'}

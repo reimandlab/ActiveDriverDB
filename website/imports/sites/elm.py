@@ -47,7 +47,7 @@ class PhosphoELMImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrai
     def load_sites(self, dump_file_path='data/sites/ELM/phosphoELM_all_2015-04.dump'):
 
         sites = read_table(dump_file_path, converters={
-            'kinases': lambda k: str(k).split(',')
+            'kinases': lambda k: str(k).upper().split(',')
         }, na_values=['N.N.'])
 
         # TODO: filter out without pubmed id?
