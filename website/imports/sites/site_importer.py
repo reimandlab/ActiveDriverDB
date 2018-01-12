@@ -188,6 +188,9 @@ class SiteImporter(Importer):
         return min(site.position - 1, self.sequence_offset)
 
     def map_sites_to_isoforms(self, sites: DataFrame) -> DataFrame:
+        if sites.empty:
+            return sites
+
         # additional "sequence" column is needed to map the site across isoforms
         sequences = sites.apply(self.extract_site_surrounding_sequence, axis=1)
         offsets = sites.apply(self.determine_left_offset, axis=1)
@@ -198,7 +201,7 @@ class SiteImporter(Importer):
         print(f'Dropped {old_len - len(sites)} sites due to lack of sequence or residue')
 
         # nothing to map
-        if len(sites) == 0:
+        if sites.empty:
             return sites
 
         mapper = SiteMapper(self.proteins, self.repr_site)

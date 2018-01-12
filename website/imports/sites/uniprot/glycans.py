@@ -12,9 +12,7 @@ class GlycosylationUniprotImporter(UniprotImporter):
     default_path = 'data/sites/UniProt/glycosylation_sites.csv'
 
     def filter_sites(self, sites):
-
-        # remove variant-specific glycosylations
-        sites = sites[~sites['modifiers'].str.contains('in variant', na=False)]
+        sites = super().filter_sites(sites)
 
         # ignore non-enzymatic events
         sites = sites.query('sugar_modifier != "glycation"')

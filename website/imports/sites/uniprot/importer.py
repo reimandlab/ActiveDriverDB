@@ -169,6 +169,17 @@ class UniprotImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait):
         """
 
     def filter_sites(self, sites: DataFrame) -> DataFrame:
+
+        # remove variant-specific modifications
+        sites = sites[~sites['modifiers'].str.contains('in variant', na=False)]
+
+        # and those which are not common
+        sites = sites[~sites['modifiers'].str.contains('atypical', na=False)]
+
+        # see: http://www.uniprot.org/help/evidences
+        # ECO_0000269 = Experimental evidence
+        sites = sites[sites['eco'] == 'ECO_0000269']
+
         return sites
 
     def load_sites(self, path=None, **filters):
@@ -182,14 +193,14 @@ class UniprotImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait):
 
         extracted_data = self.extract_site_mod_type(sites)
 
-        # TODO: source -> PubMed
-        sites.drop(columns=['data', 'source', 'eco'], inplace=True)
+        # TODO: UniProt source often uses PubMed id as citation identifier - but not always!
+        # sites['pub_med_ids'] = sites.source.str.replace('http://purl.uniprot.org/citations/', '')
+
+        sites.drop(columns=['data', 'source'], inplace=True)
 
         sites = concat([sites, extracted_data], axis=1)
 
         sites = self.filter_sites(sites)
-
-        # TODO atypical?
 
         # only chosen site types
         sites = sites[sites.mod_type.isin(self.site_types)]

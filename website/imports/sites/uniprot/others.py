@@ -40,13 +40,6 @@ class OthersUniprotImporter(UniprotImporter):
     site_types = set(modifiers_map.values())
     default_path = 'data/sites/UniProt/other_sites.csv'
 
-    def filter_sites(self, sites):
-
-        # remove variant-specific modification
-        sites = sites[~sites['modifiers'].str.contains('in variant', na=False)]
-
-        return sites
-
     def extract_site_mod_type(self, sites: DataFrame):
 
         supported_aminoacids = '|'.join(aa_names)
