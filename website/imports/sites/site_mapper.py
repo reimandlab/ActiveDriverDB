@@ -150,9 +150,9 @@ class SiteMapper:
         in provided sequence of an alternative isoform.
 
         Original position of the site is used to highlight "suspicious" cases,
-        in which the matched site is far away (>50% of isoform length) from
+        in which the matched site is far away (>50/90% of isoform length) from
         the one of the original site. This is based on premise that most of
-        alternative isoform does not differ by more than 50% (TODO: prove this)
+        alternative isoform should not differ so much.
 
         Returned positions are 1-based
         """
@@ -165,13 +165,23 @@ class SiteMapper:
 
         if len(matches) > 1:
             warn(f'More than one match for: {self.repr_site(site)}')
-        if any(abs(position - site.position) > len(isoform.sequence) / 2 for position in matches):
-            positions = ", ".join([str(m) for m in matches])
-            warn(
-                f'This site {self.repr_site(site)} was found on position(s): '
-                f'{positions}; some are quite far away from the '
-                f'position in original isoform: {site.position}.'
-            )
+
+        if matches:
+            biggest_distance = max(abs(position - site.position) for position in matches)
+
+            if biggest_distance > len(isoform.sequence) / 2:
+                positions = ", ".join([str(m) for m in matches])
+
+                if biggest_distance > len(isoform.sequence) * 9 / 10:
+                    inform = warn
+                else:
+                    inform = logger.info
+
+                inform(
+                    f'This site {self.repr_site(site)} was found on position(s): '
+                    f'{positions}; some are quite far away from the '
+                    f'position in original isoform: {site.position}.'
+                )
 
         return matches
 

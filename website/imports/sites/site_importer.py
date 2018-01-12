@@ -17,7 +17,11 @@ from imports.sites.site_mapper import SiteMapper
 from models import KinaseGroup, Kinase, Protein, Site, SiteType, BioModel, SiteSource, Gene
 
 
-warnings.showwarning = print
+def show_warning(message, category, filename, lineno, file=None, line=None):
+    print(message)
+
+
+warnings.showwarning = show_warning
 
 
 def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_groups):
