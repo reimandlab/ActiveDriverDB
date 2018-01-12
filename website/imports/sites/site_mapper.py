@@ -1,3 +1,4 @@
+import logging
 import re
 from typing import List
 from warnings import warn
@@ -7,6 +8,9 @@ from tqdm import tqdm
 
 from database import create_key_model_dict
 from models import Protein, Gene
+
+
+logger = logging.getLogger(__name__)
 
 
 def find_all(longer_string: str, sub_string: str):
@@ -96,12 +100,14 @@ class SiteMapper:
         """
         print('Mapping sites to isoforms')
 
+        mapped_cnt = 0
         mapped_sites = []
         self.already_warned = set()
         self.has_gene_names = 'gene' in sites.columns
 
         for site in tqdm(sites.itertuples(index=False), total=len(sites)):
 
+            was_mapped = False
             protein = None
             positions = {}
 
@@ -118,9 +124,6 @@ class SiteMapper:
             # create rows with sites
             for isoform, matched_positions in positions.items():
 
-                if not matched_positions:
-                    continue
-
                 for position in matched_positions:
 
                     # _replace() returns new namedtuple with replaced values;
@@ -130,6 +133,15 @@ class SiteMapper:
                         position=position
                     )
                     mapped_sites.append(new_site)
+                    was_mapped = True
+
+            if was_mapped:
+                mapped_cnt += 1
+
+        print(
+            f'Successfully mapped {mapped_cnt} '
+            f'({mapped_cnt / len(sites) * 100}%) sites'
+        )
 
         return DataFrame(mapped_sites)
 
@@ -154,10 +166,11 @@ class SiteMapper:
         if len(matches) > 1:
             warn(f'More than one match for: {self.repr_site(site)}')
         if any(abs(position - site.position) > len(isoform.sequence) / 2 for position in matches):
+            positions = ", ".join([str(m) for m in matches])
             warn(
-                f'This site {self.repr_site(site)} was found on {matches} positions, '
-                f'and some are quite far away from the position in '
-                f'original isoform: {site.position}.'
+                f'This site {self.repr_site(site)} was found on position(s): '
+                f'{positions}; some are quite far away from the '
+                f'position in original isoform: {site.position}.'
             )
 
         return matches
@@ -166,13 +179,20 @@ class SiteMapper:
         protein = None
 
         if site.refseq not in self.proteins:
-            if site.refseq not in self.already_warned:
-                warn(f'No protein with {site.refseq} for {self.repr_site(site)}')
-                self.already_warned.add(site.refseq)
             if self.has_gene_names and site.gene in self.genes:
                 gene = self.genes[site.gene]
-                warn(f'Using {gene} to map {self.repr_site(site)}')
+                logger.info(
+                    f'Using {gene} to map {self.repr_site(site)} (not using '
+                    f'{site.refseq}, as this sequence is not available).'
+                )
             else:
+                if site.refseq not in self.already_warned:
+                    warn(
+                        f'No protein with {site.refseq} '
+                        + (f'and no gene named {site.gene} ' if self.has_gene_names else '') +
+                        f'(first encountered for {self.repr_site(site)}).'
+                    )
+                    self.already_warned.add(site.refseq)
                 return []
         else:
             protein = self.proteins[site.refseq]

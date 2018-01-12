@@ -6,112 +6,146 @@ from database import db
 from database_testing import DatabaseTest
 from imports.sites.uniprot import OthersUniprotImporter
 from imports.sites.uniprot import GlycosylationUniprotImporter
-from miscellaneous import make_named_gz_file, make_named_temp_file
+from miscellaneous import make_named_gz_file, make_named_temp_file, TestCaseData, abstract_property
 from models import Protein
 from test_imports.ptm_sites.test_hprd import gene_from_isoforms
 from test_imports.test_proteins import create_test_proteins
 
 
-SEQUENCES = """\
->sp|P01889|1B07_HUMAN HLA class I histocompatibility antigen, B-7 alpha chain OS=Homo sapiens GN=HLA-B PE=1 SV=3
-MLVMAPRTVLLLLSAALALTETWAGSHSMRYFYTSVSRPGRGEPRFISVGYVDDTQFVRF
-DSDAASPREEPRAPWIEQEGPEYWDRNTQIYKAQAQTDRESLRNLRGYYNQSEAGSHTLQ
-SMYGCDVGPDGRLLRGHDQYAYDGKDYIALNEDLRSWTAADTAAQITQRKWEAAREAEQR
-RAYLEGECVEWLRRYLENGKDKLERADPPKTHVTHHPISDHEATLRCWALGFYPAEITLT
-WQRDGEDQTQDTELVETRPAGDRTFQKWAAVVVPSGEEQRYTCHVQHEGLPKPLTLRWEP
-SSQSTVPIVGIVAGLAVLAVVVIGAVVAAVMCRRKSSGGKGGSYSQAACSDSAQGSDVSL
-TA
->sp|P01891|1A68_HUMAN HLA class I histocompatibility antigen, A-68 alpha chain OS=Homo sapiens GN=HLA-A PE=1 SV=4
-MAVMAPRTLVLLLSGALALTQTWAGSHSMRYFYTSVSRPGRGEPRFIAVGYVDDTQFVRF
-DSDAASQRMEPRAPWIEQEGPEYWDRNTRNVKAQSQTDRVDLGTLRGYYNQSEAGSHTIQ
-MMYGCDVGSDGRFLRGYRQDAYDGKDYIALKEDLRSWTAADMAAQTTKHKWEAAHVAEQW
-RAYLEGTCVEWLRRYLENGKETLQRTDAPKTHMTHHAVSDHEATLRCWALSFYPAEITLT
-WQRDGEDQTQDTELVETRPAGDGTFQKWVAVVVPSGQEQRYTCHVQHEGLPKPLTLRWEP
-SSQPTIPIVGIIAGLVLFGAVITGAVVAAVMWRRKSSDRKGGSYSQAASSDSAQGSDVSL
-TACKV
->sp|Q2M3G0|ABCB5_HUMAN ATP-binding cassette sub-family B member 5 OS=Homo sapiens GN=ABCB5 PE=1 SV=4
-MENSERAEEMQENYQRNGTAEEQPKLRKEAVGSIEIFRFADGLDITLMILGILASLVNGA
-CLPLMPLVLGEMSDNLISGCLVQTNTTNYQNCTQSQEKLNEDMTLLTLYYVGIGVAALIF
-GYIQISLWIITAARQTKRIRKQFFHSVLAQDIGWFDSCDIGELNTRMTDDIDKISDGIGD
-KIALLFQNMSTFSIGLAVGLVKGWKLTLVTLSTSPLIMASAAACSRMVISLTSKELSAYS
-KAGAVAEEVLSSIRTVIAFRAQEKELQRYTQNLKDAKDFGIKRTIASKVSLGAVYFFMNG
-TYGLAFWYGTSLILNGEPGYTIGTVLAVFFSVIHSSYCIGAAVPHFETFAIARGAAFHIF
-QVIDKKPSIDNFSTAGYKPESIEGTVEFKNVSFNYPSRPSIKILKGLNLRIKSGETVALV
-GLNGSGKSTVVQLLQRLYDPDDGFIMVDENDIRALNVRHYRDHIGVVSQEPVLFGTTISN
-NIKYGRDDVTDEEMERAAREANAYDFIMEFPNKFNTLVGEKGAQMSGGQKQRIAIARALV
-RNPKILILDEATSALDSESKSAVQAALEKASKGRTTIVVAHRLSTIRSADLIVTLKDGML
-AEKGAHAELMAKRGLYYSLVMSQDIKKADEQMESMTYSTERKTNSLPLHSVKSIKSDFID
-KAEESTQSKEISLPEVSLLKILKLNKPEWPFVVLGTLASVLNGTVHPVFSIIFAKIITMF
-GNNDKTTLKHDAEIYSMIFVILGVICFVSYFMQGLFYGRAGEILTMRLRHLAFKAMLYQD
-IAWFDEKENSTGGLTTILAIDIAQIQGATGSRIGVLTQNATNMGLSVIISFIYGWEMTFL
-ILSIAPVLAVTGMIETAAMTGFANKDKQELKHAGKIATEALENIRTIVSLTREKAFEQMY
-EEMLQTQHRNTSKKAQIIGSCYAFSHAFIYFAYAAGFRFGAYLIQAGRMTPEGMFIVFTA
-IAYGAMAIGETLVLAPEYSKAKSGAAHLFALLEKKPNIDSRSQEGKKPDTCEGNLEFREV
-SFFYPCRPDVFILRGLSLSIERGKTVAFVGSSGCGKSTSVQLLQRLYDPVQGQVLFDGVD
-AKELNVQWLRSQIAIVPQEPVLFNCSIAENIAYGDNSRVVPLDEIKEAANAANIHSFIEG
-LPEKYNTQVGLKGAQLSGGQKQRLAIARALLQKPKILLLDEATSALDNDSEKVVQHALDK
-ARTGRTCLVVTHRLSAIQNADLIVVLHNGKIKEQGTHQELLRNRDIYFKLVNAQSVQ
-"""
+class UniprotCaseData(TestCaseData):
 
-GLYCOSYLATION_SITES = """\
-primary_accession,sequence_accession,position,data,eco,source
-"P01889","P01889-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
-"P01891","P01891-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
-"Q2M3G0","Q2M3G0-4","1188"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000255",
-"""
+    @classmethod
+    def files_for_init(cls):
+        return [
+            make_named_gz_file(cls.canonical),
+            make_named_gz_file(cls.alternative),
+            make_named_gz_file(cls.mappings)
+        ]
 
-SIMPLE_SITES = """\
-primary_accession,sequence_accession,position,data,eco,source
-"Q12797","Q12797-1","14"^^<http://www.w3.org/2001/XMLSchema#int>,"Phosphoserine","ECO_0000244",http://purl.uniprot.org/citations/24275569
-"""
+    @abstract_property
+    def mappings(self): pass
 
-MAPPINGS = """\
-P01889	RefSeq_NT	NM_005514.7
-P01891	Gene_Name	HLA-A
-Q2M3G0-4	RefSeq_NT	NM_001163941.1
-Q2M3G0-1	RefSeq_NT	XM_011515367.2
-Q2M3G0-1	RefSeq_NT	NM_178559.5
-"""
+    @abstract_property
+    def canonical(self): pass
+
+    @abstract_property
+    def alternative(self): pass
+
+    @abstract_property
+    def sites(self): pass
 
 
-SEQUENCES_SPLICE_TEST_CANONICAL = """\
->sp|Q12797|ASPH_HUMAN Aspartyl/asparaginyl beta-hydroxylase OS=Homo sapiens GN=ASPH PE=1 SV=3
-MAQRKNAKSSGNSSSSGSGSGSTSAGSSSPGARRETKHGGHKNGRKGGLSGTSFFTWFMV
-IALLGVWTSVAVVWFDLVDYEEVLGKLGIYDADGDGDFDVDDAKVLLGLKERSTSEPAVP
-PEEAEPHTEPEEQVPVEAEPQNIEDEAKEQIQSLLHEMVHAEHVEGEDLQQEDGPTGEPQ
-QEDDEFLMATDVDDRFETLEPEVSHEETEHSYHVEETVSQDCNQDMEEMMSEQENPDSSE
-PVVEDERLHHDTDDVTYQVYEEQAVYEPLENEGIEITEVTAPPEDNPVEDSQVIVEEVSI
-FPVEEQQEVPPETNRKTDDPEQKAKVKKKKPKLLNKFDKTIKAELDAAEKLRKRGKIEEA
-VNAFKELVRKYPQSPRARYGKAQCEDDLAEKRRSNEVLRGAIETYQEVASLPDVPADLLK
-LSLKRRSDRQQFLGHMRGSLLTLQRLVQLFPNDTSLKNDLGVGYLLIGDNDNAKKVYEEV
-LSVTPNDGFAKVHYGFILKAQNKIAESIPYLKEGIESGDPGTDDGRFYFHLGDAMQRVGN
-KEAYKWYELGHKRGHFASVWQRSLYNVNGLKAQPWWTPKETGYTELVKSLERNWKLIRDE
-GLAVMDKAKGLFLPEDENLREKGDWSQFTLWQQGRRNENACKGAPKTCTLLEKFPETTGC
-RRGQIKYSIMHPGTHVWPHTGPTNCRLRMHLGLVIPKEGCKIRCANETKTWEEGKVLIFD
-DSFEHEVWQDASSFRLIFIVDVWHPELTPQQRRSLPAI
-"""
+class GlycosylationData(UniprotCaseData):
 
-SEQUENCES_SPLICE_TEST_SPLICE = """\
->sp|Q12797-3|ASPH_HUMAN Isoform 3 of Aspartyl/asparaginyl beta-hydroxylase OS=Homo sapiens GN=ASPH
-MAEDKETKHGGHKNGRKGGLSGTSFFTWFMVIALLGVWTSVAVVWFDLVDYEEVLAKAKD
-FRYNLSEVLQGKLGIYDADGDGDFDVDDAKVLLEGPSGVAKRKTKAKVKELTKEELKKEK
-EKPESRKESKNEERKKGKKEDVRKDKKIADADLSRKESPKGKKDREKEKVDLEKSAKTKE
-NRKKSTNMKDVSSKMASRDKDDRKESRSSTRYAHLTKGNTQKRNG
-"""
+    canonical = """\
+    >sp|P01889|1B07_HUMAN HLA class I histocompatibility antigen, B-7 alpha chain OS=Homo sapiens GN=HLA-B PE=1 SV=3
+    MLVMAPRTVLLLLSAALALTETWAGSHSMRYFYTSVSRPGRGEPRFISVGYVDDTQFVRF
+    DSDAASPREEPRAPWIEQEGPEYWDRNTQIYKAQAQTDRESLRNLRGYYNQSEAGSHTLQ
+    SMYGCDVGPDGRLLRGHDQYAYDGKDYIALNEDLRSWTAADTAAQITQRKWEAAREAEQR
+    RAYLEGECVEWLRRYLENGKDKLERADPPKTHVTHHPISDHEATLRCWALGFYPAEITLT
+    WQRDGEDQTQDTELVETRPAGDRTFQKWAAVVVPSGEEQRYTCHVQHEGLPKPLTLRWEP
+    SSQSTVPIVGIVAGLAVLAVVVIGAVVAAVMCRRKSSGGKGGSYSQAACSDSAQGSDVSL
+    TA
+    >sp|P01891|1A68_HUMAN HLA class I histocompatibility antigen, A-68 alpha chain OS=Homo sapiens GN=HLA-A PE=1 SV=4
+    MAVMAPRTLVLLLSGALALTQTWAGSHSMRYFYTSVSRPGRGEPRFIAVGYVDDTQFVRF
+    DSDAASQRMEPRAPWIEQEGPEYWDRNTRNVKAQSQTDRVDLGTLRGYYNQSEAGSHTIQ
+    MMYGCDVGSDGRFLRGYRQDAYDGKDYIALKEDLRSWTAADMAAQTTKHKWEAAHVAEQW
+    RAYLEGTCVEWLRRYLENGKETLQRTDAPKTHMTHHAVSDHEATLRCWALSFYPAEITLT
+    WQRDGEDQTQDTELVETRPAGDGTFQKWVAVVVPSGQEQRYTCHVQHEGLPKPLTLRWEP
+    SSQPTIPIVGIIAGLVLFGAVITGAVVAAVMWRRKSSDRKGGSYSQAASSDSAQGSDVSL
+    TACKV
+    >sp|Q2M3G0|ABCB5_HUMAN ATP-binding cassette sub-family B member 5 OS=Homo sapiens GN=ABCB5 PE=1 SV=4
+    MENSERAEEMQENYQRNGTAEEQPKLRKEAVGSIEIFRFADGLDITLMILGILASLVNGA
+    CLPLMPLVLGEMSDNLISGCLVQTNTTNYQNCTQSQEKLNEDMTLLTLYYVGIGVAALIF
+    GYIQISLWIITAARQTKRIRKQFFHSVLAQDIGWFDSCDIGELNTRMTDDIDKISDGIGD
+    KIALLFQNMSTFSIGLAVGLVKGWKLTLVTLSTSPLIMASAAACSRMVISLTSKELSAYS
+    KAGAVAEEVLSSIRTVIAFRAQEKELQRYTQNLKDAKDFGIKRTIASKVSLGAVYFFMNG
+    TYGLAFWYGTSLILNGEPGYTIGTVLAVFFSVIHSSYCIGAAVPHFETFAIARGAAFHIF
+    QVIDKKPSIDNFSTAGYKPESIEGTVEFKNVSFNYPSRPSIKILKGLNLRIKSGETVALV
+    GLNGSGKSTVVQLLQRLYDPDDGFIMVDENDIRALNVRHYRDHIGVVSQEPVLFGTTISN
+    NIKYGRDDVTDEEMERAAREANAYDFIMEFPNKFNTLVGEKGAQMSGGQKQRIAIARALV
+    RNPKILILDEATSALDSESKSAVQAALEKASKGRTTIVVAHRLSTIRSADLIVTLKDGML
+    AEKGAHAELMAKRGLYYSLVMSQDIKKADEQMESMTYSTERKTNSLPLHSVKSIKSDFID
+    KAEESTQSKEISLPEVSLLKILKLNKPEWPFVVLGTLASVLNGTVHPVFSIIFAKIITMF
+    GNNDKTTLKHDAEIYSMIFVILGVICFVSYFMQGLFYGRAGEILTMRLRHLAFKAMLYQD
+    IAWFDEKENSTGGLTTILAIDIAQIQGATGSRIGVLTQNATNMGLSVIISFIYGWEMTFL
+    ILSIAPVLAVTGMIETAAMTGFANKDKQELKHAGKIATEALENIRTIVSLTREKAFEQMY
+    EEMLQTQHRNTSKKAQIIGSCYAFSHAFIYFAYAAGFRFGAYLIQAGRMTPEGMFIVFTA
+    IAYGAMAIGETLVLAPEYSKAKSGAAHLFALLEKKPNIDSRSQEGKKPDTCEGNLEFREV
+    SFFYPCRPDVFILRGLSLSIERGKTVAFVGSSGCGKSTSVQLLQRLYDPVQGQVLFDGVD
+    AKELNVQWLRSQIAIVPQEPVLFNCSIAENIAYGDNSRVVPLDEIKEAANAANIHSFIEG
+    LPEKYNTQVGLKGAQLSGGQKQRLAIARALLQKPKILLLDEATSALDNDSEKVVQHALDK
+    ARTGRTCLVVTHRLSAIQNADLIVVLHNGKIKEQGTHQELLRNRDIYFKLVNAQSVQ
+    """
+
+    alternative = ''
+
+    sites = """\
+    primary_accession,sequence_accession,position,data,eco,source
+    "P01889","P01889-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
+    "P01891","P01891-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
+    "Q2M3G0","Q2M3G0-4","1188"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",
+    """
+
+    mappings = """\
+    P01889	RefSeq_NT	NM_005514.7
+    P01891	Gene_Name	HLA-A
+    Q2M3G0-4	RefSeq_NT	NM_001163941.1
+    Q2M3G0-1	RefSeq_NT	XM_011515367.2
+    Q2M3G0-1	RefSeq_NT	NM_178559.5
+    """
 
 
-SITES_SPLICE_TEST = """\
-primary_accession,sequence_accession,position,data,eco,source
-"Q12797","Q12797-1","706"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000255",
-"Q12797","Q12797-1","452"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine",,
-"Q12797","Q12797-3","64"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine",,
-"""
+class ASPHCaseData(UniprotCaseData):
+    """Some arbitrary gene data, used as placeholder or base for extension."""
+
+    canonical = """\
+    >sp|Q12797|ASPH_HUMAN Aspartyl/asparaginyl beta-hydroxylase OS=Homo sapiens GN=ASPH PE=1 SV=3
+    MAQRKNAKSSGNSSSSGSGSGSTSAGSSSPGARRETKHGGHKNGRKGGLSGTSFFTWFMV
+    IALLGVWTSVAVVWFDLVDYEEVLGKLGIYDADGDGDFDVDDAKVLLGLKERSTSEPAVP
+    PEEAEPHTEPEEQVPVEAEPQNIEDEAKEQIQSLLHEMVHAEHVEGEDLQQEDGPTGEPQ
+    QEDDEFLMATDVDDRFETLEPEVSHEETEHSYHVEETVSQDCNQDMEEMMSEQENPDSSE
+    PVVEDERLHHDTDDVTYQVYEEQAVYEPLENEGIEITEVTAPPEDNPVEDSQVIVEEVSI
+    FPVEEQQEVPPETNRKTDDPEQKAKVKKKKPKLLNKFDKTIKAELDAAEKLRKRGKIEEA
+    VNAFKELVRKYPQSPRARYGKAQCEDDLAEKRRSNEVLRGAIETYQEVASLPDVPADLLK
+    LSLKRRSDRQQFLGHMRGSLLTLQRLVQLFPNDTSLKNDLGVGYLLIGDNDNAKKVYEEV
+    LSVTPNDGFAKVHYGFILKAQNKIAESIPYLKEGIESGDPGTDDGRFYFHLGDAMQRVGN
+    KEAYKWYELGHKRGHFASVWQRSLYNVNGLKAQPWWTPKETGYTELVKSLERNWKLIRDE
+    GLAVMDKAKGLFLPEDENLREKGDWSQFTLWQQGRRNENACKGAPKTCTLLEKFPETTGC
+    RRGQIKYSIMHPGTHVWPHTGPTNCRLRMHLGLVIPKEGCKIRCANETKTWEEGKVLIFD
+    DSFEHEVWQDASSFRLIFIVDVWHPELTPQQRRSLPAI
+    """
+
+    alternative = """\
+    >sp|Q12797-3|ASPH_HUMAN Isoform 3 of Aspartyl/asparaginyl beta-hydroxylase OS=Homo sapiens GN=ASPH
+    MAEDKETKHGGHKNGRKGGLSGTSFFTWFMVIALLGVWTSVAVVWFDLVDYEEVLAKAKD
+    FRYNLSEVLQGKLGIYDADGDGDFDVDDAKVLLEGPSGVAKRKTKAKVKELTKEELKKEK
+    EKPESRKESKNEERKKGKKEDVRKDKKIADADLSRKESPKGKKDREKEKVDLEKSAKTKE
+    NRKKSTNMKDVSSKMASRDKDDRKESRSSTRYAHLTKGNTQKRNG
+    """
+
+    mappings = """\
+    Q12797-1	RefSeq_NT	NM_004318.3
+    Q12797-3	RefSeq_NT	NM_020164.4
+    """
 
 
-MAPPINGS_SPLICE_TEST = """\
-Q12797-1	RefSeq_NT	NM_004318.3
-Q12797-3	RefSeq_NT	NM_020164.4
-"""
+class OtherSitesData(ASPHCaseData):
+
+    sites = """\
+    primary_accession,sequence_accession,position,data,eco,source
+    "Q12797","Q12797-1","14"^^<http://www.w3.org/2001/XMLSchema#int>,"Phosphoserine","ECO_0000269",http://purl.uniprot.org/citations/24275569
+    """
+
+
+class SpliceVariantData(ASPHCaseData):
+
+    sites = """\
+    primary_accession,sequence_accession,position,data,eco,source
+    "Q12797","Q12797-1","706"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",
+    "Q12797","Q12797-1","452"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",
+    "Q12797","Q12797-3","64"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",
+    """
 
 
 DUAL_MAPPING = """\
@@ -132,13 +166,6 @@ def make_test_shared_proteins():
     db.session.add_all(proteins)
 
     db.session.commit()
-
-
-test_data_with_splice_variants = (
-    make_named_gz_file(SEQUENCES_SPLICE_TEST_CANONICAL),
-    make_named_gz_file(SEQUENCES_SPLICE_TEST_SPLICE),
-    make_named_gz_file(MAPPINGS_SPLICE_TEST)
-)
 
 
 def equal_or_both_nan(a, b):
@@ -182,14 +209,14 @@ class TestImport(DatabaseTest):
         db.session.add(abcb5)
 
         importer = GlycosylationUniprotImporter(
-            make_named_gz_file(SEQUENCES),
-            make_named_gz_file(''),
-            make_named_gz_file(MAPPINGS)
+            make_named_gz_file(GlycosylationData.canonical),
+            make_named_gz_file(GlycosylationData.alternative),
+            make_named_gz_file(GlycosylationData.mappings)
         )
 
         assert len(importer.mappings) == 3
 
-        sites = importer.load_sites(path=make_named_temp_file(GLYCOSYLATION_SITES))
+        sites = importer.load_sites(path=make_named_temp_file(GlycosylationData.sites))
 
         # should have 2 pre-defined sites (3 but one without refseq equivalent) and one mapped (isoform NM_178559)
         assert len(sites) == 2 + 1
@@ -206,9 +233,9 @@ class TestImport(DatabaseTest):
 
         make_test_shared_proteins()
 
-        importer = GlycosylationUniprotImporter(*test_data_with_splice_variants)
+        importer = GlycosylationUniprotImporter(*SpliceVariantData.files_for_init())
 
-        sites = importer.load_sites(path=make_named_temp_file(SITES_SPLICE_TEST))
+        sites = importer.load_sites(path=make_named_temp_file(SpliceVariantData.sites))
 
         assert len(sites) == 3
 
@@ -222,7 +249,7 @@ class TestImport(DatabaseTest):
             'N-linked (GlcNAc...)': (nan, 'glycosylation', nan),
             'N-linked (Glc) (glycation) lysine': ('K', 'glycation', nan)
         }
-        importer = GlycosylationUniprotImporter(*test_data_with_splice_variants)
+        importer = GlycosylationUniprotImporter(*SpliceVariantData.files_for_init())
 
         verify_uniprot_importer_mappings(importer, cases)
 
@@ -263,7 +290,7 @@ class TestImport(DatabaseTest):
             'Dimethylated arginine; in A2780 ovarian carcinoma cell line': ('R', 'methylation', nan)
         }
 
-        importer = OthersUniprotImporter(*test_data_with_splice_variants)
+        importer = OthersUniprotImporter(*OtherSitesData.files_for_init())
 
         verify_uniprot_importer_mappings(importer, cases)
 
@@ -271,11 +298,21 @@ class TestImport(DatabaseTest):
 
         make_test_shared_proteins()
 
-        importer = OthersUniprotImporter(*test_data_with_splice_variants)
+        importer = OthersUniprotImporter(*OtherSitesData.files_for_init())
 
-        sites = importer.load_sites(path=make_named_temp_file(SIMPLE_SITES))
+        sites = importer.load_sites(path=make_named_temp_file(OtherSitesData.sites))
 
         assert len(sites) == 1
+
+        # test ECO filtering
+        sites = importer.load_sites(
+            path=make_named_temp_file(
+                # any other code should cause the entry to be ignored
+                OtherSitesData.sites.replace('ECO_0000269', 'ECO_0000200')
+            )
+        )
+
+        assert len(sites) == 0
 
     def test_missing_sequence(self):
         """Sometimes (though rarely) there is no sequence for given accession.
@@ -285,7 +322,7 @@ class TestImport(DatabaseTest):
 
         site_with_missing_sequence = (
             'primary_accession,sequence_accession,position,data,eco,source\n'
-            '"B2RDS2","B2RDS2-1","79^","N-linked (GlcNAc...) asparagine","ECO_0000256",'
+            '"B2RDS2","B2RDS2-1","79^","N-linked (GlcNAc...) asparagine","ECO_0000269",'
         )
 
         importer = GlycosylationUniprotImporter(

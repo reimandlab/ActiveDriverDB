@@ -1,6 +1,8 @@
+import warnings
 from abc import abstractmethod
 from typing import List, Set
 from warnings import warn
+from collections import Counter
 
 from numpy import nan
 from pandas import DataFrame, Series
@@ -13,6 +15,9 @@ from imports import Importer, protein_data as importers
 from imports.protein_data import get_preferred_gene_isoform
 from imports.sites.site_mapper import SiteMapper
 from models import KinaseGroup, Kinase, Protein, Site, SiteType, BioModel, SiteSource, Gene
+
+
+warnings.showwarning = print
 
 
 def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_groups):
@@ -68,6 +73,7 @@ class SiteImporter(Importer):
 
         print(f'Preparing {self.source_name} sites importer...')
 
+        self.issues_counter = Counter()
         # caching proteins and kinases allows for much faster
         # import later on, though it takes some time to cache
         self.known_kinases = create_key_model_dict(Kinase, 'name')
@@ -104,9 +110,17 @@ class SiteImporter(Importer):
 
     def load(self, *args, **kwargs) -> List[BioModel]:
         """Return a list of sites and site types to be added to the database"""
+
+        self.issues_counter.clear()
+
         print('Loading protein sites:')
 
-        return self.load_sites(*args, **kwargs) + self.novel_site_types + [self.source]
+        objects = self.load_sites(*args, **kwargs) + self.novel_site_types + [self.source]
+
+        for issue, count in self.issues_counter.items():
+            print(f'Encountered {count} issues: "{issue}".')
+
+        return objects
 
     @abstractmethod
     def load_sites(self, *args, **kwargs) -> List[Site]:
@@ -135,6 +149,7 @@ class SiteImporter(Importer):
         pos = site.position - 1
 
         if pos < 0 or pos > len(protein_sequence):
+            self.issues_counter['site outside of sequence'] += 1
             warn(
                 f'The site: {self.repr_site(site)} is outside of the protein'
                 f' sequence (which is {len(protein_sequence)} long)'
@@ -142,9 +157,10 @@ class SiteImporter(Importer):
             return nan
 
         if protein_sequence[pos] != site.residue:
+            self.issues_counter['sequence mismatch'] += 1
             warn(
                 f'Protein sequence at {pos} ({protein_sequence[pos]})'
-                f' differs from {site.residue} for site: {site}.'
+                f' differs from {site.residue} for: {self.repr_site(site)}.'
             )
             return nan
 
@@ -172,6 +188,9 @@ class SiteImporter(Importer):
         return min(site.position - 1, self.sequence_offset)
 
     def map_sites_to_isoforms(self, sites: DataFrame) -> DataFrame:
+        if sites.empty:
+            return sites
+
         # additional "sequence" column is needed to map the site across isoforms
         sequences = sites.apply(self.extract_site_surrounding_sequence, axis=1)
         offsets = sites.apply(self.determine_left_offset, axis=1)
@@ -179,10 +198,11 @@ class SiteImporter(Importer):
 
         old_len = len(sites)
         sites.dropna(axis=0, inplace=True, subset=['sequence', 'residue'])
-        print(f'Dropped {old_len - len(sites)} sites due to lack of sequence or residue')
+        diff = old_len - len(sites)
+        print(f'Dropped {diff} ({diff/old_len * 100}%) sites due to lack of sequence or residue')
 
         # nothing to map
-        if len(sites) == 0:
+        if sites.empty:
             return sites
 
         mapper = SiteMapper(self.proteins, self.repr_site)
