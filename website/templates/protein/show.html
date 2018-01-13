@@ -238,7 +238,7 @@
         site_tooltip.init({
             id: 'site',
             template: function(d){
-                return (d.start + 7) + ' ' + d.type
+                return (d.start + 7) + ' ' + d.type + '<br>' + d.sources
             },
             viewport: plot.parentNode
         })

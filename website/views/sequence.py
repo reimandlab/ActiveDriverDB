@@ -48,7 +48,8 @@ def prepare_sites(sites):
         {
             'start': site.position - 7,
             'end': site.position + 7,
-            'type': ','.join(site.type)
+            'type': ', '.join(site.type),
+            'sources': [source.name for source in site.sources]
         } for site in sites
     ]
 
