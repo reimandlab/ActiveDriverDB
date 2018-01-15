@@ -39,7 +39,6 @@ if current_app.config['LOAD_STATS']:
     print('Loading statistics')
     STATISTICS = Statistics().get_all()
     VENN_DIAGRAMS = VennDiagrams().get_all()
-    print(VENN_DIAGRAMS)
 else:
     print('Skipping loading statistics')
     STATISTICS = ''

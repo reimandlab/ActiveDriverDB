@@ -52,7 +52,6 @@ class CountStore:
 
             count, new = get_or_create(self.storage_model, name=name)
 
-            print(_counter)
             if hasattr(_counter, '__self__'):
                 value = _counter()
             else:
