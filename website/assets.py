@@ -136,6 +136,9 @@ class DependencyManager:
             'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
             'sha256-dsOXGNHAo/syFnazt+KTBsCQeRmlcW1XKL0bCK4Baec='
         ),
+        'venn.js': JSResource(
+            'https://cdn.jsdelivr.net/npm/venn.js@0.2.18/build/venn.min.js'
+        ),
         'clipboard.js': JSResource(
             'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.6.1/clipboard.min.js',
             'sha256-El0fEiD3YOM7uIVZztyQzmbbPlgEj0oJVxRWziUh4UE='
@@ -272,6 +275,10 @@ bundles = {
     'js_search_progress': js_bundle(
         'progress',
         'progress.js'
+    ),
+    'js_page': js_bundle(
+        'page',
+        'venn.js'
     ),
     'css_common': css_bundle(
         'style',

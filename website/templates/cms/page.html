@@ -5,9 +5,14 @@
   {% assets "css_page" %}
   <link href="{{ ASSET_URL }}" rel="stylesheet" />
   {% endassets %}
+  {% assets "js_page" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+  {% endassets %}
   {{ dependency('prism') }}
   {{ dependency('prism_bash') }}
   {{ dependency('prism_css') }}
+  {{ dependency('d3.js') }}
+  {{ dependency('venn.js') }}
 {% endblock %}
 
 

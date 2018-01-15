@@ -33,6 +33,12 @@ class Count(CMSModel):
     value = db.Column(db.Integer)
 
 
+class VennDiagram(CMSModel):
+    """Holds a Venn diagram data"""
+    name = db.Column(db.String(254), unique=True)
+    value = db.Column(db.PickleType)
+
+
 class BadWord(CMSModel):
     """Model for words which should be filtered out"""
 

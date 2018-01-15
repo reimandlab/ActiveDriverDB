@@ -37,7 +37,7 @@ from app import login_manager, recaptcha, limiter
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import IntegrityError, OperationalError
-from stats import STATISTICS
+from stats import STATISTICS, VENN_DIAGRAMS
 from exceptions import ValidationError
 
 
@@ -84,8 +84,35 @@ def render_help_entry(entry_id, entry_class=''):
     return jinja_module.help(entry_id, entry_class)
 
 
+def venn(name, elements_description=''):
+    data = VENN_DIAGRAMS[name]
+    return Markup(render_template_string(
+        """
+        <div id="venn_{{name}}"></div>
+        <script>
+        var sets = {{ sets| tojson }};
+        var chart = venn.VennDiagram();
+
+        var div = d3.select("#venn_{{name}}").attr("class", "venn")
+        div.datum(sets).call(chart)
+
+        div.selectAll("path")
+            .style("stroke-opacity", 0)
+            .style("stroke", "#fff")
+            .style("stroke-width", 3)
+
+        add_venn_tooltip(div, '{{elements_description}}')
+        </script>
+        """,
+        sets=data,
+        name=name,
+        elements_description=elements_description
+    ))
+
+
 USER_ACCESSIBLE_VARIABLES = {
     'stats': STATISTICS,
+    'venn': venn,
     'contact_form': create_contact_form,
     'help': render_help_entry
 }
