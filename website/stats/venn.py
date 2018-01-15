@@ -1,12 +1,15 @@
+from functools import partial
 from itertools import combinations
 
-from models import VennDiagram, Site, Protein, SiteType, SiteSource
+from models import VennDiagram, Site, Protein, SiteType, SiteSource, Mutation
+from stats import Statistics
 
 from .store import CountStore, counter
 from .table import mutation_sources, count_mutated_sites
 
 
-def venn_diagram(model, name=None):
+def venn_diagram(cases=None, model=None, name=None):
+    assert cases or model
 
     def decorator(combination_counter):
         nonlocal name
@@ -14,8 +17,12 @@ def venn_diagram(model, name=None):
         if not name:
             name = combination_counter.__name__
 
-        def subset_generator(*args, **kwargs):
-            cases = model.query.all()
+        def subset_generator(self, *args, **kwargs):
+            nonlocal cases
+
+            if model:
+                cases = model.query.all()
+
             results = []
             for i in range(1, len(cases) + 1):
                 for combination in combinations(cases, i):
@@ -42,6 +49,23 @@ def sites_by_type(combination, only_primary=True):
     return query.count()
 
 
+def mutation_by_source(combination, only_within_ptm_sites=False, only_primary=False):
+
+    query = (
+        Mutation.query
+        .filter(Statistics.get_filter_by_sources(combination))
+    )
+
+    if only_within_ptm_sites:
+        # query = query.filter(Mutation.is_ptm_distal == True)
+        query = query.filter(Mutation.precomputed_is_ptm)
+
+    if only_primary:
+        query = query.join(Protein).filter(Protein.is_preferred_isoform)
+
+    return query.count()
+
+
 class VennDiagrams(CountStore):
 
     storage_model = VennDiagram
@@ -51,18 +75,14 @@ class VennDiagrams(CountStore):
         # generate venn diagrams of mutated sites percentage
         for name, mutations_source in mutation_sources().items():
 
-            @venn_diagram(SiteType, name=f'percent_of_sites_mutated_{name}')
-            def percent_of_sites_mutated(combination, only_primary=True):
-                sites_total = sites_by_type(combination, only_primary=only_primary)
-                sites_mutated = count_mutated_sites(combination, mutations_source, only_primary=only_primary)
-                return sites_mutated / sites_total
+            count_mutated = partial(count_mutated_sites, model=mutations_source)
+            sites_mutated = venn_diagram(model=SiteType, name=f'sites_mutated_{name}')(count_mutated)
 
-            # This one is very costly too
-            # self.register(percent_of_sites_mutated)
+            self.register(sites_mutated)
 
-    venn_sites_by_type = venn_diagram(SiteType)(sites_by_type)
+    venn_sites_by_type = venn_diagram(model=SiteType)(sites_by_type)
 
-    @venn_diagram(SiteSource)
+    @venn_diagram(model=SiteSource)
     def sites_by_source(combination, only_primary=False):
         query = Site.query
 
@@ -73,3 +93,11 @@ class VennDiagrams(CountStore):
             query = query.join(Protein).filter(Protein.is_preferred_isoform)
 
         return query.count()
+
+    @venn_diagram(cases=mutation_sources().values())
+    def mutation_by_source(combination):
+        return mutation_by_source(combination)
+
+    @venn_diagram(cases=mutation_sources().values())
+    def mutations_affecting_ptm_by_mutation_source(combination):
+        return mutation_by_source(combination, only_within_ptm_sites=True)

@@ -44,7 +44,7 @@ def count_mutated_sites(site_types=tuple(), model=None, only_primary=False):
 
     if only_primary:
         query = query.join(Protein).filter(Protein.is_preferred_isoform)
-    print(query)
+
     return query.scalar()
 
 
@@ -229,4 +229,3 @@ def generate_source_specific_summary_table():
     print(table)
 
     return table
-
