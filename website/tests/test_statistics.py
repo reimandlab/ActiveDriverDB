@@ -122,7 +122,7 @@ class StatisticsTest(DatabaseTest):
         assert proteins_covered == len(u_proteins_covered)
 
     def test_table_generation(self):
-        from stats import generate_source_specific_summary_table
+        from stats.table import generate_source_specific_summary_table
 
         table = generate_source_specific_summary_table()
         assert table

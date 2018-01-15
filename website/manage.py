@@ -35,9 +35,10 @@ def calc_statistics(args, app=None):
     if not app:
         app = create_app(config_override=CONFIG)
     with app.app_context():
-        from stats import Statistics
-        statistics = Statistics()
-        statistics.calc_all()
+        from stats import Statistics, VennDiagrams
+        for store_class in [Statistics, VennDiagrams]:
+            store = store_class()
+            store.calc_all()
         db.session.commit()
 
 
