@@ -21,13 +21,14 @@ muts_import_manager = MutationImportManager()
 def create_test_models():
     protein = Protein(refseq='NM_0001', gene=Gene(name='SOMEGENE'), sequence='ABCD')
     mutation = Mutation(protein=protein, position=1, alt='E')
+    protein.gene.preferred_isoform = protein
 
     MC3Mutation(mutation=mutation, cancer=Cancer(code='CAN'), samples='Some sample')
     InheritedMutation(mutation=mutation, clin_data=[ClinicalData(disease=Disease(name='Some disease'))])
 
     protein_kinase = Protein(refseq='NM_0002', gene=Gene(name='OTHERGENE'), sequence='ABCD')
     kinase = Kinase(name='Kinase name', protein=protein_kinase)
-    site = Site(protein=protein, position=1, residue='A', kinases={kinase})
+    site = Site(protein=protein, position=1, residue='A', kinases={kinase}, pmid={1, 2})
     protein.sites = [site]
 
     return locals()
@@ -100,4 +101,21 @@ class TestExport(DatabaseTest):
             assert f.readlines() == [
                 'gene	refseq	mutation position	mutation alt	mutation summary	site position	site residue\n',
                 'SOMEGENE\tNM_0001\t1\tE\tCAN\t1\tA\n'
+            ]
+
+    def test_sites_export(self):
+
+        filename = make_named_temp_file()
+
+        with self.app.app_context():
+            test_models = create_test_models()
+            db.session.add_all(test_models.values())
+
+            namespace = Namespace(exporters=['sites_ac'], paths=[filename])
+            ProteinRelated.export(namespace)
+
+        with open(filename) as f:
+            assert f.readlines() == [
+                'gene\tposition\tresidue\tkinase\tpmid\n',
+                'SOMEGENE\t1\tA\tKinase name\t1,2\n'
             ]

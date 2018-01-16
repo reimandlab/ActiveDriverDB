@@ -80,7 +80,7 @@ def sites_ac(f):
         data = [
             site.protein.gene.name, str(site.position), site.residue,
             ','.join([k.name for k in site.kinases]),
-            site.pmid
+            ','.join(map(str, site.pmid))
         ]
 
         f.write('\t'.join(data) + '\n')
