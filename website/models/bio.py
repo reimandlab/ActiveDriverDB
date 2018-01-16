@@ -1395,13 +1395,16 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
 
     def to_json(self, filter=lambda x: x):
         return {
-            'MAF': self.maf_all,
-            'MAF EAS': self.maf_eas,
-            'MAF AMR': self.maf_amr,
-            'MAF AFR': self.maf_afr,
-            'MAF EUR': self.maf_eur,
-            'MAF SAS': self.maf_sas,
+            'MAF': self.maf_all * 100,
+            'MAF EAS': self.maf_eas * 100,
+            'MAF AMR': self.maf_amr * 100,
+            'MAF AFR': self.maf_afr * 100,
+            'MAF EUR': self.maf_eur * 100,
+            'MAF SAS': self.maf_sas * 100,
         }
+
+    def get_value(self, filter=lambda x: x):
+        return self.maf_all * 100
 
     populations_1KG = synonym('affected_populations')
 
