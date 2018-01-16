@@ -71,7 +71,7 @@ def disorder_ac(f):
 def sites_ac(f):
     """Sites as needed for Active Driver input.
     Includes only data from primary (preferred) isoforms."""
-    header = ['gene', 'position', 'residue', 'kinase', 'pmid']
+    header = ['gene', 'position', 'residue', 'type', 'kinase', 'pmid']
 
     f.write('\t'.join(header) + '\n')
     for site in tqdm(Site.query.all()):
@@ -79,6 +79,7 @@ def sites_ac(f):
             continue
         data = [
             site.protein.gene.name, str(site.position), site.residue,
+            ','.join(site.type),
             ','.join([k.name for k in site.kinases]),
             ','.join(map(str, site.pmid))
         ]

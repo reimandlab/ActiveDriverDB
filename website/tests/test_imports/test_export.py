@@ -28,7 +28,7 @@ def create_test_models():
 
     protein_kinase = Protein(refseq='NM_0002', gene=Gene(name='OTHERGENE'), sequence='ABCD')
     kinase = Kinase(name='Kinase name', protein=protein_kinase)
-    site = Site(protein=protein, position=1, residue='A', kinases={kinase}, pmid={1, 2})
+    site = Site(protein=protein, position=1, residue='A', kinases={kinase}, pmid={1, 2}, type={'glycosylation'})
     protein.sites = [site]
 
     return locals()
@@ -116,6 +116,6 @@ class TestExport(DatabaseTest):
 
         with open(filename) as f:
             assert f.readlines() == [
-                'gene\tposition\tresidue\tkinase\tpmid\n',
-                'SOMEGENE\t1\tA\tKinase name\t1,2\n'
+                'gene\tposition\tresidue\ttype\tkinase\tpmid\n',
+                'SOMEGENE\t1\tA\tglycosylation\tKinase name\t1,2\n'
             ]
