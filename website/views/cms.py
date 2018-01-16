@@ -85,7 +85,10 @@ def render_help_entry(entry_id, entry_class=''):
 
 
 def venn(name, elements_description=''):
-    data = VENN_DIAGRAMS[name]
+    try:
+        data = VENN_DIAGRAMS[name]
+    except KeyError:
+        return f'<- failed to load {name} Venn diagram ->'
     return Markup(render_template_string(
         """
         <div id="venn_{{name}}"></div>
