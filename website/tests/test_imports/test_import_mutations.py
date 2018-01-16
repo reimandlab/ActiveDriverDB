@@ -281,8 +281,9 @@ class TestImport(DatabaseTest):
 
         json = first_detail.to_json()
 
-        assert json['MAF'] == 0.000199681
-        assert json['MAF EUR'] == 0.001
+        # MAF should be presented as converted to percents
+        assert json['MAF'] == 0.0199681
+        assert json['MAF EUR'] == 0.1
 
     def test_duplicates_finder(self):
 
