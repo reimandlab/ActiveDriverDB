@@ -44,6 +44,8 @@ class OthersUniprotImporter(UniprotImporter):
 
         supported_aminoacids = '|'.join(aa_names)
 
+        # NOTE: following approach fails for '3-oxoalanine' (which is
+        # created from cysteine not alanine) and similar modification
         extracted = sites.data.str.extract(
             r'(?P<exact_mod_type>.*?)'
             r'(?P<residue>' + supported_aminoacids + ')'
