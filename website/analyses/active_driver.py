@@ -103,7 +103,8 @@ def run_active_driver(sequences, disorder, mutations, sites, mc_cores=4, progres
         result = active_driver.ActiveDriver(
             *arguments, mc_cores=mc_cores, progress_bar=progress_bar, **kwargs
         )
-        return {k: pandas2ri.ri2py(v) for k, v in result.items()}
+        if result:
+            return {k: pandas2ri.ri2py(v) for k, v in result.items()}
     except RRuntimeError as e:
         print_exc()
         return e
@@ -111,12 +112,12 @@ def run_active_driver(sequences, disorder, mutations, sites, mc_cores=4, progres
 
 def per_cancer_analysis(site_type):
 
-    sequences, disorder, mutations, sites = cached_active_driver_data('mc3', site_type)
+    sequences, disorder, all_mutations, sites = cached_active_driver_data('mc3', site_type)
 
     results = {}
 
-    for cancer_type in mutations.cancer_type.unique():
-        mutations = mutations[mutations.cancer_type == cancer_type]
+    for cancer_type in all_mutations.cancer_type.unique():
+        mutations = all_mutations[all_mutations.cancer_type == cancer_type]
         results[cancer_type] = run_active_driver(sequences, disorder, mutations, sites)
 
     return results
