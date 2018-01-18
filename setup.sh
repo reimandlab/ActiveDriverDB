@@ -89,3 +89,11 @@ sudo /etc/init.d/redis-server restart
 
 # install R
 sudo apt-get install r-base
+
+# install ActiveDriver and progress bar
+# R -e 'install.packages(c("ActiveDriver", "pbmcapply"))'
+
+# fetch forked copy of ActiveDriver
+cd website
+git clone https://github.com/krassowski/ActiveDriver
+cd ..

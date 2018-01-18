@@ -20,7 +20,7 @@ USE_LOCAL_AD = True
 
 
 if USE_LOCAL_AD:
-    r.source("ActiveDriver.R")
+    r.source("ActiveDriver/R/ActiveDriver.R")
     # ActiveDriver is in the global namespace now
     active_driver = r
 else:
@@ -84,8 +84,7 @@ def active_driver_analysis(mutation_source: str, site_type=None):
     gc.collect()
 
     try:
-        r("debug(ActiveDriver)")  # that's so strange it works in debug mode only...
-        result = active_driver.ActiveDriver(sequences, disorder, mutations, sites, mc_cores=1)
+        result = active_driver.ActiveDriver(sequences, disorder, mutations, sites, mc_cores=4, progress_bar=True)
         return {k: pandas2ri.ri2py(v) for k, v in result.items()}
     except RRuntimeError as e:
         print_exc()
