@@ -23,7 +23,7 @@ def create_test_models():
     mutation = Mutation(protein=protein, position=1, alt='E')
     protein.gene.preferred_isoform = protein
 
-    MC3Mutation(mutation=mutation, cancer=Cancer(code='CAN'), samples='Some sample')
+    MC3Mutation(mutation=mutation, cancer=Cancer(code='CAN'), samples='Sample A,Sample B', count=2)
     InheritedMutation(mutation=mutation, clin_data=[ClinicalData(disease=Disease(name='Some disease'))])
 
     protein_kinase = Protein(refseq='NM_0002', gene=Gene(name='OTHERGENE'), sequence='ABCD')
@@ -38,8 +38,33 @@ class TestExport(DatabaseTest):
 
     def test_mutations_export(self):
 
-        mc3_filename = make_named_temp_file()
-        clinvar_filename = make_named_temp_file()
+        cases = (
+            (
+                'mc3',
+                {},
+                [
+                    b'gene\tisoform\tposition\twt_residue\tmut_residue\tcancer_type\tcount\n',
+                    b'SOMEGENE\tNM_0001\t1\tA\tE\tCAN\t2'
+                ]
+            ),
+            (
+                'mc3',
+                {'export_samples': True},
+                [
+                    b'gene\tisoform\tposition\twt_residue\tmut_residue\tcancer_type\tsample_id\n',
+                    b'SOMEGENE\tNM_0001\t1\tA\tE\tCAN\tSample A\n',
+                    b'SOMEGENE\tNM_0001\t1\tA\tE\tCAN\tSample B'
+                ]
+            ),
+            (
+                'clinvar',
+                {},
+                [
+                    b'gene\tisoform\tposition\twt_residue\tmut_residue\tdisease\n',
+                    b'SOMEGENE\tNM_0001\t1\tA\tE\tSome disease'
+                ]
+            )
+        )
 
         with self.app.app_context():
             test_models = create_test_models()
@@ -47,24 +72,16 @@ class TestExport(DatabaseTest):
 
             protein = test_models['protein']
 
-            muts_import_manager.perform(
-                'export', [protein], ['mc3'], {'mc3': mc3_filename}
-            )
-            muts_import_manager.perform(
-                'export', [protein], ['clinvar'], {'clinvar': clinvar_filename}
-            )
+            for source, kwargs, expected_lines in cases:
 
-        with gzip.open(mc3_filename) as f:
-            assert f.readlines() == [
-                b'gene\tisoform\tposition\twt_residue\tmut_residue\tcancer_type\n',
-                b'SOMEGENE\tNM_0001\t1\tA\tE\tCAN'
-            ]
+                filename = make_named_temp_file()
 
-        with gzip.open(clinvar_filename) as f:
-            assert f.readlines() == [
-                b'gene\tisoform\tposition\twt_residue\tmut_residue\tdisease\n',
-                b'SOMEGENE\tNM_0001\t1\tA\tE\tSome disease'
-            ]
+                muts_import_manager.perform(
+                    'export', [protein], [source], paths={source: filename}, **kwargs
+                )
+
+                with gzip.open(filename) as f:
+                    assert f.readlines() == expected_lines
 
     def test_network_export(self, do_export=None):
 

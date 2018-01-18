@@ -21,8 +21,24 @@ class TCGAImporter(MutationImporter):
         'Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
         'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'V11'
     ]
-    export_samples = False
     samples_to_skip = set()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.export_samples = None
+        self.export_details = None
+
+    def export(self, *args, export_samples=False, **kwargs):
+
+        self.export_details = (
+            self.export_details_with_samples
+            if export_samples else
+            self.export_details_without_samples
+        )
+
+        self.export_samples = export_samples
+
+        super().export(*args, **kwargs)
 
     def decode_line(self, line):
         assert line[10].startswith('comments: ')
@@ -64,17 +80,20 @@ class TCGAImporter(MutationImporter):
     def export_details_headers(self):
         if self.export_samples:
             return ['cancer_type', 'sample_id']
-        return ['cancer_type']
+        return ['cancer_type', 'count']
 
     def export_details(self, mutation):
-        if self.export_samples:
-            return [
-                [mutation.cancer.code, sample]
-                for sample in (mutation.samples or '').split(',')
-            ]
+        raise NotImplementedError
 
+    @staticmethod
+    def export_details_without_samples(mutation):
+        return [(mutation.cancer.code, str(mutation.count))]
+
+    @staticmethod
+    def export_details_with_samples(mutation):
         return [
-            [mutation.cancer.code]
+            (mutation.cancer.code, sample)
+            for sample in (mutation.samples or '').split(',')
         ]
 
     def insert_details(self, mutations):
