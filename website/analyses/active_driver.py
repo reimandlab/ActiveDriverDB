@@ -1,7 +1,10 @@
 from tempfile import NamedTemporaryFile
 
 import gc
-from rpy2.robjects import pandas2ri
+from traceback import print_exc
+
+from rpy2.rinterface._rinterface import RRuntimeError
+from rpy2.robjects import pandas2ri, r
 
 from rpy2.robjects.packages import importr
 from pandas import read_table, Series
@@ -12,7 +15,16 @@ from exports.protein_data import sites_ac
 from imports import MutationImportManager
 from models import Gene
 
-active_driver = importr("ActiveDriver")
+
+USE_LOCAL_AD = True
+
+
+if USE_LOCAL_AD:
+    r.source("ActiveDriver.R")
+    # ActiveDriver is in the global namespace now
+    active_driver = r
+else:
+    active_driver = importr("ActiveDriver")
 
 
 def export_and_load(exporter, *args, compression=None, **kwargs):
@@ -60,7 +72,6 @@ def active_driver_analysis(mutation_source: str, site_type=None):
     importer = importer_class()
     mutations = importer.export_to_df(only_preferred=True)
     mutations = mutations[mutations.gene.isin(genes_with_sites)]
-    # TODO: unique? value?
     mutations = pandas2ri.py2ri(mutations)
     gc.collect()
 
@@ -72,6 +83,11 @@ def active_driver_analysis(mutation_source: str, site_type=None):
     disorder = pandas2ri.py2ri(disorder)
     gc.collect()
 
-    result = active_driver.ActiveDriver(sequences, disorder, mutations, sites, mc_cores=5)
+    try:
+        r("debug(ActiveDriver)")  # that's so strange it works in debug mode only...
+        result = active_driver.ActiveDriver(sequences, disorder, mutations, sites, mc_cores=1)
+        return {k: pandas2ri.ri2py(v) for k, v in result.items()}
+    except RRuntimeError as e:
+        print_exc()
+        return sequences, disorder, mutations, sites, e
 
-    return result
