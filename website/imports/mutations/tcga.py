@@ -23,22 +23,26 @@ class TCGAImporter(MutationImporter):
     ]
     samples_to_skip = set()
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, export_samples=False, **kwargs):
         super().__init__(*args, **kwargs)
+
         self.export_samples = None
         self.export_details = None
+        self.rebind_exporter(export_samples)
 
-    def export(self, *args, export_samples=False, **kwargs):
+    def export(self, *args, export_samples=None, **kwargs):
+        if export_samples is not None:
+            self.rebind_exporter(export_samples)
 
+        super().export(*args, **kwargs)
+
+    def rebind_exporter(self, export_samples):
         self.export_details = (
             self.export_details_with_samples
             if export_samples else
             self.export_details_without_samples
         )
-
         self.export_samples = export_samples
-
-        super().export(*args, **kwargs)
 
     def decode_line(self, line):
         assert line[10].startswith('comments: ')
