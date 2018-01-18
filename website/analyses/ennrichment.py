@@ -121,22 +121,46 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
     )
 
 
-def get_confirmed_mutations(sources, only_preferred=True, genes=None):
+def get_confirmed_mutations(
+        sources, only_preferred=True, genes=None, confirmed_by_definition=False,
+        base_query=Mutation.query
+    ):
+    """
+    Utility to generate a query for retrieving confirmed mutations having specific mutation details.
+
+    Args:
+        sources: list of mutation details (sources) to be used to filter
+            the mutations (including sources with non-confirmed mutations)
+        only_preferred: include only mutations from preferred isoforms
+        genes: limit to genes from provided list
+        confirmed_by_definition: do not apply the expensive is_confirmed=True
+            filter as all sources include only confirmed mutations
+        base_query: the initial mutation query (allows to adjust selected columns)
+
+    Returns:
+        Query object yielding mutations.
+    """
+
+    mutations = base_query
 
     def only_from_primary_isoforms(mutations_query):
 
         mutations_query = join_unique(mutations_query, Protein)
         return mutations_query.filter(Protein.is_preferred_isoform)
 
-    mutations = Mutation.query.filter_by(is_confirmed=True)
+    if not confirmed_by_definition:
+        mutations = mutations.filter_by(is_confirmed=True)
+
     mutations = only_from_primary_isoforms(mutations)
 
     if genes:
         mutations = mutations.filter(Protein.id.in_([g.preferred_isoform_id for g in genes]))
 
     selected_mutations = mutations.filter(Statistics.get_filter_by_sources(sources))
+
     if only_preferred:
         selected_mutations = only_from_primary_isoforms(selected_mutations)
+
     return selected_mutations
 
 

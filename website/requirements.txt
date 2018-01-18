@@ -2,7 +2,7 @@ numpy
 pandas
 sqlalchemy
 beautifulsoup4
-rpy2
+rpy2==2.9.2
 Jinja2==2.9.6
 Flask==0.12.2
 Flask-Assets==0.12

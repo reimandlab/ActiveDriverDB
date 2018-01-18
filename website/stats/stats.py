@@ -1,10 +1,11 @@
 from itertools import combinations
+from typing import List, Type
 
 from sqlalchemy import and_, func, distinct, or_
 
 import models
 from database import db, fast_count
-from models import Mutation, are_details_managed, MC3Mutation
+from models import Mutation, are_details_managed, MC3Mutation, MutationDetails
 
 from .store import counter
 from .store import CountStore
@@ -72,7 +73,7 @@ class Statistics(CountStore):
         return counts
 
     @staticmethod
-    def get_filter_by_sources(sources):
+    def get_filter_by_sources(sources: List[Type[MutationDetails]]):
 
         filters = and_(
             (
