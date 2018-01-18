@@ -55,8 +55,6 @@ def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_grou
 
 
 class SiteImporter(Importer):
-    # TODO: discuss criteria for UNIPROT (literature, I guess)
-    # TODO: ELM and PSP: compare with PTMvar implementation
 
     requires = {importers.kinase_mappings, importers.proteins_and_genes}
 
