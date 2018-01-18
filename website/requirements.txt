@@ -25,3 +25,4 @@ flask_apscheduler
 celery
 amqp
 redis
+gprofiler-official

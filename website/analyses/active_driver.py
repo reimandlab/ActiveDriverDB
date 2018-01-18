@@ -7,9 +7,10 @@ from diskcache import Cache
 from rpy2.rinterface._rinterface import RRuntimeError
 from rpy2.robjects import pandas2ri, r
 from rpy2.robjects.packages import importr
-from pandas import read_table, Series
+from pandas import read_table, Series, DataFrame
 from flask import current_app
 from tqdm import tqdm
+from gprofiler import GProfiler
 
 from exports.protein_data import sites_ac
 from imports import MutationImportManager
@@ -110,6 +111,35 @@ def run_active_driver(sequences, disorder, mutations, sites, mc_cores=4, progres
         return e
 
 
+def profile_genes_with_active_sites(enriched_genes, background=None):
+
+    gp = GProfiler('ActiveDriverDB', want_header=True)
+
+    header, *results = gp.gprofile(enriched_genes, custom_bg=background)
+
+    return DataFrame(results, columns=header)
+
+
+def process_result(result, sites, fdr_cutoff=0.05):
+
+    if not result:
+        return
+
+    all_genes = sites.gene.unique()
+
+    enriched = result['all_gene_based_fdr']
+    enriched = enriched[enriched.fdr < fdr_cutoff]
+    enriched = enriched.sort_values('fdr')
+
+    enriched_genes = enriched.gene.unique()
+
+    result['profile'] = profile_genes_with_active_sites(enriched_genes)
+    result['profile_against_genes_with_sites'] = profile_genes_with_active_sites(enriched_genes, all_genes)
+    result['top_fdr'] = enriched
+
+    return result
+
+
 def per_cancer_analysis(site_type):
 
     sequences, disorder, all_mutations, sites = cached_active_driver_data('mc3', site_type)
@@ -118,7 +148,8 @@ def per_cancer_analysis(site_type):
 
     for cancer_type in all_mutations.cancer_type.unique():
         mutations = all_mutations[all_mutations.cancer_type == cancer_type]
-        results[cancer_type] = run_active_driver(sequences, disorder, mutations, sites)
+        result = run_active_driver(sequences, disorder, mutations, sites)
+        results[cancer_type] = process_result(result, sites)
 
     return results
 
@@ -126,4 +157,5 @@ def per_cancer_analysis(site_type):
 def pan_cancer_analysis(site_type):
 
     sequences, disorder, mutations, sites = cached_active_driver_data('mc3', site_type)
-    return run_active_driver(sequences, disorder, mutations, sites)
+    result = run_active_driver(sequences, disorder, mutations, sites)
+    return process_result(result, sites)
