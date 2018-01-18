@@ -1,16 +1,18 @@
 from warnings import warn
 
 from models import MIMPMutation
-from imports.mutations import MutationImporter
 from helpers.bioinf import decode_raw_mutation
 from helpers.parsers import parse_tsv_file
 
+from .mutation_importer import MutationImporter
 
-class Importer(MutationImporter):
+
+class MIMPImporter(MutationImporter):
     # load("all_mimp_annotations_p085.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
 
+    name = 'mimp'
     model = MIMPMutation
     default_path = 'data/mutations/all_mimp_annotations.tsv'
     header = [

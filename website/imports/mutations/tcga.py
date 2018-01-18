@@ -1,16 +1,20 @@
 from collections import defaultdict
+
+from sqlalchemy.orm.exc import NoResultFound
+
 from database import db
 from database import get_or_create
 from models import Cancer
 from models import TCGAMutation
-from imports.mutations import MutationImporter
 from helpers.parsers import iterate_tsv_gz_file
 from helpers.parsers import chunked_list
-from sqlalchemy.orm.exc import NoResultFound
+
+from .mutation_importer import MutationImporter
 
 
-class Importer(MutationImporter):
+class TCGAImporter(MutationImporter):
 
+    name = 'tcga'
     model = TCGAMutation
     default_path = 'data/mutations/TCGA_muts_annotated.txt.gz'
     header = [

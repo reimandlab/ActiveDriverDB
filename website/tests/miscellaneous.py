@@ -1,9 +1,8 @@
 import gzip
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
-from warnings import warn
-
+from helpers.patterns import abstract_property
 import pytest
 
 
@@ -43,10 +42,6 @@ def make_named_gz_file(data=None, **kwargs):
 
 
 use_fixture = pytest.fixture(autouse=True)
-
-
-def abstract_property(func):
-    return property(abstractmethod(func))
 
 
 class DedentMeta(ABCMeta):

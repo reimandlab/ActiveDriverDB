@@ -2,17 +2,19 @@ from collections import OrderedDict
 
 from models import InheritedMutation, Disease
 from models import ClinicalData
-from imports.mutations import MutationImporter
-from imports.mutations import make_metadata_ordered_dict
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import gzip_open_text
 from database import get_or_create
 from database.bulk import get_highest_id, bulk_orm_insert, restart_autoincrement
 from database import db
 
+from .mutation_importer import MutationImporter
+from .mutation_importer.helpers import make_metadata_ordered_dict
 
-class Importer(MutationImporter):
 
+class ClinVarImporter(MutationImporter):
+
+    name = 'clinvar'
     model = InheritedMutation
     default_path = 'data/mutations/clinvar_muts_annotated.txt.gz'
     header = [

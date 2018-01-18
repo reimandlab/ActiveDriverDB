@@ -1,11 +1,13 @@
 from models import ExomeSequencingMutation
-from imports.mutations import MutationImporter
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import gzip_open_text
 
+from .mutation_importer import MutationImporter
 
-class Importer(MutationImporter):
 
+class ESP6500Importer(MutationImporter):
+
+    name = 'esp6500'
     model = ExomeSequencingMutation
     default_path = 'data/mutations/ESP6500_muts_annotated.txt.gz'
     header = [

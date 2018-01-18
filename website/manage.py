@@ -21,7 +21,7 @@ from helpers.commands import create_command_subparsers
 from imports import import_all, Importer
 from imports.mappings import import_aminoacid_mutation_refseq_mappings
 from imports.mappings import import_genome_proteome_mappings
-from imports.mutations import MutationImportManager
+from imports.mutations import MutationImportManager, MutationImporter
 from imports.mutations import get_proteins
 from models import Page
 from models import User
@@ -118,7 +118,11 @@ class CMS(CommandTarget):
         reset_relational_db(current_app, bind='cms')
 
 
-IMPORTERS = {importer.name: importer for importer in Importer.registry}
+PROTEIN_IMPORTERS = {
+    importer.name: importer
+    for importer in Importer.registry
+    if importer not in MutationImporter.subclassess
+}
 
 
 class ProteinRelated(CommandTarget):
@@ -134,7 +138,7 @@ class ProteinRelated(CommandTarget):
 
     @command
     def load(args):
-        data_importers = IMPORTERS
+        data_importers = PROTEIN_IMPORTERS
         for importer_name in args.importers:
             importer = data_importers[importer_name]()
             print('Running {name}:'.format(name=importer_name))
@@ -145,7 +149,7 @@ class ProteinRelated(CommandTarget):
 
     @load.argument
     def importers():
-        data_importers = IMPORTERS
+        data_importers = PROTEIN_IMPORTERS
         return argument_parameters(
             '-i',
             '--importers',

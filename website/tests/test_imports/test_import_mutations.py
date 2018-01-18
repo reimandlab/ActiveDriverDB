@@ -289,6 +289,8 @@ class TestImport(DatabaseTest):
 
         # make a simple, dummy and concrete Importer
         class Importer(MutationImporter):
+            name = 'dummy_importer'
+
             insert_keys = ['effect', 'some_db_id']
 
             def insert_details(self, data): pass

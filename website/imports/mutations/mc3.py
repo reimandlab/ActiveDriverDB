@@ -1,5 +1,5 @@
 from models import MC3Mutation
-from imports.mutations.tcga import Importer as TCGAImporter
+from .tcga import TCGAImporter
 
 
 def load_tss_cancer_map(tss_cancer_map_path):
@@ -23,8 +23,9 @@ def load_tss_cancer_map(tss_cancer_map_path):
     return tss_dict
 
 
-class Importer(TCGAImporter):
+class MC3Importer(TCGAImporter):
 
+    name = 'mc3'
     model = MC3Mutation
     default_path = 'data/mutations/mc3_muts_annotated.txt.gz'
     # ['Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',

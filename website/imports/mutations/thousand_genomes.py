@@ -1,13 +1,15 @@
 from os.path import basename, dirname
 
 from models import The1000GenomesMutation
-from imports.mutations import MutationImporter
-from imports.mutations import make_metadata_ordered_dict
 from helpers.parsers import read_from_gz_files
 
+from .mutation_importer import MutationImporter
+from .mutation_importer.helpers import make_metadata_ordered_dict
 
-class Importer(MutationImporter):
 
+class The1000GenomesImporter(MutationImporter):
+
+    name = 'thousand_genomes'
     model = The1000GenomesMutation
     default_path = 'data/mutations/G1000/G1000_chr*.txt.gz'
     insert_keys = (
