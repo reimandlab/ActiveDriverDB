@@ -154,8 +154,16 @@ def per_cancer_analysis(site_type):
     return results
 
 
-def pan_cancer_analysis(site_type):
+def source_specific_analysis(mutations_source, site_type):
 
-    sequences, disorder, mutations, sites = cached_active_driver_data('mc3', site_type)
+    sequences, disorder, mutations, sites = cached_active_driver_data(mutations_source, site_type)
     result = run_active_driver(sequences, disorder, mutations, sites)
     return process_result(result, sites)
+
+
+def pan_cancer_analysis(site_type):
+    return source_specific_analysis('mc3', site_type)
+
+
+def clinvar_analysis(site_type):
+    return source_specific_analysis('clinvar', site_type)
