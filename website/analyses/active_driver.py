@@ -1,3 +1,6 @@
+from datetime import datetime
+from os import cpu_count
+from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import gc
@@ -26,6 +29,10 @@ if USE_LOCAL_AD:
     active_driver = r
 else:
     active_driver = importr("ActiveDriver")
+
+
+def get_date() -> str:
+    return datetime.utcnow().strftime("%Y-%m-%d_%H%-M%-S")
 
 
 def export_and_load(exporter, *args, compression=None, **kwargs):
@@ -93,7 +100,10 @@ def cached_active_driver_data(*args):
     return cache[args]
 
 
-def run_active_driver(sequences, disorder, mutations, sites, mc_cores=4, progress_bar=True, **kwargs):
+def run_active_driver(sequences, disorder, mutations, sites, mc_cores=None, progress_bar=True, **kwargs):
+
+    if not mc_cores:
+        mc_cores = cpu_count()
 
     arguments = [
         pandas2ri.py2ri(python_object)
@@ -111,13 +121,21 @@ def run_active_driver(sequences, disorder, mutations, sites, mc_cores=4, progres
         return e
 
 
-def profile_genes_with_active_sites(enriched_genes, background=None):
+def profile_genes_with_active_sites(enriched_genes, background=None) -> DataFrame:
+
+    if len(enriched_genes) == 0:
+        return DataFrame()
 
     gp = GProfiler('ActiveDriverDB', want_header=True)
 
-    header, *results = gp.gprofile(enriched_genes, custom_bg=background)
+    response = gp.gprofile(enriched_genes, custom_bg=background)
 
-    return DataFrame(results, columns=header)
+    if not response:
+        return DataFrame()
+
+    header, *rows = response
+
+    return DataFrame(rows, columns=header)
 
 
 def process_result(result, sites, fdr_cutoff=0.05):
@@ -140,6 +158,23 @@ def process_result(result, sites, fdr_cutoff=0.05):
     return result
 
 
+def save_all(analysis_name: str, data, base_path=Path('analyses_output')):
+    path = base_path / analysis_name / get_date()
+
+    # create what's needed
+    path.mkdir(parents=True, exist_ok=True)
+
+    for name, datum in data.items():
+
+        # deal with the nested case
+        if isinstance(datum, dict):
+            save_all(name, datum, base_path=path)
+            continue
+
+        # save to tsv file
+        datum.to_csv(path / f'{name}.tsv', sep='\t')
+
+
 def per_cancer_analysis(site_type):
 
     sequences, disorder, all_mutations, sites = cached_active_driver_data('mc3', site_type)
@@ -151,6 +186,8 @@ def per_cancer_analysis(site_type):
         result = run_active_driver(sequences, disorder, mutations, sites)
         results[cancer_type] = process_result(result, sites)
 
+    save_all(f'pan_cancer-{site_type}', results)
+
     return results
 
 
@@ -158,7 +195,11 @@ def source_specific_analysis(mutations_source, site_type):
 
     sequences, disorder, mutations, sites = cached_active_driver_data(mutations_source, site_type)
     result = run_active_driver(sequences, disorder, mutations, sites)
-    return process_result(result, sites)
+    result = process_result(result, sites)
+
+    save_all(f'{mutations_source}-{site_type}', result)
+
+    return result
 
 
 def pan_cancer_analysis(site_type):
