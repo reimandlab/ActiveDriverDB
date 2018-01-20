@@ -158,8 +158,12 @@ def process_result(result, sites, fdr_cutoff=0.05):
     return result
 
 
-def save_all(analysis_name: str, data, base_path=Path('analyses_output')):
-    path = base_path / analysis_name / get_date()
+def save_all(analysis_name: str, data, base_path=None):
+    if base_path:
+        path = base_path / analysis_name
+    else:
+        base_path = Path('analyses_output')
+        path = base_path / analysis_name / get_date()
 
     # create what's needed
     path.mkdir(parents=True, exist_ok=True)
