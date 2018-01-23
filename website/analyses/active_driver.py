@@ -20,15 +20,13 @@ from imports import MutationImportManager
 from models import Gene
 
 
-USE_LOCAL_AD = True
-
-
-if USE_LOCAL_AD:
-    r.source("ActiveDriver/R/ActiveDriver.R")
-    # ActiveDriver is in the global namespace now
-    active_driver = r
-else:
-    active_driver = importr("ActiveDriver")
+def load_active_driver(local_ad=True):
+    if local_ad:
+        r.source("ActiveDriver/R/ActiveDriver.R")
+        # ActiveDriver is in the global namespace now
+        return r
+    else:
+        return importr("ActiveDriver")
 
 
 def get_date() -> str:
@@ -109,6 +107,8 @@ def run_active_driver(sequences, disorder, mutations, sites, mc_cores=None, prog
         pandas2ri.py2ri(python_object)
         for python_object in [sequences, disorder, mutations, sites]
     ]
+
+    active_driver = load_active_driver()
 
     try:
         result = active_driver.ActiveDriver(
