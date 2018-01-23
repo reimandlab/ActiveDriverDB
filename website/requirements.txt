@@ -26,3 +26,4 @@ celery
 amqp
 redis
 gprofiler-official
+simplejson
