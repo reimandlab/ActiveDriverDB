@@ -1335,8 +1335,10 @@ class PopulationMutation(ManagedMutationDetails):
         return {v: k for k, v in cls.populations.items()}
 
     maf_all = db.Column(db.Float)
+    scale = 1
 
     def get_value(self, filter=lambda x: x):
+        """Total MAF in percents"""
         return self.maf_all
 
     def summary(self, filter=lambda x: x):
@@ -1403,6 +1405,8 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
     maf_eur = db.Column(db.Float)
     maf_sas = db.Column(db.Float)
 
+    scale = 100
+
     # note: those are defined as super populations by 1000 Genomes project
     populations = OrderedDict(
         (
@@ -1424,12 +1428,12 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
             'MAF SAS': self.maf_sas,
         }
         return {
-            name: (maf * 100 if maf else None)
+            name: (maf * self.scale if maf else None)
             for name, maf in json.items()
         }
 
     def get_value(self, filter=lambda x: x):
-        return self.maf_all * 100
+        return self.maf_all * self.scale
 
     populations_1KG = synonym('affected_populations')
 
@@ -1682,6 +1686,17 @@ class Mutation(BioModel):
     @property
     def sites(self):
         return self.get_affected_ptm_sites()
+
+    # TODO: hybrid with sites?
+    affected_sites = db.relationship(
+        'Site',
+        primaryjoin=(
+            'and_('
+            '   foreign(Site.protein_id) == Mutation.protein_id,'
+            '   Site.position.between(Mutation.position - 7, Mutation.position + 7)'
+            ')'
+        )
+    )
 
     @hybrid_method
     def is_ptm(self, filter_manager=None):

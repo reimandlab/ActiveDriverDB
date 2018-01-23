@@ -1095,7 +1095,7 @@ def precompute_ptm_mutations():
     print('Counting mutations...')
     total = Mutation.query.filter_by(is_confirmed=True).count()
     mismatch = 0
-    for mutation in tqdm(yield_objects(Mutation.query.filter_by(is_confirmed=True)), total=total):
+    for mutation in tqdm(Mutation.query.filter_by(is_confirmed=True), total=total):
         pos = mutation.position
         is_ptm_related = mutation.protein.has_sites_in_range(pos - 7, pos + 7)
         if is_ptm_related != mutation.precomputed_is_ptm:

@@ -1,0 +1,47 @@
+{% macro venn(name, sets, elements_description='') %}
+
+  <div id="venn_{{name}}"></div>
+
+  <script>
+    var sets = {{ sets | tojson }};
+    var chart = venn.VennDiagram();
+
+    var div = d3.select("#venn_{{name}}").attr("class", "venn")
+    div.datum(sets).call(chart)
+
+    div.selectAll("path")
+        .style("stroke-opacity", 0)
+        .style("stroke", "#fff")
+        .style("stroke-width", 3)
+
+    add_venn_tooltip(div, '{{elements_description}}')
+  </script>
+
+{% endmacro %}
+
+{% macro box_plot(name, traces, title='', mode='group', log=False) %}
+
+  <div id="box_plot_{{name}}"></div>
+
+  <script>
+      var data = {{ traces | tojson }};
+
+      var layout = {
+          yaxis: {
+              title: '{{ title }}',
+              zeroline: false
+          },
+          boxmode: '{{ mode }}',
+          {% if log %}
+          yaxis: {
+            type: 'log',
+            autorange: true
+          }
+          {% endif %}
+      }
+
+
+      Plotly.newPlot('box_plot_{{ name }}', data, layout, {displaylogo: false});
+  </script>
+
+{% endmacro %}

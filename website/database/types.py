@@ -1,9 +1,11 @@
 from sqlalchemy import DateTime, func, text, TypeDecorator, Text
+from sqlalchemy.dialects import mysql
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.sql.functions import FunctionElement
 
 from berkley_db import SetWithCallback
+from database import db
 
 
 class utc_now(FunctionElement):
@@ -103,3 +105,6 @@ class MutableSet(Mutable, SetWithCallback):
 
 MutableSet.associate_with(ScalarSet)
 
+
+class MediumPickle(db.PickleType):
+    impl = mysql.MEDIUMBLOB

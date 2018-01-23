@@ -1,4 +1,4 @@
-from functools import lru_cache
+from functools import lru_cache, partial
 from types import FunctionType
 
 from tqdm import tqdm
@@ -16,6 +16,13 @@ def counter(func: FunctionType, name=None, cache=True):
     return func
 
 
+def cases(**kwargs):
+    def decorator(func):
+        func.cases = kwargs
+        return func
+    return decorator
+
+
 class CountStore:
 
     storage_model = Count
@@ -28,17 +35,28 @@ class CountStore:
                 name = _counter.__name__
         self.__dict__[name] = _counter
 
+    def __init__(self):
+        for name, _counter in self.counters.items():
+            if hasattr(_counter, 'cases'):
+                for key, value in _counter.cases.items():
+                    for case in value:
+                        new_counter = counter(partial(_counter, **{key: case}))
+                        new_counter.__self__ = _counter.__self__
+                        self.register(new_counter, name=f'{name}_{case}')
+
     @property
-    def counters(self):
-        all_members = {
+    def members(self):
+        return {
             name: getattr(self, name)
             for name in dir(self)
-            if name != 'counters'
+            if name not in ['members', 'counters']
         }
 
+    @property
+    def counters(self):
         return {
             value.name if hasattr(value, 'name') else name: value
-            for name, value in all_members.items()
+            for name, value in self.members.items()
             if callable(value) and hasattr(value, 'is_counter')
         }
 
@@ -74,4 +92,3 @@ class CountStore:
         }
 
         return counts
-

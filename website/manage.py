@@ -31,12 +31,14 @@ database_binds = ('bio', 'cms')
 CONFIG = {'LOAD_STATS': False, 'SCHEDULER_ENABLED': False, 'USE_CELERY': False}
 
 
-def calc_statistics(args, app=None):
+def calc_statistics(args, app=None, stores=None):
     if not app:
         app = create_app(config_override=CONFIG)
     with app.app_context():
-        from stats import Statistics, VennDiagrams
-        for store_class in [Statistics, VennDiagrams]:
+        if not stores:
+            from stats import store_classes
+            stores = store_classes
+        for store_class in stores:
             store = store_class()
             store.calc_all()
         db.session.commit()

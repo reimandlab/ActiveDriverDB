@@ -37,7 +37,7 @@ from app import login_manager, recaptcha, limiter
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import IntegrityError, OperationalError
-from stats import STATISTICS, VENN_DIAGRAMS
+from stats import STORES
 from exceptions import ValidationError
 
 
@@ -78,45 +78,42 @@ def render_raw_template(template_name, *args, **kwargs):
     return jinja_template.render(*args, **kwargs)
 
 
-def render_help_entry(entry_id, entry_class=''):
-    jinja_template = current_app.jinja_env.get_template('help.html')
+def get_jinja_macro(template_path, macro_name):
+    jinja_template = current_app.jinja_env.get_template(template_path)
     jinja_module = jinja_template.make_module({'current_user': current_user})
-    return jinja_module.help(entry_id, entry_class)
+    return getattr(jinja_module, macro_name)
 
 
-def venn(name, elements_description=''):
-    try:
-        data = VENN_DIAGRAMS[name]
-    except KeyError:
-        return f'<- failed to load {name} Venn diagram ->'
-    return Markup(render_template_string(
-        """
-        <div id="venn_{{name}}"></div>
-        <script>
-        var sets = {{ sets| tojson }};
-        var chart = venn.VennDiagram();
+def render_help_entry(entry_id, entry_class=''):
+    help_macro = get_jinja_macro('help.html', 'help')
+    return help_macro(entry_id, entry_class)
 
-        var div = d3.select("#venn_{{name}}").attr("class", "venn")
-        div.datum(sets).call(chart)
 
-        div.selectAll("path")
-            .style("stroke-opacity", 0)
-            .style("stroke", "#fff")
-            .style("stroke-width", 3)
+def plot_factory(plot_name, macro_name, store_name):
+    store = STORES[store_name]
 
-        add_venn_tooltip(div, '{{elements_description}}')
-        </script>
-        """,
-        sets=data,
-        name=name,
-        elements_description=elements_description
-    ))
+    def plot(name, *args, **kwargs):
+        try:
+            data = store[name]
+        except KeyError:
+            return f'<- failed to load {name} {plot_name} ->'
+        macro = get_jinja_macro('plots.html', macro_name)
+        return macro(name, data, *args, **kwargs)
+
+        # return Markup(render_template_string(
+    return plot
+
+
+def dependency(name):
+    return current_app.dependency_manager.get_dependency(name)
 
 
 USER_ACCESSIBLE_VARIABLES = {
-    'stats': STATISTICS,
-    'venn': venn,
+    'stats': STORES['Statistics'],
+    'venn': plot_factory('Venn diagram', 'venn', 'VennDiagrams'),
+    'box_plot': plot_factory('BoxPlot', 'box_plot', 'BoxPlots'),
     'contact_form': create_contact_form,
+    'dependency': dependency,
     'help': render_help_entry
 }
 
