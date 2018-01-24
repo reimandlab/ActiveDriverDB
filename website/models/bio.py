@@ -1193,6 +1193,18 @@ class InheritedMutation(MutationDetails, BioModel):
     def get_value(self, filter=lambda x: x):
         return len(filter(self.clin_data))
 
+    @hybrid_property
+    def count(self):
+        return self.get_value()
+
+    @count.expression
+    def count(cls):
+        return (
+            select([func.count(ClinicalData.id)])
+            .where(ClinicalData.inherited_id == cls.id)
+            .label('count')
+        )
+
     def to_json(self, filter=lambda x: x):
         return {
             'dbSNP id': self.db_snp_ids or [],

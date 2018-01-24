@@ -38,3 +38,22 @@
   </script>
 
 {% endmacro %}
+
+{% macro bar_plot(name, traces, title='', y_axis={}, x_axis={}) %}
+
+  <div id="bar_plot_{{name}}"></div>
+
+  <script>
+      var data = {{ traces | tojson }};
+
+      var layout = {
+          yaxis: {{ y_axis | tojson }},
+          xaxis: {{ x_axis | tojson }},
+          title: '{{ title }}'
+      }
+
+
+      Plotly.newPlot('bar_plot_{{ name }}', data, layout, {displaylogo: false});
+  </script>
+
+{% endmacro %}

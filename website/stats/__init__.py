@@ -2,7 +2,7 @@ from collections import defaultdict, Counter
 
 from flask import current_app
 
-from .box_plot import BoxPlots
+from .plots import Plots
 from .stats import Statistics
 from .venn import VennDiagrams
 
@@ -36,7 +36,7 @@ def hypermutated_samples(path, threshold=900):
     return hypermutated
 
 
-store_classes = [Statistics, VennDiagrams, BoxPlots]
+store_classes = [Statistics, VennDiagrams, Plots]
 
 
 if current_app.config['LOAD_STATS']:

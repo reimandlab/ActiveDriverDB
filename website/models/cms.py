@@ -33,8 +33,8 @@ class Count(CMSModel):
     value = db.Column(db.Integer)
 
 
-class BoxPlot(CMSModel):
-    """Holds a box plot data"""
+class Plot(CMSModel):
+    """Holds a plot data"""
     name = db.Column(db.String(254), unique=True)
     value = db.Column(MediumPickle)
 

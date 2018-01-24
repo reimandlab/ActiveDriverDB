@@ -2,11 +2,11 @@ import random
 from collections import namedtuple
 from statistics import median
 
-from sqlalchemy import and_
+from sqlalchemy import and_, func, distinct, desc
 from tqdm import tqdm
 
 from database import join_unique, db
-from models import Protein, Mutation, The1000GenomesMutation, MC3Mutation, InheritedMutation, Gene
+from models import Protein, Mutation, The1000GenomesMutation, MC3Mutation, InheritedMutation, Gene, Site
 from stats import Statistics
 
 
@@ -151,6 +151,7 @@ def get_confirmed_mutations(
     if not confirmed_by_definition:
         mutations = mutations.filter_by(is_confirmed=True)
 
+    # TODO: remove?
     mutations = only_from_primary_isoforms(mutations)
 
     if genes:
@@ -266,7 +267,7 @@ def load_cancer_census(cancer_census_path='data/disease_muts_in_ptm_sites/census
         if g:
             cancer_genes.add(g)
         else:
-            print('%s' % name)
+            print(f'Cancer Census gene: "{name}" not in database')
     return cancer_genes
 
 
@@ -360,3 +361,35 @@ def disease_muts_affecting_ptm_sites():
         count_mutations_from_genes(clinvar_genes, [InheritedMutation], only_preferred_isoforms)
         print('Cancer census/TCGA')
         count_mutations_from_genes(cancer_genes, [MC3Mutation], only_preferred_isoforms)
+
+
+def most_mutated_sites(source, site_type=None, limit=25):
+
+    if hasattr(source, 'count'):
+        mutations_count = func.sum(source.count)
+    elif hasattr(source, 'maf_all'):
+        mutations_count = func.sum(source.maf_all)
+    else:
+        mutations_count = func.count(distinct(source.id))
+
+    mutations_count = mutations_count.label('mutations_count')
+
+    query = (
+        db.session.query(
+            Site,
+            mutations_count
+        )
+        .select_from(source).join(Mutation).join(Mutation.affected_sites)
+        .filter(Site.protein.has(Protein.is_preferred_isoform))
+    )
+
+    if site_type:
+        query = query.filter(Site.type.contains(site_type))
+
+    query = (
+        query
+        .group_by(Site)
+        .order_by(desc(mutations_count))
+    )
+
+    return query.limit(limit)

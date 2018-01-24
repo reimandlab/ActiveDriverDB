@@ -111,7 +111,8 @@ def dependency(name):
 USER_ACCESSIBLE_VARIABLES = {
     'stats': STORES['Statistics'],
     'venn': plot_factory('Venn diagram', 'venn', 'VennDiagrams'),
-    'box_plot': plot_factory('BoxPlot', 'box_plot', 'BoxPlots'),
+    'box_plot': plot_factory('BoxPlot', 'box_plot', 'Plots'),
+    'bar_plot': plot_factory('BarPlot', 'bar_plot', 'Plots'),
     'contact_form': create_contact_form,
     'dependency': dependency,
     'help': render_help_entry

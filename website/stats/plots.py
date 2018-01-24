@@ -4,15 +4,15 @@ from analyses.variability_in_population import (
     variability_in_population, group_by_substitution_rates,
     proteins_variability,
 )
-from models import BoxPlot, The1000GenomesMutation, ExomeSequencingMutation, Site
+from models import Plot, The1000GenomesMutation, ExomeSequencingMutation, Site, MC3Mutation, InheritedMutation
 from stats.store import CountStore, counter, cases
 
 population_sources = [ExomeSequencingMutation, The1000GenomesMutation]
 
 
-class BoxPlots(CountStore):
+class Plots(CountStore):
 
-    storage_model = BoxPlot
+    storage_model = Plot
 
     @cases(site_type=Site.types())
     @counter
@@ -103,3 +103,27 @@ class BoxPlots(CountStore):
             results.append(result)
 
         return results
+
+    @cases(site_type=Site.types())
+    @counter
+    def most_mutated_sites_mc3(self, site_type=''):
+        return self.most_mutated_sites(MC3Mutation, site_type)
+
+    @cases(site_type=Site.types())
+    @counter
+    def most_mutated_sites_clinvar(self, site_type=''):
+        return self.most_mutated_sites(InheritedMutation, site_type)
+
+    @staticmethod
+    def most_mutated_sites(source, site_type=''):
+        from analyses.enrichment import most_mutated_sites
+
+        sites, counts = zip(*most_mutated_sites(source, site_type, limit=20).all())
+
+        return [
+            {
+                'x': [f'{site.protein.refseq}:{site.position}{site.residue}' for site in sites],
+                'y': counts,
+                'type': 'bar'
+            }
+        ]
