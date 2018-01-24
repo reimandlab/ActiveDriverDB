@@ -42,6 +42,8 @@ class CountStore:
                     for case in value:
                         new_counter = counter(partial(_counter, **{key: case}))
                         new_counter.__self__ = _counter.__self__
+                        if isinstance(case, bool):
+                            case = f'{key}:{case}'
                         self.register(new_counter, name=f'{name}_{case}')
 
     @property

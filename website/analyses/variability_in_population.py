@@ -42,11 +42,17 @@ def variability_in_population(source, site_type=None, protein_subset=None, rare_
 
 
 @lru_cache()
-def proteins_variability(source, only_primary=True, site_type=None, without_sites=False):
+def proteins_variability(source, only_primary=True, site_type=None, without_sites=False, by_counts=False):
+
+    if by_counts:
+        variability_measure = func.count(distinct(source.id))
+    else:
+        variability_measure = func.sum(source.maf_all)
+
     query = (
         db.session.query(
             Protein.id,
-            func.sum(source.maf_all) / func.length(Protein.sequence)
+            variability_measure / func.length(Protein.sequence)
         ).select_from(source).join(Mutation).join(Protein)
     )
 
@@ -65,15 +71,15 @@ def proteins_variability(source, only_primary=True, site_type=None, without_site
     return query
 
 
-def group_by_substitution_rates(source, only_primary=True, bins_count=100):
+def group_by_substitution_rates(source, only_primary=True, bins_count=100, by_frequency=False):
     # see http://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1004919#sec004:
     # "Global variation of PTM regions", though this operates only on mis-sense aminoacid substitutions
     # (non-sense and synonymous mutations are not considered)
     percentiles_per_bin = 100 / bins_count
 
-    protein_rates = proteins_variability(source, only_primary).all()
+    protein_rates = proteins_variability(source, only_primary, by_counts=not by_frequency).all()
 
-    substitution_rates = [rate for protein, rate in protein_rates]
+    substitution_rates = [float(rate) for protein, rate in protein_rates]
 
     bins = []
 

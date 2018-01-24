@@ -31,7 +31,7 @@ class BoxPlots(CountStore):
         for population_source in population_sources:
             protein_bins[population_source] = group_by_substitution_rates(population_source)
 
-        for group, site_type in [('all', None), ('ptm', site_type)]:
+        for group, site_type in [('non-PTM', None), ('PTM regions', site_type)]:
 
             y = []
             x = []
@@ -68,20 +68,22 @@ class BoxPlots(CountStore):
 
         return results
 
-    @cases(site_type=Site.types())
+    @cases(site_type=Site.types(), by_counts=[True])
     @counter
-    def proteins_variability_by_ptm_presence(self, site_type=''):
+    def proteins_variability_by_ptm_presence(self, site_type='', by_counts=False):
 
         results = []
 
-        for group, without_ptm, site_type in [('no ptm', True, None), ('ptm', False, site_type)]:
+        for group, without_ptm, site_type in [('Without PTM sites', True, None), ('With PTM sites', False, site_type)]:
             y = []
             x = []
             counts = {}
 
             for population_source in population_sources:
 
-                rates = proteins_variability(population_source, site_type=site_type, without_sites=without_ptm)
+                rates = proteins_variability(
+                    population_source, site_type=site_type, without_sites=without_ptm, by_counts=by_counts
+                )
                 proteins, variability = zip(*rates)
 
                 y += variability
