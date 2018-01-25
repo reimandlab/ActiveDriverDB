@@ -4,10 +4,35 @@ from analyses.variability_in_population import (
     variability_in_population, group_by_substitution_rates,
     proteins_variability,
 )
-from models import Plot, The1000GenomesMutation, ExomeSequencingMutation, Site, MC3Mutation, InheritedMutation
-from stats.store import CountStore, counter, cases
+from database import db
+from models import (
+    Plot, The1000GenomesMutation, ExomeSequencingMutation, Site, MC3Mutation, InheritedMutation, Cancer,
+    Gene,
+    Protein,
+    Mutation,
+    func,
+)
+from analyses.active_driver import pan_cancer_analysis, per_cancer_analysis, clinvar_analysis
+from .store import CountStore, counter, cases
 
 population_sources = [ExomeSequencingMutation, The1000GenomesMutation]
+
+
+def bar_plot(func):
+    def plot(*args, **kwargs):
+        labels, values, *args = func(*args, **kwargs)
+        data = {
+            'x': list(labels),
+            'y': list(values),
+            'type': 'bar'
+        }
+        if args:
+            data['text'] = args[0]
+        return [data]
+    return plot
+
+
+site_types = Site.types()
 
 
 class Plots(CountStore):
@@ -115,15 +140,52 @@ class Plots(CountStore):
         return self.most_mutated_sites(InheritedMutation, site_type)
 
     @staticmethod
+    @bar_plot
     def most_mutated_sites(source, site_type=''):
         from analyses.enrichment import most_mutated_sites
 
         sites, counts = zip(*most_mutated_sites(source, site_type, limit=20).all())
 
+        return [f'{site.protein.gene_name}:{site.position}{site.residue}' for site in sites], counts
+
+    @staticmethod
+    def count_mutations_by_gene(source, genes):
         return [
-            {
-                'x': [f'{site.protein.refseq}:{site.position}{site.residue}' for site in sites],
-                'y': counts,
-                'type': 'bar'
-            }
+            db.session.query(func.count(source.count))
+            .join(Mutation).join(Protein)
+            .join(Gene, Gene.preferred_isoform_id == Protein.id)
+            .filter(Gene.name == gene).scalar()
+            for gene in genes
         ]
+
+    def active_driver_by_muts_count(self, result):
+        top_fdr = result['top_fdr']
+        mutation_counts = self.count_mutations_by_gene(MC3Mutation, top_fdr.gene)
+        return top_fdr.gene, mutation_counts, top_fdr.fdr
+
+    @cases(site_type=site_types)
+    @bar_plot
+    def pan_cancer_active_driver(self, site_type=''):
+        result = pan_cancer_analysis(site_type)
+        return self.active_driver_by_muts_count(result)
+
+    @cases(site_type=site_types)
+    @bar_plot
+    def clinvar_active_driver(self, site_type=''):
+        result = clinvar_analysis(site_type)
+        return self.active_driver_by_muts_count(result)
+
+    @cases(cancer_code={cancer.code for cancer in Cancer.query})
+    @bar_plot
+    def per_cancer_active_driver(self, cancer_code, site_type=''):
+        results = per_cancer_analysis(site_type)
+        result = results[cancer_code]
+        return self.active_driver_by_muts_count(result)
+
+    @cases(site_type=site_types)
+    @bar_plot
+    def pan_cancer_active_driver_gene_ontology(self, site_type):
+        result = pan_cancer_analysis(site_type)
+        top_fdr = result['profile']
+
+        return top_fdr['t name'], top_fdr['T'], top_fdr['p-value']

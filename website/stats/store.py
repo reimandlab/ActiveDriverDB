@@ -36,12 +36,12 @@ class CountStore:
         self.__dict__[name] = _counter
 
     def __init__(self):
-        for name, _counter in self.counters.items():
-            if hasattr(_counter, 'cases'):
-                for key, value in _counter.cases.items():
+        for name, member in self.members.items():
+            if hasattr(member, 'cases'):
+                for key, value in member.cases.items():
                     for case in value:
-                        new_counter = counter(partial(_counter, **{key: case}))
-                        new_counter.__self__ = _counter.__self__
+                        new_counter = counter(partial(member, **{key: case}))
+                        new_counter.__self__ = member.__self__
                         if isinstance(case, bool):
                             case = f'{key}:{case}'
                         self.register(new_counter, name=f'{name}_{case}')

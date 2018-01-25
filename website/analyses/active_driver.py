@@ -62,9 +62,27 @@ def series_from_preferred_isoforms(trait, subset=None):
 manager = MutationImportManager()
 
 
-cache = Cache('active_driver_data')
+def cached(func, cache=Cache('active_driver_data')):
+
+    name = func.__name__
+
+    def cache_manager(*args):
+
+        key = (name, *args)
+
+        if key not in cache:
+            cache[key] = func(*args)
+        else:
+            print(f'Using cached result of {name}({", ".join(args)})')
+
+        return cache[key]
+
+    cache_manager.__name__ = f'cache_manager_of_{name}'
+
+    return cache_manager
 
 
+@cached
 def prepare_active_driver_data(mutation_source: str, site_type=None):
 
     sites = export_and_load(sites_ac)
@@ -88,14 +106,6 @@ def prepare_active_driver_data(mutation_source: str, site_type=None):
     gc.collect()
 
     return sequences, disorder, mutations, sites
-
-
-def cached_active_driver_data(*args):
-
-    if args not in cache:
-        cache[args] = prepare_active_driver_data(*args)
-
-    return cache[args]
 
 
 def run_active_driver(sequences, disorder, mutations, sites, mc_cores=None, progress_bar=True, **kwargs):
@@ -138,10 +148,10 @@ def profile_genes_with_active_sites(enriched_genes, background=None) -> DataFram
     return DataFrame(rows, columns=header)
 
 
-def process_result(result, sites, fdr_cutoff=0.05):
+def process_result(result, sites, fdr_cutoff=0.05) -> dict:
 
     if not result:
-        return
+        return {}
 
     all_genes = sites.gene.unique()
 
@@ -179,9 +189,10 @@ def save_all(analysis_name: str, data, base_path=None):
         datum.to_csv(path / f'{name}.tsv', sep='\t')
 
 
+@cached
 def per_cancer_analysis(site_type):
 
-    sequences, disorder, all_mutations, sites = cached_active_driver_data('mc3', site_type)
+    sequences, disorder, all_mutations, sites = prepare_active_driver_data('mc3', site_type)
 
     results = {}
 
@@ -190,14 +201,14 @@ def per_cancer_analysis(site_type):
         result = run_active_driver(sequences, disorder, mutations, sites)
         results[cancer_type] = process_result(result, sites)
 
-    save_all(f'pan_cancer-{site_type}', results)
+    save_all(f'per_cancer-{site_type}', results)
 
     return results
 
 
 def source_specific_analysis(mutations_source, site_type):
 
-    sequences, disorder, mutations, sites = cached_active_driver_data(mutations_source, site_type)
+    sequences, disorder, mutations, sites = prepare_active_driver_data(mutations_source, site_type)
     result = run_active_driver(sequences, disorder, mutations, sites)
     result = process_result(result, sites)
 
@@ -206,9 +217,11 @@ def source_specific_analysis(mutations_source, site_type):
     return result
 
 
+@cached
 def pan_cancer_analysis(site_type):
     return source_specific_analysis('mc3', site_type)
 
 
+@cached
 def clinvar_analysis(site_type):
     return source_specific_analysis('clinvar', site_type)
