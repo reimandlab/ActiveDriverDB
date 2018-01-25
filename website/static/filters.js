@@ -32,6 +32,11 @@ var AsyncFiltersHandler = function()
     var form;
     var current_state_checksum;
 
+    var filters_separator = ';'
+    var field_separator = ':'
+    var sub_value_separator = ','
+    var quote_char = '\''
+
     /**
      * Generate checksum string for given query string.
      * @param {string} query
@@ -42,6 +47,64 @@ var AsyncFiltersHandler = function()
         return md5(query);
     }
 
+
+    /**
+     * Serialize a form into the new format (fallback=False)
+     * @param {jQuery} $form - Form to be serialized.
+     * @returns {string} Generated query string (parameters).
+     */
+    function serialize_new_format($form)
+    {
+
+        var filters_list = $form.serializeArray()
+
+        var filters = {}
+        var others = []
+
+        filters_list.forEach(
+            function(filter){
+                var name = filter.name;
+
+                if(name.match(/filter\[(.*)\]/) == null)
+                {
+                    // this is new format, not the fallback format
+                    if(name === 'fallback')
+                        filter.value = false
+
+                    others.push(name + '=' + filter.value)
+                    return
+                }
+
+                name = name.slice(7, -1)
+
+                if(name in filters)
+                    filters[name] += sub_value_separator + filter.value
+                else
+                    filters[name] = filter.value
+            }
+        )
+
+        var filter_strings = []
+
+        $.each(
+            filters,
+            function(key, value){
+                filter_strings.push(key + field_separator + 'None' + field_separator + value)
+            }
+        )
+
+        var query = filter_strings.join(filters_separator)
+
+        if(query)
+            query = 'filters=' + query
+
+        if(others) {
+            query += query ? '&' : '?';
+            query += others.join('&')
+        }
+        return query
+    }
+
     /**
      * Serialize a form into a GET-parameters list (for use in URLs),
      * additionally, a checksum parameter (md5) will be added.
@@ -50,8 +113,13 @@ var AsyncFiltersHandler = function()
      */
     function serialize_form($form)
     {
-        var filters_query = $form.serialize();
+        var filters_query = $form.serialize()
+
         var checksum = make_checksum(filters_query);
+
+        // use less tested but more concise format if the length exceeds acceptable 2000 characters
+        if(filters_query.length >= 1800)
+            filters_query = serialize_new_format($form)
 
         filters_query += filters_query ? '&' : '?';
 
