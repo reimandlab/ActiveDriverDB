@@ -162,7 +162,7 @@
               Residue: {{ site.residue }}
             </div>
             <div>
-              Type: {{ site.type }}
+              Type: {{ site.type | join(', ') }}
             </div>
           </div>
           <div class="col-md-4">
