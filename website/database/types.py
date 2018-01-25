@@ -107,4 +107,10 @@ MutableSet.associate_with(ScalarSet)
 
 
 class MediumPickle(db.PickleType):
+
     impl = mysql.MEDIUMBLOB
+
+
+@compiles(MediumPickle, 'sqlite')
+def sqlite_utc_after(element, compiler, **kwargs):
+    return compiler.visit_BLOB(element, **kwargs)
