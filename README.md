@@ -203,6 +203,12 @@ Following extract from configuration file might be useful help for writing you o
 
 Usually you can find appropriate configuration files in directories like `/etc/apache2/sites-enabled/` or so.
 
+For Apache2, increasing the maximum length of URI is recommended (in order to handle GET requests, e.g. for filters which include large number of disease names). To do so, edit Apache configuration (typically `/etc/apache2/apache2.conf`) appending:
+
+```apache
+LimitRequestLine 10000
+LimitRequestFieldSize 10000
+```
 
 #### Runing python3 in "optimized" mode
 
