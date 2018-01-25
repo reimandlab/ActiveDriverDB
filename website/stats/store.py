@@ -1,3 +1,4 @@
+import re
 from functools import lru_cache, partial
 from types import FunctionType
 
@@ -62,13 +63,27 @@ class CountStore:
             if callable(value) and hasattr(value, 'is_counter')
         }
 
-    def calc_all(self):
+    def calc_all(self, limit_to=None):
+        """Calculate all counts and save calculated values into database.
 
-        counters = self.counters
+        Already existing values will be updated.
+
+        Args:
+            limit_to: regular expression for limiting which counters should be executed
+        """
+
+        counters = {
+            _counter.name if hasattr(_counter, 'name') else name: _counter
+            for name, _counter in self.counters.items()
+        }
+
+        counters = {
+            name: _counter
+            for name, _counter in counters.items()
+            if not limit_to or re.match(limit_to, name)
+        }
 
         for name, _counter in tqdm(counters.items(), total=len(counters)):
-            if hasattr(_counter, 'name'):
-                name = _counter.name
 
             count, new = get_or_create(self.storage_model, name=name)
 
