@@ -5,7 +5,7 @@ import os
 from sqlalchemy.orm import load_only
 from tqdm import tqdm
 
-from database import db, yield_objects, fast_count
+from database import db, fast_count
 from helpers.patterns import abstract_property
 from models import Gene, Protein, Mutation
 
@@ -47,7 +47,7 @@ class MutationExporter:
 
         query = db.session.query(self.model, Mutation).select_from(self.model).join(Mutation)
 
-        for mutation_details, mut in tqdm(yield_objects(query), total=fast_count(db.session.query(self.model))):
+        for mutation_details, mut in tqdm(query, total=fast_count(db.session.query(self.model))):
 
             protein = mut.protein
 
