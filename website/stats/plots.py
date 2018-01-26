@@ -27,7 +27,7 @@ def bar_plot(func):
             'type': 'bar'
         }
         if args:
-            data['text'] = args[0]
+            data['text'] = list(args[0])
         return [data]
     return plot
 
@@ -164,12 +164,14 @@ class Plots(CountStore):
         return top_fdr.gene, mutation_counts, top_fdr.fdr
 
     @cases(site_type=site_types)
+    @counter
     @bar_plot
     def pan_cancer_active_driver(self, site_type=''):
         result = pan_cancer_analysis(site_type)
         return self.active_driver_by_muts_count(result)
 
     @cases(site_type=site_types)
+    @counter
     @bar_plot
     def clinvar_active_driver(self, site_type=''):
         result = clinvar_analysis(site_type)
