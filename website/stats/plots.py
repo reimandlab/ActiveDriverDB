@@ -161,7 +161,7 @@ class Plots(CountStore):
     def active_driver_by_muts_count(self, result):
         top_fdr = result['top_fdr']
         mutation_counts = self.count_mutations_by_gene(MC3Mutation, top_fdr.gene)
-        return top_fdr.gene, mutation_counts, top_fdr.fdr
+        return top_fdr.gene, mutation_counts, [f'fdr: {fdr}' for fdr in top_fdr.fdr]
 
     @cases(site_type=site_types)
     @counter
@@ -185,9 +185,10 @@ class Plots(CountStore):
         return self.active_driver_by_muts_count(result)
 
     @cases(site_type=site_types)
+    @counter
     @bar_plot
     def pan_cancer_active_driver_gene_ontology(self, site_type):
         result = pan_cancer_analysis(site_type)
         top_fdr = result['profile']
 
-        return top_fdr['t name'], top_fdr['T'], top_fdr['p-value']
+        return top_fdr['t name'], top_fdr['T'], [f'p-value: {p}' for p in top_fdr['p-value']]
