@@ -33,6 +33,7 @@ def bar_plot(func):
 
 
 site_types = Site.types()
+any_site_type = ''
 
 
 class Plots(CountStore):
@@ -41,7 +42,7 @@ class Plots(CountStore):
 
     @cases(site_type=Site.types())
     @counter
-    def ptm_variability_population_rare_substitutions(self, site_type=''):
+    def ptm_variability_population_rare_substitutions(self, site_type=any_site_type):
         """Compare variability of sequence in PTM sites
         with the variability of sequence outside of PTM sites,
         using frequency of rare substitutions.
@@ -95,7 +96,7 @@ class Plots(CountStore):
 
     @cases(site_type=Site.types(), by_counts=[True])
     @counter
-    def proteins_variability_by_ptm_presence(self, site_type='', by_counts=False):
+    def proteins_variability_by_ptm_presence(self, site_type=any_site_type, by_counts=False):
 
         results = []
 
@@ -131,17 +132,17 @@ class Plots(CountStore):
 
     @cases(site_type=Site.types())
     @counter
-    def most_mutated_sites_mc3(self, site_type=''):
+    def most_mutated_sites_mc3(self, site_type=any_site_type):
         return self.most_mutated_sites(MC3Mutation, site_type)
 
     @cases(site_type=Site.types())
     @counter
-    def most_mutated_sites_clinvar(self, site_type=''):
+    def most_mutated_sites_clinvar(self, site_type=any_site_type):
         return self.most_mutated_sites(InheritedMutation, site_type)
 
     @staticmethod
     @bar_plot
-    def most_mutated_sites(source, site_type=''):
+    def most_mutated_sites(source, site_type=any_site_type):
         from analyses.enrichment import most_mutated_sites
 
         sites, counts = zip(*most_mutated_sites(source, site_type, limit=20).all())
@@ -166,29 +167,38 @@ class Plots(CountStore):
     @cases(site_type=site_types)
     @counter
     @bar_plot
-    def pan_cancer_active_driver(self, site_type=''):
+    def pan_cancer_active_driver(self, site_type=any_site_type):
         result = pan_cancer_analysis(site_type)
         return self.active_driver_by_muts_count(result)
 
     @cases(site_type=site_types)
     @counter
     @bar_plot
-    def clinvar_active_driver(self, site_type=''):
+    def clinvar_active_driver(self, site_type=any_site_type):
         result = clinvar_analysis(site_type)
         return self.active_driver_by_muts_count(result)
 
     @cases(cancer_code={cancer.code for cancer in Cancer.query})
     @bar_plot
-    def per_cancer_active_driver(self, cancer_code, site_type=''):
+    def per_cancer_active_driver(self, cancer_code, site_type=any_site_type):
         results = per_cancer_analysis(site_type)
         result = results[cancer_code]
         return self.active_driver_by_muts_count(result)
 
+    @staticmethod
+    @bar_plot
+    def active_driver_gene_ontology(result):
+        top_fdr = result['profile']
+        return top_fdr['t name'], top_fdr['Q&T'], [f'p-value: {p}' for p in top_fdr['p-value']]
+
     @cases(site_type=site_types)
     @counter
-    @bar_plot
-    def pan_cancer_active_driver_gene_ontology(self, site_type):
+    def pan_cancer_active_driver_gene_ontology(self, site_type=any_site_type):
         result = pan_cancer_analysis(site_type)
-        top_fdr = result['profile']
+        return self.active_driver_gene_ontology(result)
 
-        return top_fdr['t name'], top_fdr['T'], [f'p-value: {p}' for p in top_fdr['p-value']]
+    @cases(site_type=site_types)
+    @counter
+    def clinvar_active_driver_gene_ontology(self, site_type=any_site_type):
+        result = clinvar_analysis(site_type)
+        return self.active_driver_gene_ontology(result)
