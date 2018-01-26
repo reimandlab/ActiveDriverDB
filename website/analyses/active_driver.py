@@ -5,6 +5,7 @@ from tempfile import NamedTemporaryFile
 
 import gc
 from traceback import print_exc
+from typing import Type
 
 from diskcache import Cache
 from rpy2.rinterface._rinterface import RRuntimeError
@@ -15,9 +16,10 @@ from flask import current_app
 from tqdm import tqdm
 from gprofiler import GProfiler
 
+from database import get_or_create
 from exports.protein_data import sites_ac
 from imports import MutationImportManager
-from models import Gene
+from models import Gene, GeneList, GeneListEntry, MutationDetails, MC3Mutation
 
 
 def load_active_driver(local_ad=True):
@@ -33,14 +35,14 @@ def get_date() -> str:
     return datetime.utcnow().strftime("%Y-%m-%d_%H%-M%-S")
 
 
-def export_and_load(exporter, *args, compression=None, **kwargs):
+def export_and_load(exporter, *args, compression=None, **kwargs) -> DataFrame:
     with current_app.app_context():
         with NamedTemporaryFile() as file:
             exporter(*args, path=file.name, **kwargs)
             return read_table(file.name, compression=compression)
 
 
-def series_from_preferred_isoforms(trait, subset=None):
+def series_from_preferred_isoforms(trait, subset=None) -> Series:
 
     sequences = []
     names = []
@@ -120,6 +122,9 @@ def run_active_driver(sequences, disorder, mutations, sites, mc_cores=None, prog
 
     active_driver = load_active_driver()
 
+    # uncomment to debug a stalled run
+    # r('debug(ActiveDriver)')
+
     try:
         result = active_driver.ActiveDriver(
             *arguments, mc_cores=mc_cores, progress_bar=progress_bar, **kwargs
@@ -189,6 +194,31 @@ def save_all(analysis_name: str, data, base_path=None):
         datum.to_csv(path / f'{name}.tsv', sep='\t')
 
 
+def create_gene_list(name: str, list_data: DataFrame, mutation_source: Type[MutationDetails]=None) -> GeneList:
+    gene_list, created = get_or_create(GeneList, name=name)
+
+    print(('Creating' if created else 'Updating') + f' gene list: {name}')
+
+    if mutation_source:
+        gene_list.mutation_source_name = mutation_source.name
+
+    entries = []
+
+    for raw_entry in list_data.itertuples(index=False):
+
+        gene, created = get_or_create(Gene, name=raw_entry.gene)
+        entry = GeneListEntry(
+            gene=gene,
+            fdr=raw_entry.fdr,
+            p=raw_entry.p
+        )
+        entries.append(entry)
+
+    gene_list.entries = entries
+
+    return gene_list
+
+
 @cached
 def per_cancer_analysis(site_type):
 
@@ -199,7 +229,9 @@ def per_cancer_analysis(site_type):
     for cancer_type in all_mutations.cancer_type.unique():
         mutations = all_mutations[all_mutations.cancer_type == cancer_type]
         result = run_active_driver(sequences, disorder, mutations, sites)
-        results[cancer_type] = process_result(result, sites)
+        result = process_result(result, sites)
+        results[cancer_type] = result
+        create_gene_list(f'ActiveDriver: {cancer_type} in {site_type} sites', result['top_fdr'], MC3Mutation)
 
     save_all(f'per_cancer-{site_type}', results)
 
@@ -211,6 +243,8 @@ def source_specific_analysis(mutations_source, site_type):
     sequences, disorder, mutations, sites = prepare_active_driver_data(mutations_source, site_type)
     result = run_active_driver(sequences, disorder, mutations, sites)
     result = process_result(result, sites)
+    source = manager.importers[mutations_source].model
+    create_gene_list(f'ActiveDriver: {source.name} {site_type} sites', result['top_fdr'], source)
 
     save_all(f'{mutations_source}-{site_type}', result)
 

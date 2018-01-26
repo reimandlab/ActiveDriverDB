@@ -963,9 +963,9 @@ def active_driver_gene_lists(
             )
             list_entries.append(entry)
 
-            gene_list.entries = list_entries
-
         parse_tsv_file(list_data.path, parser, header)
+
+        gene_list.entries = list_entries
 
         gene_lists.append(gene_list)
 
