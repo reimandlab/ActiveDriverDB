@@ -1,3 +1,4 @@
+from pandas import DataFrame
 from tqdm import tqdm
 
 from analyses.variability_in_population import (
@@ -187,18 +188,29 @@ class Plots(CountStore):
 
     @staticmethod
     @bar_plot
-    def active_driver_gene_ontology(result):
-        top_fdr = result['profile']
-        return top_fdr['t name'], top_fdr['Q&T'], [f'p-value: {p}' for p in top_fdr['p-value']]
+    def active_driver_gene_ontology(profile: DataFrame):
+        if profile.empty:
+            return [], []
+        return profile['t name'], profile['Q&T'], [f'p-value: {p}' for p in profile['p-value']]
 
     @cases(site_type=site_types)
     @counter
     def pan_cancer_active_driver_gene_ontology(self, site_type=any_site_type):
         result = pan_cancer_analysis(site_type)
-        return self.active_driver_gene_ontology(result)
+        return self.active_driver_gene_ontology(result['profile'])
 
     @cases(site_type=site_types)
     @counter
     def clinvar_active_driver_gene_ontology(self, site_type=any_site_type):
         result = clinvar_analysis(site_type)
-        return self.active_driver_gene_ontology(result)
+        return self.active_driver_gene_ontology(result['profile'])
+
+    @cases(site_type=site_types)
+    def pan_cancer_active_driver_gene_ontology_with_bg(self, site_type=any_site_type):
+        result = pan_cancer_analysis(site_type)
+        return self.active_driver_gene_ontology(result['profile_against_genes_with_sites'])
+
+    @cases(site_type=site_types)
+    def clinvar_active_driver_gene_ontology_with_bg(self, site_type=any_site_type):
+        result = clinvar_analysis(site_type)
+        return self.active_driver_gene_ontology(result['profile_against_genes_with_sites'])
