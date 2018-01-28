@@ -8,7 +8,7 @@ from traceback import print_exc
 from typing import Type
 
 from diskcache import Cache
-from rpy2.rinterface._rinterface import RRuntimeError
+from rpy2.rinterface import RRuntimeError
 from rpy2.robjects import pandas2ri, r
 from rpy2.robjects.packages import importr
 from pandas import read_table, Series, DataFrame
@@ -18,6 +18,7 @@ from gprofiler import GProfiler
 
 from database import get_or_create
 from exports.protein_data import sites_ac
+from helpers.cache import cache_decorator
 from imports import MutationImportManager
 from models import Gene, GeneList, GeneListEntry, MutationDetails, MC3Mutation
 
@@ -62,26 +63,7 @@ def series_from_preferred_isoforms(trait, subset=None) -> Series:
 
 
 manager = MutationImportManager()
-
-
-def cached(func, cache=Cache('active_driver_data')):
-
-    name = func.__name__
-
-    def cache_manager(*args):
-
-        key = (name, *args)
-
-        if key not in cache:
-            cache[key] = func(*args)
-        else:
-            print(f'Using cached result of {name}({", ".join(args)})')
-
-        return cache[key]
-
-    cache_manager.__name__ = f'cache_manager_of_{name}'
-
-    return cache_manager
+cached = cache_decorator(Cache('active_driver_data'))
 
 
 @cached
