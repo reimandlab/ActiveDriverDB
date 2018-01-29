@@ -45,3 +45,12 @@ def test_cache(tmpdir):
 
     assert cached_accumulative_mul(5) == 5
     assert cached_accumulative_mul(5) == 5
+
+    last_result = 10    # this should change nothing
+    assert cached_accumulative_mul(5) == 5
+
+    # unless the cache is deleted
+    cached_accumulative_mul.clean(5)
+
+    assert cached_accumulative_mul(5) == 50
+    assert cached_accumulative_mul(5) == 50

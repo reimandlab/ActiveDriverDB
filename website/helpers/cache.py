@@ -17,6 +17,10 @@ def cache_decorator(cache: Cache) -> Callable:
 
         name = func.__name__
 
+        def clean_cache(*args):
+            key = (name, *args)
+            del cache[key]
+
         def cache_manager(*args):
 
             key = (name, *args)
@@ -29,6 +33,7 @@ def cache_decorator(cache: Cache) -> Callable:
             return cache[key]
 
         cache_manager.__name__ = f'cache_manager_of_{name}'
+        cache_manager.clean = clean_cache
 
         return cache_manager
 
