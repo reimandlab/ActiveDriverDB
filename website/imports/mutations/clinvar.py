@@ -84,7 +84,7 @@ class ClinVarImporter(MutationImporter):
 
                 try:
                     if names:
-                        if names[i] not in ('not_specified', 'not provided'):
+                        if names[i] not in ('not_specified', 'not_provided'):
                             names[i] = self._beautify_disease_name(names[i])
                             at_least_one_significant_sub_entry = True
                     if statuses and statuses[i] == 'no_criteria':
@@ -149,7 +149,7 @@ class ClinVarImporter(MutationImporter):
 
                 for i in range(sub_entries_cnt):
                     # disease names matching is case insensitive;
-                    # NB: MySQL uses case-insensitive unqiue constraint by default
+                    # NB: MySQL uses case-insensitive unique constraint by default
                     name = names[i]
                     key = name.lower()
 
@@ -172,7 +172,6 @@ class ClinVarImporter(MutationImporter):
                             highest_disease_id += 1
                             new_diseases[key] = highest_disease_id, name
                             disease_id = highest_disease_id
-
 
                     clinvar_data.append(
                         (
