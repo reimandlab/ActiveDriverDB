@@ -226,12 +226,14 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
                 isoform = 1
 
             reference, new = get_or_create(ProteinReferences, protein=protein)
-            uniprot_entry, _ = get_or_create(UniprotEntry, accession=uniprot, isoform=isoform)
+            uniprot_entry, new_uniprot = get_or_create(UniprotEntry, accession=uniprot, isoform=isoform)
             reference.uniprot_entries.append(uniprot_entry)
             references[uniprot].append(reference)
 
             if new:
                 db.session.add(reference)
+            if new_uniprot:
+                db.session.add(uniprot_entry)
 
     ensembl_references_to_collect = {
         'Ensembl_PRO': 'peptide_id'
@@ -270,7 +272,13 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
             if len(x) <= 5:
                 for reference in relevant_references:
                     assert '-' not in full_uniprot
-                    entry = UniprotEntry.query.filter_by(accession=full_uniprot, reference=reference).one()
+                    matching_entries = [entry for entry in reference.uniprot_entries if entry.accession == full_uniprot]
+                    if len(matching_entries) != 1:
+                        print(f'More than one match for reference: {reference}: {matching_entries}')
+                    if not matching_entries:
+                        print(f'No matching entries for reference: {reference}: {matching_entries}')
+                        continue
+                    entry = matching_entries[0]
                     entry.reviewed = True
 
             return
