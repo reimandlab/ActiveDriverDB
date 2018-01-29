@@ -680,7 +680,7 @@ def suggest_matching_cancers(query, count=2):
         )
     ), Cancer.name, query).limit(count)
 
-    tcga_list = GeneList.query.filter_by(mutation_source_name=MC3Mutation.name).one()
+    tcga_list = GeneList.query.filter_by(mutation_source_name=MC3Mutation.name).first()
 
     return [
         {
