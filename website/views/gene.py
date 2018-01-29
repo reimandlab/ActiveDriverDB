@@ -98,7 +98,6 @@ def prepare_subqueries(sql_filters, required_joins):
             )
             .filter(and_(
                 Mutation.protein_id == Protein.id,
-                Site.protein_id == Protein.id,
                 Mutation.precomputed_is_ptm
             ))
             .join(Site, Site.protein_id == Mutation.protein_id)

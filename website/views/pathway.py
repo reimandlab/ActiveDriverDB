@@ -52,13 +52,13 @@ class PathwaysView(FlaskView):
         data = pathway.to_json()
 
         query = (
-            db.session.query(Gene.name, func.count(Protein.refseq))
-                .select_from(Pathway)
-                .filter(Pathway.id == pathway.id)
-                .join(Pathway.association_table)
-                .join(Gene)
-                .outerjoin(Protein, Gene.id == Protein.gene_id)
-                .group_by(Gene)
+            db.session.query(Gene.name, func.count(Protein.id))
+            .select_from(Pathway)
+            .filter(Pathway.id == pathway.id)
+            .join(Pathway.association_table)
+            .join(Gene)
+            .outerjoin(Protein, Gene.id == Protein.gene_id)
+            .group_by(Gene)
         )
 
         isoforms_counts = {
@@ -108,16 +108,12 @@ class PathwaysView(FlaskView):
     )
 
     def significant_data(self, gene_list_id):
-        gene_list = GeneList.query.get(gene_list_id)
-
         def query_constructor(sql_filters, joins):
 
             significant_genes = (
-                db.session.query(
-                    GeneListEntry.gene_id
-                )
+                db.session.query(GeneListEntry.gene_id)
                 .select_from(GeneListEntry)
-                .filter(GeneListEntry.gene_list_id == gene_list.id)
+                .filter(GeneListEntry.gene_list_id == gene_list_id)
                 .filter(Pathway.association_table.c['gene_id'] == GeneListEntry.gene_id)
             ).label('significant_genes')
 
