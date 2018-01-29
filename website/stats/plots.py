@@ -181,9 +181,13 @@ class Plots(CountStore):
 
     @cases(cancer_code={cancer.code for cancer in Cancer.query})
     @bar_plot
-    def per_cancer_active_driver(self, cancer_code, site_type=any_site_type):
+    def per_cancer_active_driver_glycosylation(self, cancer_code, site_type='glycosylation'):
         results = per_cancer_analysis(site_type)
-        result = results[cancer_code]
+        try:
+            result = results[cancer_code]
+        except KeyError:
+            print(f'No results for {cancer_code}')
+            return [], []
         return self.active_driver_by_muts_count(result)
 
     @staticmethod

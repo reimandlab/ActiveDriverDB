@@ -24,6 +24,7 @@ from flask import render_template_string
 from werkzeug.utils import secure_filename
 
 import security
+import models
 from models import Page, HelpEntry, TextEntry
 from models import Menu
 from models import MenuEntry
@@ -115,7 +116,9 @@ USER_ACCESSIBLE_VARIABLES = {
     'bar_plot': plot_factory('BarPlot', 'bar_plot', 'Plots'),
     'contact_form': create_contact_form,
     'dependency': dependency,
-    'help': render_help_entry
+    'help': render_help_entry,
+     # cms models are not exposed on purpose
+    'bio_models': models.bio
 }
 
 
