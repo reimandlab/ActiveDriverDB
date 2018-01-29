@@ -151,23 +151,27 @@ class Plots(CountStore):
         return [f'{site.protein.gene_name}:{site.position}{site.residue}' for site in sites], counts
 
     @staticmethod
-    def count_mutations_by_gene(source, genes, filters=None):
+    def count_mutations_by_gene(source, genes, site_type, filters=None):
         counts = []
         for gene in genes:
             query = (
-                db.session.query(func.count(source.count))
+                db.session.query(func.sum(source.count))
+                .select_from(source)
                 .join(Mutation).join(Protein)
+                .filter(Mutation.affected_sites.any(
+                    Site.type.contains(site_type)
+                ))
                 .join(Gene, Gene.preferred_isoform_id == Protein.id)
                 .filter(Gene.name == gene)
             )
-            if filters:
+            if filters is not None:
                 query = query.filter(filters)
             counts.append(query.scalar())
         return counts
 
-    def active_driver_by_muts_count(self, result, filters=None):
+    def active_driver_by_muts_count(self, result, source, site_type, filters=None):
         top_fdr = result['top_fdr']
-        mutation_counts = self.count_mutations_by_gene(MC3Mutation, top_fdr.gene, filters)
+        mutation_counts = self.count_mutations_by_gene(source, top_fdr.gene, site_type, filters)
         return top_fdr.gene, mutation_counts, [f'fdr: {fdr}' for fdr in top_fdr.fdr]
 
     @cases(site_type=site_types)
@@ -175,14 +179,14 @@ class Plots(CountStore):
     @bar_plot
     def pan_cancer_active_driver(self, site_type=any_site_type):
         result = pan_cancer_analysis(site_type)
-        return self.active_driver_by_muts_count(result)
+        return self.active_driver_by_muts_count(result, MC3Mutation, site_type)
 
     @cases(site_type=site_types)
     @counter
     @bar_plot
     def clinvar_active_driver(self, site_type=any_site_type):
         result = clinvar_analysis(site_type)
-        return self.active_driver_by_muts_count(result)
+        return self.active_driver_by_muts_count(result, InheritedMutation, site_type)
 
     @cases(cancer_code={cancer.code for cancer in Cancer.query})
     @bar_plot
@@ -193,7 +197,7 @@ class Plots(CountStore):
         except KeyError:
             print(f'No results for {cancer_code}')
             return [], []
-        return self.active_driver_by_muts_count(result, MC3Mutation.cancer_code == cancer_code)
+        return self.active_driver_by_muts_count(result, MC3Mutation, site_type, MC3Mutation.cancer_code == cancer_code)
 
     @staticmethod
     @bar_plot
