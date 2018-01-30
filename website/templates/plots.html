@@ -19,7 +19,7 @@
 
 {% endmacro %}
 
-{% macro box_plot(name, traces, title='', mode='group', y_axis={}, x_axis={}) %}
+{% macro box_plot(name, traces, title='', mode='group', y_axis={}, x_axis={}, annotations={}) %}
 
   <div id="box_plot_{{name}}"></div>
 
@@ -30,7 +30,8 @@
           yaxis: {{ y_axis | tojson }},
           xaxis: {{ x_axis | tojson }},
           boxmode: '{{ mode }}',
-          title: '{{ title }}'
+          title: '{{ title }}',
+          annotations: {{ annotations | tojson }}
       }
 
 

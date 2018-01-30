@@ -1,10 +1,16 @@
-from functools import lru_cache
-
+from diskcache import Cache
 from numpy import percentile
+from rpy2.robjects import FloatVector, r
 from sqlalchemy import func, distinct, case, literal_column
+from tqdm import tqdm
 
 from database import db
-from models import Mutation, Protein, Site
+from helpers.cache import cache_decorator
+from models import Mutation, Protein, Site, ExomeSequencingMutation, The1000GenomesMutation
+
+cached = cache_decorator(Cache('.variability_cache'))
+population_sources = [ExomeSequencingMutation, The1000GenomesMutation]
+wilcox = r['wilcox.test']
 
 
 def variability_in_population(source, site_type=None, protein_subset=None, rare_threshold=0.5, only_primary=True):
@@ -41,7 +47,6 @@ def variability_in_population(source, site_type=None, protein_subset=None, rare_
     return query
 
 
-@lru_cache()
 def proteins_variability(source, only_primary=True, site_type=None, without_sites=False, by_counts=False):
 
     if by_counts:
@@ -99,3 +104,91 @@ def group_by_substitution_rates(source, only_primary=True, bins_count=100, by_fr
 
     return bins
 
+
+def variability_vector(result, source):
+    return FloatVector(result[source.name])
+
+
+@cached
+def ptm_variability_population_rare_substitutions(site_type):
+    """Compare variability of sequence in PTM sites
+    with the variability of sequence outside of PTM sites,
+    using frequency of rare substitutions.
+    """
+    results = {}
+
+    protein_bins = {}
+
+    print(f'Rare substitutions in PTM/non-PTM regions for: {site_type}')
+
+    for population_source in population_sources:
+        protein_bins[population_source] = group_by_substitution_rates(population_source)
+
+    for group, site_type in [('non-PTM', None), ('PTM regions', site_type)]:
+
+        group_muts = []
+        result = {}
+
+        for population_source in population_sources:
+
+            variability = []
+            source_group_muts = []
+
+            for protein_bin in tqdm(protein_bins[population_source]):
+
+                for percentage, muts_cout in variability_in_population(
+                        population_source, site_type,
+                        protein_subset=protein_bin
+                ):
+                    if muts_cout == 0:
+                        percentage = 0
+                    variability.append(float(percentage))
+                    source_group_muts.append(muts_cout)
+
+            result[population_source.name] = variability
+            group_muts += source_group_muts
+
+        print(f'Total muts in {group}: {sum(group_muts)}')
+
+        results[group] = result
+
+    return results
+
+
+def does_median_differ_significances(results):
+    significances = {}
+
+    for population_source in population_sources:
+        visibilities = [
+            variability_vector(result, population_source)
+            for result in results.values()
+        ]
+        significance = wilcox(*visibilities, paired=True)
+        significances[population_source.name] = significance.rx("p.value")[0][0]
+
+    return significances
+
+
+@cached
+def proteins_variability_by_ptm_presence(site_type, by_counts):
+    results = {}
+
+    for group, without_ptm, site_type in [('Without PTM sites', True, None), ('With PTM sites', False, site_type)]:
+        result = {}
+        counts = {}
+
+        for population_source in population_sources:
+
+            rates = proteins_variability(
+                population_source, site_type=site_type, without_sites=without_ptm, by_counts=by_counts
+            )
+            proteins, variability = zip(*rates)
+
+            result[population_source.name] = variability
+            counts[population_source.name] = len(proteins)
+
+        print(f'Proteins distribution for {group} (site_type: {site_type}): {counts}')
+
+        results[group] = result
+
+    return results

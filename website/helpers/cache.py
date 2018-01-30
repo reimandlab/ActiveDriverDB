@@ -13,17 +13,22 @@ def cache_decorator(cache: Cache) -> Callable:
     defined in __hash__ or __eq__ methods.
     """
 
+    def create_key(name, *args, **kwargs):
+        if kwargs:
+            return (name, *args, kwargs)
+        return (name, *args)
+
     def cached(func: Callable):
 
         name = func.__name__
 
-        def clean_cache(*args):
-            key = (name, *args)
+        def clean_cache(*args, **kwargs):
+            key = create_key(name, *args, **kwargs)
             del cache[key]
 
-        def cache_manager(*args):
+        def cache_manager(*args, **kwargs):
 
-            key = (name, *args)
+            key = create_key(name, *args, **kwargs)
 
             if key not in cache:
                 cache[key] = func(*args)

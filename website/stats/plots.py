@@ -1,13 +1,17 @@
+from typing import Mapping, Iterable
+
+from numpy import percentile
 from pandas import DataFrame
-from tqdm import tqdm
 
 from analyses.variability_in_population import (
-    variability_in_population, group_by_substitution_rates,
     proteins_variability,
+    ptm_variability_population_rare_substitutions,
+    does_median_differ_significances,
+    proteins_variability_by_ptm_presence,
 )
 from database import db
 from models import (
-    Plot, The1000GenomesMutation, ExomeSequencingMutation, Site, MC3Mutation, InheritedMutation, Cancer,
+    Plot, Site, MC3Mutation, InheritedMutation, Cancer,
     Gene,
     Protein,
     Mutation,
@@ -16,25 +20,79 @@ from models import (
 from analyses.active_driver import pan_cancer_analysis, per_cancer_analysis, clinvar_analysis
 from .store import CountStore, counter, cases
 
-population_sources = [ExomeSequencingMutation, The1000GenomesMutation]
+
+def bar_plot(labels: Iterable, values: Iterable, text: Iterable=None):
+    data = {
+        'x': list(labels),
+        'y': list(values),
+        'type': 'bar'
+    }
+    if text:
+        data['text'] = list(text)
+    return [data]
 
 
-def bar_plot(func):
-    def plot(*args, **kwargs):
-        labels, values, *args = func(*args, **kwargs)
-        data = {
-            'x': list(labels),
-            'y': list(values),
-            'type': 'bar'
+BoxSet = Mapping[str, list]
+
+
+def grouped_box_plot(boxes_by_group: Mapping[str, BoxSet]):
+
+    results = []
+
+    for group_name, boxes in boxes_by_group.items():
+        names = []
+        values = []
+
+        for box_name, box_values in boxes.items():
+
+            names += [box_name] * len(box_values)
+            values.extend(box_values)
+
+        result = {
+            'y': values,
+            'x': names,
+            'name': group_name,
+            'type': 'box'
         }
-        if args:
-            data['text'] = list(args[0])
-        return [data]
-    return plot
+        results.append(result)
+
+    return results
+
+
+def as_decorator(plotting_func, unpack=False):
+    def decorator(data_func):
+
+        def data_func_with_plot(*args, **kwargs):
+            data = data_func(*args, **kwargs)
+            if unpack:
+                return plotting_func(*data)
+            else:
+                return plotting_func(data)
+
+        return data_func_with_plot
+    return decorator
+
+
+grouped_box_plot = as_decorator(grouped_box_plot)
+bar_plot = as_decorator(bar_plot, unpack=True)
 
 
 site_types = Site.types()
 any_site_type = ''
+
+
+def p_value_annotations(results, significances):
+    return [
+        {
+            'x': 1 * i,
+            'y': max(percentile(result[population_source], 75) for result in results.values()) + 10,
+            'xref': 'x',
+            'yref': 'y',
+            'text': f'p-value: {significance:.3f}',
+            'showarrow': False
+        }
+        for i, (population_source, significance) in enumerate(significances.items())
+    ]
 
 
 class Plots(CountStore):
@@ -43,93 +101,31 @@ class Plots(CountStore):
 
     @cases(site_type=Site.types())
     @counter
+    @grouped_box_plot
     def ptm_variability_population_rare_substitutions(self, site_type=any_site_type):
-        """Compare variability of sequence in PTM sites
-        with the variability of sequence outside of PTM sites,
-        using frequency of rare substitutions.
-        """
-
-        results = []
-
-        protein_bins = {}
-
-        print(f'Rare substitutions in PTM/non-PTM regions for: {site_type}')
-
-        for population_source in population_sources:
-            protein_bins[population_source] = group_by_substitution_rates(population_source)
-
-        for group, site_type in [('non-PTM', None), ('PTM regions', site_type)]:
-
-            y = []
-            x = []
-            z = []
-
-            for population_source in population_sources:
-
-                variability = []
-                total_muts = []
-
-                for protein_bin in tqdm(protein_bins[population_source]):
-
-                    for percentage, muts_cout in variability_in_population(
-                        population_source, site_type,
-                        protein_subset=protein_bin
-                    ):
-                        variability += [percentage]
-                        total_muts += [muts_cout]
-
-                y += variability
-                x += [population_source.name] * len(variability)
-                z += total_muts
-
-                print(f'Total muts in {group}: {sum(z)}')
-
-            result = {
-                'y': y,
-                'x': x,
-                'counts': z,
-                'name': group,
-                'type': 'box'
-            }
-            results.append(result)
-
+        results = ptm_variability_population_rare_substitutions(site_type)
         return results
+
+    @cases(site_type=Site.types())
+    @counter
+    def ptm_variability_population_rare_substitutions_significance(self, site_type=any_site_type):
+        results = ptm_variability_population_rare_substitutions(site_type)
+        significances = does_median_differ_significances(results)
+        return p_value_annotations(results, significances)
 
     @cases(site_type=Site.types(), by_counts=[True])
     @counter
+    @grouped_box_plot
     def proteins_variability_by_ptm_presence(self, site_type=any_site_type, by_counts=False):
-
-        results = []
-
-        for group, without_ptm, site_type in [('Without PTM sites', True, None), ('With PTM sites', False, site_type)]:
-            y = []
-            x = []
-            counts = {}
-
-            for population_source in population_sources:
-
-                rates = proteins_variability(
-                    population_source, site_type=site_type, without_sites=without_ptm, by_counts=by_counts
-                )
-                proteins, variability = zip(*rates)
-
-                y += variability
-                x += [population_source.name] * len(variability)
-
-                counts[population_source.name] = len(proteins)
-
-            print(f'Proteins distribution for {group} (site_type: {site_type}): {counts}')
-
-            result = {
-                'y': y,
-                'x': x,
-                'proteins_count': counts,
-                'name': group,
-                'type': 'box'
-            }
-            results.append(result)
-
+        results = proteins_variability_by_ptm_presence(site_type, by_counts)
         return results
+
+    @cases(site_type=Site.types())
+    @counter
+    def proteins_variability_by_ptm_presence_significance(self, site_type=any_site_type):
+        results = proteins_variability(site_type)
+        significances = does_median_differ_significances(results)
+        return p_value_annotations(results, significances)
 
     @cases(site_type=Site.types())
     @counter
