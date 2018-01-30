@@ -4,7 +4,6 @@ from numpy import percentile
 from pandas import DataFrame
 
 from analyses.variability_in_population import (
-    proteins_variability,
     ptm_variability_population_rare_substitutions,
     does_median_differ_significances,
     proteins_variability_by_ptm_presence,
@@ -123,7 +122,7 @@ class Plots(CountStore):
     @cases(site_type=Site.types())
     @counter
     def proteins_variability_by_ptm_presence_significance(self, site_type=any_site_type):
-        results = proteins_variability(site_type)
+        results = proteins_variability_by_ptm_presence(site_type)
         significances = does_median_differ_significances(results)
         return p_value_annotations(results, significances)
 
