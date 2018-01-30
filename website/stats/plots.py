@@ -84,7 +84,12 @@ def p_value_annotations(results, significances):
     return [
         {
             'x': 1 * i,
-            'y': max(percentile(result[population_source], 75) for result in results.values()) + 10,
+            'y': max(
+                percentile(
+                    [float(x) for x in result[population_source]],
+                    75
+                ) for result in results.values()
+            ) + 10,
             'xref': 'x',
             'yref': 'y',
             'text': f'p-value: {significance:.3f}',
