@@ -31,7 +31,7 @@ def cache_decorator(cache: Cache) -> Callable:
             key = create_key(name, *args, **kwargs)
 
             if key not in cache:
-                cache[key] = func(*args)
+                cache[key] = func(*args, **kwargs)
             else:
                 print(f'Using cached result of {name}({", ".join(map(repr, args))})')
 

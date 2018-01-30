@@ -54,3 +54,19 @@ def test_cache(tmpdir):
 
     assert cached_accumulative_mul(5) == 50
     assert cached_accumulative_mul(5) == 50
+
+    # handle keywords:
+
+    base = 5
+
+    @cached
+    def calc(a=2):
+        return base**a
+
+    assert calc() == 25
+    assert calc(a=1) == 5
+
+    base = 1
+    assert calc() == 25
+    assert calc(a=1) == 5
+    assert calc(a=2) == 1
