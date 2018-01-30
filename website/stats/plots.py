@@ -119,10 +119,10 @@ class Plots(CountStore):
         results = proteins_variability_by_ptm_presence(site_type, by_counts)
         return results
 
-    @cases(site_type=Site.types())
+    @cases(site_type=Site.types(), by_counts=[True])
     @counter
-    def proteins_variability_by_ptm_presence_significance(self, site_type=any_site_type):
-        results = proteins_variability_by_ptm_presence(site_type)
+    def proteins_variability_by_ptm_presence_significance(self, site_type=any_site_type, by_counts=False):
+        results = proteins_variability_by_ptm_presence(site_type, by_counts)
         significances = does_median_differ_significances(results)
         return p_value_annotations(results, significances)
 
