@@ -155,7 +155,7 @@ def ptm_variability_population_rare_substitutions(site_type):
     return results
 
 
-def does_median_differ_significances(results):
+def does_median_differ_significances(results, paired=False):
     significances = {}
 
     for population_source in population_sources:
@@ -163,7 +163,7 @@ def does_median_differ_significances(results):
             variability_vector(result, population_source)
             for result in results.values()
         ]
-        significance = wilcox(*visibilities, paired=True)
+        significance = wilcox(*visibilities, paired=paired)
         significances[population_source.name] = significance.rx("p.value")[0][0]
 
     return significances

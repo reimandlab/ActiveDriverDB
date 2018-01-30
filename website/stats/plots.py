@@ -109,7 +109,7 @@ class Plots(CountStore):
     @counter
     def ptm_variability_population_rare_substitutions_significance(self, site_type=any_site_type):
         results = ptm_variability_population_rare_substitutions(site_type)
-        significances = does_median_differ_significances(results)
+        significances = does_median_differ_significances(results, paired=True)
         return p_value_annotations(results, significances)
 
     @cases(site_type=Site.types(), by_counts=[True])
