@@ -6,7 +6,6 @@ from tqdm import tqdm
 import models
 from database import db
 from models import Mutation, Protein, Site
-from stats import Statistics
 
 
 def count_mutated_sites(site_types=tuple(), model=None, only_primary=False):
@@ -38,7 +37,7 @@ def count_mutated_sites(site_types=tuple(), model=None, only_primary=False):
         .join(Mutation, Site.protein_id == Mutation.protein_id)
     )
     if model:
-        query = query.filter(Statistics.get_filter_by_sources([model]))
+        query = query.filter(Mutation.in_sources(model))
     else:
         query = query.filter(Mutation.is_confirmed == True)
 
@@ -111,7 +110,7 @@ def source_specific_nucleotide_mappings():
     for i, model in tqdm(sources_map.items(), total=len(sources_map)):
         query = (
             db.session.query(Mutation.protein_id, Mutation.alt, Mutation.position)
-            .filter(Statistics.get_filter_by_sources([model]))
+            .filter(Mutation.in_sources(model))
             # no need for '.filter(Mutation.is_confirmed==True)'
             # (if it is in source of interest, it is confirmed - we do not count MIMPs here)
             .yield_per(5000)
@@ -169,7 +168,7 @@ def source_specific_mutated_sites():
         count = (
             Mutation.query
             .filter_by(is_confirmed=True, is_ptm_distal=True)
-            .filter(Statistics.get_filter_by_sources([model]))
+            .filter(Mutation.in_sources(model))
             .count()
         )
         muts_in_ptm_sites[name] = count
@@ -178,7 +177,7 @@ def source_specific_mutated_sites():
             Mutation.query
             .filter(
                 and_(
-                    Statistics.get_filter_by_sources([models.MIMPMutation, model]),
+                    Mutation.in_sources(models.MIMPMutation, model),
                     Mutation.is_confirmed,
                 )
             ).count()

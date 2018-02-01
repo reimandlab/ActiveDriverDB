@@ -4,6 +4,7 @@ from typing import Pattern
 
 from tqdm import tqdm
 
+from analyses.active_driver import ActiveDriverResult
 from models import Site, SiteType, Mutation
 
 
@@ -93,3 +94,14 @@ def count_muts_and_sites(mutations_query, site_type: SiteType, motifs_db=all_mot
         muts_breaking_sites_motif=muts_breaking_sites_motif
     )
 
+
+def count_by_source(source, site_type: SiteType):
+
+    return count_muts_and_sites(
+        Mutation.filter(Mutation.in_sources(source)),
+        site_type
+    )
+
+
+def count_by_active_driver(source, result: ActiveDriverResult, site_type):
+    pass

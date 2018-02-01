@@ -2,7 +2,6 @@ from functools import partial
 from itertools import combinations
 
 from models import VennDiagram, Site, Protein, SiteType, SiteSource, Mutation
-from stats import Statistics
 
 from .store import CountStore, counter
 from .table import mutation_sources, count_mutated_sites
@@ -53,7 +52,7 @@ def mutation_by_source(combination, only_within_ptm_sites=False, only_primary=Fa
 
     query = (
         Mutation.query
-        .filter(Statistics.get_filter_by_sources(combination))
+        .filter(Mutation.in_sources(*combination))
     )
 
     if only_within_ptm_sites:

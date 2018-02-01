@@ -2,6 +2,7 @@ from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from collections import UserList
 from functools import lru_cache
+from typing import List, Type
 
 from sqlalchemy import and_, distinct
 from sqlalchemy import case
@@ -463,10 +464,7 @@ class Protein(BioModel):
             )
         ]
         if dataset:
-            from stats import Statistics
-            criteria.append(
-                Statistics.get_filter_by_sources([dataset])
-            )
+            criteria.append(Mutation.in_sources(dataset))
         return (
             select([
                 case(
@@ -1906,3 +1904,17 @@ class Mutation(BioModel):
             'is_confirmed': self.is_confirmed,
             'is_ptm': self.is_ptm()
         }
+
+    @classmethod
+    def in_sources(cls, *sources: Type[MutationDetails]):
+
+        return and_(
+            (
+                (
+                    cls.get_relationship(source).any()
+                    if are_details_managed(source) else
+                    cls.get_relationship(source).has()
+                )
+                for source in sources
+            )
+        )

@@ -7,7 +7,6 @@ from tqdm import tqdm
 
 from database import join_unique, db
 from models import Protein, Mutation, The1000GenomesMutation, MC3Mutation, InheritedMutation, Gene, Site
-from stats import Statistics
 
 
 def count_mutated_potential_sites():
@@ -157,7 +156,7 @@ def get_confirmed_mutations(
     if genes:
         mutations = mutations.filter(Protein.id.in_([g.preferred_isoform_id for g in genes]))
 
-    selected_mutations = mutations.filter(Statistics.get_filter_by_sources(sources))
+    selected_mutations = mutations.filter(Mutation.in_sources(*sources))
 
     if only_preferred:
         selected_mutations = only_from_primary_isoforms(selected_mutations)
@@ -277,7 +276,7 @@ def get_genes_with_mutations_from_sources(sources, only_genes_with_ptm_sites=Fal
         .join(Protein, Gene.preferred_isoform_id == Protein.id)
         .join(Mutation)
     )
-    query = query.filter(Statistics.get_filter_by_sources(sources))
+    query = query.filter(Mutation.in_sources(*sources))
 
     genes = set(query.distinct())
 
@@ -325,7 +324,7 @@ def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False, st
         mutations_filters = and_(
             Mutation.protein_id.in_([p.id for p in proteins]),
             Mutation.is_confirmed == True,
-            Statistics.get_filter_by_sources(sources)
+            Mutation.in_sources(*sources)
         )
 
         all_mutations_count += (

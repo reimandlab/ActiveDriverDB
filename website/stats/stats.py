@@ -73,26 +73,8 @@ class Statistics(CountStore):
         return counts
 
     @staticmethod
-    def get_filter_by_sources(sources: List[Type[MutationDetails]]):
-
-        filters = and_(
-            (
-                (
-                    Mutation.get_relationship(source).any()
-                    if are_details_managed(source) else
-                    Mutation.get_relationship(source).has()
-                )
-                for source in sources
-
-            )
-        )
-
-        return filters
-
-    def count_by_source(self, sources):
-        return Mutation.query.filter(
-            self.get_filter_by_sources(sources)
-        ).count()
+    def count_by_sources(sources: List[Type[MutationDetails]]):
+        return Mutation.query.filter(Mutation.in_sources(*sources)).count()
 
     def __init__(self):
 
@@ -101,7 +83,7 @@ class Statistics(CountStore):
             name = 'mutations_' + source_model.name.replace('1', 'T')
 
             def muts_counter(_self):
-                return self.count_mutations(source_model)
+                return self.count_by_sources([source_model])
 
             self.register(counter(muts_counter, name=name))
 
@@ -134,7 +116,7 @@ class Statistics(CountStore):
     def confirmed_with_mimp(self):
         return Mutation.query.filter(
             and_(
-                self.get_filter_by_sources([models.MIMPMutation]),
+                Mutation.in_sources(models.MIMPMutation),
                 Mutation.is_confirmed,
             )
         ).count()
@@ -158,18 +140,13 @@ class Statistics(CountStore):
         for i in range(2, len(sources) + 1):
             sign = 1 if i % 2 == 0 else -1
             for combination in combinations(sources, i):
-                count += sign * self.count_by_source(combination)
+                count += sign * self.count_by_sources(combination)
 
         return count
 
     @staticmethod
     def count(model):
         return db.session.query(model).count()
-
-    def count_mutations(self, mutation_class):
-        return db.session.query(Mutation).filter(
-            self.get_filter_by_sources([mutation_class])
-        ).count()
 
     def mc3_exomes(self):
         return len(
