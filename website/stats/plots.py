@@ -89,10 +89,10 @@ def p_value_annotations(results, significances):
                     [float(x) for x in result[population_source]],
                     75
                 ) for result in results.values()
-            ) + 10,
+            ) * 1.1,
             'xref': 'x',
             'yref': 'y',
-            'text': f'p-value: {significance:.3f}',
+            'text': f'p-value: {significance:.2e}',
             'showarrow': False
         }
         for i, (population_source, significance) in enumerate(significances.items())
