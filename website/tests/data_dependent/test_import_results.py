@@ -6,7 +6,7 @@ from models import Protein
 
 
 def test_mappings():
-    """This is a simple inclusion test for genome -> proteme mutation mappigns.
+    """This is a simple inclusion test for genome -> proteome mutation mappings.
 
     Knowing the data, we demand the items from the right side (of test data)
     to be in the results of queries specified on the left side.
@@ -35,6 +35,8 @@ def test_mappings():
             for item in bdb[snv]
         ]
 
+        retrieved_data = None
+
         for item in items:
             retrieved_data = (
                 Protein.query.get(item['protein_id']).gene.name,
@@ -45,4 +47,4 @@ def test_mappings():
             if retrieved_data == protein_data:
                 break
         else:
-            raise Exception(retrieved_data, protein_data)
+            raise Exception(retrieved_data, protein_data, items)
