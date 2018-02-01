@@ -3,7 +3,7 @@ from database import db
 from .model_testing import ModelTest
 
 from exceptions import ValidationError
-from models import Protein
+from models import Protein, SiteType
 from models import Site
 
 
@@ -44,3 +44,29 @@ class SiteTest(ModelTest):
         for position, expected_sequence in data.items():
             site = Site(position=position + 1, type={'methylation'}, residue=p.sequence[position], protein=p)
             assert site.sequence == expected_sequence
+
+    def test_types(self):
+
+        p = Protein(refseq='NM_007', id=1, sequence='ABCD')
+        db.session.add(p)
+
+        # both should work fine
+        a = Site(position=2, type={SiteType(name='methylation')}, residue='B', protein=p)
+        b = Site(position=2, type={'methylation'}, residue='B', protein=p)
+
+        db.session.commit()
+
+        assert a.type == b.type
+
+        query = Protein.query
+
+        for site_type in ['methylation', SiteType(name='methylation')]:
+            assert query.filter(Protein.sites.any(Site.type.contains(site_type))).one()
+            assert not query.filter(Protein.sites.any(~Site.type.contains(site_type))).all()
+            assert Site.query.filter(Site.type == site_type).count() == 2
+            assert not Site.query.filter(Site.type != site_type).all()
+
+        for site_type in ['phosphorylation', SiteType(name='phosphorylation')]:
+            assert not query.filter(Protein.sites.any(Site.type.contains(site_type))).all()
+            assert query.filter(Protein.sites.any(~Site.type.contains(site_type))).one()
+            assert Site.query.filter(Site.type == site_type).count() == 0
