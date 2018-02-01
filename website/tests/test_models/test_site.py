@@ -30,6 +30,17 @@ class SiteTest(ModelTest):
         with pytest.raises(ValidationError):
             Site(position=-5, protein=p)
 
+    def test_default_residue(self):
+        p = Protein(refseq='NM_007', id=1, sequence='ABCD')
+
+        # note: for sites, positions are 1-based)
+        site = Site(position=2, type={'methylation'}, protein=p)
+
+        db.session.add(p)
+        db.session.commit()
+
+        assert site.residue == 'B'
+
     def test_sequence(self):
 
         p = Protein(refseq='NM_007', id=1, sequence='ABCDEFGHIJKLMNOPQRSTUVWXYZ')

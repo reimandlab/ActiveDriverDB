@@ -691,7 +691,7 @@ def default_residue(context):
 
     if protein and position:
         try:
-            return protein.sequence[position]
+            return protein.sequence[position - 1]
         except IndexError:
             print('Position of PTM possibly exceeds its protein')
             return
