@@ -748,9 +748,10 @@ class Site(BioModel):
         self.validate_position()
         self.validate_residue()
 
-    def get_nearby_sequence(self, protein, dst=3):
-        left = self.position - dst - 1
-        right = self.position + dst
+    def get_nearby_sequence(self, offset=3):
+        protein = self.protein
+        left = self.position - offset - 1
+        right = self.position + offset
         return (
             '-' * -min(0, left) +
             protein.sequence[max(0, left):min(right, protein.length)] +
@@ -759,7 +760,7 @@ class Site(BioModel):
 
     @hybrid_property
     def sequence(self):
-        return self.get_nearby_sequence(self.protein, dst=7)
+        return self.get_nearby_sequence(offset=7)
 
     @hybrid_property
     def mutations(self):
