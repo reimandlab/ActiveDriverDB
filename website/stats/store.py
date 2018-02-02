@@ -1,5 +1,6 @@
 import re
 from functools import lru_cache, partial
+from itertools import product
 from types import FunctionType
 
 from tqdm import tqdm
@@ -17,11 +18,69 @@ def counter(func: FunctionType, name=None, cache=True):
     return func
 
 
-def cases(**kwargs):
-    def decorator(func):
-        func.cases = kwargs
+def independent_cases(func_cases: dict):
+    for key, values in func_cases.items():
+        for case in values:
+            yield {key: case}
+
+
+def product_cases(func_cases: dict):
+    for values in product(*func_cases.values()):
+        yield dict(zip(func_cases.keys(), values))
+
+
+class Cases:
+
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+        self.mode = 'independent'
+
+    def __call__(self, func):
+        func.cases = self.kwargs
+        func.mode = self.mode
         return func
-    return decorator
+
+    def set_mode(self, new_mode):
+        if new_mode not in self.modes:
+            raise ValueError(f'Invalid mode: {new_mode}; accepted: {", ".join(self.modes)}')
+        self.mode = new_mode
+        return self
+
+    modes = {
+        'independent': independent_cases,
+        'cartesian_product': product_cases
+    }
+
+    @classmethod
+    def full_case_name(cls, kwargs):
+        parts = []
+        for case_name, case_value in kwargs.items():
+            part = case_value
+
+            if isinstance(case_value, bool):
+                part = f'{case_name}:{case_value}'
+            elif hasattr(case_value, 'name'):
+                part = case_value.name
+
+            parts.append(part)
+        return '_'.join(parts)
+
+    @classmethod
+    def iter_cases(cls, func_with_cases):
+
+        if not hasattr(func_with_cases, 'cases'):
+            return []
+
+        transform = cls.modes[func_with_cases.mode]
+
+        for kwargs in transform(func_with_cases.cases):
+            func_case = counter(partial(func_with_cases, **kwargs))
+            func_case.__self__ = func_with_cases.__self__
+
+            yield cls.full_case_name(kwargs), func_case
+
+
+cases = Cases
 
 
 class CountStore:
@@ -38,14 +97,9 @@ class CountStore:
 
     def __init__(self):
         for name, member in self.members.items():
-            if hasattr(member, 'cases'):
-                for key, value in member.cases.items():
-                    for case in value:
-                        new_counter = counter(partial(member, **{key: case}))
-                        new_counter.__self__ = member.__self__
-                        if isinstance(case, bool):
-                            case = f'{key}:{case}'
-                        self.register(new_counter, name=f'{name}_{case}')
+            for case_name, new_counter in Cases.iter_cases(member):
+                print(case_name, new_counter)
+                self.register(new_counter, name=f'{name}_{case_name}')
 
     @property
     def members(self):

@@ -3,6 +3,7 @@ from typing import Mapping, Iterable
 from numpy import percentile
 from pandas import DataFrame
 
+from analyses.motifs import count_by_source
 from analyses.variability_in_population import (
     ptm_variability_population_rare_substitutions,
     does_median_differ_significances,
@@ -227,3 +228,12 @@ class Plots(CountStore):
     def clinvar_active_driver_gene_ontology_with_bg(self, site_type=any_site_type):
         result = clinvar_analysis(site_type)
         return self.active_driver_gene_ontology(result['profile_against_genes_with_sites'])
+
+    motifs_cases = cases(site_type=site_types, source=[InheritedMutation, MC3Mutation]).set_mode('cartesian_product')
+
+    @motifs_cases
+    def broken_motifs(self, source, site_type):
+        return count_by_source(source, site_type)
+
+    def broken_motifs_in_active_driver(self):
+        pass

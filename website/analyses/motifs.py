@@ -119,7 +119,7 @@ def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db) -> M
 def count_by_source(source: MutationSource, site_type: SiteType):
 
     return count_muts_and_sites_from_query(
-        Mutation.filter(Mutation.in_sources(source)),
+        Mutation.query.filter(Mutation.in_sources(source)),
         site_type
     )
 
