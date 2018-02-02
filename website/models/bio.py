@@ -1072,6 +1072,9 @@ class MutationDetails:
         )
 
 
+MutationSource = Type[MutationDetails]
+
+
 class ManagedMutationDetails(MutationDetails):
     """For use when one mutation is related to many mutation details entries."""
 
@@ -1615,11 +1618,11 @@ class Mutation(BioModel):
                 return model
 
     @classmethod
-    def get_relationship(cls, mutation_class, class_relation_map={}):
+    def get_relationship(cls, source: MutationSource, class_relation_map={}):
         if not class_relation_map:
             for model in cls.source_specific_data:
                 class_relation_map[model] = getattr(cls, 'meta_' + model.name)
-        return class_relation_map[mutation_class]
+        return class_relation_map[source]
 
     source_fields = OrderedDict(
         (model.name, 'meta_' + model.name)
@@ -1906,7 +1909,7 @@ class Mutation(BioModel):
         }
 
     @classmethod
-    def in_sources(cls, *sources: Type[MutationDetails]):
+    def in_sources(cls, *sources: MutationSource):
 
         return and_(
             (
