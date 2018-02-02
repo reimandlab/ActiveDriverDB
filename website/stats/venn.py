@@ -7,6 +7,12 @@ from .store import CountStore, counter
 from .table import mutation_sources, count_mutated_sites
 
 
+def all_combinations(items, min_length=1):
+    for i in range(min_length, len(items) + 1):
+        for combination in combinations(items, i):
+            yield combination
+
+
 def venn_diagram(cases=None, model=None, name=None):
     assert cases or model
 
@@ -23,13 +29,13 @@ def venn_diagram(cases=None, model=None, name=None):
                 cases = model.query.all()
 
             results = []
-            for i in range(1, len(cases) + 1):
-                for combination in combinations(cases, i):
-                    result = {
-                        'sets': [c.name for c in combination],
-                        'size': combination_counter(combination, *args, **kwargs)
-                    }
-                    results.append(result)
+
+            for combination in all_combinations(cases):
+                result = {
+                    'sets': [c.name for c in combination],
+                    'size': combination_counter(combination, *args, **kwargs)
+                }
+                results.append(result)
             return results
 
         return counter(subset_generator, name=name)
