@@ -21,6 +21,7 @@ from flask_login import logout_user
 from flask_login import login_required
 from flask_mail import Message
 from flask import render_template_string
+from jinja2.runtime import Macro
 from werkzeug.utils import secure_filename
 
 import security
@@ -79,9 +80,12 @@ def render_raw_template(template_name, *args, **kwargs):
     return jinja_template.render(*args, **kwargs)
 
 
-def get_jinja_macro(template_path, macro_name):
+def get_jinja_module(template_path):
     jinja_template = current_app.jinja_env.get_template(template_path)
-    jinja_module = jinja_template.make_module({'current_user': current_user})
+    return jinja_template.make_module({'current_user': current_user})
+
+def get_jinja_macro(template_path, macro_name):
+    jinja_module = get_jinja_module(template_path)
     return getattr(jinja_module, macro_name)
 
 
@@ -118,8 +122,13 @@ USER_ACCESSIBLE_VARIABLES = {
     'contact_form': create_contact_form,
     'dependency': dependency,
     'help': render_help_entry,
-     # cms models are not exposed on purpose
-    'bio_models': models.bio
+    # cms models are not exposed on purpose
+    'bio_models': models.bio,
+    **{
+        name: macro
+        for name, macro in vars(get_jinja_module('cms/user_accessible_macros.html')).items()
+        if isinstance(macro, Macro)
+    }
 }
 
 
