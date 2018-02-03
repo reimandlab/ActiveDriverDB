@@ -284,14 +284,14 @@ class Plots(CountStore):
             except TypeError:
                 return sum(len(e) for e in data)
 
-        ratio_by_gene = {}
+        ratio_and_count = {}
         for gene_name, counts in counts_by_gene.items():
             by_count = sum_or_count(getattr(counts, by).values())
             bg_count = sum_or_count(getattr(counts, bg).values())
             if by_count:
-                ratio_by_gene[gene_name] = by_count / bg_count
+                ratio_and_count[gene_name] = (by_count / bg_count, by_count)
 
-        genes_ordered = sorted(ratio_by_gene, key=ratio_by_gene.get, reverse=True)
+        genes_ordered = sorted(ratio_and_count, key=ratio_and_count.get, reverse=True)
         return genes_ordered
 
     @staticmethod
