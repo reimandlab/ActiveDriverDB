@@ -28,11 +28,11 @@
 {% endmacro %}
 
 
-{% macro plot_tabs(plot_func, plot_id_base, plot_name, params, active) %}
+{% macro plot_tabs(plot_func, plot_id_base, plot_name, params, active, attr='name') %}
   {{ tabs(params, active=active, prefix=plot_id_base) }}
   {{ tabs_start() }}
   {% for param in params %}
-    {% set content = plot_func(plot_id_base + param.name, plot_name + param.name, **kwargs) %}
+    {% set content = plot_func(plot_id_base + param[attr], plot_name + param.name, **kwargs) %}
     {{ tab(param.id, content, active=active, prefix=plot_id_base) }}
   {% endfor %}
   {{ tabs_end() }}
