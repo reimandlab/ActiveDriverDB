@@ -52,8 +52,8 @@ class MotifAnalysisTest(DatabaseTest):
         db.session.commit()
 
         counts = count_muts_and_sites_from_query(Mutation.query, SiteType(name='xation'), motifs_db)
-        assert counts.muts_around_sites_with_motif == 3
-        assert counts.muts_breaking_sites_motif == 2
+        assert counts.muts_around_sites_with_motif['canonical'] == 3
+        assert counts.muts_breaking_sites_motif['canonical'] == 2
         assert counts.sites_with_broken_motif['canonical'] == {canonical_sites[0]}
         assert counts.sites_with_motif['canonical'] == set(canonical_sites)
 

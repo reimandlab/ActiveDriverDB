@@ -31,7 +31,10 @@
           xaxis: {{ x_axis | tojson }},
           boxmode: '{{ mode }}',
           title: '{{ title }}',
-          annotations: {{ annotations | tojson }}
+          annotations: {{ annotations | tojson }},
+          {% for attr, value in kwargs.items() %}
+            {{ attr }}: {{ value | tojson }},
+          {% endfor %}
       }
 
 
@@ -50,7 +53,10 @@
       var layout = {
           yaxis: {{ y_axis | tojson }},
           xaxis: {{ x_axis | tojson }},
-          title: '{{ title }}'
+          title: '{{ title }}',
+          {% for attr, value in kwargs.items() %}
+              {{ attr }}: {{ value | tojson }},
+          {% endfor %}
       }
 
 

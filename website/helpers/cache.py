@@ -38,6 +38,7 @@ def cache_decorator(cache: Cache) -> Callable:
             return cache[key]
 
         cache_manager.__name__ = f'cache_manager_of_{name}'
+        cache_manager.name = name
         cache_manager.clean = clean_cache
 
         return cache_manager

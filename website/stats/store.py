@@ -55,12 +55,14 @@ class Cases:
     def full_case_name(cls, kwargs):
         parts = []
         for case_name, case_value in kwargs.items():
-            part = case_value
+            part = str(case_value)
 
             if isinstance(case_value, bool):
                 part = f'{case_name}:{case_value}'
             elif hasattr(case_value, 'name'):
                 part = case_value.name
+            elif callable(case_value):
+                part = case_value.__name__
 
             parts.append(part)
         return '_'.join(parts)
@@ -98,7 +100,6 @@ class CountStore:
     def __init__(self):
         for name, member in self.members.items():
             for case_name, new_counter in Cases.iter_cases(member):
-                print(case_name, new_counter)
                 self.register(new_counter, name=f'{name}_{case_name}')
 
     @property

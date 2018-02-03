@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict, namedtuple
-from typing import Pattern, Iterable, Mapping
+from typing import Pattern, Iterable, Mapping, Union
 
 from flask_sqlalchemy import BaseQuery
 from tqdm import tqdm
@@ -19,14 +19,16 @@ def compile_motifs(motifs: dict):
     return motifs
 
 
-all_motifs = compile_motifs({
+raw_motifs = {
     # motifs or rather sequons:
     'glycosylation': {
         'N-glycosylation': 'N[^P][ST]',     # https://prosite.expasy.org/PDOC00001
         'Atypical N-glycosylation': 'N[^P][CV]',    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4721579/
         # 'O-glycosylation': ''
     }
-})
+}
+
+all_motifs = compile_motifs(raw_motifs)
 
 
 def has_motif(site_sequence: str, motif: Pattern) -> bool:
@@ -85,8 +87,8 @@ def count_muts_and_sites(mutations: Iterable, sites: Iterable, site_type: SiteTy
 
 def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db) -> MotifsRelatedCounts:
 
-    muts_around_sites_with_motif = 0
-    muts_breaking_sites_motif = 0
+    muts_around_sites_with_motif = defaultdict(int)
+    muts_breaking_sites_motif = defaultdict(int)
 
     sites_with_broken_motif = defaultdict(set)
 
@@ -100,13 +102,13 @@ def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db) -> M
 
             for motif_name, motif in site_specific_motifs.items():
                 if site in sites_with_motif[motif_name]:
-                    muts_around_sites_with_motif += 1
+                    muts_around_sites_with_motif[motif_name] += 1
 
                     mutated_sequence = mutate_sequence(site, mutation, offset=7)
 
                     if not has_motif(mutated_sequence, motif):
                         sites_with_broken_motif[motif_name].add(site)
-                        muts_breaking_sites_motif += 1
+                        muts_breaking_sites_motif[motif_name] += 1
 
     return MotifsRelatedCounts(
         sites_with_motif=sites_with_motif,
@@ -116,15 +118,19 @@ def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db) -> M
     )
 
 
-def count_by_source(source: MutationSource, site_type: SiteType):
+def count_by_source(source: MutationSource, site_type: SiteType, primary_isoforms=True):
 
-    return count_muts_and_sites_from_query(
-        Mutation.query.filter(Mutation.in_sources(source)),
-        site_type
-    )
+    query = Mutation.query.filter(Mutation.in_sources(source))
+
+    if primary_isoforms:
+        query = query.filter(Mutation.protein.is_preferred_isoform)
+
+    return count_muts_and_sites_from_query(query, site_type)
 
 
-def count_by_active_driver(site_type: SiteType, result: ActiveDriverResult, by_genes=False):
+def count_by_active_driver(
+    site_type: SiteType, result: ActiveDriverResult, by_genes=False
+) -> Union[MotifsRelatedCounts, Mapping[str, MotifsRelatedCounts]]:
 
     active_mutations = result['all_active_mutations']
     active_sites = result['all_active_sites']
@@ -132,6 +138,7 @@ def count_by_active_driver(site_type: SiteType, result: ActiveDriverResult, by_g
     mutations = []
     sites = []
     gene_protein = {}
+    counts_by_genes = {}
 
     for gene_name, group in tqdm(active_mutations.groupby('gene')):
         gene_mutations = []
@@ -169,12 +176,14 @@ def count_by_active_driver(site_type: SiteType, result: ActiveDriverResult, by_g
         ]
 
         if by_genes:
-            print(gene_name, count_muts_and_sites(gene_mutations, gene_sites, site_type))
+            counts_by_genes[gene_name] = count_muts_and_sites(gene_mutations, gene_sites, site_type)
         else:
             mutations.extend(gene_mutations)
             sites.extend(gene_sites)
 
-    if not by_genes:
+    if by_genes:
+        return counts_by_genes
+    else:
         return count_muts_and_sites(mutations, sites, site_type)
 
 
