@@ -5,9 +5,8 @@ from typing import Pattern, Iterable, Mapping, Union
 from flask_sqlalchemy import BaseQuery
 from tqdm import tqdm
 
-from analyses import active_driver
 from analyses.active_driver import ActiveDriverResult
-from models import Site, SiteType, Mutation, InheritedMutation, MC3Mutation, MutationDetails, MutationSource, Protein
+from models import Site, SiteType, Mutation, MutationSource, Protein
 
 
 def compile_motifs(motifs: dict):
@@ -20,11 +19,16 @@ def compile_motifs(motifs: dict):
 
 
 raw_motifs = {
-    # motifs or rather sequons:
     'glycosylation': {
-        'N-glycosylation': 'N[^P][ST]',     # https://prosite.expasy.org/PDOC00001
-        'Atypical N-glycosylation': 'N[^P][CV]',    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4721579/
-        # 'O-glycosylation': ''
+        # Sequons:
+        'N-glycosylation': '.{7}N[^P][ST].{5}',     # https://prosite.expasy.org/PDOC00001
+        'Atypical N-glycosylation': '.{7}N[^P][CV].{5}',    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4721579/
+
+        # Based on https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1301293/
+        'O-glycosylation TAPP': '.{7}TAPP',
+        'O-glycosylation TSAP': '.{7}TSAP',
+        'O-glycosylation TV.P': '.{7}TV.P',
+        'O-glycosylation [ST]P.P': '.{7}[ST]P.P',
     }
 }
 
@@ -67,7 +71,9 @@ def select_sites_with_motifs(sites: Iterable, motifs) -> Mapping[str, set]:
     return sites_with_motif
 
 
-def count_muts_and_sites_from_query(mutations: BaseQuery, site_type: SiteType, motifs_db=all_motifs) -> MotifsRelatedCounts:
+def count_muts_and_sites_from_query(
+    mutations: BaseQuery, site_type: SiteType, motifs_db=all_motifs
+) -> MotifsRelatedCounts:
 
     mutations_affecting_sites = mutations.filter(
         Mutation.affected_sites.any(Site.type.contains(site_type))
@@ -78,14 +84,16 @@ def count_muts_and_sites_from_query(mutations: BaseQuery, site_type: SiteType, m
     return count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db)
 
 
-def count_muts_and_sites(mutations: Iterable, sites: Iterable, site_type: SiteType, motifs_db=all_motifs) -> MotifsRelatedCounts:
+def count_muts_and_sites(
+    mutations: Iterable, sites: Iterable, site_type: SiteType, motifs_db=all_motifs, **kwargs
+) -> MotifsRelatedCounts:
 
     ptm_muts = len(mutations) if isinstance(mutations, list) else None
 
-    return count(mutations, ptm_muts, sites, site_type, motifs_db)
+    return count(mutations, ptm_muts, sites, site_type, motifs_db, **kwargs)
 
 
-def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db) -> MotifsRelatedCounts:
+def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db, mode='change_of_motif') -> MotifsRelatedCounts:
 
     muts_around_sites_with_motif = defaultdict(int)
     muts_breaking_sites_motif = defaultdict(int)
@@ -94,6 +102,19 @@ def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db) -> M
 
     site_specific_motifs = motifs_db[site_type.name]
     sites_with_motif = select_sites_with_motifs(sites, site_specific_motifs)
+
+    def change_of_motif(mutated_seq, motif):
+        return not has_motif(mutated_seq, motif)
+
+    def broken_motif(mutated_seq, _):
+        return not any(has_motif(mutated_seq, motif) for motif in site_specific_motifs.values())
+
+    breaking_modes = {
+        'change_of_motif': change_of_motif,
+        'broken_motif': broken_motif
+    }
+
+    is_affected = breaking_modes[mode]
 
     for mutation in tqdm(mutations_affecting_sites, total=ptm_muts):
         sites = mutation.affected_sites
@@ -106,7 +127,7 @@ def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db) -> M
 
                     mutated_sequence = mutate_sequence(site, mutation, offset=7)
 
-                    if not has_motif(mutated_sequence, motif):
+                    if is_affected(mutated_sequence, motif):
                         sites_with_broken_motif[motif_name].add(site)
                         muts_breaking_sites_motif[motif_name] += 1
 
@@ -129,7 +150,7 @@ def count_by_source(source: MutationSource, site_type: SiteType, primary_isoform
 
 
 def count_by_active_driver(
-    site_type: SiteType, result: ActiveDriverResult, by_genes=False
+    site_type: SiteType, result: ActiveDriverResult, by_genes=False, **kwargs
 ) -> Union[MotifsRelatedCounts, Mapping[str, MotifsRelatedCounts]]:
 
     active_mutations = result['all_active_mutations']
@@ -176,7 +197,7 @@ def count_by_active_driver(
         ]
 
         if by_genes:
-            counts_by_genes[gene_name] = count_muts_and_sites(gene_mutations, gene_sites, site_type)
+            counts_by_genes[gene_name] = count_muts_and_sites(gene_mutations, gene_sites, site_type, **kwargs)
         else:
             mutations.extend(gene_mutations)
             sites.extend(gene_sites)
@@ -184,18 +205,4 @@ def count_by_active_driver(
     if by_genes:
         return counts_by_genes
     else:
-        return count_muts_and_sites(mutations, sites, site_type)
-
-
-ad_analyses = [
-    active_driver.clinvar_analysis,
-    active_driver.pan_cancer_analysis
-]
-
-
-def motifs_in_active_driver(site_type: SiteType):
-    for analyses in ad_analyses:
-        for analysis in analyses:
-            result = analysis(site_type.name)
-            counts = count_by_active_driver(site_type, result, by_genes=True)
-            print(analysis, counts)
+        return count_muts_and_sites(mutations, sites, site_type, **kwargs)
