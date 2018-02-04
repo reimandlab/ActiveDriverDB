@@ -1,5 +1,6 @@
-{% macro venn(name, sets, elements_description='') %}
+{% macro venn(name, sets, title='', elements_description='') %}
 
+  <h4 class="text-center">{{ title }}</h4>
   <div id="venn_{{name}}"></div>
 
   <script>

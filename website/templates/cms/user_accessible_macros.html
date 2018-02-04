@@ -14,7 +14,7 @@
 
 
 {% macro tab(tab_id, content, active=None, prefix='') %}
-<div role="tabpanel" class="tab-pane fade {{ 'active' if tab_id == active }}" id="{{ prefix }}{{ tab_id }}">
+<div role="tabpanel" class="tab-pane {{ 'active' if tab_id == active }}" id="{{ prefix }}{{ tab_id }}">
   {{ content }}
 </div>
 {% endmacro %}
@@ -32,7 +32,7 @@
   {{ tabs(params, active=active, prefix=plot_id_base) }}
   {{ tabs_start() }}
   {% for param in params %}
-    {% set content = plot_func(plot_id_base + param[attr], plot_name + param.name, **kwargs) %}
+    {% set content = plot_func(plot_id_base + param[attr], title=plot_name + param.name, **kwargs) %}
     {{ tab(param.id, content, active=active, prefix=plot_id_base) }}
   {% endfor %}
   {{ tabs_end() }}
