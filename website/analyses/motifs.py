@@ -29,6 +29,10 @@ raw_motifs = {
         'O-glycosylation TSAP': '.{7}TSAP',
         'O-glycosylation TV.P': '.{7}TV.P',
         'O-glycosylation [ST]P.P': '.{7}[ST]P.P',
+
+        # https://www.uniprot.org/help/carbohyd
+        'C-linked W..W': '(.{7}W..W.{4}|.{4}W..W.{7})',
+        'C-linked W[ST].C': '.{7}W[ST].C{4}',
     }
 }
 
