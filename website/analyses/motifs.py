@@ -32,7 +32,7 @@ raw_motifs = {
 
         # https://www.uniprot.org/help/carbohyd
         'C-linked W..W': '(.{7}W..W.{4}|.{4}W..W.{7})',
-        'C-linked W[ST].C': '.{7}W[ST].C{4}',
+        'C-linked W[ST].C': '.{7}W[ST].C.{4}',
     }
 }
 
