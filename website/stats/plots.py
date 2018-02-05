@@ -276,7 +276,8 @@ class Plots(CountStore):
     analysis_cases = cases(
         site_type=site_types,
         analysis=active_driver_analyses,
-        mode=['change_of_motif', 'broken_motif']
+        only_significant_genes=[True, False],
+        mode=['broken_motif']   # 'change_of_motif'
     ).set_mode('cartesian_product')
 
     @staticmethod
@@ -340,10 +341,13 @@ class Plots(CountStore):
 
     @analysis_cases
     @stacked_bar_plot
-    def muts_breaking_motifs_in_active_driver(self, analysis, site_type, mode):
+    def muts_breaking_motifs_in_active_driver(self, analysis, site_type, mode, only_significant_genes):
         analysis_result = analysis(site_type)
 
-        counts_by_gene = count_by_active_driver(SiteType(name=site_type), analysis_result, by_genes=True, mode=mode)
+        counts_by_gene = count_by_active_driver(
+            SiteType(name=site_type), analysis_result, by_genes=True, mode=mode,
+            only_significant_genes=only_significant_genes
+        )
 
         # order by percentage
         genes_ordered = self.genes_by_ratio(counts_by_gene, 'muts_breaking_sites_motif', 'muts_around_sites_with_motif')
@@ -352,9 +356,12 @@ class Plots(CountStore):
 
     @analysis_cases
     @stacked_bar_plot
-    def broken_motifs_in_active_driver(self, analysis, site_type, mode):
+    def broken_motifs_in_active_driver(self, analysis, site_type, mode, only_significant_genes):
         analysis_result = analysis(site_type)
-        counts_by_gene = count_by_active_driver(SiteType(name=site_type), analysis_result, by_genes=True, mode=mode)
+        counts_by_gene = count_by_active_driver(
+            SiteType(name=site_type), analysis_result, by_genes=True, mode=mode,
+            only_significant_genes=only_significant_genes
+         )
 
         # order by percentage
         genes_ordered = self.genes_by_ratio(counts_by_gene, 'sites_with_broken_motif', 'sites_with_motif')

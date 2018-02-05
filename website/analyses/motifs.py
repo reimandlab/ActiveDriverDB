@@ -154,7 +154,8 @@ def count_by_source(source: MutationSource, site_type: SiteType, primary_isoform
 
 
 def count_by_active_driver(
-    site_type: SiteType, result: ActiveDriverResult, by_genes=False, **kwargs
+    site_type: SiteType, result: ActiveDriverResult, by_genes=False,
+    only_significant_genes=True, **kwargs
 ) -> Union[MotifsRelatedCounts, Mapping[str, MotifsRelatedCounts]]:
 
     active_mutations = result['all_active_mutations']
@@ -169,7 +170,7 @@ def count_by_active_driver(
 
     for gene_name, group in tqdm(active_mutations.groupby('gene')):
 
-        if gene_name not in genes_passing_threshold:
+        if only_significant_genes and gene_name not in genes_passing_threshold:
             continue
 
         gene_mutations = []
