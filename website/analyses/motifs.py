@@ -160,12 +160,18 @@ def count_by_active_driver(
     active_mutations = result['all_active_mutations']
     active_sites = result['all_active_sites']
 
+    genes_passing_threshold = result['top_fdr'].gene.values
+
     mutations = []
     sites = []
     gene_protein = {}
     counts_by_genes = {}
 
     for gene_name, group in tqdm(active_mutations.groupby('gene')):
+
+        if gene_name not in genes_passing_threshold:
+            continue
+
         gene_mutations = []
 
         if gene_name not in gene_protein:
