@@ -1643,7 +1643,7 @@ class Mutation(BioModel):
     vars().update(source_data_relationships)
 
     @classmethod
-    def get_source_model(cls, name):
+    def get_source_model(cls, name: str) -> MutationSource:
         for model in cls.source_specific_data:
             if model.name == name:
                 return model

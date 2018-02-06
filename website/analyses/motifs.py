@@ -77,8 +77,12 @@ def select_sites_with_motifs(sites: Iterable, motifs) -> Mapping[str, set]:
 
 def count_muts_and_sites(
     mutations: BaseQuery, sites: BaseQuery, site_type: SiteType, motifs_db=all_motifs,
-    mode='broken_motif', show_progress=True
+    mode='broken_motif', show_progress=True, occurrences_in: List[MutationSource]=None
 ) -> MotifsRelatedCounts:
+    """If occurrences_in is provided, the count of mutations will
+    represent number of occurrences of mutations in provided
+    sources, instead of number of distinct substitutions.
+    """
 
     mutations_affecting_sites = mutations.filter(
         Mutation.affected_sites.any(Site.type.contains(site_type))
@@ -103,6 +107,16 @@ def count_muts_and_sites(
         'broken_motif': broken_motif
     }
 
+    if occurrences_in:
+        def mutation_count(mut: Mutation):
+            return sum([
+                mut.sources_dict[source.name].get_value()
+                for source in occurrences_in
+            ])
+    else:
+        def mutation_count(mut):
+            return 1
+
     is_affected = breaking_modes[mode]
 
     if show_progress:
@@ -116,14 +130,15 @@ def count_muts_and_sites(
 
             for motif_name, motif in site_specific_motifs.items():
                 if site in sites_with_motif[motif_name]:
-                    muts_around_sites_with_motif[motif_name] += 1
+                    count = mutation_count(mutation)
+                    muts_around_sites_with_motif[motif_name] += count
 
                     mutated_sequence = mutate_sequence(site, mutation, offset=7)
 
                     if is_affected(mutated_sequence, motif):
                         sites_with_broken_motif[motif_name].add(site)
                         # TODO: mutation.source.count?
-                        muts_breaking_sites_motif[motif_name] += 1
+                        muts_breaking_sites_motif[motif_name] += count
 
     return MotifsRelatedCounts(
         sites_with_motif=sites_with_motif,

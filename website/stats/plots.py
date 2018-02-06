@@ -315,7 +315,14 @@ class Plots(CountStore):
     #
 
     @staticmethod
-    def genes_by_ratio(counts_by_gene, by, bg):
+    def genes_by_ratio(counts_by_gene, y_axis):
+
+        assert y_axis in ['sites', 'mutations']
+
+        if y_axis == 'sites':
+            by, bg = 'sites_with_broken_motif', 'sites_with_motif'
+        else:
+            by, bg = 'muts_breaking_sites_motif', 'muts_around_sites_with_motif'
 
         def sum_or_count(data):
             try:
@@ -374,52 +381,56 @@ class Plots(CountStore):
         return data
 
     motifs_cases = cases(
-        site_type=site_types,
-        sources=[[InheritedMutation], [MC3Mutation], [InheritedMutation, MC3Mutation]]
+        site_type=[SiteType(name='glycosylation')],
+        sources=[[InheritedMutation], [MC3Mutation], [InheritedMutation, MC3Mutation]],
+        count_method=['occurrences', 'distinct']
     ).set_mode('product')
 
-    @motifs_cases
-    @stacked_bar_plot
-    def muts_breaking_motifs(self, sources: List[MutationSource], site_type: SiteType):
-        counts_by_gene = count_by_sources(sources, site_type, by_genes=True)
-        genes_ordered = self.genes_by_ratio(counts_by_gene, 'muts_breaking_sites_motif', 'muts_around_sites_with_motif')
+    def calc_motifs(self, sources, site_type, count_method, y_axis: str):
+        kwargs = {}
+        if count_method == 'occurrences':
+            kwargs['occurrences_in'] = sources
+        counts_by_gene = count_by_sources(sources, site_type, by_genes=True, **kwargs)
+        genes_ordered = self.genes_by_ratio(counts_by_gene, y_axis)
         return self.prepare_motifs_plot(counts_by_gene, genes_ordered, site_type)
 
     @motifs_cases
     @stacked_bar_plot
-    def broken_motifs(self, sources: List[MutationSource], site_type: SiteType):
-        counts_by_gene = count_by_sources(sources, site_type, by_genes=True)
-        genes_ordered = self.genes_by_ratio(counts_by_gene, 'sites_with_broken_motif', 'sites_with_motif')
-        return self.prepare_motifs_plot(counts_by_gene, genes_ordered, site_type)
+    def muts_breaking_motifs(self, sources: List[MutationSource], site_type: SiteType, count_method: str):
+        return self.calc_motifs(sources, site_type, count_method, 'mutations')
+
+    @motifs_cases
+    @stacked_bar_plot
+    def broken_motifs(self, sources: List[MutationSource], site_type: SiteType, count_method: str):
+        return self.calc_motifs(sources, site_type, count_method, 'sites')
 
     analysis_cases = cases(
-        site_type=site_types,
+        site_type=[SiteType(name='glycosylation')],
         analysis=active_driver_analyses,
-        mode=['broken_motif']   # 'change_of_motif'
+        count_method=['occurrences', 'distinct']
     ).set_mode('product')
 
-    @analysis_cases
-    @stacked_bar_plot
-    def muts_breaking_motifs_in_active_driver(self, analysis, site_type: SiteType, mode):
+    def calc_motifs_in_active_driver(self, analysis, site_type, count_method: str, y_axis: str, mode='broken_motif'):
         analysis_result = analysis(site_type.name)
         source = active_driver_analyses[analysis]
 
-        counts_by_gene = count_by_active_driver(site_type, source, analysis_result, by_genes=True, mode=mode)
+        kwargs = {}
+        if count_method == 'occurrences':
+            kwargs['occurrences_in'] = [source]
+
+        counts_by_gene = count_by_active_driver(site_type, source, analysis_result, by_genes=True, mode=mode, **kwargs)
 
         # order by percentage
-        genes_ordered = self.genes_by_ratio(counts_by_gene, 'muts_breaking_sites_motif', 'muts_around_sites_with_motif')
+        genes_ordered = self.genes_by_ratio(counts_by_gene, y_axis)
 
-        return self.prepare_motifs_plot(counts_by_gene, genes_ordered, site_type)
+        return self.prepare_motifs_plot(counts_by_gene, genes_ordered, site_type, y_axis=y_axis)
 
     @analysis_cases
     @stacked_bar_plot
-    def broken_motifs_in_active_driver(self, analysis, site_type: SiteType, mode):
-        analysis_result = analysis(site_type.name)
-        source = active_driver_analyses[analysis]
-        counts_by_gene = count_by_active_driver(site_type, source, analysis_result, by_genes=True, mode=mode)
+    def muts_breaking_motifs_in_active_driver(self, analysis, site_type: SiteType, count_method: str):
+        return self.calc_motifs_in_active_driver(analysis, site_type, count_method, 'mutations')
 
-        # order by percentage
-        genes_ordered = self.genes_by_ratio(counts_by_gene, 'sites_with_broken_motif', 'sites_with_motif')
-
-        return self.prepare_motifs_plot(counts_by_gene, genes_ordered, site_type, y_axis='sites')
-
+    @analysis_cases
+    @stacked_bar_plot
+    def broken_motifs_in_active_driver(self, analysis, site_type: SiteType, count_method: str):
+        return self.calc_motifs_in_active_driver(analysis, site_type, count_method, 'sites')
