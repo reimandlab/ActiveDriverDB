@@ -110,7 +110,7 @@ def count_muts_and_sites(
     if occurrences_in:
         def mutation_count(mut: Mutation):
             return sum([
-                mut.sources_dict[source.name].get_value()
+                mut.sources_dict[source.name].get_value() if source.name in mut.sources_dict else 0
                 for source in occurrences_in
             ])
     else:
