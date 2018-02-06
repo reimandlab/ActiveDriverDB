@@ -97,3 +97,6 @@ sudo apt-get install r-base
 cd website
 git clone https://github.com/krassowski/ActiveDriver
 cd ..
+
+# needed only if using sqlite3 for tests
+sudo apt-get install sqlite3-pcre

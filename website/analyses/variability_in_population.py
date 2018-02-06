@@ -6,14 +6,17 @@ from tqdm import tqdm
 
 from database import db
 from helpers.cache import cache_decorator
-from models import Mutation, Protein, Site, ExomeSequencingMutation, The1000GenomesMutation
+from models import Mutation, Protein, Site, ExomeSequencingMutation, The1000GenomesMutation, and_
 
 cached = cache_decorator(Cache('.variability_cache'))
 population_sources = [ExomeSequencingMutation, The1000GenomesMutation]
 wilcox = r['wilcox.test']
 
 
-def variability_in_population(source, site_type=None, protein_subset=None, rare_threshold=0.5, only_primary=True):
+def variability_in_population(
+    source, site_type=None, protein_subset=None, rare_threshold=0.5,
+    only_primary=True, site_motif=None
+):
 
     all_muts = func.count(distinct(Mutation.id)).label('muts_cnt')
 
@@ -37,9 +40,15 @@ def variability_in_population(source, site_type=None, protein_subset=None, rare_
     if site_type is None:
         query = query.filter(~Mutation.affected_sites.any())
     else:
-        query = query.filter(Mutation.affected_sites.any(
-            Site.type.contains(site_type)
-        ))
+        site_condition = Site.type.contains(site_type)
+
+        if site_motif:
+            site_condition = and_(
+                site_condition,
+                Site.has_motif(site_motif)
+            )
+
+        query = query.filter(Mutation.affected_sites.any(site_condition))
 
     if protein_subset:
         query = query.filter(Protein.id.in_(protein_subset))
@@ -47,7 +56,7 @@ def variability_in_population(source, site_type=None, protein_subset=None, rare_
     return query
 
 
-def proteins_variability(source, only_primary=True, site_type=None, without_sites=False, by_counts=False):
+def proteins_variability(source, only_primary=True, site_type=None, without_sites=False, by_counts=False, site_motif=None):
 
     if by_counts:
         variability_measure = func.count(distinct(source.id))
@@ -66,7 +75,18 @@ def proteins_variability(source, only_primary=True, site_type=None, without_site
 
     if site_type is not None:
         assert not without_sites
-        query = query.filter(Protein.sites.any(Site.type.contains(site_type)))
+
+        site_condition = Site.type.contains(site_type)
+        if site_motif:
+            site_condition = and_(
+                site_condition,
+                Site.has_motif(site_motif)
+            )
+
+        query = query.filter(Protein.sites.any(site_condition))
+
+    if site_motif is not None:
+        assert site_type
 
     if without_sites:
         query = query.filter(~Protein.sites.any())
@@ -76,13 +96,13 @@ def proteins_variability(source, only_primary=True, site_type=None, without_site
     return query
 
 
-def group_by_substitution_rates(source, only_primary=True, bins_count=100, by_frequency=False):
+def group_by_substitution_rates(source, only_primary=True, bins_count=100, by_frequency=False, site_type=None):
     # see http://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1004919#sec004:
     # "Global variation of PTM regions", though this operates only on mis-sense aminoacid substitutions
     # (non-sense and synonymous mutations are not considered)
     percentiles_per_bin = 100 / bins_count
 
-    protein_rates = proteins_variability(source, only_primary, by_counts=not by_frequency).all()
+    protein_rates = proteins_variability(source, only_primary, by_counts=not by_frequency, site_type=site_type).all()
 
     substitution_rates = [float(rate) for protein, rate in protein_rates]
 
@@ -110,7 +130,7 @@ def variability_vector(result, source):
 
 
 @cached
-def ptm_variability_population_rare_substitutions(site_type):
+def ptm_variability_population_rare_substitutions(site_type, motif=None):
     """Compare variability of sequence in PTM sites
     with the variability of sequence outside of PTM sites,
     using frequency of rare substitutions.
@@ -136,14 +156,15 @@ def ptm_variability_population_rare_substitutions(site_type):
 
             for protein_bin in tqdm(protein_bins[population_source]):
 
-                for percentage, muts_cout in variability_in_population(
+                for percentage, muts_count in variability_in_population(
                         population_source, site_type,
-                        protein_subset=protein_bin
+                        protein_subset=protein_bin,
+                        site_motif=motif
                 ):
-                    if muts_cout == 0:
+                    if muts_count == 0:
                         percentage = 0
                     variability.append(float(percentage))
-                    source_group_muts.append(muts_cout)
+                    source_group_muts.append(muts_count)
 
             result[population_source.name] = variability
             group_muts += source_group_muts
@@ -170,7 +191,7 @@ def does_median_differ_significances(results, paired=False):
 
 
 @cached
-def proteins_variability_by_ptm_presence(site_type, by_counts):
+def proteins_variability_by_ptm_presence(site_type, by_counts, site_motif=None):
     results = {}
 
     for group, without_ptm, site_type in [('Without PTM sites', True, None), ('With PTM sites', False, site_type)]:
@@ -180,7 +201,8 @@ def proteins_variability_by_ptm_presence(site_type, by_counts):
         for population_source in population_sources:
 
             rates = proteins_variability(
-                population_source, site_type=site_type, without_sites=without_ptm, by_counts=by_counts
+                population_source, site_type=site_type, without_sites=without_ptm, by_counts=by_counts,
+                site_motif=(site_motif if site_type else None)
             )
             proteins, variability = zip(*rates)
 

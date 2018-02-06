@@ -2,6 +2,7 @@ import re
 from functools import lru_cache, partial
 from itertools import product
 from types import FunctionType
+from warnings import warn
 
 from tqdm import tqdm
 
@@ -48,7 +49,7 @@ class Cases:
 
     modes = {
         'independent': independent_cases,
-        'cartesian_product': product_cases
+        'product': product_cases
     }
 
     @classmethod
@@ -63,6 +64,8 @@ class Cases:
                 part = case_value.name
             elif callable(case_value):
                 part = case_value.__name__
+            elif case_value in [None, '']:
+                continue
 
             parts.append(part)
         return '_'.join(parts)
@@ -95,12 +98,15 @@ class CountStore:
                 name = _counter.name
             else:
                 name = _counter.__name__
+        if name in self.__dict__:
+            warn(f'{name} was registered twice')
         self.__dict__[name] = _counter
 
     def __init__(self):
         for name, member in self.members.items():
             for case_name, new_counter in Cases.iter_cases(member):
-                self.register(new_counter, name=f'{name}_{case_name}')
+                full_name = name + ('_' + case_name if case_name else '')
+                self.register(new_counter, name=full_name)
 
     @property
     def members(self):

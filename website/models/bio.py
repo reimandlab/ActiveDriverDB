@@ -1,8 +1,9 @@
+import re
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from collections import UserList
 from functools import lru_cache
-from typing import List, Type
+from typing import Type
 
 from sqlalchemy import and_, distinct
 from sqlalchemy import case
@@ -20,6 +21,7 @@ from werkzeug.utils import cached_property
 from database import db, count_expression, client_side_defaults
 from database import fast_count
 from database.types import ScalarSet
+from database.functions import least, greatest
 from exceptions import ValidationError
 from helpers.models import generic_aggregator, association_table_super_factory
 from models import Model
@@ -759,6 +761,35 @@ class Site(BioModel):
     @hybrid_property
     def sequence(self):
         return self.get_nearby_sequence(offset=7)
+
+    @sequence.expression
+    def sequence(cls):
+        """Required joins: Protein"""
+        # SQL is 1 based
+        left = cls.position - 8
+
+        sequence = func.substr(
+            Protein.sequence,
+            greatest(cls.position - 7, 1),
+            least(
+                15 + least(left, 0),
+                func.length(Protein.sequence) - left
+            )
+        )
+        left_padding = func.substr('-------', 1, greatest(-left, 0))
+        right_padding = func.substr('-------', 1, greatest(
+            cls.position + 8 - func.length(Protein.sequence), 0)
+        )
+        return left_padding.concat(sequence).concat(right_padding)
+
+    @hybrid_method
+    def has_motif(self, motif):
+        return re.match(motif, self.sequence)
+
+    @has_motif.expression
+    def has_motif(cls, motif):
+        """Required joins: Protein"""
+        return cls.sequence.op('regexp')(motif)
 
     @hybrid_property
     def mutations(self):

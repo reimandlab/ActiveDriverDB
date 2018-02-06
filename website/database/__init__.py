@@ -1,4 +1,5 @@
 from sqlalchemy import inspect
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import func
@@ -169,7 +170,7 @@ def create_key_model_dict(model, key, lowercase=False, options=None, progress=Tr
         return {k: m for k, m in query}
 
 
-def get_engine(bind_key, app=None):
+def get_engine(bind_key, app=None) -> Engine:
     if not app:
         from flask import current_app
         app = current_app

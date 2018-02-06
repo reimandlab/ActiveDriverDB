@@ -130,44 +130,73 @@ active_driver_analyses = [
 ]
 
 
+class Motif:
+
+    def __init__(self, name, pattern):
+        self.name = name
+        self.pattern = pattern
+
+
 class Plots(CountStore):
 
     storage_model = Plot
 
-    @cases(site_type=Site.types())
+    @cases(site_type=site_types)
     @counter
     @grouped_box_plot
     def ptm_variability_population_rare_substitutions(self, site_type=any_site_type):
-        results = ptm_variability_population_rare_substitutions(site_type)
-        return results
+        return ptm_variability_population_rare_substitutions(site_type)
 
-    @cases(site_type=Site.types())
+    @cases(site_type=site_types)
     @counter
     def ptm_variability_population_rare_substitutions_significance(self, site_type=any_site_type):
         results = ptm_variability_population_rare_substitutions(site_type)
         significances = does_median_differ_significances(results, paired=True)
         return p_value_annotations(results, significances)
 
-    @cases(site_type=Site.types(), by_counts=[True])
-    @counter
-    @grouped_box_plot
-    def proteins_variability_by_ptm_presence(self, site_type=any_site_type, by_counts=False):
-        results = proteins_variability_by_ptm_presence(site_type, by_counts)
-        return results
+    motifs = [
+        Motif(pattern='.{7}N[^P][STCV].{5}', name='n_linked'),
+        Motif(pattern='.{7}(TAPP|TSAPP|TV.P|[ST].P).{4}', name='o_linked'),
+        Motif(pattern='(.{7}W..W.{4}|.{4}W..W.{7}|.{7}W[ST].C.{4})', name='c_linked')
+    ]
 
-    @cases(site_type=Site.types(), by_counts=[True])
-    @counter
-    def proteins_variability_by_ptm_presence_significance(self, site_type=any_site_type, by_counts=False):
+    @cases(motif=motifs)
+    @grouped_box_plot
+    def ptm_variability_population_rare_substitutions_glycosylation(self, motif):
+        return ptm_variability_population_rare_substitutions('glycosylation', motif)
+
+    variability_cases = cases(site_type=site_types + [any_site_type], by_counts=[None, True]).set_mode('product')
+
+    @variability_cases
+    @grouped_box_plot
+    def proteins_variability_by_ptm_presence(self, site_type, by_counts):
+        return proteins_variability_by_ptm_presence(site_type, by_counts)
+
+    glycosylation_motifs_cases = cases(by_counts=[None, True], motif=motifs).set_mode('product')
+
+    @glycosylation_motifs_cases
+    @grouped_box_plot
+    def proteins_variability_by_ptm_presence_glycosylation(self, by_counts, motif):
+        return proteins_variability_by_ptm_presence('glycosylation', by_counts, motif.pattern)
+
+    @variability_cases
+    def proteins_variability_by_ptm_presence_significance(self, site_type, by_counts):
         results = proteins_variability_by_ptm_presence(site_type, by_counts)
         significances = does_median_differ_significances(results)
         return p_value_annotations(results, significances)
 
-    @cases(site_type=Site.types())
+    @glycosylation_motifs_cases
+    def proteins_variability_by_ptm_presence_significance_glycosylation(self, by_counts, motif):
+        results = proteins_variability_by_ptm_presence('glycosylation', by_counts, motif.pattern)
+        significances = does_median_differ_significances(results)
+        return p_value_annotations(results, significances)
+
+    @cases(site_type=site_types)
     @counter
     def most_mutated_sites_mc3(self, site_type=any_site_type):
         return self.most_mutated_sites(MC3Mutation, site_type)
 
-    @cases(site_type=Site.types())
+    @cases(site_type=site_types)
     @counter
     def most_mutated_sites_clinvar(self, site_type=any_site_type):
         return self.most_mutated_sites(InheritedMutation, site_type)
@@ -262,7 +291,7 @@ class Plots(CountStore):
         result = clinvar_analysis(site_type)
         return self.active_driver_gene_ontology(result['profile_against_genes_with_sites'])
 
-    motifs_cases = cases(site_type=site_types, source=[InheritedMutation, MC3Mutation]).set_mode('cartesian_product')
+    motifs_cases = cases(site_type=site_types, source=[InheritedMutation, MC3Mutation]).set_mode('product')
 
     @motifs_cases
     def broken_motifs(self, source, site_type: str):
@@ -278,7 +307,7 @@ class Plots(CountStore):
         analysis=active_driver_analyses,
         only_significant_genes=[True, False],
         mode=['broken_motif']   # 'change_of_motif'
-    ).set_mode('cartesian_product')
+    ).set_mode('product')
 
     @staticmethod
     def genes_by_ratio(counts_by_gene, by, bg):

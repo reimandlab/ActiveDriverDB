@@ -1,10 +1,16 @@
 import pytest
-from database import db
+from database import db, get_engine
 from .model_testing import ModelTest
 
 from exceptions import ValidationError
-from models import Protein, SiteType
+from models import Protein, SiteType, func
 from models import Site
+
+
+def load_regex_support(engine):
+    if engine.name == 'sqlite':
+        engine.raw_connection().enable_load_extension(True)
+        engine.execute('select load_extension("/usr/lib/sqlite3/pcre.so")')
 
 
 class SiteTest(ModelTest):
@@ -52,9 +58,42 @@ class SiteTest(ModelTest):
             25: 'STUVWXYZ-------'
         }
 
+        sites = {}
+
+        for position in data:
+            sites[position] = Site(position=position + 1, type={'methylation'}, residue=p.sequence[position], protein=p)
+
+        db.session.add_all(sites.values())
+        db.session.commit()
+
         for position, expected_sequence in data.items():
-            site = Site(position=position + 1, type={'methylation'}, residue=p.sequence[position], protein=p)
+            site = sites[position]
+            # Python side
             assert site.sequence == expected_sequence
+            # SQL side
+            assert Site.query.filter_by(sequence=expected_sequence).one() == site
+
+        sequences = [s for (s, ) in db.session.query(Site.sequence).select_from(Site).join(Protein)]
+        assert set(sequences) == set(data.values())
+
+    def test_has_motif(self):
+
+        engine = get_engine('bio')
+        load_regex_support(engine)
+
+        p = Protein(refseq='NM_007', id=1, sequence='ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+        s = Site(position=3, residue='C', protein=p)
+
+        db.session.add(s)
+        db.session.commit()
+
+        # Python side
+        assert s.has_motif('.{7}C[DX].{6}')
+        assert not s.has_motif('.{7}C[XY].{6}')
+
+        # SQL side
+        assert Site.query.filter(Site.has_motif('.{7}C[DX].{6}')).one()
+        assert not Site.query.filter(Site.has_motif('.{7}C[XY].{6}')).all()
 
     def test_types(self):
 
