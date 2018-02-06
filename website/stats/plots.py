@@ -1,9 +1,9 @@
-from typing import Mapping, Iterable
+from typing import Mapping, Iterable, List
 
 from numpy import percentile, nan
 from pandas import DataFrame
 
-from analyses.motifs import count_by_source, count_by_active_driver, all_motifs
+from analyses.motifs import count_by_active_driver, all_motifs, count_by_sources
 from analyses.variability_in_population import (
     ptm_variability_population_rare_substitutions,
     does_median_differ_significances,
@@ -17,6 +17,7 @@ from models import (
     Mutation,
     func,
     SiteType,
+    MutationSource,
 )
 from analyses.active_driver import pan_cancer_analysis, per_cancer_analysis, clinvar_analysis
 from .store import CountStore, counter, cases
@@ -92,7 +93,8 @@ bar_plot = as_decorator(bar_plot, unpack=True)
 stacked_bar_plot = as_decorator(stacked_bar_plot)
 
 
-site_types = Site.types()
+site_types_names = Site.types()
+site_types = [SiteType(name=name) for name in site_types_names]
 any_site_type = ''
 
 
@@ -120,14 +122,15 @@ def named(func, name):
     return func
 
 
-active_driver_analyses = [
-    pan_cancer_analysis,
-    clinvar_analysis,
-    *(
-        named(lambda site_type: per_cancer_analysis(site_type)[cancer.code], f'per_cancer_analysis_{cancer.code}')
+active_driver_analyses = {
+    # analysis -> mutation source
+    pan_cancer_analysis: MC3Mutation,
+    clinvar_analysis: InheritedMutation,
+    **{
+        named(lambda site_type: per_cancer_analysis(site_type)[cancer.code], f'per_cancer_analysis_{cancer.code}'): MC3Mutation
         for cancer in Cancer.query
-    )
-]
+    }
+}
 
 
 class Motif:
@@ -141,13 +144,13 @@ class Plots(CountStore):
 
     storage_model = Plot
 
-    @cases(site_type=site_types)
+    @cases(site_type=site_types_names)
     @counter
     @grouped_box_plot
     def ptm_variability_population_rare_substitutions(self, site_type=any_site_type):
         return ptm_variability_population_rare_substitutions(site_type)
 
-    @cases(site_type=site_types)
+    @cases(site_type=site_types_names)
     @counter
     def ptm_variability_population_rare_substitutions_significance(self, site_type=any_site_type):
         results = ptm_variability_population_rare_substitutions(site_type)
@@ -165,7 +168,11 @@ class Plots(CountStore):
     def ptm_variability_population_rare_substitutions_glycosylation(self, motif):
         return ptm_variability_population_rare_substitutions('glycosylation', motif)
 
-    variability_cases = cases(site_type=site_types + [any_site_type], by_counts=[None, True]).set_mode('product')
+    #
+    # PROTEINS VARIABILITY
+    #
+
+    variability_cases = cases(site_type=site_types_names + [any_site_type], by_counts=[None, True]).set_mode('product')
 
     @variability_cases
     @grouped_box_plot
@@ -191,12 +198,16 @@ class Plots(CountStore):
         significances = does_median_differ_significances(results)
         return p_value_annotations(results, significances)
 
-    @cases(site_type=site_types)
+    #
+    # MUTATED SITES
+    #
+
+    @cases(site_type=site_types_names)
     @counter
     def most_mutated_sites_mc3(self, site_type=any_site_type):
         return self.most_mutated_sites(MC3Mutation, site_type)
 
-    @cases(site_type=site_types)
+    @cases(site_type=site_types_names)
     @counter
     def most_mutated_sites_clinvar(self, site_type=any_site_type):
         return self.most_mutated_sites(InheritedMutation, site_type)
@@ -209,6 +220,10 @@ class Plots(CountStore):
         sites, counts = zip(*most_mutated_sites(source, site_type, limit=20).all())
 
         return [f'{site.protein.gene_name} {site.position}{site.residue}' for site in sites], counts
+
+    #
+    # ACTIVE DRIVER
+    #
 
     @staticmethod
     def count_mutations_by_gene(source, genes, site_type, filters=None):
@@ -234,14 +249,14 @@ class Plots(CountStore):
         mutation_counts = self.count_mutations_by_gene(source, top_fdr.gene, site_type, filters)
         return top_fdr.gene, mutation_counts, [f'Mutations: {count}<br>FDR: {fdr}' for count, fdr in zip(top_fdr.fdr)]
 
-    @cases(site_type=site_types)
+    @cases(site_type=site_types_names)
     @counter
     @bar_plot
     def pan_cancer_active_driver(self, site_type=any_site_type):
         result = pan_cancer_analysis(site_type)
         return self.active_driver_by_muts_count(result, MC3Mutation, site_type)
 
-    @cases(site_type=site_types)
+    @cases(site_type=site_types_names)
     @counter
     @bar_plot
     def clinvar_active_driver(self, site_type=any_site_type):
@@ -259,6 +274,10 @@ class Plots(CountStore):
             return [], []
         return self.active_driver_by_muts_count(result, MC3Mutation, site_type, MC3Mutation.cancer_code == cancer_code)
 
+    #
+    # GENE ONTOLOGY
+    #
+
     @staticmethod
     @bar_plot
     def active_driver_gene_ontology(profile: DataFrame):
@@ -269,45 +288,31 @@ class Plots(CountStore):
             for qt, p in zip(profile['Q&T'], profile['p-value'])
         ]
 
-    @cases(site_type=site_types)
+    @cases(site_type=site_types_names)
     @counter
     def pan_cancer_active_driver_gene_ontology(self, site_type=any_site_type):
         result = pan_cancer_analysis(site_type)
         return self.active_driver_gene_ontology(result['profile'])
 
-    @cases(site_type=site_types)
+    @cases(site_type=site_types_names)
     @counter
     def clinvar_active_driver_gene_ontology(self, site_type=any_site_type):
         result = clinvar_analysis(site_type)
         return self.active_driver_gene_ontology(result['profile'])
 
-    @cases(site_type=site_types)
+    @cases(site_type=site_types_names)
     def pan_cancer_active_driver_gene_ontology_with_bg(self, site_type=any_site_type):
         result = pan_cancer_analysis(site_type)
         return self.active_driver_gene_ontology(result['profile_against_genes_with_sites'])
 
-    @cases(site_type=site_types)
+    @cases(site_type=site_types_names)
     def clinvar_active_driver_gene_ontology_with_bg(self, site_type=any_site_type):
         result = clinvar_analysis(site_type)
         return self.active_driver_gene_ontology(result['profile_against_genes_with_sites'])
 
-    motifs_cases = cases(site_type=site_types, source=[InheritedMutation, MC3Mutation]).set_mode('product')
-
-    @motifs_cases
-    def broken_motifs(self, source, site_type: str):
-        result = count_by_source(source, SiteType(name=site_type))
-        # new function?
-        for sites_dict in [result.sites_with_motif, result.sites_with_broken_motif]:
-            for motif, sites in sites_dict.items():
-                sites_dict[motif] = len(sites)
-        return result
-
-    analysis_cases = cases(
-        site_type=site_types,
-        analysis=active_driver_analyses,
-        only_significant_genes=[True, False],
-        mode=['broken_motif']   # 'change_of_motif'
-    ).set_mode('product')
+    #
+    # MOTIFS
+    #
 
     @staticmethod
     def genes_by_ratio(counts_by_gene, by, bg):
@@ -329,12 +334,12 @@ class Plots(CountStore):
         return genes_ordered
 
     @staticmethod
-    def prepare_motifs_plot(counts_by_gene, genes_ordered, site_type, y_axis='mutations'):
+    def prepare_motifs_plot(counts_by_gene, genes_ordered, site_type: SiteType, y_axis='mutations'):
 
         # bars = genes, stacks = motifs
         data = {}
 
-        for motif in all_motifs[site_type].keys():
+        for motif in all_motifs[site_type.name].keys():
 
             y = []
             comments = []
@@ -368,15 +373,38 @@ class Plots(CountStore):
             data[motif] = genes_ordered, y, comments
         return data
 
+    motifs_cases = cases(
+        site_type=site_types,
+        sources=[[InheritedMutation], [MC3Mutation], [InheritedMutation, MC3Mutation]]
+    ).set_mode('product')
+
+    @motifs_cases
+    @stacked_bar_plot
+    def muts_breaking_motifs(self, sources: List[MutationSource], site_type: SiteType):
+        counts_by_gene = count_by_sources(sources, site_type, by_genes=True)
+        genes_ordered = self.genes_by_ratio(counts_by_gene, 'muts_breaking_sites_motif', 'muts_around_sites_with_motif')
+        return self.prepare_motifs_plot(counts_by_gene, genes_ordered, site_type)
+
+    @motifs_cases
+    @stacked_bar_plot
+    def broken_motifs(self, sources: List[MutationSource], site_type: SiteType):
+        counts_by_gene = count_by_sources(sources, site_type, by_genes=True)
+        genes_ordered = self.genes_by_ratio(counts_by_gene, 'sites_with_broken_motif', 'sites_with_motif')
+        return self.prepare_motifs_plot(counts_by_gene, genes_ordered, site_type)
+
+    analysis_cases = cases(
+        site_type=site_types,
+        analysis=active_driver_analyses,
+        mode=['broken_motif']   # 'change_of_motif'
+    ).set_mode('product')
+
     @analysis_cases
     @stacked_bar_plot
-    def muts_breaking_motifs_in_active_driver(self, analysis, site_type, mode, only_significant_genes):
-        analysis_result = analysis(site_type)
+    def muts_breaking_motifs_in_active_driver(self, analysis, site_type: SiteType, mode):
+        analysis_result = analysis(site_type.name)
+        source = active_driver_analyses[analysis]
 
-        counts_by_gene = count_by_active_driver(
-            SiteType(name=site_type), analysis_result, by_genes=True, mode=mode,
-            only_significant_genes=only_significant_genes
-        )
+        counts_by_gene = count_by_active_driver(site_type, source, analysis_result, by_genes=True, mode=mode)
 
         # order by percentage
         genes_ordered = self.genes_by_ratio(counts_by_gene, 'muts_breaking_sites_motif', 'muts_around_sites_with_motif')
@@ -385,12 +413,10 @@ class Plots(CountStore):
 
     @analysis_cases
     @stacked_bar_plot
-    def broken_motifs_in_active_driver(self, analysis, site_type, mode, only_significant_genes):
-        analysis_result = analysis(site_type)
-        counts_by_gene = count_by_active_driver(
-            SiteType(name=site_type), analysis_result, by_genes=True, mode=mode,
-            only_significant_genes=only_significant_genes
-         )
+    def broken_motifs_in_active_driver(self, analysis, site_type: SiteType, mode):
+        analysis_result = analysis(site_type.name)
+        source = active_driver_analyses[analysis]
+        counts_by_gene = count_by_active_driver(site_type, source, analysis_result, by_genes=True, mode=mode)
 
         # order by percentage
         genes_ordered = self.genes_by_ratio(counts_by_gene, 'sites_with_broken_motif', 'sites_with_motif')

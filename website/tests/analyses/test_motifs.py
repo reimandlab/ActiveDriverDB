@@ -1,5 +1,5 @@
 from analyses.motifs import (
-    count_muts_and_sites, compile_motifs, mutate_sequence, count_muts_and_sites_from_query,
+    count_muts_and_sites, compile_motifs, mutate_sequence, count_muts_and_sites,
     select_sites_with_motifs,
 )
 from database import db
@@ -39,27 +39,25 @@ class MotifAnalysisTest(DatabaseTest):
             Mutation(protein=p, position=2, alt='Y'),   # direct, breaking
         ]
 
+        xation = SiteType(name='xation')
+
         canonical_sites = [
-            Site(protein=p, position=2, type={'xation'}),     # canonical, seriously mutated and broken
-            Site(protein=p, position=12, type={'xation'}),    # canonical, not mutated
+            Site(protein=p, position=2, type={xation}),     # canonical, seriously mutated and broken
+            Site(protein=p, position=12, type={xation}),    # canonical, not mutated
         ]
         other_sites = [
-            Site(protein=p, position=22, type={'xation'}),    # non-canonical motif, not mutated
+            Site(protein=p, position=22, type={xation}),    # non-canonical motif, not mutated
         ]
         all_sites = canonical_sites + other_sites
 
         db.session.add(p)
         db.session.commit()
 
-        counts = count_muts_and_sites_from_query(Mutation.query, SiteType(name='xation'), motifs_db)
+        counts = count_muts_and_sites(Mutation.query, Site.query, xation, motifs_db)
         assert counts.muts_around_sites_with_motif['canonical'] == 3
         assert counts.muts_breaking_sites_motif['canonical'] == 2
         assert counts.sites_with_broken_motif['canonical'] == {canonical_sites[0]}
         assert counts.sites_with_motif['canonical'] == set(canonical_sites)
-
-        counts_two = count_muts_and_sites(mutations, all_sites, SiteType(name='xation'), motifs_db)
-
-        assert counts == counts_two
 
         x_motifs = motifs_db['xation']
 

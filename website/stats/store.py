@@ -55,18 +55,25 @@ class Cases:
     @classmethod
     def full_case_name(cls, kwargs):
         parts = []
-        for case_name, case_value in kwargs.items():
-            part = str(case_value)
 
-            if isinstance(case_value, bool):
-                part = f'{case_name}:{case_value}'
+        def compose_name(name: str, value) -> str:
+
+            if isinstance(value, list):
+                return '_'.join([compose_name(name, v) for v in value])
+            if isinstance(value, bool):
+                return f'{name}:{value}'
             elif hasattr(case_value, 'name'):
-                part = case_value.name
-            elif callable(case_value):
-                part = case_value.__name__
-            elif case_value in [None, '']:
-                continue
+                return value.name
+            elif callable(value):
+                return value.__name__
+            elif value in [None, '']:
+                return
+            return str(value)
 
+        for case_name, case_value in kwargs.items():
+            part = compose_name(case_name, case_value)
+            if part is None:
+                continue
             parts.append(part)
         return '_'.join(parts)
 

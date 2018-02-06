@@ -1,12 +1,12 @@
 import re
 from collections import defaultdict, namedtuple
-from typing import Pattern, Iterable, Mapping, Union
+from typing import Pattern, Iterable, Mapping, Union, List
 
 from flask_sqlalchemy import BaseQuery
 from tqdm import tqdm
 
 from analyses.active_driver import ActiveDriverResult
-from models import Site, SiteType, Mutation, MutationSource, Protein
+from models import Site, SiteType, Mutation, MutationSource, Protein, Gene, or_
 
 
 def compile_motifs(motifs: dict):
@@ -75,29 +75,14 @@ def select_sites_with_motifs(sites: Iterable, motifs) -> Mapping[str, set]:
     return sites_with_motif
 
 
-def count_muts_and_sites_from_query(
-    mutations: BaseQuery, site_type: SiteType, motifs_db=all_motifs
+def count_muts_and_sites(
+    mutations: BaseQuery, sites: BaseQuery, site_type: SiteType, motifs_db=all_motifs,
+    mode='broken_motif', show_progress=True
 ) -> MotifsRelatedCounts:
 
     mutations_affecting_sites = mutations.filter(
         Mutation.affected_sites.any(Site.type.contains(site_type))
     )
-    ptm_muts = mutations_affecting_sites.count()
-    sites = Site.query.filter(Site.type.contains(site_type))
-
-    return count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db)
-
-
-def count_muts_and_sites(
-    mutations: Iterable, sites: Iterable, site_type: SiteType, motifs_db=all_motifs, **kwargs
-) -> MotifsRelatedCounts:
-
-    ptm_muts = len(mutations) if isinstance(mutations, list) else None
-
-    return count(mutations, ptm_muts, sites, site_type, motifs_db, **kwargs)
-
-
-def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db, mode='change_of_motif') -> MotifsRelatedCounts:
 
     muts_around_sites_with_motif = defaultdict(int)
     muts_breaking_sites_motif = defaultdict(int)
@@ -120,7 +105,11 @@ def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db, mode
 
     is_affected = breaking_modes[mode]
 
-    for mutation in tqdm(mutations_affecting_sites, total=ptm_muts):
+    if show_progress:
+        ptm_muts = mutations_affecting_sites.count()
+        mutations_affecting_sites = tqdm(mutations_affecting_sites, total=ptm_muts)
+
+    for mutation in mutations_affecting_sites:
         sites = mutation.affected_sites
 
         for site in sites:
@@ -133,6 +122,7 @@ def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db, mode
 
                     if is_affected(mutated_sequence, motif):
                         sites_with_broken_motif[motif_name].add(site)
+                        # TODO: mutation.source.count?
                         muts_breaking_sites_motif[motif_name] += 1
 
     return MotifsRelatedCounts(
@@ -143,77 +133,47 @@ def count(mutations_affecting_sites, ptm_muts, sites, site_type, motifs_db, mode
     )
 
 
-def count_by_source(source: MutationSource, site_type: SiteType, primary_isoforms=True):
+def count_by_sources(
+    sources: List[MutationSource], site_type: SiteType, primary_isoforms=True,
+    by_genes=True, genes=None, **kwargs
+):
 
-    query = Mutation.query.filter(Mutation.in_sources(source))
+    base_query = Mutation.query.filter(or_(
+        *[Mutation.in_sources(source) for source in sources]
+    ))
 
     if primary_isoforms:
-        query = query.filter(Mutation.protein.is_preferred_isoform)
+        base_query = base_query.join(Protein).filter(Protein.is_preferred_isoform)
 
-    return count_muts_and_sites_from_query(query, site_type)
+    sites = Site.query.filter(Site.type.contains(site_type))
+
+    if not by_genes:
+        return count_muts_and_sites(base_query, sites, site_type, **kwargs)
+
+    counts_by_genes = {}
+
+    if not genes:
+        genes = Gene.query.all()
+
+    for gene in tqdm(genes):
+
+        query = base_query.filter(Mutation.protein == gene.preferred_isoform)
+        gene_sites = sites.filter(Site.protein == gene.preferred_isoform)
+        counts_by_genes[gene.name] = count_muts_and_sites(
+            query, gene_sites, site_type, show_progress=False, **kwargs
+        )
+
+    return counts_by_genes
 
 
 def count_by_active_driver(
-    site_type: SiteType, result: ActiveDriverResult, by_genes=False,
-    only_significant_genes=True, **kwargs
+    site_type: SiteType, source: MutationSource,
+    result: ActiveDriverResult, by_genes=False, **kwargs
 ) -> Union[MotifsRelatedCounts, Mapping[str, MotifsRelatedCounts]]:
 
-    active_mutations = result['all_active_mutations']
-    active_sites = result['all_active_sites']
+    genes_passing_threshold = Gene.query.filter(Gene.name.in_(result['top_fdr'].gene.values)).all()
 
-    genes_passing_threshold = result['top_fdr'].gene.values
+    return count_by_sources(
+        [source], site_type, by_genes=by_genes, genes=genes_passing_threshold, **kwargs
+    )
 
-    mutations = []
-    sites = []
-    gene_protein = {}
-    counts_by_genes = {}
-
-    for gene_name, group in tqdm(active_mutations.groupby('gene')):
-
-        if only_significant_genes and gene_name not in genes_passing_threshold:
-            continue
-
-        gene_mutations = []
-
-        if gene_name not in gene_protein:
-            gene_protein[gene_name] = (
-                Protein.query
-                .filter(Protein.is_preferred_isoform)
-                .filter(Protein.gene_name == gene_name)
-                .one()
-            )
-
-        protein = gene_protein[gene_name]
-
-        for data in group.itertuples(index=False):
-
-            assert protein.refseq == data.isoform
-
-            mutation = (
-                Mutation.query
-                .filter(Mutation.protein == protein)
-                .filter_by(
-                    position=data.position,
-                    alt=data.mut_residue
-                ).one()
-            )
-
-            assert mutation.alt == data.mut_residue
-
-            gene_mutations.append(mutation)
-
-        gene_sites = [
-            Site.query.filter_by(protein=gene_protein[s.gene], position=s.position).one()
-            for s in active_sites.query('gene == @gene_name').itertuples(index=False)
-        ]
-
-        if by_genes:
-            counts_by_genes[gene_name] = count_muts_and_sites(gene_mutations, gene_sites, site_type, **kwargs)
-        else:
-            mutations.extend(gene_mutations)
-            sites.extend(gene_sites)
-
-    if by_genes:
-        return counts_by_genes
-    else:
-        return count_muts_and_sites(mutations, sites, site_type, **kwargs)
