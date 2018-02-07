@@ -166,7 +166,14 @@ class Plots(CountStore):
     @cases(motif=motifs)
     @grouped_box_plot
     def ptm_variability_population_rare_substitutions_glycosylation(self, motif):
-        return ptm_variability_population_rare_substitutions('glycosylation', motif)
+        return ptm_variability_population_rare_substitutions('glycosylation', motif.pattern)
+
+    @cases(motif=motifs)
+    @grouped_box_plot
+    def ptm_variability_population_rare_substitutions_significance_glycosylation(self, motif):
+        results = ptm_variability_population_rare_substitutions('glycosylation', motif.pattern)
+        significances = does_median_differ_significances(results, paired=True)
+        return p_value_annotations(results, significances)
 
     #
     # PROTEINS VARIABILITY
