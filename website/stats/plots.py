@@ -169,7 +169,6 @@ class Plots(CountStore):
         return ptm_variability_population_rare_substitutions('glycosylation', motif.pattern)
 
     @cases(motif=motifs)
-    @grouped_box_plot
     def ptm_variability_population_rare_substitutions_significance_glycosylation(self, motif):
         results = ptm_variability_population_rare_substitutions('glycosylation', motif.pattern)
         significances = does_median_differ_significances(results, paired=True)
@@ -397,6 +396,8 @@ class Plots(CountStore):
         kwargs = {}
         if count_method == 'occurrences':
             kwargs['occurrences_in'] = sources
+        if len(sources) > 1:
+            kwargs['intersection'] = sources
         counts_by_gene = count_by_sources(sources, site_type, by_genes=True, **kwargs)
         genes_ordered = self.genes_by_ratio(counts_by_gene, y_axis)
         return self.prepare_motifs_plot(counts_by_gene, genes_ordered, site_type)

@@ -6,7 +6,7 @@ from flask_sqlalchemy import BaseQuery
 from tqdm import tqdm
 
 from analyses.active_driver import ActiveDriverResult
-from models import Site, SiteType, Mutation, MutationSource, Protein, Gene, or_
+from models import Site, SiteType, Mutation, MutationSource, Protein, Gene, and_, or_
 
 
 def compile_motifs(motifs: dict):
@@ -77,12 +77,20 @@ def select_sites_with_motifs(sites: Iterable, motifs) -> Mapping[str, set]:
 
 def count_muts_and_sites(
     mutations: BaseQuery, sites: BaseQuery, site_type: SiteType, motifs_db=all_motifs,
-    mode='broken_motif', show_progress=True, occurrences_in: List[MutationSource]=None
+    mode='broken_motif', show_progress=True, occurrences_in: List[MutationSource]=None,
+    intersection=None
 ) -> MotifsRelatedCounts:
     """If occurrences_in is provided, the count of mutations will
     represent number of occurrences of mutations in provided
     sources, instead of number of distinct substitutions.
     """
+
+    if intersection:
+        accepted_sites = sites.join(Mutation.affected_sites).filter(and_(
+            *[Mutation.in_sources(source) for source in intersection]
+        )).all()
+    else:
+        accepted_sites = sites.all()
 
     mutations_affecting_sites = mutations.filter(
         Mutation.affected_sites.any(Site.type.contains(site_type))
@@ -94,7 +102,7 @@ def count_muts_and_sites(
     sites_with_broken_motif = defaultdict(set)
 
     site_specific_motifs = motifs_db[site_type.name]
-    sites_with_motif = select_sites_with_motifs(sites, site_specific_motifs)
+    sites_with_motif = select_sites_with_motifs(accepted_sites, site_specific_motifs)
 
     def change_of_motif(mutated_seq, motif):
         return not has_motif(mutated_seq, motif)
@@ -127,6 +135,8 @@ def count_muts_and_sites(
         sites = mutation.affected_sites
 
         for site in sites:
+            if site not in accepted_sites:
+                continue
 
             for motif_name, motif in site_specific_motifs.items():
                 if site in sites_with_motif[motif_name]:
