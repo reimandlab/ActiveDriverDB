@@ -281,7 +281,8 @@ bundles = {
     ),
     'js_page': js_bundle(
         'page',
-        'venn.js'
+        'venn.js',
+        'plots.js',
     ),
     'css_common': css_bundle(
         'style',
