@@ -1,7 +1,10 @@
-from typing import Mapping, Iterable, List
+from collections import defaultdict
+from typing import List
+from warnings import warn
 
-from numpy import percentile, nan
+from numpy import nan
 from pandas import DataFrame
+from tqdm import tqdm
 
 from analyses.motifs import count_by_active_driver, all_motifs, count_by_sources
 from analyses.variability_in_population import (
@@ -10,6 +13,7 @@ from analyses.variability_in_population import (
     proteins_variability_by_ptm_presence,
 )
 from database import db
+from helpers.plots import grouped_box_plot, bar_plot, stacked_bar_plot, p_value_annotations
 from models import (
     Plot, Site, MC3Mutation, InheritedMutation, Cancer,
     Gene,
@@ -22,99 +26,9 @@ from models import (
 from analyses.active_driver import pan_cancer_analysis, per_cancer_analysis, clinvar_analysis
 from .store import CountStore, counter, cases
 
-
-def bar_plot(labels: Iterable, values: Iterable, text: Iterable=None, name=None):
-    data = {
-        'x': list(labels),
-        'y': list(values),
-        'type': 'bar'
-    }
-    if text:
-        data['text'] = list(text)
-        data['hoverinfo'] = 'text'
-    if name:
-        data['name'] = name
-    return [data]
-
-
-def stacked_bar_plot(grouped_data):
-    traces = []
-    for name, group in grouped_data.items():
-        traces.append(bar_plot.plot(*group, name=name)[0])
-    return traces
-
-
-BoxSet = Mapping[str, list]
-
-
-def grouped_box_plot(boxes_by_group: Mapping[str, BoxSet]):
-
-    results = []
-
-    for group_name, boxes in boxes_by_group.items():
-        names = []
-        values = []
-
-        for box_name, box_values in boxes.items():
-
-            names += [box_name] * len(box_values)
-            values.extend(box_values)
-
-        result = {
-            'y': values,
-            'x': names,
-            'name': group_name,
-            'type': 'box'
-        }
-        results.append(result)
-
-    return results
-
-
-def as_decorator(plotting_func, unpack=False):
-    def decorator(data_func):
-
-        def data_func_with_plot(*args, **kwargs):
-            data = data_func(*args, **kwargs)
-            if unpack:
-                return plotting_func(*data)
-            else:
-                return plotting_func(data)
-
-        return data_func_with_plot
-
-    decorator.plot = plotting_func
-
-    return decorator
-
-
-grouped_box_plot = as_decorator(grouped_box_plot)
-bar_plot = as_decorator(bar_plot, unpack=True)
-stacked_bar_plot = as_decorator(stacked_bar_plot)
-
-
 site_types_names = Site.types()
 site_types = [SiteType(name=name) for name in site_types_names]
 any_site_type = ''
-
-
-def p_value_annotations(results, significances):
-    return [
-        {
-            'x': 1 * i,
-            'y': max(
-                percentile(
-                    [float(x) for x in result[population_source]],
-                    75
-                ) for result in results.values()
-            ) * 1.1,
-            'xref': 'x',
-            'yref': 'y',
-            'text': f'p-value: {significance:.2e}',
-            'showarrow': False
-        }
-        for i, (population_source, significance) in enumerate(significances.items())
-    ]
 
 
 def named(func, name):
@@ -127,7 +41,9 @@ active_driver_analyses = {
     pan_cancer_analysis: MC3Mutation,
     clinvar_analysis: InheritedMutation,
     **{
-        named(lambda site_type: per_cancer_analysis(site_type)[cancer.code], f'per_cancer_analysis_{cancer.code}'): MC3Mutation
+        named(
+            lambda site_type: per_cancer_analysis(site_type)[cancer.code], f'per_cancer_analysis_{cancer.code}'
+        ): MC3Mutation
         for cancer in Cancer.query
     }
 }
@@ -442,3 +358,26 @@ class Plots(CountStore):
     @stacked_bar_plot
     def broken_motifs_in_active_driver(self, analysis, site_type: SiteType, count_method: str):
         return self.calc_motifs_in_active_driver(analysis, site_type, count_method, 'sites')
+
+    @counter
+    @bar_plot
+    def sites_in_disordered_regions(self):
+        disordered = defaultdict(int)
+        not_disordered = defaultdict(int)
+
+        for site in tqdm(Site.query.all()):
+            for site_type in site.type:
+                try:
+                    if site.protein.disorder_map[site.position - 1] == '1':
+                        disordered[site_type] += 1
+                    else:
+                        not_disordered[site_type] += 1
+                except IndexError:
+                    warn(f"Disorder of {site.protein} does not include {site.position}")
+
+        values = [
+            100 * disordered[site_type] / (disordered[site_type] + not_disordered[site_type])
+            for site_type in site_types_names
+        ]
+
+        return site_types_names, values
