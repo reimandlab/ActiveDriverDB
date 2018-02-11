@@ -359,13 +359,17 @@ class Plots(CountStore):
     def broken_motifs_in_active_driver(self, analysis, site_type: SiteType, count_method: str):
         return self.calc_motifs_in_active_driver(analysis, site_type, count_method, 'sites')
 
-    @counter
+    @cases(only_preferred=[True, False])
     @bar_plot
-    def sites_in_disordered_regions(self):
+    def sites_in_disordered_regions(self, only_preferred):
         disordered = defaultdict(int)
         not_disordered = defaultdict(int)
 
-        for site in tqdm(Site.query.all()):
+        query = Site.query
+        if only_preferred:
+            query = query.join(Protein).filter(Protein.is_preferred_isoform)
+
+        for site in tqdm(query.all()):
             for site_type in site.type:
                 try:
                     if site.protein.disorder_map[site.position - 1] == '1':
@@ -381,3 +385,18 @@ class Plots(CountStore):
         ]
 
         return site_types_names, values
+
+    @cases(only_preferred=[True, False])
+    @bar_plot
+    def sites_counts(self, only_preferred):
+        counts = defaultdict(int)
+
+        query = Site.query
+        if only_preferred:
+            query = query.join(Protein).filter(Protein.is_preferred_isoform)
+
+        for site in tqdm(query.all()):
+            for site_type in site.type:
+                counts[site_type] += 1
+
+        return site_types_names, [counts[site_type] for site_type in site_types_names]
