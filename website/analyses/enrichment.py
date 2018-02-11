@@ -179,6 +179,17 @@ def test_ptm_enrichment():
     return clinvar_result, tcga_result
 
 
+def test_enrichment_against_source(ptm_muts_count: int, all_muts_count: int, source=The1000GenomesMutation):
+    ref_genes = get_genes_with_mutations_from_sources([source], only_genes_with_ptm_sites=True)
+    reference_mutations = get_confirmed_mutations([source], genes=ref_genes)
+
+    result = test_enrichment_of_ptm_mutations_among_mutations_subset(
+        None, reference_mutations, subset_size=all_muts_count, subset_ptms=ptm_muts_count
+    )
+
+    return result
+
+
 def parametric_test_ptm_enrichment(tested_source, reference_source, tested_genes, ref_genes):
     """Uses only mutations from primary isoforms."""
 
