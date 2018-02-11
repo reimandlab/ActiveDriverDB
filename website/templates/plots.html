@@ -39,7 +39,7 @@
       }
 
 
-      Plotly.newPlot('box_plot_{{ name }}', data, layout, {displaylogo: false});
+      plot('box_plot_{{ name }}', data, layout);
   </script>
 
 {% endmacro %}
@@ -61,7 +61,7 @@
       }
 
 
-      Plotly.newPlot('bar_plot_{{ name }}', data, layout, {displaylogo: false});
+      plot('bar_plot_{{ name }}', data, layout);
   </script>
 
 {% endmacro %}
