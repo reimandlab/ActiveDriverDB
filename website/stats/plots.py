@@ -262,8 +262,10 @@ class Plots(CountStore):
         genes_ordered = sorted(ratio_and_count, key=ratio_and_count.get, reverse=True)
         return genes_ordered
 
-    @staticmethod
-    def prepare_motifs_plot(counts_by_gene, genes_ordered, site_type: SiteType, y_axis='mutations'):
+    def prepare_motifs_plot(self, counts_by_gene, site_type: SiteType, y_axis: str):
+
+        # order by percentage
+        genes_ordered = self.genes_by_ratio(counts_by_gene, y_axis)
 
         # bars = genes, stacks = motifs
         data = {}
@@ -315,8 +317,8 @@ class Plots(CountStore):
         if len(sources) > 1:
             kwargs['intersection'] = sources
         counts_by_gene = count_by_sources(sources, site_type, by_genes=True, **kwargs)
-        genes_ordered = self.genes_by_ratio(counts_by_gene, y_axis)
-        return self.prepare_motifs_plot(counts_by_gene, genes_ordered, site_type)
+
+        return self.prepare_motifs_plot(counts_by_gene, site_type, y_axis)
 
     @motifs_cases
     @stacked_bar_plot
@@ -344,10 +346,7 @@ class Plots(CountStore):
 
         counts_by_gene = count_by_active_driver(site_type, source, analysis_result, by_genes=True, mode=mode, **kwargs)
 
-        # order by percentage
-        genes_ordered = self.genes_by_ratio(counts_by_gene, y_axis)
-
-        return self.prepare_motifs_plot(counts_by_gene, genes_ordered, site_type, y_axis=y_axis)
+        return self.prepare_motifs_plot(counts_by_gene, site_type, y_axis)
 
     @analysis_cases
     @stacked_bar_plot
