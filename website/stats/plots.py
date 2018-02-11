@@ -336,7 +336,7 @@ class Plots(CountStore):
         count_method=['occurrences', 'distinct']
     ).set_mode('product')
 
-    def calc_motifs_in_active_driver(self, analysis, site_type, count_method: str, y_axis: str, mode='broken_motif'):
+    def calc_motifs_in_active_driver(self, analysis, site_type, count_method: str, y_axis: str):
         analysis_result = analysis(site_type.name)
         source = active_driver_analyses[analysis]
 
@@ -344,7 +344,7 @@ class Plots(CountStore):
         if count_method == 'occurrences':
             kwargs['occurrences_in'] = [source]
 
-        counts_by_gene = count_by_active_driver(site_type, source, analysis_result, by_genes=True, mode=mode, **kwargs)
+        counts_by_gene = count_by_active_driver(site_type, source, analysis_result, by_genes=True, **kwargs)
 
         return self.prepare_motifs_plot(counts_by_gene, site_type, y_axis)
 
