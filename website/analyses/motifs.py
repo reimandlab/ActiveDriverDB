@@ -162,14 +162,14 @@ class MotifsCounter:
         return MotifsRelatedCounts(
             sites_with_motif=sites_with_motif,
             sites_with_broken_motif=sites_with_broken_motif,
-            muts_around_sites_with_motif={
+            muts_around_sites_with_motif=defaultdict(int, {
                 motif: sum(counts_by_mutations.values())
                 for motif, counts_by_mutations in muts_around_sites_with_motif.items()
-            },
-            muts_breaking_sites_motif={
+            }),
+            muts_breaking_sites_motif=defaultdict(int, {
                 motif: sum(counts_by_mutations.values())
                 for motif, counts_by_mutations in muts_breaking_sites_motif.items()
-            }
+            })
         )
 
 
