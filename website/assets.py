@@ -281,6 +281,7 @@ bundles = {
     ),
     'js_page': js_bundle(
         'page',
+        'export.js',
         'venn.js',
         'plots.js',
     ),

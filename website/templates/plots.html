@@ -1,13 +1,20 @@
 {% macro venn(name, sets, title='', elements_description='') %}
 
   <h4 class="text-center">{{ title }}</h4>
-  <div id="venn_{{name}}"></div>
+  <div>
+    <button type="button" class="btn btn-default save_venn_btn" id="venn_{{ name }}_btn">
+      <span class="glyphicon glyphicon-camera"></span>
+    </button>
+    <div id="venn_{{name}}" class="venn"></div>
+  </div>
+
 
   <script>
     var sets = {{ sets | tojson }};
     var chart = venn.VennDiagram();
 
-    var div = d3.select("#venn_{{name}}").attr("class", "venn")
+    var name = "#venn_{{name}}"
+    var div = d3.select(name)
     div.datum(sets).call(chart)
 
     div.selectAll("path")
@@ -16,6 +23,12 @@
         .style("stroke-width", 3)
 
     add_venn_tooltip(div, '{{elements_description}}')
+
+    var exporter = Export();
+
+    exporter.init($(name).get(0), '{{ title }}', null, null, '*{font-family:sans}')
+    $(name + '_btn').click(exporter.export_svg)
+
   </script>
 
 {% endmacro %}

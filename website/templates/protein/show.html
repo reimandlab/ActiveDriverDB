@@ -290,6 +290,7 @@
     );
 
     var mutation_table = MutationTable();
+    var exporter = Export()
 
     var $table_wrapper = $('#table-wrapper');
 
@@ -298,7 +299,7 @@
     {% endraw %}
 
     {% assets "css_protein" %}
-        Export.init(
+        exporter.init(
             plot,
             'protein_view:{{ protein.gene.name }}-{{ protein.refseq }}-{{ filters.url_string(expanded=True) }}',
             '{{ ASSET_URL }}'
@@ -326,7 +327,7 @@
     {
         short_url.reset();
 
-        Export.update_title(
+        exporter.update_title(
             format(
                 export_title_pattern,
                 {
