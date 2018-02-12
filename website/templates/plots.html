@@ -33,9 +33,13 @@
 
 {% endmacro %}
 
-{% macro box_plot(name, traces, title='', mode='group', y_axis={}, x_axis={}, annotations={}) %}
+{% macro box_plot(name, traces, title='', mode='group', y_axis={}, x_axis={}, notched=True) %}
 
   <div id="box_plot_{{name}}"></div>
+
+  {% for trace in traces or [] %}
+    {% set _ = trace.update({'notched': notched}) %}
+  {% endfor %}
 
   <script>
       var data = {{ traces | tojson }};
@@ -45,7 +49,6 @@
           xaxis: {{ x_axis | tojson }},
           boxmode: '{{ mode }}',
           title: '{{ title }}',
-          annotations: {{ annotations | tojson }},
           {% for attr, value in kwargs.items() %}
             {{ attr }}: {{ value | tojson }},
           {% endfor %}

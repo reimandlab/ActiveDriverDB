@@ -140,7 +140,8 @@ class DependencyManager:
             'https://cdn.jsdelivr.net/npm/venn.js@0.2.18/build/venn.min.js'
         ),
         'plotly': JSResource(
-            'https://cdnjs.cloudflare.com/ajax/libs/plotly.js/1.33.0/plotly.min.js'
+            'https://cdnjs.cloudflare.com/ajax/libs/plotly.js/1.34.0/plotly.min.js',
+            'sha256-La2UAvjjTIcv770heB/LtzhTHy+3VzURFWZRrjJ0M8U='
         ),
         'clipboard.js': JSResource(
             'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.6.1/clipboard.min.js',
