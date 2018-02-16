@@ -1,12 +1,13 @@
 import random
 from collections import namedtuple
 from statistics import median
+from typing import List
 
 from sqlalchemy import and_, func, distinct, desc
 from tqdm import tqdm
 
 from database import join_unique, db
-from models import Protein, Mutation, The1000GenomesMutation, MC3Mutation, InheritedMutation, Gene, Site
+from models import Protein, Mutation, The1000GenomesMutation, MC3Mutation, InheritedMutation, Gene, Site, MutationSource
 
 
 def count_mutated_potential_sites():
@@ -107,7 +108,7 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
         'enriched_ptm_muts_in_iterations, '
         'median, median_percentage, '
         'p_value, p_value_percentage, '
-        'expected_ptm_muts'
+        'observed_ptm_muts'
     )
 
     return result_tuple(
@@ -373,23 +374,47 @@ def disease_muts_affecting_ptm_sites():
         count_mutations_from_genes(cancer_genes, [MC3Mutation], only_preferred_isoforms)
 
 
-def most_mutated_sites(source, site_type=None, limit=25):
+def most_mutated_sites(sources: List[MutationSource], site_type=None, limit=25):
+    """Sources must be of the same type"""
 
-    if hasattr(source, 'count'):
-        mutations_count = func.sum(source.count)
-    elif hasattr(source, 'maf_all'):
-        mutations_count = func.sum(source.maf_all)
-    else:
-        mutations_count = func.count(distinct(source.id))
+    counts = []
 
-    mutations_count = mutations_count.label('mutations_count')
+    assert len(sources) >= 1
+
+    aggr_func = func.sum
+
+    for source in sources:
+
+        if hasattr(source, 'count'):
+            mutations_count = source.count
+            assert all(hasattr(s, 'count') for s in sources)
+        elif hasattr(source, 'maf_all'):
+            mutations_count = source.maf_all
+            assert all(hasattr(s, 'maf_all') for s in sources)
+        else:
+            mutations_count = distinct(source.id)
+            aggr_func = func.count
+
+        counts.append(mutations_count)
+
+    total_muts_count = aggr_func(sum(counts))
+
+    total_muts_count = total_muts_count.label('mutations_count')
 
     query = (
         db.session.query(
             Site,
-            mutations_count
+            total_muts_count
         )
-        .select_from(source).join(Mutation).join(Mutation.affected_sites)
+        .select_from(Mutation)
+    )
+
+    for source in sources:
+        query = query.join(source)
+
+    query = (
+        query
+        .join(Mutation.affected_sites)
         .filter(Site.protein.has(Protein.is_preferred_isoform))
     )
 
@@ -399,7 +424,7 @@ def most_mutated_sites(source, site_type=None, limit=25):
     query = (
         query
         .group_by(Site)
-        .order_by(desc(mutations_count))
+        .order_by(desc(total_muts_count))
     )
 
     return query.limit(limit)
