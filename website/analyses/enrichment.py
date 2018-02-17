@@ -1,9 +1,12 @@
+import operator
 import random
 from collections import namedtuple
+from functools import reduce
 from statistics import median
 from typing import List
 
 from sqlalchemy import and_, func, distinct, desc
+from sqlalchemy.orm import aliased
 from tqdm import tqdm
 
 from database import join_unique, db
@@ -123,7 +126,7 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
 
 def get_confirmed_mutations(
         sources, only_preferred=True, genes=None, confirmed_by_definition=False,
-        base_query=Mutation.query
+        base_query=None
     ):
     """
     Utility to generate a query for retrieving confirmed mutations having specific mutation details.
@@ -140,6 +143,9 @@ def get_confirmed_mutations(
     Returns:
         Query object yielding mutations.
     """
+
+    if not base_query:
+        base_query = Mutation.query
 
     mutations = base_query
 
@@ -374,43 +380,74 @@ def disease_muts_affecting_ptm_sites():
         count_mutations_from_genes(cancer_genes, [MC3Mutation], only_preferred_isoforms)
 
 
-def most_mutated_sites(sources: List[MutationSource], site_type=None, limit=25):
-    """Sources must be of the same type"""
+def prepare_for_summing(sources: List[MutationSource], count_distinct_substitutions=False) -> List:
+    """Mutations from various sources can be summed up differently.
 
-    counts = []
+    Given list of mutation sources, checks if the mutation sources
+    can be summed up (counted together) in a reasonable way.
 
-    assert len(sources) >= 1
+    It is possible - though not always advisable - to add frequencies
+    of different types of population mutations; it is also possible to
+    add occurrence counts of ClinVar and TCGA mutations;
 
-    aggr_func = func.sum
+    It is assumed that counting population and non-population
+    mutations together is not reasonable as summing frequencies
+    with counts has no meaning; however, counting (and summing)
+    unique occurrences of mutations from incompatible mutation
+    sources is possible with `count_distinct_substitutions=True`.
 
-    for source in sources:
+    Returns:
+        list of expressions counting mutations from provided sources
+    """
+
+    if count_distinct_substitutions:
+        counts = [func.count(distinct(source.id)) for source in sources]
+    else:
+        source = sources[0]
 
         if hasattr(source, 'count'):
-            mutations_count = source.count
             assert all(hasattr(s, 'count') for s in sources)
+            counts = [
+                func.sum(source.count)
+                for source in sources
+            ]
         elif hasattr(source, 'maf_all'):
-            mutations_count = source.maf_all
             assert all(hasattr(s, 'maf_all') for s in sources)
+            counts = [
+                func.sum(source.maf_all)
+                for source in sources
+            ]
         else:
-            mutations_count = distinct(source.id)
-            aggr_func = func.count
+            raise Exception(
+                f'Undefined behaviour for summing: {source} source,'
+                f' which has neither `count` nor `maf_all` defined.'
+            )
 
-        counts.append(mutations_count)
+    return counts
 
-    total_muts_count = aggr_func(sum(counts))
 
-    total_muts_count = total_muts_count.label('mutations_count')
+def most_mutated_sites(sources: List[MutationSource], site_type=None, limit=25, muts_intersection=True):
+    """Sources must be of the same type"""
+
+    counts = prepare_for_summing(sources)
 
     query = (
         db.session.query(
             Site,
-            total_muts_count
+            *[
+                count.label(f'count_{i}')
+                for i, count in enumerate(counts)
+            ]
         )
         .select_from(Mutation)
     )
 
-    for source in sources:
-        query = query.join(source)
+    if muts_intersection:
+        for source in sources:
+            query = query.join(source)
+    else:
+        for source in sources:
+            query = query.outerjoin(source)
 
     query = (
         query
@@ -424,7 +461,34 @@ def most_mutated_sites(sources: List[MutationSource], site_type=None, limit=25):
     query = (
         query
         .group_by(Site)
-        .order_by(desc(total_muts_count))
+        .having(and_(*counts))
     )
+
+    if len(sources) > 1:
+        # this code will work when len(sources) == 1,
+        # but using subquery might be suboptimal;
+
+        # the only downside is that the label of
+        # the count is then 'count_1' instead of
+        # 'mutations_count'
+
+        query = query.subquery()
+
+        total_muts_count = reduce(
+            operator.add, [
+                getattr(query.c, f'count_{i}')
+                for i in range(len(counts))
+            ]
+        )
+
+        total_muts_count = total_muts_count.label('mutations_count')
+
+        query = (
+            db.session.query(
+                aliased(Site, query),
+                total_muts_count,
+            )
+            .order_by(desc(total_muts_count))
+        )
 
     return query.limit(limit)

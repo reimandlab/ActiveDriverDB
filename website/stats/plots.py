@@ -134,17 +134,27 @@ class Plots(CountStore):
     def most_mutated_sites_clinvar(self, site_type=any_site_type):
         return self.most_mutated_sites([InheritedMutation], site_type)
 
-    @cases(site_type=site_types_names)
-    @counter
-    def most_mutated_sites_mc3_and_clinvar(self, site_type=any_site_type):
-        return self.most_mutated_sites([MC3Mutation, InheritedMutation], site_type)
+    both_sources_cases = cases(
+        site_type=site_types_names + [any_site_type],
+        intersection=[True, False]
+    ).set_mode('product')
+
+    @both_sources_cases
+    def most_mutated_sites_mc3_and_clinvar(self, site_type, intersection):
+        return self.most_mutated_sites(
+            [MC3Mutation, InheritedMutation],
+            site_type,
+            intersection
+        )
 
     @staticmethod
     @bar_plot
-    def most_mutated_sites(sources, site_type=any_site_type):
+    def most_mutated_sites(sources, site_type=any_site_type, intersection=None):
         from analyses.enrichment import most_mutated_sites
 
-        sites, counts = zip(*most_mutated_sites(sources, site_type, limit=20).all())
+        sites, counts = zip(*most_mutated_sites(
+            sources, site_type, limit=20, muts_intersection=intersection
+        ).all())
 
         return [f'{site.protein.gene_name} {site.position}{site.residue}' for site in sites], counts
 
