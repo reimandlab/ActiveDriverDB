@@ -98,5 +98,11 @@ cd website
 git clone https://github.com/krassowski/ActiveDriver
 cd ..
 
+
+# ActivePathways are in private repository
+# git clone https://github.com/reimandlab/activeDriverPW.git
+# R -e 'install.packages(c("metap", "data.table"), repos = "http://cran.us.r-project.org")'
+# R -e 'install.packages("activeDriverPW", repos=NULL)'
+
 # needed only if using sqlite3 for tests
 sudo apt-get install sqlite3-pcre
