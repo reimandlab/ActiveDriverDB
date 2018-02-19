@@ -169,14 +169,14 @@ class TestImport(DatabaseTest):
             sites_by_pos = {site.position: site for site in sites}
 
             assert sites_by_pos[105].residue == sites_by_pos[109].residue == 'T'
-            assert sites_by_pos[105].type == {'glycosylation'}
+            assert sites_by_pos[105].type == {'O-glycosylation'}
 
         # check re-loading
         db.session.add_all(sites)
         db.session.commit()
 
         site = Site.query.filter_by(position=105).one()
-        assert site.type == {'glycosylation'}
+        assert site.type == {'O-glycosylation'}
 
     def test_edge_cases(self):
 

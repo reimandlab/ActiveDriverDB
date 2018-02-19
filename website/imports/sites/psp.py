@@ -34,13 +34,13 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
     source_name = 'PhosphoSitePlus'
     site_types = [
-        'phosphorylation', 'glycosylation', 'acetylation',
-        'ubiquitination', 'methylation'
+        'phosphorylation', 'O-glycosylation', 'glycosylation'
+        'acetylation', 'ubiquitination', 'methylation'
     ]
 
     site_datasets = {
-        'O-GalNAc': 'glycosylation',
-        'O-GlcNAc': 'glycosylation',
+        'O-GalNAc': 'O-glycosylation',
+        'O-GlcNAc': 'O-glycosylation',
         'Acetylation': 'acetylation',
         'Methylation': 'methylation',
         'Phosphorylation': 'phosphorylation',

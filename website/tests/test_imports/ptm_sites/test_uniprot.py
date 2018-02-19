@@ -242,12 +242,12 @@ class TestImport(DatabaseTest):
 
     def test_glycans_mapping(self):
         cases = {
-            'O-linked (GlcNAc) tyrosine; by Photorhabdus PAU_02230': ('Y', 'glycosylation', ['Photorhabdus PAU_02230']),
-            'O-linked (Hex) serine': ('S', 'glycosylation', nan),
-            'O-linked (GalNAc...) serine; in variant S-874': ('S', 'glycosylation', nan),
-            'S-linked (Gal...) cysteine': ('C', 'glycosylation', nan),
-            'N-linked (GlcNAc...) asparagine': ('N', 'glycosylation', nan),
-            'N-linked (GlcNAc...)': (nan, 'glycosylation', nan),
+            'O-linked (GlcNAc) tyrosine; by Photorhabdus PAU_02230': ('Y', 'O-glycosylation', ['Photorhabdus PAU_02230']),
+            'O-linked (Hex) serine': ('S', 'O-glycosylation', nan),
+            'O-linked (GalNAc...) serine; in variant S-874': ('S', 'O-glycosylation', nan),
+            'S-linked (Gal...) cysteine': ('C', 'S-glycosylation', nan),
+            'N-linked (GlcNAc...) asparagine': ('N', 'N-glycosylation', nan),
+            'N-linked (GlcNAc...)': (nan, 'N-glycosylation', nan),
             'N-linked (Glc) (glycation) lysine': ('K', 'glycation', nan)
         }
         importer = GlycosylationUniprotImporter(*SpliceVariantData.files_for_init())
