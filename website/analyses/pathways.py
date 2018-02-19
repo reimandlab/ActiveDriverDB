@@ -13,21 +13,24 @@ output_dir = Path('analyses_output/active_pathway/')
 
 bi_path = Path('data/gene_sets/')
 
-# GMT files downloaded from Broad Institute:
-# these files has to be manually downloaded from
-# http://software.broadinstitute.org/gsea/msigdb/collections.jsp
-bi_gene_sets = {
-    'hallmarks': 'h.all.v6.1.symbols.gmt',
-    'gene_ontology': 'c5.all.v6.1.symbols.gmt',
-    'oncogenic': 'c6.all.v6.1.symbols.gmt',
-    'immunologic': 'c7.all.v6.1.symbols.gmt',
+gene_sets = {
+    # GMT files downloaded from Broad Institute:
+    # these files has to be manually downloaded from
+    # http://software.broadinstitute.org/gsea/msigdb/collections.jsp
+    'hallmarks': bi_path / 'h.all.v6.1.symbols.gmt',
+    'all_canonical_pathways': bi_path / 'c2.cp.reactome.v6.1.symbols.gmt',
+    'gene_ontology': bi_path / 'c5.all.v6.1.symbols.gmt',
+    'oncogenic': bi_path / 'c6.all.v6.1.symbols.gmt',
+    'immunologic': bi_path / 'c7.all.v6.1.symbols.gmt',
+    # other gene sets
+    'human_pathways': 'data/hsapiens.pathways.NAME.gmt'
 }
 
 
 def run_active_pathways(ad_result: ActiveDriverResult, gene_sets_gmt_path: str, cytoscape_dir: Path=None) -> DataFrame:
     active_pathways = importr('activeDriverPW')
     df = ad_result['all_gene_based_fdr']
-    df = df.set_index('gene')['p']
+    df = df.set_index('gene')['fdr']
     scores = r['as.matrix'](df)
 
     cytoscape_paths = StrVector([
@@ -38,8 +41,8 @@ def run_active_pathways(ad_result: ActiveDriverResult, gene_sets_gmt_path: str, 
     return active_pathways.activeDriverPW(scores, gene_sets_gmt_path, cytoscape_filenames=cytoscape_paths)
 
 
-def active_pathways_from_bi(ad_result: ActiveDriverResult, gene_set_name: str, cytoscape_dir: Path=None) -> DataFrame:
-    gene_sets_path = bi_path / bi_gene_sets[gene_set_name]
+def active_pathways(ad_result: ActiveDriverResult, gene_set_name: str, cytoscape_dir: Path=None) -> DataFrame:
+    gene_sets_path = gene_sets[gene_set_name]
     return run_active_pathways(ad_result, str(gene_sets_path), cytoscape_dir)
 
 
@@ -54,11 +57,13 @@ def run_all(site_type):
     data_table = importr('data.table')
 
     for analysis in [active_driver.pan_cancer_analysis, active_driver.clinvar_analysis]:
-        for bi_set in bi_gene_sets:
-            path = output_dir / analysis.name / bi_set / site_type
+        for gene_set in gene_sets:
+            path = output_dir / analysis.name / gene_set / site_type
             path.mkdir(parents=True, exist_ok=True)
 
             ad_result = analysis(site_type)
-            result = active_pathways_from_bi(ad_result, bi_set, cytoscape_dir=path)
+            print(f'Preparing active pathways: {analysis.name} for {len(ad_result["all_gene_based_fdr"])} genes')
+            print(f'Gene sets/background: {gene_set}')
+            result = active_pathways(ad_result, gene_set, cytoscape_dir=path)
 
             data_table.fwrite(result, str(path / 'pathways.tsv'), sep='\t', sep2=r.c('', ',', ''))
