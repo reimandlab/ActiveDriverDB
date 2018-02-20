@@ -703,9 +703,24 @@ class SiteType(BioModel):
     # the initial import
     name = db.Column(db.String(16), unique=True)
 
+    def find_modified_residues(self) -> set:
+        return {site.residue for site in self.sites}
+
+    @property
+    def sites(self):
+        return Site.query.filter(Site.type.contains(self))
+
 
 class SiteSource(BioModel):
     name = db.Column(db.String(16), unique=True)
+
+
+def extract_padded_sequence(protein: Protein, left: int, right: int):
+    return (
+        '-' * -min(0, left) +
+        protein.sequence[max(0, left):min(right, protein.length)] +
+        '-' * max(0, right - protein.length)
+    )
 
 
 class Site(BioModel):
@@ -749,14 +764,8 @@ class Site(BioModel):
         self.validate_residue()
 
     def get_nearby_sequence(self, offset=3):
-        protein = self.protein
-        left = self.position - offset - 1
-        right = self.position + offset
-        return (
-            '-' * -min(0, left) +
-            protein.sequence[max(0, left):min(right, protein.length)] +
-            '-' * max(0, right - protein.length)
-        )
+        # self.position is 1-based
+        return extract_padded_sequence(self.protein, self.position - offset - 1, self.position + offset)
 
     @hybrid_property
     def sequence(self):

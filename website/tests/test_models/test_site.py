@@ -47,6 +47,18 @@ class SiteTest(ModelTest):
 
         assert site.residue == 'B'
 
+    def test_gather_residues(self):
+        m = SiteType(name='methylation')
+
+        p = Protein(refseq='NM_007', id=1, sequence='ABCD')
+        sites = [
+            Site(position=2, type={m}, protein=p),  # default -> 'B'
+            Site(position=4, type={'methylation'}, residue='D'),
+        ]
+        db.session.add_all(sites)
+
+        assert m.find_modified_residues() == {'B', 'D'}
+
     def test_sequence(self):
 
         p = Protein(refseq='NM_007', id=1, sequence='ABCDEFGHIJKLMNOPQRSTUVWXYZ')
