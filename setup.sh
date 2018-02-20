@@ -106,7 +106,7 @@ cd ..
 
 sudo apt-get install r-bioc-biocgenerics r-bioc-genomicranges r-bioc-biostrings
 git clone https://github.com/reimandlab/rmimp.git
-sudo R -e 'install.packages(c("mclust", "ROCR"), repos = "http://cran.us.r-project.org")'
+sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
 sudo R -e 'install.packages("rmimp", repos=NULL)'
 
 # needed only if using sqlite3 for tests
