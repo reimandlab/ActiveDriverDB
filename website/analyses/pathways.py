@@ -11,19 +11,20 @@ pandas2ri.activate()
 
 output_dir = Path('analyses_output/active_pathway/')
 
-bi_path = Path('data/gene_sets/')
+sets_path = Path('data/gene_sets/')
 
 gene_sets = {
     # GMT files downloaded from Broad Institute:
     # these files has to be manually downloaded from
     # http://software.broadinstitute.org/gsea/msigdb/collections.jsp
-    'hallmarks': bi_path / 'h.all.v6.1.symbols.gmt',
-    'all_canonical_pathways': bi_path / 'c2.cp.reactome.v6.1.symbols.gmt',
-    'gene_ontology': bi_path / 'c5.all.v6.1.symbols.gmt',
-    'oncogenic': bi_path / 'c6.all.v6.1.symbols.gmt',
-    'immunologic': bi_path / 'c7.all.v6.1.symbols.gmt',
+    'hallmarks': sets_path / 'h.all.v6.1.symbols.gmt',
+    'all_canonical_pathways': sets_path / 'c2.cp.reactome.v6.1.symbols.gmt',
+    'gene_ontology': sets_path / 'c5.all.v6.1.symbols.gmt',
+    'oncogenic': sets_path / 'c6.all.v6.1.symbols.gmt',
+    'immunologic': sets_path / 'c7.all.v6.1.symbols.gmt',
     # other gene sets
-    'human_pathways': 'data/hsapiens.pathways.NAME.gmt'
+    'human_pathways': 'data/hsapiens.pathways.NAME.gmt',
+    'drug_targets': sets_path / 'Human_DrugBank_all_symbol.gmt',
 }
 
 
