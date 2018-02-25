@@ -104,11 +104,15 @@ cd ..
 # R -e 'install.packages(c("metap", "data.table"), repos = "http://cran.us.r-project.org")'
 # R -e 'install.packages("activeDriverPW", repos=NULL)'
 
-sudo apt-get install r-bioc-biocgenerics r-bioc-genomicranges r-bioc-biostrings
+#sudo apt-get install r-bioc-biocgenerics r-bioc-genomicranges r-bioc-biostrings
 git clone https://github.com/reimandlab/rmimp.git
 cd rmimp
 git checkout refactored
 cd ..
+sudo R -e 'source("https://bioconductor.org/biocLite.R"); biocLite(c("S4Vectors", "GenomicRanges", "Biostrings", "BiocGenerics"))'
+#sudo R -e 'install.packages("devtools", repos = "http://cran.us.r-project.org")'
+#sudo R -e 'devtools::install("rmimp", dependencies = TRUE)'
+
 sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
 sudo R -e 'install.packages("rmimp", repos=NULL)'
 
