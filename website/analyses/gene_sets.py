@@ -1,17 +1,51 @@
+from functools import lru_cache
 from pathlib import Path
 
 from pandas import DataFrame
 from rpy2.robjects import pandas2ri, r, NULL as null, StrVector
 from rpy2.robjects.packages import importr
+from tqdm import tqdm
 
 from analyses import active_driver
 from analyses.active_driver import ActiveDriverResult
+from models import InterproDomain
 
 pandas2ri.activate()
 
 output_dir = Path('analyses_output/active_pathway/')
 
 sets_path = Path('data/gene_sets/')
+
+
+@lru_cache()
+def gmt_from_domains(path=sets_path / 'domains.gmt', include_sub_types=True):
+    """Export sets of genes having the same domains into a GMT file"""
+    with open(path, 'w') as f:
+
+        query = InterproDomain.query
+        for domain_type in tqdm(query, total=query.count()):
+
+            # collect all occurrences
+            occurrences = []
+            occurrences.extend(domain_type.occurrences)
+
+            if include_sub_types:
+                sub_types = domain_type.children[:]
+                while sub_types:
+                    sub_type = sub_types.pop()
+                    occurrences.extend(sub_type.occurrences)
+                    sub_types.extend(sub_type.children)
+
+            line = [
+                domain_type.accession,
+                domain_type.description,
+                *{domain.protein.gene_name for domain in occurrences}
+            ]
+
+            f.write('\t'.join(line) + '\n')
+
+    return path
+
 
 gene_sets = {
     # GMT files downloaded from Broad Institute:
@@ -25,6 +59,7 @@ gene_sets = {
     # other gene sets
     'human_pathways': 'data/hsapiens.pathways.NAME.gmt',
     'drug_targets': sets_path / 'Human_DrugBank_all_symbol.gmt',
+    'domains': gmt_from_domains
 }
 
 
@@ -40,11 +75,6 @@ def run_active_pathways(ad_result: ActiveDriverResult, gene_sets_gmt_path: str, 
     ]) if cytoscape_dir else null
 
     return active_pathways.activeDriverPW(scores, gene_sets_gmt_path, cytoscape_filenames=cytoscape_paths)
-
-
-def active_pathways(ad_result: ActiveDriverResult, gene_set_name: str, cytoscape_dir: Path=None) -> DataFrame:
-    gene_sets_path = gene_sets[gene_set_name]
-    return run_active_pathways(ad_result, str(gene_sets_path), cytoscape_dir)
 
 
 def run_all(site_type):
@@ -65,6 +95,12 @@ def run_all(site_type):
             ad_result = analysis(site_type)
             print(f'Preparing active pathways: {analysis.name} for {len(ad_result["all_gene_based_fdr"])} genes')
             print(f'Gene sets/background: {gene_set}')
-            result = active_pathways(ad_result, gene_set, cytoscape_dir=path)
+
+            gene_sets_path = gene_sets[gene_set]
+
+            if callable(gene_sets_path):
+                gene_sets_path = gene_sets_path()
+
+            result = run_active_pathways(ad_result, str(gene_sets_path), cytoscape_dir=path)
 
             data_table.fwrite(result, str(path / 'pathways.tsv'), sep='\t', sep2=r.c('', ',', ''))
