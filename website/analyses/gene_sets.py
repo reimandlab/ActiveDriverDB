@@ -1,5 +1,11 @@
+import signal
+from contextlib import ExitStack
 from functools import lru_cache
 from pathlib import Path
+from subprocess import Popen
+from tempfile import NamedTemporaryFile
+
+import os
 
 from pandas import DataFrame
 from rpy2.robjects import pandas2ri, r, NULL as null, StrVector
@@ -8,6 +14,7 @@ from tqdm import tqdm
 
 from analyses import active_driver
 from analyses.active_driver import ActiveDriverResult
+from helpers.cytoscape import CytoscapeCommand, Cytoscape, get
 from models import InterproDomain
 
 pandas2ri.activate()
@@ -77,30 +84,97 @@ def run_active_pathways(ad_result: ActiveDriverResult, gene_sets_gmt_path: str, 
     return active_pathways.activeDriverPW(scores, gene_sets_gmt_path, cytoscape_filenames=cytoscape_paths)
 
 
-def run_all(site_type):
+class EnrichmentMap(CytoscapeCommand):
+    """API for initial processing and loading of enrichment maps in Cytoscape"""
+
+    build = get(defaults={'analysisType': 'generic'}, plain_text=True)
+
+
+class DeadlyPopen(Popen):
+    """Same as Popen, but commits suicide on exit"""
+
+    def __init__(self, *args, kill_descendants=True, **kwargs):
+        self.kill_descendants = kill_descendants
+        if kill_descendants:
+            kwargs['preexec_fn'] = os.setsid
+        super().__init__(*args, **kwargs)
+
+    def __exit__(self, *args, **kwargs):
+        if self.kill_descendants:
+            os.killpg(self.pid, signal.SIGKILL)
+        else:
+            self.terminate()
+            self.kill()
+
+
+def run_all(site_type, cytoscape_path=None):
     """Runs all active_pathways combinations for given site_type.
 
     Uses pan_cancer/clinvar Active Driver analyses results
     and all GMT gene sets from Broad Institute.
 
+    If `cytoscape_path` is given, network maps will be created in Cytoscape.
+    The path should point to a dir with 'cytoscape.sh' script in it.
+
     Results are saved in `output_dir`.
     """
     data_table = importr('data.table')
 
-    for analysis in [active_driver.pan_cancer_analysis, active_driver.clinvar_analysis]:
-        for gene_set in gene_sets:
-            path = output_dir / analysis.name / gene_set / site_type
-            path.mkdir(parents=True, exist_ok=True)
+    render_cytoscape = True if cytoscape_path else False
 
-            ad_result = analysis(site_type)
-            print(f'Preparing active pathways: {analysis.name} for {len(ad_result["all_gene_based_fdr"])} genes')
-            print(f'Gene sets/background: {gene_set}')
+    with ExitStack() as stack:
 
-            gene_sets_path = gene_sets[gene_set]
+        enrichment_app: EnrichmentMap
+        cytoscape: Cytoscape
 
-            if callable(gene_sets_path):
-                gene_sets_path = gene_sets_path()
+        if render_cytoscape:
+            cytoscape_server_path = Path(cytoscape_path) / 'cytoscape.sh'
 
-            result = run_active_pathways(ad_result, str(gene_sets_path), cytoscape_dir=path)
+            # start cytoscape REST API server in a context manager
+            # (so it will be close automatically upon exit or error)
+            port = 1234
+            cytoscape_out = stack.enter_context(NamedTemporaryFile())
+            print('Starting Cytoscape...')
+            print(f'All the output will be saved in {cytoscape_out.name}')
 
-            data_table.fwrite(result, str(path / 'pathways.tsv'), sep='\t', sep2=r.c('', ',', ''))
+            stack.enter_context(
+                DeadlyPopen(
+                    [cytoscape_server_path, '-R', str(port)],
+                    kill_descendants=True,
+                    stdout=cytoscape_out
+                )
+            )
+            cytoscape = Cytoscape()
+
+            enrichment_app = EnrichmentMap(port=port)
+
+        for analysis in [active_driver.pan_cancer_analysis, active_driver.clinvar_analysis]:
+            for gene_set in gene_sets:
+                path = output_dir / analysis.name / gene_set / site_type
+                path.mkdir(parents=True, exist_ok=True)
+                path = path.absolute()
+
+                ad_result = analysis(site_type)
+                print(f'Preparing active pathways: {analysis.name} for {len(ad_result["all_gene_based_fdr"])} genes')
+                print(f'Gene sets/background: {gene_set}')
+
+                gene_sets_path = gene_sets[gene_set]
+
+                if callable(gene_sets_path):
+                    gene_sets_path = gene_sets_path()
+
+                result = run_active_pathways(ad_result, str(gene_sets_path), cytoscape_dir=path)
+
+                data_table.fwrite(result, str(path / 'pathways.tsv'), sep='\t', sep2=r.c('', ',', ''))
+
+                if render_cytoscape:
+                    enrichment_path = str(path / 'terms.txt')
+                    gmt_path = path / 'abridged.gmt'
+                    if gmt_path.exists():
+                        response = enrichment_app.build(gmtFile=str(gmt_path), enrichmentsDataset1=enrichment_path)
+                        print('Cytoscape Enrichment Map:', response)
+
+                        cytoscape.session.save_as(data={'file': str(path / 'enrichment_map.cys')})
+                        cytoscape.session.new()
+                    else:
+                        print(f'No gmt file for {analysis.name} & {gene_set} - no cytoscape network will be created')
