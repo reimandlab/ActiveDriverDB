@@ -65,7 +65,7 @@ rm hsapiens.TF.NAME.gmt
 # gene sets
 mkdir -p gene_sets
 cd gene_sets
-wget http://download.baderlab.org/EM_Genesets/February_01_2018/Human/symbol/DrugTargets/Human_DrugBank_all_symbol.gmt
+wget http://download.baderlab.org/EM_Genesets/current_release/Human/symbol/DrugTargets/Human_DrugBank_all_symbol.gmt
 echo 'Gene sets from MSigDB need to be downloaded directly from: software.broadinstitute.org/gsea/msigdb/'
 cd ..
 
