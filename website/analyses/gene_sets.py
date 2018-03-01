@@ -77,7 +77,7 @@ def run_active_pathways(
 ) -> DataFrame:
     active_pathways = importr('activeDriverPW')
     df = ad_result['all_gene_based_fdr']
-    df = df.set_index('gene')['fdr']
+    df = df.set_index('gene')['p']
     scores = r['as.matrix'](df)
 
     cytoscape_paths = StrVector([
@@ -111,7 +111,7 @@ class DeadlyPopen(Popen):
             self.kill()
 
 
-def run_all(site_type: str, gene_sets: Mapping[str, Path]=GENE_SETS, gene_set_filter: Tuple[int]=(5, 1000)):
+def run_all(site_type: str, gene_sets: Mapping[str, Path]=GENE_SETS, gene_set_filter: Tuple[int]=(5, 1000), **kwargs):
     """Runs all active_pathways combinations for given site_type.
 
     Uses pan_cancer/clinvar Active Driver analyses results
@@ -131,7 +131,7 @@ def run_all(site_type: str, gene_sets: Mapping[str, Path]=GENE_SETS, gene_set_fi
     data_table = importr('data.table')
     paths = {}
 
-    kwargs = {'geneset.filter': IntVector(gene_set_filter)}
+    kwargs['geneset.filter'] = IntVector(gene_set_filter)
 
     for analysis in [active_driver.pan_cancer_analysis, active_driver.clinvar_analysis]:
         for gene_set in gene_sets:
