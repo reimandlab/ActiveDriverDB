@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 
 import gc
 from traceback import print_exc
-from typing import Type, Mapping
+from typing import Type, Mapping, Union
 
 from diskcache import Cache
 from rpy2.rinterface import RRuntimeError
@@ -135,7 +135,7 @@ def profile_genes_with_active_sites(enriched_genes, background=None) -> DataFram
     return DataFrame(rows, columns=header)
 
 
-ActiveDriverResult = Mapping
+ActiveDriverResult = Mapping[str, Union[DataFrame, 'ActiveDriverResult']]
 
 
 def process_result(result, sites, fdr_cutoff=0.05) -> ActiveDriverResult:
