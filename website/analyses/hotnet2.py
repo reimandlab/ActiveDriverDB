@@ -136,28 +136,29 @@ def run_on_active_driver_results(
     df = active_driver_results['all_gene_based_fdr']
     df = df.set_index('gene')['p']
 
-    with NamedTemporaryFile('w') as input_heat_file, NamedTemporaryFile('w') as output_heat_file:
+    with NamedTemporaryFile('w') as input_heat_file, NamedTemporaryFile('w', suffix='.json') as output_heat_file:
 
         # generate initial heat (genes/nodes value = p-values from AD)
-        df.to_csv(input_heat_file.name, sep='\t')
+        df.to_csv(input_heat_file.name, sep='\t', header=False)
 
         # convert the heat file into HotNet json file
         results = hotnet.command(
             'makeHeatFile',
             'scores',
             heat_file=input_heat_file.name,
-            output_file=output_heat_file.name
+            output_file=output_heat_file.name,
+            name='active_driver_p_values'
         )
 
         # run HotNet
         hotnet.command(
             'HotNet2',
             network_files=[
-                f'{networks_dir}/{name}/{name}_ppr_{beta}.h5'
+                f'{hotnet.networks_dir}/{name}/{name}_ppr_{beta}.h5'
                 for name, beta in networks.items()
             ],
             permuted_network_paths=[
-                f'{networks_dir}/{name}/permuted/{name}_ppr_{beta}_##NUM##.h5'
+                f'{hotnet.networks_dir}/{name}/permuted/{name}_ppr_{beta}_##NUM##.h5'
                 for name, beta in networks.items()
             ],
             heat_files=output_heat_file.name,
