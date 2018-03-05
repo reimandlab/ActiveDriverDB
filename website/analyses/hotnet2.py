@@ -13,6 +13,9 @@ from database import db
 from models import Pathway, Gene
 
 
+OUTPUT_DIR = Path('analyses_output/hotnet2')
+
+
 def python(module_name, *args, python_path='python', working_dir=Path('.'), key_prefix='--', **kwargs) -> List:
     """Create args list for execution of python as a subprocess in Popen.
 
@@ -118,11 +121,12 @@ HOTNET_PUBLICATION_NETWORKS = {
 
 
 def run_on_active_driver_results(
-    active_driver_results: ActiveDriverResult, hotnet_path,
+    active_driver_results: ActiveDriverResult, analysis_name, hotnet_path,
     interpreter='python', networks=HOTNET_PUBLICATION_NETWORKS,
     num_heat_permutations=1000, num_network_permutations=100, num_cores=-1
 ):
     hotnet_path = Path(hotnet_path)
+    output_dir = OUTPUT_DIR / analysis_name
 
     hotnet = HotNet(interpreter, hotnet_path)
 
@@ -164,16 +168,24 @@ def run_on_active_driver_results(
             heat_files=output_heat_file.name,
             network_permutations=num_network_permutations,
             heat_permutations=num_heat_permutations,
-            output_directory='analyses_results/hotnet2',
+            output_directory=output_dir,
             num_cores=num_cores
         )
+        print(f'HotNet2 is ready. The results are saved in {output_dir}. Use:')
+        print(f'cd {hotnet_path}/viz')
+        print('# To install required dependencies - needed just once: ')
+        print(f'{interpreter.absolute()} -m pip install -r requirements.txt')
+        print('sudo npm install -g bower')
+        print('bower install')
+        print('# To run vizualization server:')
+        print(f'{interpreter.absolute()} server.py -i {output_dir.absolute()}')
 
 
 def run_all(site_type: str, **kwargs):
 
     for analysis in [active_driver.pan_cancer_analysis, active_driver.clinvar_analysis]:
         result = analysis(site_type)
-        run_on_active_driver_results(result, **kwargs)
+        run_on_active_driver_results(result, analysis.name + '/' + site_type, **kwargs)
 
 
 def run_all_from_biogrid(site_type: str, hotnet_path, interpreter, **kwargs):
