@@ -1,7 +1,7 @@
 from analyses.enrichment import most_mutated_sites
 from database import db
 from models import Mutation, Site, Protein, InheritedMutation, MC3Mutation, ClinicalData, Gene
-from tests.database_testing import DatabaseTest
+from database_testing import DatabaseTest
 
 
 class MutationTest(DatabaseTest):

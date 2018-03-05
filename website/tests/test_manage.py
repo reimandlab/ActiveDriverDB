@@ -7,7 +7,7 @@ from flask import current_app
 import manage
 from database import db
 from models import User, Gene, Cancer, Page
-from tests.miscellaneous import make_named_temp_file, use_fixture
+from miscellaneous import make_named_temp_file, use_fixture
 
 
 class ManageTest(DatabaseTest):
@@ -105,7 +105,7 @@ class ManageTest(DatabaseTest):
             msg, error = self.run_command(command)
             assert 'Exported site_specific_network_of_kinases_and_targets to %s' % filename in msg
 
-        from tests.test_imports.test_export import TestExport
+        from test_imports.test_export import TestExport
         TestExport.test_network_export(self, do_export)
 
     def test_cms(self):

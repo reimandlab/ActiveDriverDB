@@ -2,7 +2,7 @@ import re
 from io import BytesIO
 
 from view_testing import ViewTest, relative_location
-from tests.miscellaneous import mock_proteins_and_genes
+from miscellaneous import mock_proteins_and_genes
 
 from database import db
 from models import Gene, Pathway, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData

@@ -5,7 +5,7 @@ from analyses.motifs import (
 )
 from database import db
 from models import Mutation, Protein, Site, SiteType
-from tests.database_testing import DatabaseTest
+from database_testing import DatabaseTest
 
 
 class MotifAnalysisTest(DatabaseTest):
