@@ -6,6 +6,7 @@ from tempfile import NamedTemporaryFile
 from typing import List
 
 from pandas import read_table
+import numpy as np
 
 from analyses import active_driver
 from analyses.active_driver import ActiveDriverResult
@@ -27,7 +28,7 @@ def python(module_name, *args, python_path='python', working_dir=Path('.'), key_
         key_prefix: '-' for short args, '--' for long format
         **kwargs: arguments to be passed to parser or subparser
     """
-    cmd = [python_path, str(working_dir / f'{module_name}.py'), *args] + [
+    cmd = [str(python_path), str(working_dir / f'{module_name}.py'), *args] + [
         arg
         for arg in chain(*[
             [key_prefix + key] + (value if isinstance(value, list) else [str(value)])
@@ -123,9 +124,16 @@ HOTNET_PUBLICATION_NETWORKS = {
 def run_on_active_driver_results(
     active_driver_results: ActiveDriverResult, analysis_name, hotnet_path,
     interpreter='python', networks=HOTNET_PUBLICATION_NETWORKS,
-    num_heat_permutations=1000, num_network_permutations=100, num_cores=-1
+    num_heat_permutations=1000, num_network_permutations=100, num_cores=-1,
+    score_by='p'
 ):
+    """
+    Args:
+        score_by: what to use for scoring: 'p' for p-value, 'fdr' for q-value
+    """
     hotnet_path = Path(hotnet_path)
+    interpreter = Path(interpreter)
+    analysis_name += '_' + score_by
     output_dir = OUTPUT_DIR / analysis_name
 
     hotnet = HotNet(interpreter, hotnet_path)
@@ -138,7 +146,8 @@ def run_on_active_driver_results(
         hotnet.create_network_files(networks, num_network_permutations, num_cores)
 
     df = active_driver_results['all_gene_based_fdr']
-    df = df.set_index('gene')['p']
+    df[score_by] = - np.log10(df[score_by])
+    df = df.set_index('gene')[score_by]
 
     with NamedTemporaryFile('w') as input_heat_file, NamedTemporaryFile('w', suffix='.json') as output_heat_file:
 
@@ -151,7 +160,7 @@ def run_on_active_driver_results(
             'scores',
             heat_file=input_heat_file.name,
             output_file=output_heat_file.name,
-            name='active_driver_p_values'
+            name=analysis_name
         )
 
         # run HotNet
@@ -185,7 +194,7 @@ def run_all(site_type: str, **kwargs):
 
     for analysis in [active_driver.pan_cancer_analysis, active_driver.clinvar_analysis]:
         result = analysis(site_type)
-        run_on_active_driver_results(result, analysis.name + '/' + site_type, **kwargs)
+        run_on_active_driver_results(result, analysis.name + '_' + site_type, **kwargs)
 
 
 def run_all_from_biogrid(site_type: str, hotnet_path, interpreter, **kwargs):
