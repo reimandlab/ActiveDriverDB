@@ -36,10 +36,14 @@ def named(func, name):
     return func
 
 
-active_driver_analyses = {
+full_active_driver_analyses = {
     # analysis -> mutation source
     pan_cancer_analysis: MC3Mutation,
-    clinvar_analysis: InheritedMutation,
+    clinvar_analysis: InheritedMutation
+}
+
+active_driver_analyses = {
+    **full_active_driver_analyses,
     **{
         named(
             lambda site_type: per_cancer_analysis(site_type)[cancer.code], f'per_cancer_analysis_{cancer.code}'
@@ -54,6 +58,60 @@ class Motif:
     def __init__(self, name, pattern):
         self.name = name
         self.pattern = pattern
+
+
+def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_to_genes: List[str]=None):
+
+    motifs_counter = MotifsCounter(site_type, mode='change_of_motif')
+    sites = (
+        Site.query.filter(Site.type.contains(site_type))
+        .join(Protein).filter(Protein.is_preferred_isoform)
+    )
+
+    def fuzzy_site_filter(sites):
+        return [
+            site for site in sites
+            # matches 'O-glycosylation' for site_type 'glycosylation'
+            if any(site_type.name in s_t for s_t in site.type)
+        ]
+
+    mutations_by_impact_by_gene = {
+        # order matters
+        'direct': defaultdict(int),
+        'motif-changing': defaultdict(int),
+        'proximal': defaultdict(int),
+        'distal': defaultdict(int)
+    }
+
+    mutations = (
+        Mutation.query
+        .filter(Mutation.in_sources(source))
+        .join(Protein)
+        .join(Gene, Gene.preferred_isoform_id == Protein.id)
+    )
+    motifs_data = motifs_counter.gather_muts_and_sites(mutations, sites, occurrences_in=[source])
+
+    all_breaking_muts = set()
+    for motif_name, breaking_muts in motifs_data.muts_breaking_sites_motif.items():
+        all_breaking_muts.update(breaking_muts)
+
+    mutations = mutations.filter(Mutation.affected_sites.any(Site.type.contains(site_type)))
+    if limit_to_genes is not None:
+        mutations = mutations.filter(
+            Gene.name.in_(limit_to_genes)
+        )
+    mutations = mutations.with_entities(Gene, Mutation)
+
+    for gene, mutation in tqdm(mutations, total=mutations.count()):
+
+        impact = mutation.impact_on_ptm(fuzzy_site_filter)
+        if impact != 'direct' and mutation in all_breaking_muts:
+            mutations_by_impact_by_gene['motif-changing'][gene] += 1
+            continue
+        assert impact != 'none'
+        mutations_by_impact_by_gene[impact][gene] += 1
+
+    return mutations_by_impact_by_gene
 
 
 class Plots(CountStore):
@@ -186,19 +244,35 @@ class Plots(CountStore):
         mutation_counts = self.count_mutations_by_gene(source, top_fdr.gene, site_type, filters)
         return top_fdr.gene, mutation_counts, [f'Mutations: {count}<br>FDR: {fdr}' for count, fdr in zip(top_fdr.fdr)]
 
-    @cases(site_type=site_types_names)
-    @counter
-    @bar_plot
-    def pan_cancer_active_driver(self, site_type=any_site_type):
-        result = pan_cancer_analysis(site_type)
-        return self.active_driver_by_muts_count(result, MC3Mutation, site_type)
+    @staticmethod
+    def active_driver_by_muts_stacked(result, source, site_type):
+        top_fdr = result['top_fdr']
+        grouped = gather_ptm_muts_impacts(source, site_type, limit_to_genes=top_fdr.gene)
+        return {
+            impact: ([gene.name for gene in muts_by_gene], muts_by_gene.values(), [])
+            for impact, muts_by_gene in grouped.items()
+        }
 
-    @cases(site_type=site_types_names)
+    active_driver_cases = cases(
+        analysis=full_active_driver_analyses,
+        site_type=site_types + [SiteType(name=any_site_type)],
+    ).set_mode('product')
+
+    @active_driver_cases
+    @counter
+    @stacked_bar_plot
+    def active_driver_muts_by_impact(self, analysis, site_type):
+        source = active_driver_analyses[analysis]
+        result = analysis(site_type.name)
+        return self.active_driver_by_muts_stacked(result, source, site_type)
+
+    @active_driver_cases
     @counter
     @bar_plot
-    def clinvar_active_driver(self, site_type=any_site_type):
-        result = clinvar_analysis(site_type)
-        return self.active_driver_by_muts_count(result, InheritedMutation, site_type)
+    def active_driver_muts(self, analysis, site_type):
+        source = active_driver_analyses[analysis]
+        result = analysis(site_type.name)
+        return self.active_driver_by_muts_count(result, source, site_type)
 
     @cases(cancer_code={cancer.code for cancer in Cancer.query})
     @bar_plot
@@ -415,43 +489,10 @@ class Plots(CountStore):
     @pie_chart
     def ptm_mutations_by_impact(self, source: MutationSource, site_type: SiteType):
 
-        motifs_counter = MotifsCounter(site_type, mode='change_of_motif')
-        sites = Site.query.filter(Site.type.contains(site_type))
-
-        def fuzzy_site_filter(sites):
-            return [
-                site for site in sites
-                # matches 'O-glycosylation' for site_type 'glycosylation'
-                if any(site_type.name in s_t for s_t in site.type)
-            ]
-
-        mutations_by_impact = {
-            # order matters
-            'direct': 0,
-            'motif-changing': 0,
-            'proximal': 0,
-            'distal': 0
+        muts_by_impact_by_gene = gather_ptm_muts_impacts(source, site_type)
+        muts_by_impact = {
+            impact: sum(gene_muts.values())
+            for impact, gene_muts in muts_by_impact_by_gene.items()
         }
 
-        mutations = (
-            Mutation.query
-            .filter(Mutation.in_sources(source))
-            .filter(Mutation.affected_sites.any(Site.type.contains(site_type)))
-            .join(Protein).filter(Protein.is_preferred_isoform)
-        )
-        motifs_data = motifs_counter.gather_muts_and_sites(mutations, sites, occurrences_in=[source])
-
-        all_breaking_muts = set()
-        for motif_name, breaking_muts in motifs_data.muts_breaking_sites_motif.items():
-            all_breaking_muts.update(breaking_muts)
-
-        for mutation in tqdm(mutations, total=mutations.count()):
-
-            impact = mutation.impact_on_ptm(fuzzy_site_filter)
-            if impact != 'direct' and mutation in all_breaking_muts:
-                mutations_by_impact['motif-changing'] += 1
-                continue
-            assert impact != 'none'
-            mutations_by_impact[impact] += 1
-
-        return {source.name: mutations_by_impact}
+        return {source.name: muts_by_impact}
