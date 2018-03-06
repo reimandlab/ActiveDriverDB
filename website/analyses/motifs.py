@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict, namedtuple
-from typing import Pattern, Iterable, Mapping, Union, List
+from typing import Pattern, Iterable, Mapping, Union, List, NamedTuple
 
 from flask_sqlalchemy import BaseQuery
 from tqdm import tqdm
@@ -54,16 +54,24 @@ def mutate_sequence(site: Site, mutation: Mutation, offset: int) -> str:
     return sequence
 
 
-MotifsRelatedCounts = namedtuple(
-    'MotifsRelatedCounts',
-    [
-        'sites_with_motif', 'sites_with_broken_motif',
-        'muts_around_sites_with_motif', 'muts_breaking_sites_motif'
-    ]
-)
+MotifName = str
 
 
-def select_sites_with_motifs(sites: Iterable, motifs) -> Mapping[str, set]:
+class MotifsRelatedCounts(NamedTuple):
+    sites_with_motif: Mapping[MotifName, int]
+    sites_with_broken_motif: Mapping[MotifName, int]
+    muts_around_sites_with_motif: Mapping[MotifName, int]
+    muts_breaking_sites_motif: Mapping[MotifName, int]
+
+
+class MotifsData(NamedTuple):
+    sites_with_motif: Mapping[MotifName, set]
+    sites_with_broken_motif: Mapping[MotifName, set]
+    muts_around_sites_with_motif: Mapping[MotifName, Mapping[Mutation, int]]
+    muts_breaking_sites_motif: Mapping[MotifName, Mapping[Mutation, int]]
+
+
+def select_sites_with_motifs(sites: Iterable, motifs) -> Mapping[MotifName, set]:
 
     sites_with_motif = defaultdict(set)
 
@@ -98,10 +106,10 @@ class MotifsCounter:
             has_motif(mutated_seq, motif) for motif in self.site_specific_motifs.values()
         )
 
-    def count_muts_and_sites(
+    def gather_muts_and_sites(
         self, mutations: BaseQuery, sites: BaseQuery,
         show_progress=True, occurrences_in: List[MutationSource]=None, intersection=None
-    ) -> MotifsRelatedCounts:
+    ) -> MotifsData:
         """If occurrences_in is provided, the count of mutations will
         represent number of occurrences of mutations in provided
         sources, instead of number of distinct substitutions.
@@ -159,16 +167,27 @@ class MotifsCounter:
                             sites_with_broken_motif[motif_name].add(site)
                             muts_breaking_sites_motif[motif_name][mutation] = count
 
-        return MotifsRelatedCounts(
+        return MotifsData(
             sites_with_motif=sites_with_motif,
             sites_with_broken_motif=sites_with_broken_motif,
+            muts_around_sites_with_motif=muts_around_sites_with_motif,
+            muts_breaking_sites_motif=muts_breaking_sites_motif
+        )
+
+    def count_muts_and_sites(self, *args, **kwargs) -> MotifsRelatedCounts:
+
+        data = self.gather_muts_and_sites(*args, **kwargs)
+
+        return MotifsRelatedCounts(
+            sites_with_motif={motif: len(sites) for motif, sites in data.sites_with_motif.items()},
+            sites_with_broken_motif={motif: len(sites) for motif, sites in data.sites_with_broken_motif.items()},
             muts_around_sites_with_motif=defaultdict(int, {
                 motif: sum(counts_by_mutations.values())
-                for motif, counts_by_mutations in muts_around_sites_with_motif.items()
+                for motif, counts_by_mutations in data.muts_around_sites_with_motif.items()
             }),
             muts_breaking_sites_motif=defaultdict(int, {
                 motif: sum(counts_by_mutations.values())
-                for motif, counts_by_mutations in muts_breaking_sites_motif.items()
+                for motif, counts_by_mutations in data.muts_breaking_sites_motif.items()
             })
         )
 

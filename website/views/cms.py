@@ -118,6 +118,7 @@ USER_ACCESSIBLE_VARIABLES = {
     'venn': plot_factory('Venn diagram', 'venn', 'VennDiagrams'),
     'box_plot': plot_factory('BoxPlot', 'box_plot', 'Plots'),
     'bar_plot': plot_factory('BarPlot', 'bar_plot', 'Plots'),
+    'pie_chart': plot_factory('PieChart', 'pie_chart', 'Plots'),
     'plot_data': lambda name: STORES['Plots'][name],
     'contact_form': create_contact_form,
     'dependency': dependency,

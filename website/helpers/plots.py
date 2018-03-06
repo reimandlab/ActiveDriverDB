@@ -67,6 +67,26 @@ def box_plot(boxes: BoxSet):
     return results
 
 
+Pie = Mapping[str, float]
+
+
+def pie_chart(pies: Mapping[str, Pie]):
+
+    results = []
+
+    for pie_name, pie in pies.items():
+
+        result = {
+            'labels': list(pie.keys()),
+            'values': list(pie.values()),
+            'name': pie_name,
+            'type': 'pie'
+        }
+        results.append(result)
+
+    return results
+
+
 def as_decorator(plotting_func, unpack=False):
     def decorator(data_func):
 
@@ -86,6 +106,7 @@ def as_decorator(plotting_func, unpack=False):
 
 grouped_box_plot = as_decorator(grouped_box_plot)
 box_plot = as_decorator(box_plot)
+pie_chart = as_decorator(pie_chart)
 bar_plot = as_decorator(bar_plot, unpack=True)
 stacked_bar_plot = as_decorator(stacked_bar_plot)
 

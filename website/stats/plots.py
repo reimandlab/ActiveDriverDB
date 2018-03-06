@@ -6,14 +6,14 @@ from numpy import nan
 from pandas import DataFrame
 from tqdm import tqdm
 
-from analyses.motifs import count_by_active_driver, all_motifs, count_by_sources
+from analyses.motifs import count_by_active_driver, all_motifs, count_by_sources, MotifsCounter
 from analyses.variability_in_population import (
     ptm_variability_population_rare_substitutions,
     does_median_differ_significances,
     proteins_variability_by_ptm_presence,
 )
 from database import db
-from helpers.plots import grouped_box_plot, bar_plot, stacked_bar_plot, p_value_annotations
+from helpers.plots import grouped_box_plot, bar_plot, stacked_bar_plot, p_value_annotations, pie_chart
 from models import (
     Plot, Site, MC3Mutation, InheritedMutation, Cancer,
     Gene,
@@ -261,16 +261,10 @@ class Plots(CountStore):
         else:
             by, bg = 'muts_breaking_sites_motif', 'muts_around_sites_with_motif'
 
-        def sum_or_count(data):
-            try:
-                return sum(data)
-            except TypeError:
-                return sum(len(e) for e in data)
-
         ratio_and_count = {}
         for gene_name, counts in counts_by_gene.items():
-            by_count = sum_or_count(getattr(counts, by).values())
-            bg_count = sum_or_count(getattr(counts, bg).values())
+            by_count = sum(getattr(counts, by).values())
+            bg_count = sum(getattr(counts, bg).values())
             if by_count:
                 ratio_and_count[gene_name] = (by_count / bg_count, by_count)
 
@@ -297,8 +291,8 @@ class Plots(CountStore):
                 muts_around = counts.muts_around_sites_with_motif[motif]
                 muts_percentage = breaking_muts / muts_around * 100 if muts_around else nan
 
-                broken_sites = len(counts.sites_with_broken_motif[motif])
-                motif_sites = len(counts.sites_with_motif[motif])
+                broken_sites = counts.sites_with_broken_motif[motif]
+                motif_sites = counts.sites_with_motif[motif]
                 sites_percentage = broken_sites / motif_sites * 100 if motif_sites else nan
 
                 if y_axis == 'mutations':
@@ -414,3 +408,50 @@ class Plots(CountStore):
                 counts[site_type] += 1
 
         return site_types_names, [counts[site_type] for site_type in site_types_names]
+
+    impact_cases = cases(source=[InheritedMutation, MC3Mutation], site_type=site_types).set_mode('product')
+
+    @impact_cases
+    @pie_chart
+    def ptm_mutations_by_impact(self, source: MutationSource, site_type: SiteType):
+
+        motifs_counter = MotifsCounter(site_type, mode='change_of_motif')
+        sites = Site.query.filter(Site.type.contains(site_type))
+
+        def fuzzy_site_filter(sites):
+            return [
+                site for site in sites
+                # matches 'O-glycosylation' for site_type 'glycosylation'
+                if any(site_type.name in s_t for s_t in site.type)
+            ]
+
+        mutations_by_impact = {
+            # order matters
+            'direct': 0,
+            'motif-changing': 0,
+            'proximal': 0,
+            'distal': 0
+        }
+
+        mutations = (
+            Mutation.query
+            .filter(Mutation.in_sources(source))
+            .filter(Mutation.affected_sites.any(Site.type.contains(site_type)))
+            .join(Protein).filter(Protein.is_preferred_isoform)
+        )
+        motifs_data = motifs_counter.gather_muts_and_sites(mutations, sites, occurrences_in=[source])
+
+        all_breaking_muts = set()
+        for motif_name, breaking_muts in motifs_data.muts_breaking_sites_motif.items():
+            all_breaking_muts.update(breaking_muts)
+
+        for mutation in tqdm(mutations, total=mutations.count()):
+
+            impact = mutation.impact_on_ptm(fuzzy_site_filter)
+            if impact != 'direct' and mutation in all_breaking_muts:
+                mutations_by_impact['motif-changing'] += 1
+                continue
+            assert impact != 'none'
+            mutations_by_impact[impact] += 1
+
+        return {source.name: mutations_by_impact}

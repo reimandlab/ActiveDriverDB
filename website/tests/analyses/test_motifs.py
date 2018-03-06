@@ -61,8 +61,8 @@ class MotifAnalysisTest(DatabaseTest):
 
         assert counts.muts_around_sites_with_motif['canonical'] == 4
         assert counts.muts_breaking_sites_motif['canonical'] == 3
-        assert counts.sites_with_broken_motif['canonical'] == {canonical_sites[0], canonical_sites[1]}
-        assert counts.sites_with_motif['canonical'] == set(canonical_sites)
+        assert counts.sites_with_broken_motif['canonical'] == 2
+        assert counts.sites_with_motif['canonical'] == len(canonical_sites)
 
         assert counts.muts_around_sites_with_motif['non-canonical'] == 0
 
@@ -71,3 +71,8 @@ class MotifAnalysisTest(DatabaseTest):
 
         assert selection['canonical'] == set(canonical_sites)
         assert select_sites_with_motifs(all_sites, x_motifs) == selection
+
+        data = counter.gather_muts_and_sites(Mutation.query, Site.query)
+
+        assert data.sites_with_broken_motif['canonical'] == {canonical_sites[0], canonical_sites[1]}
+        assert data.sites_with_motif['canonical'] == set(canonical_sites)

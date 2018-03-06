@@ -33,51 +33,50 @@
 
 {% endmacro %}
 
-{% macro box_plot(name, traces, title='', mode='group', y_axis={}, x_axis={}, notched=True) %}
 
-  <div id="box_plot_{{name}}"></div>
+{% macro plotly_plot(plot_type, name, traces, y_axis, x_axis, colors=None) %}
+
+  <div id="{{ plot_type }}_{{ name }}"></div>
+
+  {% if colors %}
+    {% for trace in traces or [] %}
+      {% set _ = trace.update({'marker': {'colors': colors}}) %}
+    {% endfor %}
+  {% endif %}
+
+  <script>
+      var data = {{ traces | tojson }};
+
+      var layout = {
+          yaxis: {{ y_axis | tojson }},
+          xaxis: {{ x_axis | tojson }},
+          {% for attr, value in kwargs.items() %}
+          {{ attr }}: {{ value | tojson }},
+          {% endfor %}
+      }
+
+      plot('{{ plot_type }}_{{ name }}', data, layout);
+  </script>
+
+{% endmacro %}
+
+
+{% macro box_plot(name, traces, title='', mode='group', y_axis={}, x_axis={}, notched=True) %}
 
   {% for trace in traces or [] %}
     {% set _ = trace.update({'notched': notched}) %}
   {% endfor %}
 
-  <script>
-      var data = {{ traces | tojson }};
-
-      var layout = {
-          yaxis: {{ y_axis | tojson }},
-          xaxis: {{ x_axis | tojson }},
-          boxmode: '{{ mode }}',
-          title: '{{ title }}',
-          {% for attr, value in kwargs.items() %}
-            {{ attr }}: {{ value | tojson }},
-          {% endfor %}
-      }
-
-
-      plot('box_plot_{{ name }}', data, layout);
-  </script>
+  {{ plotly_plot('box_plot', name, traces, y_axis, x_axis, title=title, boxmode=mode, **kwargs) }}
 
 {% endmacro %}
 
+
 {% macro bar_plot(name, traces, title='', y_axis={}, x_axis={}) %}
-
-  <div id="bar_plot_{{name}}"></div>
-
-  <script>
-      var data = {{ traces | tojson }};
-
-      var layout = {
-          yaxis: {{ y_axis | tojson }},
-          xaxis: {{ x_axis | tojson }},
-          title: '{{ title }}',
-          {% for attr, value in kwargs.items() %}
-              {{ attr }}: {{ value | tojson }},
-          {% endfor %}
-      }
+  {{ plotly_plot('bar_plot', name, traces, y_axis, x_axis, title=title, **kwargs) }}
+{% endmacro %}
 
 
-      plot('bar_plot_{{ name }}', data, layout);
-  </script>
-
+{% macro pie_chart(name, traces, title='', y_axis={}, x_axis={}) %}
+  {{ plotly_plot('pie_chart', name, traces, y_axis, x_axis, title=title, **kwargs) }}
 {% endmacro %}
