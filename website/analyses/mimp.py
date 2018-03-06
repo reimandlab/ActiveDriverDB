@@ -15,6 +15,7 @@ from models import Kinase, Site, SiteType, Protein, extract_padded_sequence
 
 
 pandas2ri.activate()
+r("options(warn=1)")
 
 
 def load_mimp():
