@@ -36,7 +36,6 @@ plot = (function () {
 
         var COMMON_PLOT_OPTIONS = {
             displaylogo: false,
-            modeBarButtonsToRemove: ['toImage'],
             modeBarButtonsToAdd: [{
                 name: 'Save as SVG',
                 icon: Plotly.Icons.camera,
