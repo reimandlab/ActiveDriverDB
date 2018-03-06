@@ -242,7 +242,11 @@ class Plots(CountStore):
     def active_driver_by_muts_count(self, result, source, site_type, filters=None):
         top_fdr = result['top_fdr']
         mutation_counts = self.count_mutations_by_gene(source, top_fdr.gene, site_type, filters)
-        return top_fdr.gene, mutation_counts, [f'Mutations: {count}<br>FDR: {fdr}' for count, fdr in zip(top_fdr.fdr)]
+        return (
+            top_fdr.gene,
+            mutation_counts,
+            [f'Mutations: {count}<br>FDR: {fdr}' for count, fdr in zip(mutation_counts, top_fdr.fdr)]
+        )
 
     @staticmethod
     def active_driver_by_muts_stacked(result, source, site_type):
