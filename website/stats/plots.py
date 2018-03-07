@@ -60,7 +60,7 @@ class Motif:
         self.pattern = pattern
 
 
-def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_to_genes: List[str]=None):
+def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_to_genes: List[str]=None, occurrences=True):
 
     motifs_counter = MotifsCounter(site_type, mode='change_of_motif')
     sites = (
@@ -100,16 +100,18 @@ def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_t
         mutations = mutations.filter(
             Gene.name.in_(limit_to_genes)
         )
-    mutations = mutations.with_entities(Gene, Mutation)
+    mutations = mutations.with_entities(Gene.name, Mutation)
 
-    for gene, mutation in tqdm(mutations, total=mutations.count()):
+    for gene_name, mutation in tqdm(mutations, total=mutations.count()):
+
+        value = mutation.sources_dict[source.name].get_value() if occurrences else 1
 
         impact = mutation.impact_on_ptm(fuzzy_site_filter)
         if impact != 'direct' and mutation in all_breaking_muts:
-            mutations_by_impact_by_gene['motif-changing'][gene] += 1
+            mutations_by_impact_by_gene['motif-changing'][gene_name] += value
             continue
         assert impact != 'none'
-        mutations_by_impact_by_gene[impact][gene] += 1
+        mutations_by_impact_by_gene[impact][gene_name] += value
 
     return mutations_by_impact_by_gene
 
@@ -251,9 +253,10 @@ class Plots(CountStore):
     @staticmethod
     def active_driver_by_muts_stacked(result, source, site_type):
         top_fdr = result['top_fdr']
-        grouped = gather_ptm_muts_impacts(source, site_type, limit_to_genes=top_fdr.gene)
+        genes = top_fdr.gene
+        grouped = gather_ptm_muts_impacts(source, site_type, limit_to_genes=genes)
         return {
-            impact: ([gene.name for gene in muts_by_gene], muts_by_gene.values(), [])
+            impact: (genes, [muts_by_gene[gene_name] for gene_name in genes], [])
             for impact, muts_by_gene in grouped.items()
         }
 

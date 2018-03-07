@@ -40,7 +40,9 @@
 
   {% if colors %}
     {% for trace in traces or [] %}
-      {% set _ = trace.update({'marker': {'colors': colors}}) %}
+      {% set color = colors[loop.index - 1] %}
+      {% set number = 'colors' if (color is iterable and color is not string) else 'color' %}
+      {% set _ = trace.update({'marker': {number: color}}) %}
     {% endfor %}
   {% endif %}
 
