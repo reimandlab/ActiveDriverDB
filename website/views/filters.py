@@ -1,4 +1,4 @@
-from models import MC3Mutation, DrugGroup, Drug, Disease
+from models import MC3Mutation, DrugGroup, Drug, Disease, source_manager
 from models import Cancer
 from models import Mutation
 from models import Site
@@ -94,7 +94,7 @@ def source_filter_to_sqlalchemy(source_filter, target):
 
 
 def source_to_sa_filter(source_name, target=Mutation):
-    field_name = Mutation.source_fields[source_name]
+    field_name = source_manager.visible_fields[source_name]
     field = getattr(target, field_name)
     return has_or_any(field)
 
@@ -107,7 +107,7 @@ def create_dataset_labels():
     # map dataset display names to dataset names
     dataset_labels = {
         dataset.name: dataset.display_name
-        for dataset in Mutation.source_specific_data
+        for dataset in source_manager.all
     }
     # hide user's mutations in dataset choice
     # (there is separate widget for that, shown only if there are any user's datasets)
@@ -148,7 +148,7 @@ def common_filters(
     return [
         Filter(
             Mutation, 'sources', comparators=['in'],
-            choices=list(Mutation.source_fields.keys()),
+            choices=list(source_manager.visible_fields.keys()),
             default=default_source, nullable=source_nullable,
             as_sqlalchemy=source_filter_to_sqlalchemy
         ),

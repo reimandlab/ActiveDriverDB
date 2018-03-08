@@ -1,5 +1,5 @@
 import re
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from typing import Pattern, Iterable, Mapping, Union, List, NamedTuple
 
 from flask_sqlalchemy import BaseQuery

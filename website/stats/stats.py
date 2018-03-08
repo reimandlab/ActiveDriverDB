@@ -1,11 +1,11 @@
 from itertools import combinations
-from typing import List, Type
+from typing import List
 
 from sqlalchemy import and_, func, distinct, or_
 
 import models
 from database import db, fast_count
-from models import Mutation, are_details_managed, MC3Mutation, MutationDetails
+from models import Mutation, are_details_managed, MC3Mutation, source_manager, MutationSource
 
 from .store import counter
 from .store import CountStore
@@ -73,12 +73,12 @@ class Statistics(CountStore):
         return counts
 
     @staticmethod
-    def count_by_sources(sources: List[Type[MutationDetails]]):
+    def count_by_sources(sources: List[MutationSource]):
         return Mutation.query.filter(Mutation.in_sources(*sources)).count()
 
     def __init__(self):
 
-        for source_model in Mutation.source_specific_data:
+        for source_model in source_manager.all:
             # dirty trick: 1KGenomes is not a valid name in Python
             name = 'mutations_' + source_model.name.replace('1', 'T')
 
@@ -87,7 +87,7 @@ class Statistics(CountStore):
 
             self.register(counter(muts_counter, name=name))
 
-        for source_model in filter(lambda model: are_details_managed(model), Mutation.source_specific_data):
+        for source_model in filter(lambda model: are_details_managed(model), source_manager.all):
             name = f'mutations_{source_model.name}_annotations'
 
             self.register(
@@ -131,9 +131,9 @@ class Statistics(CountStore):
         """
 
         sources = [
-            model
-            for model in Mutation.source_specific_data
-            if model != models.MIMPMutation and model != models.UserUploadedMutation
+            source
+            for source in source_manager.all
+            if source.is_confirmed and source.is_visible
         ]
         count = 0
 

@@ -57,10 +57,10 @@ class MutationTest(DatabaseTest):
 
         both_sources = [MC3Mutation, InheritedMutation]
 
-        sites_with_muts_in_both_intersection = most_mutated_sites(both_sources, muts_intersection=True).all()
+        sites_with_muts_in_both_intersection = most_mutated_sites(both_sources, intersection=True).all()
         assert sites_with_muts_in_both_intersection == [(sites['K'], 4)]
 
-        sites_with_muts_in_both = most_mutated_sites(both_sources, muts_intersection=False).all()
+        sites_with_muts_in_both = most_mutated_sites(both_sources, intersection=False).all()
         assert sites_with_muts_in_both == [(sites['A'], 5), (sites['K'], 4)]
 
         glyco_sites_with_mc3 = most_mutated_sites([MC3Mutation], site_type='glycosylation').all()

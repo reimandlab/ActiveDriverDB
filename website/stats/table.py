@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 import models
 from database import db
-from models import Mutation, Protein, Site
+from models import Mutation, Protein, Site, source_manager
 
 
 def count_mutated_sites(site_types=tuple(), model=None, only_primary=False):
@@ -48,14 +48,10 @@ def count_mutated_sites(site_types=tuple(), model=None, only_primary=False):
 
 
 def mutation_sources():
-    sources = {}
-
-    for name, source in Mutation.sources_dict.items():
-        if name == 'user':
-            continue
-        sources[name] = Mutation.get_source_model(name)
-
-    return sources
+    return {
+        source.name: source
+        for source in source_manager.confirmed
+    }
 
 
 def source_specific_proteins_with_ptm_mutations():

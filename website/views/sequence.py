@@ -13,7 +13,7 @@ from helpers.tracks import MutationsTrack
 from helpers.tracks import SequenceTrack
 from helpers.tracks import Track
 from helpers.tracks import TrackElement
-from models import Domain
+from models import Domain, source_manager
 from models import Mutation
 from models import Site
 from views.abstract_protein import AbstractProteinView, GracefulFilterManager, ProteinRepresentation
@@ -64,7 +64,7 @@ class SequenceRepresentation(ProteinRepresentation):
         tracks = prepare_tracks(protein, self.protein_mutations)
 
         source = filter_manager.get_value('Mutation.sources')
-        source_model = Mutation.get_source_model(source)
+        source_model = source_manager.source_by_name[source]
         value_type = source_model.value_type
 
         parsed_mutations = self.represent_needles()
@@ -81,7 +81,7 @@ class SequenceRepresentation(ProteinRepresentation):
 
         source_name = self.filter_manager.get_value('Mutation.sources')
 
-        get_source_data = attrgetter(Mutation.source_fields[source_name])
+        get_source_data = attrgetter(source_manager.visible_fields[source_name])
 
         get_mimp_data = attrgetter('meta_MIMP')
 

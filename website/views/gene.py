@@ -5,7 +5,7 @@ from flask_classful import FlaskView
 from flask_classful import route
 from sqlalchemy.sql.elements import TextClause
 
-from models import Protein, Cancer, InheritedMutation, Disease, ClinicalData
+from models import Protein, Cancer, InheritedMutation, Disease, ClinicalData, source_manager
 from models import Mutation
 from models import Gene
 from models import Site
@@ -146,7 +146,7 @@ class GeneViewFilters(FilterManager):
         filters = [
             Filter(
                 Mutation, 'sources', comparators=['in'],
-                choices=list(Mutation.source_fields.keys()),
+                choices=list(source_manager.visible_fields.keys()),
                 default=None, nullable=True,
                 as_sqlalchemy=source_filter_to_sqlalchemy
             ),

@@ -130,7 +130,6 @@ def mutations_affecting_ptm_sites(f, sources):
 
     f.write('\t'.join(header) + '\n')
     for source in sources:
-        # mutation_details_model = Mutation.get_source_model(source)
         mutation_details_model = source
 
         for mut_details in tqdm(yield_objects(mutation_details_model.query), total=fast_count(mutation_details_model.query)):

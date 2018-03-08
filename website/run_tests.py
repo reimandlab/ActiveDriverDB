@@ -4,4 +4,4 @@ if [ $# -eq 0 ]
 	else
 		match="$1"
 fi
-python3 -m pytest -x -n 2 --cov=. -k "$match" -v
+python3 -m pytest -x -n 2 --cov=. -k "$match" -vv

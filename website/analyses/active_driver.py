@@ -5,7 +5,7 @@ from tempfile import NamedTemporaryFile
 
 import gc
 from traceback import print_exc
-from typing import Type, Mapping, Union
+from typing import Mapping, Union
 
 from diskcache import Cache
 from rpy2.rinterface import RRuntimeError
@@ -20,7 +20,7 @@ from database import get_or_create
 from exports.protein_data import sites_ac
 from helpers.cache import cache_decorator
 from imports import MutationImportManager
-from models import Gene, GeneList, GeneListEntry, MutationDetails, MC3Mutation
+from models import Gene, GeneList, GeneListEntry, MC3Mutation, MutationSource
 
 
 def load_active_driver(local_ad=True):
@@ -179,7 +179,7 @@ def save_all(analysis_name: str, data, base_path=None):
         datum.to_csv(path / f'{name}.tsv', sep='\t')
 
 
-def create_gene_list(name: str, list_data: DataFrame, mutation_source: Type[MutationDetails]=None) -> GeneList:
+def create_gene_list(name: str, list_data: DataFrame, mutation_source: MutationSource=None) -> GeneList:
     gene_list, created = get_or_create(GeneList, name=name)
 
     print(('Creating' if created else 'Updating') + f' gene list: {name}')

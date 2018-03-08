@@ -1,7 +1,7 @@
 from functools import partial
 from itertools import chain
 from pathlib import Path
-from subprocess import Popen, check_output
+from subprocess import check_output
 from tempfile import NamedTemporaryFile
 from typing import List
 

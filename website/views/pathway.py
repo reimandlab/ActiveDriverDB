@@ -4,7 +4,7 @@ from flask_classful import FlaskView
 from flask_classful import route
 
 from database import db, levenshtein_sorted
-from models import Pathway, GeneList, GeneListEntry, Mutation, Protein, Gene
+from models import Pathway, GeneList, GeneListEntry, Protein, Gene, source_manager
 from sqlalchemy import or_, func, and_, text
 from helpers.views import AjaxTableView
 
@@ -88,7 +88,7 @@ class PathwaysView(FlaskView):
     def with_significant_genes(self, significant_gene_list_name):
         query = request.args.get('query', '')
         gene_list = GeneList.query.filter_by(name=significant_gene_list_name).first_or_404()
-        dataset = Mutation.get_source_model(gene_list.mutation_source_name)
+        dataset = source_manager.source_by_name[gene_list.mutation_source_name]
         return template(
             'pathway/significant.html',
             gene_list=gene_list,

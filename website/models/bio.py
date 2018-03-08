@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from collections import UserList
 from functools import lru_cache
-from typing import Type
+from typing import Type, Mapping, Set, List, Dict
 
 from sqlalchemy import and_, distinct
 from sqlalchemy import case
@@ -13,9 +13,10 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method, Comparator
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, synonym
+from sqlalchemy.orm import backref, synonym, RelationshipProperty
 from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
+from sqlalchemy.util import classproperty
 from werkzeug.utils import cached_property
 
 from database import db, count_expression, client_side_defaults
@@ -947,7 +948,7 @@ class MutationDetailsManager(UserList, metaclass=ABCMeta):
 
     @property
     @abstractmethod
-    def name(self):
+    def name(self) -> str:
         """Internal name which has to remain unchanged, used in relationships"""
         pass
 
@@ -1091,9 +1092,19 @@ class MutationDetails:
         raise NotImplementedError
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Internal name which has to remain unchanged, used in relationships"""
         raise NotImplementedError
+
+    @property
+    def is_confirmed(self):
+        """Does this mutation come from an experiment (True) or it is a prediction (False)?"""
+        return True
+
+    @property
+    def is_visible(self):
+        """Should this mutation be shown to the user?"""
+        return True
 
     @property
     def value_type(self):
@@ -1135,6 +1146,10 @@ class UserUploadedMutation(MutationDetails, BioModel):
     name = 'user'
     display_name = 'User\'s mutations'
 
+    # user mutations should be visible in interface,
+    # but should not be included in whole-proteome analyses
+    is_confirmed = False
+
     value_type = 'count'
 
     def __init__(self, **kwargs):
@@ -1142,7 +1157,7 @@ class UserUploadedMutation(MutationDetails, BioModel):
         super().__init__(**kwargs)
 
     # having count not mapped with SQLAlchemy prevents useless attempts
-    # to update recodrs which are not stored in database at all:
+    # to update records which are not stored in database at all:
     # count = db.Column(db.Integer, default=0)
     query = db.Column(db.Text)
 
@@ -1497,6 +1512,8 @@ class MIMPMutation(ManagedMutationDetails, BioModel):
 
     name = 'MIMP'
     display_name = 'MIMP'
+    is_confirmed = False
+    is_visible = False
 
     details_manager = MIMPMetaManager
 
@@ -1609,6 +1626,72 @@ def managed_mutation_details_relationship(model):
     )
 
 
+class Sources:
+
+    def __init__(self, all_sources):
+        self.all = all_sources
+
+        self.relationships = {
+            'meta_' + source.name: (
+                managed_mutation_details_relationship(source)
+                if are_details_managed(source) else
+                mutation_details_relationship(source)
+            )
+            for source in all_sources
+        }
+
+        self.visible: Set[MutationSource] = {
+            source for source in all_sources if source.is_visible
+        }
+        self.confirmed: Set[MutationSource] = {
+            source for source in all_sources if source.is_confirmed
+        }
+
+        self.fields: Mapping[MutationSource, str] = {
+            source: 'meta_' + source.name
+            for source in all_sources
+        }
+
+        self.visible_fields: Mapping[str, str] = {
+            source.name: 'meta_' + source.name
+            for source in self.visible
+        }
+
+    def get_relationship(self, source: MutationSource) -> RelationshipProperty:
+        return self.class_relation_map[source]
+
+    def get_bound_relationship(self, mutation, source: MutationSource) -> MutationDetails:
+        return getattr(mutation, self.fields[source])
+
+    @property
+    @lru_cache()
+    def class_relation_map(self) -> Dict[MutationSource, RelationshipProperty]:
+        return {
+            model: getattr(Mutation, self.fields[model])
+            for model in self.all
+        }
+
+    @property
+    @lru_cache()
+    def source_by_name(self) -> Dict[str, MutationSource]:
+        return {
+            model.name: model
+            for model in self.all
+        }
+
+
+source_manager = Sources([
+    # order matters (widget's labels will show up in this order)
+    # TCGAMutation,
+    MC3Mutation,
+    InheritedMutation,
+    ExomeSequencingMutation,
+    The1000GenomesMutation,
+    UserUploadedMutation,
+    MIMPMutation
+])
+
+
 class Mutation(BioModel):
     __table_args__ = (
         db.Index('mutation_index', 'alt', 'protein_id', 'position'),
@@ -1629,46 +1712,7 @@ class Mutation(BioModel):
 
     types = ('direct', 'network-rewiring', 'proximal', 'distal', 'none')
 
-    # order matters (widget's labels will show up in this order)
-    source_specific_data = [
-        # TCGAMutation,
-        MC3Mutation,
-        InheritedMutation,
-        ExomeSequencingMutation,
-        The1000GenomesMutation,
-        UserUploadedMutation,
-        MIMPMutation
-    ]
-
-    source_data_relationships = {
-        'meta_' + model.name: (
-            managed_mutation_details_relationship(model)
-            if are_details_managed(model) else
-            mutation_details_relationship(model)
-        )
-        for model in source_specific_data
-    }
-
-    vars().update(source_data_relationships)
-
-    @classmethod
-    def get_source_model(cls, name: str) -> MutationSource:
-        for model in cls.source_specific_data:
-            if model.name == name:
-                return model
-
-    @classmethod
-    def get_relationship(cls, source: MutationSource, class_relation_map={}):
-        if not class_relation_map:
-            for model in cls.source_specific_data:
-                class_relation_map[model] = getattr(cls, 'meta_' + model.name)
-        return class_relation_map[source]
-
-    source_fields = OrderedDict(
-        (model.name, 'meta_' + model.name)
-        for model in source_specific_data
-        if model != MIMPMutation
-    )
+    vars().update(source_manager.relationships)
 
     populations_1KG = details_proxy(The1000GenomesMutation, 'affected_populations', managed=True)
     populations_ESP6500 = details_proxy(ExomeSequencingMutation, 'affected_populations', managed=True)
@@ -1684,38 +1728,22 @@ class Mutation(BioModel):
         )
 
     @hybrid_property
-    def sources_dict(self):
-        """Return list of names of sources which mention this mutation
-
-        Names of sources are determined by source_fields class property.
-        """
-        sources = {}
-        for source_name, associated_field in self.source_fields.items():
-            field_value = getattr(self, associated_field)
-            if source_name == 'user':
-                continue
-            if field_value:
-                sources[source_name] = field_value
-        return sources
+    def sources_dict(self) -> Mapping[str, MutationDetails]:
+        """Return mapping: name -> bound relationship for sources that mention this mutation"""
+        mapping = {}
+        for source in source_manager.confirmed:
+            details = source_manager.get_bound_relationship(self, source)
+            if details:
+                mapping[source.name] = details
+        return mapping
 
     @hybrid_property
-    def sources(self):
-        """Return list of names of sources which mention this mutation
-
-        Names of sources are determined by source_fields class property.
-        """
-        sources = []
-        for source_name, associated_field in self.source_fields.items():
-            if getattr(self, associated_field):
-                sources.append(source_name)
-        return sources
-
-    @hybrid_property
-    def confirmed_fields(cls):
+    def sources(self) -> List[str]:
+        """Return list of names of (visible) sources that mention this mutation"""
         return [
-            getattr(cls, field_name)
-            for field_name in cls.source_fields.values()
-            if field_name != 'meta_user'
+            source.name
+            for source in source_manager.visible
+            if source_manager.get_bound_relationship(self, source)
         ]
 
     @hybrid_property
@@ -1725,7 +1753,7 @@ class Mutation(BioModel):
         (or experiments). Presence of MIMP metadata does not imply
         if mutation has been ever studied experimentally before.
         """
-        return any(self.confirmed_fields)
+        return any([source_manager.get_bound_relationship(self, source) for source in source_manager.confirmed])
 
     @is_confirmed.expression
     def is_confirmed(cls):
@@ -1734,14 +1762,16 @@ class Mutation(BioModel):
             relationship_field.any()
             if relationship_field.prop.uselist
             else relationship_field.has()
-            for relationship_field in cls.confirmed_fields
+            for relationship_field in [
+                source_manager.get_relationship(source) for source in source_manager.confirmed
+            ]
         )
 
     @property
     def sites(self):
         return self.get_affected_ptm_sites()
 
-    # TODO: hybrid with sites?
+    # TODO: hybrid with `sites` property?
     affected_sites = db.relationship(
         'Site',
         primaryjoin=(
@@ -1954,9 +1984,9 @@ class Mutation(BioModel):
         return and_(
             (
                 (
-                    cls.get_relationship(source).any()
+                    source_manager.get_relationship(source).any()
                     if are_details_managed(source) else
-                    cls.get_relationship(source).has()
+                    source_manager.get_relationship(source).has()
                 )
                 for source in sources
             )
