@@ -210,10 +210,10 @@ class Plots(CountStore):
         return self.most_mutated_sites([MC3Mutation, InheritedMutation], site_type, intersection=True)
 
     @staticmethod
-    def most_mutated_sites(sources, site_type=any_site_type, intersection=False, stacked=False):
+    def most_mutated_sites(sources, site_type=any_site_type, intersection=False, stacked=False, limit=20):
         from analyses.enrichment import most_mutated_sites
 
-        most_mutated = partial(most_mutated_sites, site_type=site_type, limit=20)
+        most_mutated = partial(most_mutated_sites, site_type=site_type, limit=limit)
 
         def create_track(sites, counts):
             return (
@@ -236,11 +236,41 @@ class Plots(CountStore):
             (sources[1:], False, sources[:1]),  # e.g. MC3
         ]
 
+        site_track_count = defaultdict(dict)
+        track_names = []
+
         for sources, intersection, exclusive in tracks:
 
             query = most_mutated(sources, intersection=intersection, exclusive=exclusive)
-            sites, counts = zip(*query.all())
-            results[' and '.join([source.name for source in sources])] = create_track(sites, counts)
+            track_name = ' and '.join([source.name for source in sources])
+            track_names.append(track_name)
+
+            for site, count in query:
+                site_track_count[site][track_name] = count
+
+        # take top X sites:
+
+        def sum_of_counts(site_data):
+            site, counts_by_track = site_data
+            return sum(counts_by_track.values())
+
+        sorted_sites = sorted(
+            site_track_count.items(),
+            key=sum_of_counts,
+            reverse=True
+        )
+
+        # tracks with sites limited to the top sites
+        limited_tracks_data = defaultdict(list)
+
+        for site, site_data in sorted_sites[:limit]:
+            for track_name in track_names:
+                count = site_data.get(track_name, 0)
+                limited_tracks_data[track_name].append((site, count))
+
+        for track_name, data in limited_tracks_data.items():
+            sites, counts = zip(*data)
+            results[track_name] = create_track(sites, counts)
 
         return results
 
