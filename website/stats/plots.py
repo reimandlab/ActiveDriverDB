@@ -1,4 +1,5 @@
 from collections import defaultdict
+from functools import partial
 from typing import List
 from warnings import warn
 
@@ -104,7 +105,7 @@ def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_t
 
     for gene_name, mutation in tqdm(mutations, total=mutations.count()):
 
-        value = mutation.sources_dict[source.name].get_value() if occurrences else 1
+        value = mutation.sources_map[source.name].get_value() if occurrences else 1
 
         impact = mutation.impact_on_ptm(fuzzy_site_filter)
         if impact != 'direct' and mutation in all_breaking_muts:
@@ -186,37 +187,61 @@ class Plots(CountStore):
 
     @cases(site_type=site_types_names)
     @counter
+    @bar_plot
     def most_mutated_sites_mc3(self, site_type=any_site_type):
         return self.most_mutated_sites([MC3Mutation], site_type)
 
     @cases(site_type=site_types_names)
     @counter
+    @bar_plot
     def most_mutated_sites_clinvar(self, site_type=any_site_type):
         return self.most_mutated_sites([InheritedMutation], site_type)
 
-    both_sources_cases = cases(
-        site_type=site_types_names + [any_site_type],
-        intersection=[True, False]
-    ).set_mode('product')
+    both_sources_cases = cases(site_type=site_types_names + [any_site_type])
 
     @both_sources_cases
-    def most_mutated_sites_mc3_and_clinvar(self, site_type, intersection):
-        return self.most_mutated_sites(
-            [MC3Mutation, InheritedMutation],
-            site_type,
-            intersection
-        )
+    @stacked_bar_plot
+    def most_mutated_sites_mc3_and_clinvar(self, site_type):
+        return self.most_mutated_sites([MC3Mutation, InheritedMutation], site_type, stacked=True)
+
+    @both_sources_cases
+    @bar_plot
+    def most_mutated_sites_mc3_and_clinvar_intersection(self, site_type):
+        return self.most_mutated_sites([MC3Mutation, InheritedMutation], site_type, intersection=False)
 
     @staticmethod
-    @bar_plot
-    def most_mutated_sites(sources, site_type=any_site_type, intersection=None):
+    def most_mutated_sites(sources, site_type=any_site_type, intersection=None, stacked=False):
         from analyses.enrichment import most_mutated_sites
 
-        sites, counts = zip(*most_mutated_sites(
-            sources, site_type, limit=20, muts_intersection=intersection
-        ).all())
+        most_mutated = partial(most_mutated_sites, site_type=site_type, limit=20)
 
-        return [f'{site.protein.gene_name} {site.position}{site.residue}' for site in sites], counts
+        def create_track(sites, counts):
+            return (
+                [f'{site.protein.gene_name} {site.position}{site.residue}' for site in sites],
+                counts
+            )
+
+        if not stacked or intersection:
+            sites, counts = zip(*most_mutated(sources, intersection=intersection).all())
+            return create_track(sites, counts)
+
+        assert len(sources) == 2
+
+        # so there are three tracks to stack: only ClinVar, only MC3, MC3 intersection ClinVar
+        results = {}
+
+        tracks = [
+            (sources[:1], False, True),  # ClinVar
+            (sources, True, False),      # MC3 intersection ClinVar
+            (sources[1:], False, True),  # ClinVar
+        ]
+
+        for sources, intersection, exclusive in tracks:
+
+            sites, counts = zip(*most_mutated(sources, intersection=intersection, exclusive=exclusive).all())
+            results[' and '.join([source.name for source in sources])] = create_track(sites, counts)
+
+        return results
 
     #
     # ACTIVE DRIVER
@@ -266,7 +291,6 @@ class Plots(CountStore):
     ).set_mode('product')
 
     @active_driver_cases
-    @counter
     @stacked_bar_plot
     def active_driver_muts_by_impact(self, analysis, site_type):
         source = active_driver_analyses[analysis]
@@ -274,7 +298,6 @@ class Plots(CountStore):
         return self.active_driver_by_muts_stacked(result, source, site_type)
 
     @active_driver_cases
-    @counter
     @bar_plot
     def active_driver_muts(self, analysis, site_type):
         source = active_driver_analyses[analysis]

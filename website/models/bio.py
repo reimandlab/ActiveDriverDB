@@ -1640,12 +1640,12 @@ class Sources:
             for source in all_sources
         }
 
-        self.visible: Set[MutationSource] = {
+        self.visible: List[MutationSource] = [
             source for source in all_sources if source.is_visible
-        }
-        self.confirmed: Set[MutationSource] = {
+        ]
+        self.confirmed: List[MutationSource] = [
             source for source in all_sources if source.is_confirmed
-        }
+        ]
 
         self.fields: Mapping[MutationSource, str] = {
             source: 'meta_' + source.name
@@ -1728,8 +1728,8 @@ class Mutation(BioModel):
         )
 
     @hybrid_property
-    def sources_dict(self) -> Mapping[str, MutationDetails]:
-        """Return mapping: name -> bound relationship for sources that mention this mutation"""
+    def sources_map(self) -> Mapping[str, MutationDetails]:
+        """Return mapping: name -> bound relationship for >confirmed< sources that mention this mutation"""
         mapping = {}
         for source in source_manager.confirmed:
             details = source_manager.get_bound_relationship(self, source)
@@ -1739,7 +1739,7 @@ class Mutation(BioModel):
 
     @hybrid_property
     def sources(self) -> List[str]:
-        """Return list of names of (visible) sources that mention this mutation"""
+        """Return list of names of >visible< sources that mention this mutation"""
         return [
             source.name
             for source in source_manager.visible

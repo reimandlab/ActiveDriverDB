@@ -42,12 +42,7 @@ class Widget:
             data = []
         self.data = data
         self._value = value
-        if isinstance(labels, dict):
-            labels = [
-                labels[datum] for datum in data
-                if labels[datum] is not None
-            ]
-        if labels and data and len(labels) > len(data):
+        if labels and data and len(labels) > len(data) and not isinstance(labels, dict):
             raise ValueError(
                 'Number of labels has to be lower '
                 'or equal the data elements count.'
@@ -72,9 +67,20 @@ class Widget:
     @property
     def items(self):
         data = self.data
+
         if data:
             data = [quote_if_needed(d) for d in data]
-        return zip(data, self.labels)
+
+        if isinstance(self.labels, dict):
+            for datum in data:
+                label = self.labels[datum]
+                if label is not None:
+                    yield datum, label
+        else:
+            for i, datum in enumerate(data):
+                yield datum, self.labels[i]
+
+        #return zip(data, self.labels)
 
     @property
     def all_active(self):

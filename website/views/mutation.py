@@ -8,7 +8,7 @@ from models import Mutation
 def prepare_datasets(mutation):
     datasets = []
 
-    sources_with_mutation = mutation.sources_dict
+    sources_with_mutation = mutation.sources_map
 
     for source in source_manager.confirmed:
         assert source.name != 'user'
