@@ -77,10 +77,8 @@ class Widget:
                 if label is not None:
                     yield datum, label
         else:
-            for i, datum in enumerate(data):
-                yield datum, self.labels[i]
-
-        #return zip(data, self.labels)
+            for datum, label in zip(data, self.labels):
+                yield datum, label
 
     @property
     def all_active(self):
