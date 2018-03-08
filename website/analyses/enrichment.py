@@ -429,7 +429,7 @@ def prepare_for_summing(sources: List[MutationSource], count_distinct_substituti
     return counts
 
 
-def most_mutated_sites(sources: List[MutationSource], site_type=None, limit=25, intersection=True, exclusive=False):
+def most_mutated_sites(sources: List[MutationSource], site_type=None, limit=25, intersection=True, exclusive=None):
     """Sources must be of the same type"""
 
     assert not (intersection and exclusive)
@@ -450,20 +450,13 @@ def most_mutated_sites(sources: List[MutationSource], site_type=None, limit=25, 
     if intersection:
         for source in sources:
             query = query.join(source)
-    elif exclusive:
-        for source in sources:
-            query = query.outerjoin(source)
-
-        to_exclude = [
-            source
-            for source in exclusive
-            if source not in sources
-        ]
-
-        query = query.filter(~Mutation.in_sources(*to_exclude))
     else:
         for source in sources:
             query = query.outerjoin(source)
+
+        if exclusive:
+            query = query.filter(~Mutation.in_sources(*exclusive))
+
 
     query = (
         query
@@ -480,31 +473,23 @@ def most_mutated_sites(sources: List[MutationSource], site_type=None, limit=25, 
         .having(and_(*counts))
     )
 
-    if len(sources) > 1:
-        # this code will work when len(sources) == 1,
-        # but using subquery might be suboptimal;
+    query = query.subquery()
 
-        # the only downside is that the label of
-        # the count is then 'count_1' instead of
-        # 'mutations_count'
+    total_muts_count = reduce(
+        operator.add, [
+            getattr(query.c, f'count_{i}')
+            for i in range(len(counts))
+        ]
+    )
 
-        query = query.subquery()
+    total_muts_count = total_muts_count.label('mutations_count')
 
-        total_muts_count = reduce(
-            operator.add, [
-                getattr(query.c, f'count_{i}')
-                for i in range(len(counts))
-            ]
+    query = (
+        db.session.query(
+            aliased(Site, query),
+            total_muts_count,
         )
-
-        total_muts_count = total_muts_count.label('mutations_count')
-
-        query = (
-            db.session.query(
-                aliased(Site, query),
-                total_muts_count,
-            )
-            .order_by(desc(total_muts_count))
-        )
+        .order_by(desc(total_muts_count))
+    )
 
     return query.limit(limit)

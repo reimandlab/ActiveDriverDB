@@ -207,10 +207,10 @@ class Plots(CountStore):
     @both_sources_cases
     @bar_plot
     def most_mutated_sites_mc3_and_clinvar_intersection(self, site_type):
-        return self.most_mutated_sites([MC3Mutation, InheritedMutation], site_type, intersection=False)
+        return self.most_mutated_sites([MC3Mutation, InheritedMutation], site_type, intersection=True)
 
     @staticmethod
-    def most_mutated_sites(sources, site_type=any_site_type, intersection=None, stacked=False):
+    def most_mutated_sites(sources, site_type=any_site_type, intersection=False, stacked=False):
         from analyses.enrichment import most_mutated_sites
 
         most_mutated = partial(most_mutated_sites, site_type=site_type, limit=20)
