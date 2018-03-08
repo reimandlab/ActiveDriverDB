@@ -456,11 +456,11 @@ def most_mutated_sites(sources: List[MutationSource], site_type=None, limit=25, 
 
         to_exclude = [
             source
-            for source in source_manager.confirmed
+            for source in exclusive
             if source not in sources
         ]
 
-        query = query.filter(Mutation.in_sources(*to_exclude))
+        query = query.filter(~Mutation.in_sources(*to_exclude))
     else:
         for source in sources:
             query = query.outerjoin(source)

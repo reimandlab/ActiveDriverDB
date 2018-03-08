@@ -231,14 +231,15 @@ class Plots(CountStore):
         results = {}
 
         tracks = [
-            (sources[:1], False, True),  # ClinVar
-            (sources, True, False),      # MC3 intersection ClinVar
-            (sources[1:], False, True),  # ClinVar
+            (sources[:1], False, sources[1:]),  # e.g. ClinVar
+            (sources, True, False),             # MC3 intersection ClinVar
+            (sources[1:], False, sources[:1]),  # e.g. MC3
         ]
 
         for sources, intersection, exclusive in tracks:
 
-            sites, counts = zip(*most_mutated(sources, intersection=intersection, exclusive=exclusive).all())
+            query = most_mutated(sources, intersection=intersection, exclusive=exclusive)
+            sites, counts = zip(*query.all())
             results[' and '.join([source.name for source in sources])] = create_track(sites, counts)
 
         return results
