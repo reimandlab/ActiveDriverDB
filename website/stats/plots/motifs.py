@@ -4,7 +4,7 @@ from typing import List
 from numpy import nan
 
 from analyses.motifs import count_by_active_driver, all_motifs, count_by_sources, motifs_hierarchy
-from helpers.plots import stacked_bar_plot, bar_plot
+from helpers.plots import stacked_bar_plot
 from models import (
     MC3Mutation, InheritedMutation,
     SiteType,
@@ -79,9 +79,11 @@ def prepare_motifs_plot(counts_by_gene, site_type: SiteType, y_axis: str):
     return data
 
 
+sources_combinations = [[InheritedMutation], [InheritedMutation, MC3Mutation], [MC3Mutation]]
+
 motifs_cases = cases(
     site_type=[SiteType(name='glycosylation')],
-    sources=[[InheritedMutation], [MC3Mutation], [InheritedMutation, MC3Mutation]],
+    sources=sources_combinations,
     count_method=['occurrences', 'distinct']
 ).set_mode('product')
 
@@ -124,6 +126,33 @@ def all(site_type: SiteType):
     return {
         motif: (group_counts.keys(), group_counts.values())
         for motif, group_counts in motifs.items()
+    }
+
+
+def muts_by_motifs_group(sources, site_type):
+
+    counts = count_by_sources(sources, site_type, by_genes=False)
+    by_group = defaultdict(dict)
+
+    for motif_group, members in motifs_hierarchy[site_type.name].items():
+        by_group[motif_group] = sum(counts.muts_breaking_sites_motif[motif] for motif in members)
+
+    return by_group
+
+
+@cases(site_type=[SiteType(name='glycosylation')])
+@stacked_bar_plot
+def broken_by_sources(site_type: SiteType):
+
+    counts = defaultdict(dict)
+    for sources in sources_combinations:
+        for motif_group, count in muts_by_motifs_group(sources, site_type).items():
+            name = ' and '.join([source.name for source in sources])
+            counts[name][motif_group] = count
+
+    return {
+        sources_name: (group_counts.keys(), group_counts.values())
+        for sources_name, group_counts in counts.items()
     }
 
 
