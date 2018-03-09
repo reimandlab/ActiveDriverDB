@@ -83,6 +83,10 @@ def select_sites_with_motifs(sites: Iterable, motifs) -> Mapping[MotifName, set]
     return sites_with_motif
 
 
+class NoKnownMotifs(Exception):
+    pass
+
+
 class MotifsCounter:
 
     def __init__(self, site_type: SiteType, mode='broken_motif', motifs_db=all_motifs):
@@ -90,7 +94,10 @@ class MotifsCounter:
         self.motifs_db = motifs_db
         self.mode = mode
 
-        self.site_specific_motifs = motifs_db[site_type.name]
+        try:
+            self.site_specific_motifs = motifs_db[site_type.name]
+        except KeyError:
+            raise NoKnownMotifs(f'No known motifs for {site_type} in {motifs_db}')
 
         self.breaking_modes = {
             'change_of_motif': self.change_of_motif,

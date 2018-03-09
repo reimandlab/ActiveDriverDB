@@ -8,7 +8,7 @@ from database import db, fast_count
 from models import Mutation, are_details_managed, MC3Mutation, source_manager, MutationSource
 
 from .store import counter
-from .store import CountStore
+from .store.store import CountStore
 
 
 def models_counter(model, name=None):
