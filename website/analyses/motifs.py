@@ -186,8 +186,14 @@ class MotifsCounter:
         data = self.gather_muts_and_sites(*args, **kwargs)
 
         return MotifsRelatedCounts(
-            sites_with_motif={motif: len(sites) for motif, sites in data.sites_with_motif.items()},
-            sites_with_broken_motif={motif: len(sites) for motif, sites in data.sites_with_broken_motif.items()},
+            sites_with_motif=defaultdict(int, {
+                motif: len(sites)
+                for motif, sites in data.sites_with_motif.items()
+            }),
+            sites_with_broken_motif=defaultdict(int, {
+                motif: len(sites)
+                for motif, sites in data.sites_with_broken_motif.items()
+            }),
             muts_around_sites_with_motif=defaultdict(int, {
                 motif: sum(counts_by_mutations.values())
                 for motif, counts_by_mutations in data.muts_around_sites_with_motif.items()

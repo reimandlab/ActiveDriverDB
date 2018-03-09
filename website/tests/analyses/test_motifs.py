@@ -64,6 +64,7 @@ class MotifAnalysisTest(DatabaseTest):
         assert counts.sites_with_broken_motif['canonical'] == 2
         assert counts.sites_with_motif['canonical'] == len(canonical_sites)
 
+        assert counts.sites_with_broken_motif['non-canonical'] == 0
         assert counts.muts_around_sites_with_motif['non-canonical'] == 0
 
         x_motifs = motifs_db['xation']
