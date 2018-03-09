@@ -72,7 +72,6 @@ class CountStore:
             for name, counter in self.counters.items()
             if not limit_to or re.match(limit_to, name)
         }
-        assert counters['pathways']
 
         for name, counter in tqdm(counters.items(), total=len(counters)):
 
