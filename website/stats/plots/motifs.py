@@ -1,8 +1,8 @@
 from collections import defaultdict
-from operator import and_
 from typing import List
 
 from numpy import nan
+from sqlalchemy import and_
 
 from analyses.motifs import count_by_active_driver, all_motifs, count_by_sources, motifs_hierarchy
 from helpers.plots import stacked_bar_plot
