@@ -217,10 +217,10 @@ class MotifsCounter:
 
 def count_by_sources(
     sources: List[MutationSource], site_type: SiteType, primary_isoforms=True,
-    by_genes=True, genes=None, **kwargs
+    by_genes=True, genes=None, muts_conjunction=or_, **kwargs
 ):
 
-    base_query = Mutation.query.filter(or_(
+    base_query = Mutation.query.filter(muts_conjunction(
         *[Mutation.in_sources(source) for source in sources]
     ))
 

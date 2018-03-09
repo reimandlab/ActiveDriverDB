@@ -1,4 +1,5 @@
 from collections import defaultdict
+from operator import and_
 from typing import List
 
 from numpy import nan
@@ -131,7 +132,7 @@ def all(site_type: SiteType):
 
 def muts_by_motifs_group(sources, site_type):
 
-    counts = count_by_sources(sources, site_type, by_genes=False)
+    counts = count_by_sources(sources, site_type, by_genes=False, muts_conjunction=and_)
     by_group = defaultdict(dict)
 
     for motif_group, members in motifs_hierarchy[site_type.name].items():
@@ -142,7 +143,7 @@ def muts_by_motifs_group(sources, site_type):
 
 @cases(site_type=[SiteType(name='glycosylation')])
 @stacked_bar_plot
-def broken_by_sources(site_type: SiteType):
+def muts_breaking_by_sources(site_type: SiteType):
 
     counts = defaultdict(dict)
     for sources in sources_combinations:
