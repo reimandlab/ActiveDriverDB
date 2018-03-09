@@ -1,5 +1,5 @@
 import re
-from collections import defaultdict
+from collections import defaultdict, ChainMap
 from typing import Pattern, Iterable, Mapping, Union, List, NamedTuple
 
 from flask_sqlalchemy import BaseQuery
@@ -18,25 +18,35 @@ def compile_motifs(motifs: dict):
     return motifs
 
 
-raw_motifs = {
+motifs_hierarchy = {
     'glycosylation': {
-        # Sequons:
-        'N-glycosylation': '.{7}N[^P][ST].{5}',     # https://prosite.expasy.org/PDOC00001
-        'Atypical N-glycosylation': '.{7}N[^P][CV].{5}',    # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4721579/
-
-        # Based on https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1301293/
-        'O-glycosylation TAPP': '.{7}TAPP',
-        'O-glycosylation TSAP': '.{7}TSAP',
-        'O-glycosylation TV.P': '.{7}TV.P',
-        'O-glycosylation [ST]P.P': '.{7}[ST]P.P',
-
-        # https://www.uniprot.org/help/carbohyd
-        'C-linked W..W': '(.{7}W..W.{4}|.{4}W..W.{7})',
-        'C-linked W[ST].C': '.{7}W[ST].C.{4}',
+        'N-linked': {
+            # https://prosite.expasy.org/PDOC00001
+            'N-linked': '.{7}N[^P][ST].{5}',
+            # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4721579/
+            'N-linked - atypical': '.{7}N[^P][CV].{5}',
+        },
+        'O-linked': {
+            # Based on https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1301293/
+            'O-linked TAPP': '.{7}TAPP',
+            'O-linked TSAP': '.{7}TSAP',
+            'O-linked TV.P': '.{7}TV.P',
+            'O-linked [ST]P.P': '.{7}[ST]P.P',
+        },
+        'C-linked': {
+            # https://www.uniprot.org/help/carbohyd
+            'C-linked W..W': '(.{7}W..W.{4}|.{4}W..W.{7})',
+            'C-linked W[ST].C': '.{7}W[ST].C.{4}',
+        }
     }
 }
 
-all_motifs = compile_motifs(raw_motifs)
+motifs_by_site_type = {
+    site_type: dict(ChainMap(*motif_groups.values()))
+    for site_type, motif_groups in motifs_hierarchy.items()
+}
+
+all_motifs = compile_motifs(motifs_by_site_type)
 
 
 def has_motif(site_sequence: str, motif: Pattern) -> bool:

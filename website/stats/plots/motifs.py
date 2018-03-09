@@ -1,13 +1,15 @@
+from collections import defaultdict
 from typing import List
 
 from numpy import nan
 
-from analyses.motifs import count_by_active_driver, all_motifs, count_by_sources
-from helpers.plots import stacked_bar_plot
+from analyses.motifs import count_by_active_driver, all_motifs, count_by_sources, motifs_hierarchy
+from helpers.plots import stacked_bar_plot, bar_plot
 from models import (
     MC3Mutation, InheritedMutation,
     SiteType,
     MutationSource,
+    source_manager,
 )
 
 from ..store import cases
@@ -105,6 +107,24 @@ def muts_breaking(sources: List[MutationSource], site_type: SiteType, count_meth
 @stacked_bar_plot
 def broken(sources: List[MutationSource], site_type: SiteType, count_method: str):
     return calc_motifs(sources, site_type, count_method, 'sites')
+
+
+@cases(site_type=[SiteType(name='glycosylation')])
+@stacked_bar_plot
+def all(site_type: SiteType):
+    counts = count_by_sources(source_manager.confirmed, site_type, by_genes=False)
+
+    motifs = defaultdict(dict)
+    for motif_group, members in motifs_hierarchy[site_type.name].items():
+
+        for motif in members:
+            count = counts.sites_with_motif[motif]
+            motifs[motif][motif_group] = count
+
+    return {
+        motif: (group_counts.keys(), group_counts.values())
+        for motif, group_counts in motifs.items()
+    }
 
 
 analysis_cases = cases(
