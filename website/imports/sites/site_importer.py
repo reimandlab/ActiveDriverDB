@@ -197,7 +197,10 @@ class SiteImporter(Importer):
         # additional "sequence" column is needed to map the site across isoforms
         sequences = sites.apply(self.extract_site_surrounding_sequence, axis=1)
         offsets = sites.apply(self.determine_left_offset, axis=1)
-        sites = sites.assign(sequence=Series(sequences), left_sequence_offset=Series(offsets))
+        sites = sites.assign(
+            sequence=Series(sequences).values,
+            left_sequence_offset=Series(offsets).values
+        )
 
         old_len = len(sites)
         sites.dropna(axis=0, inplace=True, subset=['sequence', 'residue'])

@@ -52,7 +52,7 @@ class GlycosylationUniprotImporter(UniprotImporter):
                 site_details.link_type + '-glycosylation'
             )
             for site_details in extracted.itertuples()
-        )
+        ).values
 
         extracted.kinases = self.split_kinases(extracted.kinases)
         extracted.residue = extracted.residue.replace(aa_name_to_symbol)
