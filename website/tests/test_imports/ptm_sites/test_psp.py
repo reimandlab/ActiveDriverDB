@@ -8,7 +8,7 @@ from database import db
 from database_testing import DatabaseTest
 from imports.sites.psp import PhosphoSitePlusImporter
 from miscellaneous import make_named_gz_file, TestCaseData, abstract_property
-from models import Protein, Site
+from models import Protein, Site, SiteType
 
 
 class PSPCaseData(TestCaseData):
@@ -190,6 +190,7 @@ class TestImport(DatabaseTest):
         with initialized_importer(EdgeSitesCase, 'My_test') as importer:
 
             importer.site_datasets['My_test'] = 'mixed_type'
+            importer.site_types_map['mixed_type'] = SiteType(name='mixed_type')
 
             sites = importer.load_sites(site_datasets=['My_test'])
 
