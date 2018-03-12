@@ -34,7 +34,7 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
     source_name = 'PhosphoSitePlus'
     site_types = [
-        'phosphorylation', 'O-glycosylation', 'glycosylation'
+        'phosphorylation', 'O-glycosylation', 'glycosylation',
         'acetylation', 'ubiquitination', 'methylation'
     ]
 
