@@ -1,5 +1,6 @@
 import warnings
 from abc import abstractmethod
+from itertools import chain
 from typing import List, Set
 from warnings import warn
 from collections import Counter
@@ -24,7 +25,7 @@ def show_warning(message, category, filename, lineno, file=None, line=None):
 warnings.showwarning = show_warning
 
 
-def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_groups):
+def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_groups) -> [Set[Kinase], Set[KinaseGroup]]:
     """Create a subset of known kinases and known kinase groups based on given
     list of kinases names ('chosen_kinases_names'). If no kinase or kinase group
     of given name is known, it will be created.
@@ -105,6 +106,10 @@ class SiteImporter(Importer):
         self.novel_site_types = [
             site_type for site_type, new in site_type_objects if new
         ]
+        self.site_types_map = {
+            site_type.name: site_type
+            for site_type, new in site_type_objects
+        }
 
         self.source, _ = get_or_create(SiteSource, name=self.source_name)
 
@@ -228,6 +233,7 @@ class SiteImporter(Importer):
 
         protein = self.proteins[refseq]
         site_key = (protein.id, position, residue)
+        site_type = self.site_types_map[mod_type]
 
         if site_key in self.known_sites:
             site = self.known_sites[site_key]
@@ -255,6 +261,9 @@ class SiteImporter(Importer):
             )
             site.kinases.update(site_kinases)
             site.kinase_groups.update(site_kinase_groups)
+
+            for kinase_or_group in chain(site_kinases, site_kinase_groups):
+                kinase_or_group.is_involved_in.add(site_type)
 
         return site, created
 

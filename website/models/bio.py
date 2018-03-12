@@ -59,6 +59,20 @@ class GeneList(BioModel):
     mutation_source_name = db.Column(db.String(256))
 
 
+class SiteType(BioModel):
+    # this table can be pre-fetched into the application
+    # memory on start, as it is not supposed to change after
+    # the initial import
+    name = db.Column(db.String(16), unique=True)
+
+    def find_modified_residues(self) -> set:
+        return {site.residue for site in self.sites}
+
+    @property
+    def sites(self):
+        return Site.query.filter(Site.type.contains(self))
+
+
 class Kinase(BioModel):
     """Kinase represents an entity interacting with some site.
 
@@ -70,6 +84,14 @@ class Kinase(BioModel):
     name = db.Column(db.String(80), unique=True, index=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     group_id = db.Column(db.Integer, db.ForeignKey('kinasegroup.id'))
+
+    site_type_table = make_association_table('kinase.id', 'sitetype.id')
+    is_involved_in = db.relationship(
+        SiteType,
+        secondary=site_type_table,
+        collection_class=set,
+        backref='kinases'
+    )
 
     def __repr__(self):
         return '<Kinase {0} belonging to {1} group>'.format(
@@ -103,6 +125,14 @@ class KinaseGroup(BioModel):
         'Kinase',
         order_by='Kinase.name',
         backref='group'
+    )
+
+    site_type_table = make_association_table('kinasegroup.id', 'sitetype.id')
+    is_involved_in = db.relationship(
+        SiteType,
+        secondary=site_type_table,
+        collection_class=set,
+        backref='kinase_groups'
     )
 
     def __repr__(self):
@@ -696,20 +726,6 @@ def default_residue(context):
         except IndexError:
             print('Position of PTM possibly exceeds its protein')
             return
-
-
-class SiteType(BioModel):
-    # this table can be pre-fetched into the application
-    # memory on start, as it is not supposed to change after
-    # the initial import
-    name = db.Column(db.String(16), unique=True)
-
-    def find_modified_residues(self) -> set:
-        return {site.residue for site in self.sites}
-
-    @property
-    def sites(self):
-        return Site.query.filter(Site.type.contains(self))
 
 
 class SiteSource(BioModel):

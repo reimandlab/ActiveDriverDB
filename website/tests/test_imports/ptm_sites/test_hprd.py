@@ -6,7 +6,7 @@ from database import db
 from database_testing import DatabaseTest
 from imports.sites.hprd import HPRDImporter
 from miscellaneous import make_named_temp_file
-from models import Gene, Protein
+from models import Gene, Protein, SiteType
 from test_imports.test_proteins import create_test_proteins
 
 SEQUENCES = """\
@@ -106,6 +106,9 @@ class TestImport(DatabaseTest):
 
         tp53_46s = tp_53_sites[46]
         assert {kinase.name for kinase in tp53_46s.kinases} == {'ATM', 'HIPK2'}
+
+        phosphorylation = SiteType.query.filter_by(name='phosphorylation').one()
+        assert list(tp53_6s.kinases)[0].is_involved_in == {phosphorylation}
 
     def test_exceptions(self):
 
