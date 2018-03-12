@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from getpass import getpass
+from typing import Mapping
 
 from flask import current_app
 from sqlalchemy.exc import IntegrityError, OperationalError
@@ -52,16 +53,16 @@ def automigrate(args, app=None):
     return True
 
 
-def get_all_models(module_name='bio'):
+def get_all_models(module_name='bio') -> Mapping:
     from models import Model
     from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
     module_name = 'models.' + module_name
 
-    models = [
-        model
+    models = {
+        model.__name__: model
         for model in Model._decl_class_registry.values()
         if not isinstance(model, _ModuleMarker) and model.__module__ == module_name
-    ]
+    }
     return models
 
 
@@ -215,18 +216,31 @@ class ProteinRelated(CommandTarget):
 
     @command
     def remove(args):
-        import models.bio as bio_models
-        for model_name in args.models:
-            model = getattr(bio_models, model_name)
+        models = get_all_models('bio')
+        to_remove = args.models
+
+        if args.all:
+            to_remove = models.keys()
+        elif not args.models:
+            print('Please specify model(s) to remove with --model or --all')
+
+        for model_name in to_remove:
+            model = models[model_name]
             remove_model(model)
             db.session.commit()
+
+    @remove.argument
+    def all():
+        return argument_parameters(
+            '--all', '-a',
+            action='store_true',
+            help='Remove all bio models.'
+        )
 
     @remove.argument
     def models():
 
         models = get_all_models('bio')
-
-        models_names = [model.__name__ for model in models]
 
         return argument_parameters(
             '--models', '-m',
@@ -234,9 +248,10 @@ class ProteinRelated(CommandTarget):
             metavar='',
             help=(
                 'Names of models to be removed.'
-                ' Available models: ' + ', '.join(models_names) + '.'
+                ' Available models: ' + ', '.join(models) + '.'
             ),
-            choices=models_names
+            default=[],
+            choices=models.keys()
         )
 
 

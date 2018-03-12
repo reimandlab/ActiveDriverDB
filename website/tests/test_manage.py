@@ -116,7 +116,7 @@ class ManageTest(DatabaseTest):
         assert User.query.filter_by(email=email).one()
         assert 'Root user account created' in msg
 
-    def test_remove(self):
+    def test_remove_models(self):
 
         with current_app.app_context():
             assert len(Gene.query.all()) == 0
@@ -134,6 +134,11 @@ class ManageTest(DatabaseTest):
 
             assert len(Gene.query.all()) == 0
             assert len(Cancer.query.all()) == 1
+
+            # remove all models
+            self.run_command('remove protein_related --all')
+
+            assert len(Cancer.query.all()) == 0
 
     def test_drop_all(self):
         with current_app.app_context():
