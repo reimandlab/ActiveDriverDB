@@ -71,3 +71,5 @@ class TestImport(DatabaseTest):
 
             assert {kinase.name for kinase in sites_by_pos[236].kinases} == {'P70S6K'}
             assert {group.name for group in sites_by_pos[236].kinase_groups} == {'RSK'}
+
+            assert len(sites_by_pos[242].kinases) == 0
