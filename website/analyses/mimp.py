@@ -1,6 +1,7 @@
 import shutil
 from pathlib import Path
 from random import sample
+from types import SimpleNamespace
 from typing import Set, NamedTuple, List
 from warnings import warn
 from collections import Counter
@@ -30,8 +31,11 @@ def save_kinase_sequences(kinase, sequences, seq_dir):
             f' as no sequences were found.'
         )
 
-    with open(seq_dir / f'{kinase.name}.sequences', 'w') as f:
-        f.write(kinase.name + '\n')
+    # make it possible to use BCR/ABL as filename
+    name = kinase.name.replace('/', '-')
+
+    with open(seq_dir / f'{name}.sequences', 'w') as f:
+        f.write(name + '\n')
         for sequence in sequences:
             f.write(sequence + '\n')
 
@@ -111,7 +115,19 @@ def calculate_background_frequency():
     return counts
 
 
-def train_model(site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, output_path=None, **kwargs):
+def residues_groups(site_type, modified_residues):
+    if site_type.name == 'phosphorylation':
+        return StrVector(['S|T', 'Y'])
+    # TODO: better grouping residues for site-specific enzymes:
+    # for glycosylation there are ~16 enzymes; the idea would be
+    # to load "site" : "terminal sugar" associations (e.g. from O-GlycBase)
+    # and then map "terminal sugar" : "enzyme" for enzymes known to catalyze
+    # glycosylation with given "terminal sugar" (& fro given link type)
+    # Some additional literature review might be needed
+    return StrVector(['|'.join(modified_residues)])
+
+
+def train_model(site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, enzyme_type='kinase', output_path=None, **kwargs):
     """Train MIMP model for given site type.
 
     NOTE: Natively MIMP works on phosphorylation sites only,
@@ -147,23 +163,38 @@ def train_model(site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, out
         shutil.rmtree(str(path), ignore_errors=True)
         path.mkdir(parents=True)
 
-    kinases = Kinase.query.filter(
-        Kinase.sites.any(Site.type.contains(site_type))
-    )
+    if enzyme_type == 'kinase':
 
-    for kinase in tqdm(kinases, total=kinases.count()):
+        enzymes = Kinase.query.filter(
+            Kinase.is_involved_in.any(SiteType.name == site_type.name)
+        ).filter(
+            Kinase.sites.any(Site.type.contains(site_type))
+        )
+        enzymes = tqdm(enzymes, total=enzymes.count())
+
+    elif enzyme_type == 'catch-all':
+        enzymes = [
+            SimpleNamespace(
+                sites=Site.query.filter(Site.type.contains(site_type)),
+                name=f'all_enzymes_for_{site_type.name}'
+            )
+        ]
+    else:
+        assert False
+
+    for enzyme in enzymes:
 
         sites = [
             site
-            for site in kinase.sites
+            for site in enzyme.sites
             if site_type.name in site.type
         ]
 
         positive_sequences = [site.sequence for site in sites]
         negative_sequences = sample_random_negative_sequences(negative_sites, sampling_n)
 
-        save_kinase_sequences(kinase, positive_sequences, positive_path)
-        save_kinase_sequences(kinase, negative_sequences, negative_path)
+        save_kinase_sequences(enzyme, positive_sequences, positive_path)
+        save_kinase_sequences(enzyme, negative_sequences, negative_path)
 
     priors = mimp.PRIORS.rx2('human')
 
@@ -176,30 +207,34 @@ def train_model(site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, out
         priors=priors,    # or calculate_background_frequency(),
         # both give the same values (within rounding error), the custom
         # func might come in handy in future
-        # TODO: how to group the residues? some site-type specific mapping is needed here
-        # TODO: as well as some literature review
-        residues_groups=StrVector(['|'.join(modified_residues)]),
+        residues_groups=residues_groups(site_type, modified_residues),
         **kwargs
     )
 
 
-def run_mimp(mutation_source: str, site_type: str, model: str=None):
+def run_mimp(mutation_source: str, site_type_name: str, model: str=None, enzyme_type='kinase'):
     """Run MIMP for given source of mutations and given site type.
 
     Args:
         mutation_source: name of mutation source
-        site_type: name of site type
+        site_type_name: name of site type
         model: name of the model or path to custom .mimp file,
-               if not specified, an automatically generated,
-               custom, site-based model will be used.
+            if not specified, an automatically generated,
+            custom, site-based model will be used.
+        enzyme_type: is the enzyme that modifies the site a kinase?
+            if not use "catch-all" strategy: train MIMP as if there
+            was just one site-specific enzyme - just because we do
+            not have information about enzyme-site specificity for
+            enzymes other than kinases (yet!)
     """
+    site_type = SiteType.query.filter_by(name=site_type_name).one()
 
     if not model:
-        path = Path(site_type + '.mimp')
+        path = Path(site_type_name + '.mimp')
         if path.exists():
             print(f'Reusing existing custom MIMP model: {path}')
         else:
-            model = train_model(SiteType(name=site_type), output_path=str(path))
+            model = train_model(site_type, output_path=str(path), enzyme_type=enzyme_type)
             if not model:
                 raise Exception('Running MIMP not possible: trained model is empty')
             assert path.exists()
@@ -208,7 +243,7 @@ def run_mimp(mutation_source: str, site_type: str, model: str=None):
     mimp = load_mimp()
 
     sequences, disorder, mutations, sites = prepare_active_driver_data(
-        mutation_source, site_type
+        mutation_source, site_type_name
     )
 
     mutations = mutations.assign(mutation=Series(
@@ -217,10 +252,14 @@ def run_mimp(mutation_source: str, site_type: str, model: str=None):
     ).values)
 
     sites.position = to_numeric(sites.position)
+
     sequences = ListVector(sequences)
+
+    modified_residues = site_type.find_modified_residues()
 
     return mimp.site_mimp(
         mutations[['gene', 'mutation']], sequences,
-        site_type=site_type, sites=sites[['gene', 'position']],
+        site_type=site_type_name, sites=sites[['gene', 'position']],
+        residues_groups=residues_groups(site_type, modified_residues),
         **{'model.data': model}
     )
