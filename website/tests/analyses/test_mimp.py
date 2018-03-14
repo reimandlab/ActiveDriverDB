@@ -75,7 +75,7 @@ class MIMPTest(DatabaseTest):
         g = Gene(isoforms=[p], preferred_isoform=p)
         db.session.add(g)
 
-        k = Kinase(name='CDK1')
+        k = Kinase(name='CDK1', is_involved_in={phosphorylation})
 
         for pos in [9, 24]:
             s = Site(position=pos, type={phosphorylation}, residue='S', protein=p, kinases={k})
@@ -86,11 +86,12 @@ class MIMPTest(DatabaseTest):
         with TemporaryDirectory() as temp_dir:
             model = train_model(
                 phosphorylation,
-                sequences_dir=temp_dir, sampling_n=2,
+                sequences_dir=temp_dir,
+                sampling_n=2,
                 threshold=2
             )
 
-        # the model should have one set oa params - for CDK1 kinase
+        # the model should have one set of params - for CDK1 kinase
         assert len(model) == 1
 
         cdk_params = model.rx2('CDK1')
