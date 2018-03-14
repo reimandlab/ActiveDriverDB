@@ -14,6 +14,8 @@ from tqdm import tqdm
 from analyses.active_driver import prepare_active_driver_data
 from models import Kinase, Site, SiteType, Protein, extract_padded_sequence
 
+from ._paths import ANALYSES_OUTPUT_PATH
+
 
 pandas2ri.activate()
 r("options(warn=1)")
@@ -212,6 +214,18 @@ def train_model(site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, enz
     )
 
 
+def get_or_create_model_path(site_type: SiteType, enzyme_type) -> str:
+    path = Path(site_type.name + '.mimp')
+    if path.exists():
+        print(f'Reusing existing custom MIMP model: {path}')
+    else:
+        model = train_model(site_type, output_path=str(path), enzyme_type=enzyme_type)
+        if not model:
+            raise Exception('Running MIMP not possible: trained model is empty')
+        assert path.exists()
+    return str(path)
+
+
 def run_mimp(mutation_source: str, site_type_name: str, model: str=None, enzyme_type='kinase'):
     """Run MIMP for given source of mutations and given site type.
 
@@ -230,15 +244,7 @@ def run_mimp(mutation_source: str, site_type_name: str, model: str=None, enzyme_
     site_type = SiteType.query.filter_by(name=site_type_name).one()
 
     if not model:
-        path = Path(site_type_name + '.mimp')
-        if path.exists():
-            print(f'Reusing existing custom MIMP model: {path}')
-        else:
-            model = train_model(site_type, output_path=str(path), enzyme_type=enzyme_type)
-            if not model:
-                raise Exception('Running MIMP not possible: trained model is empty')
-            assert path.exists()
-        model = str(path)
+        model = get_or_create_model_path(site_type, enzyme_type)
 
     mimp = load_mimp()
 
@@ -257,9 +263,57 @@ def run_mimp(mutation_source: str, site_type_name: str, model: str=None, enzyme_
 
     modified_residues = site_type.find_modified_residues()
 
-    return mimp.site_mimp(
+    mimp_result = mimp.site_mimp(
         mutations[['gene', 'mutation']], sequences,
         site_type=site_type_name, sites=sites[['gene', 'position']],
         residues_groups=residues_groups(site_type, modified_residues),
         **{'model.data': model}
     )
+    return pandas2ri.ri2py(mimp_result)
+
+
+glycosylation_sub_types = [
+    'N-glycosylation',
+    'O-glycosylation',
+    'C-glycosylation',
+    'S-glycosylation',
+]
+
+
+def sequence_logos_for_site_types(site_types, enzyme_type='kinase'):
+    ggplot = importr("ggplot2")
+    gglogo = importr("ggseqlogo")
+
+    logos_path = ANALYSES_OUTPUT_PATH / 'mimp' / 'logos'
+
+    logos = {}
+
+    for site_type_name in site_types:
+        site_type = SiteType.query.filter_by(name=site_type_name).one()
+
+        model_path = get_or_create_model_path(site_type, enzyme_type=enzyme_type)
+        models = r.readRDS(model_path)
+
+        site_logos_path = logos_path / site_type_name
+        site_logos_path.mkdir(parents=True, exist_ok=True)
+
+        site_type_logos = {}
+
+        for model in models:
+            pwm = model.rx('pwm')
+            name = model.rx2('name')[0]
+
+            path = site_logos_path / f'{name}-pwm.png'
+
+            logo = gglogo.ggseqlogo(pwm)
+            ggplot.ggsave(str(path))
+
+            site_type_logos[name] = logo
+
+        logos[site_type_name] = site_type_logos
+
+    return logos
+
+
+def sequence_logos_for_glycosylation_subtypes(subtypes=glycosylation_sub_types):
+    return sequence_logos_for_site_types(subtypes, enzyme_type='catch-all')

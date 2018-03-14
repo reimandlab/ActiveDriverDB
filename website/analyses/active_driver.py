@@ -22,6 +22,8 @@ from helpers.cache import cache_decorator
 from imports import MutationImportManager
 from models import Gene, GeneList, GeneListEntry, MC3Mutation, MutationSource
 
+from ._paths import ANALYSES_OUTPUT_PATH
+
 
 def load_active_driver(local_ad=True):
     if local_ad:
@@ -162,7 +164,7 @@ def save_all(analysis_name: str, data, base_path=None):
     if base_path:
         path = base_path / analysis_name
     else:
-        base_path = Path('analyses_output')
+        base_path = ANALYSES_OUTPUT_PATH
         path = base_path / analysis_name / get_date()
 
     # create what's needed
