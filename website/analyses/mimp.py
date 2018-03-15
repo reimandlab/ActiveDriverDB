@@ -6,8 +6,9 @@ from typing import Set, NamedTuple, List
 from warnings import warn
 from collections import Counter
 
-from pandas import Series, to_numeric
+from pandas import Series, to_numeric, DataFrame
 from rpy2.robjects import pandas2ri, StrVector, ListVector, r
+from rpy2.robjects.constants import NULL
 from rpy2.robjects.packages import importr
 from tqdm import tqdm
 
@@ -230,7 +231,7 @@ def get_or_create_model_path(site_type: SiteType, enzyme_type) -> str:
     return str(path)
 
 
-def run_mimp(mutation_source: str, site_type_name: str, model: str=None, enzyme_type='kinase'):
+def run_mimp(mutation_source: str, site_type_name: str, model: str=None, enzyme_type='kinase') -> DataFrame:
     """Run MIMP for given source of mutations and given site type.
 
     Args:
@@ -273,6 +274,8 @@ def run_mimp(mutation_source: str, site_type_name: str, model: str=None, enzyme_
         residues_groups=residues_groups(site_type, modified_residues),
         **{'model.data': model}
     )
+    if mimp_result is NULL:
+        return DataFrame()
     return pandas2ri.ri2py(mimp_result)
 
 
