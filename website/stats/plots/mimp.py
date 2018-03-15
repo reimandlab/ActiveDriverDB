@@ -15,5 +15,8 @@ def gains_and_losses_for_glycosylation_subtypes():
             if result.empty:
                 continue
             effect_counts = result.effect.value_counts()
-            results[source_name] = effects, [effect_counts.get(effect, 0) for effect in effects]
+            results[source_name] = effects, [
+                int(effect_counts.get(effect, 0))
+                for effect in effects
+            ]
     return results
