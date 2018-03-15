@@ -214,6 +214,10 @@ def train_model(site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, enz
     )
 
 
+class EmptyModel(Exception):
+    pass
+
+
 def get_or_create_model_path(site_type: SiteType, enzyme_type) -> str:
     path = Path(site_type.name + '.mimp')
     if path.exists():
@@ -221,7 +225,7 @@ def get_or_create_model_path(site_type: SiteType, enzyme_type) -> str:
     else:
         model = train_model(site_type, output_path=str(path), enzyme_type=enzyme_type)
         if not model:
-            raise Exception('Running MIMP not possible: trained model is empty')
+            raise EmptyModel('Running MIMP not possible: the trained model is empty')
         assert path.exists()
     return str(path)
 
@@ -291,7 +295,12 @@ def sequence_logos_for_site_types(site_types, enzyme_type='kinase'):
     for site_type_name in site_types:
         site_type = SiteType.query.filter_by(name=site_type_name).one()
 
-        model_path = get_or_create_model_path(site_type, enzyme_type=enzyme_type)
+        try:
+            model_path = get_or_create_model_path(site_type, enzyme_type=enzyme_type)
+        except EmptyModel as e:
+            print(e)
+            continue
+
         models = r.readRDS(model_path)
 
         site_logos_path = logos_path / site_type_name
