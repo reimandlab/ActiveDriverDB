@@ -1722,7 +1722,52 @@ source_manager = Sources([
 ])
 
 
-class Mutation(BioModel):
+class SiteMotif(BioModel):
+    type_motif_table = make_association_table('sitemotif.id', SiteType.id)
+    site_type = db.relationship(SiteType, secondary=type_motif_table, backref='motifs')
+
+
+class MutatedMotifs:
+
+    were_affected_motifs_precomputed = db.Column(db.Boolean, default=False)
+
+    @declared_attr
+    def precomputed_affected_motifs(self):
+        mutation_motif_table = make_association_table(f'{self.__tablename__}.id', SiteMotif.id)
+        return db.relationship(
+            SiteMotif,
+            secondary=mutation_motif_table,
+            collection_class=set,
+            backref='mutations'
+        )
+
+    def affected_motifs(self, sites=None):
+        if self.were_affected_motifs_precomputed:
+            return self.precomputed_affected_motifs
+
+        from analyses.motifs import mutate_sequence
+        from analyses.motifs import has_motif
+
+        affected_motifs = set()
+
+        if not sites:
+            sites = self.affected_sites
+
+        for site in sites:
+            for site_type in site.types:
+                for motif in site_type.motifs:
+
+                    if site.has_motif(motif):
+                        # todo: make it a method of mutation? "self.mutate_sequence()" ?
+
+                        mutated_sequence = mutate_sequence(site, self, offset=7)
+                        if not has_motif(mutated_sequence, motif):
+                            affected_motifs.add(motif)
+
+        return affected_motifs
+
+
+class Mutation(BioModel, MutatedMotifs):
     __table_args__ = (
         db.Index('mutation_index', 'alt', 'protein_id', 'position'),
         db.UniqueConstraint('alt', 'protein_id', 'position')
@@ -1740,7 +1785,7 @@ class Mutation(BioModel):
     # is different than None. Be careful with boolean evaluation!
     precomputed_is_ptm = db.Column(db.Boolean)
 
-    types = ('direct', 'network-rewiring', 'proximal', 'distal', 'none')
+    types = ('direct', 'network-rewiring', 'motif-changing', 'proximal', 'distal', 'none')
 
     vars().update(source_manager.relationships)
 
@@ -1910,6 +1955,8 @@ class Mutation(BioModel):
             return 'direct'
         elif site in self.meta_MIMP.sites and not ignore_mimp:
             return 'network-rewiring'
+        elif self.affected_motifs([site]):
+            return 'motif-changing'
         elif abs(self.position - site.position) < 3:
             return 'proximal'
         elif abs(self.position - site.position) < 8:
@@ -1930,6 +1977,8 @@ class Mutation(BioModel):
             return 'direct'
         elif any(site in sites for site in self.meta_MIMP.sites):
             return 'network-rewiring'
+        elif self.affected_motifs(sites):
+            return 'motif-changing'
         elif self.is_close_to_some_site(2, 2, sites):
             return 'proximal'
         elif self.is_close_to_some_site(7, 7, sites):
@@ -1948,8 +1997,8 @@ class Mutation(BioModel):
         ).order_by(func.abs(Site.position - pos)).limit(2).all()
 
         if(
-                        len(sites) == 2 and
-                        abs(sites[0].position - pos) != abs(sites[1].position - pos)
+            len(sites) == 2 and
+            abs(sites[0].position - pos) != abs(sites[1].position - pos)
         ):
             return sites[:1]
         else:
