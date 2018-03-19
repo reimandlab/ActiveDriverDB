@@ -171,14 +171,14 @@ def train_model(site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, enz
         enzymes = Kinase.query.filter(
             Kinase.is_involved_in.any(SiteType.name == site_type.name)
         ).filter(
-            Kinase.sites.any(Site.type.contains(site_type))
+            Kinase.sites.any(Site.types.contains(site_type))
         )
         enzymes = tqdm(enzymes, total=enzymes.count())
 
     elif enzyme_type == 'catch-all':
         enzymes = [
             SimpleNamespace(
-                sites=Site.query.filter(Site.type.contains(site_type)),
+                sites=Site.query.filter(Site.types.contains(site_type)),
                 name=f'all_enzymes_for_{site_type.name}'
             )
         ]
@@ -190,7 +190,7 @@ def train_model(site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, enz
         sites = [
             site
             for site in enzyme.sites
-            if site_type.name in site.type
+            if site_type in site.types
         ]
 
         positive_sequences = [site.sequence for site in sites]

@@ -207,7 +207,7 @@ def create_gene_list(name: str, list_data: DataFrame, mutation_source: MutationS
 
 
 @cached
-def per_cancer_analysis(site_type):
+def per_cancer_analysis(site_type: str):
 
     sequences, disorder, all_mutations, sites = prepare_active_driver_data('mc3', site_type)
 
@@ -239,10 +239,10 @@ def source_specific_analysis(mutations_source, site_type):
 
 
 @cached
-def pan_cancer_analysis(site_type):
+def pan_cancer_analysis(site_type: str):
     return source_specific_analysis('mc3', site_type)
 
 
 @cached
-def clinvar_analysis(site_type):
+def clinvar_analysis(site_type: str):
     return source_specific_analysis('clinvar', site_type)

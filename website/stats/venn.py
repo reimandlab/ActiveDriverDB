@@ -46,7 +46,7 @@ def sites_by_type(combination, only_primary=True):
     query = Site.query
 
     for site_type in combination:
-        query = query.filter(Site.type.contains(site_type.name))
+        query = query.filter(Site.types.contains(site_type))
 
     if only_primary:
         query = query.join(Protein).filter(Protein.is_preferred_isoform)
@@ -66,7 +66,7 @@ def mutation_by_source(combination, site_type=None, only_within_ptm_sites=False,
         query = query.filter(Mutation.precomputed_is_ptm)
 
     if site_type:
-        query = query.filter(Mutation.affected_sites.any(Site.type.contains(site_type)))
+        query = query.filter(Mutation.affected_sites.any(Site.types.contains(site_type)))
 
     if only_primary:
         query = query.join(Protein).filter(Protein.is_preferred_isoform)
@@ -81,7 +81,7 @@ def sites_by_source(combination, site_type=None, only_primary=False):
         query = query.filter(Site.sources.any(source.id == SiteSource.id))
 
     if site_type:
-        query = query.filter(Site.type.contains(site_type))
+        query = query.filter(Site.types.contains(site_type))
 
     if only_primary:
         query = query.join(Protein).filter(Protein.is_preferred_isoform)

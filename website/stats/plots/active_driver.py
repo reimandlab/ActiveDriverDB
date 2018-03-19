@@ -6,10 +6,10 @@ from sqlalchemy import func
 from analyses import per_cancer_analysis, pan_cancer_analysis, clinvar_analysis
 from database import db
 from helpers.plots import bar_plot, stacked_bar_plot
-from models import Mutation, Protein, Gene, Site, MC3Mutation, Cancer, InheritedMutation, SiteType, MutationSource
+from models import Mutation, Protein, Gene, Site, MC3Mutation, Cancer, InheritedMutation, MutationSource
 
 from ..store import cases
-from .common import site_types, any_site_type
+from .common import site_types_with_any
 from .ptm_mutations import gather_ptm_muts_impacts
 
 
@@ -53,7 +53,7 @@ def count_mutations_by_gene(source, genes, site_type, filters=None):
             .select_from(source)
             .join(Mutation).join(Protein)
             .filter(Mutation.affected_sites.any(
-                Site.type.contains(site_type)
+                Site.types.contains(site_type)
             ))
             .join(Gene, Gene.preferred_isoform_id == Protein.id)
             .filter(Gene.name == gene)
@@ -86,7 +86,7 @@ def by_muts_stacked(result, source, site_type):
 
 active_driver_cases = cases(
     analysis=whole_dataset_analyses,
-    site_type=site_types + [SiteType(name=any_site_type)],
+    site_type=site_types_with_any,
 ).set_mode('product')
 
 

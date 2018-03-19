@@ -140,7 +140,7 @@ class MotifsCounter:
             accepted_sites = sites.all()
 
         mutations_affecting_sites = mutations.filter(
-            Mutation.affected_sites.any(Site.type.contains(self.site_type))
+            Mutation.affected_sites.any(Site.types.contains(self.site_type))
         )
 
         muts_around_sites_with_motif = defaultdict(dict)
@@ -227,7 +227,7 @@ def count_by_sources(
     if primary_isoforms:
         base_query = base_query.join(Protein).filter(Protein.is_preferred_isoform)
 
-    sites = Site.query.filter(Site.type.contains(site_type))
+    sites = Site.query.filter(Site.types.contains(site_type))
 
     counter = MotifsCounter(site_type)
 

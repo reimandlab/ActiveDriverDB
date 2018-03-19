@@ -40,7 +40,7 @@ def variability_in_population(
     if site_type is None:
         query = query.filter(~Mutation.affected_sites.any())
     else:
-        site_condition = Site.type.contains(site_type)
+        site_condition = Site.types.contains(site_type)
 
         if site_motif:
             site_condition = and_(
@@ -76,7 +76,7 @@ def proteins_variability(source, only_primary=True, site_type=None, without_site
     if site_type is not None:
         assert not without_sites
 
-        site_condition = Site.type.contains(site_type)
+        site_condition = Site.types.contains(site_type)
         if site_motif:
             site_condition = and_(
                 site_condition,
@@ -157,9 +157,9 @@ def ptm_variability_population_rare_substitutions(site_type, motif=None):
             for protein_bin in tqdm(protein_bins[population_source]):
 
                 for percentage, muts_count in variability_in_population(
-                        population_source, site_type,
-                        protein_subset=protein_bin,
-                        site_motif=motif
+                    population_source, site_type,
+                    protein_subset=protein_bin,
+                    site_motif=motif
                 ):
                     if muts_count == 0:
                         percentage = 0

@@ -3,11 +3,10 @@ from analyses.variability_in_population import does_median_differ_significances,
 from helpers.plots import grouped_box_plot, p_value_annotations
 
 from ..store import cases
-from .common import site_types_names, any_site_type, motifs
-
+from .common import motifs, site_types_with_any
 
 variability_cases = cases(
-    site_type=site_types_names + [any_site_type],
+    site_type=site_types_with_any,
     by_counts=[None, True]
 ).set_mode('product')
 

@@ -247,7 +247,7 @@ class SiteImporter(Importer):
             self.known_sites[site_key] = site
             created = True
 
-        site.type.add(mod_type)
+        site.types.add(self.site_types_map[mod_type])
         site.sources.add(self.source)
 
         if pubmed_ids:

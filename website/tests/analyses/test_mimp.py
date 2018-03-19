@@ -18,7 +18,7 @@ class MIMPTest(DatabaseTest):
         g = Gene(isoforms=[p], preferred_isoform=p)
 
         # one-based
-        s = Site(position=11, type={'methylation'}, residue='X', protein=p)
+        s = Site(position=11, types={SiteType(name='methylation')}, residue='X', protein=p)
 
         db.session.add_all([g, p, s])
 
@@ -78,7 +78,7 @@ class MIMPTest(DatabaseTest):
         k = Kinase(name='CDK1', is_involved_in={phosphorylation})
 
         for pos in [9, 24]:
-            s = Site(position=pos, type={phosphorylation}, residue='S', protein=p, kinases={k})
+            s = Site(position=pos, types={phosphorylation}, residue='S', protein=p, kinases={k})
             db.session.add(s)
 
         db.session.commit()

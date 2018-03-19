@@ -1,8 +1,9 @@
-from models import Site, SiteType
+from models import SiteType, AnySiteType
 
-site_types_names = Site.types()
-site_types = [SiteType(name=name) for name in site_types_names]
-any_site_type = ''
+site_types_with_any = SiteType.available_types(include_any=True)
+site_types = SiteType.available_types()
+site_types_names = [site_type.name for site_type in site_types]
+any_site_type = AnySiteType()
 
 
 class Motif:

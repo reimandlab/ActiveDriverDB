@@ -1,4 +1,4 @@
-from models import MC3Mutation, DrugGroup, Drug, Disease, source_manager
+from models import MC3Mutation, DrugGroup, Drug, Disease, source_manager, SiteType
 from models import Cancer
 from models import Mutation
 from models import Site
@@ -170,8 +170,8 @@ def common_filters(
             as_sqlalchemy=True
         ),
         Filter(
-            Site, 'type', comparators=['in'],
-            choices=Site.types(),
+            Site, 'types', comparators=['in'],
+            choices=SiteType.available_types(),
             as_sqlalchemy=True
         )
     ] + source_dependent_filters(protein)
@@ -300,7 +300,7 @@ def create_widgets(protein, filters_by_id, custom_datasets_names=None):
         ),
         'ptm_type': FilterWidget(
             'Type of PTM site', 'radio',
-            filter=filters_by_id['Site.type'],
+            filter=filters_by_id['Site.types'],
             disabled_label='Any site'
         ),
         'other': [FilterWidget(

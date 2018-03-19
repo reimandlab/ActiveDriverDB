@@ -62,7 +62,7 @@ class TestImport(DatabaseTest):
             sites_by_pos = {site.position: site for site in sites}
 
             assert sites_by_pos[236].residue == sites_by_pos[242].residue == 'S'
-            assert sites_by_pos[236].type == sites_by_pos[242].type == {'phosphorylation'}
+            assert sites_by_pos[236].types_names == sites_by_pos[242].types_names == {'phosphorylation'}
 
             assert sites_by_pos[236].pmid == {17360704}
 

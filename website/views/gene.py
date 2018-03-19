@@ -5,7 +5,7 @@ from flask_classful import FlaskView
 from flask_classful import route
 from sqlalchemy.sql.elements import TextClause
 
-from models import Protein, Cancer, InheritedMutation, Disease, ClinicalData, source_manager
+from models import Protein, Cancer, InheritedMutation, Disease, ClinicalData, source_manager, SiteType
 from models import Mutation
 from models import Gene
 from models import Site
@@ -151,8 +151,8 @@ class GeneViewFilters(FilterManager):
                 as_sqlalchemy=source_filter_to_sqlalchemy
             ),
             Filter(
-                Site, 'type', comparators=['in'],
-                choices=Site.types(),
+                Site, 'types', comparators=['in'],
+                choices=[site_type.name for site_type in SiteType.available_types()],
                 as_sqlalchemy=True
             ),
             Filter(
@@ -184,7 +184,7 @@ def make_widgets(filter_manager, include_dataset_specific=False):
         ),
         'ptm_type': FilterWidget(
             'Type of PTM site', 'radio',
-            filter=filter_manager.filters['Site.type'],
+            filter=filter_manager.filters['Site.types'],
             disabled_label='all sites'
         ),
         'has_ptm': FilterWidget(

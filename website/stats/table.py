@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Iterable
 
 from sqlalchemy import func, distinct, case, literal_column, and_
 from tqdm import tqdm
@@ -8,14 +9,14 @@ from database import db
 from models import Mutation, Protein, Site, source_manager
 
 
-def count_mutated_sites(site_types=tuple(), model=None, only_primary=False):
+def count_mutated_sites(site_types: Iterable[models.SiteType]=tuple(), model=None, only_primary=False):
     filters = [
         Mutation.protein_id == Protein.id,
         Site.protein_id == Protein.id,
         Mutation.precomputed_is_ptm
     ]
     for site_type in site_types:
-        filters.append(Site.type.contains(site_type.name))
+        filters.append(Site.types.contains(site_type))
     query = (
         db.session.query(
             func.count(distinct(case(
@@ -198,10 +199,8 @@ def source_specific_mutated_sites():
 
 def sites_counts():
     counts = {}
-    site_types = ['']  # empty will match all sites
-    site_types.extend(Site.types())
-    for site_type in site_types:
-        count = Site.query.filter(Site.type.contains(site_type)).count()
+    for site_type in models.SiteType.available_types(include_any=True):
+        count = site_type.filter(Site.query).count()
         counts[site_type] = count
     return {'PTM sites': counts}
 

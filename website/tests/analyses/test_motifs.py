@@ -44,12 +44,12 @@ class MotifAnalysisTest(DatabaseTest):
         xation = SiteType(name='xation')
 
         canonical_sites = [
-            Site(protein=p, position=2, type={xation}),     # canonical, seriously mutated and broken
-            Site(protein=p, position=4, type={xation}),     # canonical, mutated
-            Site(protein=p, position=12, type={xation}),    # canonical, not mutated
+            Site(protein=p, position=2, types={xation}),     # canonical, seriously mutated and broken
+            Site(protein=p, position=4, types={xation}),     # canonical, mutated
+            Site(protein=p, position=12, types={xation}),    # canonical, not mutated
         ]
         other_sites = [
-            Site(protein=p, position=22, type={xation}),    # non-canonical motif, not mutated
+            Site(protein=p, position=22, types={xation}),    # non-canonical motif, not mutated
         ]
         all_sites = canonical_sites + other_sites
 

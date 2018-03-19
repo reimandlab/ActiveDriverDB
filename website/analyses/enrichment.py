@@ -13,6 +13,7 @@ from database import join_unique, db
 from models import (
     Protein, Mutation, The1000GenomesMutation, MC3Mutation, InheritedMutation, Gene, Site,
     MutationSource, source_manager,
+    SiteType,
 )
 
 
@@ -429,7 +430,7 @@ def prepare_for_summing(sources: List[MutationSource], count_distinct_substituti
     return counts
 
 
-def most_mutated_sites(sources: List[MutationSource], site_type=None, limit=25, intersection=True, exclusive=None):
+def most_mutated_sites(sources: List[MutationSource], site_type: SiteType=None, limit=25, intersection=True, exclusive=None):
     """Sources must be of the same type"""
 
     assert not (intersection and exclusive)
@@ -465,7 +466,7 @@ def most_mutated_sites(sources: List[MutationSource], site_type=None, limit=25, 
     )
 
     if site_type:
-        query = query.filter(Site.type.contains(site_type))
+        query = query.filter(Site.types.contains(site_type))
 
     query = (
         query

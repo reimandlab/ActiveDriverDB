@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from collections import UserList
 from functools import lru_cache
-from typing import Type, Mapping, Set, List, Dict
+from typing import Type, Mapping, List, Dict
 
 from sqlalchemy import and_, distinct
 from sqlalchemy import case
@@ -16,7 +16,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, synonym, RelationshipProperty
 from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
-from sqlalchemy.util import classproperty
 from werkzeug.utils import cached_property
 
 from database import db, count_expression, client_side_defaults
@@ -68,9 +67,32 @@ class SiteType(BioModel):
     def find_modified_residues(self) -> set:
         return {site.residue for site in self.sites}
 
-    @property
-    def sites(self):
-        return Site.query.filter(Site.type.contains(self))
+    def filter(self, query):
+        return query.filter(Site.types.contains(self))
+
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    @lru_cache()
+    def available_types(cls, include_any=False):
+        return [site_type for site_type in cls.query] + (
+            [AnySiteType()]
+            if include_any else
+            []
+        )
+
+
+class AnySiteType:
+
+    name = ''
+
+    @staticmethod
+    def filter(query):
+        return query
+
+    def __str__(self):
+        return ''
 
 
 class Kinase(BioModel):
@@ -85,7 +107,7 @@ class Kinase(BioModel):
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     group_id = db.Column(db.Integer, db.ForeignKey('kinasegroup.id'))
 
-    site_type_table = make_association_table('kinase.id', 'sitetype.id')
+    site_type_table = make_association_table('kinase.id', SiteType.id)
     is_involved_in = db.relationship(
         SiteType,
         secondary=site_type_table,
@@ -127,7 +149,7 @@ class KinaseGroup(BioModel):
         backref='group'
     )
 
-    site_type_table = make_association_table('kinasegroup.id', 'sitetype.id')
+    site_type_table = make_association_table('kinasegroup.id', SiteType.id)
     is_involved_in = db.relationship(
         SiteType,
         secondary=site_type_table,
@@ -232,7 +254,7 @@ class Pathway(BioModel):
     gene_ontology = db.Column(db.Integer)
     reactome = db.Column(db.Integer)
 
-    association_table = make_association_table('pathway.id', 'gene.id')
+    association_table = make_association_table('pathway.id', Gene.id)
 
     genes = db.relationship(
         'Gene',
@@ -362,7 +384,7 @@ class Drug(BioModel):
     drug_bank_id = db.Column(db.String(32))
     description = db.Column(db.Text)
 
-    target_genes_association_table = make_association_table('drug.id', 'gene.id')
+    target_genes_association_table = make_association_table('drug.id', Gene.id)
 
     target_genes = db.relationship(
         Gene,
@@ -375,7 +397,7 @@ class Drug(BioModel):
     type_id = db.Column(db.Integer, db.ForeignKey('drugtype.id'))
     type = db.relationship(DrugType, backref='drugs', lazy=False)
 
-    group_association_table = make_association_table('drug.id', 'druggroup.id')
+    group_association_table = make_association_table('drug.id', DrugGroup.id)
 
     groups = db.relationship(
         DrugGroup,
@@ -747,33 +769,36 @@ class Site(BioModel):
     residue = db.Column(db.String(1), default=default_residue)
 
     pmid = db.Column(ScalarSet(separator=',', element_type=int), default=set)
-    type = db.Column(ScalarSet(separator=',', coerce={SiteType: 'name'}), default=set)
 
-    # TODO: following ideas might be worth exploring:
-    # mapped = db.Column(db.Boolean)
+    site_type_table = make_association_table('site.id', SiteType.id)
+    types = db.relationship(SiteType, secondary=site_type_table, backref='sites', collection_class=set)
+
+    @property
+    def types_names(self):
+        return {site_type.name for site_type in self.types}
 
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
 
     sources = db.relationship(
         'SiteSource',
-        secondary=make_association_table('site.id', 'sitesource.id'),
+        secondary=make_association_table('site.id', SiteSource.id),
         collection_class=set,
         backref='sites'
     )
     kinases = db.relationship(
         'Kinase',
-        secondary=make_association_table('site.id', 'kinase.id'),
+        secondary=make_association_table('site.id', Kinase.id),
         collection_class=set,
         backref='sites'
     )
     kinase_groups = db.relationship(
         'KinaseGroup',
-        secondary=make_association_table('site.id', 'kinasegroup.id'),
+        secondary=make_association_table('site.id', KinaseGroup.id),
         collection_class=set,
         backref='sites'
     )
 
-    @client_side_defaults('pmid', 'type')
+    @client_side_defaults('pmid')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -866,7 +891,7 @@ class Site(BioModel):
     def to_json(self, with_kinases=False):
         data = {
             'position': self.position,
-            'type': ','.join(self.type),
+            'type': ','.join(self.types_names),
             'residue': self.residue
         }
         if with_kinases:
@@ -880,21 +905,13 @@ class Site(BioModel):
             ]
         return data
 
-    @classmethod
-    @lru_cache()
-    def types(cls):
-        return [site_type.name for site_type in SiteType.query]
-
 
 class Cancer(BioModel):
     code = db.Column(db.String(16), unique=True)
     name = db.Column(db.String(64), unique=True)
 
     def __repr__(self):
-        return '<Cancer with code: {0}, named: {1}>'.format(
-            self.code,
-            self.name
-        )
+        return f'<Cancer with code: {self.code}, named: {self.name}>'
 
 
 class InterproDomain(BioModel):
@@ -954,9 +971,6 @@ class Domain(BioModel):
             self.start,
             self.end
         )
-
-
-mutation_site_association = make_association_table('site.id', 'mutation.id')
 
 
 class MutationDetailsManager(UserList, metaclass=ABCMeta):
@@ -1909,6 +1923,7 @@ class Mutation(BioModel):
         It describes impact on the closest PTM site or on a site chosen by
         MIMP algorithm (so it applies only when 'network-rewiring' is returned)
         """
+        # TODO: use affected sites!?
         sites = site_filter(self.protein.sites)
 
         if self.is_close_to_some_site(0, 0, sites):
@@ -1981,11 +1996,11 @@ class Mutation(BioModel):
 
     @property
     def short_name(self):
-        return '%s%s%s' % (self.ref, self.position, self.alt)
+        return f'{self.ref}{self.position}{self.alt}'
 
     @property
     def name(self):
-        return '%s %s' % (self.protein.gene.name, self.short_name)
+        return f'{self.protein.gene.name} {self.short_name}'
 
     def to_json(self):
         return {
