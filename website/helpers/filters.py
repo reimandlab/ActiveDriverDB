@@ -91,7 +91,14 @@ class Filter:
             default_comparator = comparators[0]
 
         self.allowed_comparators = comparators
-        self.choices = choices
+
+        if isinstance(choices, dict):
+            self.choices = list(choices.keys())
+            self.mappings = choices
+        else:
+            self.choices = choices
+            self.mappings = None
+
         self.targets = (
             targets
             if is_iterable_but_not_str(targets)
@@ -123,6 +130,7 @@ class Filter:
 
     def as_sqlalchemy(self, target):
         from sqlalchemy.ext.associationproxy import AssociationProxy
+        from sqlalchemy.orm.relationships import RelationshipProperty
         from sqlalchemy.sql.annotation import AnnotatedSelect
         from sqlalchemy.sql.sqltypes import Text
         from types import FunctionType
@@ -202,13 +210,17 @@ class Filter:
                 )
                 return comp_func, []
 
-        if (
-            self.comparator == 'in' and
-            type(field.property.columns[0].type) in [Text, ScalarSet]
-        ):
-            return getattr(field, 'like')('%' + self.value + '%'), []
+        comparator = comparators[self.comparator]
+        value = self.value
 
-        return getattr(field, comparators[self.comparator])(self.value), []
+        if self.comparator == 'in':
+            if isinstance(field.property, RelationshipProperty):
+                comparator = 'contains'
+            elif type(field.property.columns[0].type) in [Text, ScalarSet]:
+                comparator = 'like'
+                value = '%' + self.value + '%'
+
+        return getattr(field, comparator)(value), []
 
     @property
     def primary_target(self):
@@ -287,6 +299,10 @@ class Filter:
                 value = list(retained)
             # raise if we cannot fix it
             self._verify_value(value, True)
+
+        if self.mappings and value is not None:
+            value = self.mappings[value]
+
         self._value = value
 
         return rejected
