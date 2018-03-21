@@ -3,7 +3,7 @@ from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from collections import UserList
 from functools import lru_cache
-from typing import Type, Mapping, List, Dict
+from typing import Type, Mapping, List, Dict, Iterable
 
 from sqlalchemy import and_, distinct
 from sqlalchemy import case
@@ -1723,8 +1723,11 @@ source_manager = Sources([
 
 
 class SiteMotif(BioModel):
-    type_motif_table = make_association_table('sitemotif.id', SiteType.id)
-    site_type = db.relationship(SiteType, secondary=type_motif_table, backref='motifs')
+    name = db.Column(db.String(32))
+    pattern = db.Column(db.String(32))
+
+    site_type_id = db.Column(db.Integer, db.ForeignKey('sitetype.id'))
+    site_type = db.relationship(SiteType, backref='motifs')
 
 
 class MutatedMotifs:
@@ -1741,7 +1744,7 @@ class MutatedMotifs:
             backref='mutations'
         )
 
-    def affected_motifs(self, sites=None):
+    def affected_motifs(self, sites: Iterable[Site]=None):
         if self.were_affected_motifs_precomputed:
             return self.precomputed_affected_motifs
 
@@ -1755,13 +1758,14 @@ class MutatedMotifs:
 
         for site in sites:
             for site_type in site.types:
+
                 for motif in site_type.motifs:
 
-                    if site.has_motif(motif):
+                    if site.has_motif(motif.pattern):
                         # todo: make it a method of mutation? "self.mutate_sequence()" ?
 
                         mutated_sequence = mutate_sequence(site, self, offset=7)
-                        if not has_motif(mutated_sequence, motif):
+                        if not has_motif(mutated_sequence, motif.pattern):
                             affected_motifs.add(motif)
 
         return affected_motifs
@@ -1970,8 +1974,7 @@ class Mutation(BioModel, MutatedMotifs):
         It describes impact on the closest PTM site or on a site chosen by
         MIMP algorithm (so it applies only when 'network-rewiring' is returned)
         """
-        # TODO: use affected sites!?
-        sites = site_filter(self.protein.sites)
+        sites = site_filter(self.sites)
 
         if self.is_close_to_some_site(0, 0, sites):
             return 'direct'
