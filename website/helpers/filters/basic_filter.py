@@ -1,4 +1,6 @@
 import operator
+from functools import lru_cache
+from types import MethodType
 
 from helpers.utilities import is_iterable_but_not_str
 
@@ -16,6 +18,48 @@ class BasicFilter:
     objects that have compliant interface.
 
     Args:
+        targets:
+            list of targets against which applying the filter is planned.
+            Each target should be given as a class of the object to be targeted.
+
+            One filter (e.g. age filter) can be used against several targets,
+            as long as all the targets have the required attribute accessible.
+
+            For example:
+                >>> age_filter = BasicFilter(targets=[User, Equipment], attribute='age')
+
+        attribute:
+            the name of an attribute in which a value to be compared is stored.
+
+            For example:
+
+                for model of an user which is defined as:
+                    >>> class User:
+                    >>>     def __init__(self, name): self.name = name
+                    >>> user = User('John')
+                if one wished to filter users by name,
+                the target would be `User` and the attribute would be `'name'`.
+
+            If the value accessed by `getattr(tested_object, attribute)`
+            needs to be modified before being used for comparison (i.e
+            you want to add custom filtering, aggregation or type casting),
+            you may set `custom_attr_getter` method on property accessing the
+            value. This mechanism is meant to facilitate in-flight amendments
+            to the structures retrieved by SQLAlchemy, which needs to be used
+            in other parts of the application as well, as such values cannot
+            be modified on the model/column level - because it would affect
+            how these values are returned in other parts of the app.
+
+            The attribute can be a method provided that takes no arguments
+            (or that all arguments have some default values).
+
+            When more than one target is provided, only the first target is
+            considered when deciding whether the attribute is a method or
+            when detecting `custom_attr_getter` of the attribute.
+        default:
+            the value to compare against if a custom value is not provided
+        nullable:
+            whether setting False-evaluating values is allowed for this filter
         choices:
             allowed values of the filter, given as a list of identifiers
             (strings) or as a dictionary that maps identifiers (strings)
@@ -45,7 +89,9 @@ class BasicFilter:
             a mapping with custom comparators, which may override the pre-defined
             comparing functions (usually taken from `operator` module); should
             be given in form of: {comparator_name: comparing_function}
-
+        skip_if_default:
+            if True, the filter will be applied only if the value differs from
+            the default one.
     """
 
     possible_comparators = {
@@ -75,7 +121,7 @@ class BasicFilter:
         self, targets, attribute, default=None, nullable=True,
         comparators='__all__', choices=None,
         default_comparator=None, multiple=None,
-        is_attribute_a_method=False, skip_if_default=False,
+        skip_if_default=False,
         custom_comparators=None
     ):
         # setup and verify comparators
@@ -122,7 +168,6 @@ class BasicFilter:
 
         # copy/initialize simple state/config variables
         self.skip_if_default = skip_if_default
-        self.is_attribute_a_method = is_attribute_a_method
         self.default = default
         self.attribute = attribute
         self.multiple = multiple
@@ -252,22 +297,26 @@ class BasicFilter:
 
         return compare
 
+    @lru_cache(maxsize=1)
     def attr_getter(self):
-        """Attrgetter that passes a value to an method-attribute if needed"""
-
+        """Attribute getter that passes a value to an method-attribute if needed"""
         # handle custom arguments getters
         if hasattr(self.primary_target, self.attribute):
             field = getattr(self.primary_target, self.attribute)
+
             if hasattr(field, 'custom_attr_getter'):
                 return field.custom_attr_getter
+        else:
+            field = None
 
         getter = operator.attrgetter(self.attribute)
-        if self.is_attribute_a_method:
+
+        if field and isinstance(field, MethodType):
             def attr_get(element):
                 return getter(element)(self.manager)
-        else:
-            attr_get = getter
-        return attr_get
+            return attr_get
+
+        return getter
 
     def test(self, obj):
         """Test if a given object (instance) passes criteria of this filter.
@@ -318,9 +367,18 @@ class BasicFilter:
         )
 
     @property
-    def is_active(self):    # TODO rename to 'is_applicable' or so
+    def is_active(self):
+        """The filter is active if it is visible and has either:
+        - a value different than None, or
+        - a value that does not equals to the default one
+
+        so if you need your filter to accept None as a value,
+        you will need to change the default to a value != None.
+        """
         return self.visible and (
-            self.value is not None or self.value != self.default
+            self.value is not None
+            or
+            self.value != self.default
         )
 
     @property
@@ -335,7 +393,7 @@ class BasicFilter:
             return self._comparator
         return self._default_comparator
 
-    visible = True      # TODO rename to 'active'
+    visible = True
 
     def __repr__(self):
         return f'<Filter {self.id} ({"" if self.is_active else "in"}active) with value "{self.value}">'

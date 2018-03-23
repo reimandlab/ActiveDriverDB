@@ -290,7 +290,6 @@ class SearchViewFilters(FilterManager):
             # 1         1                                       1
             Filter(
                 Mutation, 'is_ptm', comparators=['or'],
-                is_attribute_a_method=True,
                 default=False
             ),
             Filter(

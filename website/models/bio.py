@@ -14,7 +14,6 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method, Comparator
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, synonym, RelationshipProperty
-from sqlalchemy.orm.collections import InstrumentedSet
 from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
 from werkzeug.utils import cached_property

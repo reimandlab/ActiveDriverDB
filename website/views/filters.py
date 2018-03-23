@@ -162,8 +162,7 @@ def common_filters(
             default=None, nullable=True
         ),
         Filter(
-            Mutation, 'is_ptm', comparators=['eq'],
-            is_attribute_a_method=True
+            Mutation, 'is_ptm', comparators=['eq']
         ),
         Filter(
             Drug, 'groups.name', comparators=['in'],
@@ -223,7 +222,7 @@ def source_dependent_filters(protein=None):
             choices=populations_esp,
             default=populations_esp,
             source='ESP6500',
-            multiple='any',
+            multiple='any'
         ),
         MutationDetailsFilter(
             ClinicalData, 'sig_code',

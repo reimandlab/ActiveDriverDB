@@ -70,22 +70,14 @@ class FilterManager:
         # (so one filter can relay on state of other filters,
         # eg. be active conditionally, if another filter is set).
 
-        for filter in filters:
-            filter.manager = self
+        for filter_ in filters:
+            filter_.manager = self
 
         # store filters as dict of filter_id -> filter for quick access
         self.filters = {
-            filter.id: filter
-            for filter in filters
+            filter_.id: filter_
+            for filter_ in filters
         }
-
-    def get_active(self):
-        """Return a list of active filters"""
-        return [f for f in self.filters.values() if f.is_active]
-
-    def get_inactive(self):
-        """Return a list of inactive filters"""
-        return [f for f in self.filters.values() if not f.is_active]
 
     def prepare_filters(self, target=None):
 
@@ -93,7 +85,7 @@ class FilterManager:
         query_filters = []
         all_required_joins = []
 
-        for the_filter in self._get_non_trivial_active(target):
+        for the_filter in self._filters_to_apply_to(target):
 
             if the_filter.has_sqlalchemy:
 
@@ -173,29 +165,38 @@ class FilterManager:
         if filters_subset is not None:
             filters = filters_subset
         else:
-            filters = self._get_non_trivial_active(target_type)
+            filters = self._filters_to_apply_to(target_type)
 
         for filter_ in filters:
             elements = filter_.apply(elements, itemgetter)
 
         return list(elements)
 
-    def _get_non_trivial_active(self, target=None):
-        non_trivial_filters = []
-        for filter_ in self._get_active(target):
-            if filter_.skip_if_default and set(filter_.default) == set(filter_.value):
-                continue
-            non_trivial_filters.append(filter_)
-        return non_trivial_filters
+    def _filters_to_apply_to(self, target=None):
+        """Return filters that are active and can be applied to given target.
 
-    def _get_active(self, target=None):
-        """Return filters which are active & target the same type of objects"""
+        If a filter is set to be omitted by `skip_if_default=True`, it will be
+        filtered if the current value of the filter is the save as the default.
+        """
         return [
-            the_filter
-            for the_filter in self.filters.values()
+            filter_
+            for filter_ in self._active_and_applicable_filters(target)
+            if not (filter_.skip_if_default and set(filter_.default) == set(filter_.value))
+        ]
+
+    def _active_and_applicable_filters(self, target=None):
+        """Return filters which are active & are applicable to given target.
+
+        If no target is given, all active filters will be returned.
+        """
+        catch_all_active_filters = not target
+        return [
+            filter_
+            for filter_ in self.filters.values()
             if (
-                (not target or target in the_filter.targets) and
-                the_filter.is_active
+                (catch_all_active_filters or target in filter_.targets)
+                and
+                filter_.is_active
             )
         ]
 
@@ -394,8 +395,8 @@ class FilterManager:
 
     def reset(self):
         """Reset values of child filters to bring them into a neutral state."""
-        for filter in self.filters.values():
-            filter._value = None
+        for filter_ in self.filters.values():
+            filter_._value = None
 
     def reformat_request_url(self, request, endpoint, *args, **kwargs):
         from flask import url_for
