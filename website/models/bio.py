@@ -14,6 +14,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_method, Comparator
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, synonym, RelationshipProperty
+from sqlalchemy.orm.collections import InstrumentedSet
 from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
 from werkzeug.utils import cached_property
@@ -74,13 +75,53 @@ class SiteType(BioModel):
         return self.name
 
     @classmethod
-    @lru_cache()
     def available_types(cls, include_any=False):
         return [site_type for site_type in cls.query] + (
             [AnySiteType()]
             if include_any else
             []
         )
+
+    @classmethod
+    @lru_cache()
+    def id_by_name(cls):
+        return {
+            site_type.name: site_type.id
+            for site_type in cls.available_types()
+        }
+
+    @classmethod
+    def fuzzy_filter(cls, other_type):
+        matched_types_ids = [
+            type_id
+            for type_name, type_id in cls.id_by_name().items()
+            if other_type.name in type_name
+        ]
+
+        if len(matched_types_ids) == 1:
+            return SiteType.id == matched_types_ids[0]
+
+        return Site.types.any(
+            SiteType.id.in_(matched_types_ids)
+        )
+        # NB: there are following alternatives available:
+        # return Site.types.contains(matched_types[0]) # for single type matched
+        # return or_(Site.types.any(id=site_type.id) for site_type in matched_types)
+        # return Site.types.any(SiteType.name.like('%' + other_site.name + '%'))
+
+    @classmethod
+    def fuzzy_comparator(cls, other_types, some_type):
+
+        if other_types is some_type:
+            return
+
+        matched_types_ids = [
+            type_id
+            for type_name, type_id in cls.id_by_name().items()
+            if some_type.name in type_name
+        ]
+
+        return any(other_type.id in matched_types_ids for other_type in other_types)
 
 
 class AnySiteType:
@@ -705,15 +746,15 @@ class Protein(BioModel):
         return False
 
     @property
-    def disease_names(self):
+    def disease_names_by_id(self):
         query = (
-            db.session.query(distinct(Disease.name))
+            db.session.query(Disease.id, Disease.name)
             .join(ClinicalData)
             .join(InheritedMutation)
             .join(Mutation)
             .filter(Mutation.protein == self)
         )
-        return [row[0] for row in query]
+        return {row[0]: row[1] for row in query}
 
     def cancer_codes(self, mutation_details_model):
         query = (
@@ -763,6 +804,7 @@ def extract_padded_sequence(protein: Protein, left: int, right: int):
 
 
 class Site(BioModel):
+
     # Note: this position is 1-based
     position = db.Column(db.Integer, index=True)
 
@@ -770,7 +812,7 @@ class Site(BioModel):
 
     pmid = db.Column(ScalarSet(separator=',', element_type=int), default=set)
 
-    site_type_table = make_association_table('site.id', SiteType.id)
+    site_type_table = make_association_table('site.id', SiteType.id, index=True)
     types = db.relationship(SiteType, secondary=site_type_table, backref='sites', collection_class=set)
 
     @property
@@ -1276,6 +1318,7 @@ class InheritedMutation(MutationDetails, BioModel):
 
     sig_code = association_proxy('clin_data', 'sig_code')
     disease_name = association_proxy('clin_data', 'disease_name')
+    disease_id = association_proxy('clin_data', 'disease_id')
 
     def get_value(self, filter=lambda x: x):
         return len(filter(self.clin_data))
@@ -1797,6 +1840,7 @@ class Mutation(BioModel, MutatedMotifs):
     populations_ESP6500 = details_proxy(ExomeSequencingMutation, 'affected_populations', managed=True)
     mc3_cancer_code = details_proxy(MC3Mutation, 'mc3_cancer_code')
     sig_code = details_proxy(InheritedMutation, 'sig_code')
+    disease_id = details_proxy(InheritedMutation, 'disease_id')
     disease_name = details_proxy(InheritedMutation, 'disease_name')
 
     def __repr__(self):
@@ -1968,13 +2012,16 @@ class Mutation(BioModel, MutatedMotifs):
         else:
             return 'none'
 
-    def impact_on_ptm(self, site_filter=lambda x: x):
+    def impact_on_ptm(self, site_filter=None):
         """How intense might be an impact of the mutation on a PTM site.
 
         It describes impact on the closest PTM site or on a site chosen by
         MIMP algorithm (so it applies only when 'network-rewiring' is returned)
         """
-        sites = site_filter(self.sites)
+        if site_filter is None:
+            sites = self.sites
+        else:
+            sites = site_filter(self.sites)
 
         if self.is_close_to_some_site(0, 0, sites):
             return 'direct'

@@ -5,7 +5,7 @@ from flask_classful import FlaskView
 from flask_classful import route
 from sqlalchemy.sql.elements import TextClause
 
-from models import Protein, Cancer, InheritedMutation, Disease, ClinicalData, source_manager, SiteType
+from models import Protein, Cancer, InheritedMutation, Disease, ClinicalData, source_manager, SiteType, MC3Mutation
 from models import Mutation
 from models import Gene
 from models import Site
@@ -17,10 +17,10 @@ from sqlalchemy import case
 from sqlalchemy import literal_column
 from database import db
 from helpers.views import AjaxTableView
-from helpers.filters import FilterManager, joined_query
+from helpers.filters.manager import joined_query, FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
-from .filters import source_filter_to_sqlalchemy, create_dataset_labels, source_dependent_filters, \
+from .filters import sqlalchemy_filter_from_source_name, create_dataset_labels, source_dependent_filters, \
     create_dataset_specific_widgets
 
 from sqlalchemy import and_
@@ -55,6 +55,12 @@ def select_filters(filters, models):
     return selected
 
 
+def chain_filters(filters, conjunction=and_):
+    if len(filters) == 1:
+        return next(iter(filters))
+    return conjunction(*filters)
+
+
 def prepare_subqueries(sql_filters, required_joins):
     """Return three sub-queries suitable for use in protein queries which are:
         - mutations count (muts_cnt),
@@ -64,8 +70,10 @@ def prepare_subqueries(sql_filters, required_joins):
     Returned sub-queries are labelled as shown in parentheses above.
     """
 
-    any_site_filters = select_filters(sql_filters, [Site])
-    any_muts_filters = select_filters(sql_filters, [Mutation, InheritedMutation, ClinicalData, Disease, Cancer])
+    muts_filtering_models = [Mutation, MC3Mutation, InheritedMutation, ClinicalData, Disease, Cancer]
+
+    any_site_filters = select_filters(sql_filters, [Site, SiteType])
+    any_muts_filters = select_filters(sql_filters, muts_filtering_models)
 
     muts = (
         joined_query(
@@ -73,9 +81,15 @@ def prepare_subqueries(sql_filters, required_joins):
                 db.session.query(func.count(Mutation.id))
                 .filter(Mutation.protein_id == Protein.id)
             ),
-            required_joins
+            required_joins,
+            limit_to=muts_filtering_models
         )
         .filter(and_(*any_muts_filters))
+    )
+
+    sites = (
+        db.session.query(func.count(Site.id))
+        .filter(Site.protein_id == Protein.id)
     )
 
     if any_site_filters:
@@ -101,10 +115,18 @@ def prepare_subqueries(sql_filters, required_joins):
                 Mutation.precomputed_is_ptm
             ))
             .join(Site, Site.protein_id == Mutation.protein_id)
+            .join(SiteType, Site.types)
+            .filter(chain_filters(any_site_filters))
         )
+
         ptm_muts = (
-            joined_query(ptm_muts, required_joins)
-            .filter(and_(*select_filters(sql_filters, [Site, Mutation])))
+            joined_query(ptm_muts, required_joins, limit_to=muts_filtering_models)
+            .filter(chain_filters(any_muts_filters))
+        )
+        sites = (
+            sites
+            .join(SiteType, Site.types)
+            .filter(chain_filters(any_site_filters))
         )
     else:
         ptm_muts = (
@@ -115,8 +137,8 @@ def prepare_subqueries(sql_filters, required_joins):
             ))
         )
         ptm_muts = (
-            joined_query(ptm_muts, required_joins)
-            .filter(and_(*any_muts_filters))
+            joined_query(ptm_muts, required_joins, limit_to=muts_filtering_models)
+            .filter(chain_filters(any_muts_filters))
         )
 
     # if no specific dataset is chosen
@@ -127,14 +149,7 @@ def prepare_subqueries(sql_filters, required_joins):
 
     muts = muts.label('muts_cnt')
     ptm_muts = ptm_muts.label('ptm_muts_cnt')
-
-    sites = (
-        db.session.query(func.count(Site.id))
-        .filter(
-            Site.protein_id == Protein.id,
-        )
-        .filter(and_(*select_filters(sql_filters, [Site])))
-    ).label('ptm_sites_cnt')
+    sites = sites.label('ptm_sites_cnt')
 
     return muts, ptm_muts, sites
 
@@ -148,22 +163,26 @@ class GeneViewFilters(FilterManager):
                 Mutation, 'sources', comparators=['in'],
                 choices=list(source_manager.visible_fields.keys()),
                 default=None, nullable=True,
-                as_sqlalchemy=source_filter_to_sqlalchemy
+                as_sqlalchemy=sqlalchemy_filter_from_source_name
             ),
             Filter(
                 Site, 'types', comparators=['in'],
-                choices=[site_type.name for site_type in SiteType.available_types()],
-                as_sqlalchemy=True
+                choices={
+                    site_type.name: site_type
+                    for site_type in SiteType.available_types()
+                },
+                as_sqlalchemy=SiteType.fuzzy_filter,
+                as_sqlalchemy_joins=[SiteType]
             ),
             Filter(
                 Gene, 'has_ptm_muts',
                 comparators=['eq'],
-                as_sqlalchemy=lambda self, value: text('ptm_muts_cnt > 0') if value else text('true')
+                as_sqlalchemy=lambda value: text('ptm_muts_cnt > 0') if value else text('true')
             ),
             Filter(
                 Gene, 'is_known_kinase',
                 comparators=['eq'],
-                as_sqlalchemy=lambda self, value: Protein.kinase.any()
+                as_sqlalchemy=lambda value: Protein.kinase.any()
             )
         ] + [
             filter

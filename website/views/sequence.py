@@ -13,10 +13,9 @@ from helpers.tracks import MutationsTrack
 from helpers.tracks import SequenceTrack
 from helpers.tracks import Track
 from helpers.tracks import TrackElement
-from models import Domain, source_manager, SiteType
+from models import Domain, source_manager, SiteType, Site
 from models import Mutation
-from models import Site
-from views.abstract_protein import AbstractProteinView, GracefulFilterManager, ProteinRepresentation
+from .abstract_protein import AbstractProteinView, GracefulFilterManager, ProteinRepresentation
 from ._commons import represent_mutation
 from .filters import common_filters, ProteinFiltersData
 from .filters import create_widgets

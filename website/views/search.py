@@ -28,7 +28,7 @@ from models import Mutation
 from models import UsersMutationsDataset
 from models import UserUploadedMutation
 from sqlalchemy import exists, or_, text
-from helpers.filters import FilterManager, quote_if_needed
+from helpers.filters.manager import quote_if_needed, FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 from views.gene import prepare_subqueries

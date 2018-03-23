@@ -1,5 +1,7 @@
 import pytest
 import helpers.filters as filters
+import helpers.filters.basic_filter
+import helpers.filters.manager
 
 
 class Model:
@@ -12,7 +14,7 @@ def test_filter():
 
     # Test initialization
 
-    with pytest.raises(filters.InitializationError):
+    with pytest.raises(helpers.filters.basic_filter.InitializationError):
         filters.Filter(
             Model, 'value', comparators=['this is not a comparator'],
             choices=['a', 'b', 'c', 'd'],
@@ -72,7 +74,7 @@ def test_select_filter():
         tested_filter.update(value)
         assert len(list(tested_filter.apply(test_objects))) == length
 
-    with pytest.raises(filters.ValidationError):
+    with pytest.raises(helpers.filters.basic_filter.ValidationError):
         tested_filter.update('e')
         tested_filter.apply(test_objects)
 
@@ -119,7 +121,7 @@ def test_multiselect_filter():
     # test the default value
     assert len(list(tested_filter.apply(test_objects))) == 4
 
-    with pytest.raises(filters.ValidationError):
+    with pytest.raises(helpers.filters.basic_filter.ValidationError):
         tested_filter.update('e')
         tested_filter.apply(test_objects)
 
@@ -129,7 +131,7 @@ def test_multiselect_filter():
 
 
 def create_manager():
-    return filters.FilterManager(
+    return helpers.filters.manager.FilterManager(
         [
             filters.Filter(
                 Model, 'color', comparators=['eq'],
