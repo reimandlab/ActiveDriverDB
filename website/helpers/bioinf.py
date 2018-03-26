@@ -1,3 +1,11 @@
+from pathlib import Path
+
+from ggplot import ggtitle
+from rpy2.rinterface._rinterface import NULL
+from rpy2.robjects import StrVector, IntVector, r
+from rpy2.robjects.lib.ggplot2 import GGPlot
+from rpy2.robjects.packages import importr
+
 basic_mappings = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
 IUPAC_mappings = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'U': 'A', 'Y': 'R',
                   'R': 'Y', 'S': 'S', 'W': 'W', 'K': 'M', 'M': 'K', 'B': 'V',
@@ -107,3 +115,48 @@ def is_sequence_broken(protein, test_pos, test_res, test_alt=None):
         if test_res == ref_in_db:
             return False
         return protein.refseq, ref_in_db, test_res, str(test_pos), test_alt
+
+
+def sequence_logo(pwm_or_seq, path: Path=None, width=369, height=149, dpi=72, legend=False, renumarate=True, title: str=None):
+    """Generate a sequence logo from Position Weight Matrix (pwm)
+    or a list of aligned sequences.
+
+    and save it into a file if a path was provided.
+    The logo will be generated with ggseqlogo (R).
+
+    Args:
+        renumarate:
+            change the labels of x axis to reflect relative position
+            to the modified (central) residue (15-aa sequence is assumed)
+    """
+    gglogo = importr("ggseqlogo")
+    ggplot2 = importr("ggplot2")
+
+    class GG:
+        def __init__(self, plot):
+            self.plot = plot
+
+        def __add__(self, other):
+            return GG(ggplot2._env['%+%'](self.plot, other))
+
+    if isinstance(pwm_or_seq, list):
+        pwm_or_seq = StrVector(pwm_or_seq)
+
+    theme_options = {
+        'legend.position': 'auto' if legend else 'none',
+        'plot.title': ggplot2.element_text(hjust=0.5, size=18),
+        'text': ggplot2.element_text(size=22),
+        'plot.margin': r.unit([0.025, -0.25, -0.15, 0.2], 'in')
+    }
+
+    plot = GG(gglogo.ggseqlogo(pwm_or_seq)) + ggplot2.theme(**theme_options)
+
+    if renumarate:
+        plot += ggplot2.scale_x_continuous(breaks=IntVector(range(14 + 1)), labels=IntVector(range(-7, 7 + 1)))
+    if title:
+        plot += ggplot2.ggtitle(title)
+
+    if path:
+        ggplot2.ggsave(str(path), width=width / dpi, height=height / dpi, dpi=dpi, units='in', bg='transparent')
+
+    return plot

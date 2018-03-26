@@ -13,6 +13,7 @@ from rpy2.robjects.packages import importr
 from tqdm import tqdm
 
 from analyses.active_driver import prepare_active_driver_data
+from helpers.bioinf import sequence_logo
 from models import Kinase, Site, SiteType, Protein, extract_padded_sequence
 
 from ._paths import ANALYSES_OUTPUT_PATH
@@ -288,8 +289,6 @@ glycosylation_sub_types = [
 
 
 def sequence_logos_for_site_types(site_types, enzyme_type='kinase'):
-    ggplot = importr("ggplot2")
-    gglogo = importr("ggseqlogo")
 
     logos_path = ANALYSES_OUTPUT_PATH / 'mimp' / 'logos'
 
@@ -315,12 +314,7 @@ def sequence_logos_for_site_types(site_types, enzyme_type='kinase'):
             pwm = model.rx('pwm')
             name = model.rx2('name')[0]
 
-            path = site_logos_path / f'{name}-pwm.png'
-
-            logo = gglogo.ggseqlogo(pwm)
-            ggplot.ggsave(str(path))
-
-            site_type_logos[name] = logo
+            site_type_logos[name] = sequence_logo(pwm, path)
 
         logos[site_type_name] = site_type_logos
 
