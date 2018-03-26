@@ -116,6 +116,7 @@ sudo R -e 'source("https://bioconductor.org/biocLite.R"); biocLite(c("S4Vectors"
 sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
 sudo R -e 'install.packages("rmimp", repos=NULL)'
 
+# sudo apt-get install libcairo2-dev - needed for svglite
 sudo R -e 'install.packages(c("ggseqlogo", "ggplot2", "svglite"), repos = "http://cran.us.r-project.org")'
 
 # needed only if using sqlite3 for tests
