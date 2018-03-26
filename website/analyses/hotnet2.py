@@ -5,7 +5,7 @@ from subprocess import check_output
 from tempfile import NamedTemporaryFile
 from typing import List
 
-from pandas import read_table
+from pandas import read_table, Series
 import numpy as np
 
 from analyses import active_driver
@@ -188,6 +188,35 @@ def run_on_active_driver_results(
         print('bower install')
         print('# To run vizualization server:')
         print(f'{interpreter.absolute()} server.py -i {output_dir.absolute()}')
+
+
+def export_both(site_type, score_by='p', mode='max'):
+
+    analyses = [active_driver.pan_cancer_analysis, active_driver.clinvar_analysis]
+    scores = []
+
+    for analysis in analyses:
+        result = analysis(site_type)
+        df = result['all_gene_based_fdr']
+        df[score_by] = - np.log10(df[score_by])
+        df = df.set_index('gene')[score_by]
+        scores.append(df)
+
+    cancer = scores[0]
+    clinvar = scores[1]
+
+    if mode == 'product':
+        combined_scores = cancer * clinvar
+        combined_scores = combined_scores.fillna(0)
+    elif mode == 'max':
+        all_genes = set(list(cancer.index) + list(clinvar.index))
+        cancer = Series({gene: cancer.get(gene, 0) for gene in all_genes})
+        clinvar = Series({gene: clinvar.get(gene, 0) for gene in all_genes})
+        combined_scores = cancer.where(cancer > clinvar, clinvar).fillna(cancer)
+    else:
+        raise ValueError(f'Wrong mode: {mode}')
+
+    combined_scores.to_csv('hotnet_input_heat_combined', sep='\t', header=False)
 
 
 def run_all(site_type: str, **kwargs):
