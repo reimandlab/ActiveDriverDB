@@ -1,3 +1,5 @@
+from typing import TypeVar, Tuple
+
 from sqlalchemy import inspect
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import aliased
@@ -13,8 +15,10 @@ db = SQLAlchemy()
 bdb = GenomicMappings()
 bdb_refseq = BerkleyHashSet()
 
+Model = TypeVar('Model')
 
-def get_or_create(model, **kwargs):
+
+def get_or_create(model: Model, **kwargs) -> Tuple[Model, bool]:
     """Return a tuple: (object, was_created) for given parameters.
 
     Object will be taken from relational database (from a table corresponding

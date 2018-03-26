@@ -1,6 +1,7 @@
 import re
 from functools import lru_cache
 
+from pathlib import Path
 from sqlalchemy import func
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
@@ -8,6 +9,7 @@ from database import db, client_side_defaults
 from database.functions import greatest, least
 from database.types import ScalarSet
 from exceptions import ValidationError
+from helpers.bioinf import sequence_logo
 
 from .model import BioModel, make_association_table
 
@@ -278,3 +280,17 @@ class SiteMotif(BioModel):
 
     site_type_id = db.Column(db.Integer, db.ForeignKey('sitetype.id'))
     site_type = db.relationship(SiteType, backref='motifs')
+
+    def generate_pseudo_logo(self, sequences):
+        path = self.pseudo_logo_path
+        sequence_logo(sequences, path=path, title=self.name)
+
+    @property
+    def pseudo_logo_path(self) -> Path:
+        path = Path('static/logos/')
+        path.mkdir(parents=True, exist_ok=True)
+
+        safe_name = ''.join(c for c in self.name if c.isalnum())
+        path /= f'{safe_name}_{self.id}.svg'
+
+        return path
