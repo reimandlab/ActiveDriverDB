@@ -21,7 +21,7 @@ def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_t
         return {}
 
     sites = (
-        Site.query.filter(Site.type.contains(site_type))
+        Site.query.filter(Site.types.contains(site_type))
         .join(Protein).filter(Protein.is_preferred_isoform)
     )
 
@@ -29,7 +29,7 @@ def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_t
         return [
             site for site in sites
             # matches 'O-glycosylation' for site_type 'glycosylation'
-            if any(site_type.name in s_t for s_t in site.type)
+            if any(site_type.name in type_name for type_name in site.types_names)
         ]
 
     mutations_by_impact_by_gene = {
@@ -52,7 +52,7 @@ def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_t
     for motif_name, breaking_muts in motifs_data.muts_breaking_sites_motif.items():
         all_breaking_muts.update(breaking_muts)
 
-    mutations = mutations.filter(Mutation.affected_sites.any(Site.type.contains(site_type)))
+    mutations = mutations.filter(Mutation.affected_sites.any(Site.types.contains(site_type)))
     if limit_to_genes is not None:
         mutations = mutations.filter(
             Gene.name.in_(limit_to_genes)

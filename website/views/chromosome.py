@@ -4,7 +4,7 @@ from flask import jsonify
 
 from database import bdb
 from models import source_manager
-from helpers.filters import FilterManager
+from helpers.filters.manager import FilterManager
 from .filters import common_filters
 from ._commons import represent_mutation
 from operator import attrgetter

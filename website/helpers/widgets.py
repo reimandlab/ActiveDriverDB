@@ -1,4 +1,7 @@
-from helpers.filters import quote_if_needed, is_iterable_but_not_str
+from collections import Hashable
+
+from helpers.utilities import is_iterable_but_not_str
+from helpers.filters.manager import quote_if_needed
 
 
 def quoted_value(raw_value):
@@ -91,7 +94,7 @@ class Widget:
 
     @property
     def value(self):
-        cacheable_value = tuple(self._value) if type(self._value) is list else self._value
+        cacheable_value = tuple(self._value) if not isinstance(self._value, Hashable) else self._value
 
         if cacheable_value in self._quote_cache:
             return self._quote_cache[cacheable_value]

@@ -9,7 +9,7 @@ from stats.plots import (
     ptm_variability, proteins_variability, most_mutated_sites, active_driver, ptm_mutations,
     gene_ontology, motifs, mimp,
 )
-from stats.plots.common import site_types_names, any_site_type
+from stats.plots.common import site_types_names
 from ..store import cases, CountStore
 from ..store.objects import StoreObject
 
@@ -62,18 +62,18 @@ class Plots(CountStore):
             query = query.join(Protein).filter(Protein.is_preferred_isoform)
 
         for site in tqdm(query.all()):
-            for site_type in site.type:
+            for site_type in site.types:
                 try:
                     if site.protein.disorder_map[site.position - 1] == '1':
-                        disordered[site_type] += 1
+                        disordered[site_type.name] += 1
                     else:
-                        not_disordered[site_type] += 1
+                        not_disordered[site_type.name] += 1
                 except IndexError:
                     warn(f"Disorder of {site.protein} does not include {site.position}")
 
         values = [
-            100 * disordered[site_type] / (disordered[site_type] + not_disordered[site_type])
-            for site_type in site_types_names
+            100 * disordered[type_name] / (disordered[type_name] + not_disordered[type_name])
+            for type_name in site_types_names
         ]
 
         return site_types_names, values
@@ -88,7 +88,7 @@ class Plots(CountStore):
             query = query.join(Protein).filter(Protein.is_preferred_isoform)
 
         for site in tqdm(query.all()):
-            for site_type in site.type:
-                counts[site_type] += 1
+            for site_type in site.types:
+                counts[site_type.name] += 1
 
-        return site_types_names, [counts[site_type] for site_type in site_types_names]
+        return site_types_names, [counts[type_name] for type_name in site_types_names]

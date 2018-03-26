@@ -1,6 +1,6 @@
 from analyses.enrichment import most_mutated_sites
 from database import db
-from models import Mutation, Site, Protein, InheritedMutation, MC3Mutation, ClinicalData, Gene
+from models import Mutation, Site, Protein, InheritedMutation, MC3Mutation, ClinicalData, Gene, SiteType
 from database_testing import DatabaseTest
 
 
@@ -12,13 +12,15 @@ class MutationTest(DatabaseTest):
         p = Protein(refseq='NM_007', sequence='ABCDEFGHIJKLMNOPQRSTUVWXYZ', gene=g)
         g.preferred_isoform = p
 
+        glycosylation = SiteType(name='glycosylation')
+
         sites = {
             # ClinVar muts and TCGA muts but different, with total count = 5 (3 + 2)
             'A': Site(position=1, residue='A', protein=p),
             # ClinVar muts intersection TCGA muts, total count = 4 (2 + 2)
             'K': Site(position=11, residue='K', protein=p),
             # Only TCGA muts, total count = 3 (1 + 2)
-            'U': Site(position=21, residue='U', protein=p, type={'glycosylation'})
+            'U': Site(position=21, residue='U', protein=p, types={glycosylation})
         }
 
         def mut(pos):
@@ -63,5 +65,5 @@ class MutationTest(DatabaseTest):
         sites_with_muts_in_both = most_mutated_sites(both_sources, intersection=False).all()
         assert sites_with_muts_in_both == [(sites['A'], 5), (sites['K'], 4)]
 
-        glyco_sites_with_mc3 = most_mutated_sites([MC3Mutation], site_type='glycosylation').all()
+        glyco_sites_with_mc3 = most_mutated_sites([MC3Mutation], site_type=glycosylation).all()
         assert glyco_sites_with_mc3 == [(sites['U'], 3)]

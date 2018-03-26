@@ -7,7 +7,10 @@ from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
 from imports.importer import importer
-from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType
+from models import (
+    Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType, SiteType,
+    SiteMotif,
+)
 from models import Gene
 from models import InterproDomain
 from models import Cancer
@@ -1150,3 +1153,41 @@ def drugbank(path='data/drugbank/drugbank.tsv'):
     parse_tsv_file(path, parser, header)
 
     return drugs
+
+
+@importer
+def sites_motifs(data=None):
+
+    motifs_data = [
+        # site_type_name, name, pattern (Python regular expression)
+
+        # https://prosite.expasy.org/PDOC00001
+        ['N-glycosylation', 'N-linked', '.{7}N[^P][ST].{5}'],
+        # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4721579/
+        ['N-glycosylation', 'N-linked - atypical', '.{7}N[^P][CV].{5}'],
+
+        # Based on https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1301293/
+        ['O-glycosylation', 'O-linked TAPP', '.{7}TAPP'],
+        ['O-glycosylation', 'O-linked TSAP', '.{7}TSAP'],
+        ['O-glycosylation', 'O-linked TV.P', '.{7}TV.P'],
+        ['O-glycosylation', 'O-linked [ST]P.P', '.{7}[ST]P.P'],
+
+        # https://www.uniprot.org/help/carbohyd
+        ['C-glycosylation', 'C-linked W..W', '(.{7}W..W.{4}|.{4}W..W.{7})'],
+        ['C-glycosylation', 'C-linked W[ST].C', '.{7}W[ST].C.{4}'],
+
+    ]
+
+    if data:
+        motifs_data = data
+
+    new_motifs = []
+
+    for site_type_name, name, pattern in motifs_data:
+        site_type, _ = get_or_create(SiteType, name=site_type_name)
+        motif, new = get_or_create(SiteMotif, name=name, pattern=pattern, site_type=site_type)
+
+        if new:
+            new_motifs.append(motif)
+
+    return new_motifs

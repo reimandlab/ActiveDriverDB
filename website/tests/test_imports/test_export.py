@@ -3,7 +3,7 @@ from argparse import Namespace
 
 from imports.mutations import MutationImportManager
 from database_testing import DatabaseTest
-from models import Protein
+from models import Protein, SiteType
 from models import Cancer
 from models import Gene
 from models import Mutation
@@ -28,7 +28,10 @@ def create_test_models():
 
     protein_kinase = Protein(refseq='NM_0002', gene=Gene(name='OTHERGENE'), sequence='ABCD')
     kinase = Kinase(name='Kinase name', protein=protein_kinase)
-    site = Site(protein=protein, position=1, residue='A', kinases={kinase}, pmid={1, 2}, type={'glycosylation'})
+    site = Site(
+        protein=protein, position=1, residue='A',
+        kinases={kinase}, pmid={1, 2}, types={SiteType(name='glycosylation')}
+    )
     protein.sites = [site]
 
     return locals()

@@ -28,7 +28,7 @@ from models import Mutation
 from models import UsersMutationsDataset
 from models import UserUploadedMutation
 from sqlalchemy import exists, or_, text
-from helpers.filters import FilterManager, quote_if_needed
+from helpers.filters.manager import quote_if_needed, FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 from views.gene import prepare_subqueries
@@ -290,7 +290,6 @@ class SearchViewFilters(FilterManager):
             # 1         1                                       1
             Filter(
                 Mutation, 'is_ptm', comparators=['or'],
-                is_attribute_a_method=True,
                 default=False
             ),
             Filter(

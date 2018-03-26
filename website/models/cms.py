@@ -16,7 +16,7 @@ from database import db, update
 from database.types import MediumPickle
 from database.functions import utc_now, utc_days_after
 from exceptions import ValidationError
-from models import Model
+from .model import Model
 
 
 class CMSModel(Model):

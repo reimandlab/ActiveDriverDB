@@ -5,16 +5,16 @@ from analyses.variability_in_population import (
     does_median_differ_significances,
 )
 from ..store import cases
-from .common import site_types_names, any_site_type, motifs
+from .common import motifs, site_types_with_any
 
 
-@cases(site_type=site_types_names + [any_site_type])
+@cases(site_type=site_types_with_any)
 @grouped_box_plot
 def population_rare_substitutions(site_type):
     return ptm_variability_population_rare_substitutions(site_type)
 
 
-@cases(site_type=site_types_names + [any_site_type])
+@cases(site_type=site_types_with_any)
 def population_rare_substitutions_significance(site_type):
     results = ptm_variability_population_rare_substitutions(site_type)
     significances = does_median_differ_significances(results, paired=True)

@@ -42,6 +42,10 @@ class TestAbstractProteinView(ViewTest):
                 super().__init__(filters)
                 self.update_from_request(request)
 
+        test_request = Request({
+            'filters': "TestModel.property:in:Value1,Value2,'Value2, corrected'"
+        })
+        TestViewFilters(test_request)
         with self.assert_flashes(
             content='<i>Value2</i> does not occur in <i>property</i> for this protein and therefore it was left out.',
             category='warning'

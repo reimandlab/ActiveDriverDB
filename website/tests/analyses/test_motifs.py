@@ -1,5 +1,5 @@
 from analyses.motifs import (
-    compile_motifs, mutate_sequence,
+    mutate_sequence,
     select_sites_with_motifs,
     MotifsCounter,
 )
@@ -27,10 +27,10 @@ class MotifAnalysisTest(DatabaseTest):
 
     def test_counting(self):
 
-        motifs_db = compile_motifs({
+        motifs_db = {
             # xation happens whenever there is X which is not preceded with or followed by another X
             'xation': {'canonical': '.{6}[^X]X[^X].{6}', 'non-canonical': 'XXY'}
-        })
+        }
 
         p = Protein(refseq='NM_007', id=1, sequence='_X_X_______X________XXY')
 
@@ -44,12 +44,12 @@ class MotifAnalysisTest(DatabaseTest):
         xation = SiteType(name='xation')
 
         canonical_sites = [
-            Site(protein=p, position=2, type={xation}),     # canonical, seriously mutated and broken
-            Site(protein=p, position=4, type={xation}),     # canonical, mutated
-            Site(protein=p, position=12, type={xation}),    # canonical, not mutated
+            Site(protein=p, position=2, types={xation}),     # canonical, seriously mutated and broken
+            Site(protein=p, position=4, types={xation}),     # canonical, mutated
+            Site(protein=p, position=12, types={xation}),    # canonical, not mutated
         ]
         other_sites = [
-            Site(protein=p, position=22, type={xation}),    # non-canonical motif, not mutated
+            Site(protein=p, position=22, types={xation}),    # non-canonical motif, not mutated
         ]
         all_sites = canonical_sites + other_sites
 

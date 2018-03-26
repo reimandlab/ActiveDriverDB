@@ -65,8 +65,12 @@ def yield_objects(base_query, step_size=1000):
         done = not obj
 
 
+def query_joins(query):
+    return [mapper.class_ for mapper in query._join_entities]
+
+
 def join_unique(query, model):
-    joined_tables = [mapper.class_ for mapper in query._join_entities]
+    joined_tables = query_joins(query)
     if model not in joined_tables:
         return query.join(model)
     return query

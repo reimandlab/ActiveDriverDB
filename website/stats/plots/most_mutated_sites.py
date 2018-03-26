@@ -2,13 +2,13 @@ from collections import defaultdict
 from functools import partial
 
 from helpers.plots import bar_plot, stacked_bar_plot
-from models import MC3Mutation, InheritedMutation
+from models import MC3Mutation, InheritedMutation, SiteType, AnySiteType
 
 from ..store import cases, counter
-from .common import any_site_type, site_types_names
+from .common import any_site_type, site_types_with_any, site_types
 
 
-def most_mutated_sites(sources, site_type=any_site_type, intersection=False, stacked=False, limit=20):
+def most_mutated_sites(sources, site_type: SiteType=AnySiteType, intersection=False, stacked=False, limit=20):
     from analyses.enrichment import most_mutated_sites
 
     most_mutated = partial(most_mutated_sites, site_type=site_type, limit=limit)
@@ -73,21 +73,21 @@ def most_mutated_sites(sources, site_type=any_site_type, intersection=False, sta
     return results
 
 
-@cases(site_type=site_types_names)
+@cases(site_type=site_types)
 @counter
 @bar_plot
 def mc3(site_type=any_site_type):
     return most_mutated_sites([MC3Mutation], site_type)
 
 
-@cases(site_type=site_types_names)
+@cases(site_type=site_types)
 @counter
 @bar_plot
 def clinvar(site_type=any_site_type):
     return most_mutated_sites([InheritedMutation], site_type)
 
 
-both_sources_cases = cases(site_type=site_types_names + [any_site_type])
+both_sources_cases = cases(site_type=site_types_with_any)
 
 
 @both_sources_cases

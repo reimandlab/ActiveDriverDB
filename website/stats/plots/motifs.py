@@ -4,7 +4,7 @@ from typing import List
 from numpy import nan
 from sqlalchemy import and_
 
-from analyses.motifs import count_by_active_driver, all_motifs, count_by_sources, motifs_hierarchy
+from analyses.motifs import count_by_active_driver, get_all_motifs, count_by_sources, get_motifs_hierarchy
 from helpers.plots import stacked_bar_plot
 from models import (
     MC3Mutation, InheritedMutation,
@@ -45,7 +45,7 @@ def prepare_motifs_plot(counts_by_gene, site_type: SiteType, y_axis: str):
     # bars = genes, stacks = motifs
     data = {}
 
-    for motif in all_motifs[site_type.name].keys():
+    for motif in get_all_motifs()[site_type.name].keys():
 
         y = []
         comments = []
@@ -118,7 +118,7 @@ def all(site_type: SiteType):
     counts = count_by_sources(source_manager.confirmed, site_type, by_genes=False)
 
     motifs = defaultdict(dict)
-    for motif_group, members in motifs_hierarchy[site_type.name].items():
+    for motif_group, members in get_motifs_hierarchy()[site_type.name].items():
 
         for motif in members:
             count = counts.sites_with_motif[motif]
@@ -135,7 +135,7 @@ def muts_by_motifs_group(sources, site_type):
     counts = count_by_sources(sources, site_type, by_genes=False, muts_conjunction=and_)
     by_group = defaultdict(dict)
 
-    for motif_group, members in motifs_hierarchy[site_type.name].items():
+    for motif_group, members in get_motifs_hierarchy()[site_type.name].items():
         by_group[motif_group] = sum(counts.muts_breaking_sites_motif[motif] for motif in members)
 
     return by_group

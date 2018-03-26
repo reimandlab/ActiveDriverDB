@@ -6,51 +6,43 @@ from flask_sqlalchemy import BaseQuery
 from tqdm import tqdm
 
 from analyses.active_driver import ActiveDriverResult
-from models import Site, SiteType, Mutation, MutationSource, Protein, Gene, and_, or_
+from models import Site, SiteType, Mutation, MutationSource, Protein, Gene, and_, or_, SiteMotif
 
 
-def compile_motifs(motifs: dict):
-    for key, value in motifs.items():
-        if isinstance(value, dict):
-            motifs[key] = compile_motifs(value)
-        else:
-            motifs[key] = re.compile(value)
-    return motifs
+def motifs_for_site_type(site_type_name: str):
+    motifs_by_site_type = SiteMotif.query.filter(
+        SiteMotif.site_type.has(SiteMotif.name == site_type_name)
+    )
+    return {
+        motif.name: motif.expression
+        for motif in motifs_by_site_type
+    }
 
 
-motifs_hierarchy = {
-    'glycosylation': {
-        'N-linked': {
-            # https://prosite.expasy.org/PDOC00001
-            'N-linked': '.{7}N[^P][ST].{5}',
-            # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4721579/
-            'N-linked - atypical': '.{7}N[^P][CV].{5}',
-        },
-        'O-linked': {
-            # Based on https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1301293/
-            'O-linked TAPP': '.{7}TAPP',
-            'O-linked TSAP': '.{7}TSAP',
-            'O-linked TV.P': '.{7}TV.P',
-            'O-linked [ST]P.P': '.{7}[ST]P.P',
-        },
-        'C-linked': {
-            # https://www.uniprot.org/help/carbohyd
-            'C-linked W..W': '(.{7}W..W.{4}|.{4}W..W.{7})',
-            'C-linked W[ST].C': '.{7}W[ST].C.{4}',
+def get_motifs_hierarchy():
+
+    motifs_hierarchy = {
+        'glycosylation': {
+            'N-linked': motifs_for_site_type('N-glycosylation'),
+            'O-linked': motifs_for_site_type('O-glycosylation'),
+            'C-linked': motifs_for_site_type('C-glycosylation')
         }
     }
-}
-
-motifs_by_site_type = {
-    site_type: dict(ChainMap(*motif_groups.values()))
-    for site_type, motif_groups in motifs_hierarchy.items()
-}
-
-all_motifs = compile_motifs(motifs_by_site_type)
+    return motifs_hierarchy
 
 
-def has_motif(site_sequence: str, motif: Pattern) -> bool:
-    return motif.search(site_sequence) is not None
+def get_all_motifs():
+
+    motifs_hierarchy = get_motifs_hierarchy()
+
+    return {
+        site_type: dict(ChainMap(*motif_groups.values()))
+        for site_type, motif_groups in motifs_hierarchy.items()
+    }
+
+
+def has_motif(site_sequence: str, motif: str) -> bool:
+    return re.search(motif, site_sequence) is not None
 
 
 def mutate_sequence(site: Site, mutation: Mutation, offset: int) -> str:
@@ -99,7 +91,7 @@ class NoKnownMotifs(Exception):
 
 class MotifsCounter:
 
-    def __init__(self, site_type: SiteType, mode='broken_motif', motifs_db=all_motifs):
+    def __init__(self, site_type: SiteType, mode='broken_motif', motifs_db=get_all_motifs):
         self.site_type = site_type
         self.motifs_db = motifs_db
         self.mode = mode
@@ -140,7 +132,7 @@ class MotifsCounter:
             accepted_sites = sites.all()
 
         mutations_affecting_sites = mutations.filter(
-            Mutation.affected_sites.any(Site.type.contains(self.site_type))
+            Mutation.affected_sites.any(Site.types.contains(self.site_type))
         )
 
         muts_around_sites_with_motif = defaultdict(dict)
@@ -227,7 +219,7 @@ def count_by_sources(
     if primary_isoforms:
         base_query = base_query.join(Protein).filter(Protein.is_preferred_isoform)
 
-    sites = Site.query.filter(Site.type.contains(site_type))
+    sites = Site.query.filter(Site.types.contains(site_type))
 
     counter = MotifsCounter(site_type)
 

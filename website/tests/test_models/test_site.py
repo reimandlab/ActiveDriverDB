@@ -17,15 +17,17 @@ class SiteTest(ModelTest):
 
     def test_consistency(self):
 
+        methylation = SiteType(name='methylation')
+
         p = Protein(refseq='NM_007', id=1, sequence='ABCD')
         db.session.add(p)
 
         # matching residue (note: for sites, positions are 1-based)
-        assert Site(position=2, type={'methylation'}, residue='B', protein=p)
+        assert Site(position=2, types={methylation}, residue='B', protein=p)
 
         # mismatched residue
         with pytest.raises(ValidationError):
-            Site(position=3, type={'methylation'}, residue='B', protein=p)
+            Site(position=3, types={methylation}, residue='B', protein=p)
 
         # no residue and position in range
         assert Site(position=2, protein=p)
@@ -39,8 +41,10 @@ class SiteTest(ModelTest):
     def test_default_residue(self):
         p = Protein(refseq='NM_007', id=1, sequence='ABCD')
 
+        methylation = SiteType(name='methylation')
+
         # note: for sites, positions are 1-based)
-        site = Site(position=2, type={'methylation'}, protein=p)
+        site = Site(position=2, types={methylation}, protein=p)
 
         db.session.add(p)
         db.session.commit()
@@ -48,18 +52,20 @@ class SiteTest(ModelTest):
         assert site.residue == 'B'
 
     def test_gather_residues(self):
-        m = SiteType(name='methylation')
+        methylation = SiteType(name='methylation')
 
         p = Protein(refseq='NM_007', id=1, sequence='ABCD')
         sites = [
-            Site(position=2, type={m}, protein=p),  # default -> 'B'
-            Site(position=4, type={'methylation'}, residue='D'),
+            Site(position=2, types={methylation}, protein=p),  # default -> 'B'
+            Site(position=4, types={methylation}, residue='D'),
         ]
         db.session.add_all(sites)
+        db.session.commit()
 
-        assert m.find_modified_residues() == {'B', 'D'}
+        assert methylation.find_modified_residues() == {'B', 'D'}
 
     def test_sequence(self):
+        methylation = SiteType(name='methylation')
 
         p = Protein(refseq='NM_007', id=1, sequence='ABCDEFGHIJKLMNOPQRSTUVWXYZ')
         db.session.add(p)
@@ -73,7 +79,7 @@ class SiteTest(ModelTest):
         sites = {}
 
         for position in data:
-            sites[position] = Site(position=position + 1, type={'methylation'}, residue=p.sequence[position], protein=p)
+            sites[position] = Site(position=position + 1, types={methylation}, residue=p.sequence[position], protein=p)
 
         db.session.add_all(sites.values())
         db.session.commit()
@@ -108,27 +114,24 @@ class SiteTest(ModelTest):
         assert not Site.query.filter(Site.has_motif('.{7}C[XY].{6}')).all()
 
     def test_types(self):
+        methylation = SiteType(name='methylation')
 
         p = Protein(refseq='NM_007', id=1, sequence='ABCD')
         db.session.add(p)
 
-        # both should work fine
-        a = Site(position=2, type={SiteType(name='methylation')}, residue='B', protein=p)
-        b = Site(position=2, type={'methylation'}, residue='B', protein=p)
+        site = Site(position=2, types={methylation}, residue='B', protein=p)
+        db.session.add(site)
 
         db.session.commit()
 
-        assert a.type == b.type
-
         query = Protein.query
 
-        for site_type in ['methylation', SiteType(name='methylation')]:
-            assert query.filter(Protein.sites.any(Site.type.contains(site_type))).one()
-            assert not query.filter(Protein.sites.any(~Site.type.contains(site_type))).all()
-            assert Site.query.filter(Site.type == site_type).count() == 2
-            assert not Site.query.filter(Site.type != site_type).all()
+        assert query.filter(Protein.sites.any(Site.types.contains(methylation))).one()
+        assert not query.filter(Protein.sites.any(~Site.types.contains(methylation))).all()
+        assert Site.query.filter(Site.types.contains(methylation)).count() == 1
+        assert not Site.query.filter(~Site.types.contains(methylation)).all()
 
-        for site_type in ['phosphorylation', SiteType(name='phosphorylation')]:
-            assert not query.filter(Protein.sites.any(Site.type.contains(site_type))).all()
-            assert query.filter(Protein.sites.any(~Site.type.contains(site_type))).one()
-            assert Site.query.filter(Site.type == site_type).count() == 0
+        phosphorylation = SiteType(name='phosphorylation')
+        assert not query.filter(Protein.sites.any(Site.types.contains(phosphorylation))).all()
+        assert query.filter(Protein.sites.any(~Site.types.contains(phosphorylation))).one()
+        assert Site.query.filter(Site.types.contains(phosphorylation)).count() == 0

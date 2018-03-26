@@ -5,7 +5,7 @@ from view_testing import ViewTest, relative_location
 from miscellaneous import mock_proteins_and_genes
 
 from database import db
-from models import Gene, Pathway, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData
+from models import Gene, Pathway, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData, SiteType
 from models import Protein
 from models import UsersMutationsDataset
 from models import Site
@@ -131,7 +131,7 @@ class TestSearchView(ViewTest):
 
     def test_search_mutations(self):
 
-        s = Site(position=13, type={'methylation'})
+        s = Site(position=13, types={SiteType(name='methylation')})
         p = Protein(refseq='NM_007', id=7, sites=[s], sequence='XXXXXXXXXXXXV')
 
         m_in_site = Mutation(protein=p, position=13, alt='V')

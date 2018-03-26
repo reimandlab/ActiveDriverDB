@@ -13,10 +13,9 @@ from helpers.tracks import MutationsTrack
 from helpers.tracks import SequenceTrack
 from helpers.tracks import Track
 from helpers.tracks import TrackElement
-from models import Domain, source_manager
+from models import Domain, source_manager, SiteType, Site
 from models import Mutation
-from models import Site
-from views.abstract_protein import AbstractProteinView, GracefulFilterManager, ProteinRepresentation
+from .abstract_protein import AbstractProteinView, GracefulFilterManager, ProteinRepresentation
 from ._commons import represent_mutation
 from .filters import common_filters, ProteinFiltersData
 from .filters import create_widgets
@@ -48,7 +47,7 @@ def prepare_sites(sites):
         {
             'start': site.position - 7,
             'end': site.position + 7,
-            'type': ', '.join(site.type),
+            'type': ', '.join(site.types_names),
             'sources': [source.name for source in site.sources]
         } for site in sites
     ]
@@ -176,6 +175,6 @@ class SequenceView(AbstractProteinView):
                 filter_manager.filters,
                 custom_datasets_names=user_datasets.values()
             ),
-            site_types=['multi_ptm'] + Site.types(),
+            site_types=['multi_ptm'] + SiteType.available_types(),
             mutation_types=Mutation.types,
         )
