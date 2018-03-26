@@ -1,9 +1,6 @@
 from pathlib import Path
 
-from ggplot import ggtitle
-from rpy2.rinterface._rinterface import NULL
 from rpy2.robjects import StrVector, IntVector, r
-from rpy2.robjects.lib.ggplot2 import GGPlot
 from rpy2.robjects.packages import importr
 
 basic_mappings = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
