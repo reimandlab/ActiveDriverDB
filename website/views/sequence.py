@@ -102,6 +102,20 @@ class SequenceRepresentation(ProteinRepresentation):
             if mimp:
                 metadata['MIMP'] = mimp.to_json()
 
+            # affected, pre-defined motifs (not MIMP predicted)
+            motifs = mutation.affected_motifs()
+            if motifs:
+                needle['affected_motifs'] = [
+                    {
+                        'name': motif.name,
+                        'pattern': motif.pattern,
+                        'pseudo_logo_path': str(motif.pseudo_logo_path),
+                        'position': position
+                    }
+                    for motif, position in motifs
+                ]
+
+
             needle['summary'] = field.summary(data_filter)
             needle['value'] = field.get_value(data_filter)
             needle['meta'] = metadata

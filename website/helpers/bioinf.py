@@ -144,13 +144,13 @@ def sequence_logo(pwm_or_seq, path: Path=None, width=369, height=149, dpi=72, le
         'plot.title': ggplot2.element_text(hjust=0.5, size=16),
         'axis.title.y': ggplot2.element_text(size=16),
         'text': ggplot2.element_text(size=20),
-        'plot.margin': r.unit([0.025, -0.25, -0.15, 0.2], 'in'),
+        'plot.margin': r.unit([0.03, 0.045, -0.2, 0.06], 'in'),
     }
 
     plot = GG(gglogo.ggseqlogo(pwm_or_seq)) + ggplot2.theme(**theme_options) + ggplot2.labs(y='bits')
 
     if renumarate:
-        plot += ggplot2.scale_x_continuous(breaks=IntVector(range(14 + 1)), labels=IntVector(range(-7, 7 + 1)))
+        plot += ggplot2.scale_x_continuous(breaks=IntVector(range(1, 14 + 2)), labels=IntVector(range(-7, 7 + 1)))
     if title:
         plot += ggplot2.ggtitle(title)
 

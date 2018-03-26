@@ -732,7 +732,7 @@ class MutatedMotifs:
         from analyses.motifs import mutate_sequence
         from analyses.motifs import has_motif
 
-        affected_motifs = set()
+        affected_motifs = []
 
         if not sites:
             sites = self.affected_sites
@@ -747,7 +747,7 @@ class MutatedMotifs:
 
                         mutated_sequence = mutate_sequence(site, self, offset=7)
                         if not has_motif(mutated_sequence, motif.pattern):
-                            affected_motifs.add(motif)
+                            affected_motifs.append((motif, self.position - site.position + 7))
 
         return affected_motifs
 
