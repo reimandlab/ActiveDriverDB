@@ -61,7 +61,7 @@ def get_all_models(module_name='bio') -> Mapping:
     models = {
         model.__name__: model
         for model in Model._decl_class_registry.values()
-        if not isinstance(model, _ModuleMarker) and model.__module__ == module_name
+        if not isinstance(model, _ModuleMarker) and model.__module__.startswith(module_name)
     }
     return models
 
