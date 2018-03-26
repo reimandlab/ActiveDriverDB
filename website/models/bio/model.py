@@ -1,5 +1,5 @@
 from helpers.models import association_table_super_factory
-from .. import Model
+from ..model import Model
 
 
 class BioModel(Model):

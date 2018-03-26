@@ -10,7 +10,6 @@ from database.types import ScalarSet
 from exceptions import ValidationError
 
 from .model import BioModel, make_association_table
-# TODO: resolve circular
 
 
 class SiteType(BioModel):
@@ -81,6 +80,7 @@ class SiteType(BioModel):
 class AnySiteType:
 
     name = ''
+    id = None
 
     @staticmethod
     def filter(query):

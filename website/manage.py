@@ -24,7 +24,7 @@ from imports.mappings import import_aminoacid_mutation_refseq_mappings
 from imports.mappings import import_genome_proteome_mappings
 from imports.mutations import MutationImportManager, MutationImporter
 from imports.mutations import get_proteins
-from models import Page
+from models import Page, Model
 from models import User
 
 muts_import_manager = MutationImportManager()
@@ -54,7 +54,6 @@ def automigrate(args, app=None):
 
 
 def get_all_models(module_name='bio') -> Mapping:
-    from models import Model
     from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
     module_name = 'models.' + module_name
 
