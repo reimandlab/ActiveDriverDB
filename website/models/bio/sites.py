@@ -9,7 +9,7 @@ from database import db, client_side_defaults
 from database.functions import greatest, least
 from database.types import ScalarSet
 from exceptions import ValidationError
-from helpers.bioinf import sequence_logo
+from helpers.plots import sequence_logo
 
 from .model import BioModel, make_association_table
 

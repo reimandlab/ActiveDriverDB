@@ -1,6 +1,13 @@
+from pathlib import Path
 from typing import Iterable, Mapping
 
 from numpy import percentile
+from rpy2.rinterface._rinterface import SexpVector, ListSexpVector
+from rpy2.rlike.container import TaggedList
+from rpy2.robjects import StrVector, r, IntVector
+from rpy2.robjects.packages import importr
+
+from helpers.ggplot2 import GG
 
 
 def bar_plot(labels: Iterable, values: Iterable, text: Iterable=None, name=None):
@@ -128,3 +135,55 @@ def p_value_annotations(results, significances):
         }
         for i, (population_source, significance) in enumerate(significances.items())
     ]
+
+
+def sequence_logo(
+    pwm_or_seq, path: Path=None, width=369, height=149, dpi=72, show_legend=False,
+    renumerate=True, title: str=None, **kwargs
+):
+    """Generate a sequence logo from Position Weight Matrix (pwm)
+    or a list of aligned sequences.
+
+    and save it into a file if a path was provided.
+    The logo will be generated with ggseqlogo (R).
+
+    Args:
+        pwm_or_seq: list of sequences or PWM matrix or dict where
+            keys are names of facets and values are lists or PWMs
+        path: where the file should be saved
+        renumerate:
+            change the labels of x axis to reflect relative position
+            to the modified (central) residue (15-aa sequence is assumed)
+        width: width in pixels
+        height: height in pixels
+        dpi: the DPI of the plotting device
+        show_legend: whether the legend should be shown
+        title: the title of the plot
+    """
+    gglogo = importr("ggseqlogo")
+    ggplot2 = importr("ggplot2")
+
+    if isinstance(pwm_or_seq, list):
+        pwm_or_seq = StrVector(pwm_or_seq)
+    elif isinstance(pwm_or_seq, dict):
+        pwm_or_seq = TaggedList(pwm_or_seq.values(), pwm_or_seq.keys())
+
+    theme_options = {
+        'legend.position': 'auto' if show_legend else 'none',
+        'plot.title': ggplot2.element_text(hjust=0.5, size=16),
+        'axis.title.y': ggplot2.element_text(size=16),
+        'text': ggplot2.element_text(size=20),
+        'plot.margin': r.unit([0.03, 0.045, -0.2, 0.06], 'in'),
+    }
+
+    plot = GG(gglogo.ggseqlogo(pwm_or_seq, **kwargs)) + ggplot2.theme(**theme_options) + ggplot2.labs(y='bits')
+
+    if renumerate:
+        plot += ggplot2.scale_x_continuous(breaks=IntVector(range(1, 14 + 2)), labels=IntVector(range(-7, 7 + 1)))
+    if title:
+        plot += ggplot2.ggtitle(title)
+
+    if path:
+        ggplot2.ggsave(str(path), width=width / dpi, height=height / dpi, dpi=dpi, units='in', bg='transparent')
+
+    return plot

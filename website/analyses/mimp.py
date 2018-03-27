@@ -4,7 +4,7 @@ from random import sample
 from types import SimpleNamespace
 from typing import Set, NamedTuple, List
 from warnings import warn
-from collections import Counter
+from collections import Counter, defaultdict
 
 from pandas import Series, to_numeric, DataFrame
 from rpy2.robjects import pandas2ri, StrVector, ListVector, r
@@ -13,7 +13,7 @@ from rpy2.robjects.packages import importr
 from tqdm import tqdm
 
 from analyses.active_driver import prepare_active_driver_data
-from helpers.bioinf import sequence_logo
+from helpers.plots import sequence_logo
 from models import Kinase, Site, SiteType, Protein, extract_padded_sequence
 
 from ._paths import ANALYSES_OUTPUT_PATH
@@ -288,11 +288,7 @@ glycosylation_sub_types = [
 ]
 
 
-def sequence_logos_for_site_types(site_types, enzyme_type='kinase'):
-
-    logos_path = ANALYSES_OUTPUT_PATH / 'mimp' / 'logos'
-
-    logos = {}
+def iterate_mimp_models(site_types, enzyme_type):
 
     for site_type_name in site_types:
         site_type = SiteType.query.filter_by(name=site_type_name).one()
@@ -305,21 +301,41 @@ def sequence_logos_for_site_types(site_types, enzyme_type='kinase'):
 
         models = r.readRDS(model_path)
 
-        site_logos_path = logos_path / site_type_name
-        site_logos_path.mkdir(parents=True, exist_ok=True)
-
-        site_type_logos = {}
-
         for model in models:
-            pwm = model.rx('pwm')
+            pwm = model.rx2('pwm')
             name = model.rx2('name')[0]
 
-            site_type_logos[name] = sequence_logo(pwm, path)
+            yield name, pwm, site_type
 
-        logos[site_type_name] = site_type_logos
+
+def sequence_logos_for_site_types(site_types, enzyme_type='kinase'):
+    logos_path = ANALYSES_OUTPUT_PATH / 'mimp' / 'logos'
+
+    logos = defaultdict(dict)
+
+    for model_name, pwm, site_type in iterate_mimp_models(site_types, enzyme_type):
+
+        site_logos_path = logos_path / site_type.name
+        site_logos_path.mkdir(parents=True, exist_ok=True)
+
+        logos[site_type.name][model_name] = sequence_logo(pwm, path)
 
     return logos
 
 
 def sequence_logos_for_glycosylation_subtypes(subtypes=glycosylation_sub_types):
-    return sequence_logos_for_site_types(subtypes, enzyme_type='catch-all')
+    logo_path = ANALYSES_OUTPUT_PATH / 'mimp' / 'logos'
+
+    logo_path.mkdir(parents=True, exist_ok=True)
+    path = logo_path / ('_'.join(subtypes) + '.svg')
+
+    pwms = {}
+    for model_name, pwm, site_type in iterate_mimp_models(subtypes, 'catch-all'):
+        name = model_name.replace('all_enzymes_for_', '').replace('_', ' ')
+        pwms[name] = pwm
+
+    return sequence_logo(
+        pwms, path, ncol=len(pwms), width=800, height=200,
+        title='MIMP motifs for glycosylation sites'
+    )
+
