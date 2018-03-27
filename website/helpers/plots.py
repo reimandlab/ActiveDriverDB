@@ -138,7 +138,7 @@ def p_value_annotations(results, significances):
 
 
 def sequence_logo(
-    pwm_or_seq, path: Path=None, width=369, height=149, dpi=72, show_legend=False,
+    pwm_or_seq, path: Path=None, width=369, height=149, dpi=72, legend=False,
     renumerate=True, title: str=None, **kwargs
 ):
     """Generate a sequence logo from Position Weight Matrix (pwm)
@@ -157,7 +157,7 @@ def sequence_logo(
         width: width in pixels
         height: height in pixels
         dpi: the DPI of the plotting device
-        show_legend: whether the legend should be shown
+        legend: whether and where the legend should be shown
         title: the title of the plot
     """
     gglogo = importr("ggseqlogo")
@@ -169,7 +169,10 @@ def sequence_logo(
         pwm_or_seq = TaggedList(pwm_or_seq.values(), pwm_or_seq.keys())
 
     theme_options = {
-        'legend.position': 'auto' if show_legend else 'none',
+        'legend.position': legend or 'none',
+        'legend.title': ggplot2.element_blank(),
+        'legend.text': ggplot2.element_text(size=14),
+        'legend.key.size': r.unit(0.2, 'in'),
         'plot.title': ggplot2.element_text(hjust=0.5, size=16),
         'axis.title.y': ggplot2.element_text(size=16),
         'text': ggplot2.element_text(size=20),

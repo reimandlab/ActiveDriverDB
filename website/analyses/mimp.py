@@ -336,6 +336,6 @@ def sequence_logos_for_glycosylation_subtypes(subtypes=glycosylation_sub_types):
 
     return sequence_logo(
         pwms, path, ncol=len(pwms), width=800, height=200,
-        title='MIMP motifs for glycosylation sites'
+        title='MIMP motifs for glycosylation sites', legend='right'
     )
 
