@@ -331,7 +331,7 @@ def sequence_logos_for_glycosylation_subtypes(subtypes=glycosylation_sub_types):
 
     pwms = {}
     for model_name, pwm, site_type in iterate_mimp_models(subtypes, 'catch-all'):
-        name = model_name.replace('all_enzymes_for_', '').replace('_', ' ')
+        name = model_name.replace('all_enzymes_for_', '').replace('-', '-linked ')
         pwms[name] = pwm
 
     return sequence_logo(
