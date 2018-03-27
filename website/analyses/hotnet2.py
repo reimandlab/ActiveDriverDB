@@ -246,6 +246,9 @@ def run_all_from_biogrid(site_type: str, hotnet_path, interpreter, **kwargs):
 
 
 def visualize_subnetwork(gene_names, source='MC3', site_type_name='glycosylation', mode='samples with'):
+    import matplotlib
+    matplotlib.use('agg')
+
     import seaborn as sns
     import matplotlib.pyplot as plt
 
@@ -272,7 +275,7 @@ def visualize_subnetwork(gene_names, source='MC3', site_type_name='glycosylation
 
     data = DataFrame(mutations_by_cancer)
 
-    fig, ax = plt.subplots(figsize=(10, 12))
+    fig, ax = plt.subplots(figsize=(10, 15))
     ax.tick_params(axis='both', which='both', length=0)
     plot = sns.heatmap(
         data, cmap='RdYlGn_r', linewidths=0.5, annot=True, ax=ax,
@@ -281,6 +284,6 @@ def visualize_subnetwork(gene_names, source='MC3', site_type_name='glycosylation
 
     fig = plot.get_figure()
     fig.tight_layout()
-    fig.savefig('Subnetwork of: ' + ','.join(gene_names) + '.svg')
+    fig.savefig('subnetwork_of_' + ','.join(gene_names) + f'_{mode}.svg')
 
     return data
