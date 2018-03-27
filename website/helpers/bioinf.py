@@ -3,6 +3,8 @@ from pathlib import Path
 from rpy2.robjects import StrVector, IntVector, r
 from rpy2.robjects.packages import importr
 
+from helpers.ggplot2 import GG
+
 basic_mappings = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
 IUPAC_mappings = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'U': 'A', 'Y': 'R',
                   'R': 'Y', 'S': 'S', 'W': 'W', 'K': 'M', 'M': 'K', 'B': 'V',
@@ -128,13 +130,6 @@ def sequence_logo(pwm_or_seq, path: Path=None, width=369, height=149, dpi=72, le
     """
     gglogo = importr("ggseqlogo")
     ggplot2 = importr("ggplot2")
-
-    class GG:
-        def __init__(self, plot):
-            self.plot = plot
-
-        def __add__(self, other):
-            return GG(ggplot2._env['%+%'](self.plot, other))
 
     if isinstance(pwm_or_seq, list):
         pwm_or_seq = StrVector(pwm_or_seq)

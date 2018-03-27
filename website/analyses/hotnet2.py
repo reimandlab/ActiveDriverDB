@@ -4,9 +4,11 @@ from pathlib import Path
 from subprocess import check_output
 from tempfile import NamedTemporaryFile
 from typing import List
+from collections import defaultdict, Counter
 
 from pandas import read_table, Series
 import numpy as np
+from tqdm import tqdm
 
 from analyses import active_driver
 from analyses.active_driver import ActiveDriverResult
@@ -241,3 +243,44 @@ def run_all_from_biogrid(site_type: str, hotnet_path, interpreter, **kwargs):
         site_type, interpreter=interpreter, hotnet_path=hotnet_path,
         networks={'biogrid_hc': beta}, **kwargs
     )
+
+
+def visualize_subnetwork(gene_names, source='MC3', site_type_name='glycosylation', mode='samples with'):
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    from pandas import DataFrame
+
+    assert mode in ('samples with', 'unique')
+
+    mutations_by_cancer = defaultdict(Counter)  # cancer_code: mutations_count_by_site_protein_and_position
+    for gene_name in tqdm(gene_names):
+        gene = Gene.query.filter_by(name=gene_name).one()
+        protein = gene.preferred_isoform
+        muts = [m for m in protein.mutations if 'MC3' in m.sources]
+        codes = set()
+
+        for mut in muts:
+            count = 1 if mode == 'unique' else mut.meta_MC3.get_value()
+
+            for site in mut.affected_sites:
+                if any(site_type_name in site_type.name for site_type in site.types):
+                    site_name = f'{gene_name} {site.position}{site.residue}'
+                    codes = mut.mc3_cancer_code
+                    for code in codes:
+                        mutations_by_cancer[code][site_name] += count
+
+    data = DataFrame(mutations_by_cancer)
+
+    fig, ax = plt.subplots(figsize=(10, 12))
+    ax.tick_params(axis='both', which='both', length=0)
+    plot = sns.heatmap(
+        data, cmap='RdYlGn_r', linewidths=0.5, annot=True, ax=ax,
+        cbar_kws={"shrink": 0.5, 'label': f'Count of {mode} mutations affecting {site_type_name} sites'}
+    )
+
+    fig = plot.get_figure()
+    fig.tight_layout()
+    fig.savefig('Subnetwork of: ' + ','.join(gene_names) + '.svg')
+
+    return data
