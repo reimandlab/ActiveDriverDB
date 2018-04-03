@@ -1,6 +1,5 @@
 from datetime import datetime
 from os import cpu_count
-from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import gc

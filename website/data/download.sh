@@ -153,3 +153,9 @@ rm -r tmp
 
 cd mutations
 ./annotate_mc3.sh
+
+cd ..
+
+wget http://purl.obolibrary.org/obo/mondo.obo
+wget https://raw.githubusercontent.com/DiseaseOntology/HumanDiseaseOntology/master/src/ontology/HumanDO.obo
+wget https://raw.githubusercontent.com/obophenotype/human-phenotype-ontology/master/hp.obo

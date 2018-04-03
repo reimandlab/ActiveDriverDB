@@ -7,9 +7,10 @@ from analyses import per_cancer_analysis, pan_cancer_analysis, clinvar_analysis
 from database import db
 from helpers.plots import bar_plot, stacked_bar_plot
 from models import Mutation, Protein, Gene, Site, MC3Mutation, Cancer, InheritedMutation, MutationSource
+from stats.analyses.ontology import Ontology, draw_ontology_graph
 
 from ..store import cases
-from .common import site_types_with_any
+from .common import site_types_with_any, site_types
 from .ptm_mutations import gather_ptm_muts_impacts
 
 
@@ -116,3 +117,46 @@ def per_cancer_glycosylation(cancer_code, site_type='glycosylation'):
         print(f'No results for {cancer_code}')
         return [], []
     return by_muts_count(result, MC3Mutation, site_type, MC3Mutation.cancer_code == cancer_code)
+
+
+@cases(site_type=site_types)
+def diseases_wordcloud(site_type):
+    result = clinvar_analysis(site_type.name)
+    print(
+        'Copy-pase following text into a wordcloud generation program, '
+        'e.g. https://www.jasondavies.com/wordcloud/'
+    )
+    print(' '.join(result['all_active_mutations'].disease))
+
+
+@cases(site_type=site_types)
+def diseases_ontology(site_type, vector=False):
+    result = clinvar_analysis(site_type.name)
+    diseases = result['all_active_mutations'].disease
+
+    ontologies = {
+        'phenotypes': 'data/hp.obo',
+        'diseases': 'data/HumanDO.obo',
+        'mondo': 'data/mondo.obo'
+    }
+
+    ontology_subsets = {
+        'mondo': [None, 'disease', 'disease characteristic']
+    }
+
+    ontologies = {
+        name: Ontology(path)
+        for name, path in ontologies.items()
+    }
+
+    for name, ontology in ontologies.items():
+        terms = diseases.value_counts()
+        subsets = ontology_subsets.get(name, [None])
+        for subset in subsets:
+            for above_percentile in [70, 75, 80, 85, 90, 95]:
+                graph = ontology.process_graph(terms, above_percentile, root_name=subset)
+                draw_ontology_graph(
+                    graph,
+                    f'analyses_output/active_driver_{name}_{above_percentile}{"_" + subset if subset else ""}'
+                    f'.{"svg" if vector else "png"}'
+                )

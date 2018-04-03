@@ -84,6 +84,7 @@ def get_jinja_module(template_path):
     jinja_template = current_app.jinja_env.get_template(template_path)
     return jinja_template.make_module({'current_user': current_user})
 
+
 def get_jinja_macro(template_path, macro_name):
     jinja_module = get_jinja_module(template_path)
     return getattr(jinja_module, macro_name)

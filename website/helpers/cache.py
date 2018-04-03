@@ -14,6 +14,7 @@ def cache_decorator(cache: Cache) -> Callable:
     """
 
     def create_key(name, *args, **kwargs):
+        args = [arg.name if hasattr(arg, 'name') else arg for arg in args]
         if kwargs:
             return (name, *args, kwargs)
         return (name, *args)

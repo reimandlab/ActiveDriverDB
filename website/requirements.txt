@@ -1,3 +1,6 @@
+matplotlib
+networkx
+obonet
 diskcache
 numpy
 pandas
