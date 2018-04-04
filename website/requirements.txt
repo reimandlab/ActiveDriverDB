@@ -30,4 +30,5 @@ amqp
 redis
 gprofiler-official
 simplejson
+scipy
 scikit-learn
