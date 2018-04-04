@@ -12,6 +12,8 @@ from matplotlib import colors
 from matplotlib.cm import get_cmap
 from networkx.drawing import nx_agraph
 from numpy import percentile
+from sklearn.feature_extraction.text import TfidfVectorizer
+from tqdm import tqdm
 
 from helpers.commands import get_answer
 
@@ -103,6 +105,20 @@ class Ontology:
 
     @property
     @lru_cache()
+    def out_edges(self):
+        out_edges = defaultdict(list)
+        out_edge_modifiers = {}
+        for f, t, *l in self.ontology.in_edges:
+
+            out_edges[t].append(f)
+            out_edge_modifiers[t, f] = l
+
+        self.out_edge_modifiers = out_edge_modifiers
+
+        return out_edges
+
+    @property
+    @lru_cache()
     def in_edges(self):
         # workaround for networkx bug when some edges have labels and some have not:
         in_edges = defaultdict(list)
@@ -144,16 +160,21 @@ class Ontology:
     def __getattr__(self, item):
         return getattr(self.ontology, item)
 
-    def find_terms(self, terms: Dict[str, int]) -> Dict[str, int]:
-        detected_nodes = {}
+    def find_terms(self, terms: Dict[str, int], allow_misses=True, re_run=False) -> Dict[str, int]:
+        detected_nodes = Counter()
+        missed_terms = set()
 
-        for term, count in terms.items():
+        print(f'Searching for {len(terms)} terms in {self.name} ontology')
+
+        vec = TfidfVectorizer()
+
+        for term, count in tqdm(terms.items(), total=len(terms)):
             cache_key = (self.name, term)
-            if cache_key in cache:
-                chosen_node = cache[cache_key]
+            if not re_run and cache_key in cache:
+                chosen_nodes = cache[cache_key]
             else:
-                chosen_node = self.by_name.get(term, None)
-                if not chosen_node:
+                chosen_nodes = self.by_name.get(term, None)
+                if not chosen_nodes:
                     candidates = {}
 
                     # look fo synonyms and partial matches
@@ -164,22 +185,23 @@ class Ontology:
                         name = data['name']
 
                         if term.lower() == name.lower():
-                            chosen_node = node
+                            chosen_nodes = node
                             break
 
                         for synonym in data.get('synonym', []):
-                            if term in synonym:
-                                match = re.match('"(.*?)" (.*?) \[.*\]', synonym)
-                                synonym_name, similarity = match.group(1, 2)
-                                if synonym_name == term:
-                                    if similarity in ['EXACT', 'NARROW']:
-                                        print(f'"{term}" matched as synonym of {name}')
-                                        chosen_node = node
-                                        break
-                                    else:
-                                        candidates[name] = (node, f'{similarity} synonym')
+                            match = re.match('"(.*?)" (.*?) \[.*\]', synonym)
+                            synonym_name, similarity = match.group(1, 2)
+                            if synonym_name.lower() == term.lower():
+                                if similarity in ['EXACT', 'NARROW']:
+                                    print(f'"{term}" matched as synonym of {name}')
+                                    chosen_nodes = node
+                                    break
+                                else:
+                                    candidates[name] = (node, f'{similarity} synonym')
+                            elif compare(term, synonym_name) > 0.8:
+                                candidates[name] = (node, f'{similarity} synonym ({synonym_name})')
 
-                        if chosen_node:
+                        if chosen_nodes:
                             break
 
                         score = compare(term, name)
@@ -194,11 +216,17 @@ class Ontology:
                             mode = 'similar'
                         elif compare_generalized(term, name) > 0.8:
                             mode = 'more general'
+                        elif score > 0.4:
+                            vectorizer = vec.fit_transform([term.lower(), name.lower()])
+                            similarity = vectorizer * vectorizer.T
+                            if similarity[0, 1] > 0.5:
+                                print(similarity[0, 1], score)
+                                mode = 'cosine similarity'
 
                         if mode:
                             candidates[name] = (node, mode)
 
-                    if not chosen_node and candidates:
+                    if not chosen_nodes and candidates:
                         candidates = {
                             name: candidates[name]
                             for name in sorted(
@@ -207,16 +235,44 @@ class Ontology:
                                 reverse=True
                             )
                         }
-                        chosen_node = choose_best_match(self, term, candidates)
+                        chosen_nodes = choose_best_match(self, term, candidates)
 
-                    cache[cache_key] = chosen_node
+                    if not allow_misses and not chosen_nodes:
+                        while not chosen_nodes:
+                            print(f'Could not find node for {term}.')
+                            node_ids = input(
+                                'As misses are not allowed, please specify the node manually '
+                                '(you may give more than one node, separating with ","): '
+                                # to enable use of "Pheochromocytoma and Paraganglioma"
+                            )
+                            node_ids = node_ids.split(',')
+                            match = True
+                            for node_id in node_ids:
+                                if node_id not in self.nodes:
+                                    print(f'{node_id} is not a member of this ontology')
+                                    match = False
 
-            if not chosen_node:
+                            if match:
+                                chosen_nodes = node_ids
+
+                        for node_id in chosen_nodes:
+                            data = self.nodes[node_id]
+                            print(f'You chose {data["name"]} manually for {term}')
+
+                    cache[cache_key] = chosen_nodes
+
+            if not chosen_nodes:
+                missed_terms.add(term)
                 continue
             else:
-                detected_nodes[chosen_node] = count
-        found = len(detected_nodes)
-        print(f'Detected {found} terms, {found / len(terms) * 100}%')
+                if isinstance(chosen_nodes, str):
+                    chosen_nodes = [chosen_nodes]
+                per_node_count = count / len(chosen_nodes)
+                for node_id in chosen_nodes:
+                    detected_nodes[node_id] += per_node_count
+
+        found = len(terms) - len(missed_terms)
+        print(f'Mapped {found} terms to {len(detected_nodes)} nodes ({found / len(terms) * 100}% of terms mapped)')
         without_hemoglobin = [
             t for t in terms.keys()
             if not t.lower().startswith("hemoglobin")
@@ -248,7 +304,7 @@ class Ontology:
 
                     candidate_nodes = {
                         node
-                        for current_node, node in self.out_edges(node)
+                        for current_node, node in self.ontology.out_edges(node)
                         if not (node in visited or node in next_nodes or node in nodes)
                     }
 
@@ -256,9 +312,9 @@ class Ontology:
 
         return propagated_terms
 
-    def process_graph(self, terms, include_above_percentile=0, root_name=None, color_map_name=None):
+    def process_graph(self, terms, include_above_percentile=0, root_name=None, color_map_name=None, allow_misses=True):
 
-        nodes_of_mapped_terms = self.find_terms(terms)
+        nodes_of_mapped_terms = self.find_terms(terms, allow_misses=allow_misses)
         counts = self.propagate_terms_counts(nodes_of_mapped_terms)
 
         terms_to_include = []
@@ -277,7 +333,7 @@ class Ontology:
                     (not root or self.is_descendant_of(root, self.by_name[term]))
                     and
                     (not include_above_percentile or (
-                            count > p_all
+                        count > p_all
                         # count > p_terms if term in nodes_of_mapped_terms else count > p_all
                     ))
             )
@@ -287,6 +343,9 @@ class Ontology:
             node for node, data in self.nodes(data=True) if data.get('name', None) in terms_to_include
         ])
         g = g.reverse()
+        if not g.nodes():
+            print(f'No nodes above {include_above_percentile} percentile for {root_name} root')
+            return g
 
         graph_counts = {node: counts[data['name']] for node, data in g.nodes(data=True)}
 
@@ -298,13 +357,19 @@ class Ontology:
             node_graphics = g.node[node]
 
             n = norm(graph_counts[node])
-            color = color_map(n) if color_map else (1, 1 - n / 2, 1 - n / 2)
+            color = color_map(n) if color_map else (1, 1 - n / 4, 1 - n / 2)
 
             node_graphics['fillcolor'] = colors.to_hex(color)
             node_graphics['shape'] = 'box'
             node_graphics['style'] = 'bold,filled' if node in nodes_of_mapped_terms else 'dashed,filled'
 
-        g = networkx.nx.relabel_nodes(g, {node: data['name'] + f': {graph_counts[node]}' for node, data in g.nodes(data=True)})
+        g = networkx.nx.relabel_nodes(
+            g,
+            {
+                node: data['name'] + f': {graph_counts[node]:g}'
+                for node, data in g.nodes(data=True)
+            }
+        )
         return g
 
 
@@ -313,11 +378,14 @@ def compare_generalized(term, name):
     return compare(name.replace('(disease)', ''), term)
 
 
-def draw_ontology_graph(g, path):
+def draw_ontology_graph(g, path, unflatten=900):
     a = nx_agraph.to_agraph(g)
 
-    a.unflatten('-l 900 -f')
+    if len(g.nodes) < 20:
+        unflatten = 0
+
+    a.unflatten(f'-l {unflatten} -f')
     a.layout('dot', args='-Nfontsize=14 -Nwidth=".2" -Nheight=".2" -Nmargin=.1 -Gfontsize=8 -Earrowsize=.5')
-    a.draw(path)
+    a.draw(str(path))
 
     return a

@@ -1,6 +1,10 @@
+from collections import Counter
+from operator import attrgetter
+from pathlib import Path
 from types import FunctionType
 from typing import Mapping
 
+from pandas import Series, DataFrame
 from sqlalchemy import func
 
 from analyses import per_cancer_analysis, pan_cancer_analysis, clinvar_analysis
@@ -119,6 +123,90 @@ def per_cancer_glycosylation(cancer_code, site_type='glycosylation'):
     return by_muts_count(result, MC3Mutation, site_type, MC3Mutation.cancer_code == cancer_code)
 
 
+def counts_by(column_name, df: DataFrame, by_unique=False) -> dict:
+    if by_unique:
+        column = getattr(df, column_name)
+        return column.value_counts()
+    counts = Counter()
+    get_by = attrgetter(column_name)
+    for row in df.itertuples():
+        counts[get_by(row)] += int(row.count)
+    return counts
+
+
+@cases(site_type=site_types)
+@bar_plot
+def cancers(site_type):
+    result = pan_cancer_analysis(site_type)
+    counts = counts_by('cancer_type', result['all_active_mutations'])
+    cancer_by_code = {cancer.code: cancer.name for cancer in Cancer.query}
+
+    return (
+        counts.keys(),
+        counts.values(),
+        [
+            f'{cancer_by_code[cancer_type]}: {count} mutations'
+            for cancer_type, count in counts.items()
+        ]
+    )
+
+
+def ontology_plots(
+    terms, analysis_name, vector=True, thresholds=(70, 75, 80, 85, 90, 95), allow_misses=True,
+    limit_to=None, unflatten=900
+):
+
+    predefined_ontologies = {
+        'phenotypes': 'data/hp.obo',
+        'diseases': 'data/HumanDO.obo',
+        'mondo': 'data/mondo.obo'
+    }
+
+    ontology_subsets = {
+        'mondo': [None, 'disease', 'disease characteristic']
+    }
+
+    ontologies = {
+        name: Ontology(path)
+        for name, path in predefined_ontologies.items()
+        if not limit_to or name in limit_to
+    }
+
+    path = Path('analyses_output') / 'active_driver_plots' / analysis_name
+    path.mkdir(parents=True, exist_ok=True)
+
+    for name, ontology in ontologies.items():
+        subsets = ontology_subsets.get(name, [None])
+        for subset in subsets:
+            for above_percentile in thresholds:
+                graph = ontology.process_graph(terms, above_percentile, root_name=subset, allow_misses=allow_misses)
+                draw_ontology_graph(
+                    graph,
+                    path / f'{name}_{above_percentile}{"_" + subset if subset else ""}.{"svg" if vector else "png"}',
+                    unflatten
+                )
+
+
+@cases(site_type=site_types)
+def cancers_ontology(site_type, vector=False):
+    result = pan_cancer_analysis(site_type)
+    cancer_by_code = {cancer.code: cancer.name for cancer in Cancer.query}
+
+    mutations = result['all_active_mutations']
+    mutations = mutations.assign(cancer_name=Series(
+        cancer_by_code[mutation.cancer_type]
+        for mutation in mutations.itertuples(index=False)
+    ).values)
+
+    terms = counts_by('cancer_name', mutations)
+
+    ontology_plots(
+        terms, 'cancers', vector,
+        [0, 70, 75, 80, 85, 90, 95],
+        allow_misses=False, limit_to=['diseases', 'mondo']
+    )
+
+
 @cases(site_type=site_types)
 def diseases_wordcloud(site_type):
     result = clinvar_analysis(site_type.name)
@@ -131,32 +219,9 @@ def diseases_wordcloud(site_type):
 
 @cases(site_type=site_types)
 def diseases_ontology(site_type, vector=False):
+    # NOTE: This is the number of unique mutations, it does not look at the counts!
     result = clinvar_analysis(site_type.name)
-    diseases = result['all_active_mutations'].disease
+    mutations = result['all_active_mutations']
+    terms = counts_by('disease', mutations)
 
-    ontologies = {
-        'phenotypes': 'data/hp.obo',
-        'diseases': 'data/HumanDO.obo',
-        'mondo': 'data/mondo.obo'
-    }
-
-    ontology_subsets = {
-        'mondo': [None, 'disease', 'disease characteristic']
-    }
-
-    ontologies = {
-        name: Ontology(path)
-        for name, path in ontologies.items()
-    }
-
-    for name, ontology in ontologies.items():
-        terms = diseases.value_counts()
-        subsets = ontology_subsets.get(name, [None])
-        for subset in subsets:
-            for above_percentile in [70, 75, 80, 85, 90, 95]:
-                graph = ontology.process_graph(terms, above_percentile, root_name=subset)
-                draw_ontology_graph(
-                    graph,
-                    f'analyses_output/active_driver_{name}_{above_percentile}{"_" + subset if subset else ""}'
-                    f'.{"svg" if vector else "png"}'
-                )
+    ontology_plots(terms, 'diseases', vector)
