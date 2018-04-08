@@ -8,6 +8,7 @@ from pandas import Series, DataFrame
 from sqlalchemy import func
 
 from analyses import per_cancer_analysis, pan_cancer_analysis, clinvar_analysis
+from analyses.enrichment import active_driver_genes_enrichment
 from database import db
 from helpers.plots import bar_plot, stacked_bar_plot
 from models import Mutation, Protein, Gene, Site, MC3Mutation, Cancer, InheritedMutation, MutationSource
@@ -225,3 +226,20 @@ def diseases_ontology(site_type, vector=False):
     terms = counts_by('disease', mutations)
 
     ontology_plots(terms, 'diseases', vector)
+
+
+@cases(site_type=site_types)
+@bar_plot
+def cancer_census_enrichment(site_type):
+    analyses = {
+        'TCGA': pan_cancer_analysis,
+        'ClinVar': clinvar_analysis
+    }
+    results = {}
+    p_values = {}
+    for name, analysis in analyses.items():
+        result = analysis(site_type)
+        enrichment, p_value = active_driver_genes_enrichment(result)
+        results[name] = enrichment
+        p_values[name] = p_value
+    return [results.keys(), results.values(), p_values.values()]

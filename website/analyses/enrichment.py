@@ -1,6 +1,6 @@
 import operator
 import random
-from collections import namedtuple
+from collections import namedtuple, Counter, defaultdict
 from functools import reduce
 from statistics import median
 from typing import List
@@ -267,19 +267,16 @@ def non_parametric_test_ptm_enrichment():
     return results
 
 
-def load_cancer_census(cancer_census_path='data/disease_muts_in_ptm_sites/census.tsv'):
+def load_cancer_census(cancer_census_path='data/census.csv'):
     """Load genes from cancer census.
 
     Args:
         cancer_census_path: this file needs to be downloaded from COSMIC
     """
+    from pandas import read_csv
 
-    gene_names = set()
-    with open(cancer_census_path) as f:
-        for line in f:
-            gene_names.add(line.split('\t')[0])
-
-    gene_names.remove('Gene Symbol')
+    census = read_csv(cancer_census_path)
+    gene_names = set(census.gene_symbol)
 
     cancer_genes = set()
 
@@ -494,3 +491,67 @@ def most_mutated_sites(sources: List[MutationSource], site_type: SiteType=None, 
     )
 
     return query.limit(limit)
+
+
+def active_driver_genes_enrichment(analysis_result):
+    cancer_genes = load_cancer_census()
+
+    observed_genes = {
+        Gene.query.filter_by(name=gene_name).one()
+        for gene_name in analysis_result['top_fdr'].gene
+    }
+
+    observed_from_census = observed_genes.intersection(cancer_genes)
+    print(observed_from_census)
+    observed_not_in_census = observed_genes - observed_from_census
+
+    all_genes = set(Gene.query)
+    not_observed = all_genes - observed_genes
+
+    not_observed_from_census = not_observed.intersection(cancer_genes)
+    not_observed_not_in_census = not_observed - not_observed_from_census
+
+    #     x     |  cancer genes from census  |   other (not in census)
+    #  glyco    |  observed_from_census      |       observed_not_in_census
+    # not glyc? |
+
+    from scipy.stats import fisher_exact
+    contingency_table = [
+        [observed_from_census, observed_not_in_census],
+        [not_observed_from_census, not_observed_not_in_census]
+    ]
+    contingency_table = [[len(x), len(y)] for x, y in contingency_table]
+    print(contingency_table)
+    oddsratio, pvalue = fisher_exact(contingency_table)
+
+    return oddsratio, pvalue
+
+
+def breakdown_of_ptm_mutations(gene_names: List[str], source_name: str):
+    source = source_manager.source_by_name[source_name]
+    source_manager.get_relationship(source)
+    proteins = [
+        Gene.query.filter_by(name=gene_name).one().preferred_isoform
+        for gene_name in gene_names
+    ]
+    a = 0
+    c = Counter()
+    for p in proteins:
+        meta_data = {
+            m: source_manager.get_bound_relationship(m, source)
+            for m in p.mutations
+        }
+        a += sum(meta.count if meta else 0 for meta in meta_data.values())
+        ms = defaultdict(set)
+        for m in p.mutations.all():
+            sites = m.get_affected_ptm_sites()
+            for s in sites:
+                for t in s.types:
+                    ms[t].add(m)
+        for t, muts in ms.items():
+            for m in muts:
+                c[t] += meta_data[m].count if meta_data[m] else 0
+
+    print(f'All mutations: {a}')
+    for t, count in c.items():
+        print(t, count, count/a)
