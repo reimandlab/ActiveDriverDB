@@ -5,11 +5,12 @@ from functools import reduce
 from statistics import median
 from typing import List
 
+from numpy import NaN
 from sqlalchemy import and_, func, distinct, desc
 from sqlalchemy.orm import aliased
 from tqdm import tqdm
 
-from database import join_unique, db
+from database import join_unique, db, fast_count
 from models import (
     Protein, Mutation, The1000GenomesMutation, MC3Mutation, InheritedMutation, Gene, Site,
     MutationSource, source_manager,
@@ -555,13 +556,34 @@ def breakdown_of_ptm_mutations(gene_names: List[str], source_name: str):
         print(t, count, count/a)
 
 
-def sites_mutated_ratio_by_type(source_name: str):
+def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True):
+    """What proportion of sites of given type has mutations from given source?
+
+    Args:
+        source_name: name of the source (e.g. "ClinVar" or "MC3")
+        disordered: filter sites by position with regard to disorder regions:
+            None: do not filter - use all sites (default),
+            True: only sites in disordered regions,
+            False: only sites outside of the disordered regions
+        display: should the results be printed out?
+
+    Returns: fraction (as percent) of sites that are affected by mutations from given source.
+
+    """
     from stats.table import count_mutated_sites
 
     source = source_manager.source_by_name[source_name]
     ratios = {}
     for site_type in tqdm(SiteType.query, total=SiteType.query.count()):
         sites = Site.query.filter(Site.types.contains(site_type))
-        mutated = count_mutated_sites([site_type], model=source, only_primary=True)
-        ratios[site_type.name] = mutated / sites.count() * 100
+        if disordered is not False:
+            sites = sites.filter_by(in_disordered_region=disordered).join(Protein)
+        mutated = count_mutated_sites([site_type], model=source, only_primary=True, disordered=disordered)
+        sites_count = sites.count()
+        ratios[site_type.name] = mutated / sites_count * 100 if sites_count else NaN
+
+    if display:
+        for type_name, percentage in ratios.items():
+            print(f'{type_name}: {percentage:.2f}')
+
     return ratios
