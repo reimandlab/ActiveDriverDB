@@ -127,6 +127,10 @@ def extract_padded_sequence(protein: 'Protein', left: int, right: int):
     )
 
 
+class DataError(Exception):
+    pass
+
+
 class Site(BioModel):
 
     # Note: this position is 1-based
@@ -200,6 +204,26 @@ class Site(BioModel):
             cls.position + 8 - func.length(Protein.sequence), 0)
         )
         return left_padding.concat(sequence).concat(right_padding)
+
+    @hybrid_property
+    def in_disordered_region(self):
+        try:
+            return self.protein.disorder_map[self.position - 1] == '1'
+        except IndexError:
+            raise DataError(f"Disorder of {self.protein} does not include {self.position}")
+
+    @in_disordered_region.expression
+    def in_disordered_region(cls):
+        """Required joins: Protein"""
+        from .protein import Protein
+
+        disorder = func.substr(
+            Protein.disorder_map,
+            cls.position,    # both: SQL and self.position are 1-based
+            1
+        )
+
+        return disorder == '1'
 
     @hybrid_method
     def has_motif(self, motif):

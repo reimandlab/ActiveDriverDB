@@ -94,6 +94,40 @@ class SiteTest(ModelTest):
         sequences = [s for (s, ) in db.session.query(Site.sequence).select_from(Site).join(Protein)]
         assert set(sequences) == set(data.values())
 
+    def test_in_disordered(self):
+        methylation = SiteType(name='methylation')
+
+        p = Protein(
+            refseq='NM_007', id=1,
+            disorder_map='10000000001000000000000001',
+            sequence='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        )
+        db.session.add(p)
+
+        sites_in_disordered = {0, 10, 25}
+        sites_not_disordered = {1, 9, 11, 24}
+
+        sites = {}
+
+        for position in sites_in_disordered | sites_not_disordered:
+            print(position)
+            print(len(p.sequence[position]))
+            sites[position] = Site(position=position + 1, types={methylation}, residue=p.sequence[position], protein=p)
+
+        # Python side
+
+        for position in sites_in_disordered:
+            site = sites[position]
+            assert site.in_disordered_region
+
+        for position in sites_not_disordered:
+            site = sites[position]
+            assert not site.in_disordered_region
+
+        # SQL side
+        assert {site.position - 1 for site in Site.query.filter_by(in_disordered_region=True)} == sites_in_disordered
+        assert {site.position - 1 for site in Site.query.filter_by(in_disordered_region=False)} == sites_not_disordered
+
     def test_has_motif(self):
 
         engine = get_engine('bio')

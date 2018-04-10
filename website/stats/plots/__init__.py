@@ -4,7 +4,7 @@ from warnings import warn
 from tqdm import tqdm
 
 from helpers.plots import bar_plot
-from models import Plot, Site, Protein
+from models import Plot, Site, Protein, DataError
 from stats.plots import (
     ptm_variability, proteins_variability, most_mutated_sites, active_driver, ptm_mutations,
     gene_ontology, motifs, mimp,
@@ -64,12 +64,12 @@ class Plots(CountStore):
         for site in tqdm(query.all()):
             for site_type in site.types:
                 try:
-                    if site.protein.disorder_map[site.position - 1] == '1':
+                    if site.in_disordered_region:
                         disordered[site_type.name] += 1
                     else:
                         not_disordered[site_type.name] += 1
-                except IndexError:
-                    warn(f"Disorder of {site.protein} does not include {site.position}")
+                except DataError as e:
+                    warn(str(e))
 
         values = [
             100 * disordered[type_name] / (disordered[type_name] + not_disordered[type_name])

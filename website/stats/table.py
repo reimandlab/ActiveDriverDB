@@ -9,7 +9,7 @@ from database import db
 from models import Mutation, Protein, Site, source_manager
 
 
-def count_mutated_sites(site_types: Iterable[models.SiteType]=tuple(), model=None, only_primary=False):
+def count_mutated_sites(site_types: Iterable[models.SiteType]=tuple(), model=None, only_primary=False, disordered=None):
     filters = [
         Mutation.protein_id == Protein.id,
         Site.protein_id == Protein.id,
@@ -17,6 +17,8 @@ def count_mutated_sites(site_types: Iterable[models.SiteType]=tuple(), model=Non
     ]
     for site_type in site_types:
         filters.append(Site.types.contains(site_type))
+    if disordered is not None:
+        filters.append(Site.in_disordered_region == disordered)
     query = (
         db.session.query(
             func.count(distinct(case(
