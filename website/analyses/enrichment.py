@@ -576,7 +576,7 @@ def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True)
     ratios = {}
     for site_type in tqdm(SiteType.query, total=SiteType.query.count()):
         sites = Site.query.filter(Site.types.contains(site_type))
-        if disordered is not False:
+        if disordered is not None:
             sites = sites.filter_by(in_disordered_region=disordered).join(Protein)
         mutated = count_mutated_sites([site_type], model=source, only_primary=True, disordered=disordered)
         sites_count = sites.count()
