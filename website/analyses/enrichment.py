@@ -15,7 +15,6 @@ from models import (
     MutationSource, source_manager,
     SiteType,
 )
-from stats.table import count_mutated_sites
 
 
 def count_mutated_potential_sites():
@@ -557,6 +556,8 @@ def breakdown_of_ptm_mutations(gene_names: List[str], source_name: str):
 
 
 def sites_mutated_ratio_by_type(source_name: str):
+    from stats.table import count_mutated_sites
+
     source = source_manager.source_by_name[source_name]
     ratios = {}
     for site_type in tqdm(SiteType.query, total=SiteType.query.count()):
