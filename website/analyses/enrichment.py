@@ -15,6 +15,7 @@ from models import (
     MutationSource, source_manager,
     SiteType,
 )
+from stats.table import count_mutated_sites
 
 
 def count_mutated_potential_sites():
@@ -455,7 +456,6 @@ def most_mutated_sites(sources: List[MutationSource], site_type: SiteType=None, 
         if exclusive:
             query = query.filter(~Mutation.in_sources(*exclusive))
 
-
     query = (
         query
         .join(Mutation.affected_sites)
@@ -529,7 +529,6 @@ def active_driver_genes_enrichment(analysis_result):
 
 def breakdown_of_ptm_mutations(gene_names: List[str], source_name: str):
     source = source_manager.source_by_name[source_name]
-    source_manager.get_relationship(source)
     proteins = [
         Gene.query.filter_by(name=gene_name).one().preferred_isoform
         for gene_name in gene_names
@@ -555,3 +554,13 @@ def breakdown_of_ptm_mutations(gene_names: List[str], source_name: str):
     print(f'All mutations: {a}')
     for t, count in c.items():
         print(t, count, count/a)
+
+
+def sites_mutated_ratio_by_type(source_name: str):
+    source = source_manager.source_by_name[source_name]
+    ratios = {}
+    for site_type in tqdm(SiteType.query, total=SiteType.query.count()):
+        sites = Site.query.filter(Site.types.contains(site_type))
+        mutated = count_mutated_sites([site_type], model=source, only_primary=True)
+        ratios[site_type.name] = mutated / sites.count() * 100
+    return ratios
