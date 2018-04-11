@@ -1,7 +1,7 @@
 import operator
 import random
 from collections import namedtuple, Counter, defaultdict
-from functools import reduce
+from functools import reduce, partial
 from statistics import median
 from typing import List
 
@@ -9,6 +9,7 @@ from numpy import NaN
 from sqlalchemy import and_, func, distinct, desc
 from sqlalchemy.orm import aliased
 from tqdm import tqdm
+from scipy.stats import fisher_exact, chisquare
 
 from database import join_unique, db, fast_count
 from models import (
@@ -515,7 +516,6 @@ def active_driver_genes_enrichment(analysis_result):
     #  glyco    |  observed_from_census      |       observed_not_in_census
     # not glyc? |
 
-    from scipy.stats import fisher_exact
     contingency_table = [
         [observed_from_census, observed_not_in_census],
         [not_observed_from_census, not_observed_not_in_census]
@@ -562,8 +562,47 @@ from diskcache import Cache
 cached = cache_decorator(Cache('.enrichment_cache'))
 
 
+def get_site_filters(exclude=None, glycosylation='together'):
+    """Yields (site type name, type filter) tuples.
+
+    Args:
+        exclude: site types to exclude
+        glycosylation: 'together', 'only' or 'separate'
+    """
+
+    for site_type in tqdm(SiteType.query, total=SiteType.query.count()):
+        glyco_kind = 'glycosylation' in site_type.name
+        type_name = site_type.name
+
+        if glycosylation == 'together':
+
+            if glyco_kind:
+                if type_name == 'glycosylation':
+                    type_name = 'glycosylation (all subtypes)'
+                else:
+                    continue
+
+        elif glycosylation == 'only':
+
+            if not glyco_kind:
+                continue
+
+            if type_name == 'glycosylation':
+                type_name = 'glycosylation (unknown subtype)'
+
+        if exclude and site_type.name in exclude:
+            continue
+
+        if glycosylation == 'together':
+            site_filter = SiteType.fuzzy_filter(site_type)
+        else:
+            site_filter = Site.types.contains(site_type)
+
+        yield type_name, site_filter
+
+
 @cached
-def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True, relative=True, exclude=None):
+def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True, relative=True, **kwargs):
     """What proportion of sites of given type has mutations from given source?
 
     Args:
@@ -573,7 +612,7 @@ def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True,
             True: only sites in disordered regions,
             False: only sites outside of the disordered regions
         display: should the results be printed out?
-        exclude: site types to exclude
+        **kwargs: site filter arguments
 
     Returns: fraction (as percent) of sites that are affected by mutations from given source.
 
@@ -582,16 +621,16 @@ def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True,
 
     source = source_manager.source_by_name[source_name]
     ratios = {}
-    for site_type in tqdm(SiteType.query, total=SiteType.query.count()):
-        if exclude and site_type.name in exclude:
-            continue
-        sites = Site.query.filter(Site.types.contains(site_type))
+
+    for type_name, site_filter in get_site_filters(**kwargs):
+
+        sites = Site.query.filter(site_filter)
         if disordered is not None and relative:
             sites = sites.filter_by(in_disordered_region=disordered).join(Protein)
-        mutated = count_mutated_sites([site_type], model=source, only_primary=True, disordered=disordered)
+        mutated = count_mutated_sites(custom_filter=site_filter, model=source, only_primary=True, disordered=disordered)
         sites_count = sites.count()
-        print(site_type.name, sites_count)
-        ratios[site_type.name] = mutated / sites_count * 100 if sites_count else NaN
+        print(type_name, sites_count)
+        ratios[type_name] = mutated / sites_count * 100 if sites_count else NaN
 
     if display:
         for type_name, percentage in ratios.items():
@@ -600,7 +639,44 @@ def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True,
     return ratios
 
 
-def sites_mutated_ratio(path='static/plot.png', width=1400, height=900, dpi=72, exclude: List[str]=None):
+def are_glycosylation_sites_mutated_more_often(source_name: str, disordered=None):
+    from stats.table import count_mutated_sites
+
+    glycosylation = SiteType.query.filter_by(name='glycosylation').one()
+    non_glycosylation = SiteType.query.filter(~SiteType.name.contains('glycosylation')).all()
+
+    print(f'Comparing {glycosylation} against {non_glycosylation}')
+
+    source = source_manager.source_by_name[source_name]
+
+    count = partial(count_mutated_sites, model=source, only_primary=True, disordered=disordered)
+
+    glyco_filter = SiteType.fuzzy_filter(glycosylation)
+    non_glyco_filter = Site.types.any(SiteType.id.in_([site_type.id for site_type in non_glycosylation]))
+
+    mutated_glycosylation = count(custom_filter=glyco_filter)
+    mutated_non_glycosylation = count(custom_filter=non_glyco_filter)
+
+    total_glycosylation = Site.query.filter(glyco_filter).count()
+    total_non_glycosylation = Site.query.filter(non_glyco_filter).count()
+
+    #         mutated | not_mutated
+    #  glyc |
+    # other |
+
+    contingency_table = [
+        [mutated_glycosylation, total_glycosylation - mutated_glycosylation],
+        [mutated_non_glycosylation, total_non_glycosylation - mutated_non_glycosylation]
+    ]
+    print(contingency_table)
+    oddsratio, pvalue = fisher_exact(contingency_table)
+    print(oddsratio, pvalue)
+
+
+def sites_mutated_ratio(
+    path='static/plot.png', width=1400, height=900, dpi=72,
+    exclude: List[str]=None, glycosylation='together'
+):
     from pandas import DataFrame
     from helpers.ggplot2 import GG
     from rpy2.robjects.packages import importr
@@ -609,7 +685,10 @@ def sites_mutated_ratio(path='static/plot.png', width=1400, height=900, dpi=72, 
     rows = []
     for disorder in [True, False]:
         for source in source_manager.confirmed:
-            ratios = sites_mutated_ratio_by_type(source.name, disordered=disorder, relative=False, display=False, exclude=exclude)
+            ratios = sites_mutated_ratio_by_type(
+                source.name, disordered=disorder, relative=False, display=False,
+                exclude=exclude, glycosylation=glycosylation
+            )
             for site_name, percentage in ratios.items():
                 row = {
                     'site_type': site_name,

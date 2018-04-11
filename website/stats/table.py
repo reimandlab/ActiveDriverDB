@@ -9,14 +9,19 @@ from database import db
 from models import Mutation, Protein, Site, source_manager
 
 
-def count_mutated_sites(site_types: Iterable[models.SiteType]=tuple(), model=None, only_primary=False, disordered=None):
+def count_mutated_sites(
+    site_types: Iterable[models.SiteType]=tuple(), model=None,
+    only_primary=False, disordered=None, custom_filter=None
+):
     filters = [
         Mutation.protein_id == Protein.id,
         Site.protein_id == Protein.id,
         Mutation.precomputed_is_ptm
     ]
     for site_type in site_types:
-        filters.append(Site.types.contains(site_type))
+        filters.append(models.SiteType.fuzzy_filter(site_type))
+    if custom_filter is not None:
+        filters.append(custom_filter)
     if disordered is not None:
         filters.append(Site.in_disordered_region == disordered)
     query = (
