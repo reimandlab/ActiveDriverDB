@@ -556,7 +556,14 @@ def breakdown_of_ptm_mutations(gene_names: List[str], source_name: str):
         print(t, count, count/a)
 
 
-def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True):
+from helpers.cache import cache_decorator
+from diskcache import Cache
+
+cached = cache_decorator(Cache('.enrichment_cache'))
+
+
+@cached
+def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True, relative=True, exclude=None):
     """What proportion of sites of given type has mutations from given source?
 
     Args:
@@ -566,6 +573,7 @@ def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True)
             True: only sites in disordered regions,
             False: only sites outside of the disordered regions
         display: should the results be printed out?
+        exclude: site types to exclude
 
     Returns: fraction (as percent) of sites that are affected by mutations from given source.
 
@@ -575,15 +583,59 @@ def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True)
     source = source_manager.source_by_name[source_name]
     ratios = {}
     for site_type in tqdm(SiteType.query, total=SiteType.query.count()):
+        if exclude and site_type.name in exclude:
+            continue
         sites = Site.query.filter(Site.types.contains(site_type))
-        if disordered is not None:
+        if disordered is not None and relative:
             sites = sites.filter_by(in_disordered_region=disordered).join(Protein)
         mutated = count_mutated_sites([site_type], model=source, only_primary=True, disordered=disordered)
         sites_count = sites.count()
+        print(site_type.name, sites_count)
         ratios[site_type.name] = mutated / sites_count * 100 if sites_count else NaN
 
     if display:
         for type_name, percentage in ratios.items():
-            print(f'{type_name}: {percentage:.2f}')
+            print(f'{type_name}: {percentage:.2f}%')
 
     return ratios
+
+
+def sites_mutated_ratio(path='static/plot.png', width=1400, height=900, dpi=72, exclude: List[str]=None):
+    from pandas import DataFrame
+    from helpers.ggplot2 import GG
+    from rpy2.robjects.packages import importr
+    from rpy2.robjects import StrVector
+
+    rows = []
+    for disorder in [True, False]:
+        for source in source_manager.confirmed:
+            ratios = sites_mutated_ratio_by_type(source.name, disordered=disorder, relative=False, display=False, exclude=exclude)
+            for site_name, percentage in ratios.items():
+                row = {
+                    'site_type': site_name,
+                    'disordered_region': 'Yes' if disorder else 'No',
+                    'percentage': percentage,
+                    'source': source.name
+                }
+                rows.append(row)
+
+    df = DataFrame(rows)
+    ggplot2 = importr("ggplot2")
+    theme_options = {
+        'axis.text.x': ggplot2.element_text(angle=90, hjust=1),
+        'axis.text': ggplot2.element_text(size=15),
+        'text': ggplot2.element_text(size=14),
+        'legend.text': ggplot2.element_text(size=14),
+        'legend.position': 'bottom'
+    }
+    plot = (
+        GG(ggplot2.ggplot(df, ggplot2.aes_string(x='site_type', y='percentage', fill='disordered_region'))) +
+        ggplot2.geom_bar(stat='identity', position=ggplot2.position_stack(reverse=True)) +
+        ggplot2.facet_grid('~source') +
+        ggplot2.theme(**theme_options) +
+        ggplot2.labs(x='Site type', y=r'Percentage of sites affected by mutations', fill='Is site in disordered region?') +
+        ggplot2.scale_fill_manual(values=StrVector(["#998ec3", "#f1a340"]))
+    )
+
+    if path:
+        ggplot2.ggsave(str(path), width=width / dpi, height=height / dpi, dpi=dpi, units='in', bg='transparent')
