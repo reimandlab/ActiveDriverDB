@@ -46,7 +46,15 @@ class SiteType(BioModel):
         }
 
     @classmethod
-    def fuzzy_filter(cls, other_type):
+    @lru_cache()
+    def type_by_id(cls):
+        return {
+            site_type.id: site_type
+            for site_type in cls.available_types()
+        }
+
+    @classmethod
+    def fuzzy_filter(cls, other_type, join=False):
         matched_types_ids = [
             type_id
             for type_name, type_id in cls.id_by_name().items()
@@ -54,7 +62,9 @@ class SiteType(BioModel):
         ]
 
         if len(matched_types_ids) == 1:
-            return SiteType.id == matched_types_ids[0]
+            if not join:
+                return SiteType.id == matched_types_ids[0]
+            return Site.types.contains(cls.type_by_id()[matched_types_ids[0]])
 
         return Site.types.any(
             SiteType.id.in_(matched_types_ids)

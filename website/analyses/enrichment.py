@@ -594,7 +594,7 @@ def get_site_filters(exclude=None, glycosylation='together'):
             continue
 
         if glycosylation == 'together':
-            site_filter = SiteType.fuzzy_filter(site_type)
+            site_filter = SiteType.fuzzy_filter(site_type, join=True)
         else:
             site_filter = Site.types.contains(site_type)
 
@@ -651,7 +651,7 @@ def are_glycosylation_sites_mutated_more_often(source_name: str, disordered=None
 
     count = partial(count_mutated_sites, model=source, only_primary=True, disordered=disordered)
 
-    glyco_filter = SiteType.fuzzy_filter(glycosylation)
+    glyco_filter = SiteType.fuzzy_filter(glycosylation, join=True)
     non_glyco_filter = Site.types.any(SiteType.id.in_([site_type.id for site_type in non_glycosylation]))
 
     mutated_glycosylation = count(custom_filter=glyco_filter)
