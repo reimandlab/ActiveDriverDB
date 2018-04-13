@@ -639,7 +639,7 @@ def sites_mutated_ratio_by_type(source_name: str, disordered=None, display=True,
     return ratios
 
 
-def are_glycosylation_sites_mutated_more_often(source_name: str, disordered=None):
+def are_glycosylation_sites_mutated_more_often(source_name: str, disordered=None, alternative='greater'):
     from stats.table import count_mutated_sites
 
     glycosylation = SiteType.query.filter_by(name='glycosylation').one()
@@ -669,8 +669,45 @@ def are_glycosylation_sites_mutated_more_often(source_name: str, disordered=None
         [mutated_non_glycosylation, total_non_glycosylation - mutated_non_glycosylation]
     ]
     print(contingency_table)
-    oddsratio, pvalue = fisher_exact(contingency_table)
-    print(oddsratio, pvalue)
+    oddsratio, pvalue = fisher_exact(contingency_table, alternative=alternative)
+    print(source_name, oddsratio, pvalue)
+    return oddsratio, pvalue
+
+
+def are_glycosylation_sites_mutated_more_often_all():
+    for disordered in [True, False, None]:
+        for source in source_manager.confirmed:
+            print(source.name, disordered)
+            are_glycosylation_sites_mutated_more_often(source.name, disordered=disordered, alternative='less' if disordered else 'greater')
+
+
+def are_glycosylation_sites_enriched(source_name: str, population_name: str, disordered=None, alternative='greater'):
+    from stats.table import count_mutated_sites
+
+    glycosylation = SiteType.query.filter_by(name='glycosylation').one()
+    glyco_filter = SiteType.fuzzy_filter(glycosylation, join=True)
+
+    non_glycosylation = SiteType.query.filter(~SiteType.name.contains('glycosylation')).all()
+    non_glyco_filter = Site.types.any(SiteType.id.in_([site_type.id for site_type in non_glycosylation]))
+
+    source = source_manager.source_by_name[source_name]
+    population = source_manager.source_by_name[population_name]
+
+    count_glyc = partial(count_mutated_sites, custom_filter=glyco_filter, only_primary=True, disordered=disordered)
+    count_not_glyc = partial(count_mutated_sites, custom_filter=non_glyco_filter, only_primary=True, disordered=disordered)
+
+    #         mutated glyc | mutated not glyc
+    # cancer |
+    # popula |
+
+    contingency_table = [
+        [count_glyc(model=source), count_not_glyc(model=source)],
+        [count_glyc(model=population), count_not_glyc(model=population)]
+    ]
+    print(contingency_table)
+    oddsratio, pvalue = fisher_exact(contingency_table, alternative=alternative)
+    print(source_name, population_name, oddsratio, pvalue)
+    return oddsratio, pvalue
 
 
 def sites_mutated_ratio(
