@@ -22,8 +22,8 @@ before_install:
 install:
   - sudo apt-get install -y pigz npm nodejs-legacy
   - sudo npm config set strict-ssl false
-  - sudo npm install -g node@latest
   - sudo npm install -g npm@latest
+  - sudo npm install -g node@latest
   - bash setup.sh
   - cd website
   - pip install wheel
