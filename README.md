@@ -171,8 +171,6 @@ Following extract from configuration file might be useful help for writing you o
 
 
 ```apache
-    DocumentRoot /some_path/website
-
     # Prevent 'Timeout when reading response headers from daemon process'
     WSGIApplicationGroup %{GLOBAL}
 
@@ -180,20 +178,20 @@ Following extract from configuration file might be useful help for writing you o
     WSGIScriptAlias / /some_path/website/app.wsgi
 
     <Directory /some_path/website>
-            WSGIProcessGroup app
-            WSGIApplicationGroup %{GLOBAL}
-            Order deny,allow
-            Allow from all
-            Require all granted
+        WSGIProcessGroup app
+        WSGIApplicationGroup %{GLOBAL}
+        # Order deny,allow   # do not use with Apache 2.4 or newer
+        # Allow from all     # do not use with Apache 2.4 or newer
+        Require all granted  # Apache 2.4 or newer
     </Directory>
 
     # Serve static files directly:
     Alias /static/ /some_path/static/
 
     <Directory /some_path/website/static/*>
-        Order allow,deny
-        Allow from all
-            Require all granted
+        # Order allow,deny   # do not use with Apache 2.4 or newer
+        # Allow from all     # do not use with Apache 2.4 or newer
+        Require all granted  # Apache 2.4 or newer
     </Directory>
 
     <Location /static>
