@@ -21,6 +21,7 @@ before_install:
 
 install:
   - sudo apt-get install -y pigz npm
+  - sudo npm install -g node@latest
   - sudo npm install -g npm@latest
   - bash setup.sh
   - cd website
