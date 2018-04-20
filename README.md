@@ -195,7 +195,7 @@ Following extract from configuration file might be useful help for writing you o
     </Directory>
 
     <Location /static>
-            SetHandler None
+        SetHandler None
     </Location>
 ```
 
