@@ -104,6 +104,7 @@ def as_decorator(plotting_func, unpack=False):
             else:
                 return plotting_func(data)
 
+        data_func_with_plot.__name__ = f'plot_of_{data_func.__name__}'
         return data_func_with_plot
 
     decorator.plot = plotting_func
