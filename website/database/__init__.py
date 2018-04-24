@@ -1,4 +1,4 @@
-from typing import TypeVar, Tuple
+from typing import TypeVar, Tuple, Type
 
 from sqlalchemy import inspect
 from sqlalchemy.engine import Engine
