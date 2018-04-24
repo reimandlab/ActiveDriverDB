@@ -4,7 +4,7 @@ from functools import partial
 from helpers.plots import bar_plot, stacked_bar_plot
 from models import MC3Mutation, InheritedMutation, SiteType, AnySiteType
 
-from ..store import cases, counter
+from ..store import cases
 from .common import any_site_type, site_types_with_any, site_types
 
 
