@@ -161,6 +161,27 @@ class Statistics(CountStore):
     def proteins(self):
         return self.count(models.Protein)
 
+    @counter
+    def glycosylations_with_subtype(self):
+        from models import Site, SiteType
+
+        glycosylation_subtypes = [
+            type_id
+            for type_name, type_id in SiteType.id_by_name().items()
+            if 'glycosylation' in type_name and type_name != 'glycosylation'
+        ]
+
+        site_filter = Site.types.any(SiteType.id.in_(glycosylation_subtypes))
+
+        return Site.query.filter(site_filter).count()
+
+    @counter
+    def glycosylations_without_subtype_ratio(self):
+        from models import Site, SiteType
+        glycosylation = SiteType.query.filter_by(name='glycosylation').one()
+        glycosylations = Site.query.filter(SiteType.fuzzy_filter(glycosylation)).count()
+        return (glycosylations - self.glycosylations_with_subtype()) / glycosylations
+
     genes = models_counter(models.Gene)
     kinases = models_counter(models.Kinase)
     kinase_groups = models_counter(models.KinaseGroup)

@@ -24,7 +24,10 @@ def create_test_models():
     protein.gene.preferred_isoform = protein
 
     MC3Mutation(mutation=mutation, cancer=Cancer(code='CAN'), samples='Sample A,Sample B', count=2)
-    InheritedMutation(mutation=mutation, clin_data=[ClinicalData(disease=Disease(name='Some disease'))])
+    InheritedMutation(mutation=mutation, clin_data=[
+        ClinicalData(disease=Disease(name='Some disease'), sig_code=5),
+        ClinicalData(disease=Disease(name='Other disease'), sig_code=2)
+    ])
 
     protein_kinase = Protein(refseq='NM_0002', gene=Gene(name='OTHERGENE'), sequence='ABCD')
     kinase = Kinase(name='Kinase name', protein=protein_kinase)
@@ -63,8 +66,9 @@ class TestExport(DatabaseTest):
                 'clinvar',
                 {},
                 [
-                    b'gene\tisoform\tposition\twt_residue\tmut_residue\tdisease\n',
-                    b'SOMEGENE\tNM_0001\t1\tA\tE\tSome disease'
+                    b'gene\tisoform\tposition\twt_residue\tmut_residue\tdisease\tsignificance\n',
+                    b'SOMEGENE\tNM_0001\t1\tA\tE\tSome disease\tPathogenic\n',
+                    b'SOMEGENE\tNM_0001\t1\tA\tE\tOther disease\tBenign'
                 ]
             )
         )

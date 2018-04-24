@@ -4,7 +4,7 @@ from functools import partial
 from helpers.plots import bar_plot, stacked_bar_plot
 from models import MC3Mutation, InheritedMutation, SiteType, AnySiteType
 
-from ..store import cases, counter
+from ..store import cases
 from .common import any_site_type, site_types_with_any, site_types
 
 
@@ -73,17 +73,15 @@ def most_mutated_sites(sources, site_type: SiteType=AnySiteType, intersection=Fa
     return results
 
 
-@cases(site_type=site_types)
-@counter
+@cases(site_type=site_types_with_any)
 @bar_plot
-def mc3(site_type=any_site_type):
+def mc3(site_type):
     return most_mutated_sites([MC3Mutation], site_type)
 
 
 @cases(site_type=site_types)
-@counter
 @bar_plot
-def clinvar(site_type=any_site_type):
+def clinvar(site_type):
     return most_mutated_sites([InheritedMutation], site_type)
 
 

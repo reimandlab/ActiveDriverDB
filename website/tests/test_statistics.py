@@ -5,10 +5,10 @@ import models
 
 class StatisticsTest(DatabaseTest):
 
-    def exposed_stats(self):
+    def exposed_stats(self, limit_to):
         from stats import Statistics
         s = Statistics()
-        s.calc_all()
+        s.calc_all(limit_to=limit_to)
         return s.get_all()
 
     def test_simple_models(self):
@@ -27,7 +27,7 @@ class StatisticsTest(DatabaseTest):
             model_objects = [model() for _ in range(10)]
             db.session.add_all(model_objects)
 
-        stats = self.exposed_stats()
+        stats = self.exposed_stats(limit_to='|'.join(model_stats))
 
         for name, model in model_stats.items():
             assert stats[name] == 10
@@ -50,7 +50,7 @@ class StatisticsTest(DatabaseTest):
             metadata = model(mutation=m)
             db.session.add(metadata)
 
-        stats = self.exposed_stats()
+        stats = self.exposed_stats(limit_to='mutations')
 
         def get_var_name(model_name):
             return model_name.replace('1', 'T')

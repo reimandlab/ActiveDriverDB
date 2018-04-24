@@ -1,4 +1,7 @@
+from warnings import warn
+from apscheduler.schedulers import SchedulerNotRunningError
 from flask_testing import TestCase
+
 from app import create_app, scheduler
 from database import db
 from database import bdb
@@ -96,4 +99,7 @@ class DatabaseTest(TestCase):
         db.drop_all()
         bdb.drop()
         bdb_refseq.drop()
-        scheduler.shutdown()
+        try:
+            scheduler.shutdown()
+        except SchedulerNotRunningError:
+            warn('Scheduler was not running at the ned of the test')
