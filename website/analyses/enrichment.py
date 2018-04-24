@@ -464,7 +464,7 @@ def most_mutated_sites(sources: List[MutationSource], site_type: SiteType=None, 
     )
 
     if site_type:
-        query = query.filter(Site.types.contains(site_type))
+        query = query.filter(SiteType.fuzzy_filter(site_type, join=True))
 
     query = (
         query

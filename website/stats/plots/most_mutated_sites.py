@@ -20,7 +20,10 @@ def most_mutated_sites(sources, site_type: SiteType=AnySiteType, intersection=Fa
         )
 
     if not stacked or intersection:
-        sites, counts = zip(*most_mutated(sources, intersection=intersection).all())
+        results = most_mutated(sources, intersection=intersection).all()
+        if not results:
+            return [], []
+        sites, counts = zip(*results)
         return create_track(sites, counts)
 
     assert len(sources) == 2

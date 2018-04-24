@@ -15,7 +15,7 @@ from flask import current_app
 from tqdm import tqdm
 from gprofiler import GProfiler
 
-from database import get_or_create
+from database import get_or_create, db
 from exports.protein_data import sites_ac
 from helpers.cache import cache_decorator
 from imports import MutationImportManager
@@ -187,6 +187,10 @@ def save_all(analysis_name: str, data, base_path=None):
 def create_gene_list(name: str, list_data: DataFrame, mutation_source: MutationSource=None) -> GeneList:
     gene_list, created = get_or_create(GeneList, name=name)
 
+    if not created:
+        for old_entry in gene_list.entries:
+            db.session.delete(old_entry)
+
     print(('Creating' if created else 'Updating') + f' gene list: {name}')
 
     if mutation_source:
@@ -205,6 +209,8 @@ def create_gene_list(name: str, list_data: DataFrame, mutation_source: MutationS
         entries.append(entry)
 
     gene_list.entries = entries
+
+    db.session.commit()
 
     return gene_list
 

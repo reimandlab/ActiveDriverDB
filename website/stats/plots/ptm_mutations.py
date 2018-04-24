@@ -21,7 +21,7 @@ def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_t
         return {}
 
     sites = (
-        Site.query.filter(Site.types.contains(site_type))
+        Site.query.filter(SiteType.fuzzy_filter(site_type, join=True))
         .join(Protein).filter(Protein.is_preferred_isoform)
     )
 
@@ -52,7 +52,7 @@ def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_t
     for motif_name, breaking_muts in motifs_data.muts_breaking_sites_motif.items():
         all_breaking_muts.update(breaking_muts)
 
-    mutations = mutations.filter(Mutation.affected_sites.any(Site.types.contains(site_type)))
+    mutations = mutations.filter(Mutation.affected_sites.any(SiteType.fuzzy_filter(site_type, join=True)))
     if limit_to_genes is not None:
         mutations = mutations.filter(
             Gene.name.in_(limit_to_genes)

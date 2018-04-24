@@ -82,7 +82,7 @@ def by_muts_count(result, source: MutationSource, site_type, filters=None):
 
 def by_muts_stacked(result, source, site_type):
     top_fdr = result['top_fdr']
-    genes = top_fdr.gene
+    genes = top_fdr.sort_values(by='fdr').gene
     grouped = gather_ptm_muts_impacts(source, site_type, limit_to_genes=genes)
     return {
         impact: (genes, [muts_by_gene[gene_name] for gene_name in genes], [])
