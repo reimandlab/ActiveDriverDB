@@ -18,7 +18,7 @@ bdb_refseq = BerkleyHashSet()
 Model = TypeVar('Model')
 
 
-def get_or_create(model: Model, **kwargs) -> Tuple[Model, bool]:
+def get_or_create(model: Type[Model], **kwargs) -> Tuple[Model, bool]:
     """Return a tuple: (object, was_created) for given parameters.
 
     Object will be taken from relational database (from a table corresponding
