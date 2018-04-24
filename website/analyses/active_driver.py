@@ -64,12 +64,12 @@ def series_from_preferred_isoforms(trait, subset=None) -> Series:
 
 
 manager = MutationImportManager()
-cached = cache_decorator(Cache('active_driver_data'))
+cache = Cache('active_driver_data')
+cached = cache_decorator(cache)
 
 
 @cached
-def prepare_active_driver_data(mutation_source: str, site_type=None):
-
+def prepare_active_driver_data(mutation_source: str, site_type=None, mutation_query=None):
     sites = export_and_load(sites_ac)
 
     if site_type:
@@ -82,6 +82,10 @@ def prepare_active_driver_data(mutation_source: str, site_type=None):
     importer = importer_class()
     mutations = importer.export_to_df(only_preferred=True)
     mutations = mutations[mutations.gene.isin(genes_with_sites)]
+
+    if mutation_query:
+        mutations = mutations.query(mutation_query)
+
     gc.collect()
 
     sequences = series_from_preferred_isoforms('sequence', subset=genes_with_sites)
@@ -224,9 +228,9 @@ def per_cancer_analysis(site_type: str):
     return results
 
 
-def source_specific_analysis(mutations_source, site_type):
+def source_specific_analysis(mutations_source, site_type, mutation_query=None):
 
-    sequences, disorder, mutations, sites = prepare_active_driver_data(mutations_source, site_type)
+    sequences, disorder, mutations, sites = prepare_active_driver_data(mutations_source, site_type, mutation_query)
     result = run_active_driver(sequences, disorder, mutations, sites)
     result = process_result(result, sites)
     source = manager.importers[mutations_source].model
@@ -243,5 +247,12 @@ def pan_cancer_analysis(site_type: str):
 
 
 @cached
-def clinvar_analysis(site_type: str):
-    return source_specific_analysis('clinvar', site_type)
+def clinvar_analysis(site_type: str, mode='strict'):
+    if mode == 'strict':
+        significances = ['Pathogenic', 'Drug response', 'Likely pathogenic']
+    elif mode == 'limited':
+        significances = ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Uncertain significance', 'Other']
+    else:
+        significances = ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Likely benign', 'Benign', 'Uncertain significance', 'Other', 'Not provided']
+
+    return source_specific_analysis('clinvar', site_type, mutation_query=f'significance in {significances}')
