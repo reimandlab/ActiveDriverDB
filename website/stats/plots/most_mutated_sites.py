@@ -73,17 +73,15 @@ def most_mutated_sites(sources, site_type: SiteType=AnySiteType, intersection=Fa
     return results
 
 
-@cases(site_type=site_types)
-@counter
+@cases(site_type=site_types_with_any)
 @bar_plot
-def mc3(site_type=any_site_type):
+def mc3(site_type):
     return most_mutated_sites([MC3Mutation], site_type)
 
 
 @cases(site_type=site_types)
-@counter
 @bar_plot
-def clinvar(site_type=any_site_type):
+def clinvar(site_type):
     return most_mutated_sites([InheritedMutation], site_type)
 
 

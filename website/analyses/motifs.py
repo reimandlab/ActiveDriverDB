@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict, ChainMap
-from typing import Pattern, Iterable, Mapping, Union, List, NamedTuple
+from typing import Iterable, Mapping, Union, List, NamedTuple
 
 from flask_sqlalchemy import BaseQuery
 from tqdm import tqdm
@@ -93,11 +93,11 @@ class MotifsCounter:
 
     def __init__(self, site_type: SiteType, mode='broken_motif', motifs_db=get_all_motifs):
         self.site_type = site_type
-        self.motifs_db = motifs_db
+        self.motifs_db = motifs_db() if callable(motifs_db) else motifs_db
         self.mode = mode
 
         try:
-            self.site_specific_motifs = motifs_db[site_type.name]
+            self.site_specific_motifs = self.motifs_db[site_type.name]
         except KeyError:
             raise NoKnownMotifs(f'No known motifs for {site_type} in {motifs_db}')
 
