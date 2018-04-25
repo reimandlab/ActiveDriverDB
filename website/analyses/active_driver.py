@@ -251,14 +251,14 @@ def source_specific_analysis(mutations_source, site_type, mutation_query=None):
 def pan_cancer_analysis(site_type: str):
     return source_specific_analysis('mc3', site_type)
 
+clinvar_significance_subsets = {
+    'all': ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Likely benign', 'Benign', 'Uncertain significance', 'Other', 'Not provided'],
+    'strict': ['Pathogenic', 'Drug response', 'Likely pathogenic'],
+    'not_benign': ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Uncertain significance', 'Other'],
+}
+
 
 @cached
 def clinvar_analysis(site_type: str, mode='strict'):
-    if mode == 'strict':
-        significances = ['Pathogenic', 'Drug response', 'Likely pathogenic']
-    elif mode == 'limited':
-        significances = ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Uncertain significance', 'Other']
-    else:
-        significances = ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Likely benign', 'Benign', 'Uncertain significance', 'Other', 'Not provided']
-
+    significances =  clinvar_significance_subsets[mode]
     return source_specific_analysis('clinvar', site_type, mutation_query=f'significance in {significances}')

@@ -2,16 +2,16 @@ from collections import defaultdict
 from functools import partial
 
 from helpers.plots import bar_plot, stacked_bar_plot
-from models import MC3Mutation, InheritedMutation, SiteType, AnySiteType
+from models import MC3Mutation, InheritedMutation, SiteType, AnySiteType, ClinicalData
 
 from ..store import cases
-from .common import any_site_type, site_types_with_any, site_types
+from .common import site_types_with_any
 
 
-def most_mutated_sites(sources, site_type: SiteType=AnySiteType, intersection=False, stacked=False, limit=20):
+def most_mutated_sites(sources, site_type: SiteType=AnySiteType, intersection=False, stacked=False, limit=20, filters=None):
     from analyses.enrichment import most_mutated_sites
 
-    most_mutated = partial(most_mutated_sites, site_type=site_type, limit=limit)
+    most_mutated = partial(most_mutated_sites, site_type=site_type, limit=limit, mutation_filter=filters)
 
     def create_track(sites, counts):
         return (
@@ -82,10 +82,30 @@ def mc3(site_type):
     return most_mutated_sites([MC3Mutation], site_type)
 
 
-@cases(site_type=site_types)
+def significance_filter(mode):
+    from analyses.active_driver import clinvar_significance_subsets
+    significance_to_code = {
+        significance: code
+        for code, significance in ClinicalData.significance_codes.items()
+    }
+    return InheritedMutation.clin_data.any(ClinicalData.sig_code.in_([
+        significance_to_code[sig]
+        for sig in clinvar_significance_subsets[mode]
+    ]))
+
+
+clinvar_subsets = {
+    'all': None,
+    'strict': significance_filter('strict'),
+    'not_benign': significance_filter('not_benign')
+}
+clinvar_cases = cases(site_type=site_types_with_any, subset=clinvar_subsets).set_mode('product')
+
+
+@clinvar_cases
 @bar_plot
-def clinvar(site_type):
-    return most_mutated_sites([InheritedMutation], site_type)
+def clinvar(site_type, subset):
+    return most_mutated_sites([InheritedMutation], site_type, filters=clinvar_subsets[subset])
 
 
 both_sources_cases = cases(site_type=site_types_with_any)

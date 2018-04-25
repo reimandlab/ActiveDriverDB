@@ -429,8 +429,11 @@ def prepare_for_summing(sources: List[MutationSource], count_distinct_substituti
     return counts
 
 
-def most_mutated_sites(sources: List[MutationSource], site_type: SiteType=None, limit=25, intersection=True, exclusive=None):
-    """Sources must be of the same type"""
+def most_mutated_sites(
+    sources: List[MutationSource], site_type: SiteType=None, limit=25, intersection=True,
+    exclusive=None, mutation_filter=None
+):
+    """Sources must have the same value_type (counts/frequencies)"""
 
     assert not (intersection and exclusive)
 
@@ -456,6 +459,9 @@ def most_mutated_sites(sources: List[MutationSource], site_type: SiteType=None, 
 
         if exclusive:
             query = query.filter(~Mutation.in_sources(*exclusive))
+
+    if mutation_filter is not None:
+        query = query.filter(mutation_filter)
 
     query = (
         query
