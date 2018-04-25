@@ -2,6 +2,7 @@ import signal
 from contextlib import ExitStack
 from functools import lru_cache
 from pathlib import Path
+from shutil import rmtree
 from subprocess import Popen
 from tempfile import NamedTemporaryFile
 
@@ -111,7 +112,7 @@ class DeadlyPopen(Popen):
             self.kill()
 
 
-def run_all(site_type: str, gene_sets: Mapping[str, Path]=GENE_SETS, gene_set_filter: Tuple[int]=(5, 1000), **kwargs):
+def run_all(site_type: str, gene_sets: Mapping[str, Path]=GENE_SETS, gene_set_filter: Tuple[int]=(5, 1000), correct=False, **kwargs):
     """Runs all active_pathways combinations for given site_type.
 
     Uses pan_cancer/clinvar Active Driver analyses results
@@ -136,7 +137,12 @@ def run_all(site_type: str, gene_sets: Mapping[str, Path]=GENE_SETS, gene_set_fi
     for analysis in [active_driver.pan_cancer_analysis, active_driver.clinvar_analysis]:
         for gene_set in gene_sets:
             path = output_dir / analysis.name / gene_set / site_type
-            path.mkdir(parents=True, exist_ok=True)
+
+            # remove the old results (if any)
+            rmtree(path, ignore_errors=True)
+            # recreate dir
+            path.mkdir(parents=True)
+
             path = path.absolute()
 
             ad_result = analysis(site_type)
@@ -148,7 +154,7 @@ def run_all(site_type: str, gene_sets: Mapping[str, Path]=GENE_SETS, gene_set_fi
             if callable(gene_sets_path):
                 gene_sets_path = gene_sets_path()
 
-            result = run_active_pathways(ad_result, str(gene_sets_path), cytoscape_dir=path, **kwargs)
+            result = run_active_pathways(ad_result, str(gene_sets_path), cytoscape_dir=path, correct=correct, **kwargs)
 
             data_table.fwrite(result, str(path / 'pathways.tsv'), sep='\t', sep2=r.c('', ',', ''))
 
