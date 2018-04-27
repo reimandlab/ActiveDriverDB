@@ -3,7 +3,8 @@ import random
 from collections import namedtuple, Counter, defaultdict
 from functools import reduce, partial
 from statistics import median
-from typing import List
+from typing import List, NamedTuple
+from math import isnan
 
 from numpy import NaN
 from sqlalchemy import and_, func, distinct, desc
@@ -291,6 +292,68 @@ def load_cancer_census(cancer_census_path='data/census.csv'):
     return cancer_genes
 
 
+def load_genes_disease_relationships(path='data/gene_condition_source_id') -> Mapping[Gene, List[NamedTuple]]:
+    """Loads gene_condition_source_id file from NCBI ClinVar,
+
+    which (as stated in README) contains gene-disease relationship from
+    OMIM and GeneReviews and is (to some extent) curated by NCBI staff.
+
+    URL: ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/gene_condition_source_id
+    """
+    from pandas import read_table
+
+    table = read_table(path)
+    diseases_by_gene = defaultdict(list)
+    found = 0
+    skipped = 0
+    skipped_names = set()
+    for i, row in table.iterrows():
+        name = row.AssociatedGenes if isinstance(row.AssociatedGenes, str) else row.RelatedGenes
+        g = Gene.query.filter_by(name=name).first()
+        if not g:
+            g = Gene.query.filter_by(entrez_id=int(row['#GeneID'])).first()
+        if g:
+            diseases_by_gene[g].append(row)
+            found += 1
+        else:
+            print(f'Skipping {row}')
+            skipped += 1
+            skipped_names.add(name)
+    print(f'Loaded {found} disease-gene relationships of {len(set(diseases_by_gene))} genes, skipped {skipped} records')
+    print(f'Skipped: {skipped_names}')
+    return diseases_by_gene
+
+
+def load_omim(omim_path='data/omim-gene_phenotype.tsv'):
+    """OMIM gene-phenotype (+) table was exported using web interface of OMIM
+
+    The resulting set of genes is unfortunately very small
+    (70 at the day of download) and it was observerd that it
+    was getting smaller with time (starting from 392 from
+    2005 OMIM publication). Due to such quirks, we decided
+    to go with gene_disease relationships from ClinVar instead.
+
+    The original search query:
+    https://www.omim.org/search/?index=entry&search=prefix%3A%2B+AND+chromosome_group%3AA&sort=number+asc&start=1&limit=100
+    """
+    from pandas import read_table
+
+    omim = read_table(omim_path, skiprows=4)
+    omim_genes = set()
+
+
+    skipped = 0
+    for i, row in omim.iterrows():
+        g = Gene.query.filter_by(entrez_id=int(row['Entrez Gene ID'])).first()
+        if g:
+            omim_genes.add(g)
+        else:
+            skipped += 1
+            print(f'OMIM gene: "{row}" not in database')
+    print(f'Found {len(omim_genes)}, skipped {skipped}')
+    return omim_genes
+
+
 def get_genes_with_mutations_from_sources(sources, only_genes_with_ptm_sites=False):
     query = (
         db.session.query(Gene)
@@ -500,37 +563,69 @@ def most_mutated_sites(
     return query.limit(limit)
 
 
-def active_driver_genes_enrichment(analysis_result):
-    cancer_genes = load_cancer_census()
+def genes_enrichment(observed_genes, reference_set):
 
-    observed_genes = {
-        Gene.query.filter_by(name=gene_name).one()
-        for gene_name in analysis_result['top_fdr'].gene
-    }
-
-    observed_from_census = observed_genes.intersection(cancer_genes)
-    print(observed_from_census)
-    observed_not_in_census = observed_genes - observed_from_census
+    observed_from_reference = observed_genes.intersection(reference_set)
+    print('Genes intersection:')
+    print(','.join([gene.name for gene in observed_from_reference]))
+    observed_not_in_reference = observed_genes - observed_from_reference
 
     all_genes = set(Gene.query)
     not_observed = all_genes - observed_genes
 
-    not_observed_from_census = not_observed.intersection(cancer_genes)
-    not_observed_not_in_census = not_observed - not_observed_from_census
+    not_observed_from_reference = not_observed.intersection(reference_set)
+    not_observed_not_in_reference = not_observed - not_observed_from_reference
 
     #     x     |  cancer genes from census  |   other (not in census)
-    #  glyco    |  observed_from_census      |       observed_not_in_census
+    #  glyco    |  observed_from_census      |   observed_not_in_census
     # not glyc? |
 
     contingency_table = [
-        [observed_from_census, observed_not_in_census],
-        [not_observed_from_census, not_observed_not_in_census]
+        [observed_from_reference, observed_not_in_reference],
+        [not_observed_from_reference, not_observed_not_in_reference]
     ]
     contingency_table = [[len(x), len(y)] for x, y in contingency_table]
     print(contingency_table)
     oddsratio, pvalue = fisher_exact(contingency_table)
 
     return oddsratio, pvalue
+
+
+def active_driver_genes_enrichment(analysis_result):
+    cancer_genes = load_cancer_census()
+    observed_genes = {
+        Gene.query.filter_by(name=gene_name).one()
+        for gene_name in analysis_result['top_fdr'].gene
+    }
+
+    return genes_enrichment(observed_genes, cancer_genes)
+
+
+def enrichment_of_ptm_genes(reference_set, site_type_name: str):
+    site_type = SiteType.query.filter_by(name=site_type_name).one()
+    observed_genes = set(
+        Gene.query.join(Gene.preferred_isoform).join(Protein.sites).filter(SiteType.fuzzy_filter(site_type))
+    )
+
+    return genes_enrichment(observed_genes, reference_set)
+
+
+def omim_enrichment(site_type_name='glycosylation'):
+    """Warning: this analysis was superseded by disease_enrichment()
+
+    Please read load_omim() documentation for more details.
+    """
+    return enrichment_of_ptm_genes(load_omim(), site_type_name)
+
+
+def disease_enrichment(site_type_name='glycosylation'):
+    genes = set(load_genes_disease_relationships().keys())
+    print(f'Using {len(genes)} disease genes')
+    return enrichment_of_ptm_genes(genes, site_type_name)
+
+
+def cancer_census_enrichment(site_type_name='glycosylation'):
+    return enrichment_of_ptm_genes(load_cancer_census(), site_type_name)
 
 
 def breakdown_of_ptm_mutations(gene_names: List[str], source_name: str):
