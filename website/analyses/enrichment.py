@@ -3,16 +3,15 @@ import random
 from collections import namedtuple, Counter, defaultdict
 from functools import reduce, partial
 from statistics import median
-from typing import List, NamedTuple
-from math import isnan
+from typing import List, NamedTuple, Mapping
 
 from numpy import NaN
 from sqlalchemy import and_, func, distinct, desc
 from sqlalchemy.orm import aliased
 from tqdm import tqdm
-from scipy.stats import fisher_exact, chisquare
+from scipy.stats import fisher_exact
 
-from database import join_unique, db, fast_count
+from database import join_unique, db
 from models import (
     Protein, Mutation, The1000GenomesMutation, MC3Mutation, InheritedMutation, Gene, Site,
     MutationSource, source_manager,
