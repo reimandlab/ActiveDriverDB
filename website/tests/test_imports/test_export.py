@@ -146,7 +146,7 @@ class TestExport(DatabaseTest):
 
     def test_ptm_muts_of_gene(self):
 
-        filename = make_named_temp_file(suffix='{protein}.tsv')
+        filename = make_named_temp_file(suffix='{site_type}_muts_of_{gene}_-_{protein}.tsv')
 
         with self.app.app_context():
 

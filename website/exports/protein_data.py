@@ -173,8 +173,8 @@ def population_muts_affecting_ptm_sites(path='exported/population_mutations_affe
 
 @exporter
 def ptm_muts_of_gene(
-    path_template='exported/{protein}.tsv', gene='EGFR', site_type='glycosylation',
-    mutation_source='mc3', **kwargs
+    path_template='exported/{site_type}_muts_of_{gene}_-_{protein}.tsv', gene='EGFR',
+    site_type='glycosylation', mutation_source='mc3', **kwargs
 ):
 
     manager = MutationImportManager()
@@ -186,12 +186,11 @@ def ptm_muts_of_gene(
     protein = gene.preferred_isoform
 
     mutations = importer.export_to_df(
-        only_preferred=True,
         mutation_filter=and_(
             Mutation.affected_sites.any(SiteType.fuzzy_filter(site_type)),
             Mutation.protein_id == protein.id
         )
     )
-    path = path_template.format(protein=protein)
+    path = path_template.format(protein=protein.refseq, gene=gene.name, site_type=site_type.name)
     mutations.to_csv(path, sep='\t', index=False)
     return path
