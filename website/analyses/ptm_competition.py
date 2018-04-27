@@ -1,7 +1,11 @@
+from itertools import chain
+from typing import Tuple
+
+from pandas import DataFrame
 from sqlalchemy import and_
 from sqlalchemy.orm import aliased
 
-from models import SiteType, Site, Protein, Mutation, source_manager
+from models import SiteType, Site, Protein, Mutation, source_manager, InheritedMutation, db
 
 
 def site_type_filter_from_str(query, site=Site):
@@ -53,16 +57,20 @@ def ptm_sites_proximity(type_1: str, type_2: str, distance: int=7, only_preferre
 
 
 def ptm_muts_around_other_ptm_sites(
-    source: str, mutation_ptm: str, other_type: str, only_preferred=True, mutation_filter=True
-) -> int:
-    distance = 7
+    source: str, mutation_ptm: str, other_type: str, only_preferred=True, mutation_filter=None,
+    distance=7
+) -> Tuple[int, int]:
     source = source_manager.source_by_name[source]
     other_site = aliased(Site)
 
+    if mutation_filter is None:
+        mutation_filter = True
+
     mut_ptm_filter = site_type_filter_from_str(mutation_ptm)
     query = (
-        Mutation.query
-        .join(source)
+
+        source.query
+        .join(Mutation)
         .filter(mutation_filter)
         .join(Mutation.affected_sites).filter(mut_ptm_filter)
         .join(
@@ -84,4 +92,30 @@ def ptm_muts_around_other_ptm_sites(
     if only_preferred:
         query = query.join(Site.protein).filter(Protein.is_preferred_isoform)
 
-    return query.count()
+    distinct_mutations = query.count()
+    mutation_occurrences = sum(m.count for m in query)
+    return mutation_occurrences, distinct_mutations
+
+
+def glycosylation_muts(only_preferred=True):
+    results = {}
+    site_type_names = [name for (name, ) in db.session.query(SiteType.name)]
+    cases = [
+        ('MC3', None),
+        ('ClinVar', InheritedMutation.significance_filter('strict')),
+        ('ESP6500', None),
+        ('1000Genomes', None),
+    ]
+    for source, additional_filter in cases:
+        result = {}
+        for type_query in chain(site_type_names, ['not glycosylation']):
+            occurrences, distinct = ptm_muts_around_other_ptm_sites(
+                source, 'glycosylation', type_query,
+                only_preferred=only_preferred,
+                mutation_filter=additional_filter
+            )
+            result[type_query] = occurrences
+        results[source] = result
+    df = DataFrame(data=results).transpose()
+    print(df)
+    return df
