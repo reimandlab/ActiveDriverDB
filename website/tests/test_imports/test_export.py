@@ -143,3 +143,25 @@ class TestExport(DatabaseTest):
                 'gene\tposition\tresidue\ttype\tkinase\tpmid\n',
                 'SOMEGENE\t1\tA\tglycosylation\tKinase name\t1,2\n'
             ]
+
+    def test_ptm_muts_of_gene(self):
+
+        filename = make_named_temp_file(suffix='{protein}.tsv')
+
+        with self.app.app_context():
+
+            test_models = create_test_models()
+            db.session.add_all(test_models.values())
+
+            from exports.protein_data import ptm_muts_of_gene
+            path = ptm_muts_of_gene(
+                path_template=filename, mutation_source='mc3',
+                gene='SOMEGENE', site_type='glycosylation', export_samples=True
+            )
+
+        with open(path) as f:
+            assert f.readlines() == [
+                'gene\tisoform\tposition\twt_residue\tmut_residue\tcancer_type\tsample_id\n',
+                'SOMEGENE\tNM_0001\t1\tA\tE\tCAN\tSample A\n',
+                'SOMEGENE\tNM_0001\t1\tA\tE\tCAN\tSample B\n'
+            ]

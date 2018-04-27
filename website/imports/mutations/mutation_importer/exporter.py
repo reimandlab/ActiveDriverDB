@@ -2,6 +2,7 @@ from datetime import datetime
 import gzip
 import os
 
+from pandas import DataFrame
 from sqlalchemy.orm import load_only
 from tqdm import tqdm
 
@@ -22,7 +23,21 @@ class MutationExporter:
     def export_details(self, mutation):
         return [],  # returns a tuple with empty list inside
 
-    def iterate_export(self, only_preferred=False):
+    def iterate_export(self, only_preferred=False, mutation_filter=None):
+        """Yield tuples with mutations data prepared for export.
+
+        A single mutation will be spread over multiple rows if it is necessary
+        in order to keep columns with source-specific mutation details
+        (like cancer_type or disease_name) atomic.
+
+        Args:
+            only_preferred: include only mutations from preferred isoforms of genes
+            mutation_filter: SQLAlchemy filter for mutations
+                (to be applied to joined self.model and Mutations tables)
+
+        Returns:
+            tuples with fields as returned by self.export_header
+        """
 
         # cache preferred isoforms in a set (to enable fast access)
         preferred_isoforms = None
@@ -47,6 +62,9 @@ class MutationExporter:
 
         query = db.session.query(self.model, Mutation).select_from(self.model).join(Mutation)
 
+        if mutation_filter is not None:
+            query = query.filter(mutation_filter)
+
         for mutation_details, mut in tqdm(query, total=fast_count(db.session.query(self.model))):
 
             protein = mut.protein
@@ -69,12 +87,11 @@ class MutationExporter:
                     str(mut.position), ref, mut.alt, *instance
                 )
 
-    def export_to_df(self, only_preferred=False):
-        from pandas import DataFrame
+    def export_to_df(self, only_preferred=False, mutation_filter=None) -> DataFrame:
 
         mutations = [
             mutation
-            for mutation in self.iterate_export(only_preferred=only_preferred)
+            for mutation in self.iterate_export(only_preferred=only_preferred, mutation_filter=mutation_filter)
         ]
 
         return DataFrame(mutations, columns=self.export_header)
