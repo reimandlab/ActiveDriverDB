@@ -21,10 +21,10 @@ def ptm_sites_proximity(type_1: str, type_2: str, distance: int=7, only_preferre
         )
     )
 
-    for site, type_name in site_and_type:
+    for i, site, type_name in enumerate(site_and_type):
         site_type = SiteType.query.filter_by(name=type_name).one()
         site_filter = SiteType.fuzzy_filter(site_type, join=True, site=site)
-        if negate_type_2:
+        if negate_type_2 and i == 1:
             site_filter = ~site_filter
         sites = sites.filter(site_filter)
 
