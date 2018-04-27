@@ -355,6 +355,17 @@ class InheritedMutation(MutationDetails, BioModel):
             for d in filter(self.clin_data)
         ))
 
+    @classmethod
+    def significance_filter(cls, mode):
+        significance_to_code = {
+            significance: code
+            for code, significance in ClinicalData.significance_codes.items()
+        }
+        return cls.clin_data.any(ClinicalData.sig_code.in_([
+            significance_to_code[sig]
+            for sig in ClinicalData.significance_subsets[mode]
+        ]))
+
 
 def population_manager(_name, _display_name):
 

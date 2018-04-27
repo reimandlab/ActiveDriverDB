@@ -60,6 +60,12 @@ class ClinicalData(BioModel):
             'Review status': self.rev_status
         }
 
+    significance_subsets = {
+        'all': ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Likely benign', 'Benign', 'Uncertain significance', 'Other', 'Not provided'],
+        'strict': ['Pathogenic', 'Drug response', 'Likely pathogenic'],
+        'not_benign': ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Uncertain significance', 'Other'],
+    }
+
 
 class Cancer(BioModel):
     code = db.Column(db.String(16), unique=True)

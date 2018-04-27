@@ -2,7 +2,7 @@ from collections import defaultdict
 from functools import partial
 
 from helpers.plots import bar_plot, stacked_bar_plot
-from models import MC3Mutation, InheritedMutation, SiteType, AnySiteType, ClinicalData
+from models import MC3Mutation, InheritedMutation, SiteType, AnySiteType
 
 from ..store import cases
 from .common import site_types_with_any
@@ -82,22 +82,10 @@ def mc3(site_type):
     return most_mutated_sites([MC3Mutation], site_type)
 
 
-def significance_filter(mode):
-    from analyses.active_driver import clinvar_significance_subsets
-    significance_to_code = {
-        significance: code
-        for code, significance in ClinicalData.significance_codes.items()
-    }
-    return InheritedMutation.clin_data.any(ClinicalData.sig_code.in_([
-        significance_to_code[sig]
-        for sig in clinvar_significance_subsets[mode]
-    ]))
-
-
 clinvar_subsets = {
     'all': None,
-    'strict': significance_filter('strict'),
-    'not_benign': significance_filter('not_benign')
+    'strict': InheritedMutation.significance_filter('strict'),
+    'not_benign': InheritedMutation.significance_filter('not_benign')
 }
 clinvar_cases = cases(site_type=site_types_with_any, subset=clinvar_subsets).set_mode('product')
 

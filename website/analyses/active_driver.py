@@ -19,7 +19,7 @@ from database import get_or_create, db
 from exports.protein_data import sites_ac
 from helpers.cache import cache_decorator
 from imports import MutationImportManager
-from models import Gene, GeneList, GeneListEntry, MC3Mutation, MutationSource
+from models import Gene, GeneList, GeneListEntry, MC3Mutation, MutationSource, ClinicalData
 
 from ._paths import ANALYSES_OUTPUT_PATH
 
@@ -251,14 +251,8 @@ def source_specific_analysis(mutations_source, site_type, mutation_query=None):
 def pan_cancer_analysis(site_type: str):
     return source_specific_analysis('mc3', site_type)
 
-clinvar_significance_subsets = {
-    'all': ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Likely benign', 'Benign', 'Uncertain significance', 'Other', 'Not provided'],
-    'strict': ['Pathogenic', 'Drug response', 'Likely pathogenic'],
-    'not_benign': ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Uncertain significance', 'Other'],
-}
-
 
 @cached
 def clinvar_analysis(site_type: str, mode='strict'):
-    significances =  clinvar_significance_subsets[mode]
+    significances = ClinicalData.significance_subsets[mode]
     return source_specific_analysis('clinvar', site_type, mutation_query=f'significance in {significances}')
