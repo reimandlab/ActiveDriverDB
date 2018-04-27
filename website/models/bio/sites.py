@@ -54,7 +54,9 @@ class SiteType(BioModel):
         }
 
     @classmethod
-    def fuzzy_filter(cls, other_type, join=False):
+    def fuzzy_filter(cls, other_type, join=False, site=None):
+        site = site if site is not None else Site
+
         matched_types_ids = [
             type_id
             for type_name, type_id in cls.id_by_name().items()
@@ -64,9 +66,9 @@ class SiteType(BioModel):
         if len(matched_types_ids) == 1:
             if not join:
                 return SiteType.id == matched_types_ids[0]
-            return Site.types.contains(cls.type_by_id()[matched_types_ids[0]])
+            return site.types.contains(cls.type_by_id()[matched_types_ids[0]])
 
-        return Site.types.any(
+        return site.types.any(
             SiteType.id.in_(matched_types_ids)
         )
         # NB: there are following alternatives available:
