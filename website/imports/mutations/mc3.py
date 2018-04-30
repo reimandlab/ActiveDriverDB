@@ -33,10 +33,13 @@ class MC3Importer(TCGAImporter):
     header = None
     tss_cancer_map_path = 'data/mutations/tissue_source_site_codes.tsv'
 
+    def extract_cancer_name(self, sample_name):
+        tss_code = sample_name.split('-')[1]
+        return self.cancer_barcodes[tss_code]
+
     def decode_line(self, line):
         sample_name = line[10]
-        tss_code = sample_name.split('-')[1]
-        cancer_name = self.cancer_barcodes[tss_code]
+        cancer_name = self.extract_cancer_name(sample_name)
         return cancer_name, sample_name
 
     def __init__(self, *args, **kwargs):
