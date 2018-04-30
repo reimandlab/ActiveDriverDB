@@ -93,7 +93,11 @@ def ptm_muts_around_other_ptm_sites(
         query = query.join(Site.protein).filter(Protein.is_preferred_isoform)
 
     distinct_mutations = query.count()
-    mutation_occurrences = sum(m.count for m in query)
+    if hasattr(source, 'count'):
+        mutation_occurrences = sum(m.count for m in query)
+    else:
+        # average frequency
+        mutation_occurrences = sum(m.maf_all for m in query) / distinct_mutations
     return mutation_occurrences, distinct_mutations
 
 
@@ -104,7 +108,7 @@ def glycosylation_muts(only_preferred=True):
         ('MC3', None),
         ('ClinVar', InheritedMutation.significance_filter('strict')),
         ('ESP6500', None),
-        ('1000Genomes', None),
+        ('1KGenomes', None),
     ]
     for source, additional_filter in cases:
         result = {}
