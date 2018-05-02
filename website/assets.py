@@ -243,6 +243,7 @@ bundles = {
     'js_gene_view': js_bundle(
         'geneView',
         'common.js',
+        'filters.js',
         'widgets.js',
     ),
     'js_inline_edit': js_bundle(

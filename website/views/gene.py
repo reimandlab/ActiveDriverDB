@@ -1,3 +1,4 @@
+import flask
 from flask import render_template as template
 from flask import jsonify
 from flask import request
@@ -275,6 +276,16 @@ def ajax_query_count(sql_filters, joins):
 
 class GeneView(FlaskView):
 
+    def check_filters(self):
+        from .filters import ProteinFiltersData
+        filter_manager = self.filter_manager
+        response = {
+            'content': {},
+            'filters': ProteinFiltersData(filter_manager, None).to_json()
+        }
+
+        return jsonify(response)
+
     def show(self, gene_name):
         gene = Gene.query.filter_by(name=gene_name).one()
         return template('gene/show.html', gene=gene)
@@ -283,9 +294,15 @@ class GeneView(FlaskView):
         filter_manager = GeneViewFilters()
         endpoint = self.build_route_name(name)
 
+        flask.g.filter_manager = filter_manager
+
         return filter_manager.reformat_request_url(
             request, endpoint, *args, **kwargs
         )
+
+    @property
+    def filter_manager(self):
+        return flask.g.filter_manager
 
     def isoforms(self, gene_name):
         gene = Gene.query.filter_by(name=gene_name).one()
