@@ -91,7 +91,7 @@ def by_muts_stacked(result, source, site_type):
 
 
 active_driver_cases = cases(
-    analysis=whole_dataset_analyses,
+    analysis=all_analyses,
     site_type=site_types_with_any,
 ).set_mode('product')
 
@@ -100,7 +100,11 @@ active_driver_cases = cases(
 @stacked_bar_plot
 def muts_by_impact(analysis, site_type):
     source = all_analyses[analysis]
-    result = analysis(site_type.name)
+    try:
+        result = analysis(site_type.name)
+    except KeyError:
+        print(f'No results for {analysis}')
+        return {}
     return by_muts_stacked(result, source, site_type)
 
 
