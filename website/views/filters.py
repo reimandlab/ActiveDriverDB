@@ -242,8 +242,12 @@ def source_dependent_filters(protein=None):
         MutationDetailsFilter(
             ClinicalData, 'disease_id',
             comparators=['in'],
-            choices=disease_names_by_id.keys(),
-            default=disease_names_by_id.keys(),
+            # casting to list() proved to be necessary
+            # as we would otherwise get wrong result of
+            # comparison: f.value != f.default
+            # (due to types difference)
+            choices=list(disease_names_by_id.keys()),
+            default=list(disease_names_by_id.keys()),
             source='ClinVar',
             multiple='any',
         ),
@@ -255,8 +259,9 @@ def source_dependent_filters(protein=None):
         MutationDetailsFilter(
             ClinicalData, 'disease_name',
             comparators=['in'],
-            choices=disease_names_by_id.values(),
-            default=disease_names_by_id.values(),
+            # casting to list(): see note in disease_id
+            choices=list(disease_names_by_id.values()),
+            default=list(disease_names_by_id.values()),
             source='ClinVar',
             multiple='any',
         ),

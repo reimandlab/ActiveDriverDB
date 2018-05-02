@@ -281,6 +281,9 @@ class GeneView(FlaskView):
         filter_manager = self.filter_manager
         response = {
             'content': {},
+            # diseases in dataset-specific widgets could limited to those of
+            # mutations of genes matching filtering criteria - but it would
+            # require another (expensive) filtering operation
             'filters': ProteinFiltersData(filter_manager, None).to_json()
         }
 
