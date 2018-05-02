@@ -1200,7 +1200,7 @@ def sites_motifs(data=None):
             [' ' * 7 + 'W  W' + ' ' * 4]
         ],
         [
-            'C-glycosylation', 'C-linked W..W', '.{4}W..W.{7})',
+            'C-glycosylation', 'C-linked W..W', '.{4}W..W.{7}',
             [' ' * 4 + 'W  W' + ' ' * 7]
         ],
         [
