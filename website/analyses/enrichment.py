@@ -4,12 +4,15 @@ from collections import namedtuple, Counter, defaultdict
 from functools import reduce, partial
 from statistics import median
 from typing import List, NamedTuple, Mapping
+from collections import defaultdict
 
 from numpy import NaN
 from sqlalchemy import and_, func, distinct, desc
 from sqlalchemy.orm import aliased
 from tqdm import tqdm
 from scipy.stats import fisher_exact
+from interval import interval
+from interval import fpu
 
 from database import join_unique, db
 from models import (
@@ -855,3 +858,127 @@ def sites_mutated_ratio(
 
     if path:
         ggplot2.ggsave(str(path), width=width / dpi, height=height / dpi, dpi=dpi, units='in', bg='transparent')
+
+
+def ptm_on_random(
+    source=MC3Mutation, site_type='glycosylation',
+    same_proteins=True, only_preferred=True, mode='occurrences'
+):
+    """"Compare frequencies of PTM mutations of given type with random proteome mutations
+
+    from protein sequence regions of the same size as analysed PTM regions.
+    """
+    assert mode in {'distinct', 'occurrences'}
+
+    def measure(x):
+        """See https://github.com/taschini/pyinterval/issues/2"""
+        return int(fpu.up(lambda: sum((c.sup - c.inf for c in x), 0)))
+
+    site_type = SiteType.query.filter_by(name=site_type).one()
+    only_preferred = Protein.is_preferred_isoform if only_preferred else True
+
+    ptm_muts = (
+        source.query
+        .join(Mutation)
+        .join(Mutation.affected_sites)
+        .filter(SiteType.fuzzy_filter(site_type))
+        .join(Protein)
+        .filter(only_preferred)
+        .group_by(source)
+    )
+    if mode == 'distinct':
+        ptm_muts_count = ptm_muts.count()
+    else:
+        ptm_muts_count = 0
+        for mut in ptm_muts:
+            assert mut.count != 0
+            ptm_muts_count += mut.count
+
+        assert ptm_muts_count >= ptm_muts.count()
+
+    glyco_sequence_region_size = 0
+
+    intervals_by_protein = defaultdict(interval)
+
+    sites = (
+        Site.query
+        .filter(SiteType.fuzzy_filter(site_type))
+        .join(Protein)
+        .filter(only_preferred)
+    )
+
+    for site in sites:
+        intervals_by_protein[site.protein] |= interval[max(site.position - 7, 0), site.position + 7]
+
+    for interval in intervals_by_protein.values():
+        glyco_sequence_region_size += measure(interval)
+
+    ptm_ratio = ptm_muts_count / glyco_sequence_region_size
+
+    def count_muts(protein, positions):
+        muts = (
+            source.query.join(Mutation)
+            .filter_by(protein=protein)
+            .filter(Mutation.position.in_(positions))
+        )
+        if mode == 'distinct':
+            return muts.count()
+        else:
+            return sum(m.count for m in muts)
+
+    count_of_sampled_muts = 0
+    if same_proteins:
+
+        size_by_protein = {
+            protein: measure(interval)
+            for protein, interval in intervals_by_protein.items()
+        }
+
+        for protein, positions_to_draw in tqdm(size_by_protein.items(), total=len(size_by_protein)):
+            positions = random.choices(range(protein.length), k=positions_to_draw)
+            count_of_sampled_muts += count_muts(protein, positions)
+    else:
+        proteins = Protein.query.filter(only_preferred).all()
+
+        # choose as much proteins as positions to sample from;
+        # later I will choose one position from each protein
+        proteins_to_samples = random.choices(
+            proteins,
+            weights=[p.length for p in proteins],
+            k=glyco_sequence_region_size
+        )
+        sample_protein_x_times = Counter()
+        for protein in proteins_to_samples:
+            sample_protein_x_times[protein] += 1
+
+        for protein, c in tqdm(sample_protein_x_times.items(), total=len(sample_protein_x_times)):
+            positions = random.choices(range(protein.length), k=c)
+            count_of_sampled_muts += count_muts(protein, positions)
+
+    random_ratio = count_of_sampled_muts / glyco_sequence_region_size
+
+    #        glyco  |  other
+    # count
+    # len
+
+    odds_ratio, p_value = fisher_exact(
+        [
+            [ptm_muts_count, count_of_sampled_muts],
+            [glyco_sequence_region_size, glyco_sequence_region_size]
+        ],
+        alternative='greater'
+    )
+
+    explanation = '(only the same proteins)' if same_proteins else ''
+
+    print(
+        f'count of {site_type.name} mutations: {count_of_sampled_muts},\n'
+        f'count of random mutations from protein sequence regions of the same size: {ptm_muts_count}'
+        f' {explanation}.'
+    )
+    print(f'region size: {glyco_sequence_region_size}')
+    print(
+        f'frequency of {site_type.name} mutations: {ptm_ratio * 100}%,\n'
+        f'frequency of random mutations: {random_ratio * 100}%.'
+    )
+    print(f'odds ratio: {odds_ratio}, p-value: {p_value} (Fisher exact test, greater)')
