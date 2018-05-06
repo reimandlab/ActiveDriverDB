@@ -131,7 +131,11 @@ def p_value_annotations(results, significances):
             ) * 1.1,
             'xref': 'x',
             'yref': 'y',
-            'text': f'p-value: {significance:.2e}',
+            'text': 'p-value: ' + (
+                f'{significance:.2e}'
+                if isinstance(significance, float) else
+                f'{significance}'
+            ),
             'showarrow': False
         }
         for i, (population_source, significance) in enumerate(significances.items())
