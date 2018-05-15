@@ -34,6 +34,14 @@
 {% endmacro %}
 
 
+{% macro static_plot(name, data, title='') %}
+
+  <h4 class="text-center">{{ title }}</h4>
+  <img src="/{{ data.path }}" id="static_plot_{{ name }}">
+
+{% endmacro %}
+
+
 {% macro plotly_plot(plot_type, name, traces, y_axis, x_axis, colors=None) %}
 
   <div id="{{ plot_type }}_{{ name }}"></div>
