@@ -189,7 +189,8 @@ def ptm_muts_of_gene(
         mutation_filter=and_(
             Mutation.affected_sites.any(SiteType.fuzzy_filter(site_type)),
             Mutation.protein_id == protein.id
-        )
+        ),
+        protein_filter=Protein.id == protein.id
     )
     path = path_template.format(protein=protein.refseq, gene=gene.name, site_type=site_type.name)
     if to_csv:

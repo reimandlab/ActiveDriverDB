@@ -23,7 +23,7 @@ class MutationExporter:
     def export_details(self, mutation):
         return [],  # returns a tuple with empty list inside
 
-    def iterate_export(self, only_preferred=False, mutation_filter=None):
+    def iterate_export(self, only_preferred=False, mutation_filter=None, protein_filter=None):
         """Yield tuples with mutations data prepared for export.
 
         A single mutation will be spread over multiple rows if it is necessary
@@ -51,6 +51,7 @@ class MutationExporter:
             .select_from(Protein)
             .options(load_only('sequence', 'refseq'))
             .join(Gene, Protein.gene_id == Gene.id)
+            .filter(protein_filter if protein_filter is not None else True)
         )
 
         gene_name_by_protein = {
@@ -64,8 +65,11 @@ class MutationExporter:
 
         if mutation_filter is not None:
             query = query.filter(mutation_filter)
+            total = query.count()
+        else:
+            total = fast_count(db.session.query(self.model))
 
-        for mutation_details, mut in tqdm(query, total=fast_count(db.session.query(self.model))):
+        for mutation_details, mut in tqdm(query, total=total):
 
             protein = mut.protein
 
@@ -81,17 +85,22 @@ class MutationExporter:
                 )
                 ref = ''
 
+            #ptms = ','.join({site_type.name for site in mut.affected_sites for site_type in site.types})
             for instance in export_details(mutation_details):
                 yield (
                     gene_name_by_protein[protein], protein.refseq,
                     str(mut.position), ref, mut.alt, *instance
                 )
 
-    def export_to_df(self, only_preferred=False, mutation_filter=None) -> DataFrame:
+    def export_to_df(self, only_preferred=False, mutation_filter=None, protein_filter=None) -> DataFrame:
 
         mutations = [
             mutation
-            for mutation in self.iterate_export(only_preferred=only_preferred, mutation_filter=mutation_filter)
+            for mutation in self.iterate_export(
+                only_preferred=only_preferred,
+                mutation_filter=mutation_filter,
+                protein_filter=protein_filter
+            )
         ]
 
         return DataFrame(mutations, columns=self.export_header)

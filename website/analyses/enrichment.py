@@ -904,6 +904,9 @@ def ptm_on_random(
             all_muts[mutation.protein][mutation.position] += 1
     else:
         for mutation_details, mutation in tqdm(q, total=q.count()):
+            if mutation.position > mutation.protein.length:
+                print(f'Faulty mutation: {mutation}')
+                continue
             all_muts[mutation.protein][mutation.position] += mutation_details.count
 
     # region size
@@ -960,7 +963,7 @@ def ptm_on_random(
                 p = 0
                 for subinterval in protein_interval.components:
                     if mutation.position in subinterval:
-                        p += mutation.position - int(subinterval[0].inf)  # position in interval
+                        p += mutation.position - 1 - int(subinterval[0].inf)  # position in interval
                         break
                     p += measure(subinterval)
 
@@ -1011,7 +1014,11 @@ def ptm_on_random(
 
     for protein in tqdm(proteins):
         for position, count in all_muts[protein].items():
-            mutations_array[pos + position] = count
+            try:
+                mutations_array[pos + position - 1] = count
+            except Exception:
+                print(protein, pos, position)
+                raise
         pos += protein.length
 
     counts = []
@@ -1040,4 +1047,4 @@ def ptm_on_random(
     print('Permutation test values:')
     print(Series(counts).describe())
 
-    return ptm_counts, counts, p_value
+    return ptm_counts, counts, glyco_sequence_region_size, p_value

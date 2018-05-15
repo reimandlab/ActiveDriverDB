@@ -162,3 +162,27 @@ wget https://raw.githubusercontent.com/obophenotype/human-phenotype-ontology/mas
 
 
 wget ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/gene_condition_source_id
+
+# Broad Firehose - TCGA open access data
+mkdir -p firehose
+cd firehose
+wget http://gdac.broadinstitute.org/runs/code/firehose_get_latest.zip
+unzip firehose_get_latest.zip
+
+# antibodies - gene map
+./firehose_get -tasks "RPPA_AnnotateWithGene.Level_3" data latest
+cd stddata__2016_07_15
+antibodies=''
+for d in *; do
+    if [ -d ${d} ]; then
+        f="$d/20160715/gdac.broadinstitute.org_$d.RPPA_AnnotateWithGene.Level_3.2016071500.0.0.tar.gz"
+        if [ -f ${f} ]; then
+            antibodies+=$(tar --to-stdout --wildcards -xf $f "gdac.broadinstitute.org_$d.RPPA_AnnotateWithGene.Level_3.2016071500.0.0/$d.antibody_annotation.txt" | tail -n +2)
+            tar --ignore-failed-read --ignore-command-error -xzf "$f" "gdac.broadinstitute.org_$d.RPPA_AnnotateWithGene.Level_3.2016071500.0.0/$d.rppa.txt"
+        fi
+    fi
+done
+cd ..
+echo "$antibodies" | sort | uniq > gene_antibody_map.txt
+
+cd ..

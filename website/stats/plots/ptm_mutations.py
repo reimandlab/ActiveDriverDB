@@ -12,7 +12,7 @@ from ..store import cases
 from .common import site_types
 
 
-def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_to_genes: List[str]=None, occurrences=True):
+def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_to_genes: List[str]=None, occurrences=True, limit_to_muts=False):
 
     try:
         motifs_counter = MotifsCounter(site_type, mode='change_of_motif')
@@ -54,14 +54,29 @@ def gather_ptm_muts_impacts(source: MutationSource, site_type: SiteType, limit_t
 
     mutations = mutations.filter(Mutation.affected_sites.any(SiteType.fuzzy_filter(site_type, join=True)))
     if limit_to_genes is not None:
+        proteins_ids = db.session.query(Protein.id).select_from(Gene).join(Gene.preferred_isoform).filter(Gene.name.in_(limit_to_genes)).all()
         mutations = mutations.filter(
-            Gene.name.in_(limit_to_genes)
+            # this was the faulty bit!!!
+            # Gene.name.in_(limit_to_genes)
+            Protein.id.in_(proteins_ids)
         )
+
     mutations = mutations.with_entities(Gene.name, Mutation)
+
+    if limit_to_muts is not None:
+        muts = {
+            Mutation.query.filter_by(position=mut.position, alt=mut.mut_residue, protein=Protein.query.filter_by(refseq=mut.isoform).one()).one(): int(mut.count)
+            for mut in limit_to_muts.itertuples(index=False)
+        }
 
     for gene_name, mutation in tqdm(mutations, total=mutations.count()):
 
-        value = mutation.sources_map[source.name].get_value() if occurrences else 1
+        if limit_to_muts is not None:
+            if mutation not in muts:
+                continue
+            value = muts[mutation]
+        else:
+            value = mutation.sources_map[source.name].get_value() if occurrences else 1
 
         impact = mutation.impact_on_ptm(fuzzy_site_filter)
         if impact != 'direct' and mutation in all_breaking_muts:
