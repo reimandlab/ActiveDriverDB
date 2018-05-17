@@ -14,6 +14,20 @@ from helpers.plots import sequence_logo
 from .model import BioModel, make_association_table
 
 
+cache_store = []
+
+
+def cache(func):
+    decorated = lru_cache()(func)
+    cache_store.append(decorated)
+    return decorated
+
+
+def clear_cache():
+    for cached in cache_store:
+        cached.cache_clear()
+
+
 class SiteType(BioModel):
     # this table can be pre-fetched into the application
     # memory on start, as it is not supposed to change after
@@ -38,7 +52,7 @@ class SiteType(BioModel):
         )
 
     @classmethod
-    @lru_cache()
+    @cache
     def id_by_name(cls):
         return {
             site_type.name: site_type.id
@@ -46,7 +60,7 @@ class SiteType(BioModel):
         }
 
     @classmethod
-    @lru_cache()
+    @cache
     def type_by_id(cls):
         return {
             site_type.id: site_type
