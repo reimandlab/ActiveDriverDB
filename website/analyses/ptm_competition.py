@@ -68,7 +68,6 @@ def ptm_muts_around_other_ptm_sites(
 
     mut_ptm_filter = site_type_filter_from_str(mutation_ptm)
     query = (
-
         source.query
         .join(Mutation)
         .filter(mutation_filter)

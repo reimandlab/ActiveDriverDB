@@ -769,6 +769,7 @@ class Mutation(BioModel, MutatedMotifs):
         db.UniqueConstraint('alt', 'protein_id', 'position')
     )
 
+    # 1-based
     position = db.Column(db.Integer)
     alt = db.Column(db.String(1))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
@@ -839,11 +840,14 @@ class Mutation(BioModel, MutatedMotifs):
             ]
         )
 
-    @property
+    @hybrid_property
     def sites(self):
         return self.get_affected_ptm_sites()
 
-    # TODO: hybrid with `sites` property?
+    @sites.expression
+    def sites(self):
+        return self.affected_sites
+
     affected_sites = db.relationship(
         'Site',
         primaryjoin=(

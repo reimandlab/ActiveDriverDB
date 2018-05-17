@@ -273,6 +273,20 @@ class Site(BioModel):
             if abs(mutation.position - self.position) < 7
         ]
 
+    affected_by_mutations = db.relationship(
+        'Mutation',
+        primaryjoin=(
+            'and_('
+            '   Site.protein_id == foreign(Mutation.protein_id),'
+            '   Mutation.position.between(Site.position - 7, Site.position + 7)'
+            ')'
+        )
+    )
+
+    @mutations.expression
+    def mutations(self):
+        return self.affected_by_mutations
+
     def validate_position(self):
         position = self.position
         if self.protein:
