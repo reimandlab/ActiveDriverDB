@@ -382,14 +382,15 @@ def run_shell(args):
     print('Starting interactive shell...')
     app = create_app(config_override=CONFIG)
     with app.app_context():
-        import models
-
         if args.command:
             print('Executing supplied command: "%s"' % args.command)
             exec(args.command)
 
         print('You can access current application using "app" variable.')
         print('Database, models and statistics modules are pre-loaded.')
+
+        import models
+        locals().update(vars(models))
 
         fallback = False
         if not args.raw:
@@ -402,9 +403,7 @@ def run_shell(args):
 
         if fallback or args.raw:
             import code
-            all_vars = locals()
-            all_vars.update(vars(models))
-            code.interact(local=all_vars)
+            code.interact(local=locals())
 
 
 def create_parser():
