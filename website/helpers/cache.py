@@ -1,6 +1,18 @@
+from pathlib import Path
 from typing import Callable
 
-from diskcache import Cache
+from diskcache import Cache as DiskCache
+
+
+class Cache(DiskCache):
+
+    def __init__(self, directory, *args, cache_root=None, **kwargs):
+        if not cache_root:
+            cache_root = Path(__file__).absolute().parent.parent
+        path = Path(directory)
+        if not path.is_absolute():
+            path = cache_root / path
+        super().__init__(str(path), *args, **kwargs)
 
 
 def cache_decorator(cache: Cache) -> Callable:

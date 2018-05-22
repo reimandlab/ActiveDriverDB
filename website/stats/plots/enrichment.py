@@ -1,14 +1,18 @@
 from collections import defaultdict
+from pathlib import Path
 
 from helpers.plots import grouped_box_plot, p_value_annotations, box_plot
+from helpers.cache import cache_decorator, Cache
 
 from analyses.enrichment import ptm_on_random
 from models import InheritedMutation, MC3Mutation, lru_cache
+
 from ..store import cases
 from .common import site_types_with_any
 
 
 muts_cases = cases(site_type=site_types_with_any, mode=['occurrences', 'distinct']).set_mode('product')
+
 
 @lru_cache()
 def ptm_muts_enrichment_frequency(site_type, mode):
@@ -51,16 +55,12 @@ def ptm_muts_frequency_significance(site_type, mode):
 
 MODES = ['occurrences', 'distinct']
 muts_cases = cases(source=[MC3Mutation, InheritedMutation], site_type=site_types_with_any, mode=MODES).set_mode('product')
-
-from helpers.cache import cache_decorator
-from diskcache import Cache
-
 cached = cache_decorator(Cache('.enrichment_plot_cache'))
+
 
 @cached
 def ptm_muts_enrichment(source, site_type, mode, repeats=1000000):
     boxes = {}
-    significances = {}
     sources_and_filters = {
         MC3Mutation: ('TCGA', None),
         InheritedMutation: (
@@ -93,11 +93,10 @@ def calc_ptm_muts_all_together(site_type):
                 groups[key][name] = box
     return groups, significances
 
-from pathlib import Path
-
 
 def ggplot2_plot(func, width=1400, height=900, dpi=72):
     dummy_cases = cases()(lambda x: x)
+
     def wrapper(*args, **kwargs):
         ggplot2 = func(*args, **kwargs)
         print(func.__name__)

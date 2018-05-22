@@ -7,7 +7,6 @@ from functools import lru_cache
 
 import obonet as obonet
 from Levenshtein._levenshtein import ratio
-from diskcache import Cache
 from matplotlib import colors
 from matplotlib.cm import get_cmap
 from networkx.drawing import nx_agraph
@@ -16,6 +15,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
 
 from helpers.commands import get_answer
+from helpers.cache import Cache
 
 
 def choose_best_match(ontology, term, candidates, history=[]):

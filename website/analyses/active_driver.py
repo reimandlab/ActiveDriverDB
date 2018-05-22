@@ -6,7 +6,6 @@ import gc
 from traceback import print_exc
 from typing import Mapping, Union
 
-from diskcache import Cache
 from rpy2.rinterface import RRuntimeError
 from rpy2.robjects import pandas2ri, r
 from rpy2.robjects.packages import importr
@@ -17,7 +16,7 @@ from gprofiler import GProfiler
 
 from database import get_or_create, db
 from exports.protein_data import sites_ac
-from helpers.cache import cache_decorator
+from helpers.cache import cache_decorator, Cache
 from imports import MutationImportManager
 from models import Gene, GeneList, GeneListEntry, MC3Mutation, MutationSource, ClinicalData
 

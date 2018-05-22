@@ -4,7 +4,6 @@ from collections import namedtuple, Counter, defaultdict
 from functools import reduce, partial
 from statistics import median, mean
 from typing import List, NamedTuple, Mapping
-from collections import defaultdict
 
 from numpy import NaN
 from sqlalchemy import and_, func, distinct, desc
@@ -21,6 +20,7 @@ from models import (
     MutationSource, source_manager,
     SiteType,
 )
+from helpers.cache import cache_decorator, Cache
 
 
 def count_mutated_potential_sites():
@@ -659,9 +659,6 @@ def breakdown_of_ptm_mutations(gene_names: List[str], source_name: str):
     for t, count in c.items():
         print(t, count, count/a)
 
-
-from helpers.cache import cache_decorator
-from diskcache import Cache
 
 cached = cache_decorator(Cache('.enrichment_cache'))
 

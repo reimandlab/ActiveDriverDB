@@ -1,11 +1,10 @@
-from diskcache import Cache
 from numpy import percentile
 from rpy2.robjects import FloatVector, r
 from sqlalchemy import func, distinct, case, literal_column
 from tqdm import tqdm
 
 from database import db
-from helpers.cache import cache_decorator
+from helpers.cache import cache_decorator, Cache
 from models import Mutation, Protein, Site, ExomeSequencingMutation, The1000GenomesMutation, and_
 
 cached = cache_decorator(Cache('.variability_cache'))
