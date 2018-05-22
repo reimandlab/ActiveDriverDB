@@ -604,11 +604,21 @@ def active_driver_genes_enrichment(analysis_result):
     return genes_enrichment(observed_genes, cancer_genes)
 
 
-def enrichment_of_ptm_genes(reference_set, site_type_name: str):
+def enrichment_of_ptm_genes(reference_set, site_type_name: str, only_mutated_sites=False):
+    """
+    Args:
+        only_mutated_sites:
+            whether only genes with mutated sites should be considered,
+            True, False or an SQLAlchemy filter, e.g. Mutation.in_sources(MC3Mutation)
+    """
     site_type = SiteType.query.filter_by(name=site_type_name).one()
-    observed_genes = set(
+    observed_genes = (
         Gene.query.join(Gene.preferred_isoform).join(Protein.sites).filter(SiteType.fuzzy_filter(site_type))
     )
+    if only_mutated_sites is not False:
+        observed_genes = observed_genes.join(Site.mutations).filter(only_mutated_sites)
+
+    observed_genes = set(observed_genes)
 
     return genes_enrichment(observed_genes, reference_set)
 
@@ -627,8 +637,8 @@ def disease_enrichment(site_type_name='glycosylation'):
     return enrichment_of_ptm_genes(genes, site_type_name)
 
 
-def cancer_census_enrichment(site_type_name='glycosylation'):
-    return enrichment_of_ptm_genes(load_cancer_census(), site_type_name)
+def cancer_census_enrichment(site_type_name='glycosylation', **kwargs):
+    return enrichment_of_ptm_genes(load_cancer_census(), site_type_name, **kwargs)
 
 
 def breakdown_of_ptm_mutations(gene_names: List[str], source_name: str):
