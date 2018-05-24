@@ -504,6 +504,3 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     run_manage(args)
-
-else:
-    print('This script should be run from command line')
