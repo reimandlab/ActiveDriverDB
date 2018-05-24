@@ -96,17 +96,24 @@ def clinvar(site_type, subset):
     return most_mutated_sites([InheritedMutation], site_type, filters=clinvar_subsets[subset])
 
 
-both_sources_cases = cases(site_type=site_types_with_any)
-
-
-@both_sources_cases
+@clinvar_cases
 @stacked_bar_plot
-def mc3_and_clinvar(site_type):
-    return most_mutated_sites([MC3Mutation, InheritedMutation], site_type, stacked=True)
+def mc3_and_clinvar(site_type, subset):
+    return most_mutated_sites(
+        [MC3Mutation, InheritedMutation],
+        site_type,
+        stacked=True,
+        filters=clinvar_subsets[subset]
+    )
 
 
-@both_sources_cases
+@clinvar_cases
 @bar_plot
 def mc3_and_clinvar_intersection(site_type):
-    return most_mutated_sites([MC3Mutation, InheritedMutation], site_type, intersection=True)
+    return most_mutated_sites(
+        [MC3Mutation, InheritedMutation],
+        site_type,
+        intersection=True,
+        filters=clinvar_subsets[subset]
+    )
 
