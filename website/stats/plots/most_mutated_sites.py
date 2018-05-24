@@ -109,7 +109,7 @@ def mc3_and_clinvar(site_type, subset):
 
 @clinvar_cases
 @bar_plot
-def mc3_and_clinvar_intersection(site_type):
+def mc3_and_clinvar_intersection(site_type, subset):
     return most_mutated_sites(
         [MC3Mutation, InheritedMutation],
         site_type,
