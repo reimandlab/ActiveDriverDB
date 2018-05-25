@@ -588,10 +588,9 @@ def genes_enrichment(observed_genes, reference_set):
         [not_observed_from_reference, not_observed_not_in_reference]
     ]
     contingency_table = [[len(x), len(y)] for x, y in contingency_table]
-    print(contingency_table)
     oddsratio, pvalue = fisher_exact(contingency_table)
 
-    return oddsratio, pvalue
+    return contingency_table, oddsratio, pvalue
 
 
 def active_driver_genes_enrichment(analysis_result):

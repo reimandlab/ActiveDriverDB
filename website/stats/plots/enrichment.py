@@ -144,9 +144,9 @@ def ptms_enrichment_for_ggplot(site_type):
     d = DataFrame(significances)
     return d, df
 
-from helpers.plots import as_decorator
 
 ggplot_cases = cases(site_type=site_types_with_any, with_facets=[True, False, 'wrap']).set_mode('product')
+
 
 @ggplot_cases
 @ggplot2_plot
@@ -217,9 +217,10 @@ def ptm_muts_all_togethaer(site_type):
 
 
 @cases(site_type=site_types_with_any)
-def ptm_muaats_all_together_significance(site_type):
+def ptm_muts_all_together_significance(site_type):
     groups, significances = calc_ptm_muts_all_together(site_type)
     return p_value_annotations(groups, significances)
+
 
 @muts_cases
 @box_plot
