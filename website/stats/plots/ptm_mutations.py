@@ -127,7 +127,11 @@ def by_impact_clinvar_strict(site_type: SiteType):
 
     muts_by_impact_by_gene = gather_ptm_muts_impacts(
         InheritedMutation, site_type,
-        muts_filter=InheritedMutation.significance_filter('strict')
+        muts_filter=(
+            source_manager.get_relationship(InheritedMutation).has(
+                InheritedMutation.significance_filter('strict')
+            )
+        )
     )
 
     muts_by_impact = {
