@@ -1062,9 +1062,9 @@ class Mutation(BioModel, MutatedMotifs):
         }
 
     @classmethod
-    def in_sources(cls, *sources: MutationSource):
+    def in_sources(cls, *sources: MutationSource, conjunction=and_):
 
-        return and_(
+        return conjunction(
             (
                 (
                     source_manager.get_relationship(source).any()
