@@ -590,7 +590,12 @@ def genes_enrichment(observed_genes, reference_set):
     contingency_table = [[len(x), len(y)] for x, y in contingency_table]
     oddsratio, pvalue = fisher_exact(contingency_table)
 
-    return contingency_table, oddsratio, pvalue
+    expected_ratio = len(reference_set) / len(all_genes)
+    expected_count = expected_ratio * len(observed_genes)
+
+    observed_count = contingency_table[0][0]
+
+    return observed_count, expected_count, contingency_table, oddsratio, pvalue
 
 
 def active_driver_genes_enrichment(analysis_result):
@@ -762,7 +767,12 @@ def are_glycosylation_sites_mutated_more_often(source_name: str, disordered=None
     count = partial(count_mutated_sites, model=source, only_primary=True, disordered=disordered)
 
     glyco_filter = SiteType.fuzzy_filter(glycosylation, join=True)
-    non_glyco_filter = Site.types.any(SiteType.id.in_([site_type.id for site_type in non_glycosylation]))
+    glycosylation_types = SiteType.query.filter(
+        SiteType.name.contains('glycosylation')
+    ).all()
+    non_glyco_filter = Site.types.any(
+        ~SiteType.id.in_([site_type.id for site_type in glycosylation_types])
+    )
 
     mutated_glycosylation = count(custom_filter=glyco_filter)
     mutated_non_glycosylation = count(custom_filter=non_glyco_filter)
@@ -787,8 +797,13 @@ def are_glycosylation_sites_mutated_more_often(source_name: str, disordered=None
 def are_glycosylation_sites_mutated_more_often_all():
     for disordered in [True, False, None]:
         for source in source_manager.confirmed:
-            print(source.name, disordered)
-            are_glycosylation_sites_mutated_more_often(source.name, disordered=disordered, alternative='less' if disordered else 'greater')
+            alternative = 'less' if disordered else 'greater'
+            result = are_glycosylation_sites_mutated_more_often(
+                source.name,
+                disordered=disordered,
+                alternative=alternative
+            )
+            yield source.name, disordered, result, alternative
 
 
 def are_glycosylation_sites_enriched(source_name: str, population_name: str, disordered=None, alternative='greater'):
@@ -797,8 +812,12 @@ def are_glycosylation_sites_enriched(source_name: str, population_name: str, dis
     glycosylation = SiteType.query.filter_by(name='glycosylation').one()
     glyco_filter = SiteType.fuzzy_filter(glycosylation, join=True)
 
-    non_glycosylation = SiteType.query.filter(~SiteType.name.contains('glycosylation')).all()
-    non_glyco_filter = Site.types.any(SiteType.id.in_([site_type.id for site_type in non_glycosylation]))
+    glycosylation_types = SiteType.query.filter(
+        SiteType.name.contains('glycosylation')
+    ).all()
+    non_glyco_filter = Site.types.any(
+        ~SiteType.id.in_([site_type.id for site_type in glycosylation_types])
+    )
 
     source = source_manager.source_by_name[source_name]
     population = source_manager.source_by_name[population_name]
