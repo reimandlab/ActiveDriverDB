@@ -228,7 +228,7 @@ def send_message(**kwargs):
     html = kwargs.pop('html', None)
 
     if html and not body:
-        soup = BeautifulSoup(html)
+        soup = BeautifulSoup(html, 'html.parser')
         for link in soup.select('a'):
             link.append(': ' + link.attrs['href'])
             link.unwrap()

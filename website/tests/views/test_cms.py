@@ -13,7 +13,7 @@ from database import db
 
 
 def find_links(html, **attrs):
-    soup = BeautifulSoup(html)
+    soup = BeautifulSoup(html, 'html.parser')
     return soup.findAll('a', attrs=attrs)
 
 
@@ -548,7 +548,7 @@ class TestCMS(ViewTest):
         # correct token should result in form generation
         response = self.client.get(path, follow_redirects=True)
         for field_name in ['password', 'confirm_password']:
-            assert BeautifulSoup(response.data).select_one('input[name="%s"]' % field_name)
+            assert BeautifulSoup(response.data, 'html.parser').select_one('input[name="%s"]' % field_name)
 
         data_validation = {
             'Provided passwords do not match!': ['someStrongPassword', 'ehmIAlreadyForgot..'],
@@ -587,7 +587,7 @@ class TestCMS(ViewTest):
         # is the form working? does it include email input?
         response = self.client.get('/reset_password/')
         assert response.status_code == 200
-        assert BeautifulSoup(response.data).select_one('input[name="email"]')
+        assert BeautifulSoup(response.data, 'html.parser').select_one('input[name="email"]')
 
         # the user is unverified but wait, we don't want to disclose that they even exists!
         # we should claim that mail was sent (but it should not be sent)

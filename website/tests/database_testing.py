@@ -22,6 +22,8 @@ class DatabaseTest(TestCase):
     BDB_GENE_TO_ISOFORM_PATH = '.test_databases/gti.db'
     SQL_LEVENSTHEIN = False
     USE_LEVENSTHEIN_MYSQL_UDF = False
+    CONTACT_LIST = ['dummy.maintainer@domain.org']
+    SCHEDULER_ENABLED = True
 
     SECRET_KEY = 'test_key'
 
@@ -102,4 +104,4 @@ class DatabaseTest(TestCase):
         try:
             scheduler.shutdown()
         except SchedulerNotRunningError:
-            warn('Scheduler was not running at the ned of the test')
+            warn('Scheduler was not running at the end of the test')
