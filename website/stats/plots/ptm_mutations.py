@@ -124,6 +124,7 @@ impact_cases = cases(source=[InheritedMutation, MC3Mutation], site_type=site_typ
 @cases(site_type=site_types)
 @pie_chart
 def by_impact_clinvar_strict(site_type: SiteType):
+    from models import source_manager
 
     muts_by_impact_by_gene = gather_ptm_muts_impacts(
         InheritedMutation, site_type,
