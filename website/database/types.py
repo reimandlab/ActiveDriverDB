@@ -1,9 +1,8 @@
 from sqlalchemy import TypeDecorator, Text
 from sqlalchemy.dialects import mysql
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.ext.mutable import Mutable
+from sqlalchemy.ext.mutable import MutableSet
 
-from berkley_db import SetWithCallback
 from database import db
 
 
@@ -76,25 +75,6 @@ class ScalarSet(TypeDecorator):
 
     def coerce_compared_value(self, op, value):
         return self.impl.coerce_compared_value(op, value)
-
-
-class MutableSet(Mutable, SetWithCallback):
-
-    def __init__(self, items):
-        SetWithCallback.__init__(self, items, lambda s: self.changed())
-
-    @classmethod
-    def coerce(cls, key, value):
-        """Convert plain set to MutableSet."""
-
-        if not isinstance(value, MutableSet):
-            if isinstance(value, set):
-                return MutableSet(value)
-
-            # this call will raise ValueError
-            return Mutable.coerce(key, value)
-        else:
-            return value
 
 
 MutableSet.associate_with(ScalarSet)
