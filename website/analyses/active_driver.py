@@ -18,7 +18,7 @@ from database import get_or_create, db
 from exports.protein_data import sites_ac
 from helpers.cache import cache_decorator, Cache
 from imports import MutationImportManager
-from models import Gene, GeneList, GeneListEntry, MC3Mutation, MutationSource, ClinicalData
+from models import Gene, GeneList, GeneListEntry, MC3Mutation, MutationSource, ClinicalData, InheritedMutation, Protein, Mutation
 
 from ._paths import ANALYSES_OUTPUT_PATH
 
@@ -255,3 +255,49 @@ def pan_cancer_analysis(site_type: str):
 def clinvar_analysis(site_type: str, mode='strict'):
     significances = ClinicalData.significance_subsets[mode]
     return source_specific_analysis('clinvar', site_type, mutation_query=f'significance in {significances}')
+
+
+def mutations_from_significant_genes(result: ActiveDriverResult, mutation_model=MC3Mutation, cancer_type=None, keep_model=False):
+
+    details_filters = {
+        MC3Mutation: lambda mutation: MC3Mutation.cancer_code == mutation.cancer_type,
+        InheritedMutation: lambda mutation: (
+            InheritedMutation.clin_data.any(
+                ClinicalData.disease_name == mutation.disease
+            )
+        )
+    }
+
+    mutations = result['all_active_mutations']
+    mutations = mutations.merge(result['top_fdr'], on='gene')
+    int_columns = ['count', 'position', 'active_region']
+    mutations[int_columns] = mutations[int_columns].astype(int)
+
+    if cancer_type:
+        mutations = mutations[mutations.cancer_type == cancer_type]
+
+    details_filter = details_filters[mutation_model]
+
+    mutations = mutations.assign(mutation=Series(
+        mutation_model.query.filter_by(
+            mutation=Mutation.query.filter_by(
+                protein=Protein.query.filter_by(refseq=mutation.isoform).one(),
+                position=mutation.position,
+                alt=mutation.mut_residue
+            ).one()
+        ).filter(details_filter(mutation))
+        .one()
+        for mutation in mutations.itertuples(index=False)
+    ).values)
+
+    if mutation_model is MC3Mutation:
+        mutations = mutations.assign(
+            barcodes=mutations.mutation.apply(
+                lambda mut: mut.samples
+            )
+        )
+
+    if not keep_model:
+        mutations = mutations.drop(['mutation'], axis=1)
+
+    return mutations
