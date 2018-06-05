@@ -8,6 +8,7 @@ from pandas import Series, DataFrame
 from sqlalchemy import func
 
 from analyses import per_cancer_analysis, pan_cancer_analysis, clinvar_analysis
+from analyses.active_driver import mutations_from_significant_genes
 from analyses.enrichment import active_driver_genes_enrichment
 from database import db
 from helpers.plots import bar_plot, stacked_bar_plot
@@ -181,56 +182,87 @@ def ontology_plots(
     path = Path('analyses_output') / 'active_driver_plots' / analysis_name
     path.mkdir(parents=True, exist_ok=True)
 
+    plots = {}
     for name, ontology in ontologies.items():
         subsets = ontology_subsets.get(name, [None])
         for subset in subsets:
             for above_percentile in thresholds:
-                graph = ontology.process_graph(terms, above_percentile, root_name=subset, allow_misses=allow_misses)
-                draw_ontology_graph(
+                graph = ontology.process_graph(terms, above_percentile, root_name=subset, allow_misses=allow_misses, show_progress=True)
+                plot = draw_ontology_graph(
                     graph,
                     path / f'{name}_{above_percentile}{"_" + subset if subset else ""}.{"svg" if vector else "png"}',
                     unflatten
                 )
+                plots[name, subset, above_percentile] = plot
+    return plot
 
 
-@cases(site_type=site_types)
-def cancers_ontology(site_type, vector=False):
-    result = pan_cancer_analysis(site_type)
-    cancer_by_code = {cancer.code: cancer.name for cancer in Cancer.query}
+def cancer_mutations(result, significant=True):
+    mutations = (
+        mutations_from_significant_genes(result, mutation_model=MC3Mutation)
+        if significant else
+        result['all_active_mutations']
+    )
 
-    mutations = result['all_active_mutations']
     mutations = mutations.assign(cancer_name=Series(
         cancer_by_code[mutation.cancer_type]
         for mutation in mutations.itertuples(index=False)
     ).values)
 
+    return mutations
+
+
+def merged_cancer_mutations(site_type):
+    all_cancer_mutations = [cancer_mutations(pan_cancer_analysis(site_type))]
+    ad_per_cancer = per_cancer_analysis(site_type)
+    for cancer_type, result in ad_per_cancer.items():
+        mutations = cancer_mutations(result, cancer_type=cancer_type)
+        all_cancer_mutations.append(mutations)
+
+
+@cases(site_type=site_types)
+def cancers_ontology(site_type, significant=True, vector=False):
+    result = pan_cancer_analysis(site_type)
+    cancer_by_code = {cancer.code: cancer.name for cancer in Cancer.query}
+
+    mutations = cancer_mutations(result, significant=significant)
+
     terms = counts_by('cancer_name', mutations)
 
-    ontology_plots(
+    return ontology_plots(
         terms, 'cancers', vector,
         [0, 70, 75, 80, 85, 90, 95],
         allow_misses=False, limit_to=['diseases', 'mondo']
     )
 
 
+def disease_mutations(result, significant=True):
+    mutations = (
+        mutations_from_significant_genes(result, mutation_model=InheritedMutation)
+        if significant else
+        result['all_active_mutations']
+    )
+    return mutations
+
+
 @cases(site_type=site_types)
-def diseases_wordcloud(site_type):
+def diseases_wordcloud(site_type, significant=True):
     result = clinvar_analysis(site_type.name)
+    mutations = disease_mutations(result)
     print(
         'Copy-pase following text into a wordcloud generation program, '
         'e.g. https://www.jasondavies.com/wordcloud/'
     )
-    print(' '.join(result['all_active_mutations'].disease))
+    print(' '.join(mutations.disease))
 
 
 @cases(site_type=site_types)
-def diseases_ontology(site_type, vector=False):
-    # NOTE: This is the number of unique mutations, it does not look at the counts!
+def diseases_ontology(site_type, significant=True, vector=False):
     result = clinvar_analysis(site_type.name)
-    mutations = result['all_active_mutations']
+    mutations = disease_mutations(result)
     terms = counts_by('disease', mutations)
 
-    ontology_plots(terms, 'diseases', vector)
+    return ontology_plots(terms, 'diseases', vector)
 
 
 @cases(site_type=site_types)
