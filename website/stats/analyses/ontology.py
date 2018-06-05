@@ -1,4 +1,7 @@
 import re
+from tempfile import NamedTemporaryFile
+from pathlib import Path
+from base64 import b64encode
 from typing import Dict, Counter
 
 import networkx
@@ -83,6 +86,8 @@ class Ontology:
 
     def __init__(self, obo_path):
         self.ontology = obonet.read_obo(obo_path)
+        # initialize cached propertry with side effects
+        self.by_name
 
     @property
     @lru_cache()
@@ -102,6 +107,19 @@ class Ontology:
                 print(f'No name for node: {node_id}')
 
         return nodes_by_name
+
+    @property
+    @lru_cache()
+    def by_xrefs(self):
+
+        nodes_by_xref = {}
+
+        for node_id, data in self.ontology.nodes(data=True):
+            if 'xref' in data:
+                for xref in data['xref']:
+                    nodes_by_xref[xref] = node_id
+
+        return nodes_by_xref
 
     @property
     @lru_cache()
@@ -160,7 +178,7 @@ class Ontology:
     def __getattr__(self, item):
         return getattr(self.ontology, item)
 
-    def find_terms(self, terms: Dict[str, int], allow_misses=True, re_run=False) -> Dict[str, int]:
+    def find_terms(self, terms: Dict[str, int], allow_misses=True, re_run=False, show_progress=False) -> Dict[str, int]:
         detected_nodes = Counter()
         missed_terms = set()
 
@@ -168,7 +186,9 @@ class Ontology:
 
         vec = TfidfVectorizer()
 
-        for term, count in tqdm(terms.items(), total=len(terms)):
+        terms_items = tqdm(terms.items(), total=len(terms)) if show_progress else terms.items()
+
+        for term, count in terms_items:
             cache_key = (self.name, term)
             if not re_run and cache_key in cache:
                 chosen_nodes = cache[cache_key]
@@ -272,16 +292,16 @@ class Ontology:
                     detected_nodes[node_id] += per_node_count
 
         found = len(terms) - len(missed_terms)
-        print(f'Mapped {found} terms to {len(detected_nodes)} nodes ({found / len(terms) * 100}% of terms mapped)')
-        without_hemoglobin = [
-            t for t in terms.keys()
-            if not t.lower().startswith("hemoglobin")
-        ]
-        print(f'{found / len(without_hemoglobin) * 100}% when ignoring hemoglobin types')
+        print(f'Mapped {found} terms to {len(detected_nodes)} nodes ({found / len(terms) * 100:.2f}% of terms mapped)')
+        # without_hemoglobin = [
+        #     t for t in terms.keys()
+        #     if not t.lower().startswith("hemoglobin")
+        # ]
+        # print(f'{found / len(without_hemoglobin) * 100}% when ignoring hemoglobin types')
         return detected_nodes
 
     def propagate_terms_counts(self, starting_nodes):
-        propagated_terms = Counter()
+        propagated_terms = Counter()# defaultdict(int)
 
         for starting_node, count in starting_nodes.items():
 
@@ -297,25 +317,51 @@ class Ontology:
                     data = self.nodes[node]
 
                     if data:
-                        name = data['name']
-                        propagated_terms[name] += count
+                        propagated_terms[data['name']] += count
                     else:
-                        print(f'No data for {node} {name}')
+                        # not a known issue
+                        if not node.startswith('https://github.com/NCI-Thesaurus/thesaurus-obo-edition/issues'):
+                            print(f'No data for {node}')
 
-                    candidate_nodes = {
+                    candidate_nodes = [
                         node
                         for current_node, node in self.ontology.out_edges(node)
                         if not (node in visited or node in next_nodes or node in nodes)
-                    }
+                    ]
 
                     next_nodes.update(candidate_nodes)
 
         return propagated_terms
 
-    def process_graph(self, terms, include_above_percentile=0, root_name=None, color_map_name=None, allow_misses=True):
+    def find_by_xrefs(self, terms, show_progress=False, verbose=True):
+        terms_items = (
+            tqdm(terms.items(), total=len(terms))
+            if show_progress else
+            terms.items()
+        )
+        detected_nodes = {
+            self.by_xrefs[term]: count
+            for term, count in terms_items
+            if term in self.by_xrefs
+        }
+        if verbose:
+            print(f'Mapped {len(detected_nodes)} (or {len(detected_nodes)  / len(terms) * 100:.2f}%) of {len(terms)} terms')
+        return detected_nodes
 
-        nodes_of_mapped_terms = self.find_terms(terms, allow_misses=allow_misses)
+    def process_graph(self, terms, include_above_percentile=0, root_name=None, color_map_name=None, allow_misses=True, show_all_terms=False, xrefs=False, show_progress=False):
+
+        if not xrefs:
+            nodes_of_mapped_terms = self.find_terms(terms, allow_misses=allow_misses, show_progress=show_progress)
+        else:
+            nodes_of_mapped_terms = self.find_by_xrefs(terms, show_progress=show_progress)
+
         counts = self.propagate_terms_counts(nodes_of_mapped_terms)
+
+        terms_to_include = self.select_terms(counts, include_above_percentile, root_name)
+
+        return self.subgraph_for_drawing(terms_to_include, nodes_of_mapped_terms, counts, color_map_name=color_map_name)
+
+    def select_terms(self, counts, include_above_percentile=0, root_name=None):
 
         terms_to_include = []
 
@@ -333,18 +379,27 @@ class Ontology:
                     (not root or self.is_descendant_of(root, self.by_name[term]))
                     and
                     (not include_above_percentile or (
-                        count > p_all
-                        # count > p_terms if term in nodes_of_mapped_terms else count > p_all
+                        (count > p_all)
+                        #if not show_all_terms else
+                        #(True if term in nodes_of_mapped_terms else count > p_all)
                     ))
             )
         ]
+
+        if not terms_to_include:
+            print(f'No nodes above {include_above_percentile} percentile for {root_name} root')
+            return terms_to_include
+
+        return terms_to_include
+
+    def subgraph_for_drawing(self, terms_to_include, nodes_of_mapped_terms, counts, color_map_name=None):
 
         g = self.subgraph([
             node for node, data in self.nodes(data=True) if data.get('name', None) in terms_to_include
         ])
         g = g.reverse()
+
         if not g.nodes():
-            print(f'No nodes above {include_above_percentile} percentile for {root_name} root')
             return g
 
         graph_counts = {node: counts[data['name']] for node, data in g.nodes(data=True)}
@@ -378,14 +433,40 @@ def compare_generalized(term, name):
     return compare(name.replace('(disease)', ''), term)
 
 
-def draw_ontology_graph(g, path, unflatten=900):
+class OntologyPlot:
+
+    def __init__(self, path, embed=True):
+        self.path = path
+        self.embed = embed
+
+    def _repr_html_(self):
+        if self.embed:
+            with open(self.path, 'rb') as f:
+                encoded = str(b64encode(f.read())).lstrip('b\'').rstrip('\'')
+                return f'<img src="data:image/png;base64,{encoded}">'
+
+        return f'<img src="{self.path}">'
+
+
+def draw_ontology_graph(g, path=None, unflatten=900, embed=True):
     a = nx_agraph.to_agraph(g)
 
     if len(g.nodes) < 20:
         unflatten = 0
 
-    a.unflatten(f'-l {unflatten} -f')
+    if unflatten:
+        a.unflatten(f'-l {unflatten} -f')
     a.layout('dot', args='-Nfontsize=14 -Nwidth=".2" -Nheight=".2" -Nmargin=.1 -Gfontsize=8 -Earrowsize=.5')
-    a.draw(str(path))
 
-    return a
+    if path:
+        return a.draw(str(path))
+    else:
+
+        dir_path = Path('images')
+        dir_path.mkdir(exist_ok=True)
+        temp_file = NamedTemporaryFile(delete=False, dir=dir_path, suffix='.png')
+        temp_file.close()
+        a.draw(temp_file.name)
+        relative_path = Path(temp_file.name).relative_to(dir_path.parent.absolute())
+
+        return OntologyPlot(relative_path, embed)
