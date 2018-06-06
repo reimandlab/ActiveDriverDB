@@ -83,6 +83,8 @@ def proteins_and_genes(path='data/protein_data.tsv'):
         ('cdsEnd', 'cds_end')
     ]
 
+    allowed_strands = ['+', '-']
+
     # a list storing refseq ids which occur at least twice in the file
     with_duplicates = []
     potentially_empty_genes = set()
@@ -98,18 +100,28 @@ def proteins_and_genes(path='data/protein_data.tsv'):
 
     def parser(line):
 
-        # load gene
+        # use name2 (fourth column from the end)
         name = line[-4]
+
+        strand = line[3]
+        assert strand in allowed_strands
+
+        gene_data = {
+            'name': name,
+            'chrom': line[2][3:],    # remove chr prefix
+            'strand': True if strand == '+' else False
+        }
+
         if name.lower() not in genes:
-            gene_data = {
-                'name': name,
-                'chrom': line[2][3:],    # remove chr prefix
-                'strand': 1 if '+' else 0
-            }
             gene = Gene(**gene_data)
             genes[name.lower()] = gene
         else:
             gene = genes[name.lower()]
+            for key, value in gene_data.items():
+                previous = getattr(gene, key)
+                if previous != value:
+                    print(f'Replacing {gene} {key} with {value} (previously: {previous})')
+                    setattr(gene, key, value)
 
         # load protein
         refseq = line[1]
