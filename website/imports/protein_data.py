@@ -120,7 +120,7 @@ def proteins_and_genes(path='data/protein_data.tsv'):
             for key, value in gene_data.items():
                 previous = getattr(gene, key)
                 if previous != value:
-                    print(f'Replacing {gene} {key} with {value} (previously: {previous})')
+                    print('Replacing %s %s with %s (previously: %s)' % (gene, key, value, previous))
                     setattr(gene, key, value)
 
         # load protein
