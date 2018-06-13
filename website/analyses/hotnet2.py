@@ -223,7 +223,7 @@ def export_heat_file_combined(site_type, score_by='p', mode='max'):
     else:
         raise ValueError(f'Wrong mode: {mode}')
 
-    combined_scores.to_csv('hotnet_input_heat_combined', sep='\t', header=False)
+    combined_scores.to_csv(f'hotnet_input_heat_combined_{mode}_{score_by}', sep='\t', header=False)
 
 
 def run_all(site_type: str, **kwargs):
@@ -266,7 +266,6 @@ def visualize_subnetwork(gene_names, source='MC3', site_type_name='glycosylation
         gene = Gene.query.filter_by(name=gene_name).one()
         protein = gene.preferred_isoform
         muts = [m for m in protein.mutations if source in m.sources]
-        codes = set()
 
         for mut in muts:
             count = 1 if mode == 'unique' else mut.meta_MC3.get_value()
