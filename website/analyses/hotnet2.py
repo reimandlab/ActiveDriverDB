@@ -147,14 +147,10 @@ def run_on_active_driver_results(
         print('Creating network files...')
         hotnet.create_network_files(networks, num_network_permutations, num_cores)
 
-    df = active_driver_results['all_gene_based_fdr']
-    df[score_by] = - np.log10(df[score_by])
-    df = df.set_index('gene')[score_by]
-
     with NamedTemporaryFile('w') as input_heat_file, NamedTemporaryFile('w', suffix='.json') as output_heat_file:
 
         # generate initial heat (genes/nodes value = p-values from AD)
-        df.to_csv(input_heat_file.name, sep='\t', header=False)
+        export_heat_file(active_driver_results, input_heat_file.name, score_by=score_by)
 
         # convert the heat file into HotNet json file
         results = hotnet.command(
@@ -192,7 +188,16 @@ def run_on_active_driver_results(
         print(f'{interpreter.absolute()} server.py -i {output_dir.absolute()}')
 
 
-def export_both(site_type, score_by='p', mode='max'):
+def export_heat_file(active_driver_result: ActiveDriverResult, heat_file_path: str, score_by='p'):
+    if heat_file_path.endswith('.json'):
+        raise ValueError('This function is not meant to generate json heat file!')
+    df = active_driver_result['all_gene_based_fdr']
+    df[score_by] = - np.log10(df[score_by])
+    df = df.set_index('gene')[score_by]
+    df.to_csv(heat_file_path, sep='\t', header=False)
+
+
+def export_heat_file_combined(site_type, score_by='p', mode='max'):
 
     analyses = [active_driver.pan_cancer_analysis, active_driver.clinvar_analysis]
     scores = []
@@ -260,7 +265,7 @@ def visualize_subnetwork(gene_names, source='MC3', site_type_name='glycosylation
     for gene_name in tqdm(gene_names):
         gene = Gene.query.filter_by(name=gene_name).one()
         protein = gene.preferred_isoform
-        muts = [m for m in protein.mutations if 'MC3' in m.sources]
+        muts = [m for m in protein.mutations if source in m.sources]
         codes = set()
 
         for mut in muts:
