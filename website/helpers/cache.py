@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Callable
+from warnings import warn
 
 from diskcache import Cache as DiskCache
 
@@ -37,7 +38,10 @@ def cache_decorator(cache: Cache) -> Callable:
 
         def clean_cache(*args, **kwargs):
             key = create_key(name, *args, **kwargs)
-            del cache[key]
+            try:
+                del cache[key]
+            except KeyError:
+                warn('Cache was already clean')
 
         def cache_manager(*args, **kwargs):
 
@@ -46,7 +50,10 @@ def cache_decorator(cache: Cache) -> Callable:
             if key not in cache:
                 cache[key] = func(*args, **kwargs)
             else:
-                print(f'Using cached result of {name}({", ".join(map(repr, args))})')
+                a = ", ".join(map(repr, args))
+                b = ", ".join(f'{key}={value}' for key, value in kwargs.items())
+                signature = a + (',' + b if b else '')
+                print(f'Using cached result of {name}({signature})')
 
             return cache[key]
 
