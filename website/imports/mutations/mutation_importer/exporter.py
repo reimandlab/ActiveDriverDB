@@ -34,6 +34,7 @@ class MutationExporter:
             only_preferred: include only mutations from preferred isoforms of genes
             mutation_filter: SQLAlchemy filter for mutations
                 (to be applied to joined self.model and Mutations tables)
+            protein_filter: SQLAlchemy filter for proteins
 
         Returns:
             tuples with fields as returned by self.export_header
@@ -52,6 +53,7 @@ class MutationExporter:
             .options(load_only('sequence', 'refseq'))
             .join(Gene, Protein.gene_id == Gene.id)
             .filter(protein_filter if protein_filter is not None else True)
+            .filter(Protein.is_preferred_isoform if only_preferred is not False else True)
         )
 
         gene_name_by_protein = {
@@ -61,20 +63,23 @@ class MutationExporter:
 
         export_details = self.export_details
 
-        query = db.session.query(self.model, Mutation).select_from(self.model).join(Mutation)
+        query = (
+            db.session.query(self.model, Mutation)
+            .select_from(self.model)
+            .join(Mutation)
+            .join(Protein)
+            .filter(protein_filter if protein_filter is not None else True)
+            .filter(Protein.is_preferred_isoform if only_preferred is not False else True)
+        )
 
         if mutation_filter is not None:
             query = query.filter(mutation_filter)
-            total = query.count()
-        else:
-            total = fast_count(db.session.query(self.model))
+
+        total = query.count()
 
         for mutation_details, mut in tqdm(query, total=total):
 
             protein = mut.protein
-
-            if only_preferred and protein.id not in preferred_isoforms:
-                continue
 
             try:
                 ref = mut.ref
@@ -93,6 +98,7 @@ class MutationExporter:
                 )
 
     def export_to_df(self, only_preferred=False, mutation_filter=None, protein_filter=None) -> DataFrame:
+        """Export mutations to pandas.DataFrame. Arguments as in self.iterate_export."""
 
         mutations = [
             mutation
