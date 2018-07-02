@@ -81,9 +81,12 @@ $search-box-width: 300px
     right: 4.5%
     top: 30%
     color: lightblue
+    transition: all .3s ease-in-out
+    opacity: 1
 
   input:focus+.glyphicon-search
-    display: none
+    right: 0
+    opacity: 0
 
   .glyphicon-search
     color: #68696b
@@ -94,20 +97,31 @@ $search-box-width: 300px
 
   .list-group-item
     overflow: auto
+    background-position: right bottom
+    background-size: 200% 100%
 
-    &:focus
+    &:focus, &.focus
       outline: none
+      color: #555
+      text-decoration: none
+      background-color: #f5f5f5
+      background-image: linear-gradient(to left, #f5f5f5 50%, #e5e5e5 50%, #e8e8e8 51%, #f1f1f1 55%)
+      transition: background-position .5s ease-out
 
     .more
       float: right
       margin-right: 1%
 
+    &.item-loading
+      background-position: left bottom
 
   .bar-results
     position: absolute
     right: 0
     z-index: 20
     display: none
+    box-shadow: 0 1px 3px rgba(10, 10, 70, 0.10)
+    border-radius: 4px
 
 
 .export button::before
