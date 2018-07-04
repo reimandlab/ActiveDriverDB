@@ -63,7 +63,7 @@ def create_cancer_meta_manager(meta_name):
                 filter(self.data)
             ]
 
-            return {meta_name + 'metadata': cancer_occurrences}
+            return {'Cancers': cancer_occurrences}
 
         def summary(self, filter=lambda x: x):
             return [

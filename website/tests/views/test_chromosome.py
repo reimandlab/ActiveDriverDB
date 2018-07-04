@@ -58,7 +58,7 @@ class TestChromosomeView(ViewTest):
         response = self.client.get(mutation_a15v_query)
 
         metadata = {
-            'MC3': {'MC3metadata': [{'Cancer': 'Breast invasive carcinoma', 'Value': 1}]},
+            'MC3': {'Cancers': [{'Cancer': 'Breast invasive carcinoma', 'Value': 1}]},
             'ESP6500': {'MAF': 0.02, 'MAF AA': 0.02, 'MAF EA': None}
         }
 
