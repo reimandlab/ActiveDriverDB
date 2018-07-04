@@ -55,6 +55,7 @@ class MC3Importer(TCGAImporter):
         )
         hypermutated = hypermutated_samples(path)
         self.samples_to_skip = set(hypermutated.keys())
-        print('%s samples are hypermutated and will be skipped at import.')
+        hypermutated_count = len(self.samples_to_skip)
+        print(f'{hypermutated_count} samples are hypermutated and will be skipped at import.')
 
         return super().parse(path)
