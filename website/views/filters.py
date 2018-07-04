@@ -1,11 +1,13 @@
-from models import MC3Mutation, DrugGroup, Drug, Disease, source_manager, SiteType
+from sqlalchemy import exists
+
+from models import MC3Mutation, DrugGroup, Drug, Disease, source_manager, SiteType, PCAWGMutation
 from models import Cancer
 from models import Mutation
 from models import Site
 from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
 from models import ClinicalData
-from database import has_or_any
+from database import has_or_any, db
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 
@@ -131,7 +133,14 @@ class CachedQueries:
             disease.id: disease.name
             for disease in sorted(Disease.query, key=lambda disease: disease.name.lower())
         })
-        self.all_cancer_codes_mc3 = [cancer.code for cancer in Cancer.query]
+        self.all_cancer_codes_mc3 = [
+            cancer.code for cancer in Cancer.query
+            if db.session.query(exists().where(MC3Mutation.cancer == cancer)).scalar()
+        ]
+        self.all_cancer_codes_pcawg = [
+            cancer.code for cancer in Cancer.query
+            if db.session.query(exists().where(PCAWGMutation.cancer == cancer)).scalar()
+        ]
         self.all_cancer_names = {
             cancer.code: '%s (%s)' % (cancer.name, cancer.code)
             for cancer in Cancer.query
@@ -189,9 +198,11 @@ def source_dependent_filters(protein=None):
 
     if protein:
         cancer_codes_mc3 = protein.cancer_codes(MC3Mutation)
+        cancer_codes_pcawg = protein.cancer_codes(PCAWGMutation)
         disease_names_by_id = protein.disease_names_by_id
     else:
         cancer_codes_mc3 = cached_queries.all_cancer_codes_mc3
+        cancer_codes_pcawg = cached_queries.all_cancer_codes_pcawg
         disease_names_by_id = cached_queries.all_disease_names_by_id
 
     # Python 3.4: cast keys() to list
@@ -206,6 +217,14 @@ def source_dependent_filters(protein=None):
             choices=cached_queries.all_cancer_codes_mc3,
             default=cancer_codes_mc3,
             source='MC3',
+            multiple='any',
+        ),
+        MutationDetailsFilter(
+            PCAWGMutation, 'pcawg_cancer_code',
+            comparators=['in'],
+            choices=cached_queries.all_cancer_codes_pcawg,
+            default=cancer_codes_pcawg,
+            source='PCAWG',
             multiple='any',
         ),
         MutationDetailsFilter(
@@ -271,9 +290,11 @@ def source_dependent_filters(protein=None):
 def create_dataset_specific_widgets(protein, filters_by_id, population_widgets=True):
     if protein:
         cancer_codes_mc3 = protein.cancer_codes(MC3Mutation)
+        cancer_codes_pcawg = protein.cancer_codes(PCAWGMutation)
         disease_names_by_id = protein.disease_names_by_id
     else:
         cancer_codes_mc3 = [] #cached_queries.all_cancer_codes_mc3
+        cancer_codes_pcawg = []
         disease_names_by_id = cached_queries.all_disease_names_by_id
 
     widgets = [
@@ -282,6 +303,12 @@ def create_dataset_specific_widgets(protein, filters_by_id, population_widgets=T
             filter=filters_by_id['Mutation.mc3_cancer_code'],
             labels=cached_queries.all_cancer_names,
             choices=cancer_codes_mc3,
+            all_selected_label='Any cancer type'
+        ),
+        FilterWidget(
+            'Cancer type', 'checkbox_multiple',
+            filter=filters_by_id['Mutation.pcawg_cancer_code'],
+            choices=cancer_codes_pcawg,
             all_selected_label='Any cancer type'
         ),
         FilterWidget(
