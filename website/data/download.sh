@@ -186,3 +186,6 @@ cd ..
 echo "$antibodies" | sort | uniq > gene_antibody_map.txt
 
 cd ..
+
+# expression
+./firehose_get -tasks Merge_rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes_normalized__data.Level_3 data latest
