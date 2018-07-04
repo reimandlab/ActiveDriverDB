@@ -62,6 +62,8 @@ class TCGAImporter(MutationImporter):
             cancer, created = get_or_create(Cancer, name=cancer_name)
 
             if created:
+                # set code (temporarily) to the cancer name
+                cancer.code = cancer_name
                 db.session.add(cancer)
 
             for mutation_id in self.preparse_mutations(line):

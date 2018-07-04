@@ -23,7 +23,7 @@ class MutationExporter:
     def export_details(self, mutation):
         return [],  # returns a tuple with empty list inside
 
-    def iterate_export(self, only_preferred=False, mutation_filter=None, protein_filter=None):
+    def iterate_export(self, only_preferred=False, mutation_filter=None, protein_filter=None, show_progress=True):
         """Yield tuples with mutations data prepared for export.
 
         A single mutation will be spread over multiple rows if it is necessary
@@ -35,6 +35,7 @@ class MutationExporter:
             mutation_filter: SQLAlchemy filter for mutations
                 (to be applied to joined self.model and Mutations tables)
             protein_filter: SQLAlchemy filter for proteins
+            show_progress: wheter to show progress bar
 
         Returns:
             tuples with fields as returned by self.export_header
@@ -97,7 +98,7 @@ class MutationExporter:
                     str(mut.position), ref, mut.alt, *instance
                 )
 
-    def export_to_df(self, only_preferred=False, mutation_filter=None, protein_filter=None) -> DataFrame:
+    def export_to_df(self, only_preferred=False, mutation_filter=None, protein_filter=None, show_progress=True) -> DataFrame:
         """Export mutations to pandas.DataFrame. Arguments as in self.iterate_export."""
 
         mutations = [
@@ -105,7 +106,8 @@ class MutationExporter:
             for mutation in self.iterate_export(
                 only_preferred=only_preferred,
                 mutation_filter=mutation_filter,
-                protein_filter=protein_filter
+                protein_filter=protein_filter,
+                show_progress=show_progress
             )
         ]
 
