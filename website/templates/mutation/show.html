@@ -113,7 +113,7 @@
               <span class="empty">no data</span>
             {% endif %}
           </div>
-          <h4>Cancer types: <span class="source">(TCGA PCAWG)</span></h4>
+          <h4>Cancer types: <span class="source">(PCAWG)</span></h4>
           <div class="clinical-data">
             {% if mutation.meta_PCAWG %}
               {{ mutation.meta_PCAWG.summary() | join(', ') }}
