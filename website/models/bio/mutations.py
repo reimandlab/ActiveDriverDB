@@ -275,6 +275,15 @@ class CancerMutation(ManagedMutationDetails):
         return self.cancer_code
 
 
+class PCAWGMutation(CancerMutation, BioModel):
+    """Metadata for cancer mutations from PCAWG project"""
+    name = 'PCAWG'
+    display_name = 'Cancer (PCAWG)'
+    details_manager = create_cancer_meta_manager('PCAWG')
+    pcawg_cancer_code = association_proxy('cancer', 'code')
+    cancer_code = pcawg_cancer_code
+
+
 class MC3Mutation(CancerMutation, BioModel):
     """Metadata for cancer mutations from ICGC data portal"""
     name = 'MC3'
@@ -714,6 +723,7 @@ source_manager = Sources([
     # order matters (widget's labels will show up in this order)
     # TCGAMutation,
     MC3Mutation,
+    PCAWGMutation,
     InheritedMutation,
     ExomeSequencingMutation,
     The1000GenomesMutation,
