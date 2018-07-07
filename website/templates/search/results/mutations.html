@@ -1,19 +1,24 @@
+{{ dependency('moment') }}
+{{ dependency('bootstrap_sortable') }}
+{{ dependency('bootstrap_sortable_css') }}
+
 {#
   Results should be in a form of a table where mappings are shown
   together with links to appropiate sites. Below the table information
   about positions that where not found in the database should be displayed
 #}
+<h4>Results</h4>
 
-<table class="table table-rowspan-hover">
+<table class="table table-rowspan-hover sortable">
   <thead>
   <tr>
-    {% set columns_count = 9 %}
+    {% set columns_count = 10 %}
     <th>User input</th>
-    <th>Gene name</th>
-    <th>Refseq</th>
-    <th>Ref aa</th>
-    <th>Alt aa</th>
-    <th>Position</th>
+    <th id='col_gene'>Gene</th>
+    <th id='col_refseq'>Refseq</th>
+    <th title="Reference amino acid residue in protein" id='col_ref'>Ref</th>
+    <th title="Mutated amino acid residue in protein">Alt</th>
+    <th title="Position of mutation in protein" id='col_pos'>Position</th>
     <th>is PTM?</th>
     <th>Count</th>
     <th>Impact</th>
@@ -21,8 +26,8 @@
   </tr>
   </thead>
   {% if results %}
+    <tbody>
     {% for user_input, result_items in results.items() %}
-      <tbody>
       {% for result in result_items %}
         {% set mutation = result.mutation %}
         <tr>
@@ -45,7 +50,7 @@
           </td>
           {% endif %}
           <td>
-            <a href="{{ url_for('ProteinView:show', refseq=result.protein.refseq) }}">
+            <a href="{{ url_for('SequenceView:show', refseq=result.protein.refseq) }}">
               {{ result.protein.refseq }}
             </a>
           </td>
@@ -59,25 +64,27 @@
           #}</td>
           <td>{{ mutation.meta_user.count }}</td>
           {% set impact = mutation.impact_on_ptm() %}
-          <td class="{{ impact or '' }}">
+          <td data-value={{ mutation_types.index(impact) }}>
+            <div class="{{ impact or '' }} badge">
               {{ impact or '' }}
               {% if impact == 'network-rewiring' %}
                   - motif {{ mutation.meta_MIMP.effect }}
               {% endif %}
+            </div>
           </td>
           <td>
-              {% if mutation.is_confirmed %}
-                <a href="{{ url_for('MutationView:show', refseq=result.protein.refseq, position=result.pos, alt=result.alt) }}">
+              <a href="{{ url_for('MutationView:show', refseq=result.protein.refseq, position=result.pos, alt=result.alt) }}">
+                {% if mutation.is_confirmed %}
                   mutation details →
-                </a>
-              {% else %}
-                novel mutation
-              {% endif %}
+                {% else %}
+                  novel mutation →
+                {% endif %}
+              </a>
           </td>
         </tr>
       {% endfor %}
-      </tbody>
     {% endfor %}
+    </tbody>
   {% endif %}
   <tfoot>
   {% if without_mutations %}

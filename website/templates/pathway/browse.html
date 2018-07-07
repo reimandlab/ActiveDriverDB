@@ -18,7 +18,7 @@
         <script type="text/javascript" src="/static/js_templates/precompiled/pathway.js"></script>
       {% endif %}
 
-      {% assets "js_utilities" %}
+      {% assets "js_pathways" %}
         <script type="text/javascript" src="{{ ASSET_URL }}"></script>
       {% endassets %}
 
@@ -50,7 +50,6 @@
     data-show-columns="true"
     data-show-export="true"
     data-detail-view="true"
-    data-detail-formatter="detailFormatter"
     data-minimum-count-columns="2"
     data-pagination="true"
     data-id-field="id"
@@ -63,161 +62,21 @@
 </div>
 
 <script>
+  var reactome_url = decode_url_pattern('{{ url_for('PathwaysView:details', reactome_id="{{ reactome }}") }}');
+  var gene_ontology_url = decode_url_pattern('{{ url_for('PathwaysView:details', gene_ontology_id="{{ gene_ontology }}") }}');
+  var reactome_show = decode_url_pattern('{{ url_for('PathwaysView:show', reactome_id="0") }}');
+  var gene_ontology_show = decode_url_pattern('{{ url_for('PathwaysView:show', gene_ontology_id="0") }}');
 
   nunjucks.configure('/static/js_templates', {autoescape: true})
 
-  var $table = $('#table')
+  var query = {{ query | tojson }}
 
-  function initTable()
-  {
-    $table.bootstrapTable({
-      columns: [
-          {
-            title: 'Name',
-            field: 'description',
-            align: 'center',
-            valign: 'middle',
-            sortable: true
-          },
-          {% block columns %}
-          {
-            title: 'Pathway ID',
-            align: 'center',
-            width: '150px',
-            valign: 'middle',
-            formatter: idFormatter
-          },
-            {
-                field: 'gene_ontology',
-                title: 'Gene Ontology ID',
-                sortable: true,
-                visible: false,
-                align: 'center'
-            },
-            {
-                field: 'reactome',
-                title: 'Reactome ID',
-                sortable: true,
-                visible: false,
-                align: 'center'
-            },
-          {
-            title: '# Genes',
-            sortable: true,
-            valign: 'middle',
-            align: 'center',
-            field: 'gene_count'
-          },
-          {
-            title: 'Genes',
-            //sortable: true,
-            valign: 'middle',
-            align: 'center',
-            field: 'genes',
-            formatter: genesFormatter
-          }
-          {% endblock %}
-      ],
-      formatLoadingMessage: function ()
-      {
-        return 'Loading, please wait... <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>'
-      },
-      onSearch: function () {
-          $table.bootstrapTable('showLoading')
-      },
-      silentSort: false
-    })
-
-    $table.on('click-row.bs.table', function (e, row, $element)
+  {% block js_table_init %}
+    $(function ()
     {
-      $table.bootstrapTable(
-        'expandRow',
-        $element.data('index')
-      );
+        initTable($('#table'), query)
     })
-    setTimeout(function ()
-    {
-        $table.bootstrapTable('resetView')
-        $table.bootstrapTable('showLoading')
-        $table.bootstrapTable('resetSearch', {{ query | tojson }})
-
-    }, 200)
-  }
-
-  var reactome_url = decode_url_pattern('{{ url_for('PathwaysView:details', reactome_id="{{ reactome }}") }}');
-  var gene_ontology_url = decode_url_pattern('{{ url_for('PathwaysView:details', gene_ontology_id="{{ gene_ontology }}") }}');
-
-  function detailFormatter(index, row, $element)
-  {
-
-      $element.html('Loading...');
-
-      var url;
-      if(row.reactome)
-          url = format(reactome_url, row);
-      else
-          url = format(gene_ontology_url, row);
-
-      $.get(url, function (details) {
-          p(details)
-          $element.html(
-              nunjucks.render(
-                  'pathway_details.njk',
-                  {
-                      pathway: details
-                  }
-              )
-          )
-      });
-
-  }
-
-  /*
-  Used as callback for buttons on list
-   */
-  function show_all_genes(btn)
-  {
-      var btn = $(btn)
-      btn.closest('.gene-list').find('li').css('display', 'inline');
-      btn.hide();
-      event.stopPropagation()
-      return false
-  }
-
-  function idFormatter(value, row, index)
-  {
-      {% raw %}
-      var ids = []
-      if(row.reactome)
-        ids.push(format(
-              'Reactome: <a href="http://www.reactome.org/content/detail/R-HSA-{{ reactome }}">{{ reactome }}</a>',
-              row
-        ))
-      if(row.gene_ontology)
-        ids.push(format(
-            'GO: <a href="http://amigo.geneontology.org/amigo/term/GO:{{ gene_ontology }}">{{ gene_ontology }}</a>',
-            row
-        ))
-      return ids.join('\n')
-      {% endraw %}
-  }
-
-  function genesFormatter(value, row, index)
-  {
-      nunjucks.installJinjaCompat()
-    return nunjucks.render(
-        'pathways_gene_list.njk',
-        {
-            genes: value,
-            more: true
-        }
-    )
-  }
-
-  $(function ()
-  {
-      initTable()
-  })
+  {% endblock %}
 </script>
 
 

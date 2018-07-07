@@ -1,22 +1,37 @@
 sudo: required
-dist: precise
+dist: trusty
 language: python
+cache:
+  timeout: 1800
+  pip: true
+  directories:
+    - node_modules
+    - downloads
+
 python:
-  - 3.4
-  - 3.5
+  - 3.6
+
+
+before_install:
+  - sudo sh -c 'echo "deb https://cloud.r-project.org/bin/linux/ubuntu trusty/" >> /etc/apt/sources.list'
+  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E084DAB9
+  - sudo apt-get update
+
 
 install:
-  - sudo apt-get update
+  - curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+  - sudo apt-get install -y nodejs
   - sudo apt-get install -y pigz
   - bash setup.sh
   - cd website
+  - pip install wheel
   - pip install -r requirements.txt
   - pip install -r tests/requirements.txt
-  - sass --update .:.
+  - bash deploy.sh
+
 
 script:
-  - python3 -m pytest -k 'not data_dependent'
-  - python3 -m pytest --cov=. -k 'not data_dependent'
+  - python3 -m pytest -x -n 2 --cov=. -k 'not data_dependent and not celery' -v
 
 
 after_success:

@@ -21,6 +21,7 @@
 {% endmacro %}
 
 {% macro render_widget(widget) %}
+    {% from "help.html" import help with context %}
     {% if widget.visible %}
     {% if widget.comparator_widget %}
         {{ render_widget(widget.comparator_widget) }}
@@ -28,6 +29,7 @@
     <div class="widget {{ widget.class_name }} {{ widget.template }}">
         <label class="name" for="{{ widget.target_name }}">
             {{ widget.title }}
+            {{ help('widget-' + widget.target_name, 'help-widget small-top') }}
         </label>
         <div class="value">
             {% include 'widgets/' + widget.template + '.html' %}

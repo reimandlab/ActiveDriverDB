@@ -6,8 +6,16 @@ from flask import Markup
 def css_bundle(name, *args):
     return Bundle(
         *args,
-        # filters='cssutils',   # cssutils breaks keyframes :(
+        filters=['autoprefixer6', 'cleancss'],
         output='min/' + name + '.css'
+    )
+
+
+def js_bundle(name, *args):
+    return Bundle(
+        *args,
+        filters=['yui_js'],
+        output='min/' + name + '.js'
     )
 
 
@@ -66,6 +74,9 @@ class DependencyManager:
             'https://code.jquery.com/jquery-1.12.4.min.js',
             'sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ='
         ),
+        'jquery_deserialize': JSResource(
+            'https://cdn.jsdelivr.net/npm/jquery-deserialize@2.0.0-rc1/src/jquery.deserialize.min.js'
+        ),
         'particles.js': JSResource(
             'https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js'
         ),
@@ -98,6 +109,17 @@ class DependencyManager:
             'https://cdnjs.cloudflare.com/ajax/libs/nunjucks/3.0.1/nunjucks-slim.min.js',
             'sha256-tdB3uMy+X5YRM5JMGgy1oMtdSm1GwTEMmWb7q80e2+g='
         ),
+        'moment': JSResource(
+            # requirement for bootstrap_sortable
+            'https://cdn.jsdelivr.net/npm/moment@2.19.2/moment.min.js'
+        ),
+        'bootstrap_sortable': JSResource(
+            # bootstrap_sortable supports rowspan, bootstrap_table does not
+            'https://cdn.jsdelivr.net/gh/drvic10k/bootstrap-sortable@2.1.0/Scripts/bootstrap-sortable.min.js'
+        ),
+        'bootstrap_sortable_css': CSSResource(
+            'https://cdn.jsdelivr.net/gh/drvic10k/bootstrap-sortable@2.1.0/Contents/bootstrap-sortable.min.css'
+        ),
         'bootstrap_table': JSResource(
             'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-table/1.11.1/bootstrap-table.min.js',
             'sha256-eXHLyyVI+v6X1wbfg9NB05IWqOqY4E9185nHZgeDIhg='
@@ -113,6 +135,9 @@ class DependencyManager:
         'd3.js': JSResource(
             'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
             'sha256-dsOXGNHAo/syFnazt+KTBsCQeRmlcW1XKL0bCK4Baec='
+        ),
+        'venn.js': JSResource(
+            'https://cdn.jsdelivr.net/npm/venn.js@0.2.18/build/venn.min.js'
         ),
         'clipboard.js': JSResource(
             'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.6.1/clipboard.min.js',
@@ -147,12 +172,13 @@ class DependencyManager:
     def __init__(self, app):
         self.app = app
         self.use_cdn = self.app.config.get('USE_CONTENT_DELIVERY_NETWORK', True)
+        self.force_local = self.app.config.get('FORBID_CONTENT_DELIVERY_NETWORK', False)
 
     def get_dependency(self, name):
 
         resource = self.third_party[name]
 
-        if self.use_cdn or resource.only_cdn:
+        if (self.use_cdn or resource.only_cdn) and not self.force_local:
             return resource.build_markup(check_integrity=True)
         else:
             return self.build_local_markup(resource)
@@ -177,20 +203,20 @@ class DependencyManager:
 
 
 bundles = {
-    'js_search_bar': Bundle(
+    'js_search_bar': js_bundle(
+        'searchbar',
         'common.js',
         'searchbar.js',
-        filters='rjsmin',
-        output='min/searchbar.js'
     ),
-    'js_search': Bundle(
+    'js_search': js_bundle(
+        'search',
         'common.js',
+        'filters.js',
         'widgets.js',
         'search.js',
-        filters='rjsmin',
-        output='min/search.js'
     ),
-    'js_protein_view': Bundle(
+    'js_protein_view': js_bundle(
+        'proteinView',
         'common.js',
         'filters.js',
         'widgets.js',
@@ -201,36 +227,36 @@ bundles = {
         'tracks.js',
         'export.js',
         'short_url.js',
-        filters='rjsmin',
-        output='min/proteinView.js'
     ),
-    'js_mutation_view': Bundle(
+    'js_mutation_view': js_bundle(
+        'mutationView',
         'common.js',
         'tooltip.js',
         'kinase_tooltip.js',
         'export.js',
         'short_url.js',
-        filters='rjsmin',
-        output='min/mutationView.js'
     ),
-    'js_gene_view': Bundle(
+    'js_gene_view': js_bundle(
+        'geneView',
         'common.js',
         'widgets.js',
-        filters='rjsmin',
-        output='min/geneView.js'
     ),
-    'js_inline_edit': Bundle(
+    'js_inline_edit': js_bundle(
+        'inlineEdit',
         'common.js',
         'inline_edit.js',
-        filters='rjsmin',
-        output='min/inlineEdit.js'
     ),
-    'js_utilities': Bundle(
+    'js_utilities': js_bundle(
+        'utilities',
         'common.js',
-        filters='rjsmin',
-        output='min/utilities.js'
     ),
-    'js_network_view': Bundle(
+    'js_pathways': js_bundle(
+        'pathways',
+        'common.js',
+        'pathways.js',
+    ),
+    'js_network_view': js_bundle(
+        'networkView',
         'common.js',
         'filters.js',
         'widgets.js',
@@ -240,13 +266,19 @@ bundles = {
         'network.js',
         'export.js',
         'short_url.js',
-        filters='rjsmin',
-        output='min/networkView.js'
     ),
-    'js_cms_editor': Bundle(
+    'js_cms_editor': js_bundle(
+        'editor',
         'common.js',
         'cms_editor.js',
-        output='min/editor.js'
+    ),
+    'js_search_progress': js_bundle(
+        'progress',
+        'progress.js'
+    ),
+    'js_page': js_bundle(
+        'page',
+        'venn.js'
     ),
     'css_common': css_bundle(
         'style',

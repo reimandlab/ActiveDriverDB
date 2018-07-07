@@ -55,7 +55,7 @@ class TrackElement(object):
     def shown_name(self):
         """Generates a name which will fit into a track."""
         if not self.description:
-            return self.name
+            return self.name or ''
 
         # names_to_try should be kept in descending length order
         names_to_try = (
@@ -252,18 +252,3 @@ class MutationsTrack(Track):
 
         return grouped
 
-
-class PositionTrack(Track):
-
-    def __init__(self, length, step):
-
-        element_size = len(str(length))
-
-        if step < element_size:
-            raise Exception('Position strings will overlap with current step')
-
-        elements = [
-            TrackElement(i - 1, element_size, i)
-            for i in range(step, length, step)
-        ]
-        super().__init__('position', elements)

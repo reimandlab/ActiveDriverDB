@@ -1,5 +1,6 @@
 from argparse import Namespace
 
+import database.manage
 from database_testing import DatabaseTest
 from flask import current_app
 
@@ -28,7 +29,7 @@ class ManageTest(DatabaseTest):
         parser = manage.create_parser()
         try:
             parsed_args = parser.parse_args(commands.split(' '))
-            manage.run_manage(parsed_args, my_app=self.app)
+            manage.run_manage(parsed_args, app=self.app)
         except SystemExit:
             if not allow_early_exit:
                 raise
@@ -48,7 +49,7 @@ class ManageTest(DatabaseTest):
 
         # test load help
         help_message = get_help('load -h')
-        choices = 'cms,mutations,protein_related,snv_to_csv_mapping,all'.split(',')
+        choices = 'cms,mutations,protein_related,mappings,all'.split(',')
         assert all(choice in help_message for choice in choices)
 
         # test load mutations help
@@ -68,7 +69,7 @@ class ManageTest(DatabaseTest):
 
         # test remove help
         help_message = get_help('remove -h')
-        choices = 'cms,mutations,protein_related,snv_to_csv_mapping'.split(',')
+        choices = 'cms,mutations,protein_related,mappings'.split(',')
         assert all(choice in help_message for choice in choices)
 
         help_message = get_help('remove protein_related -h')

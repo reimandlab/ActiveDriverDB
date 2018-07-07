@@ -21,12 +21,13 @@
 	  <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
 	  <div class="form-group">
 		<label for="email">email</label>
-		<input type="text" name="email" class="form-control" id="email" placeholder="email">
+		<input type="email" name="email" class="form-control" id="email" placeholder="email">
 	  </div>
 	  <div class="form-group">
 		<label for="password">password</label>
 		<input type="password" name="password" class="form-control" id="password" placeholder="password">
 	  </div>
+      <p>Forgot your password? <a href="{{ url_for('ContentManagementSystem:reset_password') }}">Click here to generate a new password</a>.</p>
 	  <div class="checkbox">
 		<label>
 		  <input type="checkbox" name="remember_me"> Remember me

@@ -1,4 +1,4 @@
-<h5>{{ node.type }}: {{ node.name }}</h5>
+<h5>{{ node.type }}: {{ node.name }} {% if node.type === types.site %}({{ node.ptm_type | replace(',', ', ') }}){% endif %}</h5>
 <div>
 {% if node.type === types.site %}
   Nearby sequence: {{ node.sequence }}<br>
@@ -13,44 +13,10 @@
     {% endif %}
     </p>
     <div class="site-muts">
-        <table
-          class="table site-muts-table"
-          data-page-size="5"
-          data-pagination="true"
-          data-page-list="[]"
-        >
-          <thead>
-            <th data-sortable="true">Mutation</th>
-            <th data-sortable="true">In sequence</th>
-            <th data-sortable="true">Distance</th>
-            <th data-sortable="true">Impact</th>
-          </thead>
-          {% for mutation in node.mutations %}
-            {% set pos = node.position - mutation.pos %}
-            <tr>
-              <td>
-                <a href="/mutation/show/{{ refseq }}/{{ mutation.pos }}/{{ mutation.alt }}">{{ mutation.pos }}{{ mutation.alt }}</a>
-              </td>
-              <td>
-                <a href="/protein/show/{{ refseq }}#{{ mutation.pos }}{{ mutation.alt }}" class="sequence">
-                  {% if pos < 7 -%}
-                    {{ node.sequence | truncate(7 - pos, true, '') }}
-                  {%- endif -%}
-                    [{{ mutation.ref }}/{{ mutation.alt }}]
-                  {%- if pos > -7 -%}
-                    {{ node.sequence | reverse | truncate(7 + pos, true, '') | reverse }}
-                  {% endif %}
-                </a>
-              </td>
-              <td>
-                {{ pos | abs }}
-              </td>
-              <td>
-                {{ mutation.impact }}
-              </td>
-            </tr>
-          {% endfor %}
-        </table>
+      {% set site = node %}
+      <div class="tight">
+        {% include 'site_mutations_table.njk' %}
+      </div>
     </div>
   {% endif %}
 {% elif node.type === types.group %}
@@ -59,10 +25,25 @@
   {{ node.total_cnt }} kinases at total.
 {% endif %}
 
+{% if node.type === types.drug %}
+  <div class="badges">
+  {% for group in node.data.groups %}
+    <div class="badge {{ group }}">{{ group }}</div>
+  {% endfor %}
+  </div>
+  <div>
+  {% if node.data.type %}
+  {{ node.data.type | title }}
+  </div>
+  {% endif %}
+  <p>
+    See more in DrugBank: <a href="https://www.drugbank.ca/drugs/{{ node.data.drugbank }}">{{ node.data.drugbank }}</a>
+  </p>
+{% endif %}
 
 {% if node.protein %}
   Mutations satisfying applied filters: {{ node.protein.mutations_count }}
   <br>
-  <a href="{{ nodeURL(node) }}">Show associated protein</a>
+  <a href="{{ nodeURL(node) }}">Show associated protein ({{ node.protein.refseq }})</a>
 {% endif %}
 </div>

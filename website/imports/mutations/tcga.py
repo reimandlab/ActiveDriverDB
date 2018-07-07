@@ -1,23 +1,48 @@
 from collections import defaultdict
+
+from sqlalchemy.orm.exc import NoResultFound
+
 from database import db
 from database import get_or_create
 from models import Cancer
 from models import TCGAMutation
-from imports.mutations import MutationImporter
-from helpers.parsers import parse_tsv_file
+from helpers.parsers import iterate_tsv_gz_file
 from helpers.parsers import chunked_list
-from helpers.parsers import gzip_open_text
-from sqlalchemy.orm.exc import NoResultFound
+
+from .mutation_importer import MutationImporter
 
 
-class Importer(MutationImporter):
+class TCGAImporter(MutationImporter):
 
+    name = 'tcga'
     model = TCGAMutation
     default_path = 'data/mutations/TCGA_muts_annotated.txt.gz'
     header = [
         'Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
         'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'V11'
     ]
+    samples_to_skip = set()
+
+    def __init__(self, *args, export_samples=False, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.export_samples = None
+        self.export_details = None
+        self.rebind_exporter(export_samples)
+
+    def export(self, *args, export_samples=None, **kwargs):
+        if export_samples is not None:
+            self.rebind_exporter(export_samples)
+
+        super().export(*args, **kwargs)
+
+    def rebind_exporter(self, export_samples):
+        self.export_details = (
+            self.export_details_with_samples
+            if export_samples else
+            self.export_details_without_samples
+        )
+        self.export_samples = export_samples
 
     def decode_line(self, line):
         assert line[10].startswith('comments: ')
@@ -28,8 +53,11 @@ class Importer(MutationImporter):
 
         mutations = defaultdict(lambda: [0, set()])
 
-        def cancer_parser(line):
+        for line in iterate_tsv_gz_file(path, file_header=self.header):
             cancer_name, sample_name = self.decode_line(line)
+
+            if sample_name in self.samples_to_skip:
+                continue
 
             cancer, created = get_or_create(Cancer, name=cancer_name)
 
@@ -43,13 +71,6 @@ class Importer(MutationImporter):
                 mutations[key][0] += 1
                 mutations[key][1].add(sample_name)
 
-        parse_tsv_file(
-            path,
-            cancer_parser,
-            file_header=self.header,
-            file_opener=gzip_open_text
-        )
-
         return mutations
 
     def create_init_kwargs(self, mutation, data):
@@ -59,6 +80,25 @@ class Importer(MutationImporter):
             'samples': ','.join(data[1]),
             'count': data[0]
         }
+
+    def export_details_headers(self):
+        if self.export_samples:
+            return ['cancer_type', 'sample_id']
+        return ['cancer_type', 'count']
+
+    def export_details(self, mutation):
+        raise NotImplementedError
+
+    @staticmethod
+    def export_details_without_samples(mutation):
+        return [(mutation.cancer.code, str(mutation.count))]
+
+    @staticmethod
+    def export_details_with_samples(mutation):
+        return [
+            (mutation.cancer.code, sample)
+            for sample in (mutation.samples or '').split(',')
+        ]
 
     def insert_details(self, mutations):
         for chunk in chunked_list(mutations.items()):

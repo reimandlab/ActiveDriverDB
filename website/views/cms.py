@@ -1,6 +1,9 @@
+import re
+from os import path
 from functools import wraps
-from types import FunctionType
+from pathlib import Path
 
+from bs4 import BeautifulSoup
 from flask import current_app, jsonify
 from flask import flash
 from flask import render_template as template
@@ -11,13 +14,16 @@ from flask import Markup
 from flask import abort
 from flask_classful import FlaskView
 from flask_classful import route
+from flask_limiter.util import get_remote_address
 from flask_login import current_user
 from flask_login import login_user
 from flask_login import logout_user
 from flask_login import login_required
-from jinja2 import TemplateSyntaxError
+from flask_mail import Message
 from flask import render_template_string
+from werkzeug.utils import secure_filename
 
+import security
 from models import Page, HelpEntry, TextEntry
 from models import Menu
 from models import MenuEntry
@@ -27,31 +33,91 @@ from models import Setting
 from models import User
 from database import db
 from database import get_or_create
-from app import login_manager
+from app import login_manager, recaptcha, limiter
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import IntegrityError, OperationalError
-from statistics import STATISTICS
+from stats import STATISTICS, VENN_DIAGRAMS
 from exceptions import ValidationError
 
 
-BUILT_IN_SETTINGS = ['website_name']
+BUILT_IN_SETTINGS = [
+    'website_name', 'is_maintenance_mode_active', 'maintenace_text',
+    'email_sign_up_message', 'footer_text',
+]
 
 MENU_SLOT_NAMES = ['footer_menu', 'top_menu', 'side_menu']
+
+SIGNED_UP_OR_ALREADY_USER_MSG = (
+    '<b>Your account has been created successfully</b><br>'
+    '<p>(Unless you already created an account using this email address: '
+    'in such a case your existing account remains intact.<br>'
+    'We show the same message for either case in order to protect your privacy and avoid email disclosure)</p>'
+    '<p><strong>We sent you a verification email. '
+    'Please use a hyperlink included in the email message to activate your account.</strong></p>'
+)
+ACCOUNT_ACTIVATED_MESSAGE = 'Your account has been successfully activated. You can login in using the form below:'
+CAPTCHA_FAILED = 'ReCaptcha verification failed. Please contact use if the message reappears.'
+PASSWORD_RESET_MAIL_SENT = (
+    'If an account connected to this email address exists (and is verified), '
+    'you will receive a password reset message soon'
+)
 
 
 def create_contact_form():
     args = request.args
     pass_args = ['feature', 'title']
-    return template(
+    return Markup(template(
         'cms/contact_form.html',
         **{key: args.get(key, '') for key in pass_args}
-    )
+    ))
+
+
+def render_raw_template(template_name, *args, **kwargs):
+    jinja_template = current_app.jinja_env.get_template(template_name)
+    return jinja_template.render(*args, **kwargs)
+
+
+def render_help_entry(entry_id, entry_class=''):
+    jinja_template = current_app.jinja_env.get_template('help.html')
+    jinja_module = jinja_template.make_module({'current_user': current_user})
+    return jinja_module.help(entry_id, entry_class)
+
+
+def venn(name, elements_description=''):
+    try:
+        data = VENN_DIAGRAMS[name]
+    except KeyError:
+        return f'<- failed to load {name} Venn diagram ->'
+    return Markup(render_template_string(
+        """
+        <div id="venn_{{name}}"></div>
+        <script>
+        var sets = {{ sets| tojson }};
+        var chart = venn.VennDiagram();
+
+        var div = d3.select("#venn_{{name}}").attr("class", "venn")
+        div.datum(sets).call(chart)
+
+        div.selectAll("path")
+            .style("stroke-opacity", 0)
+            .style("stroke", "#fff")
+            .style("stroke-width", 3)
+
+        add_venn_tooltip(div, '{{elements_description}}')
+        </script>
+        """,
+        sets=data,
+        name=name,
+        elements_description=elements_description
+    ))
 
 
 USER_ACCESSIBLE_VARIABLES = {
     'stats': STATISTICS,
-    'contact_form': create_contact_form
+    'venn': venn,
+    'contact_form': create_contact_form,
+    'help': render_help_entry
 }
 
 
@@ -64,6 +130,20 @@ def admin_only(f):
                 next=request.url
             ))
         if not current_user.is_admin:
+            abort(401)
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def moderator_or_admin(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            return redirect(url_for(
+                'ContentManagementSystem:login',
+                next=request.url
+            ))
+        if current_user.access_level < 5:
             abort(401)
         return f(*args, **kwargs)
     return decorated_function
@@ -97,6 +177,10 @@ def get_page(address, operation=''):
     return None
 
 
+def get_form_email_or_ip():
+    return request.form.get('email', get_remote_address())
+
+
 def update_obj_with_dict(instance, dictionary):
     for key, value in dictionary.items():
         setattr(instance, key, value)
@@ -106,27 +190,8 @@ def dict_subset(dictionary, keys):
     return {k: v for k, v in dictionary.items() if k in keys}
 
 
-def replace_allowed_object(match_obj):
-    object_name = match_obj.group(1).strip()
-    element = USER_ACCESSIBLE_VARIABLES
-    for accessor in object_name.split('.'):
-        if accessor in element:
-            element = element[accessor]
-        else:
-            return '&lt;unknown variable: {}&gt;'.format(object_name)
-        if type(element) is FunctionType:
-            element = element()
-    return str(element)
-
-
 def substitute_variables(string):
-    import re
-    pattern = '\{\{ (.*?) \}\}'
-    try:
-        return render_template_string(string, **USER_ACCESSIBLE_VARIABLES)
-    except TemplateSyntaxError as e:
-        print(e)
-        return re.sub(pattern, replace_allowed_object, string)
+    return render_template_string(string, **USER_ACCESSIBLE_VARIABLES)
 
 
 def link_to_page(page):
@@ -140,6 +205,38 @@ def get_system_setting(name):
 
 def thousand_separated_number(x):
     return '{:,}'.format(int(x))
+
+
+def send_message(**kwargs):
+    from app import mail
+
+    body = kwargs.pop('body', None)
+    html = kwargs.pop('html', None)
+
+    if html and not body:
+        soup = BeautifulSoup(html)
+        for link in soup.select('a'):
+            link.append(': ' + link.attrs['href'])
+            link.unwrap()
+        body = soup.get_text()
+
+    msg = Message(
+        subject='[ActiveDriverDB] ' + kwargs.pop('subject', 'Message'),
+        sender='ActiveDriverDB <contact-bot@activedriverdb.org>',
+        body=body, html=html,
+        **kwargs
+    )
+
+    try:
+        mail.send(msg)
+        return True
+    except ConnectionRefusedError:
+        flash(
+            'Could not sent the message. '
+            'Email server refuses connection. '
+            'We apologize for the inconvenience.',
+            'danger'
+        )
 
 
 class ContentManagementSystem(FlaskView):
@@ -183,13 +280,13 @@ class ContentManagementSystem(FlaskView):
     def _text_entry(name):
         entry = TextEntry.query.filter_by(name=name).first()
         if not entry or not entry.content:
-            if current_user.is_admin:
+            if current_user.access_level >= 5:
                 return 'Please, click the pencil icon to add text here.'
             return ''
         return entry.content
 
     @route('/admin/save_text_entry/', methods=['POST'])
-    @admin_only
+    @moderator_or_admin
     def save_text_entry(self):
         name = request.form['entry_id']
         new_content = request.form['new_content']
@@ -218,18 +315,18 @@ class ContentManagementSystem(FlaskView):
         help_entry = HelpEntry.query.filter_by(name=name).first()
         if not help_entry or not help_entry.content:
             empty = 'This element has no help text defined yet.'
-            if current_user.is_admin:
+            if current_user.access_level >= 5:
                 empty += '\nPlease, click the pencil icon to add help.'
             return empty
         return help_entry.content
 
-    @admin_only
+    @moderator_or_admin
     def link_list(self):
         pages = Page.query
         return jsonify([{'title': page.title, 'value': page.url} for page in pages])
 
     @route('/admin/save_inline_help/', methods=['POST'])
-    @admin_only
+    @moderator_or_admin
     def save_inline_help(self):
         name = request.form['entry_id']
         old_content = request.form.get('old_content', None)
@@ -267,9 +364,14 @@ class ContentManagementSystem(FlaskView):
         return self._template('page', page=page)
 
     @route('/send_message/', methods=['POST'])
+    @limiter.limit('60/day,30/hour,5/minute')
     def send_message(self):
         go_to = request.form.get('after_success', '/')
         redirection = redirect(go_to)
+
+        if not recaptcha.verify():
+            flash(CAPTCHA_FAILED, 'danger')
+            return redirection
 
         try:
             name = request.form['name']
@@ -288,31 +390,19 @@ class ContentManagementSystem(FlaskView):
             flash('Provided email address is not correct', 'warning')
             return redirection
 
-        from flask_mail import Message
-        from app import mail
-
-        msg = Message(
-            subject='[ActiveDriverDB] ' + subject,
+        success = send_message(
+            subject=subject,
             body=content,
-            sender='ActiveDriverDB <contact-bot@activedriverdb.org>',
-            reply_to='{0} <{1}>'.format(name, email),
             recipients=current_app.config['CONTACT_LIST'],
+            reply_to='{0} <{1}>'.format(name, email),
         )
 
-        try:
-            mail.send(msg)
+        if success:
             flash('Message sent!', 'success')
-        except ConnectionRefusedError:
-            flash(
-                'Could not sent the message. '
-                'Email server refuses connection. '
-                'We apologize for the inconvenience.',
-                'danger'
-            )
 
         return redirection
 
-    @admin_only
+    @moderator_or_admin
     def list_pages(self):
         pages = Page.query.all()
         return self._template('admin/pages', entries=pages)
@@ -379,15 +469,39 @@ class ContentManagementSystem(FlaskView):
     @route('/menu/<menu_id>/edit', methods=['POST'])
     @admin_only
     def edit_menu(self, menu_id):
+
+        settings = {
+            # regexp => handler
+        }
+
+        def setting(handler):
+            name = handler.__name__
+            regex = re.compile(r'{0}\[(\d+)\]'.format(name))
+            settings[regex] = handler
+
+        @setting
+        def position(entry, value):
+            entry.position = float(value)
+
+        @setting
+        def parent(entry, value):
+            entry.parent = MenuEntry.query.get(value)
+
         try:
             menu = Menu.query.get(menu_id)
             for element, value in request.form.items():
-                if element.startswith('position['):
-                    entry_id = element[9:-1]
-                    entry = MenuEntry.query.get(entry_id)
-                    entry.position = float(value)
+                # menu-wise settings
                 if element == 'name':
                     menu.name = value
+                # element-wise settings
+                else:
+                    for regex, handler in settings.items():
+                        match = regex.match(element)
+                        if match:
+                            entry_id = match.group(1)
+                            entry = MenuEntry.query.get(entry_id)
+                            handler(entry, value)
+
             db.session.commit()
         except ValueError:
             flash('Wrong value for position', 'danger')
@@ -482,7 +596,7 @@ class ContentManagementSystem(FlaskView):
         return redirect(url_for('ContentManagementSystem:list_menus'))
 
     @route('/add/', methods=['GET', 'POST'])
-    @admin_only
+    @moderator_or_admin
     def add_page(self):
         if request.method == 'GET':
             return self._template(
@@ -523,7 +637,7 @@ class ContentManagementSystem(FlaskView):
         )
 
     @route('/edit/<path:address>/', methods=['GET', 'POST'])
-    @admin_only
+    @moderator_or_admin
     def edit_page(self, address):
         page = get_page(address, 'Edit')
         if request.method == 'POST' and page:
@@ -558,8 +672,27 @@ class ContentManagementSystem(FlaskView):
 
         return self._template('admin/edit_page', page=page)
 
+    @moderator_or_admin
+    @route('/admin/upload/image', methods=['POST'])
+    def upload_image(self):
+        file_object = request.files['file']
+        filename = secure_filename(file_object.filename)
+
+        if filename and filename.split('.')[-1] in current_app.config['UPLOAD_ALLOWED_EXTENSIONS']:
+            base = Path(path.dirname(path.dirname(path.realpath(__file__))))
+
+            directory = base / Path(current_app.config['UPLOAD_FOLDER'])
+
+            if not directory.exists():
+                directory.mkdir()   # exists_ok in 3.5 >
+
+            file_path = directory / filename
+            file_object.save(str(file_path))
+
+            return jsonify({'location': '/' + str(file_path.relative_to(base))})
+
     @route('/remove_page/<path:address>/')
-    @admin_only
+    @moderator_or_admin
     def remove_page(self, address):
         page = get_page(address, 'Remove')
         if page:
@@ -576,6 +709,7 @@ class ContentManagementSystem(FlaskView):
         return redirect(url_for('ContentManagementSystem:list_pages'))
 
     @route('/login/', methods=['GET', 'POST'])
+    @limiter.limit('200/day,100/hour,20/minute', key_func=get_form_email_or_ip, per_method=True)
     def login(self):
         if request.method == 'GET':
             return self._template('login')
@@ -586,20 +720,133 @@ class ContentManagementSystem(FlaskView):
 
         user = User.query.filter_by(email=email).first()
 
-        if user is None:
-            flash('Invalid or unregistered email', 'danger')
-            return redirect(url_for('ContentManagementSystem:login'))
-
-        if user.authenticate(password):
+        if user and user.authenticate(password):
             login_user(user, remember=remember_me)
             return redirect(url_for('ContentManagementSystem:my_datasets'))
         else:
-            flash('Password is invalid', 'danger')
+            flash('Incorrect email or password or unverified account.', 'danger')
             return redirect(url_for('ContentManagementSystem:login'))
 
+    @route('/reset_password/', methods=['GET', 'POST'])
+    @limiter.limit('200/day,100/hour,20/minute', key_func=get_form_email_or_ip, per_method=True)
+    def reset_password(self):
+        if request.method == 'GET':
+            return self._template('reset_password')
+
+        if not recaptcha.verify():
+            flash(CAPTCHA_FAILED, 'danger')
+            return self._template('reset_password')
+
+        user = User.query.filter_by(email=request.form['email']).first()
+
+        if user and user.is_verified:
+            user.verification_token = security.generate_random_token()
+            db.session.commit()
+
+            send_message(
+                subject='Your password reset request',
+                recipients=[user.email],
+                html=render_raw_template(
+                    'email/password_reset_request.html',
+                    user=user,
+                    password_reset_link=url_for(
+                        'ContentManagementSystem:confirm_password_reset',
+                        token=user.verification_token,
+                        user=user.id,
+                        _external=True
+                    )
+                )
+            )
+
+        flash(PASSWORD_RESET_MAIL_SENT, category='success')
+        return redirect(url_for('ContentManagementSystem:login'))
+
+    @route('/confirm_password_reset/', methods=['GET', 'POST'])
+    def confirm_password_reset(self):
+        args = request.args
+
+        user_id = args['user']
+        token = args['token']
+
+        if not (user_id and token):
+            raise abort(404)
+
+        user = User.query.get(user_id)
+
+        if user and token == user.verification_token:
+            login_user(user)
+            flash('Your request has been correctly verified. Please set a new password now:', category='success')
+            return self.set_password()
+        else:
+            raise abort(404)
+
+    @route('/set_password/', methods=['GET', 'POST'])
+    @login_required
+    def set_password(self):
+        user = current_user
+
+        if request.method == 'GET':
+            return self._template('set_password')
+        else:
+            password = request.form['password']
+            confirm_password = request.form['confirm_password']
+
+            if not password or not confirm_password:
+                flash('Both fields are required.', category='danger')
+                return self._template('set_password')
+
+            if password != confirm_password:
+                flash('Provided passwords do not match!', category='danger')
+                return self._template('set_password')
+
+            if not user.is_password_strong(password):
+                flash(
+                    'Provided password is too weak. Please try a different one.',
+                    category='danger'
+                )
+                return self._template('set_password')
+
+            user.pass_hash = security.generate_secret_hash(password)
+            # invalidate token
+            user.verification_token = None
+            db.session.commit()
+            flash('Your new password has been set successfully!', category='success')
+
+            return redirect(url_for('ContentManagementSystem:login'))
+
+    def activate_account(self):
+        args = request.args
+
+        user_id = args['user']
+        token = args['token']
+
+        if not (user_id and token):
+            raise abort(404)
+
+        user = User.query.get(user_id)
+
+        if user and token == user.verification_token:
+
+            if user.is_verified:
+                flash('You account is already active.', category='warning')
+            else:
+                user.is_verified = True
+                db.session.commit()
+
+                flash(ACCOUNT_ACTIVATED_MESSAGE, category='success')
+
+            return redirect(url_for('ContentManagementSystem:login'))
+        else:
+            raise abort(404)
+
     @route('/register/', methods=['GET', 'POST'])
+    @limiter.limit('50/hour,10/minute')
     def sign_up(self):
         if request.method == 'GET':
+            return self._template('register')
+
+        if not recaptcha.verify():
+            flash(CAPTCHA_FAILED, 'danger')
             return self._template('register')
 
         consent = request.form.get('consent', False)
@@ -614,16 +861,34 @@ class ContentManagementSystem(FlaskView):
         email = request.form.get('email', '')
         password = request.form.get('password', '')
 
+        claim_success = False
+
         try:
             new_user = User(email, password, access_level=0)
             db.session.add(new_user)
             db.session.commit()
-            flash(
-                'Your account has been created successfully! '
-                'Now you can login with the form below:',
-                'success'
+
+            html_message = render_raw_template(
+                'email/registration.html',
+                user=new_user,
+                email_sign_up_message=self._system_setting('email_sign_up_message') or '',
+                activation_link=url_for(
+                    'ContentManagementSystem:activate_account',
+                    token=new_user.verification_token,
+                    user=new_user.id,
+                    _external=True
+                )
             )
-            return redirect(url_for('ContentManagementSystem:login'))
+
+            sent = send_message(
+                subject='Your account activation link',
+                recipients=[new_user.email],
+                html=html_message
+            )
+
+            if sent:
+                claim_success = True
+
         except ValidationError as e:
             flash(e.message, 'danger')
             return self._template('register')
@@ -633,29 +898,24 @@ class ContentManagementSystem(FlaskView):
         already_a_user = User.query.filter_by(email=email).count()
 
         if already_a_user:
-            flash(
-                'This email is already used for an account. '
-                'If you do not remember your password, please contact us.',
-                'warning'
-            )
+            claim_success = True
         else:
             flash(
-                'Something gone wrong when creating your account. '
+                'Something went wrong when creating your account. '
                 'If the problem reoccurs please contact us.',
                 'danger'
             )
+
+        if claim_success:
+            flash(SIGNED_UP_OR_ALREADY_USER_MSG, 'success')
+            # TODO: create a dedicated "Thank you, but activate your account now" page?
+            return redirect(url_for('ContentManagementSystem:login'))
 
         return self._template('register')
 
     @login_required
     def my_datasets(self):
-        from datetime import timedelta
-        datasets = [
-            dataset
-            for dataset in current_user.datasets
-            if dataset.life_expectancy > timedelta(0)
-        ]
-        return self._template('datasets', datasets=datasets)
+        return self._template('datasets', datasets=current_user.datasets)
 
     def logout(self):
         logout_user()

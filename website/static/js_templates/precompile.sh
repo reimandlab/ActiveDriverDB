@@ -16,6 +16,7 @@ nunjucks-precompile kinase_tooltip.njk >> precompiled/protein.js
 
 # network view templates
 nunjucks-precompile node_tooltip.njk > precompiled/network.js
+nunjucks-precompile site_mutations_table.njk >> precompiled/network.js
 nunjucks-precompile short_url_popup.njk >> precompiled/network.js
 
 # pathway view templates

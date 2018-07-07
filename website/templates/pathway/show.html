@@ -3,6 +3,10 @@
 
 {% block title %} {{ pathway.description }} - {{ super() }} {% endblock %}
 
+{% block head %}
+  {{ dependency('bootstrap_table') }}
+  {{ dependency('bootstrap_table_css') }}
+{% endblock %}
 
 {% block breadcrumb %}
   {{ super() }}
@@ -25,10 +29,45 @@
   </div>
 
   <h4>Genes involved in this pathway:</h4>
-  <div>
-    {% with genes=pathway.genes, more=False %}
-      {% include "pathways_gene_list.njk" %}
-    {% endwith %}
-  </div>
+
+  <table
+    class="table"
+    data-toggle="table"
+    data-sort-name="ptm-muts-cnt"
+    data-sort-order="desc"
+  >
+    <thead>
+      <tr>
+        <th data-sortable="true">Gene name</th>
+        <th data-sortable="true">Summary</th>
+        <th data-sortable="true"># mutations</th>
+        <th data-sortable="true" data-field="ptm-muts-cnt"># PTM mutations</th>
+        <th data-sortable="true"># PTM sites</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for gene in pathway.genes %}
+        <tr>
+          <td>
+            {% if gene.preferred_isoform %}
+              <a href="/protein/show/{{ gene.preferred_isoform.refseq }}">{{ gene.name }}</a>
+            {% else %}
+              {{ gene.name }}
+            {% endif %}
+          </td>
+          <td>{{ gene.full_name or '-' }}</td>
+          <td>
+            {{ gene.preferred_isoform.confirmed_mutations_count if gene.preferred_isoform else '-' }}
+          </td>
+          <td>
+            {{ gene.preferred_isoform.ptm_mutations_count if gene.preferred_isoform else '-' }}
+          </td>
+          <td>
+            {{ gene.preferred_isoform.sites_count if gene.preferred_isoform else '-' }}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 
 {% endblock %}

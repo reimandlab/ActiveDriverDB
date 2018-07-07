@@ -1,10 +1,11 @@
 from flask import request
 from flask_classful import FlaskView
 from flask import jsonify
+
+from database import bdb
 from models import Mutation
 from helpers.filters import FilterManager
-from ._global_filters import common_filters
-from ._commons import get_genomic_muts
+from .filters import common_filters
 from ._commons import represent_mutation
 from operator import attrgetter
 from collections import OrderedDict
@@ -45,7 +46,7 @@ def represent_mutations(mutations, filter_manager):
             metadata = {
                 source_name: field.to_json(data_filter)
             }
-            needle['summary'] = field.summary
+            needle['summary'] = field.summary()
             needle['value'] = field.get_value(data_filter)
 
         else:
@@ -86,13 +87,15 @@ class ChromosomeView(FlaskView):
         return filters, filter_manager
 
     def mutation(self, chrom, dna_pos, dna_ref, dna_alt):
+        """Rest API endpoint.
+        Stop codon mutations are not considered."""
 
         _, filter_manager = self._make_filters()
 
         if chrom.startswith('chr'):
             chrom = chrom[3:]
 
-        items = get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt)
+        items = bdb.get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt)
 
         raw_mutations = filter_manager.apply([
             item['mutation'] for
@@ -104,7 +107,3 @@ class ChromosomeView(FlaskView):
         )
 
         return jsonify(parsed_mutations)
-
-    def mutations(self, start, end):
-        # TODO
-        pass

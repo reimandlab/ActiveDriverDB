@@ -1,14 +1,21 @@
-import pickle
 import os
-from sqlalchemy.ext.associationproxy import association_proxy
-from sqlalchemy.orm import validates
-from werkzeug.utils import cached_property
-from database import db
-from models import Model
-import security
+import pickle
+from contextlib import suppress
 from datetime import datetime
 from datetime import timedelta
+
+from sqlalchemy import and_, not_
+from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import validates
+from werkzeug.utils import cached_property
+
+import security
+from database import db, update
+from database.types import utc_now, utc_days_after
 from exceptions import ValidationError
+from models import Model
 
 
 class CMSModel(Model):
@@ -24,6 +31,12 @@ class Count(CMSModel):
     """Statistics holder"""
     name = db.Column(db.String(254), unique=True)
     value = db.Column(db.Integer)
+
+
+class VennDiagram(CMSModel):
+    """Holds a Venn diagram data"""
+    name = db.Column(db.String(254), unique=True)
+    value = db.Column(db.PickleType)
 
 
 class BadWord(CMSModel):
@@ -79,6 +92,14 @@ class AnonymousUser:
     datasets = []
 
     @property
+    def access_level(self):
+        return 0
+
+    @property
+    def is_moderator(self):
+        return False
+
+    @property
     def is_admin(self):
         return False
 
@@ -89,14 +110,201 @@ class AnonymousUser:
         return None
 
 
+class UsersMutationsDataset(CMSModel):
+    mutations_dir = 'user_mutations'
+
+    name = db.Column(db.String(256))
+    uri = db.Column(db.String(256), unique=True, index=True)
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+    query_count = db.Column(db.Integer)
+    results_count = db.Column(db.Integer)
+    # as we get newer MySQL version, use of server_default would be preferable
+    created_on = db.Column(db.DateTime, default=utc_now())
+    # using default, not server_default as MySQL cannot handle functions as defaults, see:
+    # https://dba.stackexchange.com/questions/143953/how-can-i-set-timestamps-default-to-future-date
+    store_until = db.Column(db.DateTime, default=utc_days_after(7))
+
+    def __init__(self, *args, **kwargs):
+        data = kwargs.pop('data')
+        super().__init__(*args, **kwargs)
+        self.data = data
+
+    @classmethod
+    def by_uri(cls, uri):
+        return cls.query.filter_by(uri=uri.rstrip('/')).one()
+
+    @property
+    def data(self):
+        if not hasattr(self, '_data'):
+            try:
+                self._data = self._load_from_file()
+                self._bind_to_session()
+            except FileNotFoundError:
+                # None if associated file was deleted.
+                # Be aware of this line when debugging.
+                return
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._data = data
+        uri = self._save_to_file(data, self.uri)
+        self.uri = uri
+
+        # to be refactored after November 3, when all datasets
+        # will already have the following properties defined:
+        if data:
+            self.query_count = self.query_size
+            self.results_count = self.mutations_count
+
+    def remove(self, commit=True):
+        """Performs hard-delete of dataset.
+
+        Current session won't be committed if commit=False is provided.
+        """
+        # hard delete of data is the first priority
+        with suppress(FileNotFoundError):
+            os.remove(self._path)
+
+        # soft delete associated entry
+        update(self, store_until=utc_now())
+        if commit:
+            db.session.commit()
+
+        # prompt python interpreter to remove data from memory
+        with suppress(AttributeError):
+            del self._data
+
+        # and delete from session
+        db.session.delete(self)
+        if commit:
+            db.session.commit()
+
+    def _save_to_file(self, data, uri=None):
+        """Saves data to a file identified by uri argument.
+
+        If no uri is given, new unique file is created and new uri returned.
+        Returned uri is unique so it can serve as a kind of a randomized id to
+        prevent malicious software from iteration over all entries.
+        """
+        import base64
+        from tempfile import NamedTemporaryFile
+
+        os.makedirs(self.mutations_dir, exist_ok=True)
+
+        encoded_name = str(
+            base64.urlsafe_b64encode(bytes(self.name, 'utf-8')),
+            'utf-8'
+        )
+
+        if uri:
+            file_name = uri + '.db'
+            path = os.path.join(self.mutations_dir, file_name)
+            db_file = open(path, 'wb')
+        else:
+            db_file = NamedTemporaryFile(
+                dir=self.mutations_dir,
+                prefix=encoded_name,
+                suffix='.db',
+                delete=False
+            )
+
+        pickle.dump(data, db_file, protocol=4)
+
+        uri_code = os.path.basename(db_file.name)[:-3]
+
+        return uri_code
+
+    @property
+    def _path(self):
+        from urllib.parse import unquote
+
+        file_name = unquote(self.uri) + '.db'
+        return os.path.join(self.mutations_dir, file_name)
+
+    def _load_from_file(self):
+
+        with open(self._path, 'rb') as f:
+            data = pickle.load(f)
+        return data
+
+    @hybrid_property
+    def is_expired(self):
+        return self.life_expectancy < timedelta(0)
+
+    @is_expired.expression
+    def is_expired(self):
+        return UsersMutationsDataset.store_until < utc_now()
+
+    @hybrid_property
+    def life_expectancy(self):
+        """How much time is left for this dataset before removal."""
+        return self.store_until - datetime.utcnow()
+
+    @property
+    def query_size(self):
+        if self.query_count is None:
+            new_lines = self.data.query.count('\n')
+            return new_lines + 1 if new_lines else 0
+        return self.query_count
+
+    @property
+    def mutations(self):
+        mutations = []
+        results = self.data.results
+        for results in results.values():
+            for result in results:
+                mutations.append(result['mutation'])
+        return mutations
+
+    @property
+    def mutations_count(self):
+        if self.results_count is None:
+            return len(self.mutations)
+        return self.results_count
+
+    def get_mutation_details(self, protein, pos, alt):
+        for mutation in self.mutations:
+            if (
+                mutation.protein == protein and
+                mutation.position == pos and
+                mutation.alt == alt
+            ):
+                return mutation.meta_user
+
+    def _bind_to_session(self):
+        results = self.data.results
+        proteins = {}
+        for name, results in results.items():
+            for result in results:
+                protein = result['protein']
+                if protein.refseq not in proteins:
+                    proteins[protein.refseq] = db.session.merge(result['protein'])
+
+                result['protein'] = proteins[protein.refseq]
+                result['mutation'] = db.session.merge(result['mutation'])
+
+
 class User(CMSModel):
     """Model for use with Flask-Login"""
 
     # http://www.rfc-editor.org/errata_search.php?rfc=3696&eid=1690
+    id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(254), unique=True)
     access_level = db.Column(db.Integer, default=0)
+    is_verified = db.Column(db.Boolean, default=False)
+    verification_token = db.Column(db.Text, default=security.generate_random_token)
     pass_hash = db.Column(db.Text())
-    datasets = db.relationship('UsersMutationsDataset', backref='owner')
+
+    # only datasets
+    datasets = db.relationship(
+        'UsersMutationsDataset',
+        # beware: the expression will fail if put into quotation marks;
+        # it is somehow related to late evaluation of hybrid attributes
+        primaryjoin=and_(id == UsersMutationsDataset.owner_id, not_(UsersMutationsDataset.is_expired))
+    )
+    all_datasets = db.relationship('UsersMutationsDataset', backref='owner')
 
     def __init__(self, email, password, access_level=0):
 
@@ -153,6 +361,10 @@ class User(CMSModel):
         return self.access_level == 10
 
     @property
+    def is_moderator(self):
+        return self.access_level >= 5
+
+    @property
     def is_authenticated(self):
         return True
 
@@ -165,7 +377,7 @@ class User(CMSModel):
         return False
 
     def authenticate(self, password):
-        return security.verify_secret(password, str(self.pass_hash))
+        return self.is_verified and security.verify_secret(password, str(self.pass_hash))
 
     @cached_property
     def username(self):
@@ -223,9 +435,15 @@ class Page(CMSModel):
 class MenuEntry(CMSModel):
     """Base for tables defining links in menu"""
 
-    position = db.Column(db.Float, default=0)
+    position = db.Column(db.Float, default=5)
     menu_id = db.Column(db.Integer, db.ForeignKey('menu.id'))
     type = db.Column(db.String(32))
+
+    parent_id = db.Column(db.Integer, db.ForeignKey('menuentry.id'))
+    children = db.relationship(
+        'MenuEntry',
+        backref=db.backref('parent', remote_side='MenuEntry.id')
+    )
 
     @property
     def title(self):
@@ -244,6 +462,11 @@ class MenuEntry(CMSModel):
 
 
 class PageMenuEntry(MenuEntry):
+
+    @declared_attr
+    def __tablename__(self):
+        return 'page_menu_entry'
+
     id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
 
     page_id = db.Column(db.Integer, db.ForeignKey('page.id'))
@@ -260,10 +483,16 @@ class PageMenuEntry(MenuEntry):
 
     __mapper_args__ = {
         'polymorphic_identity': 'page_entry',
+        'inherit_condition': id == MenuEntry.id,
     }
 
 
 class CustomMenuEntry(MenuEntry):
+
+    @declared_attr
+    def __tablename__(self):
+        return 'custom_menu_entry'
+
     id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
 
     title = db.Column(db.String(256))
@@ -271,11 +500,13 @@ class CustomMenuEntry(MenuEntry):
 
     __mapper_args__ = {
         'polymorphic_identity': 'custom_entry',
+        'inherit_condition': id == MenuEntry.id,
     }
 
 
 class Menu(CMSModel):
     """Model for groups of links used as menu"""
+    id = db.Column(db.Integer, primary_key=True)
 
     # name of the menu
     name = db.Column(db.String(256), nullable=False, unique=True, index=True)
@@ -283,11 +514,16 @@ class Menu(CMSModel):
     # list of all entries (links) in this menu
     entries = db.relationship('MenuEntry')
 
+    top_level_entries = db.relationship(
+        'MenuEntry',
+        primaryjoin=and_(id == MenuEntry.menu_id, MenuEntry.parent_id == None)
+    )
+
 
 class Setting(CMSModel):
 
     name = db.Column(db.String(256), nullable=False, unique=True, index=True)
-    value = db.Column(db.String(256))
+    value = db.Column(db.Text())
 
     @property
     def int_value(self):
@@ -305,115 +541,3 @@ class TextEntry(CMSModel):
     name = db.Column(db.String(256), nullable=False, unique=True, index=True)
     content = db.Column(db.Text())
 
-
-class UsersMutationsDataset(CMSModel):
-    mutations_dir = 'user_mutations'
-
-    name = db.Column(db.String(256))
-    uri = db.Column(db.String(256), unique=True, index=True)
-    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    created_on = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def __init__(self, *args, **kwargs):
-        data = kwargs.pop('data')
-        super().__init__(*args, **kwargs)
-        self.data = data
-
-    @property
-    def data(self):
-        if not hasattr(self, '_data'):
-            self._data = self._load_from_file()
-            self._bind_to_session()
-        return self._data
-
-    @data.setter
-    def data(self, data):
-        self._data = data
-        uri = self._save_to_file(data, self.uri)
-        self.uri = uri
-
-    def _save_to_file(self, data, uri=None):
-        """Saves data to a file identified by uri argument.
-
-        If no uri is given, new unique file is created and new uri returned.
-        Returned uri is unique so it can serve as a kind of a randomized id to
-        prevent malicious software from iteration over all entries.
-        """
-        import base64
-        from tempfile import NamedTemporaryFile
-
-        os.makedirs(self.mutations_dir, exist_ok=True)
-
-        encoded_name = str(
-            base64.urlsafe_b64encode(bytes(self.name, 'utf-8')),
-            'utf-8'
-        )
-
-        if uri:
-            file_name = uri + '.db'
-            path = os.path.join(self.mutations_dir, file_name)
-            db_file = open(path, 'wb')
-        else:
-            db_file = NamedTemporaryFile(
-                dir=self.mutations_dir,
-                prefix=encoded_name,
-                suffix='.db',
-                delete=False
-            )
-
-        pickle.dump(data, db_file, protocol=4)
-
-        uri_code = os.path.basename(db_file.name)[:-3]
-
-        return uri_code
-
-    def _load_from_file(self):
-        from urllib.parse import unquote
-
-        file_name = unquote(self.uri) + '.db'
-        path = os.path.join(self.mutations_dir, file_name)
-
-        if os.path.exists(path):
-            with open(path, 'rb') as f:
-                data = pickle.load(f)
-        return data
-
-    @property
-    def life_expectancy(self):
-        """How many time is left for this dataset before removal."""
-        return self.created_on - datetime.utcnow() + timedelta(days=7)
-
-    @property
-    def query_size(self):
-        new_lines = self.data.query.count('\n')
-        return new_lines + 1 if new_lines else 0
-
-    @property
-    def mutations(self):
-        mutations = []
-        results = self.data.results
-        for results in results.values():
-            for result in results:
-                mutations.append(result['mutation'])
-        return mutations
-
-    def get_mutation_details(self, protein, pos, alt):
-        for mutation in self.mutations:
-            if (
-                mutation.protein == protein and
-                mutation.position == pos and
-                mutation.alt == alt
-            ):
-                return mutation.meta_user
-
-    def _bind_to_session(self):
-        results = self.data.results
-        proteins = {}
-        for name, results in results.items():
-            for result in results:
-                protein = result['protein']
-                if protein.refseq not in proteins:
-                    proteins[protein.refseq] = db.session.merge(result['protein'])
-
-                result['protein'] = proteins[protein.refseq]
-                result['mutation'] = db.session.merge(result['mutation'])

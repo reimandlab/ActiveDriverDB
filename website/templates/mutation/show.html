@@ -10,6 +10,9 @@
 
   {{ dependency('d3.js') }}
 
+  {{ dependency('bootstrap_table') }}
+  {{ dependency('bootstrap_table_css') }}
+
   {# Nunjucks templates #}
   {% if is_debug_mode %}
     {{ dependency('nunjucks') }}
@@ -53,7 +56,9 @@
           <div class="container-fluid">
             <div class="row">
               <div class="col-md-4">Isoform:</div>
-              <div class="col-md-8">{{ protein.refseq }}</div>
+              <div class="col-md-8">
+                <a href="{{ url_for('ProteinView:show', refseq=protein.refseq) }}">{{ protein.refseq }}</a>
+              </div>
             </div>
             <div class="row">
               <div class="col-md-4">Position:</div>
@@ -78,7 +83,7 @@
             </div>
             <div class="row">
               <div class="col-md-4">Kinases:</div>
-              <div class="col-md-8">{% include 'mutation/kinases.html' %} {# TODO: include kinase tooltip #}</div>
+              <div class="col-md-8">{% include 'mutation/kinases.html' %}</div>
             </div>
           </div>
 
@@ -100,15 +105,7 @@
           <h3 class="panel-title">Clinical Information</h3>
         </div>
         <div class="panel-body">
-          <h4>Cancer types: <span class="source">(TCGA)</span></h4>
-          <div class="clinical-data">
-            {% if mutation.meta_TCGA %}
-              {{ mutation.meta_TCGA.summary() | join(', ') }}
-            {% else %}
-              <span class="empty">no data</span>
-            {% endif %}
-          </div>
-          <h4>Cancer types: <span class="source">(MC3)</span></h4>
+          <h4>Cancer types: <span class="source">(TCGA MC3)</span></h4>
           <div class="clinical-data">
             {% if mutation.meta_MC3 %}
               {{ mutation.meta_MC3.summary() | join(', ') }}
@@ -155,63 +152,99 @@
       <div class="panel-body">
         {% set impact = mutation.impact_on_specific_ptm(site) %}
 
-        {% if impact == 'network-rewiring' %}
-          {% from "mimp.njk" import best_prediction %}
-          {% from "mimp.njk" import weaker_predictions %}
-
-          {% set mimp_meta=mutation.meta_MIMP.to_json() %}
-
-          {% for effect in ['gain', 'loss'] %}
-            {% if mimp_meta[effect] | length %}
-            <div class="mimp-effect">
-              {% set annotations_with_effect = mimp_meta[effect] %}
-              {% set effect_count = annotations_with_effect | length %}
-              {% set best = annotations_with_effect | first %}
-              <h4>{{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }} of PTM site:</h4>
-              {{ best_prediction(best, effect) }}
-
-              {% from 'macros.njk' import represent_site %}
-              {% set mimp = best %}
-              <div>
-                Site: {{ represent_site(mimp.site) }}
-              </div>
-              <div>
-                Position in motif: {{ mimp.pos_in_motif }}
-              </div>
-
-              {% if effect_count > 1 %}
-                <div>
-                  {{ weaker_predictions(annotations_with_effect, effect_count) | safe }}
-                </div>
-              {% endif %}
-              {% include 'mimp_image.njk' %}
+        <div class="row">
+          <div class="col-md-2">
+            <h4>Affected site:</h4>
+            <div>
+              Position: {{ site.position }}
             </div>
+            <div>
+              Residue: {{ site.residue }}
+            </div>
+            <div>
+              Type: {{ site.type }}
+            </div>
+          </div>
+          <div class="col-md-4">
+
+            {% if impact == 'network-rewiring' %}
+              {% from "mimp.njk" import best_prediction %}
+              {% from "mimp.njk" import weaker_predictions %}
+
+              {% set mimp_meta=mutation.meta_MIMP.to_json() %}
+
+              {% for effect in ['gain', 'loss'] %}
+                {% if mimp_meta[effect] | length %}
+                  <div class="mimp-effect">
+                    <div>
+
+                    {% set annotations_with_effect = mimp_meta[effect] %}
+                    {% set effect_count = annotations_with_effect | length %}
+                    {% set best = annotations_with_effect | first %}
+                    <h4>{{ 'Best' if effect_count > 1 else 'Only' }} {{ effect }} of PTM site:</h4>
+                    {{ best_prediction(best, effect) }}
+
+                    {% from 'macros.njk' import represent_site %}
+                    {% set mimp = best %}
+                    <div>
+                      Site: {{ represent_site(mimp.site) }}
+                    </div>
+                    <div>
+                      Position in motif: {{ mimp.pos_in_motif }}
+                    </div>
+
+                    {% if effect_count > 1 %}
+                      <div>
+                        {{ weaker_predictions(annotations_with_effect, effect_count, effect) | safe }}
+                      </div>
+                    {% endif %}
+                    </div>
+                    <div class="logo-container">
+                    {% include 'mimp_image.njk' %}
+                    </div>
+                  </div>
+                {% endif %}
+              {% endfor %}
+
+            {% else %}
+              <h4>Impact:</h4>
+              {{ impact }}
             {% endif %}
-          {% endfor %}
 
-        {% else %}
-          <h4>Impact:</h4>
-          {{ impact }}
-        {% endif %}
-
-        <h4>Affected site:</h4>
-        <div>
-          Position: {{ site.position }}
+          </div>
+          <div class="col-md-6">
+            <h4>Other mutations affecting this site</h4>
+            {% with refseq=protein.refseq %}
+              {% include 'site_mutations_table.njk' %}
+            {% endwith %}
+          </div>
         </div>
-        <div>
-          Residue: {{ site.residue }}
-        </div>
-        <div>
-          Type: {{ site.type }}
-        </div>
-
       </div>
     </div>
   {% endfor %}
 
   <div class="row">
     <div class="col-md-8">
-      {# External references ? #}
+      {% if mutation.meta_ClinVar and mutation.meta_ClinVar.db_snp_ids %}
+        <div class="panel panel-default site-summary">
+          <div class="panel-heading">
+            <h3 class="panel-title">External references</h3>
+          </div>
+          <div class="panel-body">
+            <div class="container-fluid">
+              <div class="row">
+                <div class="col-md-4">dbSNP:</div>
+                <div class="col-md-8">
+                  {% set comma = joiner() %}
+                  {% for db_snp in mutation.meta_ClinVar.db_snp_ids %}
+                    {{ comma() }} <a href="https://www.ncbi.nlm.nih.gov/snp/rs{{ db_snp }}" target="_blank">rs{{ db_snp }}</a>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
     </div>
     <div class="col-md-4">
       {% with feature='mutation', title=mutation.name %}

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "help.html" import help with context %}
+{% from "text_entry.html" import text with context %}
 
 {% block title %}
     {{ protein.gene.name }} - {{ protein.refseq }} - network view - {{ super() }}
@@ -19,12 +20,15 @@
   {{ dependency('bootstrap_table_css') }}
 
   {# Nunjucks templates #}
+  {#
   {% if is_debug_mode %}
     {{ dependency('nunjucks') }}
   {% else %}
     {{ dependency('nunjucks_slim') }}
     <script type="text/javascript" src="/static/js_templates/precompiled/network.js"></script>
   {% endif %}
+  #}
+  {{ dependency('nunjucks') }}
 
   {{ dependency('clipboard.js') }}
 
@@ -45,22 +49,9 @@
 <p class="full-protein-name">{% if protein.full_name %}{{ protein.full_name | title }}{% endif %}</p>
 
   <div class="isoform-page-options">
-    <ul class="nav nav-tabs">
-      <li role="presentation">
-        <a
-           href="{{ url_for('ProteinView:show', refseq=protein.refseq, filters=filters.url_string()) }}"
-           class="variable-url"
-           data-url-pattern="{{ url_for('ProteinView:show', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
-        >
-          <span class="glyphicon glyphicon-indent-left" aria-hidden="true" style="transform:rotate(-90deg)"></span>
-          Sequence View
-        </a>
-      <li role="presentation" class="active">
-        <a href="#">
-          <span class="glyphicon glyphicon-globe" aria-hidden="true"></span>
-          Network view
-        </a>
-    </ul>
+    {% with active_tab = 'network-predicted' if predicted_interactions else 'network' %}
+      {% include 'isoform_tabs_menu.html' %}
+    {% endwith %}
     <div class="actions">
       {% include 'buttons/short_url.html' %}
     </div>
@@ -69,113 +60,11 @@
   <div class="row">
     <div class="col-md-3">
 
-      {# Legend #}
-      <div class="panel panel-default color-legend">
-        <div class="panel-heading">
-          <h3 class="panel-title">Legend</h3>
-        </div>
-        <div class="panel-body">
-
-          <div class="legend">
-            <h4>Protein</h4>
-            <div class="swatch swatch-centered">
-              <div class="protein">
-                <div class="color"></div>
-              </div>
-              <div class="name">Currently analysed protein</div>
-            </div>
-          </div>
-
-          <div class="legend">
-            <h4>
-              Kinases
-              {{ help('legend-network-kinases', 'small-top') }}
-            </h4>
-            <div class="swatch swatch-centered">
-              <div class="kinase">
-                <div class="color"></div>
-              </div>
-              <div class="name">Kinase interacting with one of sites</div>
-            </div>
-            <div class="swatch swatch-centered">
-              <div class="kinase-gradient gradient">
-                <div class="left-edge edge">0</div>
-                <div class="color"></div>
-                <div class="right-edge edge">max</div>
-              </div>
-              <div class="name">
-                mutations occurring in this kinase
-              </div>
-            </div>
-          </div>
-
-          <div class="legend">
-            <h4>
-              Sites
-              {{ help('legend-network-sites', 'small-top') }}
-            </h4>
-            <div class="swatch swatch-centered">
-              <div class="site example">
-                <div class="color"></div>
-              </div>
-              <div class="name">PTM Site</div>
-              <div class="name"><p>Color corresponds to (most severe) impact of mutations on given site:</p></div>
-              <div class="sites">
-                {% for type in mutation_types %}
-                  <div class="swatch">
-                    <div class="site impact {{ type }}">
-                      <div class="color"></div>
-                    </div>
-                    <div class="name">{{ type }}</div>
-                  </div>
-                {% endfor %}
-              </div>
-            </div>
-          </div>
-
-          <div class="legend">
-            <h4>Interactions</h4>
-            <div class="swatch">
-              <div class="interaction normal">
-                <div class="link">
-                  <div class="color"></div>
-                </div>
-                <div class="kinase">
-                  <div class="color"></div>
-                </div>
-                <div class="site none">
-                  <div class="color"></div>
-                </div>
-              </div>
-              <div class="name">Kinase interacts with analysed protein at this site</div>
-            </div>
-            <div class="swatch">
-              <div class="interaction loss">
-                <div class="link">
-                  <div class="color"></div>
-                </div>
-                <div class="kinase">
-                  <div class="color"></div>
-                </div>
-                <div class="site network-rewiring">
-                  <div class="color"></div>
-                </div>
-              </div>
-              <div class="name">
-                Loss of interaction predicted: some mutation causes disruption of a binding motif
-                {{ help('legend-network-interaction-loss', 'small-top') }}
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
       <div id="sticky_box">
 
         {# Filters #}
         <form method="GET" class="widget-form" id="filters_form">
-          {% include 'filters/protein.html' %}
+          {% include 'filters/protein.html' with context %}
 
           <div class="collapse-me" tabindex="-1">
             {% with collapsed=True %}
@@ -185,6 +74,150 @@
 
           <input type="hidden" name="fallback" value="True">
         </form>
+
+        {# Legend #}
+        <div class="panel panel-default color-legend">
+          <div class="panel-heading">
+            <h3 class="panel-title">Legend</h3>
+          </div>
+          <div class="panel-body">
+
+            <div class="legend">
+              <h4>Protein</h4>
+              <div class="swatch swatch-centered">
+                <div class="protein">
+                  <div class="color"></div>
+                </div>
+                <div class="name">Currently analysed protein</div>
+              </div>
+            </div>
+
+            <div class="legend">
+              <h4>
+                Kinases
+                {{ help('legend-network-kinases', 'small-top') }}
+              </h4>
+              <div class="side-by-side">
+                <div class="swatch swatch-centered">
+                  <div class="kinase">
+                    <div class="color"></div>
+                  </div>
+                  <div class="name">Kinase</div>
+                </div>
+                <div class="swatch swatch-centered">
+                  <div class="svg-node">
+                    <div class="node">
+                      <svg viewBox="-21 -8 40 20" class="color">
+                        <polygon class="group shape" points="-8.176,20.823922,7.13,20.823922,17.955,10,18,-5.307337,7.131,-16.131,-8.176,-16.131,-19,-5.307,-19,10" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="name">Group</div>
+                </div>
+                <div class="swatch swatch-centered">
+                  <div class="svg-node">
+                    <div class="node">
+                      <svg viewBox="-21 -15 40 20" class="color">
+                        <polygon class="drug shape" points="0,5.36 -17.32,10 -4.64,-2.68 0,-20 4.64,-2.68 17.32,10" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="name">Drug</div>
+                </div>
+
+              </div>
+              <div class="swatch swatch-centered">
+                <div class="name">
+                  Mutations in a kinase:
+                </div>
+                <div class="kinase-gradient gradient">
+                  <div class="left-edge edge">0</div>
+                  <div class="color"></div>
+                  <div class="right-edge edge">max</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="legend">
+              <h4>
+                Sites
+                {{ help('legend-network-sites', 'small-top') }}
+              </h4>
+              <div class="swatch swatch-centered">
+                <div class="site example">
+                  <div class="color"></div>
+                </div>
+                <div class="name">PTM Site</div>
+                <div class="name"><p>Color corresponds to (the&nbsp;most severe) impact of mutations on given site:</p></div>
+                <div class="sites">
+                  {% for type in mutation_types %}
+                    <div class="swatch">
+                      <div class="site impact {{ type }}">
+                        <div class="color"></div>
+                      </div>
+                      <div class="name">{{ type }}</div>
+                    </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <div class="legend">
+              <h4>Interactions</h4>
+              <div class="swatch">
+                <div class="interaction normal">
+                  <div class="link">
+                    <div class="color"></div>
+                  </div>
+                  <div class="kinase">
+                    <div class="color"></div>
+                  </div>
+                  <div class="site none">
+                    <div class="color"></div>
+                  </div>
+                </div>
+                <div class="name">Kinase interacts with analysed protein at this site</div>
+              </div>
+              <div class="swatch">
+                <div class="interaction loss">
+                  <div class="link">
+                    <div class="color"></div>
+                  </div>
+                  <div class="kinase">
+                    <div class="color"></div>
+                  </div>
+                  <div class="site network-rewiring">
+                    <div class="color"></div>
+                  </div>
+                </div>
+                <div class="name">
+                  Loss of interaction predicted
+                  {{ help('legend-network-interaction-loss', 'small-top') }}
+                </div>
+              </div>
+              {% if predicted_interactions %}
+              <div class="swatch">
+                <div class="interaction gain">
+                  <div class="link">
+                    <div class="color"></div>
+                  </div>
+                  <div class="kinase">
+                    <div class="color"></div>
+                  </div>
+                  <div class="site network-rewiring">
+                    <div class="color"></div>
+                  </div>
+                </div>
+                <div class="name">
+                  Gain of interaction predicted
+                  {{ help('legend-network-interaction-gain', 'small-top') }}
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
 
         {# Contact us #}
         {% with feature='protein', title=protein.gene.name + ' - ' + protein.refseq %}
@@ -233,6 +266,20 @@
           </div>
       </div>
 
+      {# Summary #}
+      {% include 'protein/summary.html' %}
+
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <h3 class="panel-title">
+            Usage summary
+          </h3>
+        </div>
+        <div class="panel-body">
+          {{ text('network-usage-summary') }}
+        </div>
+      </div>
+
       {# references #}
       {% include 'protein/external_references.html' %}
 
@@ -257,6 +304,7 @@
 
     <script type="text/javascript">
     nunjucks.configure('/static/js_templates', {autoescape: true});
+    nunjucks.installJinjaCompat()
 
     affix($('#sticky_box'), $('footer'));
 
@@ -272,7 +320,7 @@
             radius: 20,
             ratio: 0.5, /* remember to keep update with style of network */
             nodeURL: function(node){
-                return '{{ url_for('ProteinView:show', refseq='') }}' + node.protein.refseq
+                return '{{ url_for('SequenceView:show', refseq='') }}' + node.protein.refseq
             },
             onload: function(){ network_spinner.hide() }
         };
@@ -302,6 +350,9 @@
     {% raw %}
     var export_title_pattern = 'network_view:{{ gene }}-{{ refseq }}-{{ expanded_filters }}';
     {% endraw %}
+    {% if predicted_interactions %}
+        export_title_pattern = 'predicted:' + export_title_pattern
+    {% endif %}
 
     {% assets "css_network" %}
     Export.init(
@@ -313,17 +364,26 @@
 
 
     /**
-     * Representation of NetworkView as defined in NetworkView:representation().
+     * Representation of NetworkView as defined in NetworkView:data().
      * @typedef {RepresentationData} NetworkViewData
      * @property {Object} network
      * @property {boolean} clone_by_site
      * @property {boolean} show_sites
+     * @property {boolean} collide_drugs
      */
 
-    var download_link = decode_url_pattern("{{ url_for('NetworkView:download', refseq=protein.refseq, format='{{ format }}', filters='{{ filters }}') }}")
+    var download_link = decode_url_pattern("{{
+      url_for(
+        'NetworkView:download' + ('_predicted' if predicted_interactions else ''),
+         refseq=protein.refseq,
+         format='{{ format }}',
+         filters='{{ filters }}'
+      )
+    }}")
 
     /**
      * Callback for AsyncFiltersHandler loading representation from server response.
+     * @callback
      * @param {NetworkViewData} data
      * @param {FiltersData} filters_data
      */
@@ -358,9 +418,31 @@
             ]
         );
 
+        var site_type = filters_handler.value('Site.type')
+        if(!data.network.kinases.length && !data.network.kinase_groups.length)
+        {
+            $('.temporary-alert').remove()
+            // For experimental network the reason why it is empty is always lack of
+            // interactions specific for given PTM site type (or all types).
+            // For predicted networks chosen mutation filters play a role too.
+            flash(
+                'The network of {{ protein.refseq  }} is empty as there are ' +
+                'no PTM-specific interaction' +
+                '{{
+                  ' changes predicted by MIMP'
+                  if predicted_interactions else
+                  's defined in the experimental database'
+                }}' +
+                ' (for ' + (site_type !== 'None' ? site_type : 'any of PTM') + ' sites' +
+                '{{ ' and mutations meeting filtering criteria' if predicted_interactions else '' }}' +
+                ').',
+                'warning temporary-alert'
+            )
+        }
         init_network({
             data: data.network,
             show_sites: data.show_sites,
+            collide_drugs: data.collide_drugs,
             clone_by_site: data.clone_by_site
         })
     }
@@ -372,7 +454,7 @@
     filters_handler.init({
         form: $('#filters_form'),
         data_handler: load_data,
-        representation_url: "{{ url_for('NetworkView:representation', refseq=protein.refseq) }}",
+        endpoint_url: "{{ url_for('NetworkView:' +  ('predicted_' if predicted_interactions else '') + 'data', refseq=protein.refseq) }}",
         on_loading_start: function (){
             if (network)
                 network.destroy();

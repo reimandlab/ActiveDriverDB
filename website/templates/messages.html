@@ -1,11 +1,15 @@
 {% with messages=get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div class="flashes">
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category or 'warning' }}" role="alert">
-          {{ message | safe }}
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
+  <div class="flashes">
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category or 'warning' }}" role="alert">
+        {{ message | safe }}
+      </div>
+    {% endfor %}
+    {% if system_setting('is_maintenance_mode_active') %}
+      <div class="alert alert-warning">
+        The site is currently in maintenance mode. Some functions may be temporarily unavailable.
+        {{ system_setting('maintenace_text') }}
+      </div>
+    {% endif %}
+  </div>
 {% endwith %}

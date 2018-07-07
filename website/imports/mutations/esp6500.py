@@ -1,11 +1,13 @@
 from models import ExomeSequencingMutation
-from imports.mutations import MutationImporter
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import gzip_open_text
 
+from .mutation_importer import MutationImporter
 
-class Importer(MutationImporter):
 
+class ESP6500Importer(MutationImporter):
+
+    name = 'esp6500'
     model = ExomeSequencingMutation
     default_path = 'data/mutations/ESP6500_muts_annotated.txt.gz'
     header = [
@@ -13,12 +15,15 @@ class Importer(MutationImporter):
         'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'V11',
         'V12', 'V13', 'V14', 'V15', 'V16', 'V17', 'V18', 'V19', 'V20', 'V21'
     ]
-    insert_keys = ('maf_ea', 'maf_aa', 'maf_all', 'mutation_id')
+    insert_keys = ('mutation_id', 'maf_ea', 'maf_aa', 'maf_all')
 
     def parse(self, path):
         esp_mutations = []
+        duplicates = 0
+        skipped = 0
 
         def esp_parser(line):
+            nonlocal duplicates, skipped
 
             metadata = line[20].split(';')
 
@@ -27,22 +32,36 @@ class Importer(MutationImporter):
 
             maf_ea, maf_aa, maf_all = map(float, metadata[4][4:].split(','))
 
+            if maf_all == 0:
+                skipped += 1
+                return
+
             for mutation_id in self.preparse_mutations(line):
 
-                esp_mutations.append(
-                    (
-                        maf_ea,
-                        maf_aa,
-                        maf_all,
-                        mutation_id
-                    )
+                values = (
+                    mutation_id,
+                    maf_ea,
+                    maf_aa,
+                    maf_all
                 )
+
+                duplicated = self.look_after_duplicates(mutation_id, esp_mutations, values)
+                if duplicated:
+                    duplicates += 1
+                    continue
+
+                self.protect_from_duplicates(mutation_id, esp_mutations)
+
+                esp_mutations.append(values)
 
         parse_tsv_file(
             path, esp_parser,
             self.header,
             file_opener=gzip_open_text
         )
+
+        print('%s duplicates found' % duplicates)
+        print('%s zero-frequency mutations skipped' % skipped)
 
         return esp_mutations
 

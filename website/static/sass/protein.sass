@@ -6,33 +6,24 @@
   padding-bottom: 50%
   vertical-align: top
   overflow: hidden
-  margin-bottom: 20px
+  margin-bottom: 10px
 
-text
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif
+.tracks-controls, .tracks-box, #plot_area
+  opacity: 1
+  transition-property: all
+  transition-duration: 0.3s
 
-  &.label
-    font-weight: bold
+.scroll-feedback
+  right: 150px
+  font-size: 90%
+  color: #8a6d3b
+  z-index: 10
+  top: 2px
 
-.site
-  rect, path
-    stroke: #555
 
-rect, path
-  .phosphorylation &
-    fill: rgb(67, 162, 202)
+.invisible
+  opacity: 0!important
 
-  .acetylation &
-    fill: rgb(186, 228, 188)
-
-  .ubiquitination &
-    fill: rgb(123, 204, 196)
-
-  .methylation &
-    fill: rgb(240, 249, 232)
-
-  .multi_ptm &
-    fill: rgb(8, 104, 172)
 
 @import "_color_legend.sass"
 
@@ -50,25 +41,8 @@ rect, path
     border-right: 8px solid transparent
     border-bottom: 12px solid rgb(67, 162, 202)
 
-.axis
-  shape-rendering: crispEdges
-
-  .minor
-    stroke-opacity: .5
-
-  line, path
-    fill: none
-    stroke: #000
-
-.needle
-  line
-    stroke: black
-
-  *:hover
-    cursor: pointer
-
+@import "needleplot"
 @import "mimp"
-
 @import "mutation_table"
 
 .panel-needleplot
@@ -94,9 +68,11 @@ rect, path
 
   ul.minor_mimp_kinases, ul.kinases
     li::after
-      content: ', '
+      content: ','
+      margin-right: 1ch
     li:last-of-type::after
       content: ''
+      margin-right: 0
 
   ul.kinases
     padding-left: 1ch
@@ -109,39 +85,7 @@ rect, path
       padding: 0
       display: inline
 
-.protein-summary
-  .progress
-    margin-bottom: 0
+@import "protein_summary"
 
-    .progress-text
-      $col: #bb4946
-      position: absolute
-      text-shadow: 1px 0 0 $col, 0 1px 0 $col, -1px 0 0 $col, 0 -1px 0 $col, 0 0 1px $col, 0 0 3px $col
-      margin-left: auto
-      margin-right: auto
-      left: 0
-      right: 0
-
-
-  dt::after
-    content: ':'
-
-  .gene-wide-data
-    dl
-      margin: 0
-
-    .strand
-      float: right
-      margin-right: 20%
-
-      dd
-        margin-left: 70px
-      dt
-        width: 70px
-
-  .dl-horizontal
-    dd
-      margin-left: 125px
-    dt
-      width: 125px
-      text-align: left
+.kinase
+  border-bottom: 1px dashed #999

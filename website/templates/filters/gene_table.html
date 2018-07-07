@@ -1,6 +1,6 @@
 {% extends 'filters/box.html' %}
-{% from 'widgets/widgets.html' import widget_list %}
-{% from 'widgets/widgets.html' import render_widget %}
+{% from 'widgets/widgets.html' import widget_list with context %}
+{% from 'widgets/widgets.html' import render_widget with context %}
 
 {% block dataset_widgets %}
   <div class="is-ptm">
@@ -11,7 +11,7 @@
     {{ render_widget(widgets.dataset) }}
   </div>
 
-  <div class="dataset-specific">
+  <div class="dataset-specific dynamic-widgets">
     {{ widget_list(widgets.dataset_specific, collapse=True) }}
   </div>
 {% endblock %}
@@ -19,5 +19,8 @@
 {% block other_widgets %}
   <div class="ptm-type">
     {{ render_widget(widgets.ptm_type) }}
+  </div>
+  <div class="is-known-kinase">
+    {{ render_widget(widgets.is_kinase) }}
   </div>
 {% endblock %}

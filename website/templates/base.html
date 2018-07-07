@@ -6,13 +6,22 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <link rel="icon" href="/static/img/favicon.ico">
+  <link rel="icon" type="image/png" href="/static/img/favicon-128.png" sizes="128x128">
+  <link rel="icon" type="image/png" href="/static/img/favicon-64.png" sizes="64x64">
+  <link rel="icon" type="image/png" href="/static/img/favicon-32.png" sizes="32x32">
+
   {{ dependency('bootstrap_css') }}
+
+  {{ dependency('futura_fonts') }}
+  <script>try{Typekit.load({async:true})}catch(e){}</script>
 
   {# jQuery #}
   {{ dependency('jquery') }}
+  {{ dependency('jquery_deserialize') }}
   {{ dependency('bootstrap_js') }}
 
-  {% if current_user.is_admin %}
+  {% if current_user.is_moderator %}
     {{ dependency('tinymce') }}
     {{ dependency('prism') }}
     {{ dependency('prism_bash') }}
@@ -28,7 +37,7 @@
     {% endassets %}
   {% endblock %}
 
-  {% if current_user.is_admin %}
+  {% if current_user.is_moderator %}
   {% assets "js_inline_edit" %}
     <script type="text/javascript" src="{{ ASSET_URL }}"></script>
   {% endassets %}
@@ -43,7 +52,7 @@
   {% block head %}
   {% endblock %}
 </head>
-<body class="{{ 'admin' if current_user.is_admin else '' }} {% block body_class %}{% endblock %}">
+<body class="{{ 'admin' if current_user.is_moderator else '' }} {% block body_class %}{% endblock %}">
   <script type="text/javascript">
     {# elements with 'js-hidden' class will be hidden only if js is active #}
     var css = document.createElement('style')
@@ -57,9 +66,10 @@
 
 
   {% block body %}
-  <div class="container">
 
-    {% include "navbar.html" %}
+  {% include "navbar.html" %}
+
+  <div class="container main-container">
 
     {% block breadcrumbs_bar %}
     <div class="minor-top-navigation">
@@ -72,11 +82,13 @@
         {% if current_user.is_authenticated %}
           <span class="welcome-user">Welcome {{ current_user.username }}!</span>
           {% block user_menu %}
-            {% if current_user.is_admin %}
+            {% if current_user.is_moderator %}
               <a href="{{ url_for('ContentManagementSystem:list_pages') }}" class="btn btn-default">
                 <span class="glyphicon glyphicon-list-alt"></span>
                 Pages
               </a>
+            {% endif %}
+            {% if current_user.is_admin %}
               <a href="{{ url_for('ContentManagementSystem:list_menus') }}" class="btn btn-default">
                 <span class="glyphicon glyphicon-list"></span>
                 Menus
@@ -89,6 +101,10 @@
             <a href="{{ url_for('ContentManagementSystem:my_datasets') }}" class="btn btn-default">
               <span class="glyphicon glyphicon-log-out"></span>
               My datasets
+            </a>
+            <a href="{{ url_for('ContentManagementSystem:set_password') }}" class="btn btn-default">
+              <span class="glyphicon glyphicon-lock"></span>
+              Change password
             </a>
             <a href="{{ url_for('ContentManagementSystem:logout') }}" class="btn btn-default">
               <span class="glyphicon glyphicon-log-out"></span>
@@ -117,13 +133,6 @@
       {% block content %}
       {% endblock %}
     </div>
-    <footer class="footer">
-      <ul class="menu list-unstyled">
-        {% block footer %}
-          {{ system_menu('footer_menu').as_list }}
-        {% endblock %}
-      </ul>
-    </footer>
 
     {% if side_menu.is_active %}
       </div>
@@ -137,14 +146,29 @@
     {% endif %}
 
   </div>
-
   {% endblock %}
+
+<footer class="footer">
+  <div class="inner-footer">
+    <div class="col-md-5 col-md-offset-1">
+        <ul class="menu list-unstyled">
+            {% block footer %}
+                {{ system_menu('footer_menu').as_list }}
+            {% endblock %}
+        </ul>
+    </div>
+    <div class="col-md-5">
+      {{ system_setting('footer_text') or '' }}
+    </div>
+  </div>
+</footer>
+
 
 {% assets "js_search_bar" %}
 <script type="text/javascript" src="{{ ASSET_URL }}"></script>
 {% endassets %}
 {% block footer_js %}
-  {% if current_user.is_admin %}
+  {% if current_user.is_moderator %}
   {% assets "js_cms_editor" %}
     <script src="{{ ASSET_URL }}"></script>
   {% endassets %}
@@ -162,7 +186,7 @@
 
   document.getElementById('spinner').style.display='none'
 
-  {% if current_user.is_admin %}
+  {% if current_user.is_moderator %}
     create_help_manager("{{ url_for('ContentManagementSystem:save_inline_help') }}");
     create_text_manager("{{ url_for('ContentManagementSystem:save_text_entry') }}");
     set_csrf_token("{{ csrf_token() | safe }}")
@@ -193,5 +217,8 @@
   {% endif %}
 </script>
 {% endblock %}
+  {% if not is_debug_mode %}
+    {% include 'analytics.html' %}
+  {% endif %}
 </body>
 </html>

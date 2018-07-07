@@ -66,7 +66,7 @@
                 <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ uniprot.accession }}</a>{% if uniprot.isoform != 1 %},
                   <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}#{{ uniprot.accession }}-{{ uniprot.isoform }}" {{ target }}>isoform {{ uniprot.isoform }}</a>
                 {% endif %}
-              <li><a href="http://www.phosphosite.org/uniprotAccAction?id={{ uniprot.accession }}" {{ target }}>Phosposite</a>
+              <li><a href="http://www.phosphosite.org/uniprotAccAction?id={{ uniprot.accession }}" {{ target }}>PhosphoSitePlus</a>
               <li><a href="http://pfam.xfam.org/protein?acc={{ uniprot.accession }}" {{ target }}>PFAM</a>
               <li><a href="http://string-db.org/newstring_cgi/show_network_section.pl?identifier={{ uniprot.accession }}" {{ target }}>STRING</a>
               <li><a href="http://www.phospho3d.org/search.py?flag=3&query_string={{ uniprot.accession }}&redundancy=all" {{ target }}>phospho3d</a>

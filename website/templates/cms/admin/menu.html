@@ -59,6 +59,7 @@
               <th class=text-center>Address</th>
               <th class=text-center>Type</th>
               <th class=text-center>Position</th>
+              <th class=text-center>Parent</th>
               <th class=text-center>Remove</th>
             </tr>
         </thead>
@@ -80,6 +81,18 @@
                 </td>
                 <td class=text-center>
                   <input type="number" name="position[{{ entry.id }}]" value="{{ entry.position }}" class="form-control" required step="0.1">
+                </td>
+                <td class=text-center>
+                  <select name="parent[{{ entry.id }}]">
+                    <option value="None" {{ 'selected' if entry.parent }}>None (Top level)</option>
+                    {% for other_entry in menu.entries %}
+                      {% if other_entry != entry %}
+                        <option value="{{ other_entry.id }}" {{ 'selected' if other_entry == entry.parent }}>
+                        {{ other_entry.title }}
+                        </option>
+                      {% endif %}
+                    {% endfor %}
+                  </select>
                 </td>
                 <td class="text-center">
                   <a href="{{ url_for('ContentManagementSystem:remove_menu_entry', menu_id=menu.id, entry_id=entry.id) }}" title="Remove">

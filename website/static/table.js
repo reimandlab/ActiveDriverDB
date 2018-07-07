@@ -5,6 +5,9 @@ var MutationTable = function ()
 {
     var element
     var mutations
+    var impact_importances = {}
+    var mutation_template
+    var tooltips = []
 
     function detailFormatter(index, row_data, element)
     {
@@ -24,7 +27,8 @@ var MutationTable = function ()
 
     function initializeTooltips()
     {
-        initializeKinaseTooltips()
+        var tooltip = initializeKinaseTooltips()
+        tooltips.push(tooltip)
     }
 
     function showMutation(mutation_id)
@@ -57,8 +61,10 @@ var MutationTable = function ()
     }
 
     var publicSpace = {
-        init: function(table_element, mutations_list)
+        init: function(table_element, mutations_list, impacts, mutation_url)
         {
+            mutation_template = decodeURIComponent(mutation_url)
+
             mutations = {}
             for(var i = 0; i < mutations_list.length; i++)
             {
@@ -78,15 +84,60 @@ var MutationTable = function ()
                 showMutation(mutation_id)
             }
             initializeTooltips()
+
+            for(var j = 0; j < impacts.length; j++)
+            {
+                impact_importances[impacts[j]] = j
+            }
+
         },
         expandRow: function(mutation_id)
         {
-            element.bootstrapTable(
+            var expanded_row = element.bootstrapTable(
                 'expandRow',
                 getMutationRow(mutation_id).data('index')
             )
+            var tooltip = initializeKinaseTooltips(d3.select(expanded_row.get(0)).selectAll('.kinase'))
+            tooltips.push(tooltip)
         },
-        showMutation: showMutation
+        showMutation: showMutation,
+        impactFormatter: function(value, row, index)
+        {
+            var mutation = mutations[row.pos + row.alt]
+            return '<div class="' + mutation.category + ' badge">' + value + '</div>'
+        },
+        impactSorter: function (a, b)
+        {
+            // take only the first part of impact value (category, without MIMP change direction)
+            a = a.split(' ')[0]
+            b = b.split(' ')[0]
+            if(impact_importances[a] < impact_importances[b]) return 1
+            if(impact_importances[a] > impact_importances[b]) return -1
+        },
+        dbSNPFormatter: function(value, row, index)
+        {
+            var ids = mutations[row.pos + row.alt].meta['ClinVar']['dbSNP id'];
+            var results = []
+            for(var i = 0; i < ids.length; i++)
+            {
+                var id = ids[i]
+                results.push('<a href="https://www.ncbi.nlm.nih.gov/snp/rs' + id + '" target="_blank">rs' + id + '</a>')
+            }
+
+            return results.join(', ')
+        },
+        URLFormatter: function(value, row, index)
+        {
+            return '<a href="' + format(mutation_template, row) + '" title="Show mutation page">' + value.replace(' ', '&nbsp;') + '</a>'
+        },
+        positionFormatter: function (value, row, index) {
+            // Warning: this requires global "tracks" to be defined!
+            return '<a href="#" onclick="tracks.scrollTo(' + value + ')" title="Show in visualisation">' + value + '</a>'
+        },
+        destroy: function () {
+            var tooltip
+            while(tooltip = tooltips.pop()) tooltip.remove()
+        }
     }
 
     return publicSpace

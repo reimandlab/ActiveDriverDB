@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block head %}
+  {% assets "css_search" %}
+    <link href="{{ ASSET_URL }}" rel="stylesheet" />
+  {% endassets %}
+{% endblock %}
+
+
+{% block title %} {{ dataset.name }} - mutations dataset - {{ super() }} {% endblock %}
+
+
+{% block content %}
+
+  <h3>Dataset: {{ dataset.name }}</h3>
+  <h4>Saved on {{ dataset.created_on }}
+    {% if dataset.owner %}
+      by {{ dataset.owner.username }}
+    {% else %}
+      anonymously
+    {% endif %}
+  </h4>
+
+  {% include 'search/forms/mutations.html' %}
+
+{% endblock %}

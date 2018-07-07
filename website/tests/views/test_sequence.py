@@ -1,5 +1,5 @@
 from view_testing import ViewTest
-from models import Protein
+from models import Protein, Disease, MIMPMutation, Kinase
 from models import Gene
 from models import Mutation
 from models import Cancer
@@ -8,7 +8,6 @@ from models import InheritedMutation
 from models import ClinicalData
 from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
-from models import Site
 from database import db
 
 
@@ -42,60 +41,70 @@ def create_test_mutations():
             meta_ClinVar=InheritedMutation(
                 clin_data=[
                     ClinicalData(
-                        disease_name='Disease X',
+                        disease=Disease(name='Disease X'),
                         sig_code=1
                     ),
                     ClinicalData(
-                        disease_name='Disease Y',
+                        disease=Disease(name='Disease Y'),
                         sig_code=1
                     )
                 ]
-            )
+            ),
+            meta_MIMP=[
+                MIMPMutation(pwm='Kinase with protein', probability=0.1),
+                MIMPMutation(pwm='Kinase without protein', probability=0.1),
+                MIMPMutation(pwm='Unknown kinase', probability=0.1)
+            ]
         ),
         Mutation(
             position=3,
             alt='K',
-            meta_1KGenomes=The1000GenomesMutation(
+            meta_1KGenomes=[The1000GenomesMutation(
                 maf_afr=0.5,
                 maf_eur=0.2
-            )
+            )]
         ),
         Mutation(
             position=4,
             alt='K',
-            meta_ESP6500=ExomeSequencingMutation(
+            meta_ESP6500=[ExomeSequencingMutation(
                 maf_ea=0.5
-            )
+            )]
         )
     ]
 
     return data
 
 
-class TestProteinView(ViewTest):
+class TestSequenceView(ViewTest):
 
     def test_show(self):
 
         p = Protein(**test_protein_data())
         p.mutations = create_test_mutations()
+        kinases = [
+            Kinase(name='Kinase with protein', protein=Protein(refseq='NM_0001')),
+            Kinase(name='Kinase without protein')
+        ]
+        db.session.add_all(kinases)
         db.session.add(p)
 
-        from website.views._global_filters import cached_queries
+        from website.views.filters import cached_queries
         cached_queries.reload()
 
-        response = self.client.get('/protein/show/NM_000123')
+        response = self.client.get('/sequence/show/NM_000123')
 
         assert response.status_code == 200
         assert b'SomeGene' in response.data
         assert b'NM_000123' in response.data
 
-        response = self.client.get('/protein/representation_data/NM_000123')
+        response = self.client.get('/sequence/representation_data/NM_000123')
 
         assert response.status_code == 200
         assert b'MART' in response.data
         assert response.content_type == 'application/json'
 
-        representation = response.json['representation']
+        representation = response.json['content']
         assert representation['tracks']
         assert representation['mutation_table']
 
@@ -105,39 +114,11 @@ class TestProteinView(ViewTest):
         # no sites were given
         assert len(representation['sites']) == 0
 
-    def test_browse(self):
-        p = Protein(**test_protein_data())
-        db.session.add(p)
-
-        response = self.client.get('/protein/browse', follow_redirects=True)
-
-        assert response.status_code == 200
-
-    def test_sites(self):
-
-        p = Protein(**test_protein_data())
-
-        sites = [
-            Site(position=3, residue='R', type='phosphorylation'),
-            Site(position=4, residue='T', type='methylation')
-        ]
-        db.session.add(p)
-        p.sites = sites
-
-        response = self.client.get('/protein/sites/NM_000123')
-
-        assert response.status_code == 200
-        assert response.content_type == 'application/json'
-
-        assert len(response.json) == 2
-
-        phospo_site_repr = None
-
-        for site_repr in response.json:
-            if site_repr['type'] == 'phosphorylation':
-                phospo_site_repr = site_repr
-
-        assert phospo_site_repr
+        # let's check clinvar source
+        response = self.client.get('/sequence/representation_data/NM_000123?filters=Mutation.sources:in:ClinVar')
+        muts = response.json['content']['mutations']
+        assert len(muts) == 1
+        assert len(muts[0]['meta']['MIMP']) == 3
 
     def test_details(self):
 
@@ -153,9 +134,11 @@ class TestProteinView(ViewTest):
             'ESP6500': ['European American']
         }
 
+        uri = '/protein/details/NM_000123'
+
         for source, expected_meta in expected_source_meta.items():
             response = self.client.get(
-                '/protein/details/NM_000123?filters=Mutation.sources:in:%s' % source
+                uri + '?filters=Mutation.sources:in:%s' % source
             )
             assert response.status_code == 200
             assert response.content_type == 'application/json'
@@ -163,3 +146,9 @@ class TestProteinView(ViewTest):
             assert json_response['refseq'] == 'NM_000123'
             assert set(json_response['meta']) == set(expected_meta)
             assert json_response['muts_count'] == 1
+
+        response = self.client.get(uri + '?filters=Mutation.sources:in:ESP6500;Mutation.populations_ESP6500:in:African American')
+        assert response.json['muts_count'] == 0
+
+        response = self.client.get(uri + '?filters=Mutation.sources:in:ESP6500;Mutation.populations_ESP6500:in:European American')
+        assert response.json['muts_count'] == 1

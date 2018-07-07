@@ -2,12 +2,15 @@
 import argparse
 from getpass import getpass
 
+from flask import current_app
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from app import create_app
-from database import bdb, remove_model, reset_relational_db, get_column_names
+from database import bdb
 from database import bdb_refseq
 from database import db
+from database.manage import remove_model, reset_relational_db
+from database.migrate import basic_auto_migrate_relational_db
 from exceptions import ValidationError
 from exports.protein_data import EXPORTERS
 from helpers.commands import CommandTarget
@@ -15,35 +18,36 @@ from helpers.commands import argument
 from helpers.commands import argument_parameters
 from helpers.commands import command
 from helpers.commands import create_command_subparsers
-from imports import import_all
-from imports.mappings import import_mappings
-from imports.mutations import MutationImportManager
+from imports import import_all, Importer
+from imports.mappings import import_aminoacid_mutation_refseq_mappings
+from imports.mappings import import_genome_proteome_mappings
+from imports.mutations import MutationImportManager, MutationImporter
 from imports.mutations import get_proteins
-from imports.protein_data import IMPORTERS
 from models import Page
 from models import User
 
 muts_import_manager = MutationImportManager()
 database_binds = ('bio', 'cms')
-app = None
-
-
-def automigrate(args, app=None):
-    if not app:
-        app = create_app(config_override={'LOAD_STATS': False})
-    for database_bind in args.databases:
-        basic_auto_migrate_relational_db(app, bind=database_bind)
-    return True
+CONFIG = {'LOAD_STATS': False, 'SCHEDULER_ENABLED': False, 'USE_CELERY': False}
 
 
 def calc_statistics(args, app=None):
     if not app:
-        app = create_app(config_override={'LOAD_STATS': False})
+        app = create_app(config_override=CONFIG)
     with app.app_context():
-        from statistics import Statistics
-        statistics = Statistics()
-        statistics.calc_all()
+        from stats import Statistics, VennDiagrams
+        for store_class in [Statistics, VennDiagrams]:
+            store = store_class()
+            store.calc_all()
         db.session.commit()
+
+
+def automigrate(args, app=None):
+    if not app:
+        app = create_app(config_override=CONFIG)
+    for database_bind in args.databases:
+        basic_auto_migrate_relational_db(app, bind=database_bind)
+    return True
 
 
 def get_all_models(module_name='bio'):
@@ -57,75 +61,6 @@ def get_all_models(module_name='bio'):
         if not isinstance(model, _ModuleMarker) and model.__module__ == module_name
     ]
     return models
-
-
-def basic_auto_migrate_relational_db(app, bind):
-    """Inspired with http://stackoverflow.com/questions/2103274/"""
-
-    from sqlalchemy import Table
-    from sqlalchemy import MetaData
-
-    print('Performing very simple automigration in', bind, 'database...')
-    db.session.commit()
-    db.reflect()
-    db.session.commit()
-    db.create_all(bind=bind)
-
-    with app.app_context():
-        engine = db.get_engine(app, bind)
-        tables = db.get_tables_for_bind(bind=bind)
-        metadata = MetaData()
-        metadata.engine = engine
-
-        ddl = engine.dialect.ddl_compiler(engine.dialect, None)
-
-        for table in tables:
-
-            db_table = Table(
-                table.name, metadata, autoload=True, autoload_with=engine
-            )
-            db_columns = get_column_names(db_table)
-
-            columns = get_column_names(table)
-            new_columns = columns - db_columns
-            unused_columns = db_columns - columns
-
-            for column_name in new_columns:
-                column = getattr(table.c, column_name)
-                if column.constraints:
-                    print(
-                        'Column %s skipped due to existing constraints.'
-                        % column_name
-                    )
-                    continue
-                print('Creating column: %s' % column_name)
-
-                definition = ddl.get_column_specification(column)
-                sql = 'ALTER TABLE %s ADD %s' % (table.name, definition)
-                engine.execute(sql)
-
-            if unused_columns:
-                print(
-                    'Following columns in %s table are no longer used '
-                    'and can be safely removed:' % table.name
-                )
-                for column in unused_columns:
-                    answered = False
-                    while not answered:
-                        answer = input('%s: remove (y/n)? ' % column)
-                        if answer == 'y':
-                            sql = (
-                                'ALTER TABLE %s DROP %s'
-                                % (table.name, column)
-                            )
-                            engine.execute(sql)
-                            print('Removed column %s.' % column)
-                            answered = True
-                        elif answer == 'n':
-                            print('Keeping column %s.' % column)
-                            answered = True
-
-    print('Automigration of', bind, 'database completed.')
 
 
 class CMS(CommandTarget):
@@ -159,6 +94,7 @@ class CMS(CommandTarget):
                     'you type due to security reasons): '
                 )
                 root = User(email, password, access_level=10)
+                root.is_verified = True
                 correct = True
             except ValidationError as e:
                 print('Root credentials are incorrect: ', e.message)
@@ -179,7 +115,14 @@ class CMS(CommandTarget):
 
     @command
     def remove(args):
-        reset_relational_db(app, bind='cms')
+        reset_relational_db(current_app, bind='cms')
+
+
+PROTEIN_IMPORTERS = {
+    importer.name: importer
+    for importer in Importer.registry
+    if importer not in MutationImporter.subclassess
+}
 
 
 class ProteinRelated(CommandTarget):
@@ -195,18 +138,18 @@ class ProteinRelated(CommandTarget):
 
     @command
     def load(args):
-        data_importers = IMPORTERS
+        data_importers = PROTEIN_IMPORTERS
         for importer_name in args.importers:
-            importer = data_importers[importer_name]
+            importer = data_importers[importer_name]()
             print('Running {name}:'.format(name=importer_name))
-            results = importer()
+            results = importer.load()
             if results:
                 db.session.add_all(results)
             db.session.commit()
 
     @load.argument
     def importers():
-        data_importers = IMPORTERS
+        data_importers = PROTEIN_IMPORTERS
         return argument_parameters(
             '-i',
             '--importers',
@@ -266,7 +209,7 @@ class ProteinRelated(CommandTarget):
 
     @command
     def remove_all(args):
-        reset_relational_db(app, bind='bio')
+        reset_relational_db(current_app, bind='bio')
 
     @command
     def remove(args):
@@ -284,7 +227,7 @@ class ProteinRelated(CommandTarget):
         models_names = [model.__name__ for model in models]
 
         return argument_parameters(
-            '--models',
+            '--models', '-m',
             nargs='+',
             metavar='',
             help=(
@@ -295,15 +238,37 @@ class ProteinRelated(CommandTarget):
         )
 
 
-class SnvToCsvMapping(CommandTarget):
+class Mappings(CommandTarget):
 
     description = 'should mappings (DNA -> protein) be {command}ed'
 
     @command
     def load(args):
-        print('Importing mappings')
+        print('Importing %s mappings' % (args.restrict_to or 'all'))
         proteins = get_proteins()
-        import_mappings(proteins)
+
+        if args.restrict_to != 'aminoacid_refseq':
+            import_genome_proteome_mappings(proteins, bdb_dir=args.path)
+        if args.restrict_to != 'genome_proteome':
+            import_aminoacid_mutation_refseq_mappings(proteins, bdb_dir=args.path)
+
+    @load.argument
+    def restrict_to():
+        return argument_parameters(
+            '--restrict_to', '-r',
+            default=None,
+            choices=['genome_proteome', 'aminoacid_refseq'],
+            help='Should only genome_proteome or aminoacid_refseq mappings be imported?'
+        )
+
+    @load.argument
+    def path():
+        return argument_parameters(
+            '--path',
+            type=str,
+            default='',
+            help='A path to dir where mappings dbs should be created'
+        )
 
     @command
     def remove(args):
@@ -380,15 +345,50 @@ class All(CommandTarget):
     def load(args):
         ProteinRelated.load_all(args)
         Mutations.load(argparse.Namespace(sources='__all__'))
-        SnvToCsvMapping.load(args)
+        Mappings.load(args)
         CMS.load(args)
 
     @command
     def remove(args):
         ProteinRelated.remove_all(args)
         Mutations.remove(argparse.Namespace(sources='__all__'))
-        SnvToCsvMapping.remove(args)
+        Mappings.remove(args)
         CMS.remove(args)
+
+
+def new_subparser(subparsers, name, func, **kwargs):
+    subparser = subparsers.add_parser(name, **kwargs)
+    subparser.set_defaults(func=func)
+    return subparser
+
+
+def run_shell(args):
+    print('Starting interactive shell...')
+    app = create_app(config_override=CONFIG)
+    with app.app_context():
+        import models
+
+        if args.command:
+            print('Executing supplied command: "%s"' % args.command)
+            exec(args.command)
+
+        print('You can access current application using "app" variable.')
+        print('Database, models and statistics modules are pre-loaded.')
+
+        fallback = False
+        if not args.raw:
+            try:
+                from IPython import embed
+                embed()
+            except ImportError:
+                print('To use enhanced interactive shell install ipython3')
+                fallback = True
+
+        if fallback or args.raw:
+            import code
+            all_vars = locals()
+            all_vars.update(vars(models))
+            code.interact(local=all_vars)
 
 
 def create_parser():
@@ -407,24 +407,42 @@ def create_parser():
 
     create_command_subparsers(command_subparsers)
 
-    # STATS SUBCOMMAND
-    stats_parser = subparsers.add_parser(
+    new_subparser(
+        subparsers,
         'calc_stats',
+        calc_statistics,
         help=(
             'should statistics (counts of protein, pathways, mutation, etc) be recalculated?'
         )
     )
-    stats_parser.set_defaults(func=calc_statistics)
 
-    # MIGRATE SUBCOMMAND
-    migrate_parser = subparsers.add_parser(
+    shell_parser = new_subparser(
+        subparsers,
+        'shell',
+        run_shell
+    )
+
+    shell_parser.add_argument(
+        '-r',
+        '--raw',
+        action='store_true'
+    )
+
+    shell_parser.add_argument(
+        '-c',
+        '--command',
+        type=str
+    )
+
+    migrate_parser = new_subparser(
+        subparsers,
         'migrate',
+        automigrate,
         help=(
             'should a basic auto migration on relational databases'
             'be performed? It will only create new tables'
         )
     )
-    migrate_parser.set_defaults(func=automigrate)
 
     migrate_parser.add_argument(
         '-d',
@@ -442,14 +460,14 @@ def create_parser():
     return parser
 
 
-def run_manage(parsed_args, my_app=None):
+def run_manage(parsed_args, app=None):
     if not hasattr(parsed_args, 'func'):
         print('Scripts loaded successfully, no tasks specified.')
         return
 
-    if not my_app:
+    if not app:
         try:
-            my_app = create_app(config_override={'LOAD_STATS': False})
+            app = create_app(config_override=CONFIG)
         except OperationalError as e:
             if e.orig.args[0] == 1071:
                 print('Please run: ')
@@ -459,8 +477,6 @@ def run_manage(parsed_args, my_app=None):
                 return
             else:
                 raise
-    global app
-    app = my_app
 
     with app.app_context():
         parsed_args.func(parsed_args)

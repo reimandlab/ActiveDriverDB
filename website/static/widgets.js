@@ -10,55 +10,6 @@ var Widgets = (function () {
         form.submit()
     }
 
-    function multiselect(inputs)
-    {
-        if(inputs.length === 0)
-            return false;
-
-        inputs.multiselect({
-            onDropdownShow: function(event)
-            {
-                var target = $(event.target);
-
-                var selected = target.find('li.active');
-
-                target.data('previously_selected', selected)
-            },
-            onDropdownHide: function(event)
-            {
-                var target = $(event.target);
-
-                // selected counts also 'Select all' option
-                var selected = target.find('li.active');
-
-                // if there was not a change do not consider this action
-                if(checkEquality(selected, target.data('previously_selected')))
-                {
-                    return true
-                }
-                if (selected.length < 1)
-                {
-                    target.parent().popover(select_sth_popover).popover('show');
-                    return false
-                }
-                else {
-                    target.parent().popover('hide');
-                    update()
-                }
-
-            },
-            onChange: function(option, checked)
-            {
-                if(checked) {
-                    $(option).parent().parent().popover('hide')
-                }
-            },
-            includeSelectAllOption: true,
-            dropRight: true,
-            allSelectedText: $(this).data('all-selected-text')
-        })
-    }
-
     /**
      * Initialize checkbox lists, enabling "check all" functionality.
      * Special checkbox with class 'programmatic', wrapped in 'check-all'
@@ -136,12 +87,11 @@ var Widgets = (function () {
             form.find('.save').hide();
             form.on(
                 'change',
-                '.widget select:not(.multiselect),.widget input:not(.programmatic)',
+                '.widget select,.widget input:not(.programmatic)',
                 update
             );
 
-            multiselect(form.find('.widget .multiselect'));
-            checkbox_list(form.find('.widget .checkbox-list'));
+            checkbox_list(form.find('.widget .checkbox-list:not(.nullable)'));
         }
     };
 

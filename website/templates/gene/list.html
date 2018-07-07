@@ -112,10 +112,11 @@ function fdrFormatter(value, row, index)
 function proteinFormatter(value, row, index)
 {
   var site_params = get_url_params();
+  var query = site_params.filters ? '?filters=' + site_params.filters : ''
   output = value + '<br>'
-  output += '<a href="/protein/show/' + value + '?filters=' + site_params.filters + '">protein view</a>'
+  output += '<a href="/protein/show/' + value + query + '">protein view</a>'
   output += '<br>'
-  output += '<a href="/network/show/' + value + '?filters=' + site_params.filters + '">network view</a>'
+  output += '<a href="/network/show/' + value + query + '">network view</a>'
   return output
 }
 {% endblock %}

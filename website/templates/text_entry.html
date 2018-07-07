@@ -1,16 +1,13 @@
 {% macro text(id, btn_class='', compact_mode=False) %}
   <div class="text-entry inline-editable" data-id="{{ id }}">
-    {% if current_user.is_admin %}
+    {% if current_user.is_moderator %}
       <div>
         <button class="btn btn-default btn-sm edit-btn" type="button">
           <span class="glyphicon glyphicon-pencil"></span>
         </button>
       </div>
     {% endif %}
-
-    <div class="content">{{ text_entry(id) | safe | substitute_allowed_variables | safe }}</div>
-
-    {% if current_user.is_admin %}
+    {% if current_user.is_moderator %}
       <div class="alert alert-warning feedback" role="alert"></div>
 
       <div class="edit-form">
@@ -27,6 +24,9 @@
         </div>
       </div>
     {% endif %}
+
+    <div class="content">{{ text_entry(id) | safe | substitute_allowed_variables | safe }}</div>
+
   </div>
 
 {% endmacro %}

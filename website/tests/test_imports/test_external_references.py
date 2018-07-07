@@ -1,8 +1,4 @@
 import gzip
-from argparse import Namespace
-from collections import defaultdict
-
-from pytest import raises
 
 from imports.protein_data import external_references as load_external_references
 from database_testing import DatabaseTest
@@ -68,6 +64,7 @@ refseq_data = """\
 9606	144568	A2ML1	NG_042857.1		NM_001282424.2		NP_001269353.1		aligned: Selected
 9606	53947	A4GALT	NG_007495.2		NM_017436.4		NP_059132.1		reference standard
 9606	53947	A4GALT	NG_007495.2		NR_146459.1				aligned: Selected
+9606	7157	TP53	NG_017013.2	LRG_321	NM_000546.5	t1	NP_000537.3	p1	reference standard
 """
 
 reflink_data = """\
@@ -98,9 +95,13 @@ class TestImport(DatabaseTest):
             for refseq_nm in refseqs
         }
 
+        tp53 = Gene(name='TP53')
+        tp53_protein = Protein(refseq='NM_000546', gene=tp53)
+
         with self.app.app_context():
             # let's pretend that we already have some proteins in our db
             db.session.add_all(proteins_we_have.values())
+            db.session.add(tp53_protein)
 
             references = load_external_references(uniprot_filename, refseq_filename, reflink_filename)
 
@@ -117,8 +118,6 @@ class TestImport(DatabaseTest):
 
             uniprot_entry = protein.external_references.uniprot_entries[0]
             assert uniprot_entry.reviewed is False
-            # assert protein.external_references.refseq_np == 'NP_035869'
-            # assert protein.external_references.entrez_id == '286863'
 
             ensembl_peptides = protein.external_references.ensembl_peptides
 
@@ -145,3 +144,7 @@ class TestImport(DatabaseTest):
             db.session.add(protein)
 
             assert protein.external_references is None
+
+            # check the protein with refseq references and gene with entrez id
+            assert tp53_protein.external_references.refseq_np == 'NP_000537'
+            assert tp53.entrez_id == 7157

@@ -28,21 +28,21 @@
 
 .site-summary
   h4
-    font-size: 100%
-    margin-bottom: 0
+    font-size: 110%
+    margin-bottom: 10px
+    margin-top: 0
     font-weight: bold
 
 .kinase
   border-bottom: 1px dashed #999
 
 @import "mimp"
+@import "mutation_table"
+@import "sites_mutations_table"
 
 .mimp-effect
-  position: relative
   // height of mimp image
   min-height: 160px
 
-  .mimp-logo
-    position: absolute
-    top: 0
-    right: 0
+  .logo-container:
+    overflow-x: auto
