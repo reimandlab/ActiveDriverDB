@@ -1,6 +1,6 @@
 {% extends 'filters/box.html' %}
-{% from 'widgets/widgets.html' import render_widget with context %}
-{% from 'widgets/widgets.html' import widget_list with context %}
+{% from 'widgets/widgets.html' import widget_list %}
+{% from 'widgets/widgets.html' import render_widget %}
 
 {% block dataset_widgets %}
   <div class="is-ptm">
@@ -14,7 +14,7 @@
     {% endif %}
   </div>
 
-  <div class="dataset-specific dynamic-widgets">
+  <div class="dataset-specific">
     {{ widget_list(widgets.dataset_specific, collapse=True) }}
   </div>
 {% endblock %}

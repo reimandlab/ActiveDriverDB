@@ -1,13 +1,6 @@
 from helpers.filters import quote_if_needed, is_iterable_but_not_str
 
 
-def quoted_value(raw_value):
-    if is_iterable_but_not_str(raw_value):
-        return [quote_if_needed(v) for v in raw_value]
-    else:
-        return quote_if_needed(raw_value)
-
-
 class Widget:
     """Widget class to be used in templates to create HTML inputs, selects etc."""
 
@@ -56,7 +49,6 @@ class Widget:
         self.disabled_label = disabled_label or 'disabled'
         self.all_selected_label = all_selected_label
         self.class_name = class_name
-        self._quote_cache = {}
 
     @property
     def label(self):
@@ -87,14 +79,9 @@ class Widget:
 
     @property
     def value(self):
-        cacheable_value = tuple(self._value) if type(self._value) is list else self._value
-
-        if cacheable_value in self._quote_cache:
-            return self._quote_cache[cacheable_value]
-        else:
-            value = quoted_value(self._value)
-            self._quote_cache[cacheable_value] = value
-            return value
+        if is_iterable_but_not_str(self._value):
+            return [quote_if_needed(v) for v in self._value]
+        return quote_if_needed(self._value)
 
     @property
     def visible(self):

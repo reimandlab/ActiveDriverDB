@@ -5,7 +5,6 @@ var Tooltip = function()
     // internals
     var element          // currently shown element (or undefined)
     var tooltip          // tooltip d3js selection object
-    var cached_tooltip_size // getting DOM elements dimensions is expensive, hence those are cached
     var tooltip_content  // inner tooltip HTML container
                          // (place where content - result of templating - will be inserted)
     var ignore_next_signal = false; // should next signal be ignored?
@@ -14,6 +13,7 @@ var Tooltip = function()
     // configurable
     var viewport
     var preprocess_data
+    var data_url    // from where additional data for tooltip should be fetched
     var callback
 
     // pointer offsets
@@ -53,13 +53,11 @@ var Tooltip = function()
         tooltip_content.html(
             _template.call(element, d)
         )
-        _update_tooltip_size()
     }
 
     var _render_with_preprocess = function(d)
     {
         tooltip_content.html('Loading...')
-        _update_tooltip_size()
         preprocess_data.call(element, d, _render_local)
     }
 
@@ -70,21 +68,16 @@ var Tooltip = function()
         return d.title
     }
 
-    var _update_tooltip_size = function () {
-        cached_tooltip_size = tooltip.node().getBoundingClientRect()
-    }
-
     function _move(left, top)
     {
-        if(!cached_tooltip_size)
-            _update_tooltip_size()
+        var size = tooltip.node().getBoundingClientRect()
 
         var viewport_size = viewport.getBoundingClientRect()
 
-        left = Math.min(left, viewport_size.right - cached_tooltip_size.width)
+        left = Math.min(left, viewport_size.right - size.width)
         left = Math.max(left, viewport_size.left)
         top = Math.max(top, viewport_size.top)
-        top = Math.min(top, viewport_size.bottom - cached_tooltip_size.height)
+        top = Math.min(top, viewport_size.bottom - size.height)
 
         var scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
         var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft || document.body.scrollLeft
@@ -109,9 +102,6 @@ var Tooltip = function()
      * @property {HTMLElement} viewport - element to which the maximal size/position of tooltips
      should restricted. If not given, defaults to body (so tooltips
      are always visible on the user's screen).
-
-     Using body as a viewport requires following css declarations:
-         html{height:100%} body{min-height:100%}
      */
 
     var publicSpace = {
@@ -141,13 +131,13 @@ var Tooltip = function()
                 callback = config.callback
 
             d3.select('body')
-                .on('mouseup.' + config.id, publicSpace.unstick)
+                .on('click.' + config.id, publicSpace.unstick)
 
             // create a close button
             wrapper.append('button')
                 .attr('class', 'close')
                 .html('x')
-                .on('click', publicSpace.unstick)
+                .on('mouseup', publicSpace.unstick)
 
             if(config.viewport)
                 viewport = config.viewport
@@ -173,24 +163,24 @@ var Tooltip = function()
             if(stuck)
                 return
 
-            if(element !== this)
+            if(element != this)
             {
                 // `d` provides data whereas `this` gives the DOM element
                 element = this
-                // re-render template only if the element has changed
+                // re-render template only on if the element has changed
                 render_template(d)
 
                 if(callback)
                     callback(tooltip_content.node())
             }
 
-            visible = true
-
             publicSpace.moveToPointer()
 
             tooltip.transition()
                 .duration(50)
                 .style('opacity', 1)
+
+            visible = true
         },
         hide: function(keep_element)
         {
@@ -221,7 +211,6 @@ var Tooltip = function()
                 ignore_next_signal = false
                 return
             }
-            if (d3.event.defaultPrevented) return
             publicSpace.unstick()
             // call `show` method passing `this` context
             publicSpace.show.call(this, d)
@@ -235,9 +224,6 @@ var Tooltip = function()
             publicSpace.hide(true)
             tooltip.style('pointer-events', 'none')
         },
-        /**
-        Moves tooltip to pointer if the tooltip is visible and not stuck
-         */
         moveToPointer: function()
         {
             if(stuck || !visible)
@@ -255,7 +241,6 @@ var Tooltip = function()
             if(!element || !visible)
                 return
 
-            // Note: known bug in Firefox: https://bugzilla.mozilla.org/show_bug.cgi?id=1066435
             var size = element.getBoundingClientRect()
             _move(size.left + pointerOffsetX, size.top + pointerOffsetY)
         },
@@ -268,23 +253,8 @@ var Tooltip = function()
 
             // do not close the tooltip when selecting
             tooltip
-                .on('mouseup', function(){ d3.event.stopPropagation() })
+                .on('click', function(){ d3.event.stopPropagation() })
 
-            // update size and position if clicked (assuming that a click is only action which can change size,
-            // e.g. while clicking on "more" or "less" buttons.
-            tooltip
-                .on('click', function(){
-                    // after size-changing handler execution
-                    setTimeout(function() {
-                        _update_tooltip_size()
-                        publicSpace.moveToElement()
-                    }, 0)
-                })
-
-        },
-        remove: function()
-        {
-            tooltip.remove()
         }
     }
 

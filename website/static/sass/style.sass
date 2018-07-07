@@ -6,27 +6,36 @@
   // TODO: possible overflow hidden is needed
   overflow: visible
 
+footer
+  margin-top: 50px
+  border-top: 1px dashed #ccc
+  padding: 20px 15px
+  padding-bottom: 10px
+  color: #777
+
+  li
+    display: inline-block
+    margin-right: 2.5ch
+
 .svg-content-responsive
   display: inline-block
   position: absolute
   top: 10px
   left: 0
 
-$breadcrumb_padding: 14px
-
 .minor-top-navigation
   position: relative
   .breadcrumb
-    padding: $breadcrumb_padding
+    padding: 14px
 
 .user-menu
   position: absolute
-  top: $breadcrumb_padding / 2
-  right: $breadcrumb_padding / 2
+  top: 4px
+  right: 6px
 
 .welcome-user
   display: inline-block
-  padding: 0 13px
+  padding: 7px 13px
   margin-bottom: 0
   font-size: 14px
   font-weight: 400
@@ -35,40 +44,21 @@ $breadcrumb_padding: 14px
   top: 2px
 
 
-$search-box-width: 300px
-
-@import "color_schema"
+$search-box-width: 350px
 
 #navbar
   .search-box
     float: right
+    width: 180px
 
     input.form-control
       width: inherit!important
 
-  @media #{$under-tablet}
-    .search-box, .list-group-item
-      width: 100%
-
-  @media #{$tablet}
-    .search-box, .list-group-item
-      width: 200px
-
-  @media #{$medium-pc}
-    .search-box, .list-group-item
-      width: 300px
-
-  @media #{$under-tablet}
-    .navbar-nav
-      width: 100%
-
-@media #{$under-tablet}
-  .navbar-collapse
-    background: $main_bg
+    .list-group-item
+      width: $search-box-width
 
 .navbar-form
   padding: 0 5px
-  border: 0
 
 .search-box
   position: relative
@@ -76,24 +66,14 @@ $search-box-width: 300px
   /* width: $search-box-width */
   margin: 0 4px
 
-  .input-icon
-    position: absolute
-    right: 4.5%
-    top: 30%
-    color: lightblue
-
-  input:focus+.glyphicon-search
-    display: none
-
-  .glyphicon-search
-    color: #68696b
-
   .waiting-indicator
     display: none
     position: absolute
+    right: 10px
+    top: 11px
+    color: lightblue
 
   .list-group-item
-    overflow: auto
 
     &:focus
       outline: none
@@ -108,6 +88,7 @@ $search-box-width: 300px
     right: 0
     z-index: 20
     display: none
+    box-shadow: 0 2px 7px #eee
 
 
 .export button::before
@@ -124,6 +105,18 @@ $search-box-width: 300px
   to
     transform: rotate(359deg)
 
+@-webkit-keyframes spin
+  from
+    -webkit-transform: rotate(0deg)
+  to
+    -webkit-transform: rotate(359deg)
+
+@-moz-keyframes spin
+  from
+    -moz-transform: rotate(0deg)
+  to
+    -moz-transform: rotate(359deg)
+
 
 #spinner
   position: fixed
@@ -137,10 +130,15 @@ $search-box-width: 300px
 
 .glyphicon-spin
   transform-origin: 50% 49%
+  -webkit-transform-origin: 50% 49%
   -moz-transform-origin: 50% 43%
+  -ms-transform-origin: 50% 49%
   $function: ease-in-out
   $time: 3s
   animation: spin $time infinite $function
+  -webkit-animation: spin $time infinite $function
+  -moz-animation: spin $time infinite $function
+  -ms-animation: spin $time infinite $function
 
 .short-url-dropdown
   min-width: 335px
@@ -167,6 +165,10 @@ $search-box-width: 300px
   visibility: hidden
 
   $time: 0.20s
+  -webkit-transition: all $time
+  -moz-transition: all $time
+  -ms-transition: all $time
+  -o-transition: all $time
   transition: all $time
 
 .dropdown.open .dropdown-menu
@@ -174,6 +176,10 @@ $search-box-width: 300px
   visibility: visible
 
   $time: 0.30s
+  -webkit-transition: all $time
+  -moz-transition: all $time
+  -ms-transition: all $time
+  -o-transition: all $time
   transition: all $time
 
 .isoform-page-options
@@ -203,7 +209,7 @@ h3
 
   .source-acknowledgement
     font-style: italic
-    color: #eee
+    color: gray
 
   .panel-body
     padding: 5px 15px
@@ -270,6 +276,8 @@ h3
       li
         display: table-cell
 
+.color-legend
+  margin-bottom: 0
 
 .list-collapsed
   // hide all elements but first four
@@ -281,20 +289,14 @@ h3
   // to be shown but also prevents accidental clicking
   // on the last element (instead on "more" link)
   li:nth-of-type(4)
-    position: relative
     &::after
       content: ''
-      background: linear-gradient(rgba(255, 255, 255, 0), white)
+      background: linear-gradient(transparent, white)
       position: absolute
       top: 0
       left: 0
       width: 100%
       height: 100%
-
-.list-collapsed-horizontal
-  li:nth-of-type(4)
-    &::after
-      display: none
 
 
 .contact_form
@@ -308,13 +310,11 @@ a.list-expand
   display: inline-block
 
 #sticky_box
-  transition: padding 0.2s
+  // keep space from top edge when affixed & keep space from legend above when stuck
+  padding-top: 20px
 
   &.affix
     top: 0
-    // keep space from top edge when affixed & keep space from legend above when stuck
-    padding-top: 15px
-
 
   &.affix-bottom
     position: absolute
@@ -348,12 +348,8 @@ a.list-expand
       background: #ecfddc
 
 .inline-editable
-  z-index: 20
-  &.inline-help
-    z-index: inherit
 
   .edit-form
-    z-index: 20
     display: none
     textarea
       min-height: 100px
@@ -396,12 +392,15 @@ a.list-expand
     &:active
       background: none!important
       box-shadow: none
+      .glyphicon
+        color: #d70e00
+
+    &:hover .glyphicon, &:focus .glyphicon
+      color: #c30e00
 
     span.glyphicon
       font-size: 124%
-
-    &.help-widget
-      float: right
+      color: #777
 
     &.small-top
       padding: 0 2px 0 2px
@@ -415,9 +414,12 @@ a.list-expand
     .help-btn
       background: none!important
       box-shadow: none
+      .glyphicon
+        color: #000000
 
   .content
     line-height: 140%
+    color: #555
 
 
 .table-borderless
@@ -434,116 +436,3 @@ ul.hide-excessive-genes li:nth-of-type(1n+11)
   display: none
   button.show-all
     display: inline
-
-.strip-top, .footer
-  background: $main_bg
-
-html
-  height: 100%
-body
-  min-height: 100%
-
-$footer-height: 136px
-
-.main-container
-  min-height: 100%
-  padding-bottom: $footer-height
-
-.footer
-  height: $footer-height
-  padding: 0
-  margin-top: - $footer-height + 70px
-
-  li
-    display: inline-block
-    margin-right: 2.5ch
-  ul
-    margin: 0
-  a, div
-    color: white
-  @media #{$over-tablet}
-    div.col-md-5
-      position: relative
-      top: 50%
-      transform: translateY(-50%)
-  @media #{$over-phone}
-    div.inner-footer
-      position: relative
-      top: 50%
-      transform: translateY(-50%)
-  @media #{$phone}
-    height: inherit
-    min-height: $footer-height
-
-
-.navbar
-  background: $main_bg
-  border: none
-  z-index: 10
-  text-align: center
-  width: 100%
-  color: #fff
-  margin: 0
-  height: 140px
-  // 40-15; 15px is a normal padding of links in navbar
-  padding-top: 45px
-  margin-bottom: 20px
-  border-radius: 0
-
-  ul, .navbar-brand
-    font-family: futura-pt, "Helvetica Neue",Helvetica,Arial,sans-serif
-
-  .navbar-nav
-    float: none
-    display: inline-block
-
-  @media #{$over-tablet}
-    .navbar-header
-      width: 108px
-      height: 80px
-
-  .navbar-brand
-    color: #fff
-    @media #{$over-tablet}
-      background: url('/static/img/logo.png') center 5px / 80px 80px no-repeat
-      padding-top: 95px
-      margin-top: -95px
-      top: 60px
-      position: relative
-      padding-bottom: 25px
-
-#top-nav
-  $background_hover: rgba(67, 235, 255, 0.2)
-  li
-    &.dropdown.open, .dropdown-menu
-      background-color: lighten($main_bg, 3)
-    .dropdown-menu
-      border: 0
-
-  li a
-    color: #fff
-    text-shadow: 0 0 2px rgba(100, 100, 100, 0.5)
-    text-transform: uppercase
-    background: transparent
-
-    @media #{$pc}
-      font-size: 18px
-    //transition-duration: 0.4s
-    //transition-property: box-shadow
-
-    &:hover
-      //box-shadow: inset 0 0 0 5px rgba(67, 235, 255, 0.1)
-      background: $background_hover
-
-  .navbar-brand:hover,.navbar-brand:focus
-    color: #fff
-    background-color: $background_hover
-
-  li.active a
-    background: darken($main_bg, 5)
-
-  #navbar.collapse.in li a
-    background: rgba($main_bg, 0.9)
-
-.captcha
-  margin-bottom: 15px

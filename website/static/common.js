@@ -1,38 +1,57 @@
-function append(destination, new_content)
-{
-    Array.prototype.push.apply(destination, new_content)
-}
-
 function update_object(modified_obj, modifying_obj)
 {
-    $.extend(modified_obj, modifying_obj)
+    for(var key in modifying_obj)
+    {
+        if(modifying_obj.hasOwnProperty(key))
+        {
+            modified_obj[key] = modifying_obj[key]
+        }
+    }
 }
 
-/**
- * If property of given 'name' in 'new_config' object is an URL string,
- * perform asynchronous GET call to replace the property with JSON object
- * returned by the endpoint defined by the URL string.
- *
- * Warning: current implementation assumes that all string values are URL strings.
- *
- * @param {Object} new_config
- * @param {Object} name
- * @param {function} callback - a function to be called after the data was loaded
- * (or if there was no need to load additional data - i.e. the property was not an URL string)
- */
+function prepareSVG(element)
+{
+    return d3
+        .select(element)
+        .append('svg')
+        .attr('preserveAspectRatio', 'xMinYMin meet')
+        .attr('class', 'svg-content-responsive')
+}
+
+function prepareZoom(min, max, callback)
+{
+    return d3.behavior.zoom()
+       .scaleExtent([min, max])
+       .on('zoom', callback)
+       // allows to differentiate between pan-related clicks and normal clicks
+       .on('zoomstart', function(){
+           if(d3.event.sourceEvent) d3.event.sourceEvent.stopPropagation()
+       })
+}
+
+function checkEquality(obj1, obj2)
+{
+    if(obj1.length !== obj2.length)
+        return false
+
+    return JSON.stringify(obj1) === JSON.stringify(obj2)
+}
+
+
 function get_remote_if_needed(new_config, name, callback)
 {
-    var value = new_config[name]
-    if(typeof value === 'string')
+    if(typeof new_config[name] === 'string')
     {
-		$.get({
-			url: value,
+		$.ajax({
+			url: new_config[name],
+			type: 'GET',
+			async: true,
 			success: function(data)
 			{
 				new_config[name] = data
                 if(callback)
                 {
-                    return callback()
+                    callback()
                 }
 			}
 		})
@@ -41,7 +60,7 @@ function get_remote_if_needed(new_config, name, callback)
     {
         if(callback)
         {
-            return callback()
+            callback()
         }
 
     }
@@ -81,7 +100,7 @@ function affix(element, bottom_element)
                 return (this.top = element.offset().top)
             },
             bottom: function () {
-                return (this.bottom = bottom_element.outerHeight())
+                return (this.bottom = bottom_element.outerHeight(true))
             }
         }
     })
@@ -151,10 +170,4 @@ function set_csrf_token(token)
 function decode_url_pattern(flask_url_pattern)
 {
     return decodeURIComponent(flask_url_pattern).replace(/\+/g, ' ');
-}
-
-function flash(message, category) {
-    if(!category)
-        category = 'warning'
-    $('.flashes').append('<div class="alert alert-' + category + '" role="alert">' + message + ' </div>')
 }

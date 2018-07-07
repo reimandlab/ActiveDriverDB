@@ -6,40 +6,50 @@ var SearchBar = function ()
     var results_div
     var current_query
     var indicator
-    var initial_results_content
 
-    function default_template_result(result)
+    var get_more = '<button class="list-group-item">Get more results ' + more_icon + '</button>'
+
+    function templateResult(result)
     {
-        return '<a href="' + result.url + '" class="list-group-item">' + result.name + '</a>'
+        var link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">'
+
+        if(result.isoforms_count > 1)
+            link += '<span class="badge">' + result.isoforms_count + ' isoforms</span>'
+
+        link += result.name + '</a>'
+
+        return link
     }
 
     var config = {
         autocomplete_url: '/search/autocomplete_all',
-        template: default_template_result
+        template: templateResult
     }
 
-    function update_results(raw_result, original_query) {
+    function updateResults(rawResult, originalQuery) {
 
         // if we've got a result of an old query, it's not interesting anymore
-        if(original_query !== current_query)
+        if(originalQuery != current_query)
             return false
 
-        var results = JSON.parse(raw_result)
+        var results = JSON.parse(rawResult)
 
         if(!results.entries.length)
         {
-            results_div.html(config.template({
-                name: 'No results found',
-                type: 'message'
+            results_div.html(templateResult({
+                name: 'No results found'
             }))
         }
         else
         {
             var html = ''
-            for(var i = 0; i < results.entries.length; i++)
+            var length = Math.min(results.entries.length, 5)
+            for(var i = 0; i < length; i++)
             {
                 html += config.template(results.entries[i])
             }
+            if(results.entries.length > 5)
+                html += get_more
             results_div.html(html)
 
             add_dropdown_navigation(results_div)
@@ -56,8 +66,7 @@ var SearchBar = function ()
             $(elements[i]).on('keydown', {i: i}, function(e)
             {
                 var i = e.data.i
-                // arrow up
-                if(e.which === 38)
+                if(e.key == 'ArrowUp')
                 {
                     if(i > 0)
                         $(elements[i - 1]).focus()
@@ -66,8 +75,7 @@ var SearchBar = function ()
 
                     return false
                 }
-                // arrow down
-                else if(e.which === 40 && i + 1 < elements.length)
+                else if(e.key == 'ArrowDown' && i + 1 < elements.length)
                 {
                     $(elements[i + 1]).focus()
                     return false
@@ -76,23 +84,14 @@ var SearchBar = function ()
         }
     }
 
-    function search_on_type()
+    function searchOnType()
     {
         var query = input.val()
 
-        // if the query has not changed, skip it
-        if(current_query === query)
+        if(!query || current_query == query)
             return
 
         current_query = query
-
-        // if the query is empty, clear up results
-        if(!query)
-        {
-            results_div.html(initial_results_content)
-            indicator.hide()
-            return
-        }
 
         $.ajax({
             url: config.autocomplete_url,
@@ -102,7 +101,7 @@ var SearchBar = function ()
             {
                 return function(result)
                 {
-                    return update_results(result, query)
+                    return updateResults(result, query)
                 }
             }(query)
         })
@@ -119,28 +118,14 @@ var SearchBar = function ()
             input = box.find('input')
             results_div = box.find('.bar-results')
             indicator = box.find('.waiting-indicator')
-            initial_results_content = results_div.html()
 
-            input.on('change mouseup drop input', search_on_type)
+            input.on('change mouseup drop input', searchOnType)
             input.on('click', function(){ return false })
             input.on('focus', function(){ results_div.show() })
             input.on('keydown', function(e){
-                // arrow down
-                if(e.which === 40)
+                if(e.key == 'ArrowDown')
                 {
                     results_div.find('.list-group-item').first().focus()
-                    return false
-                }
-                if(e.which === 13)
-                {
-                    // pressing enter is equivalent to clicking on a first result,
-                    // as requested in #124
-                    results_div.find('.list-group-item').first().get(0).click()
-
-                    // blur the input so user will need to click on it to type
-                    // (and it will show up again in case if it was hidden due to click() action)
-                    input.blur()
-
                     return false
                 }
             })
@@ -161,7 +146,6 @@ var SearchBar = function ()
 function badge(name) {
     return '<span class="badge">' + name + '</span>';
 }
-
 
 function advanced_searchbar_templator(mutation_template)
 {
@@ -190,61 +174,55 @@ function advanced_searchbar_templator(mutation_template)
     }
 
     var cancer_template = 'Did you mean somatic cancer mutations of {{ name }} ({{ code }}) from TCGA?'
-    var disease_template = 'Did you mean {{ name }} mutations from ClinVar?'
-    var disease_in_protein_template = '{{ name }} mutations in {{ gene }} ({{ refseq }})'
 
     return (
         function (result)
         {
-            var link, name = ''
+            var type = result.type
 
-            if('url' in result)
-                link = '<a href="' + result.url + '" class="list-group-item">'
+            if(type === 'gene'){
+                var link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">'
 
-            switch(result.type)
+                if(result.isoforms_count > 1)
+                    link += badge(result.isoforms_count + ' isoforms')
+
+                link += result.name + '</a>'
+
+                return link
+            }
+            else if(type === 'aminoacid mutation'){
+                var name = result.mutation.name + ' (' + result.protein.refseq + ')';
+                return template_mutation(result, name)
+            }
+            else if(type === 'nucleotide mutation'){
+                var name = result.mutation.name + ' (' + result.protein.refseq + ')' + ', result of ' + result.input
+                return template_mutation(result, name)
+            }
+            else if(type === 'message')
             {
-                case 'gene':
-                    link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">' + result.name
-
-                    if(result.isoforms_count > 1)
-                        link += badge(result.isoforms_count + ' isoforms')
-
-                    return link + '</a>'
-
-                case 'aminoacid mutation':
-                    name = result.mutation.name + ' (' + result.protein.refseq + ')';
-                    return template_mutation(result, name)
-
-                case 'nucleotide mutation':
-                    name = result.mutation.name + ' (' + result.protein.refseq + ')' + ', result of ' + result.input
-                    return template_mutation(result, name)
-
-                case 'message':
-                    return '<button type="button" class="list-group-item">' + result.name + '</button>'
-
-                case 'pathway':
-
-                    link += result.name
-
-                    if(result.gene_ontology)
-                        link += badge('Gene Ontology pathway')
-                    if(result.reactome)
-                        link += badge('Reactome pathway')
-
-                    return link + '</a>'
-
-                case 'cancer':
-                    return link + format(cancer_template, result) + badge('Cancer') + '</a>'
-
-                case 'disease':
-                    return link + format(disease_template, result) + badge('Disease') + '</a>'
-
-                case 'disease_in_protein':
-                    return link + format(disease_in_protein_template, result) + badge('Disease mutations') + '</a>'
-
-                case 'see_more':
-                    return link + result.name + more_icon + '</a>'
-
+                return '<button class="list-group-item">' + result.name + '</button>'
+            }
+            else if(type === 'pathway')
+            {
+                var link = '<a href="' + result.url + '" class="list-group-item">'
+                if(result.gene_ontology)
+                    link += badge('Gene Ontology pathway')
+                if(result.reactome)
+                    link += badge('Reactome pathway')
+                link += result.name + '</a>'
+                return link
+            }
+            else if(type === 'cancer')
+            {
+                var link = '<a href="' + result.url + '" class="list-group-item">'
+                link += format(cancer_template, result) + badge('cancer') + '</a>'
+                return link
+            }
+            else if(type === 'see_more')
+            {
+                var link = '<a href="' + result.url + '" class="list-group-item">'
+                link += result.name + more_icon + '</a>'
+                return link
             }
         }
     )

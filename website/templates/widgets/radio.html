@@ -1,7 +1,7 @@
 <ul class="list-unstyled">
     {% if widget.nullable %}
         <li class="radio">
-            <label {{ 'checked' if widget.value == None }}>
+            <label {{ 'checked' if widget.value == None }}">
             <input type="radio" name="{{ widget.target_name }}" value="None" {{ 'checked' if widget.value == None }}>
             {{ widget.disabled_label }}
             </label>
@@ -9,7 +9,7 @@
     {% endif %}
     {% for value, label in widget.items %}
         <li class="radio">
-            <label {{ 'checked' if widget.value == value }}>
+            <label {{ 'checked' if widget.value == value }}">
             <input type="radio" name="{{ widget.target_name }}" value="{{ value | safe }}" {{ 'checked' if widget.value == value }}>
             {{ label }}
             </label>

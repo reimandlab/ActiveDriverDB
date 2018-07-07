@@ -8,7 +8,7 @@ var InlineEditManager = function()
 
     function updateMessage(editable_box, new_content)
     {
-        var content_div = editable_box.find('.content').first()
+        var content_div = editable_box.find('.content')
         if(config.nltobr)
             new_content = new_content.replace(/\n/g, '<br class="automatic">')
         return content_div.html(new_content)
@@ -16,7 +16,7 @@ var InlineEditManager = function()
 
     function getContent(editable_box)
     {
-        var content_div = editable_box.find('.content').first()
+        var content_div = editable_box.find('.content')
         var content = content_div.html()
         if(config.nltobr)
             content = content.replace(/<br class="automatic">/g, '\n')
@@ -31,7 +31,7 @@ var InlineEditManager = function()
             data: {
                 entry_id: editable_box.data('id'),
                 old_content: getContent(editable_box),
-                new_content: editable_box.find('.new-content').first().val()
+                new_content: editable_box.find('.new-content').val()
             },
             success: function(editable_box)
             {
@@ -66,8 +66,8 @@ var InlineEditManager = function()
 
                     if(message)
                     {
-                        editable_box.find('.feedback').first().html(message)
-                        editable_box.find('.feedback').first().show()
+                        editable_box.find('.feedback').html(message)
+                        editable_box.find('.feedback').show()
                     }
                 }
             }(editable_box)
@@ -77,16 +77,16 @@ var InlineEditManager = function()
     function rejectEdit(editable_box)
     {
         var unchanged_content = getContent(editable_box)
-        editable_box.find('.new-content').first().val(unchanged_content)
+        editable_box.find('.new-content').val(unchanged_content)
         endEdition(editable_box)
     }
 
     function endEdition(editable_box)
     {
-        editable_box.find('.edit-form').first().hide()
-        editable_box.find('.edit-btn').first().show()
-        editable_box.find('.content').first().show()
-        editable_box.find('.feedback').first().hide()
+        editable_box.find('.edit-form').hide()
+        editable_box.find('.edit-btn').show()
+        editable_box.find('.content').show()
+        editable_box.find('.feedback').hide()
     }
 
     var publicSpace = {
@@ -96,27 +96,21 @@ var InlineEditManager = function()
             config.nltobr = nltobr
 
             var inline_editable_box = $(box_selector)
-            inline_editable_box.each(function(i, box)
+            inline_editable_box.find('.edit-btn').click(
+                function()
                 {
-                    btn = $(box).find('.edit-btn').first()
-                    btn.click(
-                        function()
-                        {
-                            var edit_btn = $(this)
-                            //var edit_btn = $(btn)
-                            edit_btn.hide()
+                    var edit_btn = $(this)
+                    edit_btn.hide()
 
-                            var editable_box = edit_btn.closest(box_selector)
-                            editable_box.find('.content').first().hide()
-                            editable_box.find('.edit-form').first().show()
+                    var editable_box = edit_btn.closest(box_selector)
+                    editable_box.find('.content').hide()
+                    editable_box.find('.edit-form').show()
 
-                            editable_box.find('.save-btn').first().off().click(
-                                function(editable_box){ return function(){saveMessage(editable_box)} }(editable_box)
-                            )
-                            editable_box.find('.reject-btn').first().off().click(
-                                function(editable_box){ return function(){rejectEdit(editable_box)} }(editable_box)
-                            )
-                        }
+                    editable_box.find('.save-btn').off().click(
+                        function(editable_box){ return function(){saveMessage(editable_box)} }(editable_box)
+                    )
+                    editable_box.find('.reject-btn').off().click(
+                        function(editable_box){ return function(){rejectEdit(editable_box)} }(editable_box)
                     )
                 }
             )

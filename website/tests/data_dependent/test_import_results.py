@@ -1,6 +1,7 @@
 """"This tests should be passed after successful data import and fail before"""
 from database import bdb
-from genomic_mappings import make_snv_key, decode_csv
+from database import make_snv_key
+from database import decode_csv
 import app  # this will take some time (stats initialization)
 from models import Protein
 

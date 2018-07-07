@@ -8,7 +8,7 @@
  * Server response for filtering query for given representation.
  * @typedef {Object} ServerResponse
  * @property {FiltersData} filters
- * @property content - Content to be passed to provided data_handler
+ * @property {RepresentationData} representation - Representation specific data.
  */
 
 /**
@@ -16,21 +16,22 @@
  * to update widgets if dataset has changed and so on.
  * @typedef {Object} FiltersData
  * @property {boolean} checksum - Semaphore-like checksum of filters handled
- * @property {html} dynamic_widgets - Widgets applicable only to selected dataset
+ * @property {html} dataset_specific_widgets - Widgets applicable only to selected dataset
  * @property {string} query - Value of query as to be used in 'filters={{value}}' URL query string.
  * @property {string} expanded_query - Like query but including default filters values.
  */
 
-
 /**
- * @class
- * @return {{init: init, value: get_value, load: load, apply: apply, on_update: on_update}}
+ * @abstract
+ * @typedef {Object} RepresentationData
  */
+
+
 var AsyncFiltersHandler = function()
 {
     var config;
     var form;
-    var current_state_checksum;
+    var old_filters_query;
 
     /**
      * Generate checksum string for given query string.
@@ -50,6 +51,7 @@ var AsyncFiltersHandler = function()
      */
     function serialize_form($form)
     {
+
         var filters_query = $form.serialize();
         var checksum = make_checksum(filters_query);
 
@@ -116,22 +118,9 @@ var AsyncFiltersHandler = function()
     }
 
     /**
-     * Prevents concurrency issue of accepting two or more consecutive
-     * responses, which all pass "is_response_actual" test.
-     * It prevents effect of duplicated visualisations as shown in #121 issue.
-     * @param {FiltersData} data
-     * @returns {boolean} is different with currently set value?
-     */
-    function does_response_differ_from_current_state(data)
-    {
-        return current_state_checksum != data.checksum
-    }
-
-    /**
      * Replace filters form with relevant (updated) content:
-     * - set up dynamic widgets (widgets which change, depending on
-     *   values of other filters, e.g. dataset-specific widgets: we
-     *   do not want to filter by cancer type in ESP6500 dataset)
+     * - set up dataset-specific widgets if dataset has changed
+     *   (we do not want to filter by cancer type in ESP6500 dataset)
      * - correctly selected checkboxes / inputs
      *   (when restoring to the old state with History API,
      *   those has to be replaced accordingly to old state)
@@ -140,22 +129,21 @@ var AsyncFiltersHandler = function()
      */
     function update_form_html(data, from_future)
     {
-        var html = $.parseHTML(data.dynamic_widgets);
+        var html = $.parseHTML(data.dataset_specific_widgets);
 
         if(from_future)
         {
-            form.get(0).reset()
-            form.deserialize(history.state.form)
+            form.html(history.state.form);
             form.trigger('PotentialAffixChange');
         }
 
-        var dynamic_widgets = $('.dynamic-widgets');
+        var dataset_widgets = $('.dataset-specific');
 
         // do not replace if it's not needed - so expanded lists stay expanded
-        if(serialize_fragment(dynamic_widgets) !== serialize_fragment($(html)))
+        if(serialize_fragment(dataset_widgets) !== serialize_fragment($(html)))
         {
-            dynamic_widgets.html(html);
-            dynamic_widgets.trigger('PotentialAffixChange');
+            dataset_widgets.html(html);
+            dataset_widgets.trigger('PotentialAffixChange');
         }
     }
 
@@ -187,16 +175,21 @@ var AsyncFiltersHandler = function()
     {
         var filters_data = data.filters;
 
-        if (!(is_response_actual(filters_data) && does_response_differ_from_current_state(filters_data)) && !from_future)
+        if (!is_response_actual(filters_data) && !from_future)
         {
-            console.log('Skipping outdated response');
+            console.log('Skipping not actual response');
             return
         }
-        current_state_checksum = filters_data.checksum
 
-        config.data_handler(data.content, filters_data);
+        config.data_handler(data.representation, filters_data);
 
         update_form_html(filters_data, from_future);
+
+        var filters_query = '';
+        if(filters_data.query)
+        {
+            filters_query += 'filters=' + filters_data.query;
+        }
 
         if(config.links_to_update)
         {
@@ -206,18 +199,8 @@ var AsyncFiltersHandler = function()
         }
 
         config.on_loading_end();
-    }
 
-    function update_history(query, replace)
-    {
-        var history_action = history.pushState;
-
-        if (replace)
-            history_action = history.replaceState;
-
-        var state = {filters_query: query, form: form.serialize(), handler: 'filters'};
-
-        history_action(state, '', make_query_url(query));
+        history.replaceState(history.state, '', make_query_url(filters_query))
     }
 
     /**
@@ -225,67 +208,49 @@ var AsyncFiltersHandler = function()
      *  - ask server for data for those filters,
      *  - change URL,
      *  - record changes with History API.
-     * @param {string} filters_query - Query string as returned by {@see serialize_form}
+     * @param {string} filters_query - Query string as returned by {@link serialize_form}
      * @param {boolean} [do_not_save=false] - Should this modification be recorded in history?
      * @param {boolean} [from_future=false] - Was called on "popstate" History API event?
      */
     function apply(filters_query, do_not_save, from_future)
     {
         config.on_loading_start();
-        current_state_checksum = null;
+        var history_action;
+
+        if (!do_not_save) {
+            history_action = history.pushState;
+        }
+        else {
+            history_action = history.replaceState;
+        }
+
+        var state = {filters_query: filters_query, form: form.html(), handler: 'filters'};
+        history_action(state, '', make_query_url(filters_query));
 
         $.ajax({
-            url: config.endpoint_url,
+            url: config.representation_url,
+            type: 'GET',
             data: filters_query,
-            success: function(data){
-
-                var filters_query = ''
-
-                if(data.filters.query)
-                    filters_query += 'filters=' + data.filters.query
-
-                load(data, from_future)
-
-                update_history(filters_query, do_not_save)
-
-            }
+            success: function(data){ load(data, from_future) }
         });
-    }
 
-    /**
-     * Retrieve currently set value of a filter of given name.
-     *
-     * Returns undefined if there is no selected value or if
-     * the current value is default one and not explicitly set.
-     */
-    function get_value(filter_name)
-    {
-        var matched = form.serializeArray().filter(
-            function(o){ return o.name === 'filter[' + filter_name + ']' }
-        )
-        if(matched.length !== 1)
-            return undefined
-        return matched[0].value
+        old_filters_query = filters_query;
     }
 
     /**
      * Configuration object for AsyncFiltersHandler.
      * @typedef {Object} Config
-     * @memberOf AsyncFiltersHandler
      * @property {jQuery} form
      * @property {function} data_handler
      * @property {function} on_loading_start
      * @property {function} on_loading_end
-     * @property {number} input_delay
+     * @property {string} representation_url
      * @property {jQuery} links_to_update
-     * @property {string} endpoint_url - an URL of endpoint returning {@see ServerResponse}
-     *  the endpoint should accept checksum, (and return in {@see FiltersData})
      */
 
     return {
         /**
          * Initialize AsyncFiltersHandler
-         * @memberOf AsyncFiltersHandler
          * @param {Config} new_config
          */
         init: function(new_config)
@@ -294,35 +259,12 @@ var AsyncFiltersHandler = function()
             form = config.form;
             form.on(
                 'change',
-                'select, input:not([type=text]):not(.programmatic)',
+                'select, input:not(.programmatic)',
                 function() { on_update() }
             );
-
-            var timer;
-
-            form.on(
-                'input',
-                'input[type=text]:not(.programmatic)',
-                function() {
-
-                    if(timer)
-                        window.clearTimeout(timer)
-
-                    timer = window.setTimeout(
-                        function(){
-                            timer = null
-                            on_update()
-                        },
-                        config.input_delay || 200
-                    )
-                }
-            );
-
+            old_filters_query = serialize_form(form);
             form.find('.save').hide()
-
-            update_history(window.location.search.substring(1), true)
         },
-        value: get_value,
         load: load,
         apply: apply,
         on_update: on_update

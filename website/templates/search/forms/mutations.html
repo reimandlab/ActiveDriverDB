@@ -1,21 +1,20 @@
-{% from "text_entry.html" import text with context %}
-<script>
-function multisort(columns)
-{
-    columns.forEach(function(column)
-    {
-        $.bootstrapSortable({sortingHeader: $('#col_' + column)})
-    })
-}
-</script>
-
 <form
   action="{{ url_for('SearchView:mutations') }}"
-  class="search-form {{ 'hidden' if results or without_mutations }}"
+  class="search-form"
   method="POST"
   id="mutations-form"
   enctype="multipart/form-data"
 >
+  {% if dataset %}
+    <h3>Dataset: {{ dataset.name }}</h3>
+    <h4>Saved on {{ dataset.created_on }}
+      {% if dataset.owner %}
+        by {{ dataset.owner.username }}
+      {% else %}
+        anonymously
+      {% endif %}
+    </h4>
+  {% endif %}
   <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
   {# TODO: the example should return more representative results #}
   {% set example='HTR3E I183823756M\nSTAT6 W737C\nchr12 57490358 C A\nTP53 R282W\nBRCA1 L432V' %}
@@ -24,11 +23,11 @@ function multisort(columns)
       Select VCF file  <input type="file" name="vcf-file">
     </a>
     <a href="?mutations={{ example | urlencode }}" class="btn btn-default set-example">Load an example</a>
-    <button class="btn btn-primary mut-search">
+    <button type="submit" class="btn btn-primary mut-search">
       Search {{ 'again' if results }}
-      <span class="glyphicon glyphicon-search"></span>
+      <span class="glyphicon glyphicon-search" aria-hidden="true"></span>
     </button>
-    {% with widgets=widgets.mutations, bar_class="btn-group" %}
+    {% with widgets=[widgets.is_ptm] %}
       {% include 'filters/bar.html' %}
     {% endwith %}
   </div>
@@ -43,14 +42,14 @@ function multisort(columns)
     {% endif %}
   </label>
   <div class="storage_details hidden">
-    Dataset name: <input name="dataset_name" class="form-control">
+    Dataset name: <input type="text" name="dataset_name" class="form-control">
   </div>
   <div class="inputs">
     {# The length of the textarea should change dynamically up to 30 rows - JS #}
     {# The single-line placeholder will be substituted by multiline placeholder with JS in all browsers #}
     <textarea
       name="mutations"
-      class="form-control muts-textarea"
+      class="form-control"
       placeholder="chr1 12345678 A C"
       data-full-placeholder="Type in genomic or protein mutations separated by new lines, in following format:\n{{ example }}\n(you can mix genomic and protein mutations as long as each is placed in a separate line)"
       rows="6"
@@ -60,33 +59,9 @@ function multisort(columns)
       {%- endif -%}
     </textarea>
     <span class="help-block">
-      {{ text('search-mutations') }}
+      You can provide a VCF file and plain-text mutation lines above at once, so result for both will be shown on one page.
     </span>
   </div>
-  <input type="hidden" name="fallback" value="True">
-</form>
-
-
-<div class="results-buttons">
-    {% if results %}
-      <button
-          class="btn btn-default"
-          onclick="multisort(['ref', 'position', 'refseq', 'gene'])"
-      >
-        <span class="glyphicon glyphicon-sort-by-attributes"></span>
-        Sort by gene, refseq, position & reference
-      </button>
-    {% endif %}
-    {% if results or without_mutations %}
-      <button class="btn btn-default run-again" onclick="$('.search-form').removeClass('hidden');$(this).hide()">
-        <span class="glyphicon glyphicon-pencil"></span>
-        Modify this query and search again
-      </button>
-    {% endif %}
-</div>
-
-
-
   <div
     class="results {{ 'hidden' if not results and not badly_formatted and not without_mutations }}"
   >
@@ -95,3 +70,5 @@ function multisort(columns)
   <div id="footnote">
     * Mutations will be stored for 7 days. Ticking this box allows you to return to the results later easily.
   </div>
+  <input type="hidden" name="fallback" value="True">
+</form>

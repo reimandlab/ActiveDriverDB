@@ -9,11 +9,14 @@
     <script type="text/javascript" src="{{ ASSET_URL }}"></script>
   {% endassets %}
 
+  {{ dependency('futura_fonts') }}
+  <script>try{Typekit.load({ async: true });}catch(e){}</script>
+
   {{ dependency('particles.js') }}
 
 {% endblock %}
 
-{% block title %} {{ super() }} - front page {% endblock %}
+{% block title %} Front page - {{ super() }} {% endblock %}
 
 {% block css %}
   {% assets "css_front_page" %}
@@ -28,20 +31,11 @@
 
 {% block body %}
 
-  {% set user = current_user %}
-  {% set login_or_profile %}
-    {% if not user.is_authenticated %}
-      <li><a href="{{ url_for('ContentManagementSystem:login') }}">Login</a>
-    {% else %}
-      <li><a href="{{ url_for('ContentManagementSystem:my_datasets') }}">My datasets</a>
-    {% endif %}
-  {% endset %}
-
-  {% with without_searchbar = True, additional_menu_items=login_or_profile %}
-    {% include "navbar.html" with context %}
+  {% with without_searchbar = True %}
+    {% include "navbar.html" %}
   {% endwith %}
 
-  <div class="front-page-content page-content main-container">
+  <div class="front-page-content page-content">
 
     <div class="strip strip-top">
 
@@ -72,7 +66,7 @@
               <input
                 name="query"
                 class="form-control search-input"
-                placeholder="TP53 or NM_000345 or TP53 R282W or chr12 57490358 C A (hg19) or dementia in MAPT"
+                placeholder="TP53, NM_000345, TP53 R282W or chr12 57490358 C A"
                 autocomplete="off"
               >
               <span class="input-icon glyphicon glyphicon-search"></span>
@@ -88,7 +82,7 @@
         </div>
 
         <div class="advanced">
-          {{ text('advanced-search') }}
+          {{ text('advanced-search', compact_mode=True) }}
         </div>
 
       </div>
@@ -118,15 +112,25 @@
         </div>
       </div>
     </div>
-    <div class="row row-about">
-      <div class="col-md-10 col-md-offset-1">
-        <div class="strip text-based-strip">
-          {{ text('front-page-about') }}
-        </div>
+  <div class="row row-about">
+    <div class="col-md-10 col-md-offset-1">
+      <div class="strip text-based-strip">
+        {{ text('front-page-about') }}
       </div>
     </div>
-
   </div>
+
+  <footer class="footer">
+    <div class="row">
+      <div class="col-md-10 col-md-offset-1">
+        <ul class="menu list-unstyled">
+          {% block footer %}
+            {{ system_menu('footer_menu').as_list }}
+          {% endblock %}
+        </ul>
+      </div>
+    </div>
+  </footer>
 {% endblock %}
 
 

@@ -1,6 +1,5 @@
 from copy import copy
 
-from app import mail
 from view_testing import ViewTest
 
 
@@ -20,6 +19,7 @@ class TestMail(ViewTest):
             assert required_str in form
 
     def test_send_message(self):
+        from app import mail
 
         # easy case: everything is fine
         data = {
@@ -65,12 +65,3 @@ class TestMail(ViewTest):
             if key == 'email' and value:
                 assert b'email address is not correct' in response.data
 
-    def test_html_body(self):
-        from views.cms import send_message
-        with mail.record_messages() as outbox:
-            send_message(
-                html='<i>Test</i>. <a href="http://some_address.org">Do something</a>',
-                recipients=['some@mail.domain']
-            )
-        msg = outbox[0]
-        assert msg.body == 'Test. Do something: http://some_address.org'

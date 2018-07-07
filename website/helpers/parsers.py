@@ -47,6 +47,10 @@ def fast_gzip_read(file_name, mode='r', processes=4, as_str=False):
 def read_from_gz_files(directory, pattern, skip_header=True):
     """Creates generator yielding subsequent lines from compressed '.gz' files
 
+    Lines from each file will be decoded to 'latin1' and read in chunk of 10000
+    lines each (to keep quite optimal memory usage / disk operations ratio),
+    what allows huge files to be read with this function.
+
     Progress bar is embedded.
     """
 
@@ -61,6 +65,29 @@ def read_from_gz_files(directory, pattern, skip_header=True):
 
             for line in f:
                 yield line
+
+
+def buffered_readlines(file_handle, line_count=5000):
+    """Works like a normal readline function but buffers reading operations.
+
+    The number of lines to read in once is specified by `line_count`.
+    """
+    is_eof = False
+    while not is_eof:
+        buffer = []
+        # read as much as line_count says
+        for _ in range(line_count):
+            line = file_handle.readline()
+
+            # stop if needed
+            if not line:
+                is_eof = True
+                break
+
+            buffer.append(line)
+        # release one row in a once from buffer
+        for line in buffer:
+            yield line
 
 
 def count_lines(file_object):
@@ -142,22 +169,16 @@ def parse_text_file(filename, parser, file_header=None, file_opener=open):
             parser(line)
 
 
-def parse_fasta_file(filename, on_sequence, on_header=lambda x: x, file_opener=open, mode='r'):
+def parse_fasta_file(filename, parser, file_opener=open):
     """Utility function wrapping Fasta file parser.
 
     For each line parser will be called.
 
     Progress bar is embedded.
     """
-    header = None
-
-    with file_opener(filename, mode) as f:
+    with file_opener(filename) as f:
         for line in tqdm(f, total=count_lines(f), unit=' lines'):
-            line = line.rstrip()
-            if line.startswith('>'):
-                header = on_header(line[1:])
-            else:
-                on_sequence(header, line)
+            parser(line)
 
 
 def chunked_list(full_list, chunk_size=10000):

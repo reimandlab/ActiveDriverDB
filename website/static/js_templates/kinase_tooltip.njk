@@ -1,33 +1,19 @@
 <h5>{{ kinase.gene_name }}</h5>
 <i>{{ kinase.refseq }}</i>
-{% if site %}
-    <p>
-    Interacts with {{ site }} PTM site (among others), which is affected by this mutation.
-    </p>
-{% endif %}
+<p>
+Interacts with {{ site }} PTM site (among others),<br>
+which is affected by mutation represented in this row.
+</p>
 If the same filters as active are applied to this protein, then it has:
 <div>
     <ul>
         <li> {{ kinase.muts_count }} mutations
-             ({{ kinase.ptm_muts }} PTM mutations)
+             ({{ kinase.ptm_muts }} PTM muts)
         <li> {{ kinase.sites_count }} PTM sites
         {% if kinase.meta.length %}
             <li> {{ kinase.meta | join('; ') }}
         {% endif %}
     </ul>
+
+    <a href="{{ kinase.refseq }}">Show protein view</a>
 </div>
-{% if kinase.drugs | length %}
-  {% set many = kinase.drugs | length > 4 %}
-  <div>Following drugs interact with this kinase:</div>
-    <div{{ ' class=list-collapsed' if many else '' }}>
-      <ul>
-        {% for drug in kinase.drugs %}
-          <li>{{ drug.name }}
-        {% endfor %}
-      </ul>
-      {% if many %}
-        <a href="#" class="list-expand">more</a>
-      {% endif %}
-    </div>
-{% endif %}
-<a href="/sequence/show/{{ kinase.refseq }}">Show sequence view</a>

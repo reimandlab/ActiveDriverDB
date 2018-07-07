@@ -15,13 +15,13 @@ function get_protein_details_url(refseq)
     return href
 }
 
-function initializeKinaseTooltips(selection)
+function initializeKinaseTooltips()
 {
     var kinase_tooltip = Tooltip()
     kinase_tooltip.init({
         id: 'kinase',
         preprocess_data: function (d, render_template_cb) {
-            var context = this
+            context = this
             $.ajax({
                 url: get_protein_details_url(
                     $(this).data('refseq')
@@ -41,10 +41,6 @@ function initializeKinaseTooltips(selection)
             )
         }
     })
-    if(!selection)
-        selection = d3.selectAll('.kinase')
-    selection
+    d3.selectAll('.kinase')
         .call(kinase_tooltip.bind)
-
-    return kinase_tooltip
 }

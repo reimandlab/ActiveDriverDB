@@ -1,26 +1,22 @@
-from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 from collections import UserList
-from functools import lru_cache
 
-from sqlalchemy import and_, distinct
+from sqlalchemy import and_
 from sqlalchemy import case
 from sqlalchemy import func
 from sqlalchemy import or_
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.ext.hybrid import hybrid_method, Comparator
+from sqlalchemy.ext.hybrid import hybrid_method
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, synonym
+from sqlalchemy.orm import backref
 from sqlalchemy.sql import exists
 from sqlalchemy.sql import select
 from werkzeug.utils import cached_property
 
-from database import db, count_expression, client_side_defaults
+from database import db, count_expression
 from database import fast_count
-from database.types import ScalarSet
 from exceptions import ValidationError
-from helpers.models import generic_aggregator, association_table_super_factory
 from models import Model
 
 
@@ -34,7 +30,19 @@ class BioModel(Model):
     __bind_key__ = 'bio'
 
 
-make_association_table = association_table_super_factory(bind='bio')
+def make_association_table(fk1, fk2):
+    """Create an association table basing on names of two given foreign keys.
+
+    From keys: `site.id` and `kinase.id` a table named: site_kinase_association
+    will be created and it will contain two columns: `site_id` and `kinase_id`.
+    """
+    table_name = '%s_%s_association' % (fk1.split('.')[0], fk2.split('.')[0])
+    return db.Table(
+        table_name, db.metadata,
+        db.Column(fk1.replace('.', '_'), db.Integer, db.ForeignKey(fk1)),
+        db.Column(fk2.replace('.', '_'), db.Integer, db.ForeignKey(fk2)),
+        info={'bind_key': 'bio'}    # use 'bio' database
+    )
 
 
 class GeneListEntry(BioModel):
@@ -170,10 +178,6 @@ class Gene(BioModel):
     def isoforms_count(cls):
         return count_expression(cls, Protein)
 
-    @hybrid_property
-    def is_known_kinase(self):
-        return bool(self.preferred_isoform.kinase)
-
     def __repr__(self):
         return '<Gene {0}, with {1} isoforms>'.format(
             self.name,
@@ -275,90 +279,6 @@ class ProteinReferences(BioModel):
     uniprot_entries = db.relationship(UniprotEntry, backref='reference')
 
 
-class DrugGroup(BioModel):
-    """>Drugs are categorized by group, which determines their drug development status.<
-    A drug can belong to multiple groups.
-
-    Relevant schema definition fragment (drugbank.xsd):
-
-    <xs:complexType name="group-list-type">
-        <xs:sequence maxOccurs="6" minOccurs="1">
-            <xs:element name="group" type="group-type"/>
-        </xs:sequence>
-    </xs:complexType>
-    <xs:simpleType name="group-type">
-        <xs:annotation>
-            <xs:documentation>Drugs are grouped into a category like approved, experimental, illict.</xs:documentation>
-        </xs:annotation>
-        <xs:restriction base="xs:string">
-            <xs:enumeration value="approved"/>
-            <xs:enumeration value="illicit"/>
-            <xs:enumeration value="experimental"/>
-            <xs:enumeration value="withdrawn"/>
-            <xs:enumeration value="nutraceutical"/>
-            <xs:enumeration value="investigational"/>
-            <xs:enumeration value="vet_approved"/>
-        </xs:restriction>
-    </xs:simpleType>
-
-    """
-    name = db.Column(db.String(32), unique=True, index=True)
-
-
-class DrugType(BioModel):
-    """Drug type is either 'small molecule' or 'biotech'.
-    Every drug has only one type.
-
-    Relevant schema definition fragment (drugbank.xsd):
-
-    <xs:attribute name="type" use="required">
-        <xs:simpleType>
-            <xs:restriction base="xs:string">
-                <xs:enumeration value="small molecule"/>
-                <xs:enumeration value="biotech"/>
-            </xs:restriction>
-        </xs:simpleType>
-    </xs:attribute>
-    """
-    name = db.Column(db.String(32), unique=True, index=True)
-
-
-class Drug(BioModel):
-    name = db.Column(db.String(128))
-    drug_bank_id = db.Column(db.String(32))
-    description = db.Column(db.Text)
-
-    target_genes_association_table = make_association_table('drug.id', 'gene.id')
-
-    target_genes = db.relationship(
-        Gene,
-        secondary=target_genes_association_table,
-        backref=db.backref('drugs', cascade='all,delete', passive_deletes=True),
-        cascade='all,delete',
-        passive_deletes=True
-    )
-
-    type_id = db.Column(db.Integer, db.ForeignKey('drugtype.id'))
-    type = db.relationship(DrugType, backref='drugs', lazy=False)
-
-    group_association_table = make_association_table('drug.id', 'druggroup.id')
-
-    groups = db.relationship(
-        DrugGroup,
-        secondary=group_association_table,
-        collection_class=set,
-        backref='drugs'
-    )
-
-    def to_json(self):
-        return {
-            'name': self.name,
-            'type': self.type.name if self.type else '',
-            'groups': [drug_group.name for drug_group in self.groups],
-            'drugbank': self.drug_bank_id
-        }
-
-
 class Protein(BioModel):
     """Protein represents a single isoform of a product of given gene."""
 
@@ -370,14 +290,6 @@ class Protein(BioModel):
         backref='protein',
         uselist=False
     )
-
-    @property
-    def is_swissprot_canonical_isoform(self):
-        if self.external_references:
-            for entry in self.external_references.uniprot_entries:
-                if entry.reviewed and entry.isoform == 1:
-                    return True
-        return False
 
     # refseq id of mRNA sequence (always starts with 'NM_')
     # HGNC reserves up to 50 characters; 32 seems good enough but
@@ -431,8 +343,11 @@ class Protein(BioModel):
         backref='protein'
     )
 
-    @client_side_defaults('sequence', 'disorder_map')
     def __init__(self, **kwargs):
+        for key in ('sequence', 'disorder_map'):
+            if key not in kwargs:
+                kwargs[key] = ''
+
         super().__init__(**kwargs)
 
     def __repr__(self):
@@ -449,51 +364,25 @@ class Protein(BioModel):
 
     @has_ptm_mutations.expression
     def has_ptm_mutations(cls):
-        return cls.has_ptm_mutations_in_dataset()
-
-    @classmethod
-    def has_ptm_mutations_in_dataset(cls, dataset=None):
-        criteria = [
-            Site.protein_id == cls.id,
-            Mutation.protein_id == cls.id,
-            Mutation.is_confirmed == True,
-            Site.position.between(
-                Mutation.position - 7,
-                Mutation.position + 7
-            )
-        ]
-        if dataset:
-            from stats import Statistics
-            criteria.append(
-                Statistics.get_filter_by_sources([dataset])
-            )
         return (
             select([
                 case(
                     [(
                         exists()
-                        .where(and_(*criteria)).correlate(cls),
+                        .where(and_(
+                            Site.protein_id == cls.id,
+                            Mutation.protein_id == cls.id,
+                            Site.position.between(
+                                Mutation.position - 7,
+                                Mutation.position + 7
+                            )
+                        )).correlate(cls),
                         True
                     )],
                     else_=False,
                 ).label('has_ptm_mutations')
             ])
             .label('has_ptm_mutations_select')
-        )
-
-    @hybrid_property
-    def ptm_mutations_count(self):
-        return sum(1 for mut in self.confirmed_mutations if mut.precomputed_is_ptm)
-
-    @ptm_mutations_count.expression
-    def ptm_mutations_count(cls):
-        return (
-            select(func.count(Mutation.id))
-            .filter(and_(
-                Mutation.protein_id == Protein.id,
-                Mutation.precomputed_is_ptm,
-                Mutation.is_confirmed == True
-            ))
         )
 
     @hybrid_property
@@ -548,33 +437,14 @@ class Protein(BioModel):
             )
         }
 
-    @hybrid_property
+    @cached_property
     def is_preferred_isoform(self):
         return self.gene.preferred_isoform == self
 
-    @is_preferred_isoform.expression
-    def is_preferred_isoform(self):
-        return (
-            select([
-                case(
-                    [(
-                        exists()
-                        .where(and_(
-                            Gene.preferred_isoform_id == self.id,
-                            Gene.id == self.gene_id
-                        )).correlate(self),
-                        True
-                    )],
-                    else_=False,
-                ).label('is_preferred_isoform')
-            ])
-            .label('is_preferred_isoform_select')
-        )
-
     @cached_property
     def length(self):
-        """Length of protein's sequence, without the trailing stop (*) character"""
-        return len(self.sequence.rstrip('*'))
+        """Length of protein's sequence"""
+        return len(self.sequence)
 
     @cached_property
     def disorder_length(self):
@@ -654,21 +524,22 @@ class Protein(BioModel):
     @property
     def disease_names(self):
         query = (
-            db.session.query(distinct(Disease.name))
-            .join(ClinicalData)
-            .join(InheritedMutation)
-            .join(Mutation)
-            .filter(Mutation.protein == self)
+            db.session.query(ClinicalData.disease_name).
+            distinct(ClinicalData.disease_name).
+            join(InheritedMutation).
+            join(Mutation).
+            filter(Mutation.protein == self)
         )
         return [row[0] for row in query]
 
     def cancer_codes(self, mutation_details_model):
         query = (
-            db.session.query(distinct(Cancer.code))
-            .join(mutation_details_model)
-            .join(Mutation)
-            .filter(Mutation.protein == self)
-            .order_by(Cancer.name)
+            db.session.query(Cancer.code).
+                distinct(Cancer.code).
+                join(mutation_details_model).
+                join(Mutation).
+                filter(Mutation.protein == self).
+                order_by(Cancer.name)
         )
         return [row[0] for row in query]
 
@@ -677,8 +548,6 @@ class Protein(BioModel):
 
 
 def default_residue(context):
-    if not hasattr(context, 'current_parameters'):
-        return
     params = context.current_parameters
 
     protein = params.get('protein')
@@ -697,87 +566,41 @@ def default_residue(context):
             return
 
 
-class SiteType(BioModel):
-    # this table can be pre-fetched into the application
-    # memory on start, as it is not supposed to change after
-    # the initial import
-    name = db.Column(db.String(16), unique=True)
-
-
-class SiteSource(BioModel):
-    name = db.Column(db.String(16), unique=True)
-
-
 class Site(BioModel):
     # Note: this position is 1-based
     position = db.Column(db.Integer, index=True)
 
     residue = db.Column(db.String(1), default=default_residue)
-
-    pmid = db.Column(ScalarSet(separator=',', element_type=int), default=set)
-    type = db.Column(ScalarSet(separator=','), default=set)
-
-    # TODO: following ideas might be worth exploring:
-    # mapped = db.Column(db.Boolean)
-
+    pmid = db.Column(db.Text)
+    # type is expected to be a spaceless string, one of following:
+    #   phosphorylation acetylation ubiquitination methylation
+    # or comma separated list consisting of such strings. Another
+    # implementation which should be tested would use relationships
+    # to 'site_types' table and it might be faster to query specific
+    # sites when having this implemented that way.
+    type = db.Column(db.Text)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
-
-    sources = db.relationship(
-        'SiteSource',
-        secondary=make_association_table('site.id', 'sitesource.id'),
-        collection_class=set,
-        backref='sites'
-    )
     kinases = db.relationship(
         'Kinase',
         secondary=make_association_table('site.id', 'kinase.id'),
-        collection_class=set,
         backref='sites'
     )
     kinase_groups = db.relationship(
         'KinaseGroup',
         secondary=make_association_table('site.id', 'kinasegroup.id'),
-        collection_class=set,
         backref='sites'
     )
 
-    @client_side_defaults('pmid', 'type')
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.validate_position()
         self.validate_residue()
 
-    def get_nearby_sequence(self, protein, dst=3):
-        left = self.position - dst - 1
-        right = self.position + dst
-        return (
-            '-' * -min(0, left) +
-            protein.sequence[max(0, left):min(right, protein.length)] +
-            '-' * max(0, right - protein.length)
-        )
-
-    @hybrid_property
-    def sequence(self):
-        return self.get_nearby_sequence(self.protein, dst=7)
-
-    @hybrid_property
-    def mutations(self):
-        return [
-            {
-                'ref': mutation.ref,
-                'pos': mutation.position,
-                'alt': mutation.alt,
-                'impact': mutation.impact_on_specific_ptm(self)
-            }
-            for mutation in self.protein.mutations
-            if abs(mutation.position - self.position) < 7
-        ]
-
     def validate_position(self):
         position = self.position
         if self.protein:
-            if position > self.protein.length or position < 1:
+            if position > self.protein.length or position < 0:
                 raise ValidationError(
                     'Site is placed outside of protein sequence '
                     '(position: {0}, protein length: {1}) '
@@ -807,27 +630,17 @@ class Site(BioModel):
             self.position
         )
 
-    def to_json(self, with_kinases=False):
-        data = {
+    def to_json(self):
+        return {
             'position': self.position,
-            'type': ','.join(self.type),
+            'type': self.type,
             'residue': self.residue
         }
-        if with_kinases:
-            data['kinases'] = [
-                kinase.to_json()
-                for kinase in self.kinases
-            ]
-            data['kinase_groups'] = [
-                {'name': group.name}
-                for group in self.kinase_groups
-            ]
-        return data
 
-    @classmethod
-    @lru_cache()
-    def types(cls):
-        return [site_type.name for site_type in SiteType.query]
+    types = [
+        'phosphorylation', 'acetylation',
+        'ubiquitination', 'methylation'
+    ]
 
 
 class Cancer(BioModel):
@@ -903,42 +716,9 @@ class Domain(BioModel):
 mutation_site_association = make_association_table('site.id', 'mutation.id')
 
 
-class MutationDetailsManager(UserList, metaclass=ABCMeta):
-    """Groups (by a unique mutation) mutation details from a given source"""
-
-    @property
-    @abstractmethod
-    def name(self):
-        """Internal name which has to remain unchanged, used in relationships"""
-        pass
-
-    @property
-    @abstractmethod
-    def value_type(self):
-        """What is the value returned by 'get_value'.
-
-        It can be 'count', 'frequency' or 'probability'.
-        """
-        pass
-
-    @abstractmethod
-    def to_json(self):
-        pass
-
-    def get_value(self, filter=lambda x: x):
-        return sum(
-            (
-                data.get_value()
-                for data in filter(self.data)
-            )
-        )
-
-    summary = generic_aggregator('summary', is_callable=True)
-
-
 def create_cancer_meta_manager(meta_name):
 
-    class CancerMetaManager(MutationDetailsManager):
+    class CancerMetaManager(UserList):
         name = meta_name
         value_type = 'count'
 
@@ -956,21 +736,22 @@ def create_cancer_meta_manager(meta_name):
                 datum.summary()
                 for datum in self.data
                 # one could use:
-
+                # datum.summary()
                 # for datum in filter(self.data)
-
-                # so only the cancer data from currently selected cancer type are show,
-                # but then the user may think that the mutation is specific for this
-                # type of cancer
+                # but I think that there is no need for that now
             ]
 
+        def get_value(self, filter=lambda x: x):
+            return sum(
+                (
+                    data.get_value()
+                    for data in filter(self.data)
+                )
+            )
     return CancerMetaManager
 
 
-class MIMPMetaManager(MutationDetailsManager):
-
-    name = 'MIMP'
-    value_type = 'probability'
+class MIMPMetaManager(UserList):
 
     @staticmethod
     def sort_by_probability(mimps):
@@ -985,7 +766,7 @@ class MIMPMetaManager(MutationDetailsManager):
         losses = []
 
         for mimp in self.data:
-            if mimp.is_gain:
+            if mimp.effect:
                 gains.append(mimp)
             else:
                 losses.append(mimp)
@@ -1006,7 +787,7 @@ class MIMPMetaManager(MutationDetailsManager):
         # TODO: sort by p-value, so first we will have loss
         # if the loss data is more reliable and vice versa.
         for mimp in self.data:
-            if mimp.is_gain:
+            if mimp.effect:
                 effects.add('gain')
             else:
                 effects.add('loss')
@@ -1026,9 +807,11 @@ class MIMPMetaManager(MutationDetailsManager):
 class MutationDetails:
     """Base for tables defining detailed metadata for specific mutations"""
 
+    details_manager = None
+
     @declared_attr
     def mutation_id(cls):
-        return db.Column(db.Integer, db.ForeignKey('mutation.id'), unique=True)
+        return db.Column(db.Integer, db.ForeignKey('mutation.id'))
 
     def get_value(self, filter=lambda x: x):
         """Return number representing value to be used in needleplot"""
@@ -1064,29 +847,6 @@ class MutationDetails:
         """
         raise NotImplementedError
 
-    def __repr__(self):
-        return '<{class_name} - details of {refseq}:{mutation} with summary: {summary}>'.format(
-            class_name=self.name,
-            refseq=self.mutation.protein.refseq,
-            mutation=self.mutation.short_name,
-            summary=self.summary()
-        )
-
-
-class ManagedMutationDetails(MutationDetails):
-    """For use when one mutation is related to many mutation details entries."""
-
-    @property
-    def details_manager(self):
-        """Collection class (deriving from MutationDetailsManager) which will
-        aggregate results from all the mutation details (per mutation).
-        """
-        raise NotImplementedError
-
-    @declared_attr
-    def mutation_id(cls):
-        return db.Column(db.Integer, db.ForeignKey('mutation.id'))
-
 
 class UserUploadedMutation(MutationDetails, BioModel):
 
@@ -1095,13 +855,7 @@ class UserUploadedMutation(MutationDetails, BioModel):
 
     value_type = 'count'
 
-    def __init__(self, **kwargs):
-        self.count = kwargs.pop('count', 0)
-        super().__init__(**kwargs)
-
-    # having count not mapped with SQLAlchemy prevents useless attempts
-    # to update recodrs which are not stored in database at all:
-    # count = db.Column(db.Integer, default=0)
+    count = db.Column(db.Integer, default=0)
     query = db.Column(db.Text)
 
     def get_value(self, filter=lambda x: x):
@@ -1117,9 +871,9 @@ class UserUploadedMutation(MutationDetails, BioModel):
         return self.query
 
 
-class CancerMutation(ManagedMutationDetails):
+class CancerMutation(MutationDetails):
 
-    samples = db.Column(db.Text(), default='')
+    samples = db.Column(db.Text())
     value_type = 'count'
     count = db.Column(db.Integer)
 
@@ -1171,7 +925,7 @@ class InheritedMutation(MutationDetails, BioModel):
     value_type = 'count'
 
     # RS: dbSNP ID (i.e. rs number)
-    db_snp_ids = db.Column(db.PickleType)
+    db_snp_id = db.Column(db.Integer)
 
     # MUT: Is mutation (journal citation, explicit fact):
     # a low frequency variation that is cited
@@ -1195,7 +949,7 @@ class InheritedMutation(MutationDetails, BioModel):
 
     def to_json(self, filter=lambda x: x):
         return {
-            'dbSNP id': self.db_snp_ids or [],
+            'dbSNP id': 'rs' + str(self.db_snp_id),
             'Is validated': bool(self.is_validated),
             'Is low frequency variation': bool(self.is_low_freq_variation),
             'Is in PubMed Central': bool(self.is_in_pubmed_central),
@@ -1210,16 +964,6 @@ class InheritedMutation(MutationDetails, BioModel):
             d.disease_name
             for d in filter(self.clin_data)
         ))
-
-
-class Disease(BioModel):
-
-    __table_args__ = (
-      db.Index('idx_name', 'name', mysql_length=1024),
-    )
-
-    # CLNDBN: Variant disease name
-    name = db.Column(db.Text, nullable=False, unique=True)
 
 
 class ClinicalData(BioModel):
@@ -1242,9 +986,7 @@ class ClinicalData(BioModel):
     sig_code = db.Column(db.Integer)
 
     # CLNDBN: Variant disease name
-    disease_id = db.Column(db.Integer, db.ForeignKey('disease.id'))
-    disease = db.relationship('Disease')
-    disease_name = association_proxy('disease', 'name')
+    disease_name = db.Column(db.Text)
 
     @property
     def significance(self):
@@ -1268,59 +1010,7 @@ class ClinicalData(BioModel):
         }
 
 
-def population_manager(_name, _display_name):
-
-    class PopulationManager(MutationDetailsManager):
-        """Some population mutations annotations are provided in form of a several
-        separate records, where all the records relate to the same aminoacid mutation.
-
-        Assuming that the frequencies are summable, one could merge the annotations
-        at the time of import. However, the information about the distribution of
-        nucleotide mutation frequencies would be lost if merging at import time.
-
-        Aggregation of the mutations details in PopulationManager allows to have both
-        overall and nucleotide-mutation specific frequencies included."""
-        name = _name
-        display_name = _display_name
-        value_type = 'frequency'
-
-        affected_populations = property(generic_aggregator('affected_populations', flatten=True))
-
-        def to_json(self, filter=lambda x: x):
-            data = filter(self.data)
-            json = data[0].to_json()
-            for datum in data[1:]:
-                for k, v in datum.to_json().items():
-                    json[k] = str(json[k]) + ', ' + str(v)
-            return json
-
-    return PopulationManager
-
-
-class PopulationsComparator(Comparator):
-    """Given a population name, or list of population names,
-    determine if PopulationMutation include this population
-    (i.e. has non-zero frequency of occurrence in the population)
-    """
-
-    def __init__(self, cls):
-        self.populations_fields = cls.populations_fields()
-        self.cls = cls
-
-    def __eq__(self, population_name):
-        return getattr(self.cls, self.populations_fields[population_name]) > 0
-
-    def in_(self, population_names):
-
-        return or_(
-            *[
-                getattr(self.cls, self.populations_fields[population_name]) > 0
-                for population_name in population_names
-            ]
-        )
-
-
-class PopulationMutation(ManagedMutationDetails):
+class PopulationMutation(MutationDetails):
     """Metadata common for mutations from all population-wide studies
 
     MAF:
@@ -1329,10 +1019,6 @@ class PopulationMutation(ManagedMutationDetails):
     populations = {
         # place mappings here: field name -> population name
     }
-
-    @classmethod
-    def populations_fields(cls):
-        return {v: k for k, v in cls.populations.items()}
 
     maf_all = db.Column(db.Float)
 
@@ -1350,10 +1036,6 @@ class PopulationMutation(ManagedMutationDetails):
             if getattr(self, field)
         ]
 
-    @affected_populations.comparator
-    def affected_populations(cls):
-        return PopulationsComparator(cls)
-
 
 class ExomeSequencingMutation(PopulationMutation, BioModel):
     """Metadata for ESP 6500 mutation
@@ -1362,10 +1044,8 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
         EA - European American
         AA - African American
     """
-
     name = 'ESP6500'
     display_name = 'Population (ESP 6500)'
-    details_manager = population_manager(name, display_name)
 
     value_type = 'frequency'
 
@@ -1379,8 +1059,6 @@ class ExomeSequencingMutation(PopulationMutation, BioModel):
     maf_ea = db.Column(db.Float)
     maf_aa = db.Column(db.Float)
 
-    populations_ESP6500 = synonym('affected_populations')
-
     def to_json(self, filter=lambda x: x):
         return {
             'MAF': self.maf_all,
@@ -1393,7 +1071,6 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
     """Metadata for 1 KG mutation"""
     name = '1KGenomes'
     display_name = 'Population (1000 Genomes)'
-    details_manager = population_manager(name, display_name)
 
     value_type = 'frequency'
 
@@ -1415,7 +1092,7 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
     )
 
     def to_json(self, filter=lambda x: x):
-        json = {
+        return {
             'MAF': self.maf_all,
             'MAF EAS': self.maf_eas,
             'MAF AMR': self.maf_amr,
@@ -1423,18 +1100,15 @@ class The1000GenomesMutation(PopulationMutation, BioModel):
             'MAF EUR': self.maf_eur,
             'MAF SAS': self.maf_sas,
         }
-        return {
-            name: (maf * 100 if maf else None)
-            for name, maf in json.items()
-        }
 
-    def get_value(self, filter=lambda x: x):
-        return self.maf_all * 100
-
-    populations_1KG = synonym('affected_populations')
+    """
+    @hybrid_method
+    def affects(self, population_name):
+        return getattr(self, population_name) > 0
+    """
 
 
-class MIMPMutation(ManagedMutationDetails, BioModel):
+class MIMPMutation(MutationDetails, BioModel):
     """Metadata for MIMP mutation"""
 
     name = 'MIMP'
@@ -1450,88 +1124,28 @@ class MIMPMutation(ManagedMutationDetails, BioModel):
     pwm = db.Column(db.Text)
     pwm_family = db.Column(db.Text)
 
-    kinase = db.relationship(
-        'Kinase',
-        primaryjoin='foreign(Kinase.name)==MIMPMutation.pwm',
-        uselist=False
-    )
-    kinase_group = db.relationship(
-        'KinaseGroup',
-        primaryjoin='foreign(KinaseGroup.name)==MIMPMutation.pwm_family',
-        uselist=False
-    )
-
     # gain = +1, loss = -1
     effect = db.Column(db.Boolean)
-
-    effect_map = {
-        'gain': 1,
-        'loss': 0
-    }
-
-    def __init__(self, **kwargs):
-        effect = kwargs.get('effect', None)
-        if effect in self.effect_map:
-            kwargs['effect'] = self.effect_map[effect]
-        super().__init__(**kwargs)
-
-    @property
-    def is_gain(self):
-        return self.effect
-
-    @property
-    def is_loss(self):
-        return not self.effect
 
     # position of a mutation in an associated motif
     position_in_motif = db.Column(db.Integer)
 
     def to_json(self, filter=lambda x: x):
         return {
-            'effect': 'gain' if self.is_gain else 'loss',
+            'effect': 'gain' if self.effect else 'loss',
             'pwm': self.pwm,
-            'kinase': {'refseq': self.kinase.protein.refseq} if self.kinase and self.kinase.protein else {},
             'pos_in_motif': self.position_in_motif,
             'pwm_family': self.pwm_family,
-            'site': self.site.to_json() if self.site else None,
+            'site': self.site.to_json(),
             'probability': self.probability
         }
 
-
-def details_proxy(target_class, key, managed=False):
-    """Creates an AssociationProxy targeting MutationDetails descendants.
-    The proxy enables easy filtering and retrieval of the otherwise deeply
-    hidden information and should be owned by (i.e. declared in) Mutation model.
-
-    Attributes:
-        managed: if True, a request for server side filtering system
-            (as opposite to database side filtering) to use attribute
-            of name 'key' from 'MutationDetailsManager' (instead of
-            the one from the MutationDetails itself) will be encoded
-            in the proxy function.
-
-    """
-
-    field_name = 'meta_' + target_class.name
-    proxy = association_proxy(field_name, key)
-
-    if managed:
-        def proxy_to_details_manager(object):
-            if type(object) is Mutation:
-                manager = getattr(object, field_name)
-            elif isinstance(object, ManagedMutationDetails):
-                manager = object.details_manager
-            else:
-                assert isinstance(object, MutationDetailsManager)
-                manager = object
-            return getattr(manager, key)
-        proxy.custom_attr_getter = proxy_to_details_manager
-
-    return proxy
+    def __repr__(self):
+        return '<MIMPMutation %s>' % self.id
 
 
-def are_details_managed(model):
-    return ManagedMutationDetails in model.mro()
+def details_proxy(target_class, key):
+    return association_proxy('meta_' + target_class.name, key)
 
 
 def mutation_details_relationship(model, use_list=False, **kwargs):
@@ -1554,7 +1168,8 @@ def managed_mutation_details_relationship(model):
 class Mutation(BioModel):
     __table_args__ = (
         db.Index('mutation_index', 'alt', 'protein_id', 'position'),
-        db.UniqueConstraint('alt', 'protein_id', 'position')
+        # TODO: is constraint necessary?
+        # db.UniqueConstraint('alt', 'protein_id', 'position')
     )
 
     position = db.Column(db.Integer)
@@ -1585,7 +1200,7 @@ class Mutation(BioModel):
     source_data_relationships = {
         'meta_' + model.name: (
             managed_mutation_details_relationship(model)
-            if are_details_managed(model) else
+            if model.details_manager else
             mutation_details_relationship(model)
         )
         for model in source_specific_data
@@ -1612,8 +1227,8 @@ class Mutation(BioModel):
         if model != MIMPMutation
     )
 
-    populations_1KG = details_proxy(The1000GenomesMutation, 'affected_populations', managed=True)
-    populations_ESP6500 = details_proxy(ExomeSequencingMutation, 'affected_populations', managed=True)
+    populations_1KG = details_proxy(The1000GenomesMutation, 'affected_populations')
+    populations_ESP6500 = details_proxy(ExomeSequencingMutation, 'affected_populations')
     mc3_cancer_code = details_proxy(MC3Mutation, 'mc3_cancer_code')
     sig_code = details_proxy(InheritedMutation, 'sig_code')
     disease_name = details_proxy(InheritedMutation, 'disease_name')
@@ -1634,8 +1249,6 @@ class Mutation(BioModel):
         sources = {}
         for source_name, associated_field in self.source_fields.items():
             field_value = getattr(self, associated_field)
-            if source_name == 'user':
-                continue
             if field_value:
                 sources[source_name] = field_value
         return sources
@@ -1711,10 +1324,10 @@ class Mutation(BioModel):
     def is_ptm_proximal(self):
         """Check if the mutation is in close proximity of some PTM site.
 
-        Proximity is defined here as [pos - 2, pos + 2] span,
+        Proximity is defined here as [pos - 3, pos + 3] span,
         where pos is the position of a PTM site.
         """
-        return self.is_close_to_some_site(2, 2)
+        return self.is_close_to_some_site(3, 3)
 
     @hybrid_property
     def is_ptm_distal(self):
@@ -1776,12 +1389,12 @@ class Mutation(BioModel):
 
         return list(sites_affected)
 
-    def impact_on_specific_ptm(self, site, ignore_mimp=False):
+    def impact_on_specific_ptm(self, site):
         if self.position == site.position:
             return 'direct'
-        elif site in self.meta_MIMP.sites and not ignore_mimp:
+        elif site in self.meta_MIMP.sites:
             return 'network-rewiring'
-        elif abs(self.position - site.position) < 3:
+        elif abs(self.position - site.position) < 4:
             return 'proximal'
         elif abs(self.position - site.position) < 8:
             return 'distal'
@@ -1800,7 +1413,7 @@ class Mutation(BioModel):
             return 'direct'
         elif any(site in sites for site in self.meta_MIMP.sites):
             return 'network-rewiring'
-        elif self.is_close_to_some_site(2, 2, sites):
+        elif self.is_close_to_some_site(3, 3, sites):
             return 'proximal'
         elif self.is_close_to_some_site(7, 7, sites):
             return 'distal'

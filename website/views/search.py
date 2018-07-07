@@ -1,9 +1,8 @@
 import json
-from collections import defaultdict
 from operator import itemgetter
 from urllib.parse import unquote
 
-from flask import make_response, redirect, abort
+from flask import make_response, redirect
 from flask import render_template as template
 from flask import request
 from flask import jsonify
@@ -13,142 +12,137 @@ from flask import current_app
 from flask_classful import FlaskView
 from flask_classful import route
 from flask_login import current_user
-from sqlalchemy.orm import Load
+from Levenshtein import distance
 from sqlalchemy.orm.exc import NoResultFound
-from werkzeug.datastructures import FileStorage
 
-from app import celery
-from helpers.bioinf import complement
-from models import (
-    Protein, Pathway, Cancer, GeneList, MC3Mutation, Disease, InheritedMutation, ClinicalData,
-    OrderedDict,
-)
+from models import Protein, Pathway, Cancer, GeneList, MC3Mutation
 from models import Gene
 from models import Mutation
 from models import UsersMutationsDataset
 from models import UserUploadedMutation
-from sqlalchemy import exists, or_, text
-from helpers.filters import FilterManager, quote_if_needed
+from sqlalchemy import and_, exists, or_
+from helpers.filters import FilterManager
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
-from views.gene import prepare_subqueries
+from ._commons import get_genomic_muts
 from ._commons import get_protein_muts
-from database import db, levenshtein_sorted, bdb
-from search.gene import GeneMatch, search_feature_engines
-
-search_features = [engine.name for engine in search_feature_engines]
+from database import db, levenshtein_sorted
 
 
-def create_engines(options=None):
-    engines = OrderedDict()
-    for engine in search_feature_engines:
-        engines[engine.name] = engine(options)
-    return engines
+class GeneResult:
+
+    def __init__(self, gene, matched_isoforms=None):
+        self.gene = gene
+        if not matched_isoforms:
+            matched_isoforms = []
+        self.matched_isoforms = matched_isoforms
+
+    def __getattr__(self, key):
+        return getattr(self.gene, key)
 
 
-advanced_search_engines = create_engines()
-search_bar_search_engines = create_engines(
-    [
-
-        Load(Gene).defer('full_name').defer('strand').defer('chrom').defer('entrez_id'),
-        Load(Protein).defer('summary').defer('sequence').defer('disorder_map')
-    ]
-)
-
-
-def search_proteins(
-        phrase, limit=None, filter_manager=None,
-        features=('gene_symbol', 'refseq', 'gene_name', 'uniprot'),
-        engines=advanced_search_engines
-):
+def search_proteins(phase, limit=None, filter_manager=None):
     """Search for a protein isoform or gene.
     Only genes which have a primary isoforms will be returned.
-    The query phrase will be trimmed on both ends as we do not
-    expect HGNC gene names nor RefSeq ids to contain spaces.
 
     Args:
-        phrase:
-            a text phase to search for
-        limit:
-            number of genes to be returned (for limit=10 there
-            may be 100 -or more- isoforms and 10 genes returned)
-        filter_manager:
-            a FilterManager with SQLAlchemy filters only
-        features:
-            an iterable collection of names of features to include in
-            the search; must be a subset of search.gene.search_features
-        engines:
-            mapping of engine name => engine instance of engines to use
+        'limit': number of genes to be returned (for limit=10 there
+                 may be 100 -or more- isoforms and 10 genes returned)
     """
-    if isinstance(features, str):
-        features = [features]
-
-    phrase = phrase.strip()
-
-    if not phrase:
+    if not phase:
         return []
 
+    # find by gene name
+    filters = [Gene.name.like(phase + '%')]
     sql_filters = None
 
     if filter_manager:
         divided_filters = filter_manager.prepare_filters(Protein)
-        sql_filters, manual_filters, required_joins = divided_filters
+        sql_filters, manual_filters = divided_filters
         if manual_filters:
             raise ValueError(
                 'From query can apply only use filters with'
                 ' sqlalchemy interface'
             )
 
-    matches = []
+    if sql_filters:
+        filters += sql_filters
 
-    for feature in features:
-        search_function = engines[feature].search
-        results = search_function(phrase, sql_filters, limit=limit)
-        matches.extend(results)
-
-    results = defaultdict(GeneMatch)
-
-    for match in matches:
-        # add matches and matched isoforms
-        results[match.gene.name] += match
-
-    results = sorted(
-        results.values(),
-        key=lambda result: result.best_score
+    orm_query = (
+        Gene.query
+        # join with proteins so PTM filter can be applied
+        .join(Protein, Gene.preferred_isoform)
+        .filter(and_(*filters))
     )
 
-    return results[:limit]
+    if limit:
+        orm_query = orm_query.limit(limit)
+
+    genes = {gene.name: GeneResult(gene) for gene in orm_query}
+
+    # looking up both by name and refseq is costly - perform it wisely
+    if phase.isnumeric():
+        phase = 'NM_' + phase
+    if phase.startswith('NM_') or phase.startswith('nm_'):
+
+        # TODO: tests for lowercase
+        filters = [Protein.refseq.like(phase + '%')]
+
+        if sql_filters:
+            filters += sql_filters
+
+        query = Protein.query.filter(and_(*filters))
+
+        if limit:
+            # we want to display up to 'limit' genes;
+            # still it would be good to restrict isoforms
+            # query in such way then even when getting
+            # results where all isoforms match the same
+            # gene it still provides more than one gene
+            query = query.limit(limit * 20)
+
+        for isoform in query:
+            if limit and len(genes) > limit:
+                break
+
+            gene = isoform.gene
+
+            # add isoform to promoted (matched) isoforms of the gene
+            if gene.name in genes:
+                if isoform not in genes[gene.name].matched_isoforms:
+                    genes[gene.name].matched_isoforms.add(isoform)
+            else:
+                genes[gene.name] = GeneResult(gene, matched_isoforms={isoform})
+
+        def sort_key(gene):
+            return min(
+                [
+                    distance(isoform.refseq, phase)
+                    for isoform in gene.matched_isoforms
+                ]
+            )
+
+    else:
+        # if the phrase is not numeric
+        def sort_key(gene):
+            return distance(gene.name, phase)
+
+    return sorted(
+        genes.values(),
+        key=sort_key
+    )
 
 
 class MutationSearch:
 
     def __init__(self, vcf_file=None, text_query=None, filter_manager=None):
-        """Performs search for known and novel mutations from provided VCF file and/or text query.
+        # note: entries from both file and textarea will be merged
 
-        Stop codon mutations are not considered.
-
-        Args:
-            vcf_file: a file object containing data in Variant Call Format
-            text_query: a string of multiple lines, where each line represents either:
-                 - a genomic mutation (e.g. chr12 57490358 C A) or
-                 - a protein mutation (e.g. STAT6 W737C)
-                Entries from both VCF file and text input will be merged.
-            filter_manager: FilterManager instance used to filter out unwanted mutations
-        """
         self.query = ''
         self.results = {}
         self.without_mutations = []
         self.badly_formatted = []
         self.hidden_results_cnt = 0
-        self._progress = 0
-        self._total = 0
-        if vcf_file:
-            if type(vcf_file) is FileStorage:
-                # as bad as it can be, but usually the vcf file will be a list of lines already
-                vcf_file = vcf_file.readlines()
-            self._total += len(vcf_file)
-        if text_query:
-            self._total += sum(1 for _ in text_query.splitlines())
 
         if filter_manager:
             def data_filter(elements):
@@ -173,17 +167,7 @@ class MutationSearch:
         # like filter_manager so any instance of this class can be pickled.
         self.data_filter = None
 
-    def progress(self):
-        self._progress += 1
-        if celery.current_task:
-            celery.current_task.update_state(
-                state='PROGRESS',
-                meta={'progress': self._progress / self._total}
-            )
-
     def add_mutation_items(self, items, query_line):
-
-        self.progress()
 
         if not items:
             self.without_mutations.append(query_line)
@@ -228,7 +212,7 @@ class MutationSearch:
             alts = alts.split(',')
             for alt in alts:
 
-                items = bdb.get_genomic_muts(chrom, pos, ref, alt)
+                items = get_genomic_muts(chrom, pos, ref, alt)
 
                 chrom = 'chr' + chrom
                 parsed_line = ' '.join((chrom, pos, ref, alt)) + '\n'
@@ -247,7 +231,7 @@ class MutationSearch:
                 chrom, pos, ref, alt = data
                 chrom = chrom[3:]
 
-                items = bdb.get_genomic_muts(chrom, pos, ref, alt)
+                items = get_genomic_muts(chrom, pos, ref, alt)
 
             elif len(data) == 2:
                 gene, mut = [x.upper() for x in data]
@@ -260,22 +244,9 @@ class MutationSearch:
             self.add_mutation_items(items, line)
 
 
-class Feature:
-    """Target class for feature filtering"""
-    pass
-
-
-class Search:
-    pass
-
-
 class SearchViewFilters(FilterManager):
 
     def __init__(self, **kwargs):
-
-        available_features = search_features
-        active_features = set(available_features) - {'summary'}
-
         filters = [
             # Why default = False? Due to used widget: checkbox.
             # It is not possible to distinguish between user not asking for
@@ -296,15 +267,7 @@ class SearchViewFilters(FilterManager):
             Filter(
                 Protein, 'has_ptm_mutations', comparators=['eq'],
                 as_sqlalchemy=True
-            ),
-            Filter(
-                Feature, 'name', comparators=['in'],
-                default=list(active_features),
-                choices=available_features,
-            ),
-            Filter(
-                Search, 'query', comparators=['eq'],
-            ),
+            )
         ]
         super().__init__(filters)
         self.update_from_request(request)
@@ -312,39 +275,16 @@ class SearchViewFilters(FilterManager):
 
 def make_widgets(filter_manager):
     return {
-        'proteins': {
-            'ptm': FilterWidget(
-                'Show only proteins with PTM mutations',
-                'checkbox',
-                filter=filter_manager.filters['Protein.has_ptm_mutations'],
-                class_name='pull-right'
-            ),
-            'feature': FilterWidget(
-                'Search by', 'checkbox_multiple',
-                filter=filter_manager.filters['Feature.name'],
-                labels=[
-                    engine.pretty_name
-                    for engine in advanced_search_engines.values()
-                ],
-                all_selected_label='All features',
-                class_name='checkboxes-inline'
-            )
-        },
-        'mutations': [
-            FilterWidget(
-                'Show all mutations (by default only PTM mutations are shown)',
-                'checkbox',
-                filter=filter_manager.filters['Mutation.is_ptm'],
-                class_name='pull-right'
-            ),
-        ]
+        'is_ptm': FilterWidget(
+            'Show all mutations (by default only PTM mutations are shown)',
+            'checkbox',
+            filter=filter_manager.filters['Mutation.is_ptm']
+        ),
+        'at_least_one_ptm': FilterWidget(
+            'Show only proteins with PTM mutations', 'checkbox',
+            filter=filter_manager.filters['Protein.has_ptm_mutations']
+        )
     }
-
-
-@celery.task
-def search_task(vcf_file, textarea_query, filter_manager, dataset_uri=None):
-    mutation_search = MutationSearch(vcf_file, textarea_query, filter_manager)
-    return mutation_search, dataset_uri
 
 
 class SearchView(FlaskView):
@@ -368,10 +308,9 @@ class SearchView(FlaskView):
 
         filter_manager = SearchViewFilters()
 
-        features = filter_manager.get_value('Feature.name')
-        query = filter_manager.get_value('Search.query') or ''
+        query = request.args.get('proteins', '')
 
-        results = search_proteins(query, 20, filter_manager, features)
+        results = search_proteins(query, 20, filter_manager)
 
         return template(
             'search/index.html',
@@ -381,19 +320,21 @@ class SearchView(FlaskView):
             query=query
         )
 
-    @route('saved/<path:uri>')
+    @route('saved/<uri>')
     def user_mutations(self, uri):
 
         filter_manager = SearchViewFilters()
 
-        dataset = UsersMutationsDataset.by_uri(uri)
+        dataset = UsersMutationsDataset.query.filter_by(
+            uri=uri
+        ).one()
 
         if dataset.owner and dataset.owner != current_user:
             current_app.login_manager.unauthorized()
 
         response = make_response(template(
-            'search/dataset.html',
-            mutation_types=Mutation.types,
+            'search/index.html',
+            target='mutations',
             results=dataset.data.results,
             widgets=make_widgets(filter_manager),
             without_mutations=dataset.data.without_mutations,
@@ -403,80 +344,26 @@ class SearchView(FlaskView):
         ))
         return response
 
-    @route('remove_saved/<path:uri>')
-    def remove_user_mutations(self, uri):
-
-        dataset = UsersMutationsDataset.by_uri(uri)
-        name = dataset.name
-
-        if not dataset.owner or dataset.owner != current_user:
-            current_app.login_manager.unauthorized()
-
-        try:
-            dataset.remove()
-        except Exception as e:
-            message = 'Failed to remove dataset <b>%s</b> (%s).' % (name, uri)
-            print(message, e)
-            message += '<br>If the message reappears, please contact us.'
-            flash(message, category='danger')
-            raise abort(500)
-
-        flash('Successfully removed <b>%s</b> dataset.' % name, category='success')
-        return redirect(url_for('ContentManagementSystem:my_datasets'))
-
-    def raw_progress(self, task_id):
-        celery_task = celery.AsyncResult(task_id)
-        status = celery_task.status
-
-        progress = 0
-        if status == 'SUCCESS':
-            progress = 100
-        elif status == 'PROGRESS':
-            progress = celery_task.result.get('progress', 0)
-
-        return jsonify({'status': status, 'progress': int(progress * 100)})
-
-    def progress(self, task_id):
-
-        celery_task = celery.AsyncResult(task_id)
-        status = celery_task.status
-
-        if status == 'SUCCESS':
-            mutation_search, dataset_uri = celery_task.result
-            if dataset_uri:
-                dataset = UsersMutationsDataset.query.filter_by(uri=dataset_uri).one()
-                dataset.data = mutation_search
-                db.session.commit()
-            return redirect(url_for('SearchView:mutations', task_id=task_id))
-
-        progress = celery_task.result.get('progress', 0) if status == 'PROGRESS' else 0
-
-        return make_response(template(
-            'search/progress.html',
-            task=celery_task,
-            progress=int(progress * 100),
-            status=status
-        ))
-
     @route('/mutations', methods=['POST', 'GET'])
     def mutations(self):
         """Render search form and results (if any) for proteins or mutations"""
-        task_id = request.args.get('task_id', None)
-        use_celery = current_app.config.get('USE_CELERY', False)
+
         filter_manager = SearchViewFilters()
 
         if request.method == 'POST':
             textarea_query = request.form.get('mutations', False)
             vcf_file = request.files.get('vcf-file', False)
+
+            mutation_search = MutationSearch(
+                vcf_file,
+                textarea_query,
+                filter_manager
+            )
+
             store_on_server = request.form.get('store_on_server', False)
 
-            if not use_celery:
-                mutation_search = MutationSearch(vcf_file, textarea_query, filter_manager)
-
             if store_on_server:
-                name = request.form.get('dataset_name', None)
-                if not name:
-                    name = 'Custom Dataset'
+                name = request.form.get('dataset_name', 'Custom Dataset')
 
                 if current_user.is_authenticated:
                     user = current_user
@@ -490,38 +377,16 @@ class SearchView(FlaskView):
 
                 dataset = UsersMutationsDataset(
                     name=name,
-                    data=mutation_search if not use_celery else None,
+                    data=mutation_search,
                     owner=user
                 )
 
                 db.session.add(dataset)
                 db.session.commit()
 
-            if use_celery:
-                mutation_search = search_task.delay(
-                    # vcf_file is not serializable but list of lines is
-                    vcf_file.readlines() if vcf_file else None,
-                    textarea_query,
-                    filter_manager,
-                    dataset.uri if store_on_server else None
-                )
-
-                return redirect(url_for('SearchView:progress', task_id=mutation_search.task_id))
-
-        elif task_id:
-            celery_task = celery.AsyncResult(task_id)
-            if celery_task.status == 'PENDING':
-                flash(
-                    'This search either expired or does not exist. Please try specifying a new one',
-                    'warning'
-                )
-                return redirect(url_for('SearchView:mutations'))
-            mutation_search, dataset_uri = celery_task.result
-
-            if dataset_uri:
                 url = url_for(
                     'SearchView:user_mutations',
-                    uri=dataset_uri,
+                    uri=dataset.uri,
                     _external=True
                 )
 
@@ -531,18 +396,12 @@ class SearchView(FlaskView):
                     '<a href="' + url + '">' + url + '</a></p>',
                     'success'
                 )
-
-            for items in mutation_search.results.values():
-                for item in items:
-                    db.session.add(item['mutation'])
-            celery_task.forget()
         else:
             mutation_search = MutationSearch()
 
         response = make_response(template(
             'search/index.html',
             target='mutations',
-            mutation_types=Mutation.types,
             hidden_results_cnt=mutation_search.hidden_results_cnt,
             results=mutation_search.results,
             widgets=make_widgets(filter_manager),
@@ -561,40 +420,6 @@ class SearchView(FlaskView):
             target=target,
             widgets=make_widgets(filter_manager)
         )
-
-    def autocomplete_proteins(self, limit=20):
-        """Autocompletion API for search Advanced Proteins Search."""
-
-        filter_manager = SearchViewFilters()
-
-        # TODO: implement on client side pagination?
-
-        features = filter_manager.get_value('Feature.name')
-        query = filter_manager.get_value('Search.query')
-
-        content = {}
-
-        if query:
-            entries = search_proteins(query, limit, filter_manager, features)
-            content = {
-                'query': query,
-                'results': [
-                    {
-                        'value': gene.name,
-                        'html': template('search/results/gene.html', gene=gene)
-                    }
-                    for gene in entries
-                ],
-            }
-
-        from views.filters import FiltersData
-
-        response = {
-            'content': content,
-            'filters': FiltersData(filter_manager).to_json()
-        }
-
-        return jsonify(response)
 
     def anything(self):
         query = unquote(request.args.get('query')) or ''
@@ -620,65 +445,33 @@ class SearchView(FlaskView):
             REAC:{pathway_reactome_id}
 
             Genes with mutations detected in cancer samples:
-            {cancer name} -> cancer genes list
-
-            Proteins with mutations related to given disease:
-            {disease} -> clinvar gene list
-            {disease} in {protein} -> sequence view
+            {cancer name}
         """
 
         query = unquote(request.args.get('q')) or ''
 
-        items = []
-
-        if ' ' in query or query.upper().startswith('CHR'):
-            # TODO: use exceptions for messaging control?
-            mutation_result = autocomplete_mutation(query)
-            if type(mutation_result) is tuple:
-                mutations, are_there_more_muts = mutation_result
-                items.extend(mutations)
-                if are_there_more_muts:
-                    items.append({
-                        'type': 'see_more',
-                        'name': 'Show all mutations matching <i>%s</i>' % query,
-                        'url': url_for('SearchView:mutations', mutations=query)
-                    })
-            else:
-                items.extend(mutation_result)
-
         if ' ' in query:
-            genes, are_there_more_genes = autocomplete_gene(query, limit=2)
+            items = autocomplete_mutation(query)
         else:
-            genes, are_there_more_genes = autocomplete_gene(query, limit=3)
-
-        items.extend(genes)
-        if are_there_more_genes:
-            items.append({
-                'type': 'see_more',
-                'name': 'Show all genes matching <i>%s</i>' % query,
-                'url': url_for('SearchView:proteins', proteins=query)
-            })
+            items = autocomplete_gene(query)
 
         pathways = suggest_matching_pathways(query)
 
         cancers = suggest_matching_cancers(query)
 
-        diseases = suggest_matching_diseases(query)
-        items.extend(diseases)
-
-        items.extend(pathways)
         items.extend(cancers)
+        items.extend(pathways)
 
         return json.dumps({'entries': items})
 
 
 def suggest_matching_cancers(query, count=2):
-    cancers = levenshtein_sorted(Cancer.query.filter(
+    cancers = Cancer.query.filter(
         or_(
             Cancer.code.ilike(query + '%'),
             Cancer.name.ilike('%' + query + '%'),
         )
-    ), Cancer.name, query).limit(count)
+    ).limit(count)
 
     tcga_list = GeneList.query.filter_by(mutation_source_name=MC3Mutation.name).one()
 
@@ -699,125 +492,6 @@ def suggest_matching_cancers(query, count=2):
         }
         for cancer in cancers
     ]
-
-
-def suggest_matching_diseases(q, count=3):
-
-    items = []
-
-    potential_disease = None
-
-    if q.endswith(' i'):
-        potential_disease = q[:-2]
-    if q.endswith(' '):
-        potential_disease = q[:-1]
-
-    if potential_disease:
-        disease = (
-            levenshtein_sorted(
-                Disease.query.filter(Disease.name.ilike('%' + potential_disease + '%')),
-                Disease.name,
-                potential_disease
-            )
-         ).first()
-        if disease:
-            return json_message(
-                'Do you wish to search for <i>%s</i> mutations? '
-                'Please specify gene, using: <code>{disease} in {gene}</code> schema'
-                % disease.name
-            )
-
-    if q.endswith(' in'):
-        q += ' '
-
-    if ' in ' in q:
-        disease_name, protein_name = q.split(' in ')
-
-        if protein_name.isnumeric():
-            protein_name = 'NM_' + protein_name
-
-        disease_like = Disease.name.ilike('%' + disease_name + '%')
-        disease = Disease.query.filter(disease_like).first()
-
-        if disease:
-            muts, _, _, = prepare_subqueries(
-                [
-                    disease_like,
-                    ClinicalData.sig_code.in_(ClinicalData.significance_codes.keys()),
-                    Mutation.is_confirmed == True
-                ],
-                [[InheritedMutation, ClinicalData, Disease]]
-            )
-
-            query = (
-                db.session.query(
-                    Disease.name,
-                    Gene.name,
-                    Protein.refseq,
-                    muts
-                )
-                .select_from(Gene)
-                .join(Protein, Protein.id == Gene.preferred_isoform_id)
-                .join(Mutation, Mutation.protein_id == Protein.id)
-                .join(InheritedMutation).join(ClinicalData).join(Disease).
-                filter(disease_like)
-            )
-            if protein_name.upper().startswith('NM_'):
-                query = query.filter(Protein.refseq.ilike(protein_name + '%'))
-            else:
-                query = query.filter(Gene.name.ilike('%' + protein_name + '%'))
-
-            query = query.group_by(Gene).having(text('muts_cnt > 0'))
-
-            query = levenshtein_sorted(query, Disease.name, disease_name)
-
-            query = query.limit(count)
-
-            items += [
-                {
-                    'name': disease,
-                    'gene': gene,
-                    'refseq': refseq,
-                    'type': 'disease_in_protein',
-                    'url': url_for(
-                        'SequenceView:show',
-                        refseq=refseq,
-                        filters=(
-                            'Mutation.sources:in:%s' % InheritedMutation.name
-                            +
-                            ';Mutation.disease_name:in:%s' % quote_if_needed(disease)
-                        )
-                    )
-                }
-                for disease, gene, refseq, muts in query
-            ]
-
-    diseases = levenshtein_sorted(Disease.query.filter(
-        or_(
-            Disease.name.ilike('%' + q + '%'),
-        )
-    ), Disease.name, q).limit(count)
-
-    clinvar_list = GeneList.query.filter_by(mutation_source_name=InheritedMutation.name).first()
-
-    items += [
-        {
-            'name': disease.name,
-            'type': 'disease',
-            'url': url_for(
-                'GeneView:list',
-                list_name=clinvar_list.name,
-                filters=(
-                    'Mutation.sources:in:%s' % clinvar_list.mutation_source_name
-                    +
-                    ';Mutation.disease_name:in:%s' % quote_if_needed(disease.name)
-                )
-            )
-        }
-        for disease in diseases
-    ]
-
-    return items
 
 
 def suggest_matching_pathways(query, count=2):
@@ -845,9 +519,9 @@ def suggest_matching_pathways(query, count=2):
     def display_name(pathway):
         name = pathway.description
         if go:
-            name += ' (GO:%s)' % pathway.gene_ontology
+            name += ' (GO:' + pathway.gene_ontology + ')'
         if reactome:
-            name += ' (REAC:%s)' % pathway.reactome
+            name += ' (REAC:' + pathway.reactome + ')'
 
         return name
 
@@ -880,13 +554,8 @@ def json_message(msg):
     return [{'name': msg, 'type': 'message'}]
 
 
-def autocomplete_gene(query, limit=5):
-    """Gene auto-completion used in search bars.
-
-    Returns: (autocompletion_gene_results, are_there_more)
-    """
-    entries = search_proteins(query, limit + 1, engines=search_bar_search_engines)
-
+def autocomplete_gene(query):
+    entries = search_proteins(query, 6)
     items = [
         gene.to_json()
         for gene in entries
@@ -894,128 +563,43 @@ def autocomplete_gene(query, limit=5):
     for item in items:
         item['type'] = 'gene'
 
-    return items[:limit], len(entries) > limit
-
-
-def match_aa_mutation(gene, mut, query):
-    import re
-    try:
-        gene_obj = Gene.query.filter_by(name=gene).one()
-    except NoResultFound:
-        # return json_message('No isoforms for %s found' % gene)
-        return []
-
-    all_parts = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)(?P<alt>\D)', mut)
-    ref_and_pos = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)', mut)
-
-    if all_parts:
-        mut_data = all_parts.groupdict()
-
-    if ref_and_pos:
-        mut_data = ref_and_pos.groupdict()
-
-    if all_parts or ref_and_pos:
-        ref = mut_data['ref']
-        try:
-            pos = int(mut_data['pos'])
-        except ValueError:
-            return json_message(
-                'Did you mean to search for mutation with <code>{gene} {ref}{pos}{alt}</code> format?'
-                ' The <code>{pos}</code> should be an integer.'
-            )
-
-        # validate if ref is correct
-        valid = False
-        for isoform in gene_obj.isoforms:
-            try:
-                if isoform.sequence[pos - 1] == ref:
-                    valid = True
-                    break
-            except IndexError:
-                # not in range of this isoform, nothing scary.
-                pass
-
-        if not valid:
-            return json_message(
-                'Given reference residue <code>%s</code> does not match any of %s isoforms of %s gene at position <code>%s</code>'
-                %
-                (ref, len(gene_obj.isoforms), gene, pos)
-            )
-
-    if ref_and_pos:
-        # if ref is correct and ask user to specify alt
-        return json_message('Awaiting for <code>{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
-
-    only_ref = re.fullmatch('(?P<ref>\D)', mut)
-    if only_ref:
-        # prompt user to write more
-        return json_message('Awaiting for <code>{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
-
-    try:
-        items = get_protein_muts(gene, mut)
-    except ValueError:
-        return json_message(
-            'Did you mean to search for mutation with <code>{gene} {ref}{pos}{alt}</code> format?'
-            ' The <code>{pos}</code> should be an integer.'
-        )
-    return prepare_items(items, query, 'aminoacid mutation')
-
-
-def prepare_items(items, query, value_type):
-    for item in items:
-        item['protein'] = item['protein'].to_json()
-        item['mutation'] = item['mutation'].to_json()
-        item['input'] = query
-        item['type'] = value_type
     return items
 
 
-def autocomplete_mutation(query, limit=None):
-    """Returns: (autocompletion_mutation_results, are_there_more)"""
+def autocomplete_mutation(query):
+    import re
     # TODO: rewriting this into regexp-based set of function may increase readability
-    # TODO: use limit to restrict queries
 
-    query = query.upper().strip()
-    data = query.split()
-
-    items = []
-    messages = []
+    data = query.upper().strip().split()
 
     if len(data) == 1:
 
         if query.startswith('CHR'):
-            messages += json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
-
-        gene = data[0].strip()
-
-        if gene_exists(gene):
-            messages += json_message('Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+            return json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
         else:
-            # return json_message('Gene %s not found in the database' % gene)
-            pass
+            gene = data[0].strip()
+
+            if not gene_exists(gene):
+                return json_message('Gene %s not found in the database' % gene)
+
+            return json_message('Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
 
     elif len(data) == 4:
-        chrom, pos, ref, alt = data
-
         if not query.startswith('CHR'):
             return []
 
+        chrom, pos, ref, alt = data
         chrom = chrom[3:]
 
         try:
-            items = bdb.get_genomic_muts(chrom, pos, ref, alt)
-
-            # maybe an interesting mutation is located on the other strand
-            if not items:
-                query = 'complement of ' + query
-                items = bdb.get_genomic_muts(chrom, pos, complement(ref), complement(alt))
-
-            items = prepare_items(items, query, 'nucleotide mutation')
+            items = get_genomic_muts(chrom, pos, ref, alt)
         except ValueError:
             return json_message(
                 'Did you mean to search for mutation with <code>{chrom} {pos} {ref} {alt}</code> format?'
                 ' The <code>{pos}</code> should be an integer.'
             )
+
+        value_type = 'nucleotide mutation'
 
     elif len(data) == 3:
         if not query.startswith('CHR'):
@@ -1026,13 +610,77 @@ def autocomplete_mutation(query, limit=None):
     elif len(data) == 2:
         gene, mut = data
 
-        result = match_aa_mutation(gene, mut, query)
-        items = [r for r in result if r['type'] != 'message']
-        messages = [r for r in result if r['type'] == 'message']
+        if gene.startswith('CHR'):
+            return json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
 
-        if query.startswith('CHR') and mut.isnumeric():
-            messages += json_message('Awaiting for mutation in <code>{chrom} {pos} {ref} {alt}</code> format')
+        try:
+            gene_obj = Gene.query.filter_by(name=gene).one()
+        except NoResultFound:
+            return json_message('No isoforms for %s found' % gene)
 
-    if not limit:
-        limit = len(items)
-    return items[:limit] + messages, len(items) > limit
+        all_parts = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)(?P<alt>\D)', mut)
+        ref_and_pos = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)', mut)
+
+        if all_parts:
+            mut_data = all_parts.groupdict()
+
+        if ref_and_pos:
+            mut_data = ref_and_pos.groupdict()
+
+        if all_parts or ref_and_pos:
+            ref = mut_data['ref']
+            try:
+                pos = int(mut_data['pos'])
+            except ValueError:
+                return json_message(
+                    'Did you mean to search for mutation with <code>{gene} {ref}{pos}{alt}</code> format?'
+                    ' The <code>{pos}</code> should be an integer.'
+                )
+
+            # validate if ref is correct
+            valid = False
+            for isoform in gene_obj.isoforms:
+                try:
+                    if isoform.sequence[pos - 1] == ref:
+                        valid = True
+                        break
+                except IndexError:
+                    # not in range of this isoform, nothing scary.
+                    pass
+
+            if not valid:
+                return json_message(
+                    'Given reference residue <code>%s</code> does not match any of %s isoforms of %s gene at position <code>%s</code>'
+                    %
+                    (ref, len(gene_obj.isoforms), gene, pos)
+                )
+
+        if ref_and_pos:
+            # if ref is correct and ask user to specify alt
+            return json_message('Awaiting for <code>{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+
+        only_ref = re.fullmatch('(?P<ref>\D)', mut)
+        if only_ref:
+            # prompt user to write more
+            return json_message('Awaiting for <code>{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+
+        try:
+            items = get_protein_muts(gene, mut)
+        except ValueError:
+            return json_message(
+                'Did you mean to search for mutation with <code>{gene} {ref}{pos}{alt}</code> format?'
+                ' The <code>{pos}</code> should be an integer.'
+            )
+
+        value_type = 'aminoacid mutation'
+    else:
+        items = []
+        value_type = 'incomplete mutation'
+
+    for item in items:
+        item['protein'] = item['protein'].to_json()
+        item['mutation'] = item['mutation'].to_json()
+        item['input'] = query
+        item['type'] = value_type
+
+    return items

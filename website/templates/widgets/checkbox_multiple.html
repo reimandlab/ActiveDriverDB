@@ -1,17 +1,18 @@
-<ul class="list-unstyled checkbox-list {{ 'nullable' if widget.nullable }}">
+<ul class="list-unstyled checkbox-list">
     {% if widget.labels | length > 4 %}
         <li class="checkbox check-all js-shown">
             <label>
                 <input type="checkbox" class="programmatic" {{ 'checked' if widget.all_active }}>
-                {%  if widget.all_selected_label %}
-                  {{ widget.all_selected_label }}
-                {%  else %}
-                  All {{ widget.title | lower | pluralize }}
-                {% endif %}
+                All {{ widget.title | lower | pluralize }}
             </label>
         </li>
     {% endif %}
-    {% for value, label in widget.items -%}
-      <li class="checkbox"><label><input type="checkbox" name="{{ widget.target_name }}" value="{{ value | safe }}" {{ 'checked' if widget.value and value in widget.value }}>{{ label }}</label>
-    {%- endfor %}
+    {% for value, label in widget.items %}
+        <li class="checkbox">
+            <label>
+                <input type="checkbox" name="{{ widget.target_name }}" value="{{ value | safe}}" id="{{ widget.target_name }}" {{ 'checked' if widget.value and value in widget.value }}>
+                {{ label }}
+            </label>
+        </li>
+    {% endfor %}
 </ul>

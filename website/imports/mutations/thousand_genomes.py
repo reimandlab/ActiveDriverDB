@@ -1,17 +1,13 @@
-from os.path import basename, dirname
-
 from models import The1000GenomesMutation
+from imports.mutations import MutationImporter
+from imports.mutations import make_metadata_ordered_dict
 from helpers.parsers import read_from_gz_files
 
-from .mutation_importer import MutationImporter
-from .mutation_importer.helpers import make_metadata_ordered_dict
 
+class Importer(MutationImporter):
 
-class The1000GenomesImporter(MutationImporter):
-
-    name = 'thousand_genomes'
     model = The1000GenomesMutation
-    default_path = 'data/mutations/G1000/G1000_chr*.txt.gz'
+    default_path = 'data/mutations/G1000'
     insert_keys = (
         'mutation_id',
         'maf_all',
@@ -25,7 +21,7 @@ class The1000GenomesImporter(MutationImporter):
     @staticmethod
     # TODO: there are some issues with this function
     def find_af_subfield_number(line):
-        """Get subfield number in 1000 Genomes VCF-originating metadata,
+        """Get subfield number in 1000 Genoms VCF-originating metadata,
 
         where allele frequencies for given mutations are located.
 
@@ -40,9 +36,7 @@ class The1000GenomesImporter(MutationImporter):
         return [seq[0] for seq in line[17].split(',')].index(dna_mut)
 
     def parse(self, path):
-        thousand_genomes_mutations = []
-        duplicates = 0
-        skipped = 0
+        thousand_genoms_mutations = []
 
         maf_keys = (
             'AF',
@@ -54,8 +48,8 @@ class The1000GenomesImporter(MutationImporter):
         )
 
         for line in read_from_gz_files(
-            dirname(path),
-            basename(path),
+            path,
+            'G1000_chr*.txt.gz',
             skip_header=False
         ):
             line = line.rstrip().split('\t')
@@ -68,27 +62,15 @@ class The1000GenomesImporter(MutationImporter):
                 self.find_af_subfield_number(line)
             )
 
-            # ignore mutations with frequency equal to zero
-            if maf_data['AF'] == '0':
-                skipped += 1
-                continue
-
             values = list(maf_data.values())
 
             for mutation_id in self.preparse_mutations(line):
 
-                duplicated = self.look_after_duplicates(mutation_id, thousand_genomes_mutations, values)
-                if duplicated:
-                    duplicates += 1
-                    continue
-
-                self.protect_from_duplicates(mutation_id, thousand_genomes_mutations)
-
-                thousand_genomes_mutations.append(
+                thousand_genoms_mutations.append(
                     (
                         mutation_id,
                         # Python 3.5 makes it easy:
-                        # **values, but is not available
+                        # **values, but is not avaialable
                         values[0],
                         values[1],
                         values[2],
@@ -97,11 +79,7 @@ class The1000GenomesImporter(MutationImporter):
                         values[5],
                     )
                 )
+        return thousand_genoms_mutations
 
-        print('%s duplicates found' % duplicates)
-        print('%s zero-frequency mutations skipped' % skipped)
-
-        return thousand_genomes_mutations
-
-    def insert_details(self, thousand_genomes_mutations):
-        self.insert_list(thousand_genomes_mutations)
+    def insert_details(self, thousand_genoms_mutations):
+        self.insert_list(thousand_genoms_mutations)

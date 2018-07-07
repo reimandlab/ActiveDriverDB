@@ -42,13 +42,34 @@
 
 {% block content %}
 
+  {% if protein.full_name %}
+    {% set full_name = protein.full_name %}
+  {% elif protein.gene.full_name %}
+    {% set full_name = protein.gene.full_name %}
+  {% else %}
+    {% set full_name = '' %}
+  {% endif %}
+
   <h3>{{ protein.gene.name }} ({{ protein.refseq }}) {% if protein.gene.full_name %} - {{ protein.gene.full_name }} {% endif %}</h3>
   <p class="full-protein-name">{% if protein.full_name %}{{ protein.full_name | title }}{% endif %}</p>
 
   <div class="isoform-page-options">
-    {% with active_tab = 'sequence' %}
-      {% include 'isoform_tabs_menu.html' %}
-    {% endwith %}
+    <ul class="nav nav-tabs">
+      <li role="presentation" class="active">
+        <a href="#">
+          <span class="glyphicon glyphicon-indent-left" style="transform:rotate(-90deg)"></span>
+          Sequence View
+        </a>
+      <li role="presentation">
+        <a
+          href="{{ url_for('NetworkView:show', refseq=protein.refseq, filters=filters.url_string()) }}"
+          class="variable-url"
+          data-url-pattern="{{ url_for('NetworkView:show', refseq=protein.refseq, filters='{{ filters }}') | safe }}"
+        >
+          <span class="glyphicon glyphicon-globe"></span>
+          Network view
+        </a>
+    </ul>
     <div class="actions">
       {% include 'buttons/short_url.html' %}
     </div>
@@ -58,57 +79,57 @@
   <div class="row">
     <div class="col-md-3">
 
+      {# Legend #}
+      <div class="panel panel-default color-legend">
+        <div class="panel-heading">
+          <h3 class="panel-title">Legend</h3>
+        </div>
+        <div class="panel-body">
+          <div class="legend">
+            <h4>
+              Mutation impacts
+              {{ help('legend-mutation-impacts', 'small-top') }}
+            </h4>
+            {% for type in mutation_types %}
+              <div class="swatch">
+                <div class="impact {{ type }}">
+                  <div class="color"></div>
+                </div>
+                <div class="name">{{ type }}</div>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="legend">
+            <h4>
+              Sites
+              {{ help('legend-sequence-sites', 'small-top') }}
+            </h4>
+            {% for type in site_types %}
+              <div class="swatch">
+                <div class="site {{ type }}">
+                  <div class="color"></div>
+                </div>
+                <div class="name">{{ type }}</div>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="legend">
+            <h4>Others</h4>
+            <div class="swatch">
+              <div class="site-position"></div>
+              <div class="name">Exact position of a PTM site</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div id="sticky_box">
 
         {# Filters #}
         <form method="GET" class="widget-form" id="filters_form">
-          {% include 'filters/protein.html' with context %}
+          {% include 'filters/protein.html' %}
           <input type="hidden" name="fallback" value="True">
         </form>
-
-        {# Legend #}
-        <div class="panel panel-default color-legend">
-          <div class="panel-heading">
-            <h3 class="panel-title">Legend</h3>
-          </div>
-          <div class="panel-body">
-            <div class="legend">
-              <h4>
-                Mutation impacts
-                {{ help('legend-mutation-impacts', 'small-top') }}
-              </h4>
-              {% for type in mutation_types %}
-                <div class="swatch">
-                  <div class="impact {{ type }}">
-                    <div class="color"></div>
-                  </div>
-                  <div class="name">{{ type }}</div>
-                </div>
-              {% endfor %}
-            </div>
-            <div class="legend">
-              <h4>
-                Sites
-                {{ help('legend-sequence-sites', 'small-top') }}
-              </h4>
-              {% for type in site_types %}
-                <div class="swatch">
-                  <div class="site {{ type }}">
-                    <div class="color"></div>
-                  </div>
-                  <div class="name">{{ type }}</div>
-                </div>
-              {% endfor %}
-            </div>
-            <div class="legend">
-              <h4>Others</h4>
-              <div class="swatch">
-                <div class="site-position"></div>
-                <div class="name long">Exact position of a PTM site</div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {# Contact us #}
         {% with feature='protein', title=protein.gene.name + ' - ' + protein.refseq %}
@@ -135,38 +156,10 @@
           </div>
         </div>
         <div class="panel-body">
-
-          <div class="tracks-controls invisible">
-
-            <div class="input-group">
-              <div class="input-group-btn">
-                <button type="button" class="btn btn-default scroll-left">
-                  <span class="glyphicon glyphicon-chevron-left"></span>
-                </button>
-                <button type="button" class="btn btn-default scroll-right">
-                  <span class="glyphicon glyphicon-chevron-right"></span>
-                </button>
-                <button type="button" class="btn btn-default zoom-in">
-                  <span class="glyphicon glyphicon-zoom-in"></span>
-                </button>
-                <button type="button" class="btn btn-default zoom-out">
-                  <span class="glyphicon glyphicon-zoom-out"></span>
-                </button>
-              </div>
-              <input class="form-control scroll-to-input" placeholder="Type a position, e.g. 105 or 100-200">
-              <span class="form-control-feedback scroll-feedback"></span>
-              <span class="input-group-addon">amino acids</span>
-              <span class="input-group-btn">
-              <button class="btn btn-default scroll-to" type="button">Go!</button>
-            </span>
-            </div><!-- /input-group -->
-
-          </div>
-
           <div id="protein_spinner" class="visualisation_spinner">
             <span class="glyphicon glyphicon-refresh glyphicon-spin"></span>
           </div>
-          <div id="plot_area" class="transparent"></div>
+          <div id="plot_area"></div>
         </div>
       </div>
 
@@ -185,16 +178,95 @@
       </div>
 
       {# Summary #}
-      {% include 'protein/summary.html' %}
+      <div class="panel panel-default panel-with-btn protein-summary">
+        <div class="panel-heading">
+          <div class="heading-left">
+            <h3 class="panel-title">
+              Protein summary
+              {{ help('protein-summary') }}
+            </h3>
+          </div>
+          <div class="heading-right">
+            This is {{ 'preferred' if protein.is_preferred_isoform else 'an alternative' }} isoform of {{ protein.gene.name }} protein.
+            {% set other_isoforms_count = protein.gene.isoforms | length - 1 %}
+            {% if other_isoforms_count > 0 %}
+              <a href="{{ url_for('GeneView:show', gene_name=protein.gene.name) }}" class="btn btn-default">View all {{ protein.gene.isoforms | length }} isoforms</a>
+            {% endif %}
+          </div>
+        </div>
+        <div class="panel-body">
+          <strong>{{ protein.gene.name }}:</strong>
+          {% if full_name %}
+            {{ full_name }}
+          {% else %}
+            {% if protein.gene.isoforms | length == 1 %}
+              the only isoform
+            {% else %}
+              {{ protein.refseq }} isoform
+            {% endif %}
+          {% endif %}
+
+          <div class="description">
+            <strong>Description:</strong>
+            <p>
+              {{
+                protein.summary
+                  | replace('Publication Note:', '</p><p>Publication Note:<br>')
+                  | replace('##Evidence-Data-START##', '<p class="evidence-data">Evidence data:<br>')
+                  | replace('##Evidence-Data-END##', '</p>')
+                  | safe
+                }}
+            </p>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+
+              <div class="gene-wide-data">
+                <dl class="dl-horizontal">
+                  <div class="strand">
+                    <dt>Strand</dt>
+                    <dd>{{ '+' if protein.gene.strand else '-' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Chromosome</dt>
+                    <dd>{{ protein.gene.chrom }}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <dl class="dl-horizontal">
+                <dt>Protein</dt>
+                <dd>{{ protein.length }} residues</dd>
+                <dt>All mutations</dt>
+                <dd>{{ protein.confirmed_mutations_count }}</dd>
+              </dl>
+
+            </div>
+            <div class="col-md-6">
+
+              <dl class="dl-horizontal">
+                <dt>PTM sites</dt>
+                <dd>{{ protein.sites | length }}</dd>
+                {% if protein.cds_start and protein.cds_end %}
+                  <dt>CDS</dt>
+                  <dd>{{ '{:,}'.format(protein.cds_start) }} - {{ '{:,}'.format(protein.cds_end) }}</dd>
+                {% endif %}
+                {% if protein.tx_start and protein.tx_end %}
+                  <dt>Transcription</dt>
+                  <dd>{{ '{:,}'.format(protein.tx_start) }} - {{ '{:,}'.format(protein.tx_end) }}</dd>
+                {% endif %}
+              </dl>
+
+            </div>
+          </div>
+          {% include "protein/disorder_bar.html" %}
+        </div>
+      </div>
 
       {# table #}
-      <div class="table-outer-wrapper">
-        <div class="table-help-btn hidden">
-          {{ help('mutations-table-help-btn') }}
-        </div>
-        <div id="table-wrapper">
-          {# The table will be filled with HTML over AJAX request for mutations details #}
-        </div>
+      <div id="table-wrapper">
+        {# The table will be filled with HTML over AJAX request for mutations details #}
       </div>
 
       {# references #}
@@ -229,34 +301,21 @@
     var plot = document.getElementById('plot_area');
     var spinner = $('#protein_spinner');
 
-    var tooltips = [];
-
     function init_plot(variable_config)
     {
-        var site_tooltip = Tooltip()
-
-        site_tooltip.init({
-            id: 'site',
-            template: function(d){
-                return (d.start + 7) + ' ' + d.type + '<br>' + d.sources
-            },
-            viewport: plot.parentNode
-        })
-
-        tooltips.push(site_tooltip)
-
+        var needle_plot = NeedlePlot();
 
         var params = {
             element: plot,
-            site_tooltip: site_tooltip,
-            sequence_length: {{ protein.sequence | length }},
-            paddings: {bottom: 40, top: 30, left: 89, right: 1},
-            head_size: tracks.adjustMaxZoom(),
+            sequenceLength: {{ protein.sequence | length }},
             name: '{{ protein.gene.name }}',
             zoom_callback: tracks.setZoom,
             position_callback: tracks.setAAPosition,
             zoomAndMove_callback: tracks.setZoomAndMove,
             width: tracks_box.width(),
+            site_tooltip: function(d){
+                return (d.start + 7) + ' ' + d.type
+            },
             mutations_color_map: {
                 'distal': 'yellow',
                 'network-rewiring': 'red',
@@ -269,8 +328,7 @@
 
         update_object(params, variable_config);
 
-        var needle_plot = new NeedlePlot(params);
-
+        needle_plot.init(params);
         return needle_plot;
     }
 
@@ -306,8 +364,8 @@
     {% endassets %}
 
     /**
-     * Representation of SequenceView as defined in SequenceView:representation_data().
-     * @typedef {RepresentationData} SequenceViewData
+     * Representation of ProteinView as defined in ProteinView:representation_data().
+     * @typedef {RepresentationData} ProteinViewData
      * @property {html} mutation_table
      * @property {html} tracks
      * @property {Object} mutations
@@ -317,9 +375,8 @@
      */
 
     /**
-     * @callback for {@see AsyncFiltersHandler.Config.data_handler}
-     * Callback  loading representation from server response.
-     * @param {SequenceViewData} data
+     * Callback for AsyncFiltersHandler loading representation from server response.
+     * @param {ProteinViewData} data
      * @param {FiltersData} filters_data
      */
     function load_data(data, filters_data)
@@ -341,18 +398,17 @@
         var $table = $('#mutation_table');
 
         tracks_box.html(data.tracks);
-        tracks.init({box: tracks_box.get(0)});
+
+        tracks.init({
+            box: tracks_box.get(0)
+        });
 
         var max_zoom = tracks.adjustMaxZoom();
 
-        mutation_table.init(
-            $table, data.mutations, {{ mutation_types | tojson }}, "{{ url_for('MutationView:show', refseq=protein.refseq, position='{{ pos }}', alt='{{ alt }}') }}"
-        );
+        mutation_table.init($table, data.mutations);
 
-        var needle_tooltip = Tooltip()
-        needle_tooltip.init({
-            id: 'needle',
-            template: function(mutation) {
+        var variable_config = {
+            needle_tooltip: function(mutation) {
                 return nunjucks.render(
                     'needle_tooltip.njk',
                     {
@@ -361,16 +417,6 @@
                     }
                 )
             },
-            callback: function(node)
-            {
-                var kinase_tooltip = initializeKinaseTooltips(d3.select(node).selectAll('.kinase'))
-                tooltips.push(kinase_tooltip)
-            }
-        })
-        tooltips.push(needle_tooltip)
-
-        var variable_config = {
-            needle_tooltip: needle_tooltip,
             legends: {
                 x: null,
                 y: data.value_type + ' of mutations in {{ protein.gene.name }} {{ protein.refseq }}'
@@ -388,31 +434,22 @@
         tracks.setNeedlePlotInstance(needle_plot);
     }
 
-    var initial_widgets_form = $('#filters_form')
-    Widgets.init(initial_widgets_form, function(){});
+    Widgets.init($('#filters_form'), function(){});
 
     var filters_handler = AsyncFiltersHandler();
 
     filters_handler.init({
-        form: initial_widgets_form,
+        form: $('#filters_form'),
         data_handler: load_data,
-        endpoint_url: "{{ url_for('SequenceView:representation_data', refseq=protein.refseq) }}",
+        representation_url: "{{ url_for('ProteinView:representation_data', refseq=protein.refseq) }}",
         on_loading_start: function (){
-            if (tracks.isReady())
-                tracks.hide();
-            $('#plot_area').addClass('invisible');
-            var to_destroy = [needle_plot, tracks, mutation_table]
-            var obj, tooltip
-            while(obj = to_destroy.pop()) if (obj) obj.destroy();
-            while(tooltip = tooltips.pop()) tooltip.remove()
+            if (needle_plot)
+                needle_plot.destroy();
             $table_wrapper.addClass('loading');
             spinner.show();
         },
         on_loading_end: function(){
-            $('#plot_area').removeClass('invisible');
             $table_wrapper.removeClass('loading');
-
-            $('.table-help-btn').removeClass('hidden');
             // spinner will be hidden after needle_plot initialization
             Widgets.init($('#filters_form'), function(){});
         },

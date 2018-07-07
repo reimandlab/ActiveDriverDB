@@ -29,17 +29,7 @@
     stroke: red
     stroke-width: 2.2px
 
-  .drug
-    fill: #fff
-    stroke: purple
-    stroke-width: 2.2px
-
-    .name
-      position: relative
-      top: 20px
-
 @import "impacts"
-@import "mutation_table"
 
 .distal
   rect
@@ -79,14 +69,9 @@ text
   stroke: #eed
   stroke-width: 3px
 
-.losses-prediction
+.loss-prediction
   stroke: red
   stroke-dasharray: 2px
-
-.gains-prediction
-  stroke: #148500
-  stroke-dasharray: 3px
-  stroke-linecap: round
 
 .network
   .panel-body
@@ -97,16 +82,13 @@ text
 
 @import "collapse_btn"
 .collapse-me .panel-heading
-  +collapse_btn('fff', 30px, 7px)
+  +collapse_btn('000', 30px, 7px)
 
 
 @import "_color_legend.sass"
 
 .legend
   width: 100%
-
-$sqrt_3: 1.73205080757
-$sqrt_2: 1.41421356237
 
 .swatch
   .color
@@ -177,18 +159,7 @@ $sqrt_2: 1.41421356237
     &.loss
       .link .color
         border: $thickness dashed red
-        border-top: 0
 
-    &.gain
-      .link .color
-        border: $thickness dashed green
-        border-top: 0
-
-  .svg-node
-    .color, .node
-      border: 0
-      width: 35px
-      height: 35px
 
   .gradient
     .color
@@ -199,9 +170,6 @@ $sqrt_2: 1.41421356237
     .color, .edge
       display: inline-block
 
-    .edge
-      width: 20px
-
   .kinase-gradient
     .color
       background: linear-gradient(90deg, white, blue)
@@ -211,39 +179,26 @@ $sqrt_2: 1.41421356237
   margin: auto
   text-align: center
 
-.side-by-side
-  clear: both
-
-  .swatch
-    width: 32%
-    float: left
-
 .site-muts
-  width: 430px
+  width: 400px
 
-  @import "sites_mutations_table"
+  .bootstrap-table .site-muts-table
+    tbody > tr > td
+      padding: 4px!important
 
-.tooltip
-  h5
-    font-weight: bold
+    thead
+      th
+        .th-inner
+          padding: 4px
+          line-height: 14px
+          pading-left: 0
 
-  .badges
-    padding: 3px 0
+  .sequence
+    font-family: monospace
 
-    .badge
-      font-size: 10.5px
-      border-radius: 5px
+  .pagination-detail, .pagination
+    margin-top: 5px!important
+    margin-bottom: 0!important
 
-    .approved
-      background: #2ea92e
-
-    .investigational
-      background: #bbb213
-
-    .experimental
-      background: purple
-
-    .withdrawn
-      background: indianred
-
-@import "protein_summary"
+.tooltip h5
+  font-weight: bold

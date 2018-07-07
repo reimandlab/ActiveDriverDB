@@ -1,5 +1,5 @@
-<nav class="navbar navbar-default" id="top-nav">
-  <div class="container">
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
     <div class="navbar-header">
       <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
         <span class="sr-only">Toggle navigation</span>
@@ -17,7 +17,6 @@
       {% endif %}
       <ul class="nav navbar-nav">
         {{ system_menu('top_menu').as_list }}
-        {{ additional_menu_items }}
       </ul>
     </div>
   </div>

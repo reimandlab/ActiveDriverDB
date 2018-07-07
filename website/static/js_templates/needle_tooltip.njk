@@ -44,12 +44,6 @@ Affected PTM site{{ 's' if mutation.sites | length > 1 }}:
                         <li> Review status: {{ sub_value['Review status'] }}
                     </ul>
                 {% endfor %}
-            {% elif column == 'dbSNP id' %}
-                <li> {{ column }}:
-               {% set comma = joiner() %}
-                {% for db_snp in value %}
-                  {{ comma() }} <a href="https://www.ncbi.nlm.nih.gov/snp/rs{{ db_snp }}" target="_blank">rs{{ db_snp }}</a>
-                {% endfor %}
             {% else %}
                 <li> {{ column }}: {{value}}
             {% endif %}

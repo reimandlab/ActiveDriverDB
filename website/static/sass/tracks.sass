@@ -48,6 +48,7 @@ $description-width: 90px
 
   // an alternative for calc() which allows us to support > 95% of users [1]
   padding-left: $description-width
+  -moz-box-sizing: border-box
   box-sizing: border-box
 
   .scalable
@@ -56,7 +57,7 @@ $description-width: 90px
 @import "collapse_btn"
 
 li.subtracks_collapsed
-  +collapse_btn('999', 22px, -3px)
+  +collapse-btn('999', 22px, -3px)
 
 .subtracks
   .track

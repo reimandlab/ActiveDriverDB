@@ -7,8 +7,6 @@ from collections import Iterable
 from sqlalchemy import and_
 from sqlalchemy import or_
 
-from database.types import ScalarSet
-
 
 def is_iterable_but_not_str(obj):
     return isinstance(obj, Iterable) and not isinstance(obj, str)
@@ -78,13 +76,11 @@ class Filter:
         self, targets, attribute, default=None, nullable=True,
         comparators='__all__', choices=None,
         default_comparator=None, multiple=False,
-        is_attribute_a_method=False, as_sqlalchemy=False, type=None,
-        skip_if_default=False
+        is_attribute_a_method=False, as_sqlalchemy=False, type=None
     ):
         if comparators == '__all__':
             comparators = self.possible_comparators.keys()
 
-        self.skip_if_default = skip_if_default
         self._check_comparators(comparators)
 
         if not default_comparator and len(comparators) == 1:
@@ -124,8 +120,8 @@ class Filter:
     def as_sqlalchemy(self, target):
         from sqlalchemy.ext.associationproxy import AssociationProxy
         from sqlalchemy.sql.annotation import AnnotatedSelect
-        from sqlalchemy.sql.sqltypes import Text
         from types import FunctionType
+        #from types import MethodType
 
         comparators = {
             'ge': '__ge__',
@@ -134,7 +130,7 @@ class Filter:
             'lt': '__lt__',
             'eq': '__eq__',
             'in': 'in_',
-            'ni': 'notin_'
+            'ni': 'notin_',
         }
 
         join_operators = {
@@ -143,10 +139,10 @@ class Filter:
         }
 
         if self.value is None:
-            return None, []
+            return None
 
         if type(self._as_sqlalchemy) is FunctionType:
-            return self._as_sqlalchemy(self, target), []
+            return self._as_sqlalchemy(self, target)
 
         path = self.attribute.split('.')
 
@@ -154,61 +150,56 @@ class Filter:
 
         field = getattr(target, path[0])
 
-        # Possible upgrade:
-        #   from sqlalchemy.orm.attributes import QueryableAttribute
-        #   if isinstance(field, QueryableAttribute):
         if type(field) is AnnotatedSelect:
             if self.comparator == 'eq':
-                return field, []
+                return field
 
         if type(field) is AssociationProxy:
-            # additional joins may be needed when using proxies
-
-            joins = []
-
-            while type(field) is AssociationProxy:
-                joins.append(field.target_class)
-                field = field.remote_attr
-
             if self.comparator == 'in':
+                func = getattr(field, 'contains')
 
-                if self.multiple == 'any':
-                    # this wont give expected result for 'all'
-                    func = getattr(field, comparators[self.comparator])
-                    return func(self.value), joins
-                else:
-                    # this works for 'any' too (but it's uglier)
-                    func = getattr(field, '__eq__')
-
-                    comp_func = join_operators[self.multiple](
-                        *[
-                            func(sub_value)
-                            for sub_value in self.value
-                        ]
-                    )
-                    return comp_func, joins
+                comp_func = join_operators[self.multiple](
+                    *[
+                        func(sub_value)
+                        for sub_value in self.value
+                    ]
+                )
+                return comp_func
 
         if len(path) == 2:
             if self.comparator == 'in':
                 sub_attr = path[1]
                 func = getattr(field, 'any')
 
-                values = self.value if is_iterable_but_not_str(self.value) else [self.value]
                 comp_func = join_operators[self.multiple](
                     *[
                         func(**{sub_attr: sub_value})
-                        for sub_value in values
+                        for sub_value in self.value
                     ]
                 )
-                return comp_func, []
+                return comp_func
+
+        #apply_to_attribute = True
+        #if self.comparator == 'in' and apply_to_attribute:
+        #    return join_operators[self.multiple](
+        #        *[
+        #            getattr(field, sub_value).__gt__(0)
+        #            for sub_value in self.value
+        #        ]
+        #    )
+
+        # if type(field) is MethodType:
+        #    return getattr(field, comparators[self.comparator])(target)
+
+        from sqlalchemy.sql.sqltypes import Text
 
         if (
             self.comparator == 'in' and
-            type(field.property.columns[0].type) in [Text, ScalarSet]
+            type(field.property.columns[0].type) is Text
         ):
-            return getattr(field, 'like')('%' + self.value + '%'), []
+            return getattr(field, 'like')('%' + self.value + '%')
 
-        return getattr(field, comparators[self.comparator])(self.value), []
+        return getattr(field, comparators[self.comparator])(self.value)
 
     @property
     def primary_target(self):
@@ -218,7 +209,7 @@ class Filter:
     def id(self):
         return self.primary_target.__name__ + '.' + self.attribute
 
-    def _verify_value(self, value, raise_on_forbidden=True):
+    def _verify_value(self, value):
         if not (
                 self.nullable or
                 value
@@ -240,13 +231,10 @@ class Filter:
                     value in self.choices
                 )
         ):
-            if raise_on_forbidden:
-                raise ValidationError(
-                    'Filter %s received forbidden value: %s. Allowed: %s. '
-                    'Check types.' % (self.id, value, self.choices)
-                )
-            else:
-                return self.choices
+            raise ValidationError(
+                'Filter %s received forbidden value: %s. Allowed: %s. '
+                'Check types.' % (self.id, value, self.choices)
+            )
 
     def _verify_comparator(self, comparator):
         if comparator not in self.allowed_comparators:
@@ -259,14 +247,7 @@ class Filter:
         self._verify_value(value)
         self._verify_comparator(comparator)
 
-    def update(self, value, comparator=None, raise_on_forbidden=True):
-        """Update filter with given value and (optionally) comparator.
-
-        If given value (or part of it) is not allowed on the filter
-        it will be either returned as rejected or a ValidationError
-        will be raise - depending on raise_on_forbidden value.
-        """
-        rejected = set()
+    def update(self, value, comparator=None):
         if comparator:
             self._verify_comparator(comparator)
             self._comparator = comparator
@@ -279,17 +260,8 @@ class Filter:
                 value = [self.type(sub_value) for sub_value in value]
             else:
                 value = self.type(value)
-        accepted_values = self._verify_value(value, raise_on_forbidden)
-        if not raise_on_forbidden and accepted_values:
-            if self.multiple:
-                retained = set(value).intersection(accepted_values)
-                rejected = set(value) - retained
-                value = list(retained)
-            # raise if we cannot fix it
-            self._verify_value(value, True)
+        self._verify_value(value)
         self._value = value
-
-        return rejected
 
     def get_multiple_function(self):
         if self.multiple and is_iterable_but_not_str(self.value):
@@ -333,15 +305,9 @@ class Filter:
 
     def attr_getter(self):
         """Attrgetter that passes a value to an method-attribute if needed"""
-
-        # handle custom arguments getters
-        if hasattr(self.primary_target, self.attribute):
-            field = getattr(self.primary_target, self.attribute)
-            if hasattr(field, 'custom_attr_getter'):
-                return field.custom_attr_getter
-
         getter = operator.attrgetter(self.attribute)
         if self.is_attribute_a_method:
+
             def attr_get(element):
                 return getter(element)(self.manager)
         else:
@@ -442,16 +408,6 @@ def unqoute(value):
     return value
 
 
-def joined_query(query, required_joins):
-    already_joined = set()
-    for joins in required_joins:
-        for join in joins:
-            if join not in already_joined:
-                query = query.join(join)
-                already_joined.add(join)
-    return query
-
-
 class FilterManager:
     """Main class used to parse & apply filters' data specified by request.
 
@@ -493,25 +449,23 @@ class FilterManager:
 
         to_apply_manually = []
         query_filters = []
-        all_required_joins = []
 
-        for the_filter in self._get_non_trivial_active(target):
+        for the_filter in self._get_active(target):
 
             if the_filter.has_sqlalchemy:
 
                 the_target = target if target else the_filter.targets[0]
 
-                as_sqlalchemy, required_joins = the_filter.as_sqlalchemy(the_target)
+                as_sqlalchemy = the_filter.as_sqlalchemy(the_target)
                 if as_sqlalchemy is not None:
                     query_filters.append(as_sqlalchemy)
-                    all_required_joins.append(required_joins)
 
             else:
                 to_apply_manually.append(the_filter)
 
-        return query_filters, to_apply_manually, all_required_joins
+        return query_filters, to_apply_manually
 
-    def build_query(self, target, custom_filter=None, query_modifier=None):
+    def build_query(self, target, custom_filter=None):
         """There are two strategies of using filter manager:
 
             - you can get results from database and walk through
@@ -519,36 +473,32 @@ class FilterManager:
             - you can build a query and move some job to the database;
               not always it is possible though.
         """
-        query_filters, to_apply_manually, required_joins = self.prepare_filters(target)
+        query_filters, to_apply_manually = self.prepare_filters(target)
 
         query_filters_sum = and_(*query_filters)
 
         if custom_filter:
             query_filters_sum = custom_filter(query_filters_sum)
 
-        query = joined_query(target.query, required_joins)
-        query = query.filter(query_filters_sum)
-
-        if query_modifier:
-            query = query_modifier(query)
+        query = target.query.filter(query_filters_sum)
 
         return query, to_apply_manually
 
-    def query_all(self, target, custom_filter=None, query_modifier=None):
+    def query_all(self, target, custom_filter=None):
         """Retrieve all objects of type 'target' which
         match criteria of currently active filters.
         """
 
-        query, to_apply_manually = self.build_query(target, custom_filter, query_modifier)
+        query, to_apply_manually = self.build_query(target, custom_filter)
 
         return self.apply(query, to_apply_manually)
 
-    def query_count(self, target, custom_filter=None, query_modifier=None):
+    def query_count(self, target, custom_filter=None):
         """Retrieve count of all objects of type 'target' which
         match criteria of currently active filters.
         """
 
-        query, to_apply_manually = self.build_query(target, custom_filter, query_modifier)
+        query, to_apply_manually = self.build_query(target, custom_filter)
 
         if not to_apply_manually:
             return query.with_entities(target.id).count()
@@ -561,6 +511,7 @@ class FilterManager:
         Only filters targeting the same model and being currently active will
         be applied. The target model will be deduced from passed elements.
         """
+
         try:
             tester = elements[0]
             if itemgetter:
@@ -575,20 +526,12 @@ class FilterManager:
         if filters_subset is not None:
             filters = filters_subset
         else:
-            filters = self._get_non_trivial_active(target_type)
+            filters = self._get_active(target_type)
 
         for filter_ in filters:
             elements = filter_.apply(elements, itemgetter)
 
         return list(elements)
-
-    def _get_non_trivial_active(self, target=None):
-        non_trivial_filters = []
-        for filter_ in self._get_active(target):
-            if filter_.skip_if_default and set(filter_.default) == set(filter_.value):
-                continue
-            non_trivial_filters.append(filter_)
-        return non_trivial_filters
 
     def _get_active(self, target=None):
         """Return filters which are active & target the same type of objects"""
@@ -602,45 +545,34 @@ class FilterManager:
         ]
 
     def get_value(self, filter_id):
-        """Return value of filter with specified identifier."""
+        """Return value of filter with specified identificator."""
         return self.filters[filter_id].value
 
-    def update_from_request(self, request, raise_on_forbidden=True):
+    def update_from_request(self, request):
         """Set states of child filters to match those specified in request.
 
         The query part of request will be looked upon to get filter's data, in
         one of two available formats: modern or fallback.
+        Updates for unrecognized filters will be returned as feedback.
 
         For details see _parse_request() method in this class.
-
-        Returns:
-            tuple: skipped, rejected
-
-            skipped: updates skipped, from unrecognized filters
-            rejected: updates skipped, from forbidden values (if raise_on_forbidden was False)
         """
         filter_updates = self._parse_request(request)
 
         skipped = []
-        rejected = defaultdict(list)
-
         for update in filter_updates:
             if update.id not in self.filters:
                 skipped.append(update)
                 continue
-
-            rejected_updates = self.filters[update.id].update(
+            self.filters[update.id].update(
                 self._parse_value(update.value),
                 self._parse_comparator(update.comparator),
-                raise_on_forbidden=raise_on_forbidden
             )
 
-            if rejected_updates:
-                rejected[update.id].extend(rejected_updates)
+        return skipped
 
-        return skipped, rejected
-
-    def _parse_fallback_query(self, args):
+    @staticmethod
+    def _parse_fallback_query(args):
         """Parse query in fallback format."""
 
         re_value = re.compile(r'filter\[([\w.]+)\]')
@@ -665,7 +597,7 @@ class FilterManager:
                 filter_name,
                 data.get('cmp', None),    # allow not specifying comparator -
                 # if so, we will use default comparator.
-                self._repr_value(data.get('value'))
+                FilterManager._repr_value(data.get('value'))
             ]
             for filter_name, data in filters.items()
         ]
@@ -673,11 +605,6 @@ class FilterManager:
 
     def _parse_request(self, request):
         """Extract and normalize filters' data from Flask's request object.
-
-        Arguments will be extracted from request.args or request.form.
-
-        If arguments contain 'clear_filters' command,
-        all other arguments will be ignored.
 
         Two formats for specifying filters are available:
             modern request format:
@@ -717,7 +644,7 @@ class FilterManager:
         raw_filters = filter(bool, raw_filters)
 
         filters_list = [
-            filter_update.split(self.field_separator, maxsplit=2)
+            filter_update.split(self.field_separator)
             for filter_update in raw_filters
         ]
         return filters_list
@@ -728,11 +655,10 @@ class FilterManager:
             return None
         return comparator
 
-    def _parse_value(self, value, do_not_split=False):
+    @staticmethod
+    def _parse_value(value, do_not_split=False):
         """Safely parse value from string, without eval.
-
-        For sub-values quotations will be respected.
-        """
+        For sub-values quotations will be respected."""
 
         if value == 'True':
             return True
@@ -748,20 +674,20 @@ class FilterManager:
         splitted = split_with_quotation(value)
 
         if not do_not_split and len(splitted) > 1:
-            return [self._parse_value(v, True) for v in splitted]
+            return [FilterManager._parse_value(v, True) for v in splitted]
 
         value = unqoute(value)
 
         return value
 
-    def _repr_value(self, value):
+    @staticmethod
+    def _repr_value(value):
         """Return string representation of given value (of a filter)."""
         if is_iterable_but_not_str(value):
-            return self.sub_value_separator.join([
+            return FilterManager.sub_value_separator.join([
                 quote_if_needed(str(v))
                 for v in value
             ])
-
         return str(value)
 
     def url_string(self, expanded=False):
@@ -777,7 +703,7 @@ class FilterManager:
         """
         return self.filters_separator.join(
             [
-                self.field_separator.join(
+                FilterManager.field_separator.join(
                     map(str, [
                         f.id,
                         f.comparator,
@@ -802,13 +728,10 @@ class FilterManager:
     def reformat_request_url(self, request, endpoint, *args, **kwargs):
         from flask import url_for
         from flask import redirect
-        from flask import current_app
 
         if request.args.get('fallback'):
 
-            scheme = current_app.config.get('PREFERRED_URL_SCHEME', 'http')
-
-            url = url_for(endpoint, *args,  _external=True, _scheme=scheme, **kwargs)
+            url = url_for(endpoint, *args, **kwargs)
 
             filters = self.url_string()
 
@@ -828,5 +751,4 @@ class FilterManager:
             # add other arguments
             if query_string:
                 url += '?' + query_string
-
             return redirect(url)

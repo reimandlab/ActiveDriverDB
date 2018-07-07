@@ -1,19 +1,6 @@
-import gzip
-from abc import ABCMeta
 from tempfile import NamedTemporaryFile
-from textwrap import dedent
-from helpers.patterns import abstract_property
+
 import pytest
-
-
-def mock_proteins_and_genes(count):
-    from database import db
-    from models import Gene, Protein
-    for i in range(count):
-        g = Gene(name='Gene_%s' % i, full_name='Full name of gene %s' % i)
-        p = Protein(refseq='NM_000%s' % i, gene=g)
-        g.preferred_isoform = p
-        db.session.add(g)
 
 
 def make_named_temp_file(data=None, mode='w', opener=open, **kwargs):
@@ -35,28 +22,4 @@ def make_named_temp_file(data=None, mode='w', opener=open, **kwargs):
     return name
 
 
-def make_named_gz_file(data=None, **kwargs):
-    return make_named_temp_file(
-        data=data, mode='wt', opener=gzip.open, suffix='.gz', **kwargs
-    )
-
-
 use_fixture = pytest.fixture(autouse=True)
-
-
-class DedentMeta(ABCMeta):
-    """Will dedent all class variables"""
-
-    def __new__(mcs, name, bases, namespace):
-        return super().__new__(mcs, name, bases, namespace)
-
-    def __init__(cls, name, bases, namespace):
-        super().__init__(name, bases, namespace)
-
-        for key, value in cls.__dict__.items():
-            if not key.startswith('_') and isinstance(value, str):
-                setattr(cls, key, dedent(value))
-
-
-class TestCaseData(metaclass=DedentMeta):
-    pass

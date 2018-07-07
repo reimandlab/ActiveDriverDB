@@ -1,28 +1,16 @@
 import os
 from flask import Flask
-from flask_apscheduler import APScheduler
 from flask_assets import Environment
 from flask_login import LoginManager
-from flask_recaptcha import ReCaptcha
-from flask_mail import Mail
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-
-import csrf
 from database import db, get_engine
 from database import bdb
 from database import bdb_refseq
 from assets import bundles
 from assets import DependencyManager
-from flask_celery import Celery
-
+from flask_mail import Mail
 
 login_manager = LoginManager()
 mail = Mail()
-recaptcha = ReCaptcha()
-limiter = Limiter(key_func=get_remote_address)
-scheduler = APScheduler()
-celery = Celery()
 
 
 def create_app(config_filename='config.py', config_override={}):
@@ -46,24 +34,6 @@ def create_app(config_filename='config.py', config_override={}):
 
     for key, value in config_override.items():
         app.config[key] = value
-
-    # ReCaptcha
-    recaptcha.init_app(app)
-
-    # Limiter
-    limiter.init_app(app)
-
-    # Scheduler
-    if app.config.get('SCHEDULER_ENABLED', True):
-        if scheduler.running:
-            scheduler.shutdown()
-        scheduler.init_app(app)
-        scheduler.start()
-
-    # Celery
-    celery.init_app(app)
-    from celery.security import setup_security
-    setup_security()
 
     #
     # Error logging
@@ -90,16 +60,15 @@ def create_app(config_filename='config.py', config_override={}):
     db.init_app(app)
     db.create_all(bind='__all__')
 
-    mode = app.config.get('BDB_MODE', 'c')
-    bdb.open(app.config['BDB_DNA_TO_PROTEIN_PATH'], mode=mode)
-    bdb_refseq.open(app.config['BDB_GENE_TO_ISOFORM_PATH'], mode=mode)
+    bdb.open(app.config['BDB_DNA_TO_PROTEIN_PATH'])
+    bdb_refseq.open(app.config['BDB_GENE_TO_ISOFORM_PATH'])
 
     if app.config['USE_LEVENSTHEIN_MYSQL_UDF']:
         with app.app_context():
             for bind_key in ['bio', 'cms']:
                 engine = get_engine(bind_key)
                 engine.execute("DROP FUNCTION IF EXISTS levenshtein_ratio")
-                engine.execute("CREATE FUNCTION levenshtein_ratio RETURNS REAL SONAME 'levenshtein.so'")
+                engine.execute("CREATE FUNCTION levenshtein_ratio RETURNS INTEGER SONAME 'levenshtein.so'")
 
     #
     # Configure Login Manager
@@ -160,8 +129,9 @@ def create_app(config_filename='config.py', config_override={}):
     from jinja2_pluralize import pluralize
     import json
 
-    # csrf adds hooks in before_request to validate token
-    app.before_request(csrf.csrf_protect)
+    # csrf adds hooks in before_request to validate tokens, needs app context
+    with app.app_context():
+        import csrf
 
     app.jinja_env.trim_blocks = True
     app.jinja_env.lstrip_blocks = True

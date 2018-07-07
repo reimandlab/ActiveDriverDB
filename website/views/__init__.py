@@ -1,7 +1,6 @@
-from .protein import ProteinView
 from .gene import GeneView
 from .search import SearchView
-from .sequence import SequenceView
+from .protein import ProteinView
 from .network import NetworkView
 from .cms import ContentManagementSystem
 from .chromosome import ChromosomeView
@@ -13,7 +12,6 @@ from .mutation import MutationView
 views = [
     GeneView,
     SearchView,
-    SequenceView,
     ProteinView,
     NetworkView,
     ContentManagementSystem,

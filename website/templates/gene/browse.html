@@ -10,9 +10,6 @@
   {{ dependency('bootstrap_table') }}
   {{ dependency('bootstrap_table_css') }}
 
-  {{ dependency('table_export') }}
-  {{ dependency('bootstrap_table_export') }}
-
   {# Nunjucks templates #}
   {% if is_debug_mode %}
     {{ dependency('nunjucks') }}
@@ -51,7 +48,7 @@
       <div id="sticky_box">
         {# Filters #}
         <form method="GET" class="widget-form" id="filters_form">
-          {% include 'filters/gene_table.html' with context %}
+          {% include 'filters/gene_table.html' %}
           <input type="hidden" name="fallback" value="True">
         </form>
       </div>

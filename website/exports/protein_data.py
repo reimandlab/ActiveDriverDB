@@ -20,75 +20,66 @@ def create_path_if_possible(path):
     return os.makedirs(os.path.dirname(path), exist_ok=True)
 
 
-def file_exporter(default_path):
-    def export_wrapper(func):
-        def executable(*args, path=default_path, **kwargs):
-
-            create_path_if_possible(path)
-
-            with open(path, 'w') as f:
-                func(f, *args, **kwargs)
-                return path
-        executable.__name__ = func.__name__
-
-        return exporter(executable)
-    return export_wrapper
-
-
-@file_exporter(default_path='exported/primary_isoforms.tsv')
-def primary_isoforms(f):
-    """A list of primary isoforms of all genes in the database."""
-
-    for gene in tqdm(Gene.query.filter(Gene.preferred_isoform).all()):
-        f.write(gene.name + '\t' + gene.preferred_isoform.refseq + '\n')
-
-
-@file_exporter(default_path='exported/preferred_isoforms_sequences.fa')
-def sequences_ac(f):
+@exporter
+def sequences_ac(path='exported/preferred_isoforms_sequences.fa'):
     """Sequences as needed for Active Driver input.
     Includes only data from primary (preferred) isoforms."""
 
-    for gene in tqdm(Gene.query.all()):
-        if not gene.preferred_isoform:
-            continue
-        f.write('>' + gene.name + '\n')
-        f.write(gene.preferred_isoform.sequence + '\n')
+    create_path_if_possible(path)
+
+    with open(path, 'w') as f:
+        for gene in tqdm(Gene.query.all()):
+            if not gene.preferred_isoform:
+                continue
+            f.write('>' + gene.name + '\n')
+            f.write(gene.preferred_isoform.sequence + '\n')
+
+    return path
 
 
-@file_exporter(default_path='exported/preferred_isoforms_disorder.fa')
-def disorder_ac(f):
+@exporter
+def disorder_ac(path='exported/preferred_isoforms_disorder.fa'):
     """Disorder data as needed for Active Driver input.
     Includes only data from primary (preferred) isoforms."""
 
-    for gene in tqdm(Gene.query.all()):
-        if not gene.preferred_isoform:
-            continue
-        f.write('>' + gene.name + '\n')
-        f.write(gene.preferred_isoform.disorder_map + '\n')
+    create_path_if_possible(path)
+
+    with open(path, 'w') as f:
+        for gene in tqdm(Gene.query.all()):
+            if not gene.preferred_isoform:
+                continue
+            f.write('>' + gene.name + '\n')
+            f.write(gene.preferred_isoform.disorder_map + '\n')
+
+    return path
 
 
-@file_exporter(default_path='exported/sites.tsv')
-def sites_ac(f):
+@exporter
+def sites_ac(path='exported/sites.tsv'):
     """Sites as needed for Active Driver input.
     Includes only data from primary (preferred) isoforms."""
-    header = ['gene', 'position', 'residue', 'type', 'kinase', 'pmid']
+    header = ['gene', 'position', 'residue', 'kinase', 'pmid']
 
-    f.write('\t'.join(header) + '\n')
-    for site in tqdm(Site.query.all()):
-        if not site.protein or not site.protein.is_preferred_isoform:
-            continue
-        data = [
-            site.protein.gene.name, str(site.position), site.residue,
-            ','.join(site.type),
-            ','.join([k.name for k in site.kinases]),
-            ','.join(map(str, site.pmid))
-        ]
+    create_path_if_possible(path)
 
-        f.write('\t'.join(data) + '\n')
+    with open(path, 'w') as f:
+        f.write('\t'.join(header) + '\n')
+        for site in tqdm(Site.query.all()):
+            if not site.protein or not site.protein.is_preferred_isoform:
+                continue
+            data = [
+                site.protein.gene.name, str(site.position), site.residue,
+                ','.join([k.name for k in site.kinases]),
+                site.pmid
+            ]
+
+            f.write('\t'.join(data) + '\n')
+
+    return path
 
 
-@file_exporter(default_path='exported/site-specific_network_of_kinases_and_targets.tsv')
-def site_specific_network_of_kinases_and_targets(f):
+@exporter
+def site_specific_network_of_kinases_and_targets(path='exported/site-specific_network_of_kinases_and_targets.tsv'):
     header = [
         'kinase symbol',
         'target symbol',
@@ -98,25 +89,29 @@ def site_specific_network_of_kinases_and_targets(f):
         'target amino acid'
     ]
 
-    f.write('\t'.join(header) + '\n')
-    for protein in tqdm(Protein.query, total=fast_count(Protein.query)):
-        for site in protein.sites:
-            for kinase in site.kinases:
+    create_path_if_possible(path)
 
-                data = [
-                    kinase.name,
-                    protein.gene.name,
-                    kinase.protein.refseq if kinase.protein else '',
-                    protein.refseq,
-                    site.position,
-                    site.residue
-                ]
+    with open(path, 'w') as f:
+        f.write('\t'.join(header) + '\n')
+        for protein in tqdm(Protein.query, total=fast_count(Protein.query)):
+            for site in protein.sites:
+                for kinase in site.kinases:
 
-                f.write('\t'.join(map(str, data)) + '\n')
+                    data = [
+                        kinase.name,
+                        protein.gene.name,
+                        kinase.protein.refseq if kinase.protein else '',
+                        protein.refseq,
+                        site.position,
+                        site.residue
+                    ]
+
+                    f.write('\t'.join(map(str, data)) + '\n')
+
+    return path
 
 
-@file_exporter(default_path='exported/mutations_affecting_ptm_sites.tsv')
-def mutations_affecting_ptm_sites(f, sources):
+def mutations_affecting_ptm_sites(sources, path='exported/mutations_affecting_ptm_sites.tsv'):
 
     header = [
         'gene',
@@ -128,40 +123,45 @@ def mutations_affecting_ptm_sites(f, sources):
         'site residue'
     ]
 
-    f.write('\t'.join(header) + '\n')
-    for source in sources:
-        # mutation_details_model = Mutation.get_source_model(source)
-        mutation_details_model = source
+    create_path_if_possible(path)
 
-        for mut_details in tqdm(yield_objects(mutation_details_model.query), total=fast_count(mutation_details_model.query)):
-            mutation = mut_details.mutation
-            if mutation.is_ptm():
-                for site in mutation.get_affected_ptm_sites():
-                    protein = mutation.protein
-                    summary = mut_details.summary()
-                    data = [
-                        protein.gene.name,
-                        protein.refseq,
-                        mutation.position,
-                        mutation.alt,
-                        ', '.join(summary) if type(summary) is list else summary,
-                        site.position,
-                        site.residue
-                    ]
+    with open(path, 'w') as f:
+        f.write('\t'.join(header) + '\n')
+        for source in sources:
+            # mutation_details_model = Mutation.get_source_model(source)
+            mutation_details_model = source
 
-                    f.write('\t'.join(map(str, data)) + '\n')
+            for mut_details in tqdm(yield_objects(mutation_details_model.query), total=fast_count(mutation_details_model.query)):
+                mutation = mut_details.mutation
+                if mutation.is_ptm():
+                    for site in mutation.get_affected_ptm_sites():
+                        protein = mutation.protein
+                        summary = mut_details.summary()
+                        data = [
+                            protein.gene.name,
+                            protein.refseq,
+                            mutation.position,
+                            mutation.alt,
+                            ', '.join(summary) if type(summary) is list else summary,
+                            site.position,
+                            site.residue
+                        ]
+
+                        f.write('\t'.join(map(str, data)) + '\n')
+
+    return path
 
 
 @exporter
 def mc3_muts_affecting_ptm_sites(path='exported/mc3_mutations_affecting_ptm_sites.tsv'):
-    return mutations_affecting_ptm_sites([MC3Mutation], path=path)
+    return mutations_affecting_ptm_sites([MC3Mutation], path)
 
 
 @exporter
 def clinvar_muts_affecting_ptm_sites(path='exported/clinvar_mutations_affecting_ptm_sites.tsv'):
-    return mutations_affecting_ptm_sites([InheritedMutation], path=path)
+    return mutations_affecting_ptm_sites([InheritedMutation], path)
 
 
 @exporter
 def population_muts_affecting_ptm_sites(path='exported/population_mutations_affecting_ptm_sites.tsv'):
-    return mutations_affecting_ptm_sites([ExomeSequencingMutation, The1000GenomesMutation], path=path)
+    return mutations_affecting_ptm_sites([ExomeSequencingMutation, The1000GenomesMutation], path)

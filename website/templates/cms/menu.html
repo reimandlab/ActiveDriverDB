@@ -1,21 +1,6 @@
-{% macro render_menu(entries) %}
-    {% for entry in entries | sort(attribute='position') %}
-      {% set active = request.path == entry.url %}
-      {% if entry.children %}
-        <li class="dropdown">
-          <a href="#" class="dropdown-toggle{% if active %} active{% endif %}" role="button" data-toggle="dropdown">
-            {{ entry.title }} <span class="caret"></span>
-          </a>
-          <ul class="dropdown-menu">
-            {{ render_menu(entry.children) }}
-          </ul>
-      {% else %}
-        <li{% if active %} class="active"{% endif %}>
-        <a href="{{ entry.url }}">{{ entry.title }}</a>
-      {% endif %}
-    {% endfor %}
-{% endmacro %}
-
 {% if menu %}
-  {{ render_menu(menu.top_level_entries) }}
+  {% for entry in menu.entries | sort(attribute='position') %}
+    <li{% if request.path == entry.url %} class="active"{% endif %}>
+      <a href="{{ entry.url }}">{{ entry.title }}</a>
+  {% endfor %}
 {% endif %}

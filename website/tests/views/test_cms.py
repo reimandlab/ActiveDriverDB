@@ -1,9 +1,6 @@
-import re
-from urllib.parse import quote, urlparse, urlunparse
+from contextlib import contextmanager
+from urllib.parse import quote
 
-from bs4 import BeautifulSoup
-
-from app import mail
 from view_testing import ViewTest
 from models import Page, User, HelpEntry, Setting
 from models import Menu
@@ -12,39 +9,19 @@ from models import PageMenuEntry
 from database import db
 
 
-def find_links(html, **attrs):
-    soup = BeautifulSoup(html)
-    return soup.findAll('a', attrs=attrs)
+class Flash:
+    def __init__(self, content, category):
+        self.content = content
+        self.category = category
 
-
-def extract_relative_url(activation_link):
-    parsed_url = urlparse(activation_link)
-    relative_url = ['', '']
-    relative_url.extend(parsed_url[2:])
-    path = urlunparse(relative_url)
-    return path
-
-
-def replace_token(path, new_token='some_dummy_token'):
-    replaced_token_path = re.sub('token=.*?(&|$)', 'token=%s&' % new_token, path)
-    return replaced_token_path
-
-
-def create_fresh_test_user():
-    user = User(email='user@gmail.com', password='strongPassword')
-    db.session.add(user)
-    db.session.commit()
-    return user
+    def __repr__(self):
+        return '<Flash %s: %s>' % (self.category, self.content)
 
 
 class TestCMS(ViewTest):
 
     invalid_addresses = ['/test/', ' test/', 'test//', '/', '/test']
     weird_addresses = ['test/test', ' /test', ' test', 'test ']
-
-    def view_module(self):
-        from website.views import cms
-        return cms
 
     def login_as_admin(self):
         self.login(email='admin@domain.org', create=True, admin=True)
@@ -64,6 +41,36 @@ class TestCMS(ViewTest):
         if response.status_code != 401:
             return False
         return True
+
+    @contextmanager
+    def collect_flashes(self):
+        flashes = []
+        from website.views import cms
+
+        original_flash = cms.flash
+
+        def flash_collector(*args):
+            collected_flash = Flash(*args)
+            flashes.append(collected_flash)
+            original_flash(*args)
+
+        cms.flash = flash_collector
+
+        yield flashes
+
+        cms.flash = original_flash
+
+    @contextmanager
+    def assert_flashes(self, *args, **kwargs):
+        with self.collect_flashes() as flashes:
+            yield
+            assert self.assert_flashed(flashes, *args, **kwargs)
+
+    def assert_flashed(self, flashes, content=None, category=None):
+        for flash in flashes:
+            if (not content or flash.content == content) and (not category or flash.category == category):
+                return True
+        raise AssertionError('No flash: %s, %s. Recent flashes: %s.' % (content, category, flashes))
 
     def test_admin_only_protection(self):
         from views.cms import admin_only
@@ -247,22 +254,6 @@ class TestCMS(ViewTest):
         from views import ContentManagementSystem
         assert ContentManagementSystem._inline_help('my-helpful-hint') == help.content
 
-    def test_render_inline_help(self):
-        db.session.add(
-            HelpEntry(name='helpful-hint', content='Some explanation')
-        )
-
-        page = Page(
-            content='Some not so obvious statement {{ help("helpful-hint") }}',
-            address='test-help'
-        )
-        db.session.add(page)
-
-        response = self.client.get('/test-help/')
-
-        assert b'Some not so obvious statement' in response.data
-        assert b'Some explanation' in response.data
-
     def test_save_inline_help(self):
         assert self.is_only_for_admins('/admin/save_inline_help/', method='post')
 
@@ -362,6 +353,7 @@ class TestCMS(ViewTest):
         )
         assert response.status_code == 200
 
+        print(CustomMenuEntry.query.all())
         entries = CustomMenuEntry.query.filter_by(menu_id=menu.id).all()
         assert len(entries) == 1
         assert entries[0].title == 'ActiveDriverDB repository'
@@ -388,51 +380,7 @@ class TestCMS(ViewTest):
     def test_modify_menu(self):
         assert self.is_only_for_admins('/list_menus/')
 
-    def activation_test(self, user, activation_mail, data):
-        from views.cms import ACCOUNT_ACTIVATED_MESSAGE
-
-        # take the link from html version of message:
-        activation_links = find_links(activation_mail.html, title='Activate your account')
-
-        assert len(activation_links) == 1
-        activation_link = activation_links[0].attrs['href']
-
-        # activation link should be an external URL, no relative one
-        assert activation_link.startswith('http')
-
-        # compare with link from html-stripped, plain version
-        plain_link = re.search(r'(http://.*?)\s', activation_mail.body).group(1)
-        assert plain_link == activation_link
-
-        # is the user not verified yet?
-        assert not user.is_verified
-
-        # user should NOT be able to log-in before verifying their account:
-        assert not user.authenticate(data['password'])
-
-        path = extract_relative_url(activation_link)
-
-        # invalid token should not activate the account
-        replaced_token_path = replace_token(path)
-        response = self.client.get(replaced_token_path, follow_redirects=True)
-        assert response.status_code == 404
-        assert not user.is_verified
-
-        # is the activation link working?
-        with self.assert_flashes(ACCOUNT_ACTIVATED_MESSAGE, category='success'):
-            self.client.get(path, follow_redirects=True)
-        assert user.is_verified
-
-        # user should be able to log-in now:
-        assert user.authenticate(data['password'])
-
-        # user should be notified if they attempt to activate their account again
-        with self.assert_flashes('You account is already active.'):
-            self.client.get(path, follow_redirects=True)
-
     def test_sign_up(self):
-        from website.views.cms import SIGNED_UP_OR_ALREADY_USER_MSG
-
         response = self.client.get('/register/')
         required_fields = ('email', 'password', 'consent')
         for field in required_fields:
@@ -443,89 +391,27 @@ class TestCMS(ViewTest):
             'password': 'strongPassword',
             'consent': True
         }
+        with self.assert_flashes(category='success'):
+            self.client.post('/register/', data=data, follow_redirects=True)
 
-        with mail.record_messages() as outbox:
-            with self.assert_flashes(SIGNED_UP_OR_ALREADY_USER_MSG, category='success'):
-                self.client.post('/register/', data=data, follow_redirects=True)
-
-        # was verification email send?
-        assert len(outbox) == 1
-
-        sent_mail = outbox[0]
-        assert sent_mail.recipients == [data['email']]
-
-        # was a new user created?
         user = User.query.filter_by(email='user@gmail.com').one()
         assert user
         assert not user.is_admin
 
-        # there is a one new user
-        assert User.query.count() == 1
-
-        self.activation_test(user, sent_mail, data)
-
-        # Test registration attempt using an email address that already exists in database
-
-        old_password = data['password']
-        data['password'] = 'otherPassword2'
-
-        # using an email that exists in our database should not reveal such a fact
-        with self.assert_flashes(SIGNED_UP_OR_ALREADY_USER_MSG, category='success'):
+        # lets try again
+        with self.assert_flashes(
+                'This email is already used for an account. '
+                'If you do not remember your password, please contact us.'
+        ):
             self.client.post('/register/', data=data, follow_redirects=True)
 
-        # nor a new account should be created
-        assert User.query.count() == 1
-
-        # nor the old account should be changed
-        assert not user.authenticate(data['password'])
-        assert user.authenticate(old_password)
-
-        # Test registration without consent
+        data['email'] = 'other@some.org'
         del data['consent']
         with self.assert_flashes('Data policy consent is required to proceed.'):
             self.client.post('/register/', data=data, follow_redirects=True)
 
     def test_login(self):
-        # using an email that exists in our database should not reveal such a fact
-        incorrect_login_message = (
-            'Incorrect email or password or unverified account.'
-        )
-        user = create_fresh_test_user()
-
-        data = {'email': 'user@gmail.com', 'password': 'strongPassword'}
-
-        from flask_login import current_user
-
-        # Test unverified user (users by default should be unverified)
-        with self.assert_flashes(incorrect_login_message):
-            with self.client:
-                self.client.post('/login/', data=data, follow_redirects=True)
-                assert current_user != user
-
-        # Test successful login
-        user.is_verified = True
-
-        with self.collect_flashes() as flashes:
-            with self.client:
-                response = self.client.post('/login/', data=data, follow_redirects=True)
-                assert response.status_code == 200
-                assert not flashes
-                assert current_user == user
-
-        # Test logout
-        with self.client:
-            self.client.get('/logout/', follow_redirects=True)
-            assert current_user != user
-
-        # Test incorrect password
-        data['password'] = 'strong'
-        with self.assert_flashes(incorrect_login_message):
-            self.client.post('/login/', data=data, follow_redirects=True)
-
-        # Test incorrect email
-        data = {'email': 'u@g.com', 'password': 'strongPassword'}
-        with self.assert_flashes(incorrect_login_message):
-            self.client.post('/login/', data=data, follow_redirects=True)
+        pass
 
     def test_get_page(self):
         from website.views.cms import get_page
@@ -538,91 +424,3 @@ class TestCMS(ViewTest):
             get_page('not-existing-page')
             assert len(flashes) == 1
             assert 'no such a page' in flashes[0].content
-
-    def assert_form_not_accessible(self, faulty_path):
-        for method in [self.client.get, self.client.post]:
-            response = method(faulty_path, follow_redirects=True)
-            assert response.status_code != 200
-
-    def assert_set_password_form_works(self, user, path, check_token=False):
-        # correct token should result in form generation
-        response = self.client.get(path, follow_redirects=True)
-        for field_name in ['password', 'confirm_password']:
-            assert BeautifulSoup(response.data).select_one('input[name="%s"]' % field_name)
-
-        data_validation = {
-            'Provided passwords do not match!': ['someStrongPassword', 'ehmIAlreadyForgot..'],
-            'Both fields are required.': ['', ''],
-            'Provided password is too weak. Please try a different one.': ['so', 'so'],
-        }
-
-        # and, as long as 'password' and 'confirm_password' exists, match and are strong enough,
-        for expected_flash, data in data_validation.items():
-            password, confirmation = data
-            data = {'password': password, 'confirm_password': confirmation}
-
-            with self.assert_flashes(expected_flash):
-                self.client.post(path, data=data, follow_redirects=True)
-                # authentication with the wrong password should not be possible
-                assert not user.authenticate(password)
-                # token is still there
-                if check_token:
-                    assert user.verification_token
-
-        data = {'password': 'MySuperStrongPassword', 'confirm_password': 'MySuperStrongPassword'}
-
-        # the user's response should result in password change and token invalidation
-        with self.assert_flashes('Your new password has been set successfully!'):
-            self.client.post(path, data=data, follow_redirects=True)
-        assert user.authenticate(data['password'])
-        if check_token:
-            assert not user.verification_token
-
-    def test_password_reset(self):
-        from views.cms import PASSWORD_RESET_MAIL_SENT
-        user = create_fresh_test_user()
-
-        data = {'email': 'user@gmail.com'}
-
-        # is the form working? does it include email input?
-        response = self.client.get('/reset_password/')
-        assert response.status_code == 200
-        assert BeautifulSoup(response.data).select_one('input[name="email"]')
-
-        # the user is unverified but wait, we don't want to disclose that they even exists!
-        # we should claim that mail was sent (but it should not be sent)
-        with self.assert_flashes(PASSWORD_RESET_MAIL_SENT):
-            with mail.record_messages() as outbox:
-                self.client.post('/reset_password/', data=data, follow_redirects=True)
-                assert not outbox
-
-        # the same - but for verified user - should result in actual mail being sent
-        user.is_verified = True
-        with self.assert_flashes(PASSWORD_RESET_MAIL_SENT):
-            with mail.record_messages() as outbox:
-                self.client.post('/reset_password/', data=data, follow_redirects=True)
-                reset_mail = outbox[0]
-                assert reset_mail
-
-        # and the user should be able to reset password, using a link provided in email message:
-        link = find_links(reset_mail.html, title='Reset password')[0].attrs['href']
-        path = extract_relative_url(link)
-
-        # fake token should not work (for both: password setting [post] and form request [get])
-        replaced_token_path = replace_token(path)
-        self.assert_form_not_accessible(replaced_token_path)
-
-        self.assert_set_password_form_works(user, path, check_token=True)
-
-    def test_change_password(self):
-        user = create_fresh_test_user()
-
-        user.is_verified = True
-
-        # unauthenticated user should not be allowed
-        self.assert_form_not_accessible('/set_password/')
-
-        self.login(email=user.email, password='strongPassword')
-
-        # for authenticated user the form should work
-        self.assert_set_password_form_works(user, '/set_password/', check_token=False)

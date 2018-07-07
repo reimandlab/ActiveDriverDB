@@ -4,8 +4,6 @@
 
 The project aims to create an interactive visualisation framework for genome mutations in gene and protein networks. The idea is to display information from co-developed database in the form of different interactive "views". Thanks to the possibility of quickly switching between the views, the user will be able to grasp an analysed gene or protein with it's context and interactions from different angles. It will also provide advanced filtering and interactive loading with AJAX requests.
 
-The needleplot visualisation is now available in a separate repository: [reimandlab/needleplot](https://github.com/reimandlab/needleplot).
-
 # Licence
 
 The application is Open Source and is licensed under the terms of [GNU Lesser General Public License](https://github.com/reimandlab/ActiveDriverDB/blob/master/LICENSE).
@@ -27,12 +25,14 @@ python3 -m pip install -r requirements.txt
 ```
 In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given. An additional requirement is `bsddb3` package, which is often easier to install system-wide with your package manager (on Debian named `python3-bsddb3`). You may need to add a symbolic link to the package inside of your virtual environment.
 
+Recently released version of flask-sqlalchemy (2.2, Feb 2017) fixed some important issues but introduced a regression bug [#470](https://github.com/mitsuhiko/flask-sqlalchemy/issues/470) which forces use of forked, patched version until it is fixed. To get patched version, you will need to clone [flask_sqlalchemy directory](https://github.com/krassowski/flask-sqlalchemy/flask_sqlalchemy) into `website` directory:
+```bash
+git clone https://github.com/krassowski/flask-sqlalchemy/
+mv flask-sqlalchemy/flask_sqlalchemy .
+rm -rf flask-sqlalchemy
+```
+
 ### Backend
-
-#### Prerequisites
-
-To create a basic local copy of ActiveDriverDB you need a machine with at least 4 GB of RAM memory.
-If you wish to import genomic mappings for genome variants annotation you will more than 10 GB of RAM (recommended 16 GB).
 
 #### Database creation & configuration
 
@@ -105,7 +105,7 @@ sass --update .:.
 ```
 
 #### Precompiling Nunjucks templates
-Nunjucks templating system is used for client-side templating. It allows to move some repeatedly performed templating tasks to user's browser, which reduces transfer and speeds-up site loading. It uses jinja-nearly-compatible syntax.
+Nunjucks templating system is used for clint-side templating. It allows to move some repeatedly performed templating tasks to user's browser, which reduces transfer and speeds-up site loading. It uses jinja-nearly-compatible syntax.
 To keep this process efficient, templates should be precompiled. To do so, you will need to get full nunjucks installation, for example with `npm` (you should be able to install `npm` with your system's package manager):
 ```bash
 sudo npm install -g nunjucks
@@ -117,37 +117,6 @@ cd website/static/js_templates
 ./precompile.sh
 ```
 And you are done. When `DEBUG = False`, precompiled templates will be loaded automatically.
-
-### Task distribution
-
-
-#### Cyclic, maintenance tasks
-
-For cyclic tasks a CRON-like package [Advanced Python Scheduler](https://apscheduler.readthedocs.io/en/latest/) is used;
-it is fully integrated with application code and no additional setup is required.
-
-The jobs functions are defined in `jobs.py` file and scheduling information is stored in `config.py`, in `JOBS` variable.
-
-#### User jobs
-
-To manage and execute user provided mutation search [Celery Distributed Task Queue](http://docs.celeryproject.org/en/latest/index.html) is used,
-with the broker and backend being RabbitMQ.
-Both RabitMQ and Celery need to be run as services and set up properly, as described in [Celery](http://docs.celeryproject.org/en/latest/getting-started/brokers/rabbitmq.html#broker-rabbitmq).
-On Debian-based machines RabitMQ may be installed as a service directly from repositories.
-
-To run celery worker as a script please use the following command:
-
-```
-celery -A celery_worker.celery worker
-```
-
-For deployment it should be started as a service.
-A major part of configuration will be performed by `setup.sh` automatically but one need to amend configuration file (`celeryd`) so all paths are absolute and correct.
-To start the service use `init.d` script:
-
-```
-/etc/init.d/celeryd {start|stop|restart|status}
-```
 
 ### Serving
 
@@ -165,7 +134,7 @@ For adjusting the port or IP address, check `-h` switch of the `run.py` script
 
 Deployment on Apache2 server is more powerful alternative to Werkzeug webserver.
 
-As you may want to have a virtual environment for this application, `website/app.wsgi` provides ready-to go activation script to use with Apache2 (assuming that the name of your virtual environment is `virtual_environment`). `mod_wsgi` extension is required (`apt-get install libapache2-mod-wsgi-py3` for Debian/Ubuntu).
+As you may want to have a virtual environment for this application, `website/app.wsgi` provides ready-to go activation script to use with Apache2 (assuming that the name of your virtual environment is `virtual_environment`).
 
 Following extract from configuration file might be useful help for writing you own configuration:
 
@@ -222,7 +191,7 @@ To login to root account (created with `manage.py` script) visit `/login/` page 
 
 For proper compilation of some requirements, additional software will be needed on Debian-based servers. The required packages are:
 ```
-build-essential python3 libmysqlclient-dev python3-dev git python3-bsddb3 pigz nodejs openjdk-7-jdk
+build-essential python3 libmysqlclient-dev python3-dev python-dev git python3-bsddb3 pigz
 ```
 
 Alternative commands to create virtual environment (workaround for Debian not having some essential python3 packages installed):
@@ -240,13 +209,6 @@ python3 -m pip install -r requirements.txt
 
 All tests are placed in [website/tests](/website/tests) directory. Please find all steps explained in `readme.md` file inside this subdirectory.
 
-Browser compatibility testing is provided by [BrowserStack](https://www.browserstack.com) which allows cloud testing on desktop browsers, real iOS and Android devices. It also allows automate testing integration.
-
 ## Acknowledgments
 
-The project is developed with support from [Ontario Institute of Cancer Research](https://oicr.on.ca/) and received support from [Google Summer of Code 2016](https://developers.google.com/open-source/gsoc/).
-
-[<img src="https://cdn.rawgit.com/reimandlab/ActiveDriverDB/master/thirdparty/images/browserstack.svg" height="30px" valign="bottom">](https://www.browserstack.com)
-
-
-BrowserStack supports this open source project allowing us to use their testing systems for free.
+The project was developed with support from Google Summer Code.

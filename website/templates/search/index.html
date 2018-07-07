@@ -12,8 +12,6 @@
 
 
 {% block head %}
-  {# For filters.js for proteins #}
-  {{ dependency('md5') }}
 
   {% assets "css_search" %}
   <link href="{{ ASSET_URL }}" rel="stylesheet" />
@@ -26,7 +24,7 @@
 
 {% block content %}
 
-  <h3>Search for {{ target }}</h3>
+  <h3>Search for a protein or set of mutations</h3>
 
   {# one url, target only tells what option is active #}
 
@@ -54,7 +52,7 @@
   {% endassets %}
   <script type="text/javascript">
     var manager_params = {
-      target: '{{ target }}',
+      active_target: '{{ target}}',
       form_area: $('#form-area'),
       url_base: '{{ url_for('SearchView:default') }}'
     }

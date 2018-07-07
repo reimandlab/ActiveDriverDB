@@ -1,18 +1,14 @@
-from warnings import warn
-
 from models import MIMPMutation
+from imports.mutations import MutationImporter
 from helpers.bioinf import decode_raw_mutation
 from helpers.parsers import parse_tsv_file
 
-from .mutation_importer import MutationImporter
 
-
-class MIMPImporter(MutationImporter):
+class Importer(MutationImporter):
     # load("all_mimp_annotations_p085.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
 
-    name = 'mimp'
     model = MIMPMutation
     default_path = 'data/mutations/all_mimp_annotations.tsv'
     header = [
@@ -31,9 +27,10 @@ class MIMPImporter(MutationImporter):
 
     def parse(self, path):
         mimps = []
+        sites = []
 
         def parser(line):
-            nonlocal mimps
+            nonlocal mimps, sites
 
             refseq = line[0]
             mut = line[1]
@@ -66,19 +63,12 @@ class MIMPImporter(MutationImporter):
             ]
 
             if len(affected_sites) != 1:
-                warning = UserWarning(
-                    'Skipping %s: %s%s%s (for site at position %s): ' % (
-                       refseq, ref, pos, alt, psite_pos
-                    ) +
-                    'MIMP site does not match to the database - ' +
-                    (
-                        'too many (%s) sites found.' % len(affected_sites)
-                        if affected_sites else
-                        'given site not found.'
-                    )
-                )
-                print(warning)
-                warn(warning)
+                print('MIMP site does not match to the database:')
+                if affected_sites:
+                    print('too many (%s) sites found' % len(affected_sites))
+                else:
+                    print('given site not found')
+                print(protein, refseq, ref, pos, alt, mutation_id, psite_pos)
                 return
 
             site_id = affected_sites[0].id

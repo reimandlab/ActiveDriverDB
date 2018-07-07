@@ -56,7 +56,7 @@ class BerkleyHashSet:
     def _create_path(self):
         """Returns path to a file containing the database.
 
-        The file is not guaranteed to exist, although the 'databases' directory
+        The file is not guranted to exist, although the 'databases' directory
         will be created (if it does not exist).
         """
         base_dir = abspath(dirname(__file__))
@@ -72,7 +72,7 @@ class BerkleyHashSet:
         """
         self.name = name
         self.path = self._create_path()
-        self.db = bsddb.hashopen(self.path, mode, cachesize=20480 * 8)
+        self.db = bsddb.hashopen(self.path, mode)
         self.is_open = True
 
     def close(self):
@@ -83,11 +83,10 @@ class BerkleyHashSet:
         """key: has to be str"""
 
         key = bytes(key, 'utf-8')
-
         try:
             items = filter(
                 bool,
-                self.db.get(key).decode().split('|')
+                self.db.get(key).decode('utf-8').split('|')
             )
         except (KeyError, AttributeError):
             items = []
@@ -96,28 +95,6 @@ class BerkleyHashSet:
             items,
             lambda new_set: self.__setitem__(key, new_set)
         )
-
-    def items(self):
-        """Yields (key, iterator over items from value set) tuples.
-
-        All atomic elements are returned as plain strings.
-        """
-        for key, value in self.db.iteritems():
-            try:
-                yield key.decode(), filter(bool, value.decode().split('|'))
-            except (KeyError, AttributeError):
-                pass
-
-    def values(self):
-        """Yields iterators over items from value set.
-
-        All atomic elements are returned as plain strings.
-        """
-        for key, value in self.db.iteritems():
-            try:
-                yield filter(bool, value.decode().split('|'))
-            except (KeyError, AttributeError):
-                pass
 
     def update(self, key, value):
         key = bytes(key, 'utf-8')
@@ -167,14 +144,8 @@ class BerkleyHashSet:
         return len(self.db)
 
     @require_open
-    def drop(self, not_exists_ok=True):
-        try:
-            os.remove(self.path)
-        except FileNotFoundError:
-            if not_exists_ok:
-                pass
-            else:
-                raise
+    def drop(self):
+        os.remove(self.path)
 
     @require_open
     def reset(self):
