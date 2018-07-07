@@ -23,7 +23,7 @@ install:
   - sudo apt-get install -y nodejs
   - sudo npm config set strict-ssl false
   - sudo apt-get install -y pigz
-  - sudo apt-get install -y R
+  - sudo apt-get install -y r-base
   - bash setup.sh
   - cd website
   - pip install wheel
