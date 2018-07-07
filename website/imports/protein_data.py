@@ -485,7 +485,11 @@ def disorder(path='data/all_RefGene_disorder.fa'):
     parse_fasta_file(path, on_sequence, on_header)
 
     for protein in proteins.values():
-        assert len(protein.sequence) == protein.length
+        if len(protein.disorder_map) != protein.length:
+            print(
+                f'Protein {protein} disorder: {len(protein.disorder_map)} '
+                f'does not match the length of protein: {protein.length}'
+            )
 
 
 @importer
