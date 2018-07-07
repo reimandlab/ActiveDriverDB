@@ -15,7 +15,7 @@ def remove(orm_object, soft=False):
 
 
 def raw_delete_all(model):
-    count = model.query.delete()
+    count = db.session.query(model).delete()
     return count
 
 

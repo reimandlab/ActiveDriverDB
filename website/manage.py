@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from getpass import getpass
+from typing import Mapping
 
 from flask import current_app
 from sqlalchemy.exc import IntegrityError, OperationalError
@@ -23,7 +24,7 @@ from imports.mappings import import_aminoacid_mutation_refseq_mappings
 from imports.mappings import import_genome_proteome_mappings
 from imports.mutations import MutationImportManager, MutationImporter
 from imports.mutations import get_proteins
-from models import Page
+from models import Page, Model
 from models import User
 
 muts_import_manager = MutationImportManager()
@@ -31,12 +32,14 @@ database_binds = ('bio', 'cms')
 CONFIG = {'LOAD_STATS': False, 'SCHEDULER_ENABLED': False, 'USE_CELERY': False}
 
 
-def calc_statistics(args, app=None):
+def calc_statistics(args, app=None, stores=None):
     if not app:
         app = create_app(config_override=CONFIG)
     with app.app_context():
-        from stats import Statistics, VennDiagrams
-        for store_class in [Statistics, VennDiagrams]:
+        if not stores:
+            from stats import store_classes
+            stores = store_classes
+        for store_class in stores:
             store = store_class()
             store.calc_all()
         db.session.commit()
@@ -50,16 +53,15 @@ def automigrate(args, app=None):
     return True
 
 
-def get_all_models(module_name='bio'):
-    from models import Model
+def get_all_models(module_name='bio') -> Mapping:
     from sqlalchemy.ext.declarative.clsregistry import _ModuleMarker
     module_name = 'models.' + module_name
 
-    models = [
-        model
+    models = {
+        model.__name__: model
         for model in Model._decl_class_registry.values()
-        if not isinstance(model, _ModuleMarker) and model.__module__ == module_name
-    ]
+        if not isinstance(model, _ModuleMarker) and model.__module__.startswith(module_name)
+    }
     return models
 
 
@@ -213,18 +215,31 @@ class ProteinRelated(CommandTarget):
 
     @command
     def remove(args):
-        import models.bio as bio_models
-        for model_name in args.models:
-            model = getattr(bio_models, model_name)
+        models = get_all_models('bio')
+        to_remove = args.models
+
+        if args.all:
+            to_remove = models.keys()
+        elif not args.models:
+            print('Please specify model(s) to remove with --model or --all')
+
+        for model_name in to_remove:
+            model = models[model_name]
             remove_model(model)
             db.session.commit()
+
+    @remove.argument
+    def all():
+        return argument_parameters(
+            '--all', '-a',
+            action='store_true',
+            help='Remove all bio models.'
+        )
 
     @remove.argument
     def models():
 
         models = get_all_models('bio')
-
-        models_names = [model.__name__ for model in models]
 
         return argument_parameters(
             '--models', '-m',
@@ -232,9 +247,10 @@ class ProteinRelated(CommandTarget):
             metavar='',
             help=(
                 'Names of models to be removed.'
-                ' Available models: ' + ', '.join(models_names) + '.'
+                ' Available models: ' + ', '.join(models) + '.'
             ),
-            choices=models_names
+            default=[],
+            choices=models.keys()
         )
 
 
@@ -366,14 +382,15 @@ def run_shell(args):
     print('Starting interactive shell...')
     app = create_app(config_override=CONFIG)
     with app.app_context():
-        import models
-
         if args.command:
             print('Executing supplied command: "%s"' % args.command)
             exec(args.command)
 
         print('You can access current application using "app" variable.')
         print('Database, models and statistics modules are pre-loaded.')
+
+        import models
+        locals().update(vars(models))
 
         fallback = False
         if not args.raw:
@@ -386,9 +403,7 @@ def run_shell(args):
 
         if fallback or args.raw:
             import code
-            all_vars = locals()
-            all_vars.update(vars(models))
-            code.interact(local=all_vars)
+            code.interact(local=locals())
 
 
 def create_parser():
@@ -489,6 +504,3 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     run_manage(args)
-
-else:
-    print('This script should be run from command line')

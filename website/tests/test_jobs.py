@@ -1,7 +1,7 @@
 import time
 
 from database import update, db
-from database.types import utc_now
+from database.functions import utc_now
 from database_testing import DatabaseTest
 from jobs import hard_delete_expired_datasets
 from models import User, UsersMutationsDataset

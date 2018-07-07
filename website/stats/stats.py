@@ -1,14 +1,14 @@
 from itertools import combinations
-from typing import List, Type
+from typing import List
 
 from sqlalchemy import and_, func, distinct, or_
 
 import models
 from database import db, fast_count
-from models import Mutation, are_details_managed, MC3Mutation, MutationDetails
+from models import Mutation, are_details_managed, MC3Mutation, source_manager, MutationSource
 
 from .store import counter
-from .store import CountStore
+from .store.store import CountStore
 
 
 def models_counter(model, name=None):
@@ -73,39 +73,21 @@ class Statistics(CountStore):
         return counts
 
     @staticmethod
-    def get_filter_by_sources(sources: List[Type[MutationDetails]]):
-
-        filters = and_(
-            (
-                (
-                    Mutation.get_relationship(source).any()
-                    if are_details_managed(source) else
-                    Mutation.get_relationship(source).has()
-                )
-                for source in sources
-
-            )
-        )
-
-        return filters
-
-    def count_by_source(self, sources):
-        return Mutation.query.filter(
-            self.get_filter_by_sources(sources)
-        ).count()
+    def count_by_sources(sources: List[MutationSource]):
+        return Mutation.query.filter(Mutation.in_sources(*sources)).count()
 
     def __init__(self):
 
-        for source_model in Mutation.source_specific_data:
+        for source_model in source_manager.all:
             # dirty trick: 1KGenomes is not a valid name in Python
             name = 'mutations_' + source_model.name.replace('1', 'T')
 
             def muts_counter(_self):
-                return self.count_mutations(source_model)
+                return self.count_by_sources([source_model])
 
             self.register(counter(muts_counter, name=name))
 
-        for source_model in filter(lambda model: are_details_managed(model), Mutation.source_specific_data):
+        for source_model in filter(lambda model: are_details_managed(model), source_manager.all):
             name = f'mutations_{source_model.name}_annotations'
 
             self.register(
@@ -134,7 +116,7 @@ class Statistics(CountStore):
     def confirmed_with_mimp(self):
         return Mutation.query.filter(
             and_(
-                self.get_filter_by_sources([models.MIMPMutation]),
+                Mutation.in_sources(models.MIMPMutation),
                 Mutation.is_confirmed,
             )
         ).count()
@@ -149,27 +131,22 @@ class Statistics(CountStore):
         """
 
         sources = [
-            model
-            for model in Mutation.source_specific_data
-            if model != models.MIMPMutation and model != models.UserUploadedMutation
+            source
+            for source in source_manager.all
+            if source.is_confirmed and source.is_visible
         ]
         count = 0
 
         for i in range(2, len(sources) + 1):
             sign = 1 if i % 2 == 0 else -1
             for combination in combinations(sources, i):
-                count += sign * self.count_by_source(combination)
+                count += sign * self.count_by_sources(combination)
 
         return count
 
     @staticmethod
     def count(model):
         return db.session.query(model).count()
-
-    def count_mutations(self, mutation_class):
-        return db.session.query(Mutation).filter(
-            self.get_filter_by_sources([mutation_class])
-        ).count()
 
     def mc3_exomes(self):
         return len(
@@ -183,6 +160,27 @@ class Statistics(CountStore):
     @counter
     def proteins(self):
         return self.count(models.Protein)
+
+    @counter
+    def glycosylations_with_subtype(self):
+        from models import Site, SiteType
+
+        glycosylation_subtypes = [
+            type_id
+            for type_name, type_id in SiteType.id_by_name().items()
+            if 'glycosylation' in type_name and type_name != 'glycosylation'
+        ]
+
+        site_filter = Site.types.any(SiteType.id.in_(glycosylation_subtypes))
+
+        return Site.query.filter(site_filter).count()
+
+    @counter
+    def glycosylations_without_subtype_ratio(self):
+        from models import Site, SiteType
+        glycosylation = SiteType.query.filter_by(name='glycosylation').one()
+        glycosylations = Site.query.filter(SiteType.fuzzy_filter(glycosylation)).count()
+        return (glycosylations - self.glycosylations_with_subtype()) / glycosylations
 
     genes = models_counter(models.Gene)
     kinases = models_counter(models.Kinase)

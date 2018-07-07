@@ -2,6 +2,7 @@ import re
 from warnings import warn
 
 from database import db
+from helpers.commands import got_permission
 
 
 def add_column(engine, table_name, definition):
@@ -34,13 +35,6 @@ def set_foreign_key_checks(engine, active=True):
 
 def get_column_names(table):
     return set((i.name for i in table.c))
-
-
-def get_answer(question, choices=('y', 'n')):
-    while True:
-        answer = input('\n' + question + ' (y/n)? ')
-        if answer in choices:
-            return answer
 
 
 def basic_auto_migrate_relational_db(app, bind):
@@ -126,14 +120,14 @@ def basic_auto_migrate_relational_db(app, bind):
                         'from those in specified in models:' % table.name
                     )
                 for column, old_definition, new_definition in columns_to_update:
-                    answer = get_answer(
+                    agreed = got_permission(
                         'Column: `%s`\n'
                         'Old definition: %s\n'
                         'New definition: %s\n'
                         'Update column definition?'
                         % (column, old_definition, new_definition)
                     )
-                    if answer == 'y':
+                    if agreed:
                         update_column(engine, table.name, new_definition)
                         print('Updated %s column definition' % column)
                     else:
@@ -145,8 +139,7 @@ def basic_auto_migrate_relational_db(app, bind):
                     'and can be safely removed:' % table.name
                 )
                 for column in unused_columns:
-                    answer = get_answer('Column: `%s` - remove?' % column)
-                    if answer == 'y':
+                    if got_permission('Column: `%s` - remove?' % column):
                         drop_column(engine, table.name, column)
                         print('Removed column %s.' % column)
                     else:

@@ -3,11 +3,15 @@ from collections import defaultdict, namedtuple
 from tqdm import tqdm
 from database import db, yield_objects, create_key_model_dict
 from database import get_or_create
+from helpers.bioinf import aa_symbols
 from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
 from imports.importer import importer
-from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType
+from models import (
+    Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType, SiteType,
+    SiteMotif,
+)
 from models import Gene
 from models import InterproDomain
 from models import Cancer
@@ -58,6 +62,8 @@ def proteins_and_genes(path='data/protein_data.tsv'):
         ('cdsEnd', 'cds_end')
     ]
 
+    allowed_strands = ['+', '-']
+
     # a list storing refseq ids which occur at least twice in the file
     with_duplicates = []
     potentially_empty_genes = set()
@@ -73,18 +79,28 @@ def proteins_and_genes(path='data/protein_data.tsv'):
 
     def parser(line):
 
-        # load gene
+        # use name2 (fourth column from the end)
         name = line[-4]
+
+        strand = line[3]
+        assert strand in allowed_strands
+
+        gene_data = {
+            'name': name,
+            'chrom': line[2][3:],    # remove chr prefix
+            'strand': True if strand == '+' else False
+        }
+
         if name.lower() not in genes:
-            gene_data = {
-                'name': name,
-                'chrom': line[2][3:],    # remove chr prefix
-                'strand': 1 if '+' else 0
-            }
             gene = Gene(**gene_data)
             genes[name.lower()] = gene
         else:
             gene = genes[name.lower()]
+            for key, value in gene_data.items():
+                previous = getattr(gene, key)
+                if previous != value:
+                    print(f'Replacing {gene} {key} with {value} (previously: {previous})')
+                    setattr(gene, key, value)
 
         # load protein
         refseq = line[1]
@@ -226,12 +242,14 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
                 isoform = 1
 
             reference, new = get_or_create(ProteinReferences, protein=protein)
-            uniprot_entry, _ = get_or_create(UniprotEntry, accession=uniprot, isoform=isoform)
+            uniprot_entry, new_uniprot = get_or_create(UniprotEntry, accession=uniprot, isoform=isoform)
             reference.uniprot_entries.append(uniprot_entry)
             references[uniprot].append(reference)
 
             if new:
                 db.session.add(reference)
+            if new_uniprot:
+                db.session.add(uniprot_entry)
 
     ensembl_references_to_collect = {
         'Ensembl_PRO': 'peptide_id'
@@ -270,7 +288,13 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
             if len(x) <= 5:
                 for reference in relevant_references:
                     assert '-' not in full_uniprot
-                    entry = UniprotEntry.query.filter_by(accession=full_uniprot, reference=reference).one()
+                    matching_entries = [entry for entry in reference.uniprot_entries if entry.accession == full_uniprot]
+                    if len(matching_entries) != 1:
+                        print(f'More than one match for reference: {reference}: {matching_entries}')
+                    if not matching_entries:
+                        print(f'No matching entries for reference: {reference}: {matching_entries}')
+                        continue
+                    entry = matching_entries[0]
                     entry.reviewed = True
 
             return
@@ -461,7 +485,11 @@ def disorder(path='data/all_RefGene_disorder.fa'):
     parse_fasta_file(path, on_sequence, on_header)
 
     for protein in proteins.values():
-        assert len(protein.sequence) == protein.length
+        if len(protein.disorder_map) != protein.length:
+            print(
+                f'Protein {protein} disorder: {len(protein.disorder_map)} '
+                f'does not match the length of protein: {protein.length}'
+            )
 
 
 @importer
@@ -963,9 +991,9 @@ def active_driver_gene_lists(
             )
             list_entries.append(entry)
 
-            gene_list.entries = list_entries
-
         parse_tsv_file(list_data.path, parser, header)
+
+        gene_list.entries = list_entries
 
         gene_lists.append(gene_list)
 
@@ -1095,7 +1123,7 @@ def precompute_ptm_mutations():
     print('Counting mutations...')
     total = Mutation.query.filter_by(is_confirmed=True).count()
     mismatch = 0
-    for mutation in tqdm(yield_objects(Mutation.query.filter_by(is_confirmed=True)), total=total):
+    for mutation in tqdm(Mutation.query.filter_by(is_confirmed=True), total=total):
         pos = mutation.position
         is_ptm_related = mutation.protein.has_sites_in_range(pos - 7, pos + 7)
         if is_ptm_related != mutation.precomputed_is_ptm:
@@ -1142,3 +1170,78 @@ def drugbank(path='data/drugbank/drugbank.tsv'):
     parse_tsv_file(path, parser, header)
 
     return drugs
+
+
+@importer
+def sites_motifs(data=None):
+
+    motifs_data = [
+        # site_type_name, name, pattern (Python regular expression), sequences for pseudo logo
+
+        # https://prosite.expasy.org/PDOC00001
+        [
+            'N-glycosylation', 'N-linked', '.{7}N[^P][ST].{5}',
+            [
+                ' ' * 7 + f'N{aa}{st}' + ' ' * 5
+                for aa in aa_symbols if aa != 'P'
+                for st in 'ST'
+            ]
+        ],
+        # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4721579/
+        [
+            'N-glycosylation', 'N-linked - atypical', '.{7}N[^P][CV].{5}',
+            [
+                ' ' * 7 + f'N{aa}{cv}' + ' ' * 5
+                for aa in aa_symbols if aa != 'P'
+                for cv in 'CV'
+            ]
+
+        ],
+
+        # Based on https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1301293/
+        ['O-glycosylation', 'O-linked TAPP', '.{7}TAPP', [' ' * 7 + 'TAPP' + ' ' * 5]],
+        ['O-glycosylation', 'O-linked TSAP', '.{7}TSAP', [' ' * 7 + 'TSAP' + ' ' * 5]],
+        ['O-glycosylation', 'O-linked TV.P', '.{7}TV.P', [' ' * 7 + 'TV.P' + ' ' * 5]],
+        [
+            'O-glycosylation', 'O-linked [ST]P.P', '.{7}[ST]P.P',
+            [
+                ' ' * 7 + f'{st}P P' + ' ' * 5
+                for st in 'ST'
+            ]
+        ],
+
+        # https://www.uniprot.org/help/carbohyd
+        [
+            'C-glycosylation', 'C-linked W..W', '.{7}W..W.{4}',
+            [' ' * 7 + 'W  W' + ' ' * 4]
+        ],
+        [
+            'C-glycosylation', 'C-linked W..W', '.{4}W..W.{7}',
+            [' ' * 4 + 'W  W' + ' ' * 7]
+        ],
+        [
+            'C-glycosylation', 'C-linked W[ST].C', '.{7}W[ST].C.{4}',
+            [
+                ' ' * 7 + f'W{st} C' + ' ' * 4
+                for st in 'ST'
+            ]
+        ],
+
+    ]
+
+    if data:
+        motifs_data = data
+
+    new_motifs = []
+
+    for site_type_name, name, pattern, sequences in motifs_data:
+        site_type, _ = get_or_create(SiteType, name=site_type_name)
+        motif, new = get_or_create(SiteMotif, name=name, pattern=pattern, site_type=site_type)
+
+        if new:
+            new_motifs.append(motif)
+            db.session.add(motif)
+
+        motif.generate_pseudo_logo(sequences)
+
+    return new_motifs

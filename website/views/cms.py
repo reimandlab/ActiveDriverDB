@@ -21,9 +21,11 @@ from flask_login import logout_user
 from flask_login import login_required
 from flask_mail import Message
 from flask import render_template_string
+from jinja2.runtime import Macro
 from werkzeug.utils import secure_filename
 
 import security
+import models
 from models import Page, HelpEntry, TextEntry
 from models import Menu
 from models import MenuEntry
@@ -37,7 +39,7 @@ from app import login_manager, recaptcha, limiter
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import IntegrityError, OperationalError
-from stats import STATISTICS, VENN_DIAGRAMS
+from stats import STORES
 from exceptions import ValidationError
 
 
@@ -78,46 +80,58 @@ def render_raw_template(template_name, *args, **kwargs):
     return jinja_template.render(*args, **kwargs)
 
 
+def get_jinja_module(template_path):
+    jinja_template = current_app.jinja_env.get_template(template_path)
+    return jinja_template.make_module({'current_user': current_user})
+
+
+def get_jinja_macro(template_path, macro_name):
+    jinja_module = get_jinja_module(template_path)
+    return getattr(jinja_module, macro_name)
+
+
 def render_help_entry(entry_id, entry_class=''):
-    jinja_template = current_app.jinja_env.get_template('help.html')
-    jinja_module = jinja_template.make_module({'current_user': current_user})
-    return jinja_module.help(entry_id, entry_class)
+    help_macro = get_jinja_macro('help.html', 'help')
+    return help_macro(entry_id, entry_class)
 
 
-def venn(name, elements_description=''):
-    try:
-        data = VENN_DIAGRAMS[name]
-    except KeyError:
-        return f'<- failed to load {name} Venn diagram ->'
-    return Markup(render_template_string(
-        """
-        <div id="venn_{{name}}"></div>
-        <script>
-        var sets = {{ sets| tojson }};
-        var chart = venn.VennDiagram();
+def plot_factory(plot_name, macro_name, store_name):
+    store = STORES[store_name]
 
-        var div = d3.select("#venn_{{name}}").attr("class", "venn")
-        div.datum(sets).call(chart)
+    def plot(name, *args, **kwargs):
+        try:
+            data = store[name]
+        except KeyError:
+            return f'<- failed to load {name} {plot_name} ->'
+        macro = get_jinja_macro('plots.html', macro_name)
+        return macro(name, data, *args, **kwargs)
 
-        div.selectAll("path")
-            .style("stroke-opacity", 0)
-            .style("stroke", "#fff")
-            .style("stroke-width", 3)
+        # return Markup(render_template_string(
+    return plot
 
-        add_venn_tooltip(div, '{{elements_description}}')
-        </script>
-        """,
-        sets=data,
-        name=name,
-        elements_description=elements_description
-    ))
+
+def dependency(name):
+    return current_app.dependency_manager.get_dependency(name)
 
 
 USER_ACCESSIBLE_VARIABLES = {
-    'stats': STATISTICS,
-    'venn': venn,
+    'stats': STORES['Statistics'],
+    'venn': plot_factory('Venn diagram', 'venn', 'VennDiagrams'),
+    'box_plot': plot_factory('BoxPlot', 'box_plot', 'Plots'),
+    'bar_plot': plot_factory('BarPlot', 'bar_plot', 'Plots'),
+    'pie_chart': plot_factory('PieChart', 'pie_chart', 'Plots'),
+    'static_plot': plot_factory('StaticPlot', 'static_plot', 'Plots'),
+    'plot_data': lambda name: STORES['Plots'].get(name, f'{{"error": "failed to load plot data: {name}"}}'),
     'contact_form': create_contact_form,
-    'help': render_help_entry
+    'dependency': dependency,
+    'help': render_help_entry,
+    # cms models are not exposed on purpose
+    'bio_models': models.bio,
+    **{
+        name: macro
+        for name, macro in vars(get_jinja_module('cms/user_accessible_macros.html')).items()
+        if isinstance(macro, Macro)
+    }
 }
 
 
@@ -214,7 +228,7 @@ def send_message(**kwargs):
     html = kwargs.pop('html', None)
 
     if html and not body:
-        soup = BeautifulSoup(html)
+        soup = BeautifulSoup(html, 'html.parser')
         for link in soup.select('a'):
             link.append(': ' + link.attrs['href'])
             link.unwrap()

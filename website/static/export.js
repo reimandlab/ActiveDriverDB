@@ -1,4 +1,4 @@
-var Export = (function ()
+var Export = function ()
 {
     var svg_element
     var file_name
@@ -20,11 +20,12 @@ var Export = (function ()
 
     var publicSpace = {
 
-        init: function(element, title, style_address, custom_exporters)
+        init: function(element, title, style_address, custom_exporters, initial_style)
         {
             svg_element = element
             file_name = title
             style_url = style_address
+            styles = initial_style
 
             $('.export_svg').click(publicSpace.export_svg)
             $('.export_print').click(publicSpace.export_print)
@@ -63,7 +64,7 @@ var Export = (function ()
                 return
             }
 
-            element_code = svg_element.innerHTML
+            var element_code = svg_element.innerHTML
 
             if(!element_code.match(/<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/))
             {
@@ -109,4 +110,4 @@ var Export = (function ()
     }
 
     return publicSpace
-}())
+}

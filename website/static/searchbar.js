@@ -43,9 +43,16 @@ var SearchBar = function ()
             results_div.html(html)
 
             add_dropdown_navigation(results_div)
-
+            show_fake_focus_on_first(results_div)
         }
         indicator.hide()
+    }
+
+    function show_fake_focus_on_first(dropdown_element) {
+        var elements = dropdown_element.find('.list-group-item')
+        var first_element = $(elements[0])
+
+        first_element.addClass('focus')
     }
 
     function add_dropdown_navigation(dropdown_element)
@@ -56,6 +63,7 @@ var SearchBar = function ()
             $(elements[i]).on('keydown', {i: i}, function(e)
             {
                 var i = e.data.i
+
                 // arrow up
                 if(e.which === 38)
                 {
@@ -67,11 +75,21 @@ var SearchBar = function ()
                     return false
                 }
                 // arrow down
-                else if(e.which === 40 && i + 1 < elements.length)
+                else if(e.which === 40)
                 {
-                    $(elements[i + 1]).focus()
+                    if(i + 1 < elements.length)
+                        $(elements[i + 1]).focus()
+                    else
+                        input.focus()
+
                     return false
                 }
+            })
+
+            $(elements[i]).on('click', function(e)
+            {
+                e.stopPropagation()
+                $(this).addClass('item-loading')
             })
         }
     }
@@ -128,10 +146,33 @@ var SearchBar = function ()
                 // arrow down
                 if(e.which === 40)
                 {
-                    results_div.find('.list-group-item').first().focus()
+                    var elements = results_div.find('.list-group-item')
+                    var first = $(elements[0])
+                    var focus_on;
+
+                    if(first.hasClass('focus'))
+                    {
+                        first.removeClass('focus')
+                        focus_on = 1
+                    }
+                    else {
+                        focus_on = 0
+                    }
+                    elements[focus_on].focus()
+
                     return false
                 }
-                if(e.which === 13)
+                // arrow up
+                else if(e.which === 38)
+                {
+                    var elements = results_div.find('.list-group-item')
+                    elements.first().removeClass('focus')
+                    elements.last().focus()
+
+                    return false
+                }
+                //
+                else if(e.which === 13)
                 {
                     // pressing enter is equivalent to clicking on a first result,
                     // as requested in #124

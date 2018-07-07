@@ -95,3 +95,14 @@ def create_command_subparsers(command_parsers):
                 for arg_parameters in handler.get_arguments(command_func):
                     args, kwargs = arg_parameters
                     subparser.add_argument(*args, **kwargs)
+
+
+def get_answer(question, choices={'y': True, 'n': False}):
+    choices = {str(code): value for code, value in choices.items()}
+    while True:
+        answer = input(f'\n{question} ({"/".join(choices)})? ')
+        if answer in choices:
+            return choices[answer]
+
+
+got_permission = get_answer

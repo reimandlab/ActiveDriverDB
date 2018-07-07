@@ -1,0 +1,92 @@
+{% macro venn(name, sets, title='', elements_description='') %}
+
+  <h4 class="text-center">{{ title }}</h4>
+  <div>
+    <button type="button" class="btn btn-default save_venn_btn" id="venn_{{ name }}_btn">
+      <span class="glyphicon glyphicon-camera"></span>
+    </button>
+    <div id="venn_{{name}}" class="venn"></div>
+  </div>
+
+
+  <script>
+    var sets = {{ sets | tojson }};
+    var chart = venn.VennDiagram();
+
+    var name = "#venn_{{name}}"
+    var div = d3.select(name)
+    div.datum(sets).call(chart)
+
+    div.selectAll("path")
+        .style("stroke-opacity", 0)
+        .style("stroke", "#fff")
+        .style("stroke-width", 3)
+
+    add_venn_tooltip(div, '{{elements_description}}')
+
+    var exporter = Export();
+
+    exporter.init($(name).get(0), '{{ title }}', null, null, '*{font-family:sans}')
+    $(name + '_btn').click(exporter.export_svg)
+
+  </script>
+
+{% endmacro %}
+
+
+{% macro static_plot(name, data, title='') %}
+
+  <h4 class="text-center">{{ title }}</h4>
+  <img src="/{{ data.path }}" id="static_plot_{{ name }}">
+
+{% endmacro %}
+
+
+{% macro plotly_plot(plot_type, name, traces, y_axis, x_axis, colors=None) %}
+
+  <div id="{{ plot_type }}_{{ name }}"></div>
+
+  {% if colors %}
+    {% for trace in traces or [] %}
+      {% set color = colors[loop.index - 1] %}
+      {% set number = 'colors' if (color is iterable and color is not string) else 'color' %}
+      {% set _ = trace.update({'marker': {number: color}}) %}
+    {% endfor %}
+  {% endif %}
+
+  <script>
+      var data = {{ traces | tojson }};
+
+      var layout = {
+          yaxis: {{ y_axis | tojson }},
+          xaxis: {{ x_axis | tojson }},
+          {% for attr, value in kwargs.items() %}
+          {{ attr }}: {{ value | tojson }},
+          {% endfor %}
+      }
+
+      plot('{{ plot_type }}_{{ name }}', data, layout);
+  </script>
+
+{% endmacro %}
+
+
+{% macro box_plot(name, traces, title='', mode='group', y_axis={}, x_axis={}, notched=True) %}
+
+  {% for trace in traces or [] %}
+    {% set _ = trace.update({'notched': notched}) %}
+  {% endfor %}
+
+  {{ plotly_plot('box_plot', name, traces, y_axis, x_axis, title=title, boxmode=mode, **kwargs) }}
+
+{% endmacro %}
+
+
+{% macro bar_plot(name, traces, title='', y_axis={}, x_axis={}) %}
+  {{ plotly_plot('bar_plot', name, traces, y_axis, x_axis, title=title, **kwargs) }}
+{% endmacro %}
+
+
+{% macro pie_chart(name, traces, title='', y_axis={}, x_axis={}) %}
+  {{ plotly_plot('pie_chart', name, traces, y_axis, x_axis, title=title, **kwargs) }}
+{% endmacro %}

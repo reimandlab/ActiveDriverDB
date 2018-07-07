@@ -7,6 +7,8 @@
 
   {{ super() }}
 
+  {{ dependency('md5') }}
+
   {{ dependency('bootstrap_table') }}
   {{ dependency('bootstrap_table_css') }}
 
@@ -215,9 +217,63 @@
       initTable()
   });
 
-  Widgets.init($('#filters_form'));
 
   affix($('#sticky_box'), $('footer'));
+
+  // TODO: reduce filtering code redundancy with sequence and network views (DRY)
+  /**
+   * @callback for {@see AsyncFiltersHandler.Config.data_handler}
+   * Callback  loading representation from server response.
+   * @param {SequenceViewData} data
+   * @param {FiltersData} filters_data
+   */
+  function load_data(data, filters_data)
+  {
+      var base = $table.data('base-url')
+      if(!base)
+      {
+          base = $table.data('url')
+          $table.data('base-url', base)
+      }
+      var url_with_filters = base + '?filters=' + filters_data.query
+      $table.bootstrapTable('refresh', {url: url_with_filters});
+  }
+
+  var initial_widgets_form = $('#filters_form')
+  Widgets.init(initial_widgets_form, function(){});
+
+  var spinner = $('#spinner')
+  var filters_handler = AsyncFiltersHandler();
+
+  filters_handler.init({
+      form: initial_widgets_form,
+      data_handler: load_data,
+      endpoint_url: "{{ url_for('GeneView:check_filters') }}",
+      on_loading_start: function (){
+          $table.addClass('loading');
+          spinner.show();
+      },
+      on_loading_end: function(){
+          $table.removeClass('loading');
+          Widgets.init($('#filters_form'), function(){});
+          spinner.hide();
+      },
+      links_to_update: $('.variable-url')
+  });
+
+  var state_handlers = {
+      filters: filters_handler
+  };
+
+  // handle change in history
+  $(window).on('popstate', function(event) {
+      var state = event.originalEvent.state;
+      if(state)
+      {
+          var handler = state_handlers[state.handler];
+          handler.apply(state.filters_query, true, true)
+      }
+  });
 </script>
 
 

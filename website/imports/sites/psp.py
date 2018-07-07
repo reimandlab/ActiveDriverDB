@@ -34,13 +34,13 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
     source_name = 'PhosphoSitePlus'
     site_types = [
-        'phosphorylation', 'glycosylation', 'acetylation',
-        'ubiquitination', 'methylation'
+        'phosphorylation', 'O-glycosylation', 'glycosylation',
+        'acetylation', 'ubiquitination', 'methylation'
     ]
 
     site_datasets = {
-        'O-GalNAc': 'glycosylation',
-        'O-GlcNAc': 'glycosylation',
+        'O-GalNAc': 'O-glycosylation',
+        'O-GlcNAc': 'O-glycosylation',
         'Acetylation': 'acetylation',
         'Methylation': 'methylation',
         'Phosphorylation': 'phosphorylation',
@@ -152,7 +152,7 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
         sites['psp_ids'] = Series(
             {site.MS_LIT, site.LT_LIT}
             for site in sites.itertuples(index=False)
-        )
+        ).values
         # TODO: it should be possible to retrieve PUB MED ids from from MS_LIT and LT_LIT
         # TODO: (or alternatively link to relevant place on PSP website)
         sites['pub_med_ids'] = None

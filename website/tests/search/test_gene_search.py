@@ -2,7 +2,7 @@ from database import db
 from database_testing import DatabaseTest
 from models import ProteinReferences, UniprotEntry, Protein, Gene
 from search.gene import GeneNameSearch, UniprotSearch, SummarySearch, ProteinNameSearch
-from tests.miscellaneous import mock_proteins_and_genes
+from miscellaneous import mock_proteins_and_genes
 
 
 class TestGeneSearch(DatabaseTest):

@@ -1,4 +1,7 @@
+from typing import TypeVar, Tuple, Type
+
 from sqlalchemy import inspect
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import func
@@ -12,8 +15,10 @@ db = SQLAlchemy()
 bdb = GenomicMappings()
 bdb_refseq = BerkleyHashSet()
 
+Model = TypeVar('Model')
 
-def get_or_create(model, **kwargs):
+
+def get_or_create(model: Type[Model], **kwargs) -> Tuple[Model, bool]:
     """Return a tuple: (object, was_created) for given parameters.
 
     Object will be taken from relational database (from a table corresponding
@@ -64,8 +69,12 @@ def yield_objects(base_query, step_size=1000):
         done = not obj
 
 
+def query_joins(query):
+    return [mapper.class_ for mapper in query._join_entities]
+
+
 def join_unique(query, model):
-    joined_tables = [mapper.class_ for mapper in query._join_entities]
+    joined_tables = query_joins(query)
     if model not in joined_tables:
         return query.join(model)
     return query
@@ -169,7 +178,7 @@ def create_key_model_dict(model, key, lowercase=False, options=None, progress=Tr
         return {k: m for k, m in query}
 
 
-def get_engine(bind_key, app=None):
+def get_engine(bind_key, app=None) -> Engine:
     if not app:
         from flask import current_app
         app = current_app

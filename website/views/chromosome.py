@@ -3,8 +3,8 @@ from flask_classful import FlaskView
 from flask import jsonify
 
 from database import bdb
-from models import Mutation
-from helpers.filters import FilterManager
+from models import source_manager
+from helpers.filters.manager import FilterManager
 from .filters import common_filters
 from ._commons import represent_mutation
 from operator import attrgetter
@@ -16,7 +16,7 @@ def represent_mutations(mutations, filter_manager):
     source_name = filter_manager.get_value('Mutation.sources')
 
     if source_name:
-        get_source_data = attrgetter(Mutation.source_fields[source_name])
+        get_source_data = attrgetter(source_manager.visible_fields[source_name])
 
     get_mimp_data = attrgetter('meta_MIMP')
 
@@ -52,7 +52,7 @@ def represent_mutations(mutations, filter_manager):
         else:
             metadata = {
                 name: field.to_json(data_filter)
-                for name, field in mutation.sources_dict.items()
+                for name, field in mutation.sources_map.items()
             }
 
         mimp = get_mimp_data(mutation)

@@ -1,5 +1,6 @@
 import warnings
 from abc import abstractmethod
+from itertools import chain
 from typing import List, Set
 from warnings import warn
 from collections import Counter
@@ -9,7 +10,7 @@ from pandas import DataFrame, Series
 from sqlalchemy.orm import load_only, joinedload
 from tqdm import tqdm
 
-from database import get_or_create, create_key_model_dict
+from database import db, get_or_create, create_key_model_dict
 from imports import Importer, protein_data as importers
 # those should be moved somewhere else
 from imports.protein_data import get_preferred_gene_isoform
@@ -24,7 +25,7 @@ def show_warning(message, category, filename, lineno, file=None, line=None):
 warnings.showwarning = show_warning
 
 
-def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_groups):
+def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_groups) -> [Set[Kinase], Set[KinaseGroup]]:
     """Create a subset of known kinases and known kinase groups based on given
     list of kinases names ('chosen_kinases_names'). If no kinase or kinase group
     of given name is known, it will be created.
@@ -105,6 +106,10 @@ class SiteImporter(Importer):
         self.novel_site_types = [
             site_type for site_type, new in site_type_objects if new
         ]
+        self.site_types_map = {
+            site_type.name: site_type
+            for site_type, new in site_type_objects
+        }
 
         self.source, _ = get_or_create(SiteSource, name=self.source_name)
 
@@ -197,7 +202,10 @@ class SiteImporter(Importer):
         # additional "sequence" column is needed to map the site across isoforms
         sequences = sites.apply(self.extract_site_surrounding_sequence, axis=1)
         offsets = sites.apply(self.determine_left_offset, axis=1)
-        sites = sites.assign(sequence=Series(sequences), left_sequence_offset=Series(offsets))
+        sites = sites.assign(
+            sequence=Series(sequences).values,
+            left_sequence_offset=Series(offsets).values
+        )
 
         old_len = len(sites)
         sites.dropna(axis=0, inplace=True, subset=['sequence', 'residue'])
@@ -225,6 +233,7 @@ class SiteImporter(Importer):
 
         protein = self.proteins[refseq]
         site_key = (protein.id, position, residue)
+        site_type = self.site_types_map[mod_type]
 
         if site_key in self.known_sites:
             site = self.known_sites[site_key]
@@ -238,7 +247,7 @@ class SiteImporter(Importer):
             self.known_sites[site_key] = site
             created = True
 
-        site.type.add(mod_type)
+        site.types.add(self.site_types_map[mod_type])
         site.sources.add(self.source)
 
         if pubmed_ids:
@@ -252,6 +261,9 @@ class SiteImporter(Importer):
             )
             site.kinases.update(site_kinases)
             site.kinase_groups.update(site_kinase_groups)
+
+            for kinase_or_group in chain(site_kinases, site_kinase_groups):
+                kinase_or_group.is_involved_in.add(site_type)
 
         return site, created
 
@@ -270,12 +282,15 @@ class SiteImporter(Importer):
 
         print('Creating database objects:')
 
-        for site_data in tqdm(sites.itertuples(index=False), total=len(sites)):
+        with db.session.no_autoflush:
 
-            site, new = add_site(*site_data)
+            for site_data in tqdm(sites.itertuples(index=False), total=len(sites)):
 
-            if new:
-                site_objects.append(site)
+                # split into parts and reset known sites?
+                site, new = add_site(*site_data)
+
+                if new:
+                    site_objects.append(site)
 
         return site_objects
 

@@ -1,5 +1,6 @@
 from collections import OrderedDict
 
+from sqlalchemy.orm.exc import NoResultFound
 from models import InheritedMutation, Disease
 from models import ClinicalData
 from helpers.parsers import parse_tsv_file
@@ -83,7 +84,7 @@ class ClinVarImporter(MutationImporter):
 
                 try:
                     if names:
-                        if names[i] not in ('not_specified', 'not provided'):
+                        if names[i] not in ('not_specified', 'not_provided'):
                             names[i] = self._beautify_disease_name(names[i])
                             at_least_one_significant_sub_entry = True
                     if statuses and statuses[i] == 'no_criteria':
@@ -147,22 +148,30 @@ class ClinVarImporter(MutationImporter):
                 )
 
                 for i in range(sub_entries_cnt):
+                    # disease names matching is case insensitive;
+                    # NB: MySQL uses case-insensitive unique constraint by default
                     name = names[i]
+                    key = name.lower()
 
-                    # we don't won't _uninteresting_ data
+                    # we don't want _uninteresting_ data
                     if name in ('not_specified', 'not provided'):
                         continue
 
-                    if name in new_diseases:
-                        disease_id = new_diseases[name]
+                    if key in new_diseases:
+                        disease_id, recorded_name = new_diseases[key]
+                        if recorded_name != name:
+                            print(f'Note: {name} and {recorded_name} diseases were merged')
                     else:
-                        disease, created = get_or_create(Disease, name=name)
-                        if created:
-                            highest_disease_id += 1
-                            new_diseases[name] = highest_disease_id
-                            disease_id = highest_disease_id
-                        else:
+                        try:
+                            disease = Disease.query.filter(Disease.name.ilike(name)).one()
+                            recorded_name = disease.name
                             disease_id = disease.id
+                            if recorded_name != name:
+                                print(f'Note: {name} and {recorded_name} diseases were merged')
+                        except NoResultFound:
+                            highest_disease_id += 1
+                            new_diseases[key] = highest_disease_id, name
+                            disease_id = highest_disease_id
 
                     clinvar_data.append(
                         (
@@ -182,14 +191,14 @@ class ClinVarImporter(MutationImporter):
 
         print('%s duplicates found' % duplicates)
 
-        return clinvar_mutations, clinvar_data, new_diseases.keys()
+        return clinvar_mutations, clinvar_data, new_diseases.values()
 
     def export_details_headers(self):
-        return ['disease']
+        return ['disease', 'significance']
 
     def export_details(self, mutation):
         return [
-            [d.disease_name]
+            [d.disease_name, d.significance]
             for d in mutation.clin_data
         ]
 
@@ -199,7 +208,7 @@ class ClinVarImporter(MutationImporter):
         bulk_orm_insert(
             Disease,
             ('name',),
-            [(disease,) for disease in new_diseases]
+            [(disease,) for pk, disease in new_diseases]
         )
         self.insert_list(clinvar_mutations)
         bulk_orm_insert(
@@ -215,10 +224,9 @@ class ClinVarImporter(MutationImporter):
 
     def restart_autoincrement(self, model):
         assert self.model == model
-        restart_autoincrement(self.model)
-        db.session.commit()
-        restart_autoincrement(ClinicalData)
-        db.session.commit()
+        for model in [self.model, ClinicalData, Disease]:
+            restart_autoincrement(model)
+            db.session.commit()
 
     def raw_delete_all(self, model):
         assert self.model == model

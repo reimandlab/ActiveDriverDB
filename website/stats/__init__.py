@@ -2,6 +2,7 @@ from collections import defaultdict, Counter
 
 from flask import current_app
 
+from .plots import Plots
 from .stats import Statistics
 from .venn import VennDiagrams
 
@@ -35,11 +36,15 @@ def hypermutated_samples(path, threshold=900):
     return hypermutated
 
 
+store_classes = [Statistics, VennDiagrams, Plots]
+
+
 if current_app.config['LOAD_STATS']:
     print('Loading statistics')
-    STATISTICS = Statistics().get_all()
-    VENN_DIAGRAMS = VennDiagrams().get_all()
+    STORES = {
+        counter.__name__: counter().get_all()
+        for counter in store_classes
+    }
 else:
     print('Skipping loading statistics')
-    STATISTICS = ''
-    VENN_DIAGRAMS = ''
+    STORES = defaultdict(dict)

@@ -3,7 +3,7 @@ from argparse import Namespace
 
 from imports.mutations import MutationImportManager
 from database_testing import DatabaseTest
-from models import Protein
+from models import Protein, SiteType
 from models import Cancer
 from models import Gene
 from models import Mutation
@@ -24,11 +24,17 @@ def create_test_models():
     protein.gene.preferred_isoform = protein
 
     MC3Mutation(mutation=mutation, cancer=Cancer(code='CAN'), samples='Sample A,Sample B', count=2)
-    InheritedMutation(mutation=mutation, clin_data=[ClinicalData(disease=Disease(name='Some disease'))])
+    InheritedMutation(mutation=mutation, clin_data=[
+        ClinicalData(disease=Disease(name='Some disease'), sig_code=5),
+        ClinicalData(disease=Disease(name='Other disease'), sig_code=2)
+    ])
 
     protein_kinase = Protein(refseq='NM_0002', gene=Gene(name='OTHERGENE'), sequence='ABCD')
     kinase = Kinase(name='Kinase name', protein=protein_kinase)
-    site = Site(protein=protein, position=1, residue='A', kinases={kinase}, pmid={1, 2}, type={'glycosylation'})
+    site = Site(
+        protein=protein, position=1, residue='A',
+        kinases={kinase}, pmid={1, 2}, types={SiteType(name='glycosylation')}
+    )
     protein.sites = [site]
 
     return locals()
@@ -60,8 +66,9 @@ class TestExport(DatabaseTest):
                 'clinvar',
                 {},
                 [
-                    b'gene\tisoform\tposition\twt_residue\tmut_residue\tdisease\n',
-                    b'SOMEGENE\tNM_0001\t1\tA\tE\tSome disease'
+                    b'gene\tisoform\tposition\twt_residue\tmut_residue\tdisease\tsignificance\n',
+                    b'SOMEGENE\tNM_0001\t1\tA\tE\tSome disease\tPathogenic\n',
+                    b'SOMEGENE\tNM_0001\t1\tA\tE\tOther disease\tBenign'
                 ]
             )
         )
@@ -135,4 +142,28 @@ class TestExport(DatabaseTest):
             assert f.readlines() == [
                 'gene\tposition\tresidue\ttype\tkinase\tpmid\n',
                 'SOMEGENE\t1\tA\tglycosylation\tKinase name\t1,2\n'
+            ]
+
+    def test_ptm_muts_of_gene(self):
+
+        filename = make_named_temp_file()
+
+        with self.app.app_context():
+            from models import clear_cache
+            clear_cache()
+
+            test_models = create_test_models()
+            db.session.add_all(test_models.values())
+
+            from exports.protein_data import ptm_muts_of_gene
+            ptm_muts_of_gene(
+                path_template=filename, mutation_source='mc3',
+                gene='SOMEGENE', site_type='glycosylation', export_samples=True
+            )
+
+        with open(filename) as f:
+            assert f.readlines() == [
+                'gene\tisoform\tposition\twt_residue\tmut_residue\tcancer_type\tsample_id\n',
+                'SOMEGENE\tNM_0001\t1\tA\tE\tCAN\tSample A\n',
+                'SOMEGENE\tNM_0001\t1\tA\tE\tCAN\tSample B\n'
             ]

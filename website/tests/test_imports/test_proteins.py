@@ -103,6 +103,14 @@ class TestImport(DatabaseTest):
         assert p.cds_start == 19282213
         assert p.cds_end == 19286544
 
+        # test genes
+        genes = Gene.query.all()
+        assert len(genes) == 4
+
+        # test strands:
+        assert g.strand is True
+        assert Gene.query.filter_by(name='MUC1').one().strand is False
+
         second_filename = make_named_temp_file(update_data)
 
         with self.app.app_context():

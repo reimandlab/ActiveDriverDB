@@ -1,22 +1,29 @@
 from collections import defaultdict
+from typing import Iterable
 
 from sqlalchemy import func, distinct, case, literal_column, and_
 from tqdm import tqdm
 
 import models
 from database import db
-from models import Mutation, Protein, Site
-from stats import Statistics
+from models import Mutation, Protein, Site, source_manager
 
 
-def count_mutated_sites(site_types=tuple(), model=None, only_primary=False):
+def count_mutated_sites(
+    site_types: Iterable[models.SiteType]=tuple(), model=None,
+    only_primary=False, disordered=None, custom_filter=None
+):
     filters = [
         Mutation.protein_id == Protein.id,
         Site.protein_id == Protein.id,
         Mutation.precomputed_is_ptm
     ]
     for site_type in site_types:
-        filters.append(Site.type.contains(site_type.name))
+        filters.append(models.SiteType.fuzzy_filter(site_type))
+    if custom_filter is not None:
+        filters.append(custom_filter)
+    if disordered is not None:
+        filters.append(Site.in_disordered_region == disordered)
     query = (
         db.session.query(
             func.count(distinct(case(
@@ -38,7 +45,7 @@ def count_mutated_sites(site_types=tuple(), model=None, only_primary=False):
         .join(Mutation, Site.protein_id == Mutation.protein_id)
     )
     if model:
-        query = query.filter(Statistics.get_filter_by_sources([model]))
+        query = query.filter(Mutation.in_sources(model))
     else:
         query = query.filter(Mutation.is_confirmed == True)
 
@@ -49,14 +56,10 @@ def count_mutated_sites(site_types=tuple(), model=None, only_primary=False):
 
 
 def mutation_sources():
-    sources = {}
-
-    for name, source in Mutation.sources_dict.items():
-        if name == 'user':
-            continue
-        sources[name] = Mutation.get_source_model(name)
-
-    return sources
+    return {
+        source.name: source
+        for source in source_manager.confirmed
+    }
 
 
 def source_specific_proteins_with_ptm_mutations():
@@ -111,7 +114,7 @@ def source_specific_nucleotide_mappings():
     for i, model in tqdm(sources_map.items(), total=len(sources_map)):
         query = (
             db.session.query(Mutation.protein_id, Mutation.alt, Mutation.position)
-            .filter(Statistics.get_filter_by_sources([model]))
+            .filter(Mutation.in_sources(model))
             # no need for '.filter(Mutation.is_confirmed==True)'
             # (if it is in source of interest, it is confirmed - we do not count MIMPs here)
             .yield_per(5000)
@@ -169,7 +172,7 @@ def source_specific_mutated_sites():
         count = (
             Mutation.query
             .filter_by(is_confirmed=True, is_ptm_distal=True)
-            .filter(Statistics.get_filter_by_sources([model]))
+            .filter(Mutation.in_sources(model))
             .count()
         )
         muts_in_ptm_sites[name] = count
@@ -178,7 +181,7 @@ def source_specific_mutated_sites():
             Mutation.query
             .filter(
                 and_(
-                    Statistics.get_filter_by_sources([models.MIMPMutation, model]),
+                    Mutation.in_sources(models.MIMPMutation, model),
                     Mutation.is_confirmed,
                 )
             ).count()
@@ -203,10 +206,8 @@ def source_specific_mutated_sites():
 
 def sites_counts():
     counts = {}
-    site_types = ['']  # empty will match all sites
-    site_types.extend(Site.types())
-    for site_type in site_types:
-        count = Site.query.filter(Site.type.contains(site_type)).count()
+    for site_type in models.SiteType.available_types(include_any=True):
+        count = site_type.filter(Site.query).count()
         counts[site_type] = count
     return {'PTM sites': counts}
 

@@ -1,10 +1,13 @@
+matplotlib
+networkx
+obonet
 diskcache
 numpy
 pandas
 sqlalchemy
 beautifulsoup4
 rpy2==2.9.2
-Jinja2==2.9.6
+Jinja2==2.10
 Flask==0.12.2
 Flask-Assets==0.12
 Flask-Classful==0.13.1
@@ -26,3 +29,6 @@ celery
 amqp
 redis
 gprofiler-official
+simplejson
+scipy
+scikit-learn

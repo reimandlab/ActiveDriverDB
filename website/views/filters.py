@@ -1,11 +1,13 @@
-from models import MC3Mutation, DrugGroup, Drug, Disease
+from sqlalchemy import exists
+
+from models import MC3Mutation, DrugGroup, Drug, Disease, source_manager, SiteType, PCAWGMutation
 from models import Cancer
 from models import Mutation
 from models import Site
 from models import The1000GenomesMutation
 from models import ExomeSequencingMutation
 from models import ClinicalData
-from database import has_or_any
+from database import has_or_any, db
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 
@@ -88,14 +90,10 @@ class MutationDetailsFilter(SourceDependentFilter):
         )
 
 
-def source_filter_to_sqlalchemy(source_filter, target):
+def sqlalchemy_filter_from_source_name(source_name):
     """Adapt mutation source filter to SQLAlchemy clause (for use in mutation query)"""
-    return source_to_sa_filter(source_filter.value, target)
-
-
-def source_to_sa_filter(source_name, target=Mutation):
-    field_name = Mutation.source_fields[source_name]
-    field = getattr(target, field_name)
+    field_name = source_manager.visible_fields[source_name]
+    field = getattr(Mutation, field_name)
     return has_or_any(field)
 
 
@@ -107,12 +105,17 @@ def create_dataset_labels():
     # map dataset display names to dataset names
     dataset_labels = {
         dataset.name: dataset.display_name
-        for dataset in Mutation.source_specific_data
+        for dataset in source_manager.all
     }
     # hide user's mutations in dataset choice
     # (there is separate widget for that, shown only if there are any user's datasets)
     dataset_labels['user'] = None
     return dataset_labels
+
+
+class HashableDict(dict):
+    def __hash__(self):
+        return hash(tuple(self.items()))
 
 
 class CachedQueries:
@@ -126,8 +129,18 @@ class CachedQueries:
         """
         self.drug_groups = sorted([group.name for group in DrugGroup.query])
 
-        self.all_disease_names = sorted([disease.name for disease in Disease.query], key=str.lower)
-        self.all_cancer_codes_mc3 = [cancer.code for cancer in Cancer.query]
+        self.all_disease_names_by_id = HashableDict({
+            disease.id: disease.name
+            for disease in sorted(Disease.query, key=lambda disease: disease.name.lower())
+        })
+        self.all_cancer_codes_mc3 = [
+            cancer.code for cancer in Cancer.query
+            if db.session.query(exists().where(MC3Mutation.cancer == cancer)).scalar()
+        ]
+        self.all_cancer_codes_pcawg = [
+            cancer.code for cancer in Cancer.query
+            if db.session.query(exists().where(PCAWGMutation.cancer == cancer)).scalar()
+        ]
         self.all_cancer_names = {
             cancer.code: '%s (%s)' % (cancer.name, cancer.code)
             for cancer in Cancer.query
@@ -148,9 +161,9 @@ def common_filters(
     return [
         Filter(
             Mutation, 'sources', comparators=['in'],
-            choices=list(Mutation.source_fields.keys()),
+            choices=list(source_manager.visible_fields.keys()),
             default=default_source, nullable=source_nullable,
-            as_sqlalchemy=source_filter_to_sqlalchemy
+            as_sqlalchemy=sqlalchemy_filter_from_source_name
         ),
         Filter(
             UserMutations, 'sources', comparators=['in'],
@@ -158,8 +171,7 @@ def common_filters(
             default=None, nullable=True
         ),
         Filter(
-            Mutation, 'is_ptm', comparators=['eq'],
-            is_attribute_a_method=True
+            Mutation, 'is_ptm', comparators=['eq']
         ),
         Filter(
             Drug, 'groups.name', comparators=['in'],
@@ -170,9 +182,14 @@ def common_filters(
             as_sqlalchemy=True
         ),
         Filter(
-            Site, 'type', comparators=['in'],
-            choices=Site.types(),
-            as_sqlalchemy=True
+            Site, 'types', comparators=['in'],
+            choices={
+                site_type.name: site_type
+                for site_type in SiteType.available_types()
+            },
+            custom_comparators={'in': SiteType.fuzzy_comparator},
+            as_sqlalchemy=SiteType.fuzzy_filter,
+            as_sqlalchemy_joins=[Site.types]
         )
     ] + source_dependent_filters(protein)
 
@@ -181,10 +198,12 @@ def source_dependent_filters(protein=None):
 
     if protein:
         cancer_codes_mc3 = protein.cancer_codes(MC3Mutation)
-        disease_names = protein.disease_names
+        cancer_codes_pcawg = protein.cancer_codes(PCAWGMutation)
+        disease_names_by_id = protein.disease_names_by_id
     else:
         cancer_codes_mc3 = cached_queries.all_cancer_codes_mc3
-        disease_names = cached_queries.all_disease_names
+        cancer_codes_pcawg = cached_queries.all_cancer_codes_pcawg
+        disease_names_by_id = cached_queries.all_disease_names_by_id
 
     # Python 3.4: cast keys() to list
     populations_1kg = list(The1000GenomesMutation.populations.values())
@@ -201,6 +220,14 @@ def source_dependent_filters(protein=None):
             multiple='any',
         ),
         MutationDetailsFilter(
+            PCAWGMutation, 'pcawg_cancer_code',
+            comparators=['in'],
+            choices=cached_queries.all_cancer_codes_pcawg,
+            default=cancer_codes_pcawg,
+            source='PCAWG',
+            multiple='any',
+        ),
+        MutationDetailsFilter(
             The1000GenomesMutation, 'populations_1KG',
             comparators=['in'],
             choices=populations_1kg,
@@ -214,7 +241,7 @@ def source_dependent_filters(protein=None):
             choices=populations_esp,
             default=populations_esp,
             source='ESP6500',
-            multiple='any',
+            multiple='any'
         ),
         MutationDetailsFilter(
             ClinicalData, 'sig_code',
@@ -224,19 +251,51 @@ def source_dependent_filters(protein=None):
             source='ClinVar',
             multiple='any',
         ),
+        # We use disease id by default (instead of disease name)
+        # because the names often include some characters or
+        # symbols which make escaping and encoding tricky and
+        # might cause server to crash; also querying a lot of
+        # diseases at a time caused the url queries to exceed
+        # limits back then when the diseases where filtered by
+        # names and not identifiers.
+        MutationDetailsFilter(
+            ClinicalData, 'disease_id',
+            comparators=['in'],
+            # casting to list() proved to be necessary
+            # as we would otherwise get wrong result of
+            # comparison: f.value != f.default
+            # (due to types difference)
+            choices=list(disease_names_by_id.keys()),
+            default=list(disease_names_by_id.keys()),
+            source='ClinVar',
+            multiple='any',
+        ),
+        # Disease_name is not visible from the user interface,
+        # but was added to provide backward compatibility with
+        # 1.0 version of ActiveDriverDB and enable creation of
+        # API queries knowing only the disease names (not our
+        # internal, volatile disease identifiers)
         MutationDetailsFilter(
             ClinicalData, 'disease_name',
             comparators=['in'],
-            choices=disease_names,
-            default=disease_names,
+            # casting to list(): see note in disease_id
+            choices=list(disease_names_by_id.values()),
+            default=list(disease_names_by_id.values()),
             source='ClinVar',
             multiple='any',
-        )
+        ),
     ]
 
 
 def create_dataset_specific_widgets(protein, filters_by_id, population_widgets=True):
-    cancer_codes_mc3 = protein.cancer_codes(MC3Mutation) if protein else []
+    if protein:
+        cancer_codes_mc3 = protein.cancer_codes(MC3Mutation)
+        cancer_codes_pcawg = protein.cancer_codes(PCAWGMutation)
+        disease_names_by_id = protein.disease_names_by_id
+    else:
+        cancer_codes_mc3 = [] #cached_queries.all_cancer_codes_mc3
+        cancer_codes_pcawg = []
+        disease_names_by_id = cached_queries.all_disease_names_by_id
 
     widgets = [
         FilterWidget(
@@ -247,15 +306,22 @@ def create_dataset_specific_widgets(protein, filters_by_id, population_widgets=T
             all_selected_label='Any cancer type'
         ),
         FilterWidget(
+            'Cancer type', 'checkbox_multiple',
+            filter=filters_by_id['Mutation.pcawg_cancer_code'],
+            choices=cancer_codes_pcawg,
+            all_selected_label='Any cancer type'
+        ),
+        FilterWidget(
             'Clinical significance', 'checkbox_multiple',
             filter=filters_by_id['Mutation.sig_code'],
             all_selected_label='Any clinical significance class',
             labels=ClinicalData.significance_codes.values()
         ),
         FilterWidget(
-            'Disease name', 'checkbox_multiple',
-            filter=filters_by_id['Mutation.disease_name'],
-            all_selected_label='Any disease name'
+            'Disease', 'checkbox_multiple',
+            filter=filters_by_id['Mutation.disease_id'],
+            all_selected_label='Any disease',
+            labels=disease_names_by_id
         )
     ]
     if population_widgets:
@@ -300,7 +366,7 @@ def create_widgets(protein, filters_by_id, custom_datasets_names=None):
         ),
         'ptm_type': FilterWidget(
             'Type of PTM site', 'radio',
-            filter=filters_by_id['Site.type'],
+            filter=filters_by_id['Site.types'],
             disabled_label='Any site'
         ),
         'other': [FilterWidget(

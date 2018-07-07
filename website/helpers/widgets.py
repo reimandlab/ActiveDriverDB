@@ -1,4 +1,7 @@
-from helpers.filters import quote_if_needed, is_iterable_but_not_str
+from collections import Hashable
+
+from helpers.utilities import is_iterable_but_not_str
+from helpers.filters.manager import quote_if_needed
 
 
 def quoted_value(raw_value):
@@ -42,12 +45,7 @@ class Widget:
             data = []
         self.data = data
         self._value = value
-        if isinstance(labels, dict):
-            labels = [
-                labels[datum] for datum in data
-                if labels[datum] is not None
-            ]
-        if labels and data and len(labels) > len(data):
+        if labels and data and len(labels) > len(data) and not isinstance(labels, dict):
             raise ValueError(
                 'Number of labels has to be lower '
                 'or equal the data elements count.'
@@ -72,9 +70,18 @@ class Widget:
     @property
     def items(self):
         data = self.data
+
         if data:
             data = [quote_if_needed(d) for d in data]
-        return zip(data, self.labels)
+
+        if isinstance(self.labels, dict):
+            for datum in data:
+                label = self.labels[datum]
+                if label is not None:
+                    yield datum, label
+        else:
+            for datum, label in zip(data, self.labels):
+                yield datum, label
 
     @property
     def all_active(self):
@@ -87,7 +94,7 @@ class Widget:
 
     @property
     def value(self):
-        cacheable_value = tuple(self._value) if type(self._value) is list else self._value
+        cacheable_value = tuple(self._value) if not isinstance(self._value, Hashable) else self._value
 
         if cacheable_value in self._quote_cache:
             return self._quote_cache[cacheable_value]

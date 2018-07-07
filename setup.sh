@@ -97,3 +97,34 @@ sudo apt-get install r-base
 cd website
 git clone https://github.com/krassowski/ActiveDriver
 cd ..
+
+
+# ActivePathways are in private repository
+# git clone https://github.com/reimandlab/activeDriverPW.git
+# R -e 'install.packages(c("metap", "data.table"), repos = "http://cran.us.r-project.org")'
+# R -e 'install.packages("activeDriverPW", repos=NULL)'
+
+#sudo apt-get install r-bioc-biocgenerics r-bioc-genomicranges r-bioc-biostrings
+git clone https://github.com/reimandlab/rmimp.git
+cd rmimp
+git checkout refactored
+cd ..
+sudo R -e 'source("https://bioconductor.org/biocLite.R"); biocLite(c("S4Vectors", "GenomicRanges", "Biostrings", "BiocGenerics"))'
+#sudo R -e 'install.packages("devtools", repos = "http://cran.us.r-project.org")'
+#sudo R -e 'devtools::install("rmimp", dependencies = TRUE)'
+
+sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
+sudo R -e 'install.packages("rmimp", repos=NULL)'
+
+# sudo apt-get install libcairo2-dev - needed for svglite
+sudo R -e 'install.packages(c("ggseqlogo", "ggplot2", "svglite"), repos = "http://cran.us.r-project.org")'
+
+# needed only if using sqlite3 for tests
+sudo apt-get install sqlite3-pcre
+
+# pip3 install pygraphviz
+# on ubuntu:
+# pip3 install pygraphviz --install-option="--include-path=/usr/include/graphviz" --install-option="--library-path=/usr/lib/graphviz/"
+# on debian
+# sudo apt-get install libcgraph6 graphviz graphviz-dev
+sudo pip install git+https://github.com/krassowski/pygraphviz

@@ -8,7 +8,7 @@ from database import db
 from database_testing import DatabaseTest
 from imports.sites.psp import PhosphoSitePlusImporter
 from miscellaneous import make_named_gz_file, TestCaseData, abstract_property
-from models import Protein, Site
+from models import Protein, Site, SiteType
 
 
 class PSPCaseData(TestCaseData):
@@ -169,14 +169,14 @@ class TestImport(DatabaseTest):
             sites_by_pos = {site.position: site for site in sites}
 
             assert sites_by_pos[105].residue == sites_by_pos[109].residue == 'T'
-            assert sites_by_pos[105].type == {'glycosylation'}
+            assert sites_by_pos[105].types_names == {'O-glycosylation'}
 
         # check re-loading
         db.session.add_all(sites)
         db.session.commit()
 
         site = Site.query.filter_by(position=105).one()
-        assert site.type == {'glycosylation'}
+        assert site.types_names == {'O-glycosylation'}
 
     def test_edge_cases(self):
 
@@ -190,6 +190,7 @@ class TestImport(DatabaseTest):
         with initialized_importer(EdgeSitesCase, 'My_test') as importer:
 
             importer.site_datasets['My_test'] = 'mixed_type'
+            importer.site_types_map['mixed_type'] = SiteType(name='mixed_type')
 
             sites = importer.load_sites(site_datasets=['My_test'])
 
@@ -216,5 +217,5 @@ class TestImport(DatabaseTest):
             assert len(sites) == 1
 
             site = sites[0]
-            assert site.type == {'phosphorylation'}
+            assert site.types_names == {'phosphorylation'}
             assert {kinase.name for kinase in site.kinases} == {'SRC', 'ABL1', 'FYN'}

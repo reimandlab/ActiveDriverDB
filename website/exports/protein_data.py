@@ -1,10 +1,15 @@
 import os
 from collections import OrderedDict
 
+from sqlalchemy import and_
 from tqdm import tqdm
 
 from database import fast_count, yield_objects
-from models import Gene, InheritedMutation, MC3Mutation, ExomeSequencingMutation, The1000GenomesMutation
+from imports import MutationImportManager
+from models import (
+    Gene, InheritedMutation, MC3Mutation, ExomeSequencingMutation, The1000GenomesMutation, Mutation,
+    SiteType,
+)
 from models import Site
 from models import Protein
 from helpers.commands import register_decorator
@@ -79,7 +84,7 @@ def sites_ac(f):
             continue
         data = [
             site.protein.gene.name, str(site.position), site.residue,
-            ','.join(site.type),
+            ','.join(site.types_names),
             ','.join([k.name for k in site.kinases]),
             ','.join(map(str, site.pmid))
         ]
@@ -130,7 +135,6 @@ def mutations_affecting_ptm_sites(f, sources):
 
     f.write('\t'.join(header) + '\n')
     for source in sources:
-        # mutation_details_model = Mutation.get_source_model(source)
         mutation_details_model = source
 
         for mut_details in tqdm(yield_objects(mutation_details_model.query), total=fast_count(mutation_details_model.query)):
@@ -165,3 +169,30 @@ def clinvar_muts_affecting_ptm_sites(path='exported/clinvar_mutations_affecting_
 @exporter
 def population_muts_affecting_ptm_sites(path='exported/population_mutations_affecting_ptm_sites.tsv'):
     return mutations_affecting_ptm_sites([ExomeSequencingMutation, The1000GenomesMutation], path=path)
+
+
+@exporter
+def ptm_muts_of_gene(
+    path_template='exported/{site_type}_muts_of_{gene}_-_{protein}.tsv', gene='EGFR',
+    site_type='glycosylation', mutation_source='mc3', to_csv=True, **kwargs
+):
+
+    manager = MutationImportManager()
+    importer_class = manager.importers[mutation_source]
+    importer = importer_class(**kwargs)
+
+    site_type = SiteType.query.filter_by(name=site_type).one()
+    gene = Gene.query.filter_by(name=gene).one()
+    protein = gene.preferred_isoform
+
+    mutations = importer.export_to_df(
+        mutation_filter=and_(
+            Mutation.affected_sites.any(SiteType.fuzzy_filter(site_type)),
+            Mutation.protein_id == protein.id
+        ),
+        protein_filter=Protein.id == protein.id
+    )
+    path = path_template.format(protein=protein.refseq, gene=gene.name, site_type=site_type.name)
+    if to_csv:
+        mutations.to_csv(path, sep='\t', index=False)
+    return mutations

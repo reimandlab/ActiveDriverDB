@@ -27,9 +27,9 @@ Affected PTM site{{ 's' if mutation.sites | length > 1 }}:
     {% endif %}
     <ul>
 
-    {% if source == 'TCGA' or source == 'MC3' %}
+    {% if source == 'TCGA' or source == 'MC3' or source == 'PCAWG' %}
         <li> TOTAL ({{ mutation.value }})
-        {% for entry in metadata['TCGA metadata'] | sort(true, false, 'Value') %}
+        {% for entry in metadata['Cancers'] | sort(true, false, 'Value') %}
             <li> {{ entry.Cancer }} ({{ entry.Value }})
         {% endfor %}
     {% elif source == 'MIMP' %}
@@ -55,9 +55,21 @@ Affected PTM site{{ 's' if mutation.sites | length > 1 }}:
             {% endif %}
         {% endfor %}
     {% endif %}
-
     </ul>
 {% endfor %}
+
+{% if mutation.affected_motifs %}
+    Affected motifs:
+    <ul>
+    {% for motif in mutation.affected_motifs %}
+        <li> {{ motif.name }}
+        {% set motif_path = "/" + motif.pseudo_logo_path %}
+        {% set position = motif.position %}
+        {% set effect = 'loss' %}
+        {% include 'motif_image.njk' %}
+    {% endfor %}
+    </ul>
+{% endif %}
 
 {% set row_id = mutation.pos + mutation.alt %}
 

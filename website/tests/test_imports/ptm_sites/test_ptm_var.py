@@ -30,6 +30,6 @@ class TestImport(DatabaseTest):
         sites = {site.position: site for site in sites}
 
         assert sites[6].residue == 'K'
-        assert sites[6].type == {'ubiquitination'}
+        assert sites[6].types_names == {'ubiquitination'}
 
         assert {kinase.name for kinase in sites[204].kinases} == {'JAK2', 'LCK'}

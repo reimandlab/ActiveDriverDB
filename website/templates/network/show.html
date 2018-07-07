@@ -342,6 +342,8 @@
     );
 
     var short_url = ShortURL();
+    var exporter = Export();
+
     short_url.init(
         "{{ url_for('ShortAddress:get_shorthand_for') }}",
         "{{ url_for('ShortAddress:visit_shorthand', shorthand='<shorthand>', _external=True) }}"
@@ -355,7 +357,7 @@
     {% endif %}
 
     {% assets "css_network" %}
-    Export.init(
+    exporter.init(
         plot,
         'network_view:{{ protein.gene.name }}-{{ protein.refseq }}-{{ filters.url_string(expanded=True) }}',
         '{{ ASSET_URL }}'
@@ -392,7 +394,7 @@
 
         short_url.reset();
 
-        Export.update_title(
+        exporter.update_title(
             format(
                 export_title_pattern,
                 {
@@ -403,7 +405,7 @@
             )
         );
 
-        Export.set_custom_exporters(
+        exporter.set_custom_exporters(
             [
                 {
                     name: 'TSV file',
@@ -418,7 +420,7 @@
             ]
         );
 
-        var site_type = filters_handler.value('Site.type')
+        var site_type = filters_handler.value('Site.types')
         if(!data.network.kinases.length && !data.network.kinase_groups.length)
         {
             $('.temporary-alert').remove()
