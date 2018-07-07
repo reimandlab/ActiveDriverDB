@@ -40,17 +40,19 @@ def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_grou
         # handle kinases group
         if name.endswith('_GROUP'):
             name = name[:-6]
-            if name not in known_kinase_groups:
-                known_kinase_groups[name] = KinaseGroup(name=name)
-            groups.add(known_kinase_groups[name])
+            key = name.lower()
+            if key not in known_kinase_groups:
+                known_kinase_groups[key] = KinaseGroup(name=name)
+            groups.add(known_kinase_groups[key])
         # if it's not a group, it surely is a kinase:
         else:
-            if name not in known_kinases:
-                known_kinases[name] = Kinase(
+            key = name.lower()
+            if key not in known_kinases:
+                known_kinases[key] = Kinase(
                     name=name,
                     protein=get_preferred_gene_isoform(name)
                 )
-            kinases.add(known_kinases[name])
+            kinases.add(known_kinases[key])
 
     return kinases, groups
 
@@ -79,8 +81,8 @@ class SiteImporter(Importer):
         self.issues_counter = Counter()
         # caching proteins and kinases allows for much faster
         # import later on, though it takes some time to cache
-        self.known_kinases = create_key_model_dict(Kinase, 'name')
-        self.known_groups = create_key_model_dict(KinaseGroup, 'name')
+        self.known_kinases = create_key_model_dict(Kinase, 'name', lowercase=True)
+        self.known_groups = create_key_model_dict(KinaseGroup, 'name', lowercase=True)
         self.known_sites = create_key_model_dict(
             Site, ['protein_id', 'position', 'residue'],
             options=(
