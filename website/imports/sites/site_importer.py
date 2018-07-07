@@ -10,7 +10,7 @@ from pandas import DataFrame, Series
 from sqlalchemy.orm import load_only, joinedload
 from tqdm import tqdm
 
-from database import get_or_create, create_key_model_dict
+from database import db, get_or_create, create_key_model_dict
 from imports import Importer, protein_data as importers
 # those should be moved somewhere else
 from imports.protein_data import get_preferred_gene_isoform
@@ -282,12 +282,15 @@ class SiteImporter(Importer):
 
         print('Creating database objects:')
 
-        for site_data in tqdm(sites.itertuples(index=False), total=len(sites)):
+        with db.session.no_autoflush:
 
-            site, new = add_site(*site_data)
+            for site_data in tqdm(sites.itertuples(index=False), total=len(sites)):
 
-            if new:
-                site_objects.append(site)
+                # split into parts and reset known sites?
+                site, new = add_site(*site_data)
+
+                if new:
+                    site_objects.append(site)
 
         return site_objects
 
