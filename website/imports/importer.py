@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod
 from sqlalchemy.util import classproperty
 
 from helpers.patterns import registry_metaclass_factory
+from helpers.utilities import to_snake_case
 
 AbstractRegistry = registry_metaclass_factory(ABCMeta)
 
@@ -11,13 +12,16 @@ class ImporterError(Exception):
     pass
 
 
-class Importer(metaclass=AbstractRegistry):
+class AbstractImporter:
 
     # TODO: what about fields like "parsed_count" and "results"?
 
     @classproperty
     def name(self):
-        return self.__name__
+        name = self.__name__
+        if name.endswith('Importer'):
+            name = name[:-8]
+        return to_snake_case(name)
 
     @abstractmethod
     def load(self):
@@ -32,16 +36,26 @@ class Importer(metaclass=AbstractRegistry):
     loaded = False
 
 
-def importer(func):
+class BioImporter(AbstractImporter, metaclass=AbstractRegistry):
+    pass
 
-    class FunctionImporter(Importer):
 
-        def load(self, *args, **kwargs):
-            return func(*args, **kwargs)
+class CMSImporter(AbstractImporter, metaclass=AbstractRegistry):
+    pass
 
-    FunctionImporter.__name__ = func.__name__
 
-    return FunctionImporter().load
+def create_simple_importer(importer_abstract_class):
+    def importer(func):
+
+        class FunctionImporter(importer_abstract_class):
+
+            def load(self, *args, **kwargs):
+                return func(*args, **kwargs)
+
+        FunctionImporter.__name__ = func.__name__
+
+        return FunctionImporter().load
+    return importer
 
 
 # TODO: idea for future: class ModelImporter(Importer):

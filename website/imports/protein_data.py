@@ -1,13 +1,13 @@
 import gzip
 from collections import defaultdict, namedtuple
 from tqdm import tqdm
-from database import db, yield_objects, create_key_model_dict
+from database import db, create_key_model_dict
 from database import get_or_create
 from helpers.bioinf import aa_symbols
 from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
-from imports.importer import importer
+from imports.importer import create_simple_importer, BioImporter
 from models import (
     Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType, SiteType,
     SiteMotif,
@@ -19,7 +19,6 @@ from models import Kinase
 from models import KinaseGroup
 from models import Protein
 from models import Pathway
-from models import BadWord
 from models import GeneList
 from models import GeneListEntry
 
@@ -36,6 +35,9 @@ def get_proteins(cached_proteins={}, reload_cache=False):
         for protein in Protein.query:
             cached_proteins[protein.refseq] = protein
     return cached_proteins
+
+
+importer = create_simple_importer(BioImporter)
 
 
 @importer
@@ -1103,22 +1105,6 @@ def pathways(path='data/hsapiens.pathways.NAME.gmt'):
 
 
 @importer
-def bad_words(path='data/bad-words.txt'):
-
-    list_of_profanities = []
-    parse_text_file(
-        path,
-        list_of_profanities.append,
-        file_opener=lambda name: open(name, encoding='utf-8')
-    )
-    bad_words = [
-        BadWord(word=word)
-        for word in list_of_profanities
-    ]
-    return bad_words
-
-
-@importer
 def precompute_ptm_mutations():
     print('Counting mutations...')
     total = Mutation.query.filter_by(is_confirmed=True).count()
@@ -1138,7 +1124,7 @@ def drugbank(path='data/drugbank/drugbank.tsv'):
 
     drugs = set()
 
-    # in case we need to query drugbank, it's better to keep names comapt.
+    # in case we need to query drugbank, it's better to keep names compat.
     drug_type_map = {
         'BiotechDrug': 'biotech',
         'SmallMoleculeDrug': 'small molecule'

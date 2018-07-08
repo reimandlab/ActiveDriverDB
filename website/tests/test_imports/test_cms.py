@@ -1,4 +1,4 @@
-from imports.protein_data import bad_words as load_bad_words     # TODO Move this out of imports.protein_data
+from imports.cms import BadWordsImporter
 
 
 def test_cms(tmpdir):
@@ -9,7 +9,8 @@ def test_cms(tmpdir):
     ]
     temp_file = tmpdir.join('some_bad_words.txt')
     temp_file.write('\n'.join(words))
-    bad_words = load_bad_words(str(temp_file))
+    importer = BadWordsImporter()
+    bad_words = importer.load(str(temp_file))
 
     assert len(bad_words) == 3
 

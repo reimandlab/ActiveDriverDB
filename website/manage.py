@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import argparse
-from getpass import getpass
 from typing import Mapping
 
 from flask import current_app
-from sqlalchemy.exc import IntegrityError, OperationalError
+from sqlalchemy.exc import OperationalError
 
 from app import create_app
 from database import bdb
@@ -12,20 +11,19 @@ from database import bdb_refseq
 from database import db
 from database.manage import remove_model, reset_relational_db
 from database.migrate import basic_auto_migrate_relational_db
-from exceptions import ValidationError
 from exports.protein_data import EXPORTERS
 from helpers.commands import CommandTarget
 from helpers.commands import argument
 from helpers.commands import argument_parameters
 from helpers.commands import command
 from helpers.commands import create_command_subparsers
-from imports import import_all, Importer
+from imports import import_all, ImportManager
+from imports.importer import BioImporter, CMSImporter
 from imports.mappings import import_aminoacid_mutation_refseq_mappings
 from imports.mappings import import_genome_proteome_mappings
 from imports.mutations import MutationImportManager, MutationImporter
 from imports.mutations import get_proteins
-from models import Page, Model
-from models import User
+from models import Model
 
 muts_import_manager = MutationImportManager()
 database_binds = ('bio', 'cms')
@@ -65,93 +63,10 @@ def get_all_models(module_name='bio') -> Mapping:
     return models
 
 
-class CMS(CommandTarget):
+class ImportersMixin:
 
-    description = 'should Content Management System database be {command}ed'
-
-    @command
-    def load(args):
-        content = """
-        <ul>
-            <li><a href="/search/proteins">search for a protein</a>
-            <li><a href="/search/mutations">search for mutations</a>
-        </ul>
-        """
-        main_page = Page(
-            content=content,
-            title='Visualisation Framework for Genome Mutations',
-            address='index'
-        )
-        db.session.add(main_page)
-        print('Index page created')
-        print('Creating root user account')
-
-        correct = False
-
-        while not correct:
-            try:
-                email = input('Please type root email: ')
-                password = getpass(
-                    'Please type root password (you will not see characters '
-                    'you type due to security reasons): '
-                )
-                root = User(email, password, access_level=10)
-                root.is_verified = True
-                correct = True
-            except ValidationError as e:
-                print('Root credentials are incorrect: ', e.message)
-                print('Please, try to use something different or more secure:')
-            except IntegrityError:
-                db.session.rollback()
-                print(
-                    'IntegrityError: either a user with this email already '
-                    'exists or there is a serious problem with the database. '
-                    'Try to use a different email address'
-                )
-
-        db.session.add(root)
-        db.session.commit()
-        print('Root user with email', email, 'created')
-
-        print('Root user account created')
-
-    @command
-    def remove(args):
-        reset_relational_db(current_app, bind='cms')
-
-
-PROTEIN_IMPORTERS = {
-    importer.name: importer
-    for importer in Importer.registry
-    if importer not in MutationImporter.subclassess
-}
-
-
-class ProteinRelated(CommandTarget):
-
-    description = (
-        'should chosen by the User part of biological database'
-        'be {command}ed'
-    )
-
-    @command
-    def load_all(args):
-        import_all()
-
-    @command
-    def load(args):
-        data_importers = PROTEIN_IMPORTERS
-        for importer_name in args.importers:
-            importer = data_importers[importer_name]()
-            print('Running {name}:'.format(name=importer_name))
-            results = importer.load()
-            if results:
-                db.session.add_all(results)
-            db.session.commit()
-
-    @load.argument
-    def importers():
-        data_importers = PROTEIN_IMPORTERS
+    @staticmethod
+    def importers_choice(data_importers):
         return argument_parameters(
             '-i',
             '--importers',
@@ -169,8 +84,43 @@ class ProteinRelated(CommandTarget):
             default=data_importers,
         )
 
+
+class CMS(CommandTarget, ImportersMixin):
+
+    import_manager = ImportManager(CMSImporter)
+    description = 'should Content Management System database be {command}ed'
+
     @command
-    def export(args):
+    def load(self, args):
+        self.import_manager.import_selected(args.importers)
+
+    @load.argument
+    def importers(self):
+        return self.importers_choice(self.import_manager.importers_by_name)
+
+    @command
+    def remove(self, args):
+        reset_relational_db(current_app, bind='cms')
+
+
+class ProteinRelated(CommandTarget, ImportersMixin):
+
+    import_manager = ImportManager(BioImporter, ignore=MutationImporter.subclassess)
+    description = (
+        'should chosen by the User part of biological database'
+        'be {command}ed'
+    )
+
+    @command
+    def load(self, args):
+        self.import_manager.import_selected(args.importers)
+
+    @load.argument
+    def importers(self):
+        return self.importers_choice(self.import_manager.importers_by_name)
+
+    @command
+    def export(self, args):
         exporters = EXPORTERS
         if args.paths and len(args.paths) != len(args.exporters):
             print('Export paths should be given for every exported file, no less, no more.')
@@ -181,10 +131,10 @@ class ProteinRelated(CommandTarget):
             if args.paths:
                 kwargs['path'] = args.paths[i]
             out_file = exporter(**kwargs)
-            print('Exported %s to %s' % (name, out_file))
+            print(f'Exported {name} to {out_file}')
 
     @export.argument
-    def exporters():
+    def exporters(self):
         data_exporters = EXPORTERS
         return argument_parameters(
             '-e',
@@ -201,7 +151,7 @@ class ProteinRelated(CommandTarget):
         )
 
     @export.argument
-    def paths():
+    def paths(self):
         return argument_parameters(
             '--paths',
             nargs='*',
@@ -210,11 +160,11 @@ class ProteinRelated(CommandTarget):
         )
 
     @command
-    def remove_all(args):
+    def remove_all(self, args):
         reset_relational_db(current_app, bind='bio')
 
     @command
-    def remove(args):
+    def remove(self, args):
         models = get_all_models('bio')
         to_remove = args.models
 
@@ -229,7 +179,7 @@ class ProteinRelated(CommandTarget):
             db.session.commit()
 
     @remove.argument
-    def all():
+    def all(self):
         return argument_parameters(
             '--all', '-a',
             action='store_true',
@@ -237,7 +187,7 @@ class ProteinRelated(CommandTarget):
         )
 
     @remove.argument
-    def models():
+    def models(self):
 
         models = get_all_models('bio')
 
@@ -259,8 +209,8 @@ class Mappings(CommandTarget):
     description = 'should mappings (DNA -> protein) be {command}ed'
 
     @command
-    def load(args):
-        print('Importing %s mappings' % (args.restrict_to or 'all'))
+    def load(self, args):
+        print(f'Importing {args.restrict_to or "all"} mappings')
         proteins = get_proteins()
 
         if args.restrict_to != 'aminoacid_refseq':
@@ -269,7 +219,7 @@ class Mappings(CommandTarget):
             import_aminoacid_mutation_refseq_mappings(proteins, bdb_dir=args.path)
 
     @load.argument
-    def restrict_to():
+    def restrict_to(self):
         return argument_parameters(
             '--restrict_to', '-r',
             default=None,
@@ -278,7 +228,7 @@ class Mappings(CommandTarget):
         )
 
     @load.argument
-    def path():
+    def path(self):
         return argument_parameters(
             '--path',
             type=str,
@@ -287,7 +237,7 @@ class Mappings(CommandTarget):
         )
 
     @command
-    def remove(args):
+    def remove(self, args):
         print('Removing mappings database...')
         bdb.reset()
         bdb_refseq.reset()
@@ -309,23 +259,23 @@ class Mutations(CommandTarget):
         )
 
     @command
-    def load(args):
-        Mutations.action('load', args)
+    def load(self, args):
+        self.action('load', args)
 
     @command
-    def remove(args):
-        Mutations.action('remove', args)
+    def remove(self, args):
+        self.action('remove', args)
 
     @command
-    def export(args):
-        Mutations.action('export', args)
+    def export(self, args):
+        self.action('export', args)
 
     @command
-    def update(args):
-        Mutations.action('update', args)
+    def update(self, args):
+        self.action('update', args)
 
     @argument
-    def sources():
+    def sources(self):
         mutation_importers = muts_import_manager.names
 
         return argument_parameters(
@@ -344,7 +294,7 @@ class Mutations(CommandTarget):
         )
 
     @export.argument
-    def only_primary_isoforms():
+    def only_primary_isoforms(self):
         return argument_parameters(
             '-o',
             '--only_primary_isoforms',
@@ -358,18 +308,16 @@ class All(CommandTarget):
     description = 'should everything be {command}ed'
 
     @command
-    def load(args):
-        ProteinRelated.load_all(args)
-        Mutations.load(argparse.Namespace(sources='__all__'))
-        Mappings.load(args)
-        CMS.load(args)
+    def load(self, args):
+        import_all()
+        Mappings().load(args)
 
     @command
-    def remove(args):
-        ProteinRelated.remove_all(args)
-        Mutations.remove(argparse.Namespace(sources='__all__'))
-        Mappings.remove(args)
-        CMS.remove(args)
+    def remove(self, args):
+        ProteinRelated().remove_all(args)
+        Mutations().remove(argparse.Namespace(sources='__all__'))
+        Mappings().remove(args)
+        CMS().remove(args)
 
 
 def new_subparser(subparsers, name, func, **kwargs):
@@ -383,7 +331,7 @@ def run_shell(args):
     app = create_app(config_override=CONFIG)
     with app.app_context():
         if args.command:
-            print('Executing supplied command: "%s"' % args.command)
+            print(f'Executing supplied command: "{args.command}"')
             exec(args.command)
 
         print('You can access current application using "app" variable.')
@@ -502,5 +450,5 @@ def run_manage(parsed_args, app=None):
 if __name__ == '__main__':
     parser = create_parser()
 
-    args = parser.parse_args()
-    run_manage(args)
+    arguments = parser.parse_args()
+    run_manage(arguments)

@@ -102,7 +102,7 @@ class TestExport(DatabaseTest):
                 do_export(filename)
             else:
                 namespace = Namespace(exporters=['site_specific_network_of_kinases_and_targets'], paths=[filename])
-                ProteinRelated.export(namespace)
+                ProteinRelated().export(namespace)
 
         with open(filename) as f:
             assert f.readlines() == [
@@ -119,7 +119,7 @@ class TestExport(DatabaseTest):
             db.session.add_all(test_models.values())
 
             namespace = Namespace(exporters=['mc3_muts_affecting_ptm_sites'], paths=[filename])
-            ProteinRelated.export(namespace)
+            ProteinRelated().export(namespace)
 
         with open(filename) as f:
             assert f.readlines() == [
@@ -136,7 +136,7 @@ class TestExport(DatabaseTest):
             db.session.add_all(test_models.values())
 
             namespace = Namespace(exporters=['sites_ac'], paths=[filename])
-            ProteinRelated.export(namespace)
+            ProteinRelated().export(namespace)
 
         with open(filename) as f:
             assert f.readlines() == [

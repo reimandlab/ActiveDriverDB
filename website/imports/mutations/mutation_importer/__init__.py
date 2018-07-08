@@ -10,15 +10,15 @@ from database.bulk import bulk_orm_insert, restart_autoincrement
 from database.manage import raw_delete_all, remove_model
 from helpers.bioinf import decode_mutation, is_sequence_broken
 from helpers.patterns import abstract_property
-from imports import Importer
 from models import Protein
 
+from ...importer import BioImporter
 from .base_importer import BaseMutationsImporter
 from .exporter import MutationExporter
 
 
 # rename to MutationSourceManager?
-class MutationImporter(Importer, MutationExporter):
+class MutationImporter(BioImporter, MutationExporter):
 
     @abstract_property
     def name(self):
