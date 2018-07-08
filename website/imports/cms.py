@@ -1,4 +1,5 @@
 from getpass import getpass
+from warnings import warn
 
 from sqlalchemy.exc import IntegrityError
 
@@ -13,7 +14,7 @@ class IndexPage(CMSImporter):
 
     def load(self):
         if Page.query.filter_by(address='index').first():
-            print('Index page already exists, skipping...')
+            warn('Index page already exists, skipping...')
             return
         content = """
         <ul>

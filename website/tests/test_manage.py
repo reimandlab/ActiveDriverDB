@@ -1,6 +1,5 @@
 from argparse import Namespace
 
-# import database.manage
 from database_testing import DatabaseTest
 from flask import current_app
 
@@ -108,12 +107,12 @@ class ManageTest(DatabaseTest):
         from test_imports.test_export import TestExport
         TestExport.test_network_export(self, do_export)
 
-    def test_cms(self):
+    def test_root_user(self):
         from imports import cms
         email = 'root-email@gmail.com'
         self.monkeypatch.setitem(__builtins__, 'input', lambda prompt: email)
         self.monkeypatch.setattr(cms, 'getpass', lambda prompt: 'my-sEcure-passw0rd')
-        msg, error = self.run_command('load cms')
+        msg, error = self.run_command('load cms -i root_account')
         assert User.query.filter_by(email=email).one()
         assert 'Root user account created' in msg
 
