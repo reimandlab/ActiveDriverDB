@@ -1,5 +1,7 @@
 import gzip
 from collections import defaultdict, namedtuple
+from warnings import warn
+
 from tqdm import tqdm
 from database import db, create_key_model_dict
 from database import get_or_create
@@ -465,7 +467,7 @@ def select_preferred_isoforms():
             name = gene.name
             assert not gene.isoforms
             # remove(gene)
-            print('Gene %s has no isoforms' % name)
+            print(f'Gene {name} has no isoforms')
 
 
 @importer
@@ -487,11 +489,17 @@ def disorder(path='data/all_RefGene_disorder.fa'):
     parse_fasta_file(path, on_sequence, on_header)
 
     for protein in proteins.values():
-        if len(protein.disorder_map) != protein.length:
-            print(
-                f'Protein {protein} disorder: {len(protein.disorder_map)} '
-                f'does not match the length of protein: {protein.length}'
-            )
+        if len(protein.disorder_map) == protein.length:
+            continue
+
+        warn(
+            f'Protein {protein} disorder: {len(protein.disorder_map)} '
+            f'does not match the length of protein: {protein.length}'
+        )
+
+        if len(protein.disorder_map) > protein.length:
+            warn(f'Trimming the disorder track to {protein.length}')
+            protein.disorder_map = protein.disorder_map[:protein.length]
 
 
 @importer
