@@ -19,7 +19,7 @@ class GenomicMappings(BerkleyHashSetWithCache):
 
         self.add(snv, csv)
 
-    def get_genomic_muts(self, chrom, dna_pos, dna_ref, dna_alt) -> List[dict]:
+    def get_genomic_muts(self, chrom, dna_pos, dna_ref, dna_alt) -> List['SearchResult']:
         """Returns aminoacid mutations meeting provided criteria.
 
         There may be several mutations with the same genomic coordinates and alleles,
@@ -36,6 +36,7 @@ class GenomicMappings(BerkleyHashSetWithCache):
         Returns:
             list of items where each item contains Mutation object and additional metadata
         """
+        from search.mutation_result import SearchResult
 
         from models import Protein, Mutation
         from database import get_or_create
@@ -48,11 +49,11 @@ class GenomicMappings(BerkleyHashSetWithCache):
         ]
 
         # this could be speed up by: itemgetters, accumulative queries and so on
+        results = []
+
         for item in items:
 
             protein = Protein.query.get(item['protein_id'])
-            item['protein'] = protein
-
             mutation, created = get_or_create(
                 Mutation,
                 protein=protein,
@@ -60,10 +61,17 @@ class GenomicMappings(BerkleyHashSetWithCache):
                 position=item['pos'],
                 alt=item['alt']
             )
-            item['mutation'] = mutation
-            item['type'] = 'genomic'
+            results.append(
+                SearchResult(
+                    protein=protein,
+                    mutation=mutation,
+                    is_mutation_novel=created,
+                    type='genomic',
+                    **item
+                )
+            )
 
-        return items
+        return results
 
     def iterate_known_muts(self):
         from models import Mutation

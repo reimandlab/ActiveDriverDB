@@ -140,10 +140,6 @@ class MIMPMetaManager(MutationDetailsManager):
 class MutationDetails:
     """Base for tables defining detailed metadata for specific mutations"""
 
-    @declared_attr
-    def mutation_id(cls):
-        return db.Column(db.Integer, db.ForeignKey('mutation.id'), unique=True)
-
     def get_value(self, filter=lambda x: x):
         """Return number representing value to be used in needleplot"""
         raise NotImplementedError
@@ -197,10 +193,17 @@ class MutationDetails:
         )
 
 
+class MappedMutationDetails(MutationDetails):
+
+    @declared_attr
+    def mutation_id(cls):
+        return db.Column(db.Integer, db.ForeignKey('mutation.id'), unique=True)
+
+
 MutationSource = Type[MutationDetails]
 
 
-class ManagedMutationDetails(MutationDetails):
+class ManagedMutationDetails(MappedMutationDetails):
     """For use when one mutation is related to many mutation details entries."""
 
     @property
@@ -215,7 +218,7 @@ class ManagedMutationDetails(MutationDetails):
         return db.Column(db.Integer, db.ForeignKey('mutation.id'))
 
 
-class UserUploadedMutation(MutationDetails, BioModel):
+class UserUploadedMutation(MutationDetails):
 
     name = 'user'
     display_name = 'User\'s mutations'
@@ -226,14 +229,10 @@ class UserUploadedMutation(MutationDetails, BioModel):
 
     value_type = 'count'
 
-    def __init__(self, **kwargs):
-        self.count = kwargs.pop('count', 0)
-        super().__init__(**kwargs)
-
-    # having count not mapped with SQLAlchemy prevents useless attempts
-    # to update records which are not stored in database at all:
-    # count = db.Column(db.Integer, default=0)
-    query = db.Column(db.Text)
+    def __init__(self, count, query, mutation):
+        self.count = count
+        self.query = query
+        self.mutation = mutation
 
     def get_value(self, filter=lambda x: x):
         return self.count
@@ -301,7 +300,7 @@ class TCGAMutation(CancerMutation, BioModel):
     cancer_code = tcga_cancer_code
 
 
-class InheritedMutation(MutationDetails, BioModel):
+class InheritedMutation(MappedMutationDetails, BioModel):
     """Metadata for inherited diseased mutations from ClinVar from NCBI
 
     Columns description come from source VCF file headers.
@@ -677,6 +676,7 @@ class Sources:
                 mutation_details_relationship(source)
             )
             for source in all_sources
+            if issubclass(source, MappedMutationDetails)
         }
 
         self.visible: List[MutationSource] = [
@@ -700,7 +700,10 @@ class Sources:
         return self.class_relation_map[source]
 
     def get_bound_relationship(self, mutation, source: MutationSource) -> MutationDetails:
-        return getattr(mutation, self.fields[source])
+        try:
+            return getattr(mutation, self.fields[source])
+        except AttributeError:
+            return None
 
     @property
     @lru_cache()
@@ -708,6 +711,7 @@ class Sources:
         return {
             model: getattr(Mutation, self.fields[model])
             for model in self.all
+            if issubclass(model, MappedMutationDetails)
         }
 
     @property

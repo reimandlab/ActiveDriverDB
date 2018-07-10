@@ -95,11 +95,11 @@ class ChromosomeView(FlaskView):
         if chrom.startswith('chr'):
             chrom = chrom[3:]
 
-        items = bdb.get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt)
+        results = bdb.get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt)
 
         raw_mutations = filter_manager.apply([
-            item['mutation'] for
-            item in items
+            result.mutation for
+            result in results
         ])
 
         parsed_mutations = represent_mutations(

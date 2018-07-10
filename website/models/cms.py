@@ -142,11 +142,10 @@ class UsersMutationsDataset(CMSModel):
         return cls.query.filter_by(uri=uri.rstrip('/')).one()
 
     @property
-    def data(self):
+    def data(self) -> 'MutationSearch':
         if not hasattr(self, '_data'):
             try:
                 self._data = self._load_from_file()
-                self._bind_to_session()
             except FileNotFoundError:
                 # None if associated file was deleted.
                 # Be aware of this line when debugging.
@@ -158,12 +157,6 @@ class UsersMutationsDataset(CMSModel):
         self._data = data
         uri = self._save_to_file(data, self.uri)
         self.uri = uri
-
-        # to be refactored after November 3, when all datasets
-        # will already have the following properties defined:
-        if data:
-            self.query_count = self.query_size
-            self.results_count = self.mutations_count
 
     def remove(self, commit=True):
         """Performs hard-delete of dataset.
@@ -262,7 +255,7 @@ class UsersMutationsDataset(CMSModel):
         results = self.data.results
         for results in results.values():
             for result in results:
-                mutations.append(result['mutation'])
+                mutations.append(result.mutation)
         return mutations
 
     @property
@@ -272,25 +265,8 @@ class UsersMutationsDataset(CMSModel):
         return self.results_count
 
     def get_mutation_details(self, protein, pos, alt):
-        for mutation in self.mutations:
-            if (
-                mutation.protein == protein and
-                mutation.position == pos and
-                mutation.alt == alt
-            ):
-                return mutation.meta_user
-
-    def _bind_to_session(self):
-        results = self.data.results
-        proteins = {}
-        for name, results in results.items():
-            for result in results:
-                protein = result['protein']
-                if protein.refseq not in proteins:
-                    proteins[protein.refseq] = db.session.merge(result['protein'])
-
-                result['protein'] = proteins[protein.refseq]
-                result['mutation'] = db.session.merge(result['mutation'])
+        protein_results = self.data.results_by_refseq[protein.refseq]
+        return protein_results[pos, alt].meta_user
 
 
 class User(CMSModel):
@@ -547,4 +523,3 @@ class TextEntry(CMSModel):
 
     name = db.Column(db.String(256), nullable=False, unique=True, index=True)
     content = db.Column(db.Text())
-

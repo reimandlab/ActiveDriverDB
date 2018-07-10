@@ -92,6 +92,8 @@ class MutationDetailsFilter(SourceDependentFilter):
 
 def sqlalchemy_filter_from_source_name(source_name):
     """Adapt mutation source filter to SQLAlchemy clause (for use in mutation query)"""
+    if source_name == 'user':
+        return True
     field_name = source_manager.visible_fields[source_name]
     field = getattr(Mutation, field_name)
     return has_or_any(field)

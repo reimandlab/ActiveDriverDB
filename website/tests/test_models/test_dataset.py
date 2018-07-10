@@ -16,7 +16,7 @@ chr12 57490358 C A\
 
 
 def create_test_dataset(owner=None):
-    from views.search import MutationSearch
+    from search.mutation import MutationSearch
 
     search = MutationSearch(text_query=test_query)
 
