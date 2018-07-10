@@ -7,13 +7,13 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import func
 from tqdm import tqdm
 
-from berkley_db import BerkleyHashSet
+from berkley_db import BerkleyHashSetWithCache
 from flask_sqlalchemy import SQLAlchemy
 from genomic_mappings import GenomicMappings
 
 db = SQLAlchemy()
 bdb = GenomicMappings()
-bdb_refseq = BerkleyHashSet()
+bdb_refseq = BerkleyHashSetWithCache(integer_values=True)
 
 Model = TypeVar('Model')
 

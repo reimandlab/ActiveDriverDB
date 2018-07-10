@@ -88,4 +88,6 @@ class TestImport(DatabaseTest):
         # in some cases it is needed to reload bdb after import
         bdb_refseq.reload()
 
-        assert bdb_refseq['MAPK7 M1K'] == {'NM_002749', 'NM_139033', 'NM_139034'}
+        assert bdb_refseq['MAPK7 M1K'] == set(protein.id for protein in proteins.values())
+        retrieved_proteins = {Protein.query.get(protein_id) for protein_id in bdb_refseq['MAPK7 M1K']}
+        assert retrieved_proteins == set(proteins.values())

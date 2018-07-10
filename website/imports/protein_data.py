@@ -339,17 +339,17 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
         gene = protein.gene
 
         if gene.name != gene_name:
-            print('Gene name mismatch for RefSeq mappings: %s vs %s' % (gene.name, gene_name))
+            print(f'Gene name mismatch for RefSeq mappings: {gene.name} vs {gene_name}')
 
         entrez_id = int(entrez_id)
 
         if gene.entrez_id:
             if gene.entrez_id != entrez_id:
-                print('Entrez ID mismatch for isoforms of %s gene: %s, %s' % (gene.name, gene.entrez_id, entrez_id))
+                print(f'Entrez ID mismatch for isoforms of {gene.name} gene: {gene.entrez_id}, {entrez_id}')
                 if gene.name == gene_name:
                     print(
-                        'Overwriting %s entrez id with %s for %s gene, because record with %s has matching gene name' %
-                        (gene.entrez_id, entrez_id, gene.name, entrez_id)
+                        f'Overwriting {gene.entrez_id} entrez id with {entrez_id} for {gene.name} gene, '
+                        f'because record with {entrez_id} has matching gene name'
                     )
                     gene.entrez_id = entrez_id
         else:
@@ -375,7 +375,7 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
         gene = protein.gene
 
         if gene.name != gene_name:
-            print('Gene name mismatch for RefSeq mappings: %s vs %s' % (gene.name, gene_name))
+            print(f'Gene name mismatch for RefSeq mappings: {gene.name} vs {gene_name}')
 
         entrez_id = int(entrez_id)
 
@@ -383,20 +383,18 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
             if protein.full_name:
                 if protein.full_name != protein_full_name:
                     print(
-                        'Protein full name mismatch: %s vs %s for %s'
-                        %
-                        (protein.full_name, protein_full_name, protein.refseq)
+                        f'Protein full name mismatch: {protein.full_name} vs {protein_full_name} for {protein.refseq}'
                     )
                 continue
             protein.full_name = protein_full_name
 
         if gene.entrez_id:
             if gene.entrez_id != entrez_id:
-                print('Entrez ID mismatch for isoforms of %s gene: %s, %s' % (gene.name, gene.entrez_id, entrez_id))
+                print(f'Entrez ID mismatch for isoforms of {gene.name} gene: {gene.entrez_id}, {entrez_id}')
                 if gene.name == gene_name:
                     print(
-                        'Overwriting %s entrez id with %s for %s gene, because record with %s has matching gene name' %
-                        (gene.entrez_id, entrez_id, gene.name, entrez_id)
+                        f'Overwriting {gene.entrez_id} entrez id with {entrez_id} for {gene.name} gene, '
+                        f'because record with {entrez_id} has matching gene name'
                     )
                     gene.entrez_id = entrez_id
         else:
@@ -410,9 +408,8 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
 
             if reference.refseq_np and reference.refseq_np != refseq_peptide:
                 print(
-                    'Refseq peptide mismatch between LRG and UCSC retrieved data: %s vs %s for %s'
-                    %
-                    (reference.refseq_np, refseq_peptide, protein.refseq)
+                    f'Refseq peptide mismatch between LRG and UCSC retrieved data: '
+                    f'{reference.refseq_np} vs {refseq_peptide} for {protein.refseq}'
                 )
 
             reference.refseq_np = refseq_peptide
@@ -448,6 +445,7 @@ def select_preferred_isoform(gene):
     return isoforms[0]
 
 
+# TODO: move after mappings import?
 @importer
 def select_preferred_isoforms():
     """Perform selection of preferred isoform on all genes in database.

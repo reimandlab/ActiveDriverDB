@@ -1,7 +1,9 @@
-from berkley_db import BerkleyHashSet
+from typing import List
+
+from berkley_db import BerkleyHashSetWithCache
 
 
-class GenomicMappings(BerkleyHashSet):
+class GenomicMappings(BerkleyHashSetWithCache):
 
     def add_genomic_mut(self, chrom, dna_pos, dna_ref, dna_alt, aa_mut, strand='+', exon='EX1', is_ptm=False):
         """Add a genomic mutation mapping to provided 'mut' aminoacid mutation.
@@ -17,7 +19,7 @@ class GenomicMappings(BerkleyHashSet):
 
         self.add(snv, csv)
 
-    def get_genomic_muts(self, chrom, dna_pos, dna_ref, dna_alt):
+    def get_genomic_muts(self, chrom, dna_pos, dna_ref, dna_alt) -> List[dict]:
         """Returns aminoacid mutations meeting provided criteria.
 
         There may be several mutations with the same genomic coordinates and alleles,

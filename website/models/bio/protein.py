@@ -312,6 +312,17 @@ class Protein(BioModel):
             kinase_groups.update(site.kinase_groups)
         return kinase_groups
 
+    @cached_property
+    def sites_affecting_positions(self):
+        return set(
+            i
+            for position, in db.session.query(Site.position).filter_by(protein=self)
+            for i in range(position - 7, position + 7 + 1)
+        )
+
+    def would_affect_any_sites(self, mutation_pos):
+        return mutation_pos in self.sites_affecting_positions
+
     def has_sites_in_range(self, left, right):
         """Test if there are any sites in given range defined as <left, right>, inclusive.
 

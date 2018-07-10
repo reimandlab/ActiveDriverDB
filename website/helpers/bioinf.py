@@ -86,12 +86,11 @@ def determine_strand(ref, cdna_ref, alt, cdna_alt):
         return '-'
     else:
         raise DataInconsistencyError(
-            'Unable to determine strand for: %s %s %s %s' %
-            (ref, cdna_ref, alt, cdna_alt)
+            f'Unable to determine strand for: {ref} {cdna_ref} {alt} {cdna_alt}'
         )
 
 
-def is_sequence_broken(protein, test_pos, test_res, test_alt=None):
+def is_sequence_broken(protein, test_pos: int, test_res: str, test_alt: str=None):
     """Check if (in given protein) there is given residue on given position.
 
     Returns:
@@ -100,10 +99,11 @@ def is_sequence_broken(protein, test_pos, test_res, test_alt=None):
 
     TODO: use test_alt to detect those ref -> alt transitions which are not possible?
     """
-    if len(protein.sequence) <= int(test_pos):
+    sequence = protein.sequence
+    if len(sequence) <= test_pos:
         return protein.refseq, '-', test_res, str(test_pos), test_alt
     else:
-        ref_in_db = protein.sequence[int(test_pos) - 1]
+        ref_in_db = sequence[test_pos - 1]
         if test_res == ref_in_db:
             return False
         return protein.refseq, ref_in_db, test_res, str(test_pos), test_alt

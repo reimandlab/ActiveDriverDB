@@ -44,7 +44,7 @@ def fast_gzip_read(file_name, mode='r', processes=4, as_str=False):
     yield p.stdout
 
 
-def read_from_gz_files(directory, pattern, skip_header=True):
+def read_from_gz_files(directory, pattern, skip_header=True, after_batch=lambda: None):
     """Creates generator yielding subsequent lines from compressed '.gz' files
 
     Progress bar is embedded.
@@ -61,6 +61,8 @@ def read_from_gz_files(directory, pattern, skip_header=True):
 
             for line in f:
                 yield line
+
+        after_batch()
 
 
 def count_lines(file_object):

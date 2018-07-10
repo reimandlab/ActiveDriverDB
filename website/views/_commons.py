@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import List
 
 from database import bdb_refseq
 from database import get_or_create
@@ -49,12 +50,12 @@ def iterate_affected_isoforms(gene_name, ref, pos, alt):
         ]
     """
     hash_key = gene_name + ' ' + ref + str(pos) + alt
-    refseqs = bdb_refseq[hash_key]
+    protein_ids = bdb_refseq[hash_key]
 
-    return Protein.query.filter(Protein.refseq.in_(refseqs))
+    return Protein.query.filter(Protein.id.in_(protein_ids))
 
 
-def get_protein_muts(gene_name, mut):
+def get_protein_muts(gene_name, mut) -> List[dict]:
     """Retrieve corresponding mutations from all isoforms
 
     associated with given gene which are correct (i.e. they do not

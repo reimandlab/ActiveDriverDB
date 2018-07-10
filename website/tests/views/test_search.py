@@ -222,7 +222,7 @@ class TestSearchView(ViewTest):
             return r
 
         from database import bdb_refseq, bdb
-        bdb_refseq['BR V6E'] = ['NM_007']  # required for mutation search
+        bdb_refseq['BR V6E'] = [p.id]  # required for mutation search
         bdb.add_genomic_mut('1', 10000, 'T', 'C', mut)
 
         # Gene and mutations
