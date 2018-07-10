@@ -866,7 +866,8 @@ class Mutation(BioModel, MutatedMotifs):
             '   foreign(Site.protein_id) == Mutation.protein_id,'
             '   Site.position.between(Mutation.position - 7, Mutation.position + 7)'
             ')'
-        )
+        ),
+        order_by='Site.position'
     )
 
     @hybrid_method
@@ -960,9 +961,9 @@ class Mutation(BioModel, MutatedMotifs):
             sites_affected.add(sites[pivot])
             pivot -= 1
 
-        return list(sites_affected)
+        return sorted(sites_affected, key=lambda site: site.position)
 
-    def impact_on_specific_ptm(self, site, ignore_mimp=False):
+    def impact_on_specific_ptm(self, site: Site, ignore_mimp=False):
         if self.position == site.position:
             return 'direct'
         elif site in self.meta_MIMP.sites and not ignore_mimp:
