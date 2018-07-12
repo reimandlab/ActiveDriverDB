@@ -1586,7 +1586,7 @@ class Mutation(BioModel):
     source_fields = OrderedDict(
         (model.name, 'meta_' + model.name)
         for model in source_specific_data
-        if model != MIMPMutation
+        if model != MIMPMutation and model != UserUploadedMutation
     )
 
     populations_1KG = details_proxy(The1000GenomesMutation, 'affected_populations', managed=True)
