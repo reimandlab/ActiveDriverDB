@@ -1589,6 +1589,12 @@ class Mutation(BioModel):
         if model != MIMPMutation and model != UserUploadedMutation
     )
 
+    visible_fields = OrderedDict(
+        (model.name, 'meta_' + model.name)
+        for model in source_specific_data
+        if model != MIMPMutation
+    )
+
     populations_1KG = details_proxy(The1000GenomesMutation, 'affected_populations', managed=True)
     populations_ESP6500 = details_proxy(ExomeSequencingMutation, 'affected_populations', managed=True)
     mc3_cancer_code = details_proxy(MC3Mutation, 'mc3_cancer_code')
