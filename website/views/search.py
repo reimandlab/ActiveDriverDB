@@ -539,9 +539,6 @@ class SearchView(FlaskView):
                     'success'
                 )
 
-            for items in mutation_search.results.values():
-                for item in items:
-                    db.session.add(item['mutation'])
             celery_task.forget()
         else:
             mutation_search = MutationSearch()
@@ -968,13 +965,18 @@ def match_aa_mutation(gene, mut, query):
     return prepare_items(items, query, 'aminoacid mutation')
 
 
-def prepare_items(items, query, value_type):
-    for item in items:
-        item['protein'] = item['protein'].to_json()
-        item['mutation'] = item['mutation'].to_json()
-        item['input'] = query
-        item['type'] = value_type
-    return items
+def prepare_items(results, query, value_type):
+    return [
+        {
+            'protein': result.protein.to_json(),
+            'mutation': result.mutation.to_json(),
+            'input': query,
+            'type': value_type,
+            'pos': result.pos,
+            'alt': result.alt
+        }
+        for result in results
+    ]
 
 
 def autocomplete_mutation(query, limit=None):
