@@ -1579,7 +1579,8 @@ class Mutation(BioModel):
     def get_relationship(cls, mutation_class, class_relation_map={}):
         if not class_relation_map:
             for model in cls.source_specific_data:
-                class_relation_map[model] = getattr(cls, 'meta_' + model.name)
+                if model != UserUploadedMutation:
+                    class_relation_map[model] = getattr(cls, 'meta_' + model.name)
         return class_relation_map[mutation_class]
 
     source_fields = OrderedDict(
