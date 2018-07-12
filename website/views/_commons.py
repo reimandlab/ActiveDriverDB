@@ -5,6 +5,7 @@ from database import get_or_create
 from helpers.bioinf import decode_raw_mutation
 from models import Mutation, Drug, Gene
 from models import Protein
+from search.mutation_result import SearchResult
 
 
 def iterate_affected_isoforms(gene_name, ref, pos, alt):
@@ -76,14 +77,15 @@ def get_protein_muts(gene_name, mut):
         )
 
         items.append(
-            {
-                'protein': isoform,
-                'ref': ref,
-                'alt': alt,
-                'pos': pos,
-                'mutation': mutation,
-                'type': 'proteomic'
-            }
+            SearchResult(
+                protein=isoform,
+                mutation=mutation,
+                is_mutation_novel=created,
+                type='proteomic',
+                ref=ref,
+                alt=alt,
+                pos=pos,
+            )
         )
     return items
 

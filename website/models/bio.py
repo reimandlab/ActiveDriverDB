@@ -1067,21 +1067,17 @@ class ManagedMutationDetails(MutationDetails):
         return db.Column(db.Integer, db.ForeignKey('mutation.id'))
 
 
-class UserUploadedMutation(MutationDetails, BioModel):
+class UserUploadedMutation(MutationDetails):
 
     name = 'user'
     display_name = 'User\'s mutations'
 
     value_type = 'count'
 
-    def __init__(self, **kwargs):
-        self.count = kwargs.pop('count', 0)
-        super().__init__(**kwargs)
-
-    # having count not mapped with SQLAlchemy prevents useless attempts
-    # to update recodrs which are not stored in database at all:
-    # count = db.Column(db.Integer, default=0)
-    query = db.Column(db.Text)
+    def __init__(self, count, query, mutation):
+        self.count = count
+        self.query = query
+        self.mutation = mutation
 
     def get_value(self, filter=lambda x: x):
         return self.count
@@ -1568,6 +1564,7 @@ class Mutation(BioModel):
             mutation_details_relationship(model)
         )
         for model in source_specific_data
+        if model != UserUploadedMutation
     }
 
     vars().update(source_data_relationships)

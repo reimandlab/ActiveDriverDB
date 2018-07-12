@@ -3,8 +3,6 @@ from flask_classful import FlaskView
 from flask_login import current_user
 from models import Protein
 from models import Mutation
-#from models import Domain
-#from models import Site
 
 
 class MutationView(FlaskView):
