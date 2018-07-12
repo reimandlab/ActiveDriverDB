@@ -150,7 +150,7 @@ def common_filters(
     return [
         Filter(
             Mutation, 'sources', comparators=['in'],
-            choices=list(Mutation.source_fields.keys()),
+            choices=list(Mutation.visible_fields.keys()),
             default=default_source, nullable=source_nullable,
             as_sqlalchemy=source_filter_to_sqlalchemy
         ),
