@@ -94,6 +94,8 @@ def source_filter_to_sqlalchemy(source_filter, target):
 
 
 def source_to_sa_filter(source_name, target=Mutation):
+    if source_name == 'user':
+        return True
     field_name = Mutation.source_fields[source_name]
     field = getattr(target, field_name)
     return has_or_any(field)
@@ -148,7 +150,7 @@ def common_filters(
     return [
         Filter(
             Mutation, 'sources', comparators=['in'],
-            choices=list(Mutation.source_fields.keys()),
+            choices=list(Mutation.visible_fields.keys()),
             default=default_source, nullable=source_nullable,
             as_sqlalchemy=source_filter_to_sqlalchemy
         ),

@@ -80,7 +80,7 @@ class SequenceRepresentation(ProteinRepresentation):
 
         source_name = self.filter_manager.get_value('Mutation.sources')
 
-        get_source_data = attrgetter(Mutation.source_fields[source_name])
+        get_source_data = attrgetter(Mutation.visible_fields[source_name])
 
         get_mimp_data = attrgetter('meta_MIMP')
 

@@ -98,7 +98,7 @@ class ChromosomeView(FlaskView):
         items = bdb.get_genomic_muts(chrom, dna_pos, dna_ref, dna_alt)
 
         raw_mutations = filter_manager.apply([
-            item['mutation'] for
+            item.mutation for
             item in items
         ])
 

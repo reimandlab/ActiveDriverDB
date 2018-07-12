@@ -150,6 +150,8 @@ class Statistics(CountStore):
     def __init__(self):
 
         for model in Mutation.source_specific_data:
+            if model == models.UserUploadedMutation:
+                continue
             # dirty trick: 1KGenomes is not a valid name in Python
             name = 'mutations_' + model.name.replace('1', 'T')
 

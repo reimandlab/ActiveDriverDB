@@ -1,6 +1,6 @@
 import json
 from collections import defaultdict
-from operator import itemgetter
+from operator import attrgetter
 from urllib.parse import unquote
 
 from flask import make_response, redirect, abort
@@ -137,6 +137,7 @@ class MutationSearch:
         """
         self.query = ''
         self.results = {}
+        self.results_by_refseq = defaultdict(dict)
         self.without_mutations = []
         self.badly_formatted = []
         self.hidden_results_cnt = 0
@@ -154,7 +155,7 @@ class MutationSearch:
             def data_filter(elements):
                 return filter_manager.apply(
                     elements,
-                    itemgetter=itemgetter('mutation')
+                    itemgetter=attrgetter('mutation')
                 )
         else:
             def data_filter(elements):
@@ -196,14 +197,20 @@ class MutationSearch:
             return False
 
         if query_line in self.results:
-            for item in self.results[query_line]:
-                item['mutation'].meta_user.count += 1
+            for result in self.results[query_line]:
+                result.meta_user.count += 1
+                mutation = result.mutation
+                self.results_by_refseq[mutation.protein.refseq][mutation.position, mutation.alt] = result
         else:
-            for item in items:
-                item['mutation'].meta_user = UserUploadedMutation(
+            for result in items:
+                mutation = result.mutation
+                result.meta_user = UserUploadedMutation(
                     count=1,
-                    query=query_line
+                    query=query_line,
+                    mutation=result.mutation
                 )
+                mutation.meta_user = result.meta_user
+                self.results_by_refseq[mutation.protein.refseq][mutation.position, mutation.alt] = result
             self.results[query_line] = items
 
     def parse_vcf(self, vcf_file):
@@ -532,9 +539,6 @@ class SearchView(FlaskView):
                     'success'
                 )
 
-            for items in mutation_search.results.values():
-                for item in items:
-                    db.session.add(item['mutation'])
             celery_task.forget()
         else:
             mutation_search = MutationSearch()
@@ -961,13 +965,18 @@ def match_aa_mutation(gene, mut, query):
     return prepare_items(items, query, 'aminoacid mutation')
 
 
-def prepare_items(items, query, value_type):
-    for item in items:
-        item['protein'] = item['protein'].to_json()
-        item['mutation'] = item['mutation'].to_json()
-        item['input'] = query
-        item['type'] = value_type
-    return items
+def prepare_items(results, query, value_type):
+    return [
+        {
+            'protein': result.protein.to_json(),
+            'mutation': result.mutation.to_json(),
+            'input': query,
+            'type': value_type,
+            'pos': result.pos,
+            'alt': result.alt
+        }
+        for result in results
+    ]
 
 
 def autocomplete_mutation(query, limit=None):

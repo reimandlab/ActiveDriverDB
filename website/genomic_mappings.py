@@ -34,6 +34,7 @@ class GenomicMappings(BerkleyHashSet):
         Returns:
             list of items where each item contains Mutation object and additional metadata
         """
+        from search.mutation_result import SearchResult
 
         from models import Protein, Mutation
         from database import get_or_create
@@ -46,11 +47,10 @@ class GenomicMappings(BerkleyHashSet):
         ]
 
         # this could be speed up by: itemgetters, accumulative queries and so on
+        results = []
+
         for item in items:
-
             protein = Protein.query.get(item['protein_id'])
-            item['protein'] = protein
-
             mutation, created = get_or_create(
                 Mutation,
                 protein=protein,
@@ -58,10 +58,17 @@ class GenomicMappings(BerkleyHashSet):
                 position=item['pos'],
                 alt=item['alt']
             )
-            item['mutation'] = mutation
-            item['type'] = 'genomic'
+            results.append(
+                SearchResult(
+                    protein=protein,
+                    mutation=mutation,
+                    is_mutation_novel=created,
+                    type='genomic',
+                    **item
+                )
+            )
 
-        return items
+        return results
 
     def iterate_known_muts(self):
         from models import Mutation

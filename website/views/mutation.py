@@ -3,8 +3,6 @@ from flask_classful import FlaskView
 from flask_login import current_user
 from models import Protein
 from models import Mutation
-#from models import Domain
-#from models import Site
 
 
 class MutationView(FlaskView):
@@ -38,12 +36,11 @@ class MutationView(FlaskView):
 
         for source in mutation.source_fields:
             model = mutation.get_source_model(source)
-            if source != 'user':
-                datasets.append({
-                    'filter': 'Mutation.sources:in:' + source,
-                    'name': model.display_name,
-                    'mutation_present': sources_with_mutation.get(source, False)
-                })
+            datasets.append({
+                'filter': 'Mutation.sources:in:' + source,
+                'name': model.display_name,
+                'mutation_present': sources_with_mutation.get(source, False)
+            })
 
         user_datasets = []
 
