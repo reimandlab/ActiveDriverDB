@@ -434,9 +434,11 @@ def run_manage(parsed_args, app=None):
         except OperationalError as e:
             if e.orig.args[0] == 1071:
                 print('Please run: ')
-                print('ALTER DATABASE `db_bio` CHARACTER SET utf8;')
-                print('ALTER DATABASE `db_cms` CHARACTER SET utf8;')
+                for bind in ['bio', 'cms']:
+                    engine = db.get_engine(app, bind)
+                    print(f'ALTER DATABASE `{engine.url.database}` CHARACTER SET utf8;')
                 print('to be able to continue.')
+                print(e)
                 return
             else:
                 raise

@@ -72,18 +72,15 @@ def basic_auto_migrate_relational_db(app, bind):
             for column_name in new_columns:
                 column = getattr(table.c, column_name)
                 if column.constraints:
-                    print(
-                        'Column %s skipped due to existing constraints.'
-                        % column_name
-                    )
+                    print(f'Column {column_name} skipped due to existing constraints.')
                     continue
-                print('Creating column: %s' % column_name)
+                print(f'Creating column: {column_name}')
 
                 definition = ddl.get_column_specification(column)
                 add_column(engine, table.name, definition)
 
             if engine.dialect.name == 'mysql':
-                sql = 'SHOW CREATE TABLE `%s`' % table.name
+                sql = f'SHOW CREATE TABLE `{table.name}`'
                 table_definition = engine.execute(sql)
                 columns_definitions = {}
 
@@ -129,9 +126,9 @@ def basic_auto_migrate_relational_db(app, bind):
                     )
                     if agreed:
                         update_column(engine, table.name, new_definition)
-                        print('Updated %s column definition' % column)
+                        print(f'Updated {column} column definition')
                     else:
-                        print('Skipped %s column' % column)
+                        print(f'Skipped {column} column')
 
             if unused_columns:
                 print(
@@ -139,10 +136,10 @@ def basic_auto_migrate_relational_db(app, bind):
                     'and can be safely removed:' % table.name
                 )
                 for column in unused_columns:
-                    if got_permission('Column: `%s` - remove?' % column):
+                    if got_permission(f'Column: `{column}` - remove?'):
                         drop_column(engine, table.name, column)
-                        print('Removed column %s.' % column)
+                        print(f'Removed column {column}.')
                     else:
-                        print('Keeping column %s.' % column)
+                        print(f'Keeping column {column}.')
 
     print('Auto-migration of', bind, 'database completed.')
