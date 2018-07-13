@@ -104,6 +104,14 @@ class SiteType(BioModel):
 
         return any(other_type.id in matched_types_ids for other_type in other_types)
 
+    @property
+    def sub_types(self):
+        return [
+            type_name
+            for type_name, type_id in self.id_by_name().items()
+            if self.name in type_name and type_name != self.name
+        ]
+
 
 class AnySiteType:
 

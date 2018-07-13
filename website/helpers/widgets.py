@@ -17,7 +17,8 @@ class Widget:
     def __init__(
         self, title, template, data, target_name,
         labels=None, disabled_label=None, value=None,
-        all_selected_label=None, class_name=''
+        all_selected_label=None, class_name='',
+        hierarchy=None,
     ):
         """
         Args:
@@ -38,6 +39,7 @@ class Widget:
 
             target_name: corresponds to name attribute in HTML element
         """
+        self.hierarchy = hierarchy
         self.title = title
         self.target_name = target_name
         self.template = template
@@ -59,10 +61,7 @@ class Widget:
     @property
     def label(self):
         if len(self.labels) > 1:
-            raise Exception(
-                'Requested for a single label for a widget with multiple '
-                'labels %s' % self.title
-            )
+            raise Exception(f'Requested for a single label for a widget with multiple labels {self.title}')
         if not self.labels:
             return
         return self.labels[0]
@@ -82,6 +81,29 @@ class Widget:
         else:
             for datum, label in zip(data, self.labels):
                 yield datum, label
+
+    @property
+    def hierarchical_items(self):
+        if not self.hierarchy:
+            return self.items
+
+        all_items = dict(self.items)
+
+        for parent, children in self.hierarchy.items():
+            sub_items = {
+                child: all_items[child]
+                for child in children
+            }
+            all_items[parent] = (all_items[parent], sub_items)
+
+            for child in children:
+                del all_items[child]
+
+        for value, item in all_items.items():
+            if value in self.hierarchy:
+                yield value, item[0], item[1]
+            else:
+                yield value, item, None
 
     @property
     def all_active(self):

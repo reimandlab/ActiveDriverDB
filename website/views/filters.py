@@ -144,11 +144,12 @@ class CachedQueries:
             if db.session.query(exists().where(PCAWGMutation.cancer == cancer)).scalar()
         ]
         self.all_cancer_names = {
-            cancer.code: '%s (%s)' % (cancer.name, cancer.code)
+            cancer.code: f'{cancer.name} ({cancer.code})'
             for cancer in Cancer.query
         }
         self.dataset_labels = create_dataset_labels()
 
+        self.site_types = SiteType.query.all()
 
 cached_queries = CachedQueries()
 
@@ -369,7 +370,12 @@ def create_widgets(protein, filters_by_id, custom_datasets_names=None):
         'ptm_type': FilterWidget(
             'Type of PTM site', 'radio',
             filter=filters_by_id['Site.types'],
-            disabled_label='Any site'
+            disabled_label='Any site',
+            hierarchy={
+                site_type.name: site_type.sub_types
+                for site_type in cached_queries.site_types
+                if site_type.sub_types
+            }
         ),
         'other': [FilterWidget(
             'Drug group', 'checkbox_multiple',
