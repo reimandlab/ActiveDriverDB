@@ -84,8 +84,7 @@ class Widget:
 
     @property
     def hierarchical_items(self):
-        if not self.hierarchy:
-            return self.items
+        assert self.hierarchy
 
         all_items = dict(self.items)
 
