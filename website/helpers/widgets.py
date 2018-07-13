@@ -46,7 +46,8 @@ class Widget:
         if not data:
             data = []
         self.data = data
-        self._value = value
+        self._value = None
+        self.value = value
         if labels and data and len(labels) > len(data) and not isinstance(labels, dict):
             raise ValueError(
                 'Number of labels has to be lower '
@@ -124,6 +125,15 @@ class Widget:
             self._quote_cache[cacheable_value] = value
             return value
 
+    @value.setter
+    def value(self, value):
+        self._value = value
+        if is_iterable_but_not_str(value):
+            self._value_as_set = set(value)
+
+    def is_one_of_values(self, value):
+        return self._value and value in self._value_as_set
+
     @property
     def visible(self):
         return True
@@ -152,9 +162,10 @@ class FilterWidget(Widget):
         )
         self.comparator_widget = associated_comparator_widget
 
-    @property
+    @Widget.value.getter
     def value(self):
-        self._value = self.filter.value
+        if self._value != self.filter.value:
+            self.value = self.filter.value
         return super().value
 
     @property
