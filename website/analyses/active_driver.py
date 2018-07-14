@@ -64,12 +64,14 @@ def series_from_preferred_isoforms(trait, subset=None) -> Series:
 
 manager = MutationImportManager()
 cache = Cache('active_driver_data')
+cache.reset('cull_limit', 0)
 cached = cache_decorator(cache)
 
 
 @cached
-def prepare_active_driver_data(mutation_source: str, site_type=None, mutation_query=None):
-    sites = export_and_load(sites_ac)
+def prepare_active_driver_data(mutation_source: str, site_type=None, mutation_query=None, sites=None):
+    if sites is None:
+        sites = export_and_load(sites_ac)
 
     if site_type:
         sites = sites[sites['type'].str.contains(site_type)]
@@ -157,7 +159,7 @@ def process_result(result, sites, fdr_cutoff=0.05) -> ActiveDriverResult:
 
     result['profile'] = profile_genes_with_active_sites(enriched_genes)
     result['profile_against_genes_with_sites'] = profile_genes_with_active_sites(enriched_genes, all_genes)
-    result['top_fdr'] = enriched
+    result['top_fdr'] = enriched.reset_index(drop=True)
 
     return result
 
@@ -233,10 +235,10 @@ def per_cancer_analysis(site_type: str):
     return results
 
 
-def source_specific_analysis(mutations_source, site_type, mutation_query=None):
+def source_specific_analysis(mutations_source, site_type=None, mutation_query=None):
 
     sequences, disorder, mutations, sites = prepare_active_driver_data(mutations_source, site_type, mutation_query)
-    result = run_active_driver(sequences, disorder, mutations, sites)
+    result = run_active_driver(sequences, disorder, mutations, sites, mc_cores=1)
     result = process_result(result, sites)
     source = manager.importers[mutations_source].model
     create_gene_list(f'ActiveDriver: {source.name} {site_type} sites', result['top_fdr'], source)
