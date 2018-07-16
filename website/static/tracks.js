@@ -415,6 +415,33 @@ var Tracks = function ()
             var sequence = tracks.find('.sequence')
             sequence_elements = sequence.children('.elements')
 
+            var conservation = tracks.find('.conservation')
+            var scores = conservation.find('i')
+
+            var values = scores.map(function(i, obj){
+                return parseFloat($(this).attr('v'))
+            })
+
+            var min = Math.min.apply(null, values)
+            var max = Math.max.apply(null, values)
+            scores.each(function(i, obj)
+            {
+                var obj = $(this)
+                var value = parseFloat(obj.attr('v'))
+                var text = value + ': '
+                if(value >= 0){
+                    var r = 255 - (value / max * 255)
+                    obj.css('background', 'rgb(255, ' + r + ', ' + r + ')')
+                    text += 'conserved'
+                }
+                else {
+                    obj.css('background', 'rgb(' + (255 - (value / min * 255)) + ', 255, 255)')
+                    text += 'accelerated'
+                }
+                obj.attr('title', text)
+            })
+
+
             config.sequenceLength = getSequenceLength()
             config.char_size = getCharSize()
 

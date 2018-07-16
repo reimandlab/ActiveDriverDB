@@ -37,6 +37,17 @@ def prepare_tracks(protein, raw_mutations):
                 )
             )
         ),
+        Track(
+            'conservation',
+            (
+                ''.join([
+                    f'<i v="{score}">&nbsp;</i>'
+                    for score in protein.conservation.split(';')
+                ])
+                if protein.conservation else
+                ''
+            )
+        ),
         MutationsTrack(raw_mutations)
     ]
     return tracks

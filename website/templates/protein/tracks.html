@@ -2,7 +2,7 @@
     <div class="track {{ track.class_name }} {{ 'hidden collapsible' if collapsed }}">
         <div class="elements">
         {%- if track.elements is string -%}
-           {{ track.elements }}
+           {{ track.elements | safe }}
         {%- else -%}
         {%- for element in track.elements -%}
             <div style="left:{{ element.start - 1 }}ch;width:{{ element.length }}ch" {% if element.description -%}

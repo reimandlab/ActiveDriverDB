@@ -88,6 +88,9 @@ class Protein(BioModel):
     # should be no longer than the sequence (defined above)
     disorder_map = db.Column(db.Text, default='')
 
+    # conservation scores as defined by PhyloP - a semicolon separated list
+    conservation = db.Column(db.Text, default='')
+
     # transcription start/end coordinates
     tx_start = db.Column(db.Integer)
     tx_end = db.Column(db.Integer)

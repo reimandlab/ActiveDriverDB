@@ -74,8 +74,15 @@ li.subtracks_collapsed
 
   .elements div
     position: absolute
-    background-color: #ffaaaa
     height: $track-height
+
+  &.disorder .elements div
+    background-color: #ffaaaa
+
+  &.conservation i
+    width: 1ch
+    height: $track-height
+    cursor: pointer
 
   &.inline
     position: absolute
