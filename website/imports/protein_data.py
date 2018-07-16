@@ -469,6 +469,34 @@ def select_preferred_isoforms():
 
 
 @importer
+def conservation(path='data/hg19.100way.phyloP100way.bw', ref_gene_path='data/refGene.txt.gz'):
+    from helpers.bioinf import read_genes_data
+    from analyses.conservation.scores import scores_for_proteins
+
+    genes_data = read_genes_data(ref_gene_path)
+
+    duplicated_in_ucsc = genes_data[genes_data.index.duplicated()].sort_index()
+    print('Duplicated UCSC data:')
+    print(duplicated_in_ucsc)
+
+    print('Duplicates summary by chromosome:')
+    duplicated_in_ucsc = duplicated_in_ucsc.reset_index()
+    print(duplicated_in_ucsc.chrom.value_counts())
+
+    proteins = get_proteins()
+
+    phylo_p_tracks, phylo_details = scores_for_proteins(proteins.values(), genes_data, path)
+
+    del genes_data
+
+    for protein, scores in phylo_p_tracks.items():
+        protein.conservation = ';'.join(
+            f'{score:.2f}'.strip('0').replace('-0', '-').rstrip('.')
+            for score in scores
+        )
+
+
+@importer
 def disorder(path='data/all_RefGene_disorder.fa'):
     # library(seqinr)
     # load("all_RefGene_disorder.fa.rsav")

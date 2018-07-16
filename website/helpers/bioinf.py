@@ -1,3 +1,6 @@
+from typing import List
+from pandas import DataFrame, read_table
+
 basic_mappings = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
 IUPAC_mappings = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'U': 'A', 'Y': 'R',
                   'R': 'Y', 'S': 'S', 'W': 'W', 'K': 'M', 'M': 'K', 'B': 'V',
@@ -107,3 +110,22 @@ def is_sequence_broken(protein, test_pos: int, test_res: str, test_alt: str=None
         if test_res == ref_in_db:
             return False
         return protein.refseq, ref_in_db, test_res, str(test_pos), test_alt
+
+
+def read_genes_data(path) -> DataFrame:
+
+    genes_data = read_table(
+        path,
+        names='bin name chrom strand txStart txEnd cdsStart cdsEnd exonCount exonStarts exonEnds score name2 cdsStartStat cdsEndStat exonFrames'.split()
+    ).set_index(['chrom', 'name'])
+
+    def convert_positions(positions: List[str]):
+        return tuple(int(pos) for pos in filter(bool, positions))
+
+    genes_data.exonStarts = genes_data.exonStarts.str.split(',').apply(convert_positions)
+    genes_data.exonEnds = genes_data.exonEnds.str.split(',').apply(convert_positions)
+
+    genes_data = genes_data.sort_index(level=genes_data.index.names)
+
+    return genes_data
+

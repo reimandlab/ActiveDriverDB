@@ -32,3 +32,4 @@ gprofiler-official
 simplejson
 scipy
 scikit-learn
+pyBigWig

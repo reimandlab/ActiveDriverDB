@@ -189,3 +189,9 @@ cd ..
 
 # expression
 ./firehose_get -tasks Merge_rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes_normalized__data.Level_3 data latest
+
+
+
+# Conservation track from UCSC
+wget -N http://hgdownload.cse.ucsc.edu/goldenpath/hg19/phyloP100way/hg19.100way.phyloP100way.bw
+wget -N http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz
