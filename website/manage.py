@@ -224,7 +224,15 @@ class Mappings(CommandTarget):
         print('Loading proteins data...')
         proteins = get_proteins()
         print('Exporting...')
-        export_all_potential_ptm_mutations(proteins)
+        export_all_potential_ptm_mutations(proteins, subset=set(args.types) if args.types else None)
+
+    @export.argument
+    def types(self):
+        return argument_parameters(
+            '--types', '-t',
+            nargs='+',
+            default=None,
+        )
 
     @load.argument
     def restrict_to(self):
