@@ -41,7 +41,7 @@ def prepare_tracks(protein, raw_mutations):
             'conservation',
             (
                 ''.join([
-                    f'<i v="{score}">&nbsp;</i>'
+                    f'<i v="{score or 0}">&nbsp;</i>'
                     for score in protein.conservation.split(';')
                 ])
                 if protein.conservation else

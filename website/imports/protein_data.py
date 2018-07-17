@@ -491,7 +491,7 @@ def conservation(path='data/hg19.100way.phyloP100way.bw', ref_gene_path='data/re
 
     for protein, scores in phylo_p_tracks.items():
         protein.conservation = ';'.join(
-            f'{score:.2f}'.strip('0').replace('-0', '-').rstrip('.')
+            f'{score:.2f}'.strip('0').replace('-0', '-').rstrip('.').rstrip('-')
             for score in scores
         )
 
