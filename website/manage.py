@@ -19,7 +19,7 @@ from helpers.commands import command
 from helpers.commands import create_command_subparsers
 from imports import import_all, ImportManager
 from imports.importer import BioImporter, CMSImporter
-from imports.mappings import import_aminoacid_mutation_refseq_mappings
+from imports.mappings import import_aminoacid_mutation_refseq_mappings, export_all_potential_ptm_mutations
 from imports.mappings import import_genome_proteome_mappings
 from imports.mutations import MutationImportManager, MutationImporter
 from imports.mutations import get_proteins
@@ -217,6 +217,14 @@ class Mappings(CommandTarget):
             import_genome_proteome_mappings(proteins, bdb_dir=args.path)
         if args.restrict_to != 'genome_proteome':
             import_aminoacid_mutation_refseq_mappings(proteins, bdb_dir=args.path)
+
+    @command
+    def export(self, args):
+        print('Exporting all potential PTM mutation SNVs')
+        print('Loading proteins data...')
+        proteins = get_proteins()
+        print('Exporting...')
+        export_all_potential_ptm_mutations(proteins)
 
     @load.argument
     def restrict_to(self):

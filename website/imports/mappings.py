@@ -122,6 +122,121 @@ def import_genome_proteome_mappings(
     return broken_seq
 
 
+def export_all_potential_ptm_mutations(
+    proteins: Dict[str, Protein],
+    export_path='exported/all_potential_ptm_mutations.tsv',
+    mappings_dir='data/200616/all_variants/playground',
+    mappings_file_pattern='annot_*.txt.gz',
+    subset=None
+):
+    chromosomes = get_human_chromosomes()
+    broken_seq = defaultdict(list)
+    skipped_lines = 0
+    all_lines = 0
+    all_protein_mappings = 0
+    skipped_mappings = 0
+    ptm_related = 0
+
+    with open(export_path, 'w') as f:
+        output = []
+
+        def flush():
+            nonlocal output
+            f.writelines(output)
+            f.flush()
+            output = []
+
+        for line in read_from_gz_files(mappings_dir, mappings_file_pattern, after_batch=lambda: flush()):
+            all_lines += 1
+            try:
+                chrom, pos, ref, alt, prot = line.rstrip().split('\t')
+            except ValueError as e:
+                skipped_lines += 1
+                print(e, line)
+                continue
+
+            assert chrom.startswith('chr')
+            chrom = chrom[3:]
+
+            assert chrom in chromosomes
+            ref = ref.rstrip()
+
+            # new Coding Sequence Variants to be added to those already
+            # mapped from given `snv` (Single Nucleotide Variation)
+
+            for dest in filter(bool, prot.split(',')):
+                all_protein_mappings += 1
+                try:
+                    name, refseq, exon, cdna_mut, prot_mut = dest.split(':')
+                except ValueError as e:
+                    skipped_mappings += 1
+                    print(e, line)
+                    continue
+                assert refseq.startswith('NM_')
+                # refseq = int(refseq[3:])
+                # name and refseq are redundant with respect one to another
+
+                assert exon.startswith('exon')
+                # exon = exon[4:]
+
+                assert cdna_mut.startswith('c')
+                try:
+                    cdna_ref, cdna_pos, cdna_alt = decode_mutation(cdna_mut)
+                except ValueError as e:
+                    print(e, line)
+                    skipped_mappings += 1
+                    continue
+
+                try:
+                    strand = determine_strand(ref, cdna_ref, alt, cdna_alt)
+                except DataInconsistencyError as e:
+                    print(e, line)
+                    skipped_mappings += 1
+                    continue
+
+                assert prot_mut.startswith('p')
+                # we can check here if a given reference nuc is consistent
+                # with the reference amino acid. For example cytosine in
+                # reference implies that there should't be a methionine,
+                # glutamic acid, lysine nor arginine. The same applies to
+                # alternative nuc/aa and their combinations (having
+                # references (nuc, aa): (G, K) and alt nuc C defines that
+                # the alt aa has to be Asparagine (N) - no other is valid).
+                # Note: it could be used to compress the data in memory too
+                aa_ref, aa_pos, aa_alt = decode_mutation(prot_mut)
+
+                try:
+                    # try to get it from cache (`proteins` dictionary)
+                    protein = proteins[refseq]
+                except KeyError:
+                    skipped_mappings += 1
+                    continue
+
+                assert aa_pos == (int(cdna_pos) - 1) // 3 + 1
+
+                broken_sequence_tuple = is_sequence_broken(protein, aa_pos, aa_ref, aa_alt)
+
+                if broken_sequence_tuple:
+                    broken_seq[refseq].append(broken_sequence_tuple)
+                    skipped_mappings += 1
+                    continue
+
+                is_ptm_related = protein.would_affect_any_sites(aa_pos)
+
+                if is_ptm_related:
+                    ptm_types = protein.site_type_by_position[aa_pos]
+                    if subset and not ptm_types.intersection(subset):
+                        continue
+                    ptm_related += 1
+                    output.append('\t'.join(
+                        [chrom, str(pos), cdna_ref, str(cdna_pos), cdna_alt, aa_ref, str(aa_pos), aa_alt, strand, ','.join(ptm_types)]
+                    ) + '\n')
+
+    print(ptm_related, skipped_mappings, skipped_lines, all_lines, all_protein_mappings)
+
+    return broken_seq
+
+
 def import_aminoacid_mutation_refseq_mappings(
     proteins: Dict[str, Protein],
     mappings_dir='data/200616/all_variants/playground',

@@ -69,7 +69,7 @@ def decode_raw_mutation(mut):
     return mut[0], int(mut[1:-1]), mut[-1]
 
 
-def determine_strand(ref, cdna_ref, alt, cdna_alt):
+def determine_strand(ref, cdna_ref, alt, cdna_alt) -> str:
     """Determine DNA strand +/- on which a gene with given cDNA sequence lies.
 
     Input requirements: cdna_ref/cdna_alt has to be uppercase.

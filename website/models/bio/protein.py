@@ -323,6 +323,15 @@ class Protein(BioModel):
             for i in range(position - 7, position + 7 + 1)
         )
 
+    @cached_property
+    def site_type_by_position(self):
+        from collections import defaultdict
+        types = defaultdict(set)
+        for site in self.sites:
+            for i in range(site.position - 7, site.position + 7 + 1):
+                types[i].update([type.name for type in site.types])
+        return dict(types)
+
     def would_affect_any_sites(self, mutation_pos):
         return mutation_pos in self.sites_affecting_positions
 
