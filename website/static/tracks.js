@@ -430,12 +430,12 @@ var Tracks = function ()
                 var value = parseFloat(obj.attr('v'))
                 var text = value + ': '
                 if(value >= 0){
-                    var r = 255 - (value / max * 255)
-                    obj.css('background', 'rgb(255, ' + r + ', ' + r + ')')
+                    obj.css('background', 'rgb(' + (255 - (value / max * 255)) + ', 255, 255)')
                     text += 'conserved'
                 }
                 else {
-                    obj.css('background', 'rgb(' + (255 - (value / min * 255)) + ', 255, 255)')
+                    var r = 255 - (value / min * 255)
+                    obj.css('background', 'rgb(255, ' + r + ', ' + r + ')')
                     text += 'accelerated'
                 }
                 obj.attr('title', text)
