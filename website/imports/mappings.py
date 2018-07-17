@@ -1,6 +1,7 @@
 from collections import defaultdict
 from os.path import basename
 from typing import Dict
+import gzip
 
 from genomic_mappings import make_snv_key, encode_csv
 from helpers.bioinf import decode_mutation, DataInconsistencyError
@@ -124,7 +125,7 @@ def import_genome_proteome_mappings(
 
 def export_all_potential_ptm_mutations(
     proteins: Dict[str, Protein],
-    export_path='exported/all_potential_ptm_mutations.tsv',
+    export_path='exported/all_potential_ptm_mutations.tsv.gz',
     mappings_dir='data/200616/all_variants/playground',
     mappings_file_pattern='annot_*.txt.gz',
     subset=None
@@ -137,13 +138,13 @@ def export_all_potential_ptm_mutations(
     skipped_mappings = 0
     ptm_related = 0
 
-    with open(export_path, 'w') as f:
+    with gzip.open(export_path, 'wt') as f:
         output = []
 
         def flush():
             nonlocal output
-            f.writelines(output)
-            f.flush()
+            for line in output:
+                f.write(line)
             output = []
 
         for line in read_from_gz_files(mappings_dir, mappings_file_pattern, after_batch=lambda: flush()):
@@ -172,12 +173,11 @@ def export_all_potential_ptm_mutations(
                     skipped_mappings += 1
                     print(e, line)
                     continue
+
                 assert refseq.startswith('NM_')
-                # refseq = int(refseq[3:])
                 # name and refseq are redundant with respect one to another
 
                 assert exon.startswith('exon')
-                # exon = exon[4:]
 
                 assert cdna_mut.startswith('c')
                 try:
@@ -229,7 +229,7 @@ def export_all_potential_ptm_mutations(
                         continue
                     ptm_related += 1
                     output.append('\t'.join(
-                        [chrom, str(pos), cdna_ref, str(cdna_pos), cdna_alt, aa_ref, str(aa_pos), aa_alt, strand, ','.join(ptm_types)]
+                        [chrom, str(pos), strand, cdna_ref, str(cdna_pos), cdna_alt, refseq, aa_ref, str(aa_pos), aa_alt, ','.join(ptm_types)]
                     ) + '\n')
 
     print(ptm_related, skipped_mappings, skipped_lines, all_lines, all_protein_mappings)
