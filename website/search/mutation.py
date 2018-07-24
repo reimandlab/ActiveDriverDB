@@ -6,6 +6,7 @@ from werkzeug.datastructures import FileStorage
 
 from app import celery
 from database import bdb
+from helpers.bioinf import complement
 from models import UserUploadedMutation
 
 from .mutation_result import SearchResult
@@ -139,14 +140,22 @@ class MutationSearch:
                 self.query += parsed_line
 
     def parse_text(self, text_query):
+        complement_prefix = 'Complement of '
 
         for line in text_query.splitlines():
+            if line.startswith(complement_prefix):
+                line = line[len(complement_prefix):]
             data = line.strip().split()
             if len(data) == 4:
                 chrom, pos, ref, alt = data
-                chrom = chrom[3:]
+                if chrom.startswith('chr'):
+                    chrom = chrom[3:]
 
                 items = bdb.get_genomic_muts(chrom, pos, ref, alt)
+
+                if not items:
+                    line = complement_prefix + line
+                    items = bdb.get_genomic_muts(chrom, pos, complement(ref), complement(alt))
 
             elif len(data) == 2:
                 gene, mut = [x.upper() for x in data]
