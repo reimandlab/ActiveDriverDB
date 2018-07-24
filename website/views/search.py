@@ -491,7 +491,7 @@ class SearchView(FlaskView):
                     user = None
                     flash(
                         'To browse uploaded mutations easily in the '
-                        'future, please register or log in with this form',
+                        'future, please <a href="/register">register</a> or <a href="login">log in</a>.',
                         'warning'
                     )
 
