@@ -1,4 +1,5 @@
 from models import Protein, Mutation
+from database import get_or_create
 
 
 class SearchResult:
@@ -34,10 +35,11 @@ class SearchResult:
         ).one()
         del state['protein_refseq']
 
-        state['mutation'] = Mutation.query.filter_by(
+        state['mutation'], created = get_or_create(
+            Mutation,
             protein=state['protein'],
             **state['mutation_kwargs']
-        ).one()
+        )
         del state['mutation_kwargs']
 
         state['meta_user'].mutation = state['mutation']
