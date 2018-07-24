@@ -17,8 +17,7 @@ function multisort(columns)
   enctype="multipart/form-data"
 >
   <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
-  {# TODO: the example should return more representative results #}
-  {% set example='HTR3E I183823756M\nSTAT6 W737C\nchr12 57490358 C A\nTP53 R282W\nBRCA1 L432V' %}
+  {% set example='STAT6 W737C\nTP53 R282W\nBRCA1 L432V\nchr12 57490358 C A\nchr1 11082610 G C\nchr1 40737681 C G\nchr1 2234540 A G' %}
   <div class="options">
     <a class="btn btn-default btn-file">
       Select VCF file  <input type="file" name="vcf-file">
