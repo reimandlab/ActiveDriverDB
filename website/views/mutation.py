@@ -3,6 +3,7 @@ from flask_classful import FlaskView
 from flask_login import current_user
 from models import Protein
 from models import Mutation
+from database import get_or_create
 
 
 class MutationView(FlaskView):
@@ -11,15 +12,13 @@ class MutationView(FlaskView):
 
         protein = Protein.query.filter_by(refseq=refseq).first_or_404()
 
+        """
         mutation = Mutation.query.filter_by(
             protein=protein,
             position=int(position),
             alt=alt
         ).first_or_404()
-
-        # in case we also want to show also non-confirmed mutations:
         """
-        from database import get_or_create
 
         mutation, _ = get_or_create(
             Mutation,
@@ -29,7 +28,6 @@ class MutationView(FlaskView):
             position=int(position),
             alt=alt
         )
-        """
         datasets = []
 
         sources_with_mutation = mutation.sources_dict
