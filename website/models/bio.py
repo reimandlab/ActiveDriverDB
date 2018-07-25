@@ -749,7 +749,7 @@ class Site(BioModel):
                 'alt': mutation.alt,
                 'impact': mutation.impact_on_specific_ptm(self)
             }
-            for mutation in self.protein.mutations
+            for mutation in self.protein.confirmed_mutations
             if abs(mutation.position - self.position) < 7
         ]
 
