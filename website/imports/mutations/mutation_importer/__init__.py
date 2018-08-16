@@ -1,5 +1,7 @@
+import gzip
 from abc import abstractmethod
 from collections import defaultdict
+from typing import List, Iterable
 
 from sqlalchemy.orm import load_only
 from sqlalchemy.util import classproperty
@@ -10,7 +12,7 @@ from database.bulk import bulk_orm_insert, restart_autoincrement
 from database.manage import raw_delete_all, remove_model
 from helpers.bioinf import decode_mutation, is_sequence_broken
 from helpers.patterns import abstract_property
-from models import Protein
+from models import Protein, Mutation
 
 from ...importer import BioImporter
 from .base_importer import BaseMutationsImporter
@@ -78,7 +80,7 @@ class MutationImporter(BioImporter, MutationExporter):
 
         Long story short: when importing mutations to clean/new database - use
         update=False. For updates use update=True and expect long runtime."""
-        print('Loading %s:' % self.model_name)
+        print(f'Loading {self.model_name}:')
 
         path = self.choose_path(path)
         self.base_importer.prepare()
@@ -118,26 +120,126 @@ class MutationImporter(BioImporter, MutationExporter):
                 )
             )
 
-        print('Loaded %s.' % self.model_name)
+        print(f'Loaded {self.model_name}.')
+
+    def export_genomic_coordinates_of_ptm(self, export_path=None, path=None, only_primary_isoforms=False):
+        path = self.choose_path(path)
+
+        if not export_path:
+            export_path = self.generate_export_path(only_primary_isoforms, prefix='genomic_ptm_')
+
+        header = [
+            'Chr', 'Start', 'End', 'Ref', 'Alt',
+            'Func.refGene',
+            'Gene.refGene',
+            'GeneDetail.refGene',
+            'ExonicFunc.refGene',
+            'AAChange.refGene',
+            'AffectedSites'
+        ]
+
+        self.base_importer.prepare()
+
+        skipped = 0
+        total = 0
+
+        with gzip.open(export_path, 'wt') as f:
+
+            f.write('\t'.join(header) + '\n')
+
+            for line in self.iterate_lines(path):
+
+                relevant_proteome_coordinates = []
+
+                for pos, protein, alt, ref, is_ptm_related in self.preparse_mutations(line):
+
+                    mutation_id = self.get_or_make_mutation(
+                        pos, protein.id, alt, is_ptm_related
+                    )
+                    mutation = Mutation.query.get(mutation_id)
+
+                    if only_primary_isoforms and not protein.is_preferred_isoform:
+                        continue
+
+                    total += 1
+
+                    if not mutation:
+                        skipped += 1
+                        continue
+
+                    assert is_ptm_related == mutation.is_ptm()
+
+                    if is_ptm_related:
+                        for site in mutation.get_affected_ptm_sites():
+                            relevant_proteome_coordinates.append(
+                                (pos, protein, alt, ref, site)
+                            )
+
+                if relevant_proteome_coordinates:
+
+                    protein_mutations = []
+                    sites_affected = []
+
+                    for protein_mutation in line[9].split(','):
+                        relevant = False
+                        mutation_sites = []
+
+                        for pos, protein, alt, ref, site in relevant_proteome_coordinates:
+                            if (
+                                protein_mutation.startswith(protein.gene_name + ':' + protein.refseq)
+                                and
+                                protein_mutation.endswith(ref + str(pos) + alt)
+                            ):
+                                relevant = True
+                                mutation_sites.append(site)
+
+                        if relevant:
+                            protein_mutations.append(protein_mutation)
+                            sites_affected.append(mutation_sites)
+
+                    line[9] = ','.join(protein_mutations)
+                    sites = (
+                        ','.join(
+                            ';'.join(
+                                [
+                                    site.protein.refseq + ':' + str(site.position) + site.residue
+                                    for site in mutation_sites
+                                ]
+                            )
+                            for mutation_sites in sites_affected
+                        )
+                    )
+                    if len(line) == 10:
+                        line.append(sites)
+                    else:
+                        line[10] = sites
+                    f.write('\t'.join(line[:11]) + '\n')
+
+        print(skipped / total)
 
     def update(self, path=None):
         """Insert new and update old mutations. Same as load(update=True)."""
         self.load(path, update=True)
 
     @abstractmethod
+    def iterate_lines(self, path) -> Iterable[List[str]]:
+        pass
+
+    @abstractmethod
     def parse(self, path):
-        """Make use of self.preparse_mutations() and therefore populate
+        """Make use of self.get_or_make_mutations() and therefore populate
         self.base_mutations with new Mutation instances and also return
         a structure containing data to populate self.model (MutationDetails
-        descendants) as to be accepted by self.insert_details()."""
-        pass
+        descendants) as to be accepted by self.insert_details().
+
+        To iterate lines of the Annovar-like file, use self.iterate_lines()
+        """
 
     @abstractmethod
     def insert_details(self, data):
         """Create instances of self.model using provided data and add them to
         session (flushing is allowed, committing is highly not recommended).
         Use of db.session methods like 'bulk_insert_mappings' is recommended."""
-        pass
 
     # @abstractmethod
     # TODO: make it abstract and add it to all importers, altogether with tests
@@ -178,10 +280,10 @@ class MutationImporter(BioImporter, MutationExporter):
         )
         return mutation_id
 
-    def preparse_mutations(self, line):
+    def preparse_mutations(self, line: List[str]):
         """Preparse mutations from a line of Annovar annotation file.
 
-        Given line should be already slitted by correct separator (usually
+        Given line should be already split by correct separator (usually
         tabulator character). The mutations will be extracted from 10th field.
         The function gets first semicolon separated impact-list, and splits
         the list by commas. The redundancy of semicolon separated impact-lists
@@ -213,6 +315,12 @@ class MutationImporter(BioImporter, MutationExporter):
 
             is_ptm_related = protein.has_sites_in_range(pos - 7, pos + 7)
 
+            yield pos, protein, alt, ref, is_ptm_related
+
+    def get_or_make_mutations(self, line: List[str]):
+        """Get or create mutations from line of Annovar annotation file and return their ids."""
+        for pos, protein, alt, ref, is_ptm_related in self.preparse_mutations(line):
+
             mutation_id = self.get_or_make_mutation(
                 pos, protein.id, alt, is_ptm_related
             )
@@ -234,7 +342,7 @@ class MutationImporter(BioImporter, MutationExporter):
 
             values = get_data_from_line(line)
 
-            for mutation_id in self.preparse_mutations(line):
+            for mutation_id in self.get_or_make_mutations(line):
 
                 duplicated = self.look_after_duplicates(mutation_id, clinvar_mutations, values)
 

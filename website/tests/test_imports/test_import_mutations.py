@@ -298,6 +298,8 @@ class TestImport(DatabaseTest):
 
             def parse(self, path): pass
 
+            def iterate_lines(self, path): pass
+
         importer = Importer()
         mutation_details = []
 

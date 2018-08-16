@@ -3,7 +3,7 @@ from collections import OrderedDict
 from sqlalchemy.orm.exc import NoResultFound
 from models import InheritedMutation, Disease
 from models import ClinicalData
-from helpers.parsers import parse_tsv_file
+from helpers.parsers import tsv_file_iterator
 from helpers.parsers import gzip_open_text
 from database import get_or_create
 from database.bulk import get_highest_id, bulk_orm_insert, restart_autoincrement
@@ -34,6 +34,9 @@ class ClinVarImporter(MutationImporter):
     @staticmethod
     def _beautify_disease_name(name):
         return name.replace('\\x2c', ',').replace('_', ' ')
+
+    def iterate_lines(self, path):
+        return tsv_file_iterator(path, self.header, file_opener=gzip_open_text)
 
     def parse(self, path):
         clinvar_mutations = []
@@ -101,7 +104,7 @@ class ClinVarImporter(MutationImporter):
             if not at_least_one_significant_sub_entry:
                 return
 
-            for mutation_id in self.preparse_mutations(line):
+            for mutation_id in self.get_or_make_mutations(line):
 
                 # take care of duplicates
                 duplicated = self.look_after_duplicates(mutation_id, clinvar_mutations, values[:4])
@@ -182,14 +185,10 @@ class ClinVarImporter(MutationImporter):
                         )
                     )
 
-        parse_tsv_file(
-            path,
-            clinvar_parser,
-            self.header,
-            file_opener=gzip_open_text
-        )
+        for line in self.iterate_lines(path):
+            clinvar_parser(line)
 
-        print('%s duplicates found' % duplicates)
+        print(f'{duplicates} duplicates found')
 
         return clinvar_mutations, clinvar_data, new_diseases.values()
 

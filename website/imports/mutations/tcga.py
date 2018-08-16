@@ -49,11 +49,14 @@ class TCGAImporter(MutationImporter):
         cancer_name, sample_name, _ = line[10][10:].split(';')
         return cancer_name, sample_name
 
+    def iterate_lines(self, path):
+        return iterate_tsv_gz_file(path, file_header=self.header)
+
     def parse(self, path):
 
         mutations = defaultdict(lambda: [0, set()])
 
-        for line in iterate_tsv_gz_file(path, file_header=self.header):
+        for line in self.iterate_lines(path):
             cancer_name, sample_name = self.decode_line(line)
 
             if sample_name in self.samples_to_skip:
@@ -66,7 +69,7 @@ class TCGAImporter(MutationImporter):
                 cancer.code = cancer_name
                 db.session.add(cancer)
 
-            for mutation_id in self.preparse_mutations(line):
+            for mutation_id in self.get_or_make_mutations(line):
 
                 key = (mutation_id, cancer.id)
 

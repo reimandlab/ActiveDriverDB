@@ -119,28 +119,33 @@ class MutationExporter:
            'gene', 'isoform', 'position',  'wt_residue', 'mut_residue'
         ] + self.export_details_headers()
 
+    def generate_export_path(self, only_preferred, prefix=''):
+        export_time = datetime.utcnow()
+
+        directory = os.path.join('exported', 'mutations')
+        os.makedirs(directory, exist_ok=True)
+
+        name_template = '{prefix}{model_name}{restrictions}-{date}.tsv.gz'
+
+        name = name_template.format(
+            prefix=prefix,
+            model_name=self.model_name,
+            restrictions=(
+                '-primary_isoforms_only' if only_preferred else ''
+            ),
+            date=export_time
+        )
+        return os.path.join(directory, name)
+
     def export(self, path=None, only_preferred=False):
         """Export all mutations from this source in ActiveDriver compatible format.
 
         Source specific data export can be implemented with export_details method,
         while export_details_headers should provide names for respective headers.
         """
-        export_time = datetime.utcnow()
 
         if not path:
-            directory = os.path.join('exported', 'mutations')
-            os.makedirs(directory, exist_ok=True)
-
-            name_template = '{model_name}{restrictions}-{date}.tsv.gz'
-
-            name = name_template.format(
-                model_name=self.model_name,
-                restrictions=(
-                    '-primary_isoforms_only' if only_preferred else ''
-                ),
-                date=export_time
-            )
-            path = os.path.join(directory, name)
+            path = self.generate_export_path(only_preferred)
 
         with gzip.open(path, 'wt') as f:
 

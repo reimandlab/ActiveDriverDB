@@ -2,7 +2,7 @@ from warnings import warn
 
 from models import MIMPMutation
 from helpers.bioinf import decode_raw_mutation
-from helpers.parsers import parse_tsv_file
+from helpers.parsers import tsv_file_iterator
 
 from .mutation_importer import MutationImporter
 
@@ -29,11 +29,13 @@ class MIMPImporter(MutationImporter):
         'site_id'
     )
 
+    def iterate_lines(self, path):
+        return tsv_file_iterator(path, self.header)
+
     def parse(self, path):
         mimps = []
 
-        def parser(line):
-            nonlocal mimps
+        for line in self.iterate_lines(path):
 
             refseq = line[0]
             mut = line[1]
@@ -94,8 +96,6 @@ class MIMPImporter(MutationImporter):
                     site_id
                 )
             )
-
-        parse_tsv_file(path, parser, self.header)
 
         return mimps
 
