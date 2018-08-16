@@ -35,7 +35,8 @@ class MIMPImporter(MutationImporter):
     def parse(self, path):
         mimps = []
 
-        for line in self.iterate_lines(path):
+        def parser(line):
+            nonlocal mimps
 
             refseq = line[0]
             mut = line[1]
@@ -96,6 +97,9 @@ class MIMPImporter(MutationImporter):
                     site_id
                 )
             )
+
+        for line in self.iterate_lines(path):
+            parser(line)
 
         return mimps
 
