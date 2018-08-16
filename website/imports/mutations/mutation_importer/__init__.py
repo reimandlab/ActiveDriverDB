@@ -135,7 +135,8 @@ class MutationImporter(BioImporter, MutationExporter):
             'GeneDetail.refGene',
             'ExonicFunc.refGene',
             'AAChange.refGene',
-            'AffectedSites'
+            'AffectedSites',
+            'RawSourceSpecificMetadata'
         ]
 
         self.base_importer.prepare()
@@ -209,11 +210,8 @@ class MutationImporter(BioImporter, MutationExporter):
                             for mutation_sites in sites_affected
                         )
                     )
-                    if len(line) == 10:
-                        line.append(sites)
-                    else:
-                        line[10] = sites
-                    f.write('\t'.join(line[:11]) + '\n')
+                    line = line[:10] + [sites] + line[10:]
+                    f.write('\t'.join(line) + '\n')
 
         print(skipped / total)
 
