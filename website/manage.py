@@ -399,6 +399,8 @@ class Mutations(CommandTarget):
         kwargs = vars(args)
         if 'func' in kwargs:
             kwargs.pop('func')
+        if 'type' in kwargs:
+            kwargs.pop('type')
         muts_import_manager.perform(
             name, proteins, **kwargs
         )
@@ -413,7 +415,11 @@ class Mutations(CommandTarget):
 
     @command
     def export(args):
-        Mutations.action('export', args)
+        if args.type == 'proteome':
+            Mutations.action('export', args)
+        else:
+            assert args.type == 'genomic_ptm'
+            Mutations.action('export_genomic_coordinates_of_ptm', args)
 
     @command
     def update(args):
@@ -445,6 +451,16 @@ class Mutations(CommandTarget):
             '--only_primary_isoforms',
             action='store_true',
             help='Restrict export to primary isoforms',
+        )
+
+    @export.argument
+    def type():
+        return argument_parameters(
+            '-t',
+            '--type',
+            choices=['proteomic', 'genomic_ptm'],
+            help='What type of mutations should be exported: proteomic or genomic_ptm (genomic affecting PTM).'
+                 'By default proteomic mutations will be exported',
         )
 
 

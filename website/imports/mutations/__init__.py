@@ -190,9 +190,108 @@ class MutationImporter(ABC):
 
         print('Loaded %s.' % self.model_name)
 
+    def export_genomic_coordinates_of_ptm(self, export_path=None, path=None, only_primary_isoforms=False):
+        path = self.choose_path(path)
+
+        if not export_path:
+            export_path = self.generate_export_path(only_primary_isoforms, prefix='genomic_ptm_')
+
+        header = [
+            'Chr', 'Start', 'End', 'Ref', 'Alt',
+            'Func.refGene',
+            'Gene.refGene',
+            'GeneDetail.refGene',
+            'ExonicFunc.refGene',
+            'AAChange.refGene',
+            'AffectedSites'
+        ]
+
+        self.base_importer.prepare()
+
+        skipped = 0
+        total = 0
+
+        with gzip.open(export_path, 'wt') as f:
+
+            f.write('\t'.join(header) + '\n')
+
+            for line in self.iterate_lines(path):
+
+                relevant_proteome_coordinates = []
+
+                for pos, protein, alt, ref, is_ptm_related in self.preparse_mutations(line):
+
+                    mutation_id = self.get_or_make_mutation(
+                        pos, protein.id, alt, is_ptm_related
+                    )
+                    mutation = Mutation.query.get(mutation_id)
+
+                    if only_primary_isoforms and not protein.is_preferred_isoform:
+                        continue
+
+                    total += 1
+
+                    if not mutation:
+                        skipped += 1
+                        continue
+
+                    assert is_ptm_related == mutation.is_ptm()
+
+                    if is_ptm_related:
+                        for site in mutation.get_affected_ptm_sites():
+                            relevant_proteome_coordinates.append(
+                                (pos, protein, alt, ref, site)
+                            )
+
+                if relevant_proteome_coordinates:
+
+                    protein_mutations = []
+                    sites_affected = []
+
+                    for protein_mutation in line[9].split(','):
+                        relevant = False
+                        mutation_sites = []
+
+                        for pos, protein, alt, ref, site in relevant_proteome_coordinates:
+                            if (
+                                    protein_mutation.startswith(protein.gene_name + ':' + protein.refseq)
+                                    and
+                                    protein_mutation.endswith(ref + str(pos) + alt)
+                            ):
+                                relevant = True
+                                mutation_sites.append(site)
+
+                        if relevant:
+                            protein_mutations.append(protein_mutation)
+                            sites_affected.append(mutation_sites)
+
+                    line[9] = ','.join(protein_mutations)
+                    sites = (
+                        ','.join(
+                            ';'.join(
+                                [
+                                    site.protein.refseq + ':' + str(site.position) + site.residue
+                                    for site in mutation_sites
+                                ]
+                            )
+                            for mutation_sites in sites_affected
+                        )
+                    )
+                    if len(line) == 10:
+                        line.append(sites)
+                    else:
+                        line[10] = sites
+                    f.write('\t'.join(line[:11]) + '\n')
+
+        print(skipped / total)
+
     def update(self, path=None):
         """Insert new and update old mutations. Same as load(update=True)."""
         self.load(path, update=True)
+
+    @abstractmethod
+    def iterate_lines(self, path):
+        pass
 
     @abstractmethod
     def parse(self, path):
@@ -249,33 +348,38 @@ class MutationImporter(ABC):
     def export_details(self, mutation):
         return [[]]
 
+    def generate_export_path(self, only_preferred, prefix=''):
+        from datetime import datetime
+        import os
+
+        export_time = datetime.utcnow()
+
+        directory = os.path.join('exported', 'mutations')
+        os.makedirs(directory, exist_ok=True)
+
+        name_template = '{prefix}{model_name}{restrictions}-{date}.tsv.gz'
+
+        name = name_template.format(
+            prefix=prefix,
+            model_name=self.model_name,
+            restrictions=(
+                '-primary_isoforms_only' if only_preferred else ''
+            ),
+            date=export_time
+        )
+        return os.path.join(directory, name)
+
     def export(self, path=None, only_primary_isoforms=False):
         """Export all mutations from this source in ActiveDriver compatible format.
 
         Source specific data export can be implemented with export_details method,
         while export_details_headers should provide names for respective headers.
         """
-        from datetime import datetime
-        import os
         from tqdm import tqdm
-        export_time = datetime.utcnow()
-
         tick = 0
 
         if not path:
-            directory = os.path.join('exported', 'mutations')
-            os.makedirs(directory, exist_ok=True)
-
-            name_template = '{model_name}{restrictions}-{date}.tsv.gz'
-
-            name = name_template.format(
-                model_name=self.model_name,
-                restrictions=(
-                    '-primary_isoforms_only' if only_primary_isoforms else ''
-                ),
-                date=export_time
-            )
-            path = os.path.join(directory, name)
+            path = self.generate_export_path(only_primary_isoforms)
 
         header = [
             'gene', 'isoform', 'position',  'wt_residue', 'mut_residue'
@@ -327,7 +431,7 @@ class MutationImporter(ABC):
     def preparse_mutations(self, line):
         """Preparse mutations from a line of Annovar annotation file.
 
-        Given line should be already slitted by correct separator (usually
+        Given line should be already split by correct separator (usually
         tabulator character). The mutations will be extracted from 10th field.
         The function gets first semicolon separated impact-list, and splits
         the list by commas. The redundancy of semicolon separated impact-lists
@@ -358,6 +462,12 @@ class MutationImporter(ABC):
                 continue
 
             is_ptm_related = protein.has_sites_in_range(pos - 7, pos + 7)
+
+            yield pos, protein, alt, ref, is_ptm_related
+
+    def get_or_make_mutations(self, line):
+        """Get or create mutations from line of Annovar annotation file and return their ids."""
+        for pos, protein, alt, ref, is_ptm_related in self.preparse_mutations(line):
 
             mutation_id = self.get_or_make_mutation(
                 pos, protein.id, alt, is_ptm_related

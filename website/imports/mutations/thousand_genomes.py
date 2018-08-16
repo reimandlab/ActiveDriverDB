@@ -37,6 +37,13 @@ class Importer(MutationImporter):
         dna_mut = line[4]
         return [seq[0] for seq in line[17].split(',')].index(dna_mut)
 
+    def iterate_lines(self, path):
+        return read_from_gz_files(
+            dirname(path),
+            basename(path),
+            skip_header=False
+        )
+
     def parse(self, path):
         thousand_genomes_mutations = []
         duplicates = 0
@@ -51,11 +58,7 @@ class Importer(MutationImporter):
             'SAS_AF',
         )
 
-        for line in read_from_gz_files(
-            dirname(path),
-            basename(path),
-            skip_header=False
-        ):
+        for line in self.iterate_lines(path):
             line = line.rstrip().split('\t')
 
             metadata = line[20].split(';')
@@ -73,7 +76,7 @@ class Importer(MutationImporter):
 
             values = list(maf_data.values())
 
-            for mutation_id in self.preparse_mutations(line):
+            for mutation_id in self.get_or_make_mutations(line):
 
                 duplicated = self.look_after_duplicates(mutation_id, thousand_genomes_mutations, values)
                 if duplicated:

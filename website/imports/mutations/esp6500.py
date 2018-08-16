@@ -1,6 +1,6 @@
 from models import ExomeSequencingMutation
 from imports.mutations import MutationImporter
-from helpers.parsers import parse_tsv_file
+from helpers.parsers import tsv_file_iterator
 from helpers.parsers import gzip_open_text
 
 
@@ -14,6 +14,9 @@ class Importer(MutationImporter):
         'V12', 'V13', 'V14', 'V15', 'V16', 'V17', 'V18', 'V19', 'V20', 'V21'
     ]
     insert_keys = ('mutation_id', 'maf_ea', 'maf_aa', 'maf_all')
+
+    def iterate_lines(self, path):
+        return tsv_file_iterator(path, self.header, file_opener=gzip_open_text)
 
     def parse(self, path):
         esp_mutations = []
@@ -34,7 +37,7 @@ class Importer(MutationImporter):
                 skipped += 1
                 return
 
-            for mutation_id in self.preparse_mutations(line):
+            for mutation_id in self.get_or_make_mutations(line):
 
                 values = (
                     mutation_id,
@@ -52,11 +55,8 @@ class Importer(MutationImporter):
 
                 esp_mutations.append(values)
 
-        parse_tsv_file(
-            path, esp_parser,
-            self.header,
-            file_opener=gzip_open_text
-        )
+        for line in self.iterate_lines(path):
+            esp_parser(line)
 
         print('%s duplicates found' % duplicates)
         print('%s zero-frequency mutations skipped' % skipped)

@@ -96,6 +96,26 @@ def iterate_tsv_gz_file(
             yield line
 
 
+def tsv_file_iterator(
+    filename, file_header=None, file_opener=open, mode='r'
+):
+    with file_opener(filename, mode=mode) as f:
+        data_lines_count = count_lines(f)
+
+    with file_opener(filename, mode=mode) as f:
+        if file_header:
+            header = f.readline().rstrip().split('\t')
+            data_lines_count -= 1
+            if header != file_header:
+                raise ParsingError(
+                    'Given file header does not match to expected: '
+                    'expected: %s, found: %s' % (file_header, header)
+                )
+
+        for line in tqdm(f, total=data_lines_count, unit=' lines'):
+            yield line.rstrip().split('\t')
+
+
 def parse_tsv_file(
     filename, parser, file_header=None, file_opener=open, mode='r'
 ):
@@ -106,20 +126,8 @@ def parse_tsv_file(
 
     Progress bar is embedded.
     """
-    with file_opener(filename, mode=mode) as f:
-        data_lines_count = count_lines(f)
-    with file_opener(filename, mode=mode) as f:
-        if file_header:
-            header = f.readline().rstrip().split('\t')
-            data_lines_count -= 1
-            if header != file_header:
-                raise ParsingError(
-                    'Given file header does not match to expected: '
-                    'expected: %s, found: %s' % (file_header, header)
-                )
-        for line in tqdm(f, total=data_lines_count, unit=' lines'):
-            line = line.rstrip().split('\t')
-            parser(line)
+    for line in tsv_file_iterator(filename, file_header, file_opener, mode):
+        parser(line)
 
 
 def parse_text_file(filename, parser, file_header=None, file_opener=open):
