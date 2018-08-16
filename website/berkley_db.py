@@ -64,7 +64,7 @@ class BerkleyHashSet:
         os.makedirs(db_dir, exist_ok=True)
         return join(db_dir, basename(self.name))
 
-    def open(self, name, mode='c'):
+    def open(self, name, mode='c', cache_size=20480 * 8):
         """Open hash database in a given mode.
 
         By default it opens a database in read-write mode and in case
@@ -72,7 +72,7 @@ class BerkleyHashSet:
         """
         self.name = name
         self.path = self._create_path()
-        self.db = bsddb.hashopen(self.path, mode, cachesize=20480 * 8)
+        self.db = bsddb.hashopen(self.path, mode, cachesize=cache_size)
         self.is_open = True
 
     def close(self):

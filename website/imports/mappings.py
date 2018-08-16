@@ -24,9 +24,12 @@ def import_genome_proteome_mappings(
 
     bdb.reset()
     bdb.close()
+
+    path = current_app.config['BDB_DNA_TO_PROTEIN_PATH']
     if bdb_dir:
-        bdb_dir += '/'
-    bdb.open(bdb_dir + basename(current_app.config['BDB_DNA_TO_PROTEIN_PATH']))
+        path = bdb_dir + '/' + basename(path)
+
+    bdb.open(path, cache_size=20480 * 8 * 8 * 8 *8)
 
     for line in read_from_gz_files(mappings_dir, mappings_file_pattern):
         try:
