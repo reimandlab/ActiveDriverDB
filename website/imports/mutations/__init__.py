@@ -190,6 +190,9 @@ class MutationImporter(ABC):
 
         print('Loaded %s.' % self.model_name)
 
+    def export_genomic_clean_fields(self, fields):
+        return fields
+
     def export_genomic_coordinates_of_ptm(self, export_path=None, path=None, only_primary_isoforms=False):
         path = self.choose_path(path)
 
@@ -278,7 +281,7 @@ class MutationImporter(ABC):
                             for mutation_sites in sites_affected
                         )
                     )
-                    line = line[:10] + [sites] + line[10:]
+                    line = line[:10] + [sites] + self.export_genomic_clean_fields(line[10:])
                     f.write('\t'.join(line) + '\n')
 
         print(skipped / total)

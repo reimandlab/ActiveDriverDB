@@ -106,3 +106,6 @@ class Importer(MutationImporter):
 
     def insert_details(self, thousand_genomes_mutations):
         self.insert_list(thousand_genomes_mutations)
+
+    def export_genomic_clean_fields(self, fields):
+        return fields[:12]
