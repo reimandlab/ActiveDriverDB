@@ -40,11 +40,12 @@ class The1000GenomesImporter(MutationImporter):
         return [seq[0] for seq in line[17].split(',')].index(dna_mut)
 
     def iterate_lines(self, path):
-        return read_from_gz_files(
-            dirname(path),
-            basename(path),
-            skip_header=False
-        )
+        for line in read_from_gz_files(
+                dirname(path),
+                basename(path),
+                skip_header=False
+        ):
+            yield line.rstrip().split('\t')
 
     def parse(self, path):
         thousand_genomes_mutations = []
@@ -61,7 +62,6 @@ class The1000GenomesImporter(MutationImporter):
         )
 
         for line in self.iterate_lines(path):
-            line = line.rstrip().split('\t')
 
             metadata = line[20].split(';')
 
