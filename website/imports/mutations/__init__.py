@@ -193,6 +193,10 @@ class MutationImporter(ABC):
     def export_genomic_clean_fields(self, fields):
         return fields
 
+    def test_line(self, line):
+        """Whether the line should be imported/exported or not"""
+        return True
+
     def export_genomic_coordinates_of_ptm(self, export_path=None, path=None, only_primary_isoforms=False):
         path = self.choose_path(path)
 
@@ -219,7 +223,7 @@ class MutationImporter(ABC):
 
             f.write('\t'.join(header) + '\n')
 
-            for line in self.iterate_lines(path):
+            for line in filter(self.test_line, self.iterate_lines(path)):
 
                 relevant_proteome_coordinates = []
 
@@ -300,14 +304,12 @@ class MutationImporter(ABC):
         self.base_mutations with new Mutation instances and also return
         a structure containing data to populate self.model (MutationDetails
         descendants) as to be accepted by self.insert_details()."""
-        pass
 
     @abstractmethod
     def insert_details(self, data):
         """Create instances of self.model using provided data and add them to
         session (flushing is allowed, committing is highly not recommended).
         Use of db.session methods like 'bulk_insert_mappings' is recommended."""
-        pass
 
     # @abstractmethod
     # TODO: make it abstract and add it to all importers, altogether with tests
@@ -318,7 +320,6 @@ class MutationImporter(ABC):
         of duplicates) check if each mutation already is in the database and
         if it exists - overwrite it with the new data."""
         raise NotImplementedError
-        pass
 
     def insert_list(self, data):
         if not self.insert_keys:

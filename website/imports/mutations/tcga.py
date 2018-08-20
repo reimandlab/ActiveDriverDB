@@ -28,6 +28,10 @@ class Importer(MutationImporter):
     def iterate_lines(self, path):
         return iterate_tsv_gz_file(path, file_header=self.header)
 
+    def test_line(self, line):
+        cancer_name, sample_name = self.decode_line(line)
+        return sample_name not in self.samples_to_skip
+
     def parse(self, path):
 
         mutations = defaultdict(lambda: [0, set()])

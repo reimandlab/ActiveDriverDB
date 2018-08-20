@@ -45,29 +45,36 @@ class Importer(MutationImporter):
         ):
             yield line.rstrip().split('\t')
 
+    maf_keys = (
+        'AF',
+        'EAS_AF',
+        'AMR_AF',
+        'AFR_AF',
+        'EUR_AF',
+        'SAS_AF',
+    )
+
+    def parse_metadata(self, line):
+        metadata = line[20].split(';')
+
+        maf_data = make_metadata_ordered_dict(
+            self.maf_keys,
+            metadata,
+            self.find_af_subfield_number(line)
+        )
+        return maf_data
+
+    def test_line(self, line):
+        maf_data = self.parse_metadata(line)
+        return maf_data['AF'] != '0'
+
     def parse(self, path):
         thousand_genomes_mutations = []
         duplicates = 0
         skipped = 0
 
-        maf_keys = (
-            'AF',
-            'EAS_AF',
-            'AMR_AF',
-            'AFR_AF',
-            'EUR_AF',
-            'SAS_AF',
-        )
-
         for line in self.iterate_lines(path):
-
-            metadata = line[20].split(';')
-
-            maf_data = make_metadata_ordered_dict(
-                maf_keys,
-                metadata,
-                self.find_af_subfield_number(line)
-            )
+            maf_data = self.parse_metadata(line)
 
             # ignore mutations with frequency equal to zero
             if maf_data['AF'] == '0':

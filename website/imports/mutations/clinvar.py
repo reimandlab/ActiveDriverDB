@@ -11,6 +11,9 @@ from database import bulk_ORM_insert
 from database import db
 
 
+class MalformedRowError(Exception):
+    pass
+
 class Importer(MutationImporter):
 
     model = InheritedMutation
@@ -35,6 +38,64 @@ class Importer(MutationImporter):
     def iterate_lines(self, path):
         return tsv_file_iterator(path, self.header, file_opener=gzip_open_text)
 
+    def test_line(self, line):
+        try:
+            at_least_one_significant_sub_entry, *args = self.parse_metadata(line)
+            return at_least_one_significant_sub_entry
+        except MalformedRowError:
+            return False
+
+    clinvar_keys = (
+        'RS',
+        'MUT',
+        'VLD',
+        'PMC',
+        'CLNSIG',
+        'CLNDBN',
+        'CLNREVSTAT',
+    )
+
+    def parse_metadata(self, line):
+        metadata = line[20].split(';')
+
+        clinvar_entry = make_metadata_ordered_dict(self.clinvar_keys, metadata)
+
+        names, statuses, significances = (
+            (entry.replace('|', ',').split(',') if entry else None)
+            for entry in
+            (
+                clinvar_entry[key]
+                for key in ('CLNDBN', 'CLNREVSTAT', 'CLNSIG')
+            )
+        )
+
+        # those length should be always equal if they exists
+        sub_entries_cnt = max(
+            [
+                len(x)
+                for x in (names, statuses, significances)
+                if x
+            ] or [0]
+        )
+
+        at_least_one_significant_sub_entry = False
+
+        for i in range(sub_entries_cnt):
+
+            try:
+                if names:
+                    if names[i] not in ('not_specified', 'not_provided'):
+                        names[i] = self._beautify_disease_name(names[i])
+                        at_least_one_significant_sub_entry = True
+                if statuses and statuses[i] == 'no_criteria':
+                    statuses[i] = None
+            except IndexError:
+                raise MalformedRowError('Malformed row (wrong count of subentries) on %s-th entry:' % i)
+
+        values = list(clinvar_entry.values())
+
+        return at_least_one_significant_sub_entry, values, sub_entries_cnt, names, statuses, significances
+
     def parse(self, path):
         clinvar_mutations = []
         clinvar_data = []
@@ -56,45 +117,11 @@ class Importer(MutationImporter):
         def clinvar_parser(line):
             nonlocal highest_disease_id, duplicates
 
-            metadata = line[20].split(';')
-
-            clinvar_entry = make_metadata_ordered_dict(clinvar_keys, metadata)
-
-            names, statuses, significances = (
-                (entry.replace('|', ',').split(',') if entry else None)
-                for entry in
-                (
-                    clinvar_entry[key]
-                    for key in ('CLNDBN', 'CLNREVSTAT', 'CLNSIG')
-                )
-            )
-
-            # those length should be always equal if they exists
-            sub_entries_cnt = max(
-                [
-                    len(x)
-                    for x in (names, statuses, significances)
-                    if x
-                ] or [0]
-            )
-
-            at_least_one_significant_sub_entry = False
-
-            for i in range(sub_entries_cnt):
-
-                try:
-                    if names:
-                        if names[i] not in ('not_specified', 'not provided'):
-                            names[i] = self._beautify_disease_name(names[i])
-                            at_least_one_significant_sub_entry = True
-                    if statuses and statuses[i] == 'no_criteria':
-                        statuses[i] = None
-                except IndexError:
-                    print('Malformed row (wrong count of subentries) on %s-th entry:' % i)
-                    print(line)
-                    return False
-
-            values = list(clinvar_entry.values())
+            try:
+                at_least_one_significant_sub_entry, values, sub_entries_cnt, names, statuses, significances = self.parse_metadata(line)
+            except MalformedRowError as e:
+                print(str(e) +'\n' + line)
+                return False
 
             # following 2 lines are result of issue #47 - we don't import those
             # clinvar mutations that do not have any diseases specified:
