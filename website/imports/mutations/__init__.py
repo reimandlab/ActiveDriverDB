@@ -197,6 +197,9 @@ class MutationImporter(ABC):
         """Whether the line should be imported/exported or not"""
         return True
 
+    def modify_line(self, line):
+        return line
+
     def export_genomic_coordinates_of_ptm(self, export_path=None, path=None, only_primary_isoforms=False):
         path = self.choose_path(path)
 
@@ -273,6 +276,7 @@ class MutationImporter(ABC):
                             protein_mutations.append(protein_mutation)
                             sites_affected.append(mutation_sites)
 
+                    line = self.modify_line(line)
                     line[9] = ','.join(protein_mutations)
                     sites = (
                         ','.join(
