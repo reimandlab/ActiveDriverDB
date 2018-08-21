@@ -122,6 +122,17 @@ class MutationImporter(BioImporter, MutationExporter):
 
         print(f'Loaded {self.model_name}.')
 
+    def test_line(self, line):
+        """Whether the line should be imported/exported or not"""
+        return True
+
+    def modify_line(self, line: List[str]) -> List[str]:
+        """Modify line before export"""
+        return line
+
+    def export_genomic_clean_fields(self, fields: List[str]) -> List[str]:
+        return fields
+
     def export_genomic_coordinates_of_ptm(self, export_path=None, path=None, only_primary_isoforms=False):
         path = self.choose_path(path)
 
@@ -148,7 +159,7 @@ class MutationImporter(BioImporter, MutationExporter):
 
             f.write('\t'.join(header) + '\n')
 
-            for line in self.iterate_lines(path):
+            for line in filter(self.test_line, self.iterate_lines(path)):
 
                 relevant_proteome_coordinates = []
 
@@ -198,6 +209,7 @@ class MutationImporter(BioImporter, MutationExporter):
                             protein_mutations.append(protein_mutation)
                             sites_affected.append(mutation_sites)
 
+                    line = self.modify_line(line)
                     line[9] = ','.join(protein_mutations)
                     sites = (
                         ','.join(
@@ -210,7 +222,7 @@ class MutationImporter(BioImporter, MutationExporter):
                             for mutation_sites in sites_affected
                         )
                     )
-                    line = line[:10] + [sites] + line[10:]
+                    line = line[:10] + [sites] + self.export_genomic_clean_fields(line[10:])
                     f.write('\t'.join(line) + '\n')
 
         print(skipped / total)

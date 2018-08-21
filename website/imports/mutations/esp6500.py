@@ -20,6 +20,19 @@ class ESP6500Importer(MutationImporter):
     def iterate_lines(self, path):
         return tsv_file_iterator(path, self.header, file_opener=gzip_open_text)
 
+    def parse_metadata(self, line):
+        metadata = line[20].split(';')
+
+        # not flexible way to select MAF from metadata, but quite quick
+        assert metadata[4].startswith('MAF=')
+
+        maf_ea, maf_aa, maf_all = map(float, metadata[4][4:].split(','))
+        return maf_ea, maf_aa, maf_all
+
+    def test_line(self, line):
+        maf_ea, maf_aa, maf_all = self.parse_metadata(line)
+        return maf_all
+
     def parse(self, path):
         esp_mutations = []
         duplicates = 0
@@ -28,12 +41,7 @@ class ESP6500Importer(MutationImporter):
         def esp_parser(line):
             nonlocal duplicates, skipped
 
-            metadata = line[20].split(';')
-
-            # not flexible way to select MAF from metadata, but quite quick
-            assert metadata[4].startswith('MAF=')
-
-            maf_ea, maf_aa, maf_all = map(float, metadata[4][4:].split(','))
+            maf_ea, maf_aa, maf_all = self.parse_metadata(line)
 
             if maf_all == 0:
                 skipped += 1

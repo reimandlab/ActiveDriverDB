@@ -47,29 +47,37 @@ class The1000GenomesImporter(MutationImporter):
         ):
             yield line.rstrip().split('\t')
 
+    maf_keys = (
+        'AF',
+        'EAS_AF',
+        'AMR_AF',
+        'AFR_AF',
+        'EUR_AF',
+        'SAS_AF',
+    )
+
+    def parse_metadata(self, line):
+        metadata = line[20].split(';')
+
+        maf_data = make_metadata_ordered_dict(
+            self.maf_keys,
+            metadata,
+            self.find_af_subfield_number(line)
+        )
+        return maf_data
+
+    def test_line(self, line):
+        maf_data = self.parse_metadata(line)
+        return maf_data['AF'] != '0'
+
     def parse(self, path):
         thousand_genomes_mutations = []
         duplicates = 0
         skipped = 0
 
-        maf_keys = (
-            'AF',
-            'EAS_AF',
-            'AMR_AF',
-            'AFR_AF',
-            'EUR_AF',
-            'SAS_AF',
-        )
-
         for line in self.iterate_lines(path):
 
-            metadata = line[20].split(';')
-
-            maf_data = make_metadata_ordered_dict(
-                maf_keys,
-                metadata,
-                self.find_af_subfield_number(line)
-            )
+            maf_data = self.parse_metadata(line)
 
             # ignore mutations with frequency equal to zero
             if maf_data['AF'] == '0':
@@ -88,23 +96,16 @@ class The1000GenomesImporter(MutationImporter):
                 self.protect_from_duplicates(mutation_id, thousand_genomes_mutations)
 
                 thousand_genomes_mutations.append(
-                    (
-                        mutation_id,
-                        # Python 3.5 makes it easy:
-                        # **values, but is not available
-                        values[0],
-                        values[1],
-                        values[2],
-                        values[3],
-                        values[4],
-                        values[5],
-                    )
+                    (mutation_id, *values)
                 )
 
-        print('%s duplicates found' % duplicates)
-        print('%s zero-frequency mutations skipped' % skipped)
+        print(f'{duplicates} duplicates found')
+        print(f'{skipped} zero-frequency mutations skipped')
 
         return thousand_genomes_mutations
 
     def insert_details(self, thousand_genomes_mutations):
         self.insert_list(thousand_genomes_mutations)
+
+    def export_genomic_clean_fields(self, fields):
+        return fields[:12]
