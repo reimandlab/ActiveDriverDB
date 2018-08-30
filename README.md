@@ -182,18 +182,18 @@ WSGIScriptAlias / /some_path/website/app.wsgi
 <Directory /some_path/website>
     WSGIProcessGroup app
     WSGIApplicationGroup %{GLOBAL}
-    Order deny,allow
-    Allow from all
-    Require all granted
+    # Order deny,allow   # do not use with Apache 2.4 or newer
+    # Allow from all     # do not use with Apache 2.4 or newer
+    Require all denied   # Apache 2.4 or newer
 </Directory>
 
 # Serve static files directly:
 Alias /static/ /some_path/static/
 
 <Directory /some_path/website/static/*>
-    Order allow,deny
-    Allow from all
-    Require all granted
+    # Order deny,allow   # do not use with Apache 2.4 or newer
+    # Allow from all     # do not use with Apache 2.4 or newer
+    Require all granted  # Apache 2.4 or newer
 </Directory>
 
 <Location /static>
