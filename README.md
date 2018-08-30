@@ -171,35 +171,80 @@ Following extract from configuration file might be useful help for writing you o
 
 
 ```apache
-    # Prevent 'Timeout when reading response headers from daemon process'
+DocumentRoot /some_path/website
+
+# Prevent 'Timeout when reading response headers from daemon process'
+WSGIApplicationGroup %{GLOBAL}
+
+WSGIDaemonProcess app user=some_username group=some_group threads=2
+WSGIScriptAlias / /some_path/website/app.wsgi
+
+<Directory /some_path/website>
+    WSGIProcessGroup app
     WSGIApplicationGroup %{GLOBAL}
+    # Order deny,allow   # do not use with Apache 2.4 or newer
+    # Allow from all     # do not use with Apache 2.4 or newer
+    Require all granted  # Apache 2.4 or newer
+</Directory>
 
-    WSGIDaemonProcess app user=some_username group=some_group threads=2
-    WSGIScriptAlias / /some_path/website/app.wsgi
+# Serve static files directly:
+Alias /static/ /some_path/static/
 
-    <Directory /some_path/website>
-        WSGIProcessGroup app
-        WSGIApplicationGroup %{GLOBAL}
-        # Order deny,allow   # do not use with Apache 2.4 or newer
-        # Allow from all     # do not use with Apache 2.4 or newer
-        Require all granted  # Apache 2.4 or newer
-    </Directory>
+<Directory /some_path/website/static/*>
+    # Order allow,deny   # do not use with Apache 2.4 or newer
+    # Allow from all     # do not use with Apache 2.4 or newer
+    Require all granted  # Apache 2.4 or newer
+</Directory>
 
-    # Serve static files directly:
-    Alias /static/ /some_path/static/
-
-    <Directory /some_path/website/static/*>
-        # Order allow,deny   # do not use with Apache 2.4 or newer
-        # Allow from all     # do not use with Apache 2.4 or newer
-        Require all granted  # Apache 2.4 or newer
-    </Directory>
-
-    <Location /static>
-        SetHandler None
-    </Location>
+<Location /static>
+    SetHandler None
+</Location>
 ```
 
 Usually you can find appropriate configuration files in directories like `/etc/apache2/sites-enabled/` or so.
+
+
+##### Hard maintenance mode with Apache
+
+Apart from the soft (software, CMS-controlled) maintenance mode, an additional maintenance mode for more advanced works is available.
+
+To set it up, add following code to the Apache configuration:
+
+
+```apache
+# Handle maintenance mode:
+
+Alias /maintenance/ /some_path/website/static/maintenance.html
+
+RewriteEngine On
+RewriteCond %{DOCUMENT_ROOT}/maintenance-mode-on -f
+RewriteCond %{REQUEST_URI} !^/static.*
+RewriteCond %{REQUEST_URI} !^/maintenance
+RewriteRule ^(.*) /maintenance/ [R=503,L]
+ErrorDocument 503 /maintenance/
+
+RewriteCond %{DOCUMENT_ROOT}/maintenance-mode-off -f
+RewriteCond %{REQUEST_URI} ^/maintenance
+RewriteRule ^(.*) / [R,L]
+```
+
+and enable rewrite engine:
+
+```bash
+sudo a2enmod rewrite
+```
+
+Then, to enable the maintenance mode from within _website_ directory use:
+
+```bash
+mv maintenance-mode-off maintenance-mode-on
+```
+
+and to disable:
+
+```bash
+mv maintenance-mode-on maintenance-mode-off
+```
 
 For Apache2, increasing the maximum length of URI is recommended (in order to handle GET requests, e.g. for filters which include large number of disease names). To do so, edit Apache configuration (typically `/etc/apache2/apache2.conf`) appending:
 
