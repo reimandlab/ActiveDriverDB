@@ -33,3 +33,5 @@ simplejson
 scipy
 scikit-learn
 pyBigWig
+pyinterval
+
