@@ -9,8 +9,7 @@ cache:
     - downloads
 
 python:
-  - 3.4
-  - 3.5
+  - 3.7
 
 
 before_install:
