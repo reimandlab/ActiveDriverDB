@@ -6,7 +6,7 @@ from models import Protein
 
 
 def test_mappings():
-    """This is a simple inclusion test for genome -> proteme mutation mappigns.
+    """This is a simple inclusion test for genome -> proteme mutation mappings.
 
     Knowing the data, we demand the items from the right side (of test data)
     to be in the results of queries specified on the left side.

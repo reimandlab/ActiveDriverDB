@@ -32,7 +32,7 @@ install:
 
 
 script:
-  - python3 -m pytest -x -n 2 --cov=. -k 'not data_dependent or not celery' -v
+  - python3 -m pytest -x -n 2 --cov=. -k 'not test_import_results and not test_data and not celery' -v
 
 
 after_success:
