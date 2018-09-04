@@ -2,9 +2,9 @@
 # Install Berkley DB
 mkdir downloads
 cd downloads
-wget -N http://download.oracle.com/berkeley-db/db-6.2.32.NC.tar.gz -O db.NC.tar.gz
+wget -N http://download.oracle.com/berkeley-db/db-6.2.23.NC.tar.gz -O db.NC.tar.gz
 tar -xzf db.NC.tar.gz
-cd db-6.2.32.NC/build_unix
+cd db-6.2.23.NC/build_unix
 sudo ../dist/configure
 sudo make
 sudo make install
