@@ -36,5 +36,4 @@ script:
 
 
 after_success:
-  - cd ..
-  - coveralls --data_file website/.coverage --config_file=website/.coveragerc
+  - coveralls
