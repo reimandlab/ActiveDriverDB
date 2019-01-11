@@ -1,5 +1,8 @@
 import gzip
 from os import path
+
+import pytest
+
 from imports.mappings import import_genome_proteome_mappings, import_aminoacid_mutation_refseq_mappings
 from database_testing import DatabaseTest
 from models import Protein
@@ -56,6 +59,7 @@ def create_test_data():
 
 class TestImport(DatabaseTest):
 
+    @pytest.mark.serial
     def test_genome_proteome_mappings(self):
 
         mappings_filename, gene, proteins = create_test_data()
@@ -75,6 +79,7 @@ class TestImport(DatabaseTest):
         assert set(broken_sequences.keys()) == {'NM_002749'}
         assert [('NM_002749', 'L', 'A', '5', 'Q')] in list(broken_sequences.values())
 
+    @pytest.mark.serial
     def test_gene_mutation_mappings(self):
 
         mappings_filename, gene, proteins = create_test_data()
