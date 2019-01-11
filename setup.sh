@@ -113,6 +113,8 @@ sudo R -e 'source("https://bioconductor.org/biocLite.R"); biocLite(c("S4Vectors"
 #sudo R -e 'install.packages("devtools", repos = "http://cran.us.r-project.org")'
 #sudo R -e 'devtools::install("rmimp", dependencies = TRUE)'
 
+# mclust now requires gfortran
+sudo apt-get install gfortran
 sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
 sudo R -e 'install.packages("rmimp", repos=NULL)'
 
