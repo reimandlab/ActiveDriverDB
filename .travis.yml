@@ -1,5 +1,5 @@
 sudo: required
-dist: trusty
+dist: xenial
 language: python
 cache:
   timeout: 1800
@@ -9,7 +9,7 @@ cache:
     - downloads
 
 python:
-  - 3.6
+  - 3.7
 
 
 before_install:
@@ -34,7 +34,7 @@ install:
 
 
 script:
-  - python3 -m pytest -x -n 2 --cov=. -k 'not data_dependent and not celery' -v
+  - python3 -m pytest -x -n 2 --cov=. -k 'not test_import_results and not test_data and not celery' -v
 
 
 after_success:

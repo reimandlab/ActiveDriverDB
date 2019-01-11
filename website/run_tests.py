@@ -1,6 +1,6 @@
 if [ $# -eq 0 ]
 	then
-		match="not data_dependent and not celery"
+		match="not test_import_results and not test_data and not celery"
 	else
 		match="$1"
 fi
