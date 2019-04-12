@@ -19,6 +19,6 @@ yuicompressor
 flask-recaptcha
 flask-limiter
 flask_apscheduler
-celery
+celery==4.2.1
 amqp
 redis
