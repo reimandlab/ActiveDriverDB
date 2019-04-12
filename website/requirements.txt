@@ -1,4 +1,4 @@
-sqlalchemy
+sqlalchemy==1.2.11
 beautifulsoup4
 rpy2
 Jinja2==2.10.1
