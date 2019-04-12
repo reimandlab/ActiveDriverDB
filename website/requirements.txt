@@ -1,5 +1,6 @@
 sqlalchemy==1.2.11
 beautifulsoup4
+Werkzeug==0.14.1
 rpy2
 Jinja2==2.10.1
 Flask==0.12.3
