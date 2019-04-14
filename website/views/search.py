@@ -525,7 +525,7 @@ class SearchView(FlaskView):
         items.extend(pathways)
         items.extend(cancers)
 
-        return json.dumps({'entries': items})
+        return jsonify({'entries': items})
 
 
 def suggest_matching_cancers(query, count=2):

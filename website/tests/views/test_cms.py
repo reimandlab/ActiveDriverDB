@@ -68,6 +68,7 @@ class TestCMS(ViewTest):
     def test_admin_only_protection(self):
         from views.cms import admin_only
 
+        # TODO use PREFERRED_URL_SCHEME?
         host = 'http://localhost'
 
         @self.app.route('/secret')

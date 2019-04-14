@@ -4,4 +4,5 @@ if [ $# -eq 0 ]
 	else
 		match="$1"
 fi
-python3 -m pytest -x -n 2 --cov=. -k "$match" -vv
+python3 -m pytest -x -n 1 --cov=. -k "$match" -vv -m 'serial'
+python3 -m pytest -x -n 2 --cov=. -k "$match" -vv -m 'not serial'

@@ -26,6 +26,7 @@ class DatabaseTest(TestCase):
     SCHEDULER_ENABLED = True
 
     SECRET_KEY = 'test_key'
+    PREFERRED_URL_SCHEME = 'http'
 
     @property
     def config(self):
