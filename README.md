@@ -2,17 +2,24 @@
 
 [![Build Status](https://travis-ci.org/reimandlab/ActiveDriverDB.svg?branch=master)](https://travis-ci.org/reimandlab/ActiveDriverDB) [![Code Climate](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations/badges/gpa.svg)](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations) [![Coverage Status](https://coveralls.io/repos/github/reimandlab/ActiveDriverDB/badge.svg?branch=master)](https://coveralls.io/github/reimandlab/ActiveDriverDB?branch=master)
 
-The project aims to create an interactive visualisation framework for genome mutations in gene and protein networks. The idea is to display information from co-developed database in the form of different interactive "views". Thanks to the possibility of quickly switching between the views, the user will be able to grasp an analysed gene or protein with it's context and interactions from different angles. It will also provide advanced filtering and interactive loading with AJAX requests.
+The ActiveDriverDB is a database integrating post-translational (PTM) modification sites and mutations (both germline and somatic) from multiple sources. The data are displayed interactively in the context of PTM signalling networks, proteins or diseases. The database is available at [activedriverdb.org](https://activedriverdb.org/).
 
-The needleplot visualisation is now available in a separate repository: [reimandlab/needleplot](https://github.com/reimandlab/needleplot).
+Please see our publication in [Nucleic Acids Research](https://doi.org/10.1093/nar/gkx973) and [publications subpage](https://activedriverdb.org/publications/) for detailed academic discussion.
+
+In a broader context, this repository provides a visualisation framework for genome mutations in gene and protein networks. The extensible, interactive views enable users to understand the analysed mutations, diseases or genes in the context of signalling networks, protein structure and gene conservation. Advanced filtering and interactive loading make it easy to use for case studies and hypothesis exploration.
+
+The co-developed needleplot visualisation library is available in a separate repository: [reimandlab/needleplot](https://github.com/reimandlab/needleplot).
 
 # Licence
 
 The application is Open Source and is licensed under the terms of [GNU Lesser General Public License](https://github.com/reimandlab/ActiveDriverDB/blob/master/LICENSE).
 
+Please, see acknowledgments at the bottom of this document for third-party code licences.
+
 # Development
 
-The project is developed with Python 3. It uses Flask as a web framework with database access provided by SQLAlchemy. Templating is performed with Jinja2 on the server side and Nunjucks.js on the client side (they have mostly compatible syntax). On the frontend the styles are written with SASS; the visualizations are jQuery and D3.js based.
+The project is developed with Python 3. It uses Flask as a web framework with database access provided by SQLAlchemy. Templating is performed with Jinja2 on the server side and (Jinja2-compatiblie) Nunjucks.js on the client side. On the frontend the styles are written with SASS; the visualizations are jQuery and D3.js based.
+Interactive filtering and REST API is based on custom filtering system (built on top of SQLAlchemy and activated via AJAX requests).
 All used HTML, CSS and JS features are required to meet 95% level of support in web browsers as calculated by caniuse.com.
 
 ## Deployment
@@ -246,6 +253,12 @@ and to disable:
 mv maintenance-mode-on maintenance-mode-off
 ```
 
+For Apache2, increasing the maximum length of URI is recommended (in order to handle GET requests, e.g. for filters which include large number of disease names). To do so, edit Apache configuration (typically `/etc/apache2/apache2.conf`) appending:
+
+```apache
+LimitRequestLine 10000
+LimitRequestFieldSize 10000
+```
 
 #### Runing python3 in "optimized" mode
 
@@ -293,3 +306,9 @@ The project is developed with support from [Ontario Institute of Cancer Research
 
 
 BrowserStack supports this open source project allowing us to use their testing systems for free.
+
+### Third part licences
+
+The licences of third-party Python dependencies can be retrieved from [the Python Package Index](https://pypi.org/) using the dependency names from `requirements.txt` file. Other third-party snippets used as a base for code in this repository include:
+ - sparql query [to download PTM data from UniProt](https://github.com/reimandlab/ActiveDriverDB/blob/master/website/imports/sites/uniprot/uniprot.sparql), based on a snippet by ["me"](https://www.biostars.org/u/10878/) user of Biostars, published under the terms of [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/)
+ - [venn.js integration](https://github.com/reimandlab/ActiveDriverDB/blob/master/website/static/venn.js), based on (fairly extensive) example from the [venn.js documentation](https://github.com/benfred/venn.js), [MIT licensed](https://github.com/benfred/venn.js/blob/master/LICENSE)
