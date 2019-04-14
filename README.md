@@ -6,7 +6,7 @@ The ActiveDriverDB is a database integrating post-translational (PTM) modificati
 
 Please see our publication in [Nucleic Acids Research](https://doi.org/10.1093/nar/gkx973) and [publications subpage](https://activedriverdb.org/publications/) for detailed academic discussion.
 
-In a broader context, this repository provides a visualisation framework for genome mutations in gene and protein networks. The extensible, interactive views enable users to understand the analysed mutations, diseases or genes in the context of signalling networks, protein structure and gene conservation, providing an useful tool for case studies and hypothesis exploration.
+In a broader context, this repository provides a visualisation framework for genome mutations in gene and protein networks. The extensible, interactive views enable users to understand the analysed mutations, diseases or genes in the context of signalling networks, protein structure or sequence conservation, being a useful tool for case studies and hypothesis exploration.
 
 The co-developed needleplot visualisation library is available in a separate repository: [reimandlab/needleplot](https://github.com/reimandlab/needleplot).
 
