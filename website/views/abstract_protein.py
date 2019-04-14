@@ -1,3 +1,4 @@
+from itertools import chain
 from warnings import warn
 
 import flask
@@ -6,7 +7,7 @@ from flask_classful import FlaskView
 from flask_login import current_user
 from sqlalchemy import and_
 
-from helpers.filters import FilterManager
+from helpers.filters.manager import FilterManager
 from models import Protein, Mutation, UsersMutationsDataset
 
 
@@ -31,16 +32,16 @@ class GracefulFilterManager(FilterManager):
 
             plural = len(rejected_values) > 1
 
+            and_more = ''
+
+            if len(rejected_values) > 15:
+                and_more = f'and {len(rejected_values) - 10} more '
+                rejected_values = rejected_values[:5] + ['...'] + rejected_values[-5:]
+
             message = (
-                '<i>%s</i> %s not occur in <i>%s</i> for this protein '
-                'and therefore %s left out.'
-                %
-                (
-                    ', '.join(rejected_values),
-                    'do' if plural else 'does',
-                    filtered_property,
-                    'they were' if plural else 'it was'
-                )
+                f'<i>{", ".join(map(str, rejected_values))}</i> {and_more}'
+                f'{"do" if plural else "does"} not occur in <i>{filtered_property}</i> '
+                f'for this protein and therefore {"they were" if plural else "it was"} left out.'
             )
 
             flash(message, category='warning')
@@ -158,9 +159,9 @@ class ProteinRepresentation:
         kinases = set(
             kinase
             for site in sites
-            for kinase in (
-                site.kinases +
-                (site.kinase_groups if self.include_kinases_from_groups else [])
+            for kinase in chain(
+                site.kinases,
+                site.kinase_groups if self.include_kinases_from_groups else []
             )
         )
 

@@ -9,7 +9,7 @@ from flask_classful import route
 from sqlalchemy import and_
 
 from helpers.views import AjaxTableView
-from models import Mutation, Site
+from models import Mutation, Site, source_manager
 from models import Protein
 from .abstract_protein import AbstractProteinView, get_raw_mutations
 from .chromosome import represent_mutations
@@ -55,7 +55,7 @@ class ProteinView(AbstractProteinView):
 
         source = filter_manager.get_value('Mutation.sources')
 
-        source_column = Mutation.source_fields[source]
+        source_column = source_manager.visible_fields[source]
 
         json = protein.to_json(data_filter=filter_manager.apply)
 

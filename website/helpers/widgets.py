@@ -1,4 +1,7 @@
-from helpers.filters import quote_if_needed, is_iterable_but_not_str
+from collections import Hashable
+
+from helpers.utilities import is_iterable_but_not_str
+from helpers.filters.manager import quote_if_needed
 
 
 def quoted_value(raw_value):
@@ -14,7 +17,8 @@ class Widget:
     def __init__(
         self, title, template, data, target_name,
         labels=None, disabled_label=None, value=None,
-        all_selected_label=None, class_name=''
+        all_selected_label=None, class_name='',
+        hierarchy=None,
     ):
         """
         Args:
@@ -35,19 +39,16 @@ class Widget:
 
             target_name: corresponds to name attribute in HTML element
         """
+        self.hierarchy = hierarchy
         self.title = title
         self.target_name = target_name
         self.template = template
         if not data:
             data = []
         self.data = data
-        self._value = value
-        if isinstance(labels, dict):
-            labels = [
-                labels[datum] for datum in data
-                if labels[datum] is not None
-            ]
-        if labels and data and len(labels) > len(data):
+        self._value = None
+        self.value = value
+        if labels and data and len(labels) > len(data) and not isinstance(labels, dict):
             raise ValueError(
                 'Number of labels has to be lower '
                 'or equal the data elements count.'
@@ -61,10 +62,7 @@ class Widget:
     @property
     def label(self):
         if len(self.labels) > 1:
-            raise Exception(
-                'Requested for a single label for a widget with multiple '
-                'labels %s' % self.title
-            )
+            raise Exception(f'Requested for a single label for a widget with multiple labels {self.title}')
         if not self.labels:
             return
         return self.labels[0]
@@ -72,9 +70,40 @@ class Widget:
     @property
     def items(self):
         data = self.data
+
         if data:
             data = [quote_if_needed(d) for d in data]
-        return zip(data, self.labels)
+
+        if isinstance(self.labels, dict):
+            for datum in data:
+                label = self.labels[datum]
+                if label is not None:
+                    yield datum, label
+        else:
+            for datum, label in zip(data, self.labels):
+                yield datum, label
+
+    @property
+    def hierarchical_items(self):
+        assert self.hierarchy
+
+        all_items = dict(self.items)
+
+        for parent, children in self.hierarchy.items():
+            sub_items = {
+                child: all_items[child]
+                for child in children
+            }
+            all_items[parent] = (all_items[parent], sub_items)
+
+            for child in children:
+                del all_items[child]
+
+        for value, item in all_items.items():
+            if value in self.hierarchy:
+                yield value, item[0], item[1]
+            else:
+                yield value, item, None
 
     @property
     def all_active(self):
@@ -87,7 +116,7 @@ class Widget:
 
     @property
     def value(self):
-        cacheable_value = tuple(self._value) if type(self._value) is list else self._value
+        cacheable_value = tuple(self._value) if not isinstance(self._value, Hashable) else self._value
 
         if cacheable_value in self._quote_cache:
             return self._quote_cache[cacheable_value]
@@ -95,6 +124,15 @@ class Widget:
             value = quoted_value(self._value)
             self._quote_cache[cacheable_value] = value
             return value
+
+    @value.setter
+    def value(self, value):
+        self._value = value
+        if is_iterable_but_not_str(value):
+            self._value_as_set = set(value)
+
+    def is_one_of_values(self, value):
+        return self._value and value in self._value_as_set
 
     @property
     def visible(self):
@@ -124,9 +162,10 @@ class FilterWidget(Widget):
         )
         self.comparator_widget = associated_comparator_widget
 
-    @property
+    @Widget.value.getter
     def value(self):
-        self._value = self.filter.value
+        if self._value != self.filter.value:
+            self.value = self.filter.value
         return super().value
 
     @property

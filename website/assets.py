@@ -136,6 +136,13 @@ class DependencyManager:
             'https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js',
             'sha256-dsOXGNHAo/syFnazt+KTBsCQeRmlcW1XKL0bCK4Baec='
         ),
+        'venn.js': JSResource(
+            'https://cdn.jsdelivr.net/npm/venn.js@0.2.18/build/venn.min.js'
+        ),
+        'plotly': JSResource(
+            'https://cdnjs.cloudflare.com/ajax/libs/plotly.js/1.34.0/plotly.min.js',
+            'sha256-La2UAvjjTIcv770heB/LtzhTHy+3VzURFWZRrjJ0M8U='
+        ),
         'clipboard.js': JSResource(
             'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/1.6.1/clipboard.min.js',
             'sha256-El0fEiD3YOM7uIVZztyQzmbbPlgEj0oJVxRWziUh4UE='
@@ -236,6 +243,7 @@ bundles = {
     'js_gene_view': js_bundle(
         'geneView',
         'common.js',
+        'filters.js',
         'widgets.js',
     ),
     'js_inline_edit': js_bundle(
@@ -272,6 +280,12 @@ bundles = {
     'js_search_progress': js_bundle(
         'progress',
         'progress.js'
+    ),
+    'js_page': js_bundle(
+        'page',
+        'export.js',
+        'venn.js',
+        'plots.js',
     ),
     'css_common': css_bundle(
         'style',

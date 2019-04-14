@@ -28,7 +28,10 @@ class ProteinTest(ModelTest):
                     for pos in sites_positions
                 ]
             )
+            db.session.add(protein)
             result = protein.has_sites_in_range(mutation_position - 7, mutation_position + 7)
+            assert result == expected_result
+            result = protein.would_affect_any_sites(mutation_position)
             assert result == expected_result
 
     def test_is_preferred_isoform(self):

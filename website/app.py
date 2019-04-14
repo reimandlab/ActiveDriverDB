@@ -169,9 +169,9 @@ def create_app(config_filename='config.py', config_override={}):
     jinja_globals = app.jinja_env.globals
     jinja_filters = app.jinja_env.filters
 
-    dependency_manager = DependencyManager(app)
+    app.dependency_manager = DependencyManager(app)
 
-    jinja_globals['dependency'] = dependency_manager.get_dependency
+    jinja_globals['dependency'] = app.dependency_manager.get_dependency
     jinja_globals['system_menu'] = ContentManagementSystem._system_menu
     jinja_globals['system_setting'] = ContentManagementSystem._system_setting
     jinja_globals['inline_help'] = ContentManagementSystem._inline_help

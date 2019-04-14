@@ -8,7 +8,7 @@ from sqlalchemy import desc
 from sqlalchemy.exc import StatementError
 from sqlalchemy.ext.associationproxy import AssociationProxy
 from database import db, fast_count
-from helpers.filters import joined_query
+from helpers.filters.manager import joined_query
 
 ordering_functions = {
     'desc': desc,

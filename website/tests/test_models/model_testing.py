@@ -1,4 +1,4 @@
-from tests.database_testing import DatabaseTest
+from database_testing import DatabaseTest
 
 
 class ModelTest(DatabaseTest):

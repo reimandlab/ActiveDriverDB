@@ -183,8 +183,8 @@ WSGIScriptAlias / /some_path/website/app.wsgi
     WSGIProcessGroup app
     WSGIApplicationGroup %{GLOBAL}
     # Order deny,allow   # do not use with Apache 2.4 or newer
-    # Allow from all     # do not use with Apache 2.4 or newer
-    Require all granted  # Apache 2.4 or newer
+    # Deny from all      # do not use with Apache 2.4 or newer
+    Require all denied   # Apache 2.4 or newer
 </Directory>
 
 # Serve static files directly:
@@ -246,12 +246,6 @@ and to disable:
 mv maintenance-mode-on maintenance-mode-off
 ```
 
-For Apache2, increasing the maximum length of URI is recommended (in order to handle GET requests, e.g. for filters which include large number of disease names). To do so, edit Apache configuration (typically `/etc/apache2/apache2.conf`) appending:
-
-```apache
-LimitRequestLine 10000
-LimitRequestFieldSize 10000
-```
 
 #### Runing python3 in "optimized" mode
 

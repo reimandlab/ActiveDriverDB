@@ -1,11 +1,13 @@
 from models import ExomeSequencingMutation
-from imports.mutations import MutationImporter
 from helpers.parsers import tsv_file_iterator
 from helpers.parsers import gzip_open_text
 
+from .mutation_importer import MutationImporter
 
-class Importer(MutationImporter):
 
+class ESP6500Importer(MutationImporter):
+
+    name = 'esp6500'
     model = ExomeSequencingMutation
     default_path = 'data/mutations/ESP6500_muts_annotated.txt.gz'
     header = [
@@ -66,8 +68,8 @@ class Importer(MutationImporter):
         for line in self.iterate_lines(path):
             esp_parser(line)
 
-        print('%s duplicates found' % duplicates)
-        print('%s zero-frequency mutations skipped' % skipped)
+        print(f'{duplicates} duplicates found')
+        print(f'{skipped} zero-frequency mutations skipped')
 
         return esp_mutations
 

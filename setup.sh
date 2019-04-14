@@ -2,14 +2,18 @@
 # Install Berkley DB
 mkdir downloads
 cd downloads
-wget -N http://download.oracle.com/berkeley-db/db-6.2.23.NC.tar.gz
-tar -xzf db-6.2.23.NC.tar.gz
+wget -N http://download.oracle.com/berkeley-db/db-6.2.23.NC.tar.gz -O db.NC.tar.gz
+tar -xzf db.NC.tar.gz
 cd db-6.2.23.NC/build_unix
 sudo ../dist/configure
 sudo make
 sudo make install
 cd ..
 cd ../..
+
+export BERKELEYDB_DIR=/usr/local/BerkeleyDB.6.2
+export LD_LIBRARY_PATH=/usr/local/BerkeleyDB.6.2/lib:$LD_LIBRARY_PATH
+sudo pip3 install bsddb3
 
 # Use examplar configuration for the beginning
 cd website
@@ -42,7 +46,9 @@ sudo apt-get install rabbitmq-server
 # generate keys (for testing only!)
 mkdir -p celery
 cd celery
-ssh-keygen -t rsa -f worker.key -N 'Password for testing only'
+ssh-keygen -t rsa -b 4096 -f worker.key -q -N ''
+yes '' | openssl req -new -key worker.key -out worker.csr
+openssl x509 -req -days 1 -in worker.csr -signkey worker.key -out worker.crt
 cd ..
 
 # create celery user
@@ -85,3 +91,45 @@ sudo /etc/init.d/redis-server restart
 
 # install R
 sudo apt-get install r-base
+
+# and R building dependencies
+sudo apt-get install r-base-dev
+
+# install ActiveDriver and progress bar
+# R -e 'install.packages(c("ActiveDriver", "pbmcapply"))'
+
+# fetch forked copy of ActiveDriver
+cd website
+git clone https://github.com/krassowski/ActiveDriver
+cd ..
+
+
+# ActivePathways are in private repository
+# git clone https://github.com/reimandlab/activeDriverPW.git
+# R -e 'install.packages(c("metap", "data.table"), repos = "http://cran.us.r-project.org")'
+# R -e 'install.packages("activeDriverPW", repos=NULL)'
+
+#sudo apt-get install r-bioc-biocgenerics r-bioc-genomicranges r-bioc-biostrings
+git clone https://github.com/reimandlab/rmimp.git
+cd rmimp
+git checkout refactored
+cd ..
+sudo R -e 'source("https://bioconductor.org/biocLite.R"); biocLite(c("S4Vectors", "GenomicRanges", "Biostrings", "BiocGenerics"))'
+#sudo R -e 'install.packages("devtools", repos = "http://cran.us.r-project.org")'
+#sudo R -e 'devtools::install("rmimp", dependencies = TRUE)'
+
+sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
+sudo R -e 'install.packages("rmimp", repos=NULL)'
+
+# sudo apt-get install libcairo2-dev - needed for svglite
+sudo R -e 'install.packages(c("ggseqlogo", "ggplot2", "svglite"), repos = "http://cran.us.r-project.org")'
+
+# needed only if using sqlite3 for tests
+sudo apt-get install sqlite3-pcre
+
+# pip3 install pygraphviz
+# on ubuntu:
+# pip3 install pygraphviz --install-option="--include-path=/usr/include/graphviz" --install-option="--library-path=/usr/lib/graphviz/"
+# on debian
+# sudo apt-get install libcgraph6 graphviz graphviz-dev
+sudo pip install git+https://github.com/krassowski/pygraphviz

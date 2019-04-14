@@ -1,25 +1,28 @@
 import gzip
-from collections import OrderedDict, defaultdict, namedtuple
+from collections import defaultdict, namedtuple
+from warnings import warn
+
 from tqdm import tqdm
-from database import db, yield_objects
+from database import db, create_key_model_dict
 from database import get_or_create
+from helpers.bioinf import aa_symbols
 from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
-from models import Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType
+from imports.importer import create_simple_importer, BioImporter
+from models import (
+    Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType, SiteType,
+    SiteMotif,
+)
 from models import Gene
 from models import InterproDomain
 from models import Cancer
 from models import Kinase
 from models import KinaseGroup
 from models import Protein
-from models import Site
 from models import Pathway
-from models import BadWord
 from models import GeneList
 from models import GeneListEntry
-from helpers.commands import register_decorator
-from operator import attrgetter
 
 
 def get_proteins(cached_proteins={}, reload_cache=False):
@@ -36,27 +39,7 @@ def get_proteins(cached_proteins={}, reload_cache=False):
     return cached_proteins
 
 
-IMPORTERS = OrderedDict()
-importer = register_decorator(IMPORTERS)
-# TODO: class with register? Should have fields as "parsed_count", "results"
-
-
-def create_key_model_dict(model, key, lowercase=False):
-    """Create 'entry.key: entry' dict mappings for all entries of given model."""
-    key_getter = attrgetter(key)
-
-    if lowercase:
-        make_lowercase = str.lower
-
-        def get_key(m):
-            return make_lowercase(key_getter(m))
-    else:
-        get_key = key_getter
-
-    return {
-        get_key(m): m
-        for m in model.query
-    }
+importer = create_simple_importer(BioImporter)
 
 
 @importer
@@ -120,7 +103,7 @@ def proteins_and_genes(path='data/protein_data.tsv'):
             for key, value in gene_data.items():
                 previous = getattr(gene, key)
                 if previous != value:
-                    print('Replacing %s %s with %s (previously: %s)' % (gene, key, value, previous))
+                    print(f'Replacing {gene} {key} with {value} (previously: {previous})')
                     setattr(gene, key, value)
 
         # load protein
@@ -196,10 +179,12 @@ def sequences(path='data/all_RefGene_proteins.fa'):
         else:
             new_count += 1
 
+        return refseq
+
     def on_sequence(refseq, line):
         proteins[refseq].sequence += line
 
-    parse_fasta_file(path, on_header, on_sequence)
+    parse_fasta_file(path, on_sequence, on_header)
 
     print('%s sequences overwritten' % overwritten)
     print('%s new sequences saved' % new_count)
@@ -261,12 +246,14 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
                 isoform = 1
 
             reference, new = get_or_create(ProteinReferences, protein=protein)
-            uniprot_entry, _ = get_or_create(UniprotEntry, accession=uniprot, isoform=isoform)
+            uniprot_entry, new_uniprot = get_or_create(UniprotEntry, accession=uniprot, isoform=isoform)
             reference.uniprot_entries.append(uniprot_entry)
             references[uniprot].append(reference)
 
             if new:
                 db.session.add(reference)
+            if new_uniprot:
+                db.session.add(uniprot_entry)
 
     ensembl_references_to_collect = {
         'Ensembl_PRO': 'peptide_id'
@@ -305,7 +292,13 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
             if len(x) <= 5:
                 for reference in relevant_references:
                     assert '-' not in full_uniprot
-                    entry = UniprotEntry.query.filter_by(accession=full_uniprot, reference=reference).one()
+                    matching_entries = [entry for entry in reference.uniprot_entries if entry.accession == full_uniprot]
+                    if len(matching_entries) != 1:
+                        print(f'More than one match for reference: {reference}: {matching_entries}')
+                    if not matching_entries:
+                        print(f'No matching entries for reference: {reference}: {matching_entries}')
+                        continue
+                    entry = matching_entries[0]
                     entry.reviewed = True
 
             return
@@ -346,17 +339,17 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
         gene = protein.gene
 
         if gene.name != gene_name:
-            print('Gene name mismatch for RefSeq mappings: %s vs %s' % (gene.name, gene_name))
+            print(f'Gene name mismatch for RefSeq mappings: {gene.name} vs {gene_name}')
 
         entrez_id = int(entrez_id)
 
         if gene.entrez_id:
             if gene.entrez_id != entrez_id:
-                print('Entrez ID mismatch for isoforms of %s gene: %s, %s' % (gene.name, gene.entrez_id, entrez_id))
+                print(f'Entrez ID mismatch for isoforms of {gene.name} gene: {gene.entrez_id}, {entrez_id}')
                 if gene.name == gene_name:
                     print(
-                        'Overwriting %s entrez id with %s for %s gene, because record with %s has matching gene name' %
-                        (gene.entrez_id, entrez_id, gene.name, entrez_id)
+                        f'Overwriting {gene.entrez_id} entrez id with {entrez_id} for {gene.name} gene, '
+                        f'because record with {entrez_id} has matching gene name'
                     )
                     gene.entrez_id = entrez_id
         else:
@@ -382,7 +375,7 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
         gene = protein.gene
 
         if gene.name != gene_name:
-            print('Gene name mismatch for RefSeq mappings: %s vs %s' % (gene.name, gene_name))
+            print(f'Gene name mismatch for RefSeq mappings: {gene.name} vs {gene_name}')
 
         entrez_id = int(entrez_id)
 
@@ -390,20 +383,18 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
             if protein.full_name:
                 if protein.full_name != protein_full_name:
                     print(
-                        'Protein full name mismatch: %s vs %s for %s'
-                        %
-                        (protein.full_name, protein_full_name, protein.refseq)
+                        f'Protein full name mismatch: {protein.full_name} vs {protein_full_name} for {protein.refseq}'
                     )
                 continue
             protein.full_name = protein_full_name
 
         if gene.entrez_id:
             if gene.entrez_id != entrez_id:
-                print('Entrez ID mismatch for isoforms of %s gene: %s, %s' % (gene.name, gene.entrez_id, entrez_id))
+                print(f'Entrez ID mismatch for isoforms of {gene.name} gene: {gene.entrez_id}, {entrez_id}')
                 if gene.name == gene_name:
                     print(
-                        'Overwriting %s entrez id with %s for %s gene, because record with %s has matching gene name' %
-                        (gene.entrez_id, entrez_id, gene.name, entrez_id)
+                        f'Overwriting {gene.entrez_id} entrez id with {entrez_id} for {gene.name} gene, '
+                        f'because record with {entrez_id} has matching gene name'
                     )
                     gene.entrez_id = entrez_id
         else:
@@ -417,9 +408,8 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
 
             if reference.refseq_np and reference.refseq_np != refseq_peptide:
                 print(
-                    'Refseq peptide mismatch between LRG and UCSC retrieved data: %s vs %s for %s'
-                    %
-                    (reference.refseq_np, refseq_peptide, protein.refseq)
+                    f'Refseq peptide mismatch between LRG and UCSC retrieved data: '
+                    f'{reference.refseq_np} vs {refseq_peptide} for {protein.refseq}'
                 )
 
             reference.refseq_np = refseq_peptide
@@ -455,6 +445,7 @@ def select_preferred_isoform(gene):
     return isoforms[0]
 
 
+# TODO: move after mappings import?
 @importer
 def select_preferred_isoforms():
     """Perform selection of preferred isoform on all genes in database.
@@ -474,7 +465,35 @@ def select_preferred_isoforms():
             name = gene.name
             assert not gene.isoforms
             # remove(gene)
-            print('Gene %s has no isoforms' % name)
+            print(f'Gene {name} has no isoforms')
+
+
+@importer
+def conservation(path='data/hg19.100way.phyloP100way.bw', ref_gene_path='data/refGene.txt.gz'):
+    from helpers.bioinf import read_genes_data
+    from analyses.conservation.scores import scores_for_proteins
+
+    genes_data = read_genes_data(ref_gene_path)
+
+    duplicated_in_ucsc = genes_data[genes_data.index.duplicated()].sort_index()
+    print('Duplicated UCSC data:')
+    print(duplicated_in_ucsc)
+
+    print('Duplicates summary by chromosome:')
+    duplicated_in_ucsc = duplicated_in_ucsc.reset_index()
+    print(duplicated_in_ucsc.chrom.value_counts())
+
+    proteins = get_proteins()
+
+    phylo_p_tracks, phylo_details = scores_for_proteins(proteins.values(), genes_data, path)
+
+    del genes_data
+
+    for protein, scores in phylo_p_tracks.items():
+        protein.conservation = ';'.join(
+            f'{score:.2f}'.strip('0').replace('-0', '-').rstrip('.').rstrip('-')
+            for score in scores
+        )
 
 
 @importer
@@ -488,14 +507,25 @@ def disorder(path='data/all_RefGene_disorder.fa'):
 
     def on_header(header):
         assert header in proteins
+        return header
 
     def on_sequence(name, line):
         proteins[name].disorder_map += line
 
-    parse_fasta_file(path, on_header, on_sequence)
+    parse_fasta_file(path, on_sequence, on_header)
 
     for protein in proteins.values():
-        assert len(protein.sequence) == protein.length
+        if len(protein.disorder_map) == protein.length:
+            continue
+
+        warn(
+            f'Protein {protein} disorder: {len(protein.disorder_map)} '
+            f'does not match the length of protein: {protein.length}'
+        )
+
+        if len(protein.disorder_map) > protein.length:
+            warn(f'Trimming the disorder track to {protein.length}')
+            protein.disorder_map = protein.disorder_map[:protein.length]
 
 
 @importer
@@ -814,88 +844,6 @@ def kinase_mappings(path='data/curated_kinase_IDs.txt'):
     return new_kinases
 
 
-def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_groups):
-    """Create a subset of known kinases and known kinase groups based on given
-    list of kinases names ('chosen_kinases_names'). If no kinase or kinase group
-    of given name is known, it will be created.
-
-    Returns a tuple of sets:
-        kinases, groups
-    """
-    kinases, groups = set(), set()
-
-    for name in list(set(chosen_kinases_names)):
-
-        # handle kinases group
-        if name.endswith('_GROUP'):
-            name = name[:-6]
-            if name not in known_kinase_groups:
-                known_kinase_groups[name] = KinaseGroup(name=name)
-            groups.add(known_kinase_groups[name])
-        # if it's not a group, it surely is a kinase:
-        else:
-            if name not in known_kinases:
-                known_kinases[name] = Kinase(
-                    name=name,
-                    protein=get_preferred_gene_isoform(name)
-                )
-            kinases.add(known_kinases[name])
-
-    return kinases, groups
-
-
-@importer
-def sites(path='data/site_table.tsv'):
-    """Load sites from given file altogether with kinases which
-    interact with these sites - kinases already in database will
-    be reused, unknown kinases will be created
-
-    Args:
-        path: to tab-separated-values file with sites to load
-
-    Returns:
-        list of created sites
-    """
-    proteins = get_proteins()
-
-    print('Loading protein sites:')
-
-    header = ['gene', 'position', 'residue', 'enzymes', 'pmid', 'type']
-
-    sites = []
-
-    known_kinases = create_key_model_dict(Kinase, 'name')
-    known_groups = create_key_model_dict(KinaseGroup, 'name')
-
-    def parser(line):
-
-        refseq, position, residue, kinases_str, pmid, mod_type = line
-
-        site_kinase_names = filter(bool, kinases_str.split(','))
-
-        site_kinases, site_groups = get_or_create_kinases(
-            site_kinase_names,
-            known_kinases,
-            known_groups
-        )
-
-        site = Site(
-            position=int(position),
-            residue=residue,
-            pmid=pmid,
-            protein=proteins[refseq],
-            kinases=list(site_kinases),
-            kinase_groups=list(site_groups),
-            type=mod_type
-        )
-
-        sites.append(site)
-
-    parse_tsv_file(path, parser, header)
-
-    return sites
-
-
 @importer
 def kinase_classification(path='data/regphos_kinome_scraped_clean.txt'):
 
@@ -957,7 +905,7 @@ def clean_from_wrong_proteins(soft=True):
 
     """
     print('Removing proteins with misplaced stop codons:')
-    from database import remove
+    from database.manage import remove
 
     proteins = get_proteins()
 
@@ -1079,9 +1027,9 @@ def active_driver_gene_lists(
             )
             list_entries.append(entry)
 
-            gene_list.entries = list_entries
-
         parse_tsv_file(list_data.path, parser, header)
+
+        gene_list.entries = list_entries
 
         gene_lists.append(gene_list)
 
@@ -1191,27 +1139,11 @@ def pathways(path='data/hsapiens.pathways.NAME.gmt'):
 
 
 @importer
-def bad_words(path='data/bad-words.txt'):
-
-    list_of_profanities = []
-    parse_text_file(
-        path,
-        list_of_profanities.append,
-        file_opener=lambda name: open(name, encoding='utf-8')
-    )
-    bad_words = [
-        BadWord(word=word)
-        for word in list_of_profanities
-    ]
-    return bad_words
-
-
-@importer
 def precompute_ptm_mutations():
     print('Counting mutations...')
     total = Mutation.query.filter_by(is_confirmed=True).count()
     mismatch = 0
-    for mutation in tqdm(yield_objects(Mutation.query.filter_by(is_confirmed=True)), total=total):
+    for mutation in tqdm(Mutation.query.filter_by(is_confirmed=True), total=total):
         pos = mutation.position
         is_ptm_related = mutation.protein.has_sites_in_range(pos - 7, pos + 7)
         if is_ptm_related != mutation.precomputed_is_ptm:
@@ -1226,12 +1158,11 @@ def drugbank(path='data/drugbank/drugbank.tsv'):
 
     drugs = set()
 
-    # in case we need to query drugbank, it's better to keep names comapt.
+    # in case we need to query drugbank, it's better to keep names compat.
     drug_type_map = {
         'BiotechDrug': 'biotech',
         'SmallMoleculeDrug': 'small molecule'
     }
-
 
     def parser(data):
         drug_id, gene_name, drug_name, drug_groups, drug_type_name = data
@@ -1259,3 +1190,78 @@ def drugbank(path='data/drugbank/drugbank.tsv'):
     parse_tsv_file(path, parser, header)
 
     return drugs
+
+
+@importer
+def sites_motifs(data=None):
+
+    motifs_data = [
+        # site_type_name, name, pattern (Python regular expression), sequences for pseudo logo
+
+        # https://prosite.expasy.org/PDOC00001
+        [
+            'N-glycosylation', 'N-linked', '.{7}N[^P][ST].{5}',
+            [
+                ' ' * 7 + f'N{aa}{st}' + ' ' * 5
+                for aa in aa_symbols if aa != 'P'
+                for st in 'ST'
+            ]
+        ],
+        # https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4721579/
+        [
+            'N-glycosylation', 'N-linked - atypical', '.{7}N[^P][CV].{5}',
+            [
+                ' ' * 7 + f'N{aa}{cv}' + ' ' * 5
+                for aa in aa_symbols if aa != 'P'
+                for cv in 'CV'
+            ]
+
+        ],
+
+        # Based on https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1301293/
+        ['O-glycosylation', 'O-linked TAPP', '.{7}TAPP', [' ' * 7 + 'TAPP' + ' ' * 5]],
+        ['O-glycosylation', 'O-linked TSAP', '.{7}TSAP', [' ' * 7 + 'TSAP' + ' ' * 5]],
+        ['O-glycosylation', 'O-linked TV.P', '.{7}TV.P', [' ' * 7 + 'TV.P' + ' ' * 5]],
+        [
+            'O-glycosylation', 'O-linked [ST]P.P', '.{7}[ST]P.P',
+            [
+                ' ' * 7 + f'{st}P P' + ' ' * 5
+                for st in 'ST'
+            ]
+        ],
+
+        # https://www.uniprot.org/help/carbohyd
+        [
+            'C-glycosylation', 'C-linked W..W', '.{7}W..W.{4}',
+            [' ' * 7 + 'W  W' + ' ' * 4]
+        ],
+        [
+            'C-glycosylation', 'C-linked W..W', '.{4}W..W.{7}',
+            [' ' * 4 + 'W  W' + ' ' * 7]
+        ],
+        [
+            'C-glycosylation', 'C-linked W[ST].C', '.{7}W[ST].C.{4}',
+            [
+                ' ' * 7 + f'W{st} C' + ' ' * 4
+                for st in 'ST'
+            ]
+        ],
+
+    ]
+
+    if data:
+        motifs_data = data
+
+    new_motifs = []
+
+    for site_type_name, name, pattern, sequences in motifs_data:
+        site_type, _ = get_or_create(SiteType, name=site_type_name)
+        motif, new = get_or_create(SiteMotif, name=name, pattern=pattern, site_type=site_type)
+
+        if new:
+            new_motifs.append(motif)
+            db.session.add(motif)
+
+        motif.generate_pseudo_logo(sequences)
+
+    return new_motifs

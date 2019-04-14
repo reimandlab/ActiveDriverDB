@@ -42,6 +42,10 @@ wget ftp://ftp.ebi.ac.uk/pub/databases/interpro/interpro.xml.gz
 wget ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/RefSeqGene/LRG_RefSeqGene
 wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping.dat.gz
 
+# uniprot sequences
+wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot.fasta.gz
+wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/uniprot_sprot_varsplic.fasta.gz
+
 # pathway list
 wget http://biit.cs.ut.ee/gprofiler/gmt/gprofiler_hsapiens.NAME.gmt.zip
 unzip gprofiler_hsapiens.NAME.gmt.zip
@@ -57,6 +61,14 @@ rm hsapiens.CORUM.NAME.gmt
 rm hsapiens.BIOGRID.NAME.gmt
 rm hsapiens.REAC.NAME.gmt
 rm hsapiens.TF.NAME.gmt
+
+# gene sets
+mkdir -p gene_sets
+cd gene_sets
+wget http://download.baderlab.org/EM_Genesets/current_release/Human/symbol/DrugTargets/Human_DrugBank_all_symbol.gmt
+echo 'Gene sets from MSigDB need to be downloaded directly from: software.broadinstitute.org/gsea/msigdb/'
+cd ..
+
 
 #  All below are dropbox-dependent ===
 
@@ -141,3 +153,45 @@ rm -r tmp
 
 cd mutations
 ./annotate_mc3.sh
+
+cd ..
+
+wget http://purl.obolibrary.org/obo/mondo.obo
+wget https://raw.githubusercontent.com/DiseaseOntology/HumanDiseaseOntology/master/src/ontology/HumanDO.obo
+wget https://raw.githubusercontent.com/obophenotype/human-phenotype-ontology/master/hp.obo
+
+
+wget ftp://ftp.ncbi.nlm.nih.gov/pub/clinvar/gene_condition_source_id
+
+# Broad Firehose - TCGA open access data
+mkdir -p firehose
+cd firehose
+wget http://gdac.broadinstitute.org/runs/code/firehose_get_latest.zip
+unzip firehose_get_latest.zip
+
+# antibodies - gene map
+./firehose_get -tasks "RPPA_AnnotateWithGene.Level_3" data latest
+cd stddata__2016_07_15
+antibodies=''
+for d in *; do
+    if [ -d ${d} ]; then
+        f="$d/20160715/gdac.broadinstitute.org_$d.RPPA_AnnotateWithGene.Level_3.2016071500.0.0.tar.gz"
+        if [ -f ${f} ]; then
+            antibodies+=$(tar --to-stdout --wildcards -xf $f "gdac.broadinstitute.org_$d.RPPA_AnnotateWithGene.Level_3.2016071500.0.0/$d.antibody_annotation.txt" | tail -n +2)
+            tar --ignore-failed-read --ignore-command-error -xzf "$f" "gdac.broadinstitute.org_$d.RPPA_AnnotateWithGene.Level_3.2016071500.0.0/$d.rppa.txt"
+        fi
+    fi
+done
+cd ..
+echo "$antibodies" | sort | uniq > gene_antibody_map.txt
+
+cd ..
+
+# expression
+./firehose_get -tasks Merge_rnaseqv2__illuminahiseq_rnaseqv2__unc_edu__Level_3__RSEM_genes_normalized__data.Level_3 data latest
+
+
+
+# Conservation track from UCSC
+wget -N http://hgdownload.cse.ucsc.edu/goldenpath/hg19/phyloP100way/hg19.100way.phyloP100way.bw
+wget -N http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz

@@ -13,10 +13,9 @@ from helpers.tracks import MutationsTrack
 from helpers.tracks import SequenceTrack
 from helpers.tracks import Track
 from helpers.tracks import TrackElement
-from models import Domain
+from models import Domain, source_manager, SiteType, Site
 from models import Mutation
-from models import Site
-from views.abstract_protein import AbstractProteinView, GracefulFilterManager, ProteinRepresentation
+from .abstract_protein import AbstractProteinView, GracefulFilterManager, ProteinRepresentation
 from ._commons import represent_mutation
 from .filters import common_filters, ProteinFiltersData
 from .filters import create_widgets
@@ -38,6 +37,17 @@ def prepare_tracks(protein, raw_mutations):
                 )
             )
         ),
+        Track(
+            'conservation',
+            (
+                ''.join([
+                    f'<i v="{score or 0}">&nbsp;</i>'
+                    for score in protein.conservation.split(';')
+                ])
+                if protein.conservation else
+                ''
+            )
+        ),
         MutationsTrack(raw_mutations)
     ]
     return tracks
@@ -48,7 +58,8 @@ def prepare_sites(sites):
         {
             'start': site.position - 7,
             'end': site.position + 7,
-            'type': str(site.type)
+            'type': ', '.join(site.types_names),
+            'sources': [source.name for source in site.sources]
         } for site in sites
     ]
 
@@ -63,7 +74,7 @@ class SequenceRepresentation(ProteinRepresentation):
         tracks = prepare_tracks(protein, self.protein_mutations)
 
         source = filter_manager.get_value('Mutation.sources')
-        source_model = Mutation.get_source_model(source)
+        source_model = source_manager.source_by_name[source]
         value_type = source_model.value_type
 
         parsed_mutations = self.represent_needles()
@@ -80,7 +91,7 @@ class SequenceRepresentation(ProteinRepresentation):
 
         source_name = self.filter_manager.get_value('Mutation.sources')
 
-        get_source_data = attrgetter(Mutation.visible_fields[source_name])
+        get_source_data = attrgetter(source_manager.visible_fields[source_name])
 
         get_mimp_data = attrgetter('meta_MIMP')
 
@@ -101,6 +112,20 @@ class SequenceRepresentation(ProteinRepresentation):
 
             if mimp:
                 metadata['MIMP'] = mimp.to_json()
+
+            # affected, pre-defined motifs (not MIMP predicted)
+            motifs = mutation.affected_motifs()
+            if motifs:
+                needle['affected_motifs'] = [
+                    {
+                        'name': motif.name,
+                        'pattern': motif.pattern,
+                        'pseudo_logo_path': str(motif.pseudo_logo_path),
+                        'position': position
+                    }
+                    for motif, position in motifs
+                ]
+
 
             needle['summary'] = field.summary(data_filter)
             needle['value'] = field.get_value(data_filter)
@@ -175,6 +200,6 @@ class SequenceView(AbstractProteinView):
                 filter_manager.filters,
                 custom_datasets_names=user_datasets.values()
             ),
-            site_types=['multi_ptm'] + Site.types,
+            site_types=['multi_ptm'] + SiteType.available_types(),
             mutation_types=Mutation.types,
         )

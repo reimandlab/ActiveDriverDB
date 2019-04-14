@@ -1,21 +1,24 @@
 from collections import OrderedDict
 
+from sqlalchemy.orm.exc import NoResultFound
 from models import InheritedMutation, Disease
 from models import ClinicalData
-from imports.mutations import MutationImporter
-from imports.mutations import make_metadata_ordered_dict
 from helpers.parsers import tsv_file_iterator
 from helpers.parsers import gzip_open_text
-from database import restart_autoincrement, get_or_create, get_highest_id
-from database import bulk_ORM_insert
+from database.bulk import get_highest_id, bulk_orm_insert, restart_autoincrement
 from database import db
 
+from .mutation_importer import MutationImporter
+from .mutation_importer.helpers import make_metadata_ordered_dict
 
-class MalformedRowError(Exception):
+
+class MalformedRawError(Exception):
     pass
 
-class Importer(MutationImporter):
 
+class ClinVarImporter(MutationImporter):
+
+    name = 'clinvar'
     model = InheritedMutation
     default_path = 'data/mutations/clinvar_muts_annotated.txt.gz'
     header = [
@@ -42,7 +45,7 @@ class Importer(MutationImporter):
         try:
             at_least_one_significant_sub_entry, *args = self.parse_metadata(line)
             return at_least_one_significant_sub_entry
-        except MalformedRowError:
+        except MalformedRawError:
             return False
 
     clinvar_keys = (
@@ -90,7 +93,7 @@ class Importer(MutationImporter):
                 if statuses and statuses[i] == 'no_criteria':
                     statuses[i] = None
             except IndexError:
-                raise MalformedRowError('Malformed row (wrong count of subentries) on %s-th entry:' % i)
+                raise MalformedRawError('Malformed row (wrong count of subentries) on %s-th entry:' % i)
 
         values = list(clinvar_entry.values())
 
@@ -102,16 +105,6 @@ class Importer(MutationImporter):
         duplicates = 0
         new_diseases = OrderedDict()
 
-        clinvar_keys = (
-            'RS',
-            'MUT',
-            'VLD',
-            'PMC',
-            'CLNSIG',
-            'CLNDBN',
-            'CLNREVSTAT',
-        )
-
         highest_disease_id = get_highest_id(Disease)
 
         def clinvar_parser(line):
@@ -119,8 +112,8 @@ class Importer(MutationImporter):
 
             try:
                 at_least_one_significant_sub_entry, values, sub_entries_cnt, names, statuses, significances = self.parse_metadata(line)
-            except MalformedRowError as e:
-                print(str(e) +'\n' + line)
+            except MalformedRawError as e:
+                print(str(e) + '\n' + line)
                 return False
 
             # following 2 lines are result of issue #47 - we don't import those
@@ -163,7 +156,6 @@ class Importer(MutationImporter):
 
                 self.protect_from_duplicates(mutation_id, clinvar_mutations)
 
-                # Python 3.5 makes it easy: **values (but is not available)
                 clinvar_mutations.append(
                     [
                         mutation_id,
@@ -175,22 +167,30 @@ class Importer(MutationImporter):
                 )
 
                 for i in range(sub_entries_cnt):
+                    # disease names matching is case insensitive;
+                    # NB: MySQL uses case-insensitive unique constraint by default
                     name = names[i]
+                    key = name.lower()
 
-                    # we don't won't _uninteresting_ data
+                    # we don't want _uninteresting_ data
                     if name in ('not_specified', 'not provided'):
                         continue
 
-                    if name in new_diseases:
-                        disease_id = new_diseases[name]
+                    if key in new_diseases:
+                        disease_id, recorded_name = new_diseases[key]
+                        if recorded_name != name:
+                            print(f'Note: {name} and {recorded_name} diseases were merged')
                     else:
-                        disease, created = get_or_create(Disease, name=name)
-                        if created:
-                            highest_disease_id += 1
-                            new_diseases[name] = highest_disease_id
-                            disease_id = highest_disease_id
-                        else:
+                        try:
+                            disease = Disease.query.filter(Disease.name.ilike(name)).one()
+                            recorded_name = disease.name
                             disease_id = disease.id
+                            if recorded_name != name:
+                                print(f'Note: {name} and {recorded_name} diseases were merged')
+                        except NoResultFound:
+                            highest_disease_id += 1
+                            new_diseases[key] = highest_disease_id, name
+                            disease_id = highest_disease_id
 
                     clinvar_data.append(
                         (
@@ -204,29 +204,29 @@ class Importer(MutationImporter):
         for line in self.iterate_lines(path):
             clinvar_parser(line)
 
-        print('%s duplicates found' % duplicates)
+        print(f'{duplicates} duplicates found')
 
-        return clinvar_mutations, clinvar_data, new_diseases.keys()
+        return clinvar_mutations, clinvar_data, new_diseases.values()
 
     def export_details_headers(self):
-        return ['disease']
+        return ['disease', 'significance']
 
     def export_details(self, mutation):
         return [
-            [d.disease_name]
+            [d.disease_name, d.significance]
             for d in mutation.clin_data
         ]
 
     def insert_details(self, details):
         clinvar_mutations, clinvar_data, new_diseases = details
 
-        bulk_ORM_insert(
+        bulk_orm_insert(
             Disease,
             ('name',),
-            [(disease,) for disease in new_diseases]
+            [(disease,) for pk, disease in new_diseases]
         )
         self.insert_list(clinvar_mutations)
-        bulk_ORM_insert(
+        bulk_orm_insert(
             ClinicalData,
             (
                 'inherited_id',
@@ -239,10 +239,9 @@ class Importer(MutationImporter):
 
     def restart_autoincrement(self, model):
         assert self.model == model
-        restart_autoincrement(self.model)
-        db.session.commit()
-        restart_autoincrement(ClinicalData)
-        db.session.commit()
+        for model in [self.model, ClinicalData, Disease]:
+            restart_autoincrement(model)
+            db.session.commit()
 
     def raw_delete_all(self, model):
         assert self.model == model

@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from tests.database_testing import DatabaseTest
+from database_testing import DatabaseTest
 from urllib.parse import urlparse, urlunparse
 
 

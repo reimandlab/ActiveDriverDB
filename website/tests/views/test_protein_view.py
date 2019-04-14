@@ -1,5 +1,5 @@
 from view_testing import ViewTest, relative_location
-from models import Protein
+from models import Protein, SiteType
 from models import Site
 from database import db
 from test_sequence import test_protein_data, create_test_mutations
@@ -29,8 +29,8 @@ class TestProteinView(ViewTest):
         p = Protein(**test_protein_data())
 
         sites = [
-            Site(position=3, residue='R', type='phosphorylation'),
-            Site(position=4, residue='T', type='methylation')
+            Site(position=3, residue='R', types={SiteType(name='phosphorylation')}),
+            Site(position=4, residue='T', types={SiteType(name='methylation')})
         ]
         db.session.add(p)
         p.sites = sites
@@ -42,13 +42,14 @@ class TestProteinView(ViewTest):
 
         assert len(response.json) == 2
 
-        phospo_site_repr = None
+        phosphorylation_site_repr = None
 
         for site_repr in response.json:
+            print(site_repr)
             if site_repr['type'] == 'phosphorylation':
-                phospo_site_repr = site_repr
+                phosphorylation_site_repr = site_repr
 
-        assert phospo_site_repr
+        assert phosphorylation_site_repr
 
     def test_mutation(self):
 

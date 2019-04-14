@@ -1,5 +1,5 @@
 from models import MC3Mutation
-from imports.mutations.tcga import Importer as TCGAImporter
+from .tcga import TCGAImporter
 
 
 def load_tss_cancer_map(tss_cancer_map_path):
@@ -23,8 +23,9 @@ def load_tss_cancer_map(tss_cancer_map_path):
     return tss_dict
 
 
-class Importer(TCGAImporter):
+class MC3Importer(TCGAImporter):
 
+    name = 'mc3'
     model = MC3Mutation
     default_path = 'data/mutations/mc3_muts_annotated.txt.gz'
     # ['Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
@@ -32,10 +33,13 @@ class Importer(TCGAImporter):
     header = None
     tss_cancer_map_path = 'data/mutations/tissue_source_site_codes.tsv'
 
+    def extract_cancer_name(self, sample_name):
+        tss_code = sample_name.split('-')[1]
+        return self.cancer_barcodes[tss_code]
+
     def decode_line(self, line):
         sample_name = line[10]
-        tss_code = sample_name.split('-')[1]
-        cancer_name = self.cancer_barcodes[tss_code]
+        cancer_name = self.extract_cancer_name(sample_name)
         return cancer_name, sample_name
 
     def __init__(self, *args, **kwargs):
@@ -51,6 +55,7 @@ class Importer(TCGAImporter):
         )
         hypermutated = hypermutated_samples(path)
         self.samples_to_skip = set(hypermutated.keys())
-        print('%s samples are hypermutated and will be skipped at import.')
+        hypermutated_count = len(self.samples_to_skip)
+        print(f'{hypermutated_count} samples are hypermutated and will be skipped at import.')
 
         return super().parse(path)

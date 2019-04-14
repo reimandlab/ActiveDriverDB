@@ -1,13 +1,15 @@
 from os.path import basename, dirname
 
 from models import The1000GenomesMutation
-from imports.mutations import MutationImporter
-from imports.mutations import make_metadata_ordered_dict
 from helpers.parsers import read_from_gz_files
 
+from .mutation_importer import MutationImporter
+from .mutation_importer.helpers import make_metadata_ordered_dict
 
-class Importer(MutationImporter):
 
+class The1000GenomesImporter(MutationImporter):
+
+    name = 'thousand_genomes'
     model = The1000GenomesMutation
     default_path = 'data/mutations/G1000/G1000_chr*.txt.gz'
     insert_keys = (
@@ -39,9 +41,9 @@ class Importer(MutationImporter):
 
     def iterate_lines(self, path):
         for line in read_from_gz_files(
-            dirname(path),
-            basename(path),
-            skip_header=False
+                dirname(path),
+                basename(path),
+                skip_header=False
         ):
             yield line.rstrip().split('\t')
 
@@ -74,6 +76,7 @@ class Importer(MutationImporter):
         skipped = 0
 
         for line in self.iterate_lines(path):
+
             maf_data = self.parse_metadata(line)
 
             # ignore mutations with frequency equal to zero
@@ -93,21 +96,11 @@ class Importer(MutationImporter):
                 self.protect_from_duplicates(mutation_id, thousand_genomes_mutations)
 
                 thousand_genomes_mutations.append(
-                    (
-                        mutation_id,
-                        # Python 3.5 makes it easy:
-                        # **values, but is not available
-                        values[0],
-                        values[1],
-                        values[2],
-                        values[3],
-                        values[4],
-                        values[5],
-                    )
+                    (mutation_id, *values)
                 )
 
-        print('%s duplicates found' % duplicates)
-        print('%s zero-frequency mutations skipped' % skipped)
+        print(f'{duplicates} duplicates found')
+        print(f'{skipped} zero-frequency mutations skipped')
 
         return thousand_genomes_mutations
 

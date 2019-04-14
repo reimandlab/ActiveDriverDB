@@ -1,5 +1,5 @@
 from view_testing import ViewTest
-from models import Protein, KinaseGroup, Drug, DrugGroup, MIMPMutation
+from models import Protein, KinaseGroup, Drug, DrugGroup, MIMPMutation, SiteType
 from models import Gene
 from models import Site
 from models import Kinase
@@ -53,18 +53,20 @@ def create_network():
     group = KinaseGroup(
         name='Group of kinases',
     )
+    phosphorylation = SiteType(name='phosphorylation')
+
     s = Site(
         position=1,
-        type='phosphorylation',
+        types={phosphorylation},
         residue='T',
-        kinases=[known_interactor_of_x],
-        kinase_groups=[group]
+        kinases={known_interactor_of_x},
+        kinase_groups={group}
     )
     s2 = Site(
         position=2,
-        type='phosphorylation',
+        types={phosphorylation},
         residue='R',
-        kinase_groups=[group]
+        kinase_groups={group}
     )
     p.sites = [s, s2]
 

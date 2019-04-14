@@ -8,7 +8,7 @@ from collections import OrderedDict
 class Track(object):
     """Whole track with its elements and subtracts"""
 
-    def __init__(self, name, elements, subtracks='', inline=False):
+    def __init__(self, name, elements, subtracks=None, inline=False):
         """
         inline: tells if the track is a subtract which
         should be nested under the parent Track
@@ -17,7 +17,7 @@ class Track(object):
         """
         self.name = name
         self.elements = elements
-        self.subtracks = subtracks
+        self.subtracks = subtracks or []
         self.inline = inline
 
     @property
@@ -37,7 +37,7 @@ class Track(object):
 
 
 class TrackElement(object):
-    """Single element like mutation, phosporylation site etc on a track.
+    """Single element like mutation, phosphorylation site etc on a track.
 
     It is used a lot for every single protein, hence __slots__ implemented.
     """
@@ -59,9 +59,9 @@ class TrackElement(object):
 
         # names_to_try should be kept in descending length order
         names_to_try = (
-            '%s: %s (%d long)' % (self.name, self.description, self.length),
-            '%s: %s' % (self.name, self.description),
-            '%s' % self.name
+            f'{self.name}: {self.description} ({self.length:d} long)',
+            f'{self.name}: {self.description}',
+            f'{self.name}'
         )
         for name in names_to_try:
             if len(name) <= self.length:
@@ -143,8 +143,6 @@ class SequenceTrack(Track):
 
 class DomainsTrack(Track):
 
-    collapsed = True
-
     def __init__(self, domains):
 
         tracks = OrderedDict()
@@ -187,13 +185,19 @@ class DomainsTrack(Track):
             for level in levels
         ]
 
+        # hide the subtracks by default
+        # (if there are no subtracks, then there is nothing to hide)
+        if subtracks:
+            self.collapsed = True
+
         super().__init__(
             'domains',
             map(self.make_element, consensus_track),
             subtracks
         )
 
-    def make_element(self, domain):
+    @staticmethod
+    def make_element(domain):
         return TrackElement(
             domain.start,
             domain.end - domain.start,
@@ -201,7 +205,8 @@ class DomainsTrack(Track):
             domain.interpro.description
         )
 
-    def group_domains(self, domains):
+    @staticmethod
+    def group_domains(domains):
 
         grouped = defaultdict(list)
         for domain in domains:
@@ -234,7 +239,8 @@ class MutationsTrack(Track):
 
         super().__init__('mutations', tracks[0], subtracks)
 
-    def group_mutations(self, mutations):
+    @staticmethod
+    def group_mutations(mutations):
 
         grouped = [{}]
         for mutation in mutations:

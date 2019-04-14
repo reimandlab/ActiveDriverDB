@@ -1,4 +1,7 @@
+from warnings import warn
+from apscheduler.schedulers import SchedulerNotRunningError
 from flask_testing import TestCase
+
 from app import create_app, scheduler
 from database import db
 from database import bdb
@@ -19,8 +22,11 @@ class DatabaseTest(TestCase):
     BDB_GENE_TO_ISOFORM_PATH = '.test_databases/gti.db'
     SQL_LEVENSTHEIN = False
     USE_LEVENSTHEIN_MYSQL_UDF = False
+    CONTACT_LIST = ['dummy.maintainer@domain.org']
+    SCHEDULER_ENABLED = True
 
     SECRET_KEY = 'test_key'
+    PREFERRED_URL_SCHEME = 'http'
 
     @property
     def config(self):
@@ -96,4 +102,7 @@ class DatabaseTest(TestCase):
         db.drop_all()
         bdb.drop()
         bdb_refseq.drop()
-        scheduler.shutdown()
+        try:
+            scheduler.shutdown()
+        except SchedulerNotRunningError:
+            warn('Scheduler was not running at the end of the test')

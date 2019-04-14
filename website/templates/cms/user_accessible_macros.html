@@ -1,0 +1,40 @@
+{% macro tabs(tabs_data, active=None, prefix='', name_attr='name') %}
+<div>
+
+  <ul class="nav nav-tabs" role="tablist">
+    {% for tab in tabs_data %}
+      <li role="presentation" class="{{ 'active' if tab.id == active else '' }}">
+        <a href="#{{ prefix }}{{ tab.id }}" role="tab" data-toggle="tab">{{ tab[name_attr] }}</a>
+      </li>
+    {% endfor %}
+  </ul>
+
+</div>
+{% endmacro %}
+
+
+{% macro tab(tab_id, content, active=None, prefix='') %}
+<div role="tabpanel" class="tab-pane {{ 'active' if tab_id == active }}" id="{{ prefix }}{{ tab_id }}">
+  {{ content }}
+</div>
+{% endmacro %}
+
+{% macro tabs_start() %}
+<div class="tab-content">
+{% endmacro %}
+
+{% macro tabs_end() %}
+</div>
+{% endmacro %}
+
+
+{% macro plot_tabs(plot_func, plot_id_base, plot_name, params, active, attr='name', name_attr='name') %}
+{% set prefix = plot_id_base | replace(':', '_') | replace('{}', '') %}
+  {{ tabs(params, active=active, prefix=prefix, name_attr=name_attr) }}
+  {{ tabs_start() }}
+  {% for param in params %}
+    {% set content = plot_func(plot_id_base.format(param[attr]), title=plot_name + param.name, **kwargs) %}
+    {{ tab(param.id, content, active=active, prefix=prefix) }}
+  {% endfor %}
+  {{ tabs_end() }}
+{% endmacro %}

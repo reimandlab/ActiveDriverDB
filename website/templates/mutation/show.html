@@ -113,6 +113,14 @@
               <span class="empty">no data</span>
             {% endif %}
           </div>
+          <h4>Cancer types: <span class="source">(PCAWG)</span></h4>
+          <div class="clinical-data">
+            {% if mutation.meta_PCAWG %}
+              {{ mutation.meta_PCAWG.summary() | join(', ') }}
+            {% else %}
+              <span class="empty">no data</span>
+            {% endif %}
+          </div>
           <h4>Disease Annotations: <span class="source">(ClinVar)</span></h4>
           <div class="clinical-data">
             {% if mutation.meta_ClinVar %}
@@ -162,7 +170,7 @@
               Residue: {{ site.residue }}
             </div>
             <div>
-              Type: {{ site.type }}
+              Type: {{ site.types | join(', ') }}
             </div>
           </div>
           <div class="col-md-4">

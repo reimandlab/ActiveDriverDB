@@ -12,9 +12,11 @@ from sqlalchemy.orm import validates
 from werkzeug.utils import cached_property
 
 import security
-from database import db, utc_now, utc_days_after, update
+from database import db, update
+from database.types import MediumPickle
+from database.functions import utc_now, utc_days_after
 from exceptions import ValidationError
-from models import Model
+from .model import Model
 
 
 class CMSModel(Model):
@@ -30,6 +32,18 @@ class Count(CMSModel):
     """Statistics holder"""
     name = db.Column(db.String(254), unique=True)
     value = db.Column(db.Integer)
+
+
+class Plot(CMSModel):
+    """Holds a plot data"""
+    name = db.Column(db.String(254), unique=True)
+    value = db.Column(MediumPickle)
+
+
+class VennDiagram(CMSModel):
+    """Holds a Venn diagram data"""
+    name = db.Column(db.String(254), unique=True)
+    value = db.Column(db.PickleType)
 
 
 class BadWord(CMSModel):
@@ -128,7 +142,7 @@ class UsersMutationsDataset(CMSModel):
         return cls.query.filter_by(uri=uri.rstrip('/')).one()
 
     @property
-    def data(self):
+    def data(self) -> 'MutationSearch':
         if not hasattr(self, '_data'):
             try:
                 self._data = self._load_from_file()
@@ -509,4 +523,3 @@ class TextEntry(CMSModel):
 
     name = db.Column(db.String(256), nullable=False, unique=True, index=True)
     content = db.Column(db.Text())
-

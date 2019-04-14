@@ -44,7 +44,7 @@ def fast_gzip_read(file_name, mode='r', processes=4, as_str=False):
     yield p.stdout
 
 
-def read_from_gz_files(directory, pattern, skip_header=True):
+def read_from_gz_files(directory, pattern, skip_header=True, after_batch=lambda: None):
     """Creates generator yielding subsequent lines from compressed '.gz' files
 
     Progress bar is embedded.
@@ -61,6 +61,8 @@ def read_from_gz_files(directory, pattern, skip_header=True):
 
             for line in f:
                 yield line
+
+        after_batch()
 
 
 def count_lines(file_object):
@@ -150,7 +152,7 @@ def parse_text_file(filename, parser, file_header=None, file_opener=open):
             parser(line)
 
 
-def parse_fasta_file(filename, on_header, on_sequence, file_opener=open):
+def parse_fasta_file(filename, on_sequence, on_header=lambda x: x, file_opener=open, mode='r'):
     """Utility function wrapping Fasta file parser.
 
     For each line parser will be called.
@@ -159,12 +161,11 @@ def parse_fasta_file(filename, on_header, on_sequence, file_opener=open):
     """
     header = None
 
-    with file_opener(filename) as f:
+    with file_opener(filename, mode) as f:
         for line in tqdm(f, total=count_lines(f), unit=' lines'):
             line = line.rstrip()
             if line.startswith('>'):
-                header = line[1:]
-                on_header(header)
+                header = on_header(line[1:])
             else:
                 on_sequence(header, line)
 

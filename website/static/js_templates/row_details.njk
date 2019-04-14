@@ -14,7 +14,7 @@ Number of affected sites: {{ mutation.cnt_ptm }}<br>
     <div class="sub-cell">
       Position: {{ site.position }}<br>
       Residue: {{ site.residue }}<br>
-      Type: {{ site.type | replace(',', ', ') }}<br>
+      Type: {{ site.types | replace(',', ', ') }}<br>
       Kinases: {{ list_site_kinases(site, '','-') }}
     </div>
   {% endfor %}

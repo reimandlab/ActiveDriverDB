@@ -1,5 +1,5 @@
 from view_testing import ViewTest
-from models import Mutation, Cancer, MC3Mutation, ExomeSequencingMutation
+from models import Mutation, Cancer, MC3Mutation, ExomeSequencingMutation, SiteType
 from models import Protein
 from models import Site
 from models import Gene
@@ -10,7 +10,7 @@ class TestChromosomeView(ViewTest):
 
     def test_mutation(self):
 
-        s = Site(position=13, type='methylation')
+        s = Site(position=13, types={SiteType(name='methylation')})
         p = Protein(refseq='NM_007', id=1, sites=[s], sequence='A'*15, gene=Gene(name='SomeGene'))
 
         db.session.add(p)
@@ -58,7 +58,7 @@ class TestChromosomeView(ViewTest):
         response = self.client.get(mutation_a15v_query)
 
         metadata = {
-            'MC3': {'MC3metadata': [{'Cancer': 'Breast invasive carcinoma', 'Value': 1}]},
+            'MC3': {'Cancers': [{'Cancer': 'Breast invasive carcinoma', 'Value': 1}]},
             'ESP6500': {'MAF': 0.02, 'MAF AA': 0.02, 'MAF EA': None}
         }
 

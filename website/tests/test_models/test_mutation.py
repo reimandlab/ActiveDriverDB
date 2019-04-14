@@ -7,6 +7,27 @@ from models import Site
 
 class MutationTest(ModelTest):
 
+    def test_default_ref(self):
+        p = Protein(sequence='ABC')
+        m = Mutation(position=1, protein=p)
+        db.session.add(p)
+        db.session.commit()
+        assert m.ref == 'A'
+
+    def test_impact_on_ptm(self):
+
+        mutations = [Mutation(position=61)]
+        protein = Protein(
+            refseq='NM_00001',
+            mutations=mutations
+        )
+        db.session.add(protein)
+        protein.sites = [Site(position=61), Site(position=54), Site(position=51)]
+
+        mutation = mutations[0]
+
+        assert mutation.impact_on_ptm() == 'direct'
+
     def test_impact_on_specific_ptm(self):
 
         # case 0: there are no sites in the protein

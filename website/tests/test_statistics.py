@@ -5,10 +5,10 @@ import models
 
 class StatisticsTest(DatabaseTest):
 
-    def exposed_stats(self):
+    def exposed_stats(self, limit_to):
         from stats import Statistics
         s = Statistics()
-        s.calc_all()
+        s.calc_all(limit_to=limit_to)
         return s.get_all()
 
     def test_simple_models(self):
@@ -27,7 +27,7 @@ class StatisticsTest(DatabaseTest):
             model_objects = [model() for _ in range(10)]
             db.session.add_all(model_objects)
 
-        stats = self.exposed_stats()
+        stats = self.exposed_stats(limit_to='|'.join(model_stats))
 
         for name, model in model_stats.items():
             assert stats[name] == 10
@@ -50,7 +50,7 @@ class StatisticsTest(DatabaseTest):
             metadata = model(mutation=m)
             db.session.add(metadata)
 
-        stats = self.exposed_stats()
+        stats = self.exposed_stats(limit_to='mutations')
 
         def get_var_name(model_name):
             return model_name.replace('1', 'T')
@@ -85,12 +85,12 @@ class StatisticsTest(DatabaseTest):
         p1 = Protein(
             sites=[
                 Site(),
-                Site(kinases=[Kinase()], kinase_groups=[KinaseGroup()])
+                Site(kinases={Kinase()}, kinase_groups={KinaseGroup()})
             ]
         )
         db.session.add(p1)
         p2 = Protein(
-            sites=[Site(kinases=[Kinase()])]
+            sites=[Site(kinases={Kinase()})]
         )
         db.session.add(p2)
 
@@ -122,7 +122,7 @@ class StatisticsTest(DatabaseTest):
         assert proteins_covered == len(u_proteins_covered)
 
     def test_table_generation(self):
-        from stats import generate_source_specific_summary_table
+        from stats.table import generate_source_specific_summary_table
 
         table = generate_source_specific_summary_table()
         assert table

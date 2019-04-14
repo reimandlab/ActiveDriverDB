@@ -1,3 +1,30 @@
+{% macro render_items(items) %}
+  {% for value, label in items %}
+    <li class="radio">
+      <label {{ 'checked' if widget.value == value }}>
+        <input type="radio" name="{{ widget.target_name }}" value="{{ value | safe }}" {{ 'checked' if widget.value == value }}>
+        {{ label }}
+      </label>
+    </li>
+  {% endfor %}
+{% endmacro %}
+
+{% macro render_hierarchical_items(items) %}
+  {% for value, label, children in items %}
+    <li class="radio">
+      <label {{ 'checked' if widget.value == value }}>
+        <input type="radio" name="{{ widget.target_name }}" value="{{ value | safe }}" {{ 'checked' if widget.value == value }}>
+        {{ label }}
+      </label>
+    </li>
+    {% if children %}
+      <ul>
+        {{ render_items(children.items()) }}
+      </ul>
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+
 <ul class="list-unstyled">
     {% if widget.nullable %}
         <li class="radio">
@@ -7,12 +34,10 @@
             </label>
         </li>
     {% endif %}
-    {% for value, label in widget.items %}
-        <li class="radio">
-            <label {{ 'checked' if widget.value == value }}>
-            <input type="radio" name="{{ widget.target_name }}" value="{{ value | safe }}" {{ 'checked' if widget.value == value }}>
-            {{ label }}
-            </label>
-        </li>
-    {% endfor %}
+
+    {% if widget.hierarchy %}
+      {{ render_hierarchical_items(widget.hierarchical_items) }}
+    {% else %}
+      {{ render_items(widget.items) }}
+    {% endif %}
 </ul>

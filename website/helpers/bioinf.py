@@ -1,7 +1,23 @@
+from typing import List
+from pandas import DataFrame, read_table
+
 basic_mappings = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C'}
 IUPAC_mappings = {'A': 'T', 'T': 'A', 'C': 'G', 'G': 'C', 'U': 'A', 'Y': 'R',
                   'R': 'Y', 'S': 'S', 'W': 'W', 'K': 'M', 'M': 'K', 'B': 'V',
                   'V': 'B', 'D': 'H', 'H': 'D', 'N': 'N'}
+
+
+# note: hydroxylysine mapped to K
+aa_symbols = (
+    'A', 'C', 'D', 'D', 'E', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'Y', 'K'
+)
+aa_names = (
+    'alanine', 'cysteine', 'aspartic acid', 'aspartate', 'glutamic acid', 'glutamate', 'phenylalanine', 'glycine',
+    'histidine',
+    'isoleucine', 'lysine', 'leucine', 'methionine', 'asparagine', 'proline', 'glutamine', 'arginine',
+    'serine', 'threonine', 'valine', 'tryptophan', 'tyrosine', 'hydroxylysine'
+)
+aa_name_to_symbol = dict(zip(aa_names, aa_symbols))
 
 
 class DataInconsistencyError(Exception):
@@ -73,12 +89,11 @@ def determine_strand(ref, cdna_ref, alt, cdna_alt):
         return '-'
     else:
         raise DataInconsistencyError(
-            'Unable to determine strand for: %s %s %s %s' %
-            (ref, cdna_ref, alt, cdna_alt)
+            f'Unable to determine strand for: {ref} {cdna_ref} {alt} {cdna_alt}'
         )
 
 
-def is_sequence_broken(protein, test_pos, test_res, test_alt=None):
+def is_sequence_broken(protein, test_pos: int, test_res: str, test_alt: str=None):
     """Check if (in given protein) there is given residue on given position.
 
     Returns:
@@ -87,10 +102,30 @@ def is_sequence_broken(protein, test_pos, test_res, test_alt=None):
 
     TODO: use test_alt to detect those ref -> alt transitions which are not possible?
     """
-    if len(protein.sequence) <= int(test_pos):
+    sequence = protein.sequence
+    if len(sequence) <= test_pos:
         return protein.refseq, '-', test_res, str(test_pos), test_alt
     else:
-        ref_in_db = protein.sequence[int(test_pos) - 1]
+        ref_in_db = sequence[test_pos - 1]
         if test_res == ref_in_db:
             return False
         return protein.refseq, ref_in_db, test_res, str(test_pos), test_alt
+
+
+def read_genes_data(path) -> DataFrame:
+
+    genes_data = read_table(
+        path,
+        names='bin name chrom strand txStart txEnd cdsStart cdsEnd exonCount exonStarts exonEnds score name2 cdsStartStat cdsEndStat exonFrames'.split()
+    ).set_index(['chrom', 'name'])
+
+    def convert_positions(positions: List[str]):
+        return tuple(int(pos) for pos in filter(bool, positions))
+
+    genes_data.exonStarts = genes_data.exonStarts.str.split(',').apply(convert_positions)
+    genes_data.exonEnds = genes_data.exonEnds.str.split(',').apply(convert_positions)
+
+    genes_data = genes_data.sort_index(level=genes_data.index.names)
+
+    return genes_data
+

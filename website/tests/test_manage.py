@@ -6,7 +6,7 @@ from flask import current_app
 import manage
 from database import db
 from models import User, Gene, Cancer, Page
-from tests.miscellaneous import make_named_temp_file, use_fixture
+from miscellaneous import make_named_temp_file, use_fixture
 
 
 class ManageTest(DatabaseTest):
@@ -104,18 +104,19 @@ class ManageTest(DatabaseTest):
             msg, error = self.run_command(command)
             assert 'Exported site_specific_network_of_kinases_and_targets to %s' % filename in msg
 
-        from tests.test_imports.test_export import TestExport
+        from test_imports.test_export import TestExport
         TestExport.test_network_export(self, do_export)
 
-    def test_cms(self):
+    def test_root_user(self):
+        from imports import cms
         email = 'root-email@gmail.com'
         self.monkeypatch.setitem(__builtins__, 'input', lambda prompt: email)
-        self.monkeypatch.setattr(manage, 'getpass', lambda prompt: 'my-sEcure-passw0rd')
-        msg, error = self.run_command('load cms')
+        self.monkeypatch.setattr(cms, 'getpass', lambda prompt: 'my-sEcure-passw0rd')
+        msg, error = self.run_command('load cms -i root_account')
         assert User.query.filter_by(email=email).one()
         assert 'Root user account created' in msg
 
-    def test_remove(self):
+    def test_remove_models(self):
 
         with current_app.app_context():
             assert len(Gene.query.all()) == 0
@@ -133,6 +134,11 @@ class ManageTest(DatabaseTest):
 
             assert len(Gene.query.all()) == 0
             assert len(Cancer.query.all()) == 1
+
+            # remove all models
+            self.run_command('remove protein_related --all')
+
+            assert len(Cancer.query.all()) == 0
 
     def test_drop_all(self):
         with current_app.app_context():

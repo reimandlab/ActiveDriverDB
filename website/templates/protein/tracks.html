@@ -2,7 +2,7 @@
     <div class="track {{ track.class_name }} {{ 'hidden collapsible' if collapsed }}">
         <div class="elements">
         {%- if track.elements is string -%}
-           {{ track.elements }}
+           {{ track.elements | safe }}
         {%- else -%}
         {%- for element in track.elements -%}
             <div style="left:{{ element.start - 1 }}ch;width:{{ element.length }}ch" {% if element.description -%}
@@ -14,11 +14,13 @@
         {%- endfor -%}
         {%- endif -%}
         </div>
-        <div class="subtracks">
-        {% for subtrack in track.subtracks %}
-          {{ make_track(subtrack, track.collapsed) }}
-        {% endfor %}
-        </div>
+        {%- if track.subtracks -%}
+          <div class="subtracks">
+          {% for subtrack in track.subtracks %}
+            {{ make_track(subtrack, track.collapsed) }}
+          {% endfor %}
+          </div>
+        {%- endif -%}
     </div>
 {% endmacro %}
 
@@ -26,7 +28,7 @@
     <ul>
         {% for track in tracks %}
             {% if not track.inline %}
-            <li class="{{ 'hidden collapsible' if collapsed }} {{ track.class_name }} {{ 'subtracks_collapsed' if track.collapsed }}" data-track="{{ track.class_name }}">
+            <li class="{{ 'hidden collapsible ' if collapsed }}{{ track.class_name }}{{ ' subtracks_collapsed' if track.collapsed }}" data-track="{{ track.class_name }}">
                 {{ track.display_name | title | safe }}
 
                 {% if track.subtracks %}
