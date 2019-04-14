@@ -9,6 +9,7 @@ from miscellaneous import make_named_temp_file
 from models import Gene, Protein, SiteType
 from test_imports.test_proteins import create_test_proteins
 
+
 SEQUENCES = """\
 >00001|00001_1|NP_000680.2|Aldehyde dehydrogenase 1
 MSSSGTPDLPVLLTDLKIQYTKIFINNEWHDSVSGKKFPVFNPATEEELCQVEEGDKEDVDKAVKAARQAFQIGSPWRTMDASERGRLLYKLADLIERDRLLLATMESMNGGKLYSNAYLNDLAGCIKTLRYCAGWADKIQGRTIPIDGNFFTYTRHEPIGVCGQIIPWNFPLVMLIWKIGPALSCGNTVVVKPAEQTPLTALHVASLIKEAGFPPGVVNIVPGYGPTAGAAISSHMDIDKVAFTGSTEVGKLIKEAAGKSNLKRVTLELGGKSPCIVLADADLDNAVEFAHHGVFYHQGQCCIAASRIFVEESIYDEFVRRSVERAKKYILGNPLTPGVTQGPQIDKEQYDKILDLIESGKKEGAKLECGGGPWGNKGYFVQPTVFSNVTDEMRIAKEEIFGPVQQIMKFKSLDDVIKRANNTFYGLSAGVFTKDIDKAITISSALQAGTVWVNCYGVVSAQCPFGGFKMSGNGRELGEYGFHEYTEVKTVTVKISQKNS
@@ -81,10 +82,9 @@ class TestImport(DatabaseTest):
         with warns(None) as warnings:
             sites = importer.load_sites(path=make_named_temp_file(SITES))
 
-        if warnings.list:
-            for warning in warnings.list:
-                warn(warning.message)
-            raise AssertionError
+        for warning in warnings.list:
+            warn(warning.message)
+        assert all(warning.category is not UserWarning for warning in warnings.list)
 
         # should have 5 pre-defined sites and one mapped (isoform NM_001204889)
         assert len(sites) == 5 + 1
@@ -147,7 +147,7 @@ class TestImport(DatabaseTest):
         with warns(None) as warnings:
             sites = importer.load_sites(path=make_named_temp_file(sites_data), pos_zero_means_last_aa=True)
 
-        assert not warnings.list
+        assert all(warning.category is not UserWarning for warning in warnings.list)
         assert len(sites) == 1
 
         site = sites[0]
