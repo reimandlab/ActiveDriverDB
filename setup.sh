@@ -46,7 +46,9 @@ sudo apt-get install rabbitmq-server
 # generate keys (for testing only!)
 mkdir -p celery
 cd celery
-ssh-keygen -t rsa -f worker.key -N 'Password for testing only'
+ssh-keygen -t rsa -b 4096 -f worker.key -q -N ''
+yes '' | openssl req -new -key worker.key -out worker.csr
+openssl x509 -req -days 1 -in worker.csr -signkey worker.key -out worker.crt
 cd ..
 
 # create celery user
@@ -131,11 +133,3 @@ sudo apt-get install sqlite3-pcre
 # on debian
 # sudo apt-get install libcgraph6 graphviz graphviz-dev
 sudo pip install git+https://github.com/krassowski/pygraphviz
-
-# create simples pair of test keys for celery testing
-mkdir celery
-cd celery
-ssh-keygen -t rsa -b 4096 -f worker.key -q -N ""
-openssl req -new -key worker.key -out worker.csr
-openssl x509 -req -days 1 -in worker.csr -signkey worker.key -out worker.crt
-cd ..
