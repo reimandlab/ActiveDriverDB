@@ -25,7 +25,7 @@ yuicompressor
 flask-recaptcha
 flask-limiter
 flask_apscheduler
-celery
+celery==4.3
 amqp
 redis
 gprofiler-official
@@ -34,4 +34,5 @@ scipy
 scikit-learn
 pyBigWig
 pyinterval
+cryptography
 
