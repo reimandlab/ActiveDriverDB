@@ -35,4 +35,5 @@ scikit-learn
 pyBigWig
 pyinterval
 cryptography
+Werkzeug==0.15.2
 
