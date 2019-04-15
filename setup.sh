@@ -104,7 +104,7 @@ git clone https://github.com/krassowski/ActiveDriver
 cd ..
 
 
-# ActivePathways are in private repository
+# ActivePathways will hopefully be on cran soon
 # git clone https://github.com/reimandlab/activeDriverPW.git
 # R -e 'install.packages(c("metap", "data.table"), repos = "http://cran.us.r-project.org")'
 # R -e 'install.packages("activeDriverPW", repos=NULL)'
@@ -114,6 +114,11 @@ git clone https://github.com/reimandlab/rmimp.git
 cd rmimp
 git checkout refactored
 cd ..
+
+# NB: GenomicRanges require RCurl and might need:
+# sudo apt-get install libcurl4-gnutls-dev
+# sudo R -e 'install.packages("RCurl", repos = "http://cran.us.r-project.org")'
+
 sudo R -e 'source("https://bioconductor.org/biocLite.R"); biocLite(c("S4Vectors", "GenomicRanges", "Biostrings", "BiocGenerics"))'
 #sudo R -e 'install.packages("devtools", repos = "http://cran.us.r-project.org")'
 #sudo R -e 'devtools::install("rmimp", dependencies = TRUE)'
