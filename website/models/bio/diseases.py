@@ -7,12 +7,8 @@ from .model import BioModel
 
 class Disease(BioModel):
 
-    __table_args__ = (
-      db.Index('idx_name', 'name', mysql_length=1024),
-    )
-
     # CLNDBN: Variant disease name
-    name = db.Column(db.Text, nullable=False, unique=True)
+    name = db.Column(db.String(255), nullable=False, unique=True, index=True)
 
 
 class ClinicalData(BioModel):
