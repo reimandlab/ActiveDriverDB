@@ -696,12 +696,11 @@ class FilterManager:
         if args.get('clear_filters'):
             filters_list = self._parse_fallback_query({})
         elif args.get('fallback'):
-            filters_list = self._parse_fallback_query(dict(args))
+            filters_list = self._parse_fallback_query(args.to_dict(flat=False))
         else:
             filters_list = self._parse_string(
                 args.get('filters', '')
             )
-
         return [
             self.UpdateTuple(*filter_update)
             for filter_update in filters_list
@@ -818,7 +817,11 @@ class FilterManager:
 
             query_string = '&'.join(
                 [
-                    arg + '=' + value[0]
+                    arg + '=' + (
+                        value[0]
+                        if (isinstance(value, list) and len(value) == 1) else
+                        value
+                    )
                     for arg, value in args.items()
                     if not (arg.startswith('filter[') or arg == 'fallback')
                 ]
