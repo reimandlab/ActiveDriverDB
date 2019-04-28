@@ -1,5 +1,6 @@
 import pytest
 import helpers.filters as filters
+from werkzeug import ImmutableMultiDict
 
 
 class Model:
@@ -181,7 +182,7 @@ def test_url_string():
 class FakeRequest:
 
     def __init__(self, args, method='GET'):
-        self.args = args
+        self.args = ImmutableMultiDict(args)
         self.method = method
 
 
