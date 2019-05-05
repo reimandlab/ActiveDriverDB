@@ -1129,8 +1129,8 @@ def pathways(path='data/hsapiens.pathways.NAME.gmt'):
 
         if gene_set_name.startswith('GO'):
             pathway.gene_ontology = int(gene_set_name[3:])
-        elif gene_set_name.startswith('REAC'):
-            pathway.reactome = int(gene_set_name[5:])
+        elif gene_set_name.startswith('REAC:R-HSA-'):
+            pathway.reactome = int(gene_set_name[11:])
         else:
             raise Exception(
                 'Unknown gene set name: "%s"' % gene_set_name
