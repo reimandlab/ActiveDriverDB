@@ -316,12 +316,18 @@ class UniprotSearch(ProteinSearch):
         filters = [UniprotEntry.accession.like(phrase + '%')]
 
         def add_joins(q):
-            return q.join(ProteinReferences).join(UniprotEntry)
+            return (
+                q
+                .join(ProteinReferences)
+                .join(ProteinReferences.uniprot_association_table)
+                .join(UniprotEntry)
+            )
 
         query = self.create_query(
             limit, filters, sql_filters,
             (Gene, Protein, UniprotEntry), add_joins
         )
+        print(query)
 
         return self.parse_matches(query, phrase)
 

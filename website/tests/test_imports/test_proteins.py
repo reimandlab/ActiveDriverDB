@@ -211,29 +211,36 @@ class TestImport(DatabaseTest):
         assert Protein.query.filter_by(refseq='NM_000600').one().conservation == ''
 
     def test_select_preferred_isoform(self):
-        proteins_data = [
-            ('NM_001', 'MA', False),
-            ('NM_002', 'MAA', True),
-            ('NM_003', 'MAAA', True),   # we want this one:
-                                        # canonical according to uniprot, then longest, then oldest in refseq
-            ('NM_004', 'MAAA', True),
-            ('NM_005', 'MAAAA', False)
-        ]
+        # if is_first_isoform, simulate the case when there is a first isoform,
+        # otherwise simulate the case with picking a non-isoform specific one
+        for is_first_isoform in [True, False]:
 
-        preferred_refseq = 'NM_003'
+            proteins_data = [
+                ('NM_001', 'MA', False),
+                ('NM_002', 'MAA', True),
+                ('NM_003', 'MAAA', True),   # we want this one:
+                                            # canonical according to uniprot, then longest, then oldest in refseq
+                ('NM_004', 'MAAA', True),
+                ('NM_005', 'MAAAA', False)
+            ]
 
-        gene = Gene(name='Gene X')
-        for refseq, seq, is_uniprot_canonical in proteins_data:
-            protein = Protein(refseq=refseq, sequence=seq, gene=gene)
-            if is_uniprot_canonical:
-                protein_references = ProteinReferences(uniprot_entries=[UniprotEntry(isoform=1, reviewed=True)])
-                protein.external_references = protein_references
+            preferred_refseq = 'NM_003'
 
-        db.session.add(gene)
+            gene = Gene(name='Gene X')
+            for refseq, seq, is_uniprot_canonical in proteins_data:
+                protein = Protein(refseq=refseq, sequence=seq, gene=gene)
+                if is_uniprot_canonical:
+                    protein_references = ProteinReferences(uniprot_entries=[
+                        UniprotEntry(isoform=1 if is_first_isoform else None, reviewed=True)
+                    ])
+                    protein.external_references = protein_references
 
-        isoform = select_preferred_isoform(gene)
-        assert isoform
-        assert isoform.refseq == preferred_refseq
+            db.session.add(gene)
+
+            isoform = select_preferred_isoform(gene)
+            assert isoform
+            print(is_first_isoform)
+            assert isoform.refseq == preferred_refseq
 
     def test_protein_summaries(self):
 

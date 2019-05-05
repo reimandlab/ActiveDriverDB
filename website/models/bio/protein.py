@@ -6,7 +6,7 @@ from werkzeug.utils import cached_property
 from database import db, client_side_defaults, fast_count
 
 from .diseases import Cancer, Disease, ClinicalData
-from .model import BioModel
+from .model import BioModel, make_association_table
 from .mutations import Mutation, InheritedMutation
 from .sites import Site
 
@@ -28,7 +28,7 @@ class UniprotEntry(BioModel):
     # "UniProtKB accession numbers consist of 6 or 10 alphanumerical characters"
     # http://www.uniprot.org/help/accession_numbers
     accession = db.Column(db.String(10))
-    isoform = db.Column(db.Integer)
+    isoform = db.Column(db.Integer, nullable=True)
     reviewed = db.Column(db.Boolean, default=False)
 
 
@@ -45,7 +45,16 @@ class ProteinReferences(BioModel):
     # ensembl peptides
     ensembl_peptides = db.relationship('EnsemblPeptide',  backref='reference')
 
-    uniprot_entries = db.relationship(UniprotEntry, backref='reference')
+    uniprot_association_table = make_association_table(
+        'proteinreferences.id',
+        UniprotEntry.id
+    )
+
+    uniprot_entries = db.relationship(
+        UniprotEntry,
+        secondary=uniprot_association_table,
+        backref='references'
+    )
 
 
 class Protein(BioModel):
@@ -65,6 +74,14 @@ class Protein(BioModel):
         if self.external_references:
             for entry in self.external_references.uniprot_entries:
                 if entry.reviewed and entry.isoform == 1:
+                    return True
+        return False
+
+    @property
+    def is_swissprot_isoform(self):
+        if self.external_references:
+            for entry in self.external_references.uniprot_entries:
+                if entry.reviewed:
                     return True
         return False
 

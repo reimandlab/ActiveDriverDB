@@ -243,7 +243,7 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
                 # only one isoform ?
                 # print('No isoform specified for', full_uniprot, refseq_nm)
                 uniprot = full_uniprot
-                isoform = 1
+                isoform = None   # indicates "no isoform specified"
 
             reference, new = get_or_create(ProteinReferences, protein=protein)
             uniprot_entry, new_uniprot = get_or_create(UniprotEntry, accession=uniprot, isoform=isoform)
@@ -438,7 +438,12 @@ def select_preferred_isoform(gene):
 
         isoform_age_in_refseq_db = int(isoform.refseq[3:])
 
-        return isoform.is_swissprot_canonical_isoform, isoform.length, -isoform_age_in_refseq_db
+        return (
+            isoform.is_swissprot_canonical_isoform,
+            isoform.is_swissprot_isoform,
+            isoform.length,
+            -isoform_age_in_refseq_db
+        )
 
     isoforms = sorted(gene.isoforms, key=isoform_ordering, reverse=True)
 
