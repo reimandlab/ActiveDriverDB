@@ -1,0 +1,11 @@
+{% macro uniprot_link(uniprot, target='') %}
+    {% set reviewed = "reviewed" if uniprot.reviewed else "unreviewed" %}
+    <div class="status-indicator {{ reviewed }}" title="{{ reviewed | title }} entry">
+      <span class="glyphicon glyphicon-file"></span>
+      {% if uniprot.reviewed %}
+        <span class="glyphicon glyphicon-star-empty star"></span>
+      {% endif %}
+    </div>
+    <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ uniprot.accession }}</a>{% if uniprot.isoform != None %},
+    <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}#{{ uniprot.accession }}-{{ uniprot.isoform }}" {{ target }}>{{ ('canonical' if uniprot.isoform == 1 else 'isoform&nbsp;' + (uniprot.isoform | string )) | safe }}</a>{% endif %}
+{% endmacro %}
