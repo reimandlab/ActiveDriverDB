@@ -126,7 +126,7 @@ class UniprotImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait):
     requires = {importers.proteins_and_genes, importers.sequences}
     requires.update(SiteImporter.requires)
 
-    source_name = 'Uniprot'
+    source_name = 'UniProt'
 
     @property
     @abstractmethod

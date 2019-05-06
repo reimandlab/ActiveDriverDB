@@ -6,6 +6,6 @@
         <span class="glyphicon glyphicon-star-empty star"></span>
       {% endif %}
     </div>
-    <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ uniprot.accession }}</a>{% if uniprot.isoform != None %},
-    <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}#{{ uniprot.accession }}-{{ uniprot.isoform }}" {{ target }}>{{ ('canonical' if uniprot.isoform == 1 else 'isoform&nbsp;' + (uniprot.isoform | string )) | safe }}</a>{% endif %}
+    <a href="https://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ uniprot.accession }}</a>{% if uniprot.isoform != None %},
+    <a href="https://www.uniprot.org/uniprot/{{ uniprot.accession }}#{{ uniprot.accession }}-{{ uniprot.isoform }}" {{ target }}>{{ ('canonical' if uniprot.isoform == 1 else 'isoform&nbsp;' + (uniprot.isoform | string )) | safe }}</a>{% endif %}
 {% endmacro %}

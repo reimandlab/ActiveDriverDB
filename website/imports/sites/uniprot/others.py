@@ -36,7 +36,7 @@ class OthersUniprotImporter(UniprotImporter):
         'Asymmetric dimethyl': 'methylation',
     }
 
-    source_name = 'Uniprot'
+    source_name = 'UniProt'
     site_types = set(modifiers_map.values())
     default_path = 'data/sites/UniProt/other_sites.csv'
 
