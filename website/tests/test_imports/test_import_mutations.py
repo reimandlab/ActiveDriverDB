@@ -4,7 +4,7 @@ from imports.mutations import MutationImportManager, MutationImporter
 from database_testing import DatabaseTest
 from models import (
     Protein, InheritedMutation, Disease, ExomeSequencingMutation, The1000GenomesMutation, MIMPMutation,
-    Site,
+    Site, SiteType
 )
 from models import MC3Mutation
 from database import db
@@ -228,11 +228,13 @@ class TestImport(DatabaseTest):
 
         muts_filename = make_named_temp_file(data=mimp_mutations)
         proteins = create_proteins(tp53)
+        phosphorylation = SiteType(name='phosphorylation')
 
         sites = [
-            Site(protein=proteins['NM_000546'], position=site_pos)
+            Site(protein=proteins['NM_000546'], position=site_pos, types={phosphorylation})
             for site_pos in [20, 215, 315, 106]
         ]
+        db.session.add(phosphorylation)
         db.session.add_all(sites)
 
         with pytest.warns(

@@ -1,6 +1,6 @@
 from warnings import warn
 
-from models import MIMPMutation
+from models import MIMPMutation, SiteType
 from helpers.bioinf import decode_raw_mutation
 from helpers.parsers import tsv_file_iterator
 
@@ -28,12 +28,14 @@ class MIMPImporter(MutationImporter):
         'probability',
         'site_id'
     )
+    site_type = 'phosphorylation'
 
     def iterate_lines(self, path):
         return tsv_file_iterator(path, self.header)
 
     def parse(self, path):
         mimps = []
+        site_type = SiteType.query.filter_by(name=self.site_type).one()
 
         def parser(line):
             nonlocal mimps
@@ -66,19 +68,17 @@ class MIMPImporter(MutationImporter):
                 site
                 for site in protein.sites
                 if site.position == psite_pos
+                and any(t == site_type for t in site.types)
             ]
 
-            if len(affected_sites) != 1:
+            # as this is site-type specific and only one site object of given type should be placed at a position,
+            # we can should assume that the selection above will always produce less than two sites
+            assert len(affected_sites) <= 1
+
+            if not affected_sites:
                 warning = UserWarning(
-                    'Skipping %s: %s%s%s (for site at position %s): ' % (
-                       refseq, ref, pos, alt, psite_pos
-                    ) +
-                    'MIMP site does not match to the database - ' +
-                    (
-                        'too many (%s) sites found.' % len(affected_sites)
-                        if affected_sites else
-                        'given site not found.'
-                    )
+                    f'Skipping {refseq}: {ref}{pos}{alt} (for site at position {psite_pos}): '
+                    'MIMP site does not match to the database - given site not found.'
                 )
                 print(warning)
                 warn(warning)
