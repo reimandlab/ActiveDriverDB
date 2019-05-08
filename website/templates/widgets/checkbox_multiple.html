@@ -11,6 +11,7 @@
             </label>
         </li>
     {% endif %}
+    {{ widget.refresh_value() or '' }}
     {% for value, label in widget.items -%}
       <li class="checkbox"><label><input type="checkbox" name="{{ widget.target_name }}" value="{{ value | safe }}" {{ 'checked' if widget.is_one_of_values(value) }}>{{ label }}</label>
     {%- endfor %}

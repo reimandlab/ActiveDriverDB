@@ -132,6 +132,11 @@ class Widget:
             self._value_as_set = set(value)
 
     def is_one_of_values(self, value):
+        """Uses cached, set representation of the value, thus O(1).
+
+        If using with FilterWidget, make sure to access self.value
+        or call refresh_value() first, to refresh the cache.
+        """
         return self._value and value in self._value_as_set
 
     @property
@@ -162,10 +167,13 @@ class FilterWidget(Widget):
         )
         self.comparator_widget = associated_comparator_widget
 
-    @Widget.value.getter
-    def value(self):
+    def refresh_value(self):
         if self._value != self.filter.value:
             self.value = self.filter.value
+
+    @Widget.value.getter
+    def value(self):
+        self.refresh_value()
         return super().value
 
     @property
