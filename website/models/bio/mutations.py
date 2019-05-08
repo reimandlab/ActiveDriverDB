@@ -281,6 +281,7 @@ class PCAWGMutation(CancerMutation, BioModel):
     details_manager = create_cancer_meta_manager('PCAWG')
     pcawg_cancer_code = association_proxy('cancer', 'code')
     cancer_code = pcawg_cancer_code
+    is_visible = False
 
 
 class MC3Mutation(CancerMutation, BioModel):
