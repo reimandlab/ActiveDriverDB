@@ -35,7 +35,6 @@ class MIMPImporter(ChunkedMutationImporter):
         return tsv_file_iterator(path, self.header)
 
     def iterate_chunk(self, path, chunk_start, chunk_size):
-        print(chunk_start, chunk_size)
         header = self.header if chunk_size == 0 else None
         return tsv_file_iterator(path, header, skip=chunk_start, limit=chunk_size)
 
