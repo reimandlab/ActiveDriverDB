@@ -2,12 +2,12 @@ from warnings import warn
 
 from models import MIMPMutation, SiteType
 from helpers.bioinf import decode_raw_mutation
-from helpers.parsers import tsv_file_iterator
+from helpers.parsers import tsv_file_iterator, count_lines_tsv
 
-from .mutation_importer import MutationImporter
+from .mutation_importer import ChunkedMutationImporter
 
 
-class MIMPImporter(MutationImporter):
+class MIMPImporter(ChunkedMutationImporter):
     # load("all_mimp_annotations_p085.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
@@ -29,11 +29,20 @@ class MIMPImporter(MutationImporter):
         'site_id'
     )
     site_type = 'phosphorylation'
+    chunk_size = round(24227847 / 5)   # should be optimal for 8 GB of memory
 
     def iterate_lines(self, path):
         return tsv_file_iterator(path, self.header)
 
-    def parse(self, path):
+    def iterate_chunk(self, path, chunk_start, chunk_size):
+        print(chunk_start, chunk_size)
+        header = self.header if chunk_size == 0 else None
+        return tsv_file_iterator(path, header, skip=chunk_start, limit=chunk_size)
+
+    def count_lines(self, path) -> int:
+        return count_lines_tsv(path)
+
+    def parse_chunk(self, path, chunk_start, chunk_size):
         mimps = []
         site_type = SiteType.query.filter_by(name=self.site_type).one()
         skipped_predictions = 0
@@ -99,11 +108,12 @@ class MIMPImporter(MutationImporter):
                 )
             )
 
-        for line in self.iterate_lines(path):
+        for line in self.iterate_chunk(path, chunk_start, chunk_size):
             parser(line)
 
-        ratio = skipped_predictions / (skipped_predictions + len(mimps))
-        print(f'In total, skipped {skipped_predictions} MIMP predictions ({ratio * 100}%)')
+        if skipped_predictions:
+            ratio = skipped_predictions / (skipped_predictions + len(mimps))
+            print(f'In this chunk skipped {skipped_predictions} MIMP predictions ({ratio * 100}%)')
 
         return mimps
 

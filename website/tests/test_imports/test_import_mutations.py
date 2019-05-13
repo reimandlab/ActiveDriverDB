@@ -226,6 +226,9 @@ class TestImport(DatabaseTest):
 
     def test_mimp_import(self):
 
+        from imports.mutations.mimp import MIMPImporter
+        MIMPImporter.chunk_size = 2
+
         muts_filename = make_named_temp_file(data=mimp_mutations)
         proteins = create_proteins(tp53)
         phosphorylation = SiteType(name='phosphorylation')

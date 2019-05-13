@@ -83,23 +83,8 @@ class MutationImporter(BioImporter, MutationExporter):
         print(f'Loading {self.model_name}:')
 
         path = self.choose_path(path)
-        self.base_importer.prepare()
 
-        # as long as 'parse' uses 'get_or_make_mutation' method, it will
-        # populate 'self.base_importer.mutations' with new tuples of data
-        # necessary to create rows corresponding to 'Mutation' instances.
-        mutation_details = self.parse(path)
-
-        # first insert new 'Mutation' data
-        self.base_importer.insert()
-
-        # then insert or update details about mutation (so self.model entries)
-        if update:
-            self.update_details(mutation_details)
-        else:
-            self.insert_details(mutation_details)
-
-        self.commit()
+        self._load(path, update)
 
         if self.broken_seq:
             report_file = 'broken_seq_' + self.model_name + '.log'
@@ -121,6 +106,26 @@ class MutationImporter(BioImporter, MutationExporter):
             )
 
         print(f'Loaded {self.model_name}.')
+
+    def _load(self, path, update, **kwargs):
+
+        self.base_importer.prepare()
+
+        # as long as 'parse' uses 'get_or_make_mutation' method, it will
+        # populate 'self.base_importer.mutations' with new tuples of data
+        # necessary to create rows corresponding to 'Mutation' instances.
+        mutation_details = self.parse(path, **kwargs)
+
+        # first insert new 'Mutation' data
+        self.base_importer.insert()
+
+        # then insert or update details about mutation (so self.model entries)
+        if update:
+            self.update_details(mutation_details)
+        else:
+            self.insert_details(mutation_details)
+
+        self.commit()
 
     def test_line(self, line):
         """Whether the line should be imported/exported or not"""
@@ -383,4 +388,32 @@ class MutationImporter(BioImporter, MutationExporter):
         new_pointer = len(mutations_details)
         self.mutations_details_pointers_grouped_by_unique_mutations[mutation_id].append(new_pointer)
 
+
+class ChunkedMutationImporter(MutationImporter):
+
+    # if the input file is so large that it needs to be processed in chunks
+    # (and the importer is able to handle chunk-by-chunk processing), what
+    # should be the size of each chunk (in number of lines)
+    chunk_size = None
+
+    @abstractmethod
+    def count_lines(self, path) -> int:
+        pass
+
+    @abstractmethod
+    def parse_chunk(self, path, chunk_start, chunk_size):
+        pass
+
+    def parse(self, path, chunk_start, chunk_size):
+        return self.parse_chunk(path, chunk_start, chunk_size)
+
+    def _load(self, path, update, **kwargs):
+
+        chunks = (
+            list(range(0, len(path), self.chunk_size))
+            if self.chunk_size else
+            [None]
+        )
+        for chunk_start in chunks:
+            super()._load(path, update, chunk_start=chunk_start, chunk_size=self.chunk_size)
 
