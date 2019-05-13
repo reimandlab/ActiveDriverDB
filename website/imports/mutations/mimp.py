@@ -36,9 +36,10 @@ class MIMPImporter(MutationImporter):
     def parse(self, path):
         mimps = []
         site_type = SiteType.query.filter_by(name=self.site_type).one()
+        skipped_predictions = 0
 
         def parser(line):
-            nonlocal mimps
+            nonlocal mimps, skipped_predictions
 
             refseq = line[0]
             mut = line[1]
@@ -80,8 +81,8 @@ class MIMPImporter(MutationImporter):
                     f'Skipping {refseq}: {ref}{pos}{alt} (for site at position {psite_pos}): '
                     'MIMP site does not match to the database - given site not found.'
                 )
-                print(warning)
                 warn(warning)
+                skipped_predictions += 1
                 return
 
             site_id = affected_sites[0].id
@@ -100,6 +101,9 @@ class MIMPImporter(MutationImporter):
 
         for line in self.iterate_lines(path):
             parser(line)
+
+        ratio = skipped_predictions / (skipped_predictions + len(mimps))
+        print(f'In total, skipped {skipped_predictions} MIMP predictions ({ratio * 100}%)')
 
         return mimps
 
