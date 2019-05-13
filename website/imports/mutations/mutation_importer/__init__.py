@@ -410,7 +410,7 @@ class ChunkedMutationImporter(MutationImporter):
     def _load(self, path, update, **kwargs):
 
         chunks = (
-            list(range(0, len(path), self.chunk_size))
+            list(range(0, self.count_lines(path), self.chunk_size))
             if self.chunk_size else
             [None]
         )
