@@ -1,3 +1,4 @@
+import gc
 import gzip
 from abc import abstractmethod
 from collections import defaultdict
@@ -111,6 +112,8 @@ class MutationImporter(BioImporter, MutationExporter):
 
         self.base_importer.prepare()
 
+        gc.collect()
+
         # as long as 'parse' uses 'get_or_make_mutation' method, it will
         # populate 'self.base_importer.mutations' with new tuples of data
         # necessary to create rows corresponding to 'Mutation' instances.
@@ -126,6 +129,9 @@ class MutationImporter(BioImporter, MutationExporter):
             self.insert_details(mutation_details)
 
         self.commit()
+
+        db.session.expire_all()
+        gc.collect()
 
     def test_line(self, line):
         """Whether the line should be imported/exported or not"""

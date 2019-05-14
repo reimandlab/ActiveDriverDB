@@ -45,9 +45,10 @@ class MIMPImporter(ChunkedMutationImporter):
         mimps = []
         site_type = SiteType.query.filter_by(name=self.site_type).one()
         skipped_predictions = 0
+        mismatched_sequences = 0
 
         def parser(line):
-            nonlocal mimps, skipped_predictions
+            nonlocal mimps, skipped_predictions, mismatched_sequences
 
             refseq = line[0]
             mut = line[1]
@@ -63,7 +64,7 @@ class MIMPImporter(ChunkedMutationImporter):
             try:
                 assert ref == protein.sequence[pos - 1]
             except (AssertionError, IndexError):
-                self.broken_seq[refseq].append((protein.id, alt))
+                mismatched_sequences += 1
                 return
 
             assert line[13] in ('gain', 'loss')
@@ -113,6 +114,8 @@ class MIMPImporter(ChunkedMutationImporter):
         if skipped_predictions:
             ratio = skipped_predictions / (skipped_predictions + len(mimps))
             print(f'In this chunk skipped {skipped_predictions} MIMP predictions ({ratio * 100}%)')
+
+        print(f'Skipped {mismatched_sequences} mismatched sequences')
 
         return mimps
 
