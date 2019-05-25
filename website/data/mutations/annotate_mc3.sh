@@ -1,21 +1,5 @@
 #!/bin/bash
-if [ -f annovar.latest.tar.gz ];
-then
-    tar -xvzf annovar.latest.tar.gz
-    rm annovar.latest.tar.gz
-else
-    if [ ! -d annovar ];
-    then
-        echo "Please, download annovar into data/mutations directory and run data/mutations/annotate_mc3.sh script then"
-        exit 1
-    fi
-fi
-
-if [ ! -d humandb ];
-then
-    ./annovar/annotate_variation.pl -buildver hg19 -downdb -webfrom annovar refGene humandb/
-fi
-
+./ensure_annovar.sh
 file=mc3.v0.2.8.PUBLIC.maf.gz   
 
 # get all columns required for annovar, skipping header line (first row)
