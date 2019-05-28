@@ -329,10 +329,9 @@ class ClinVarImporter(MutationImporter):
                 if same_mutation_pointers:
                     pointer = same_mutation_pointers[0]
                     old = self.data_as_dict(clinvar_mutations[pointer])
-                    new = self.data_as_dict(values, mutation_id=mutation_id)
+                    new = self.data_as_dict(clinvar_mutation_values, mutation_id=mutation_id)
 
-                    new_rs = [int(rs) for rs in (new['db_snp_ids'] or '').split('|') if rs]
-                    for rs in new_rs:
+                    for rs in new['db_snp_ids']:
                         if rs not in old['db_snp_ids']:
                             clinvar_mutations[pointer][1].append(rs)
 
@@ -343,9 +342,13 @@ class ClinVarImporter(MutationImporter):
                             index = self.insert_keys.index(key)
                             clinvar_mutations[pointer][index] = True
 
+                    if old['variation_id'] != new['variation_id']:
+                        print(f'Merge failed: different ids: {old["variation_id"]} != {new["variation_id"]}')
+                        continue
+
                     print(
                         f'Merged details referring to the same mutation ({mutation_id}):'
-                        f'{values} into {clinvar_mutations[pointer]}'
+                        f'{new} into {old}'
                     )
                     continue
 
