@@ -222,7 +222,7 @@ class ClinVarImporter(MutationImporter):
         clinvar_entry = make_metadata_ordered_dict(self.clinvar_keys, metadata)
 
         disease_names, diseases_ids, combined_significance, significances_set = (
-            (entry.split('|') if entry else None)
+            (entry.split('|') if entry else [])
             for entry in
             (
                 clinvar_entry[key]
@@ -253,7 +253,7 @@ class ClinVarImporter(MutationImporter):
             for significance in combined_significance
         ]
 
-        assert len(combined_significance) == 1
+        assert len(combined_significance) <= 1
         assert not significances_set or len(significances_set) == 1
 
         # those lengths should be always equal
@@ -308,11 +308,11 @@ class ClinVarImporter(MutationImporter):
 
             # should correspond to insert keys!
             clinvar_mutation_values = [
-                [int(clinvar_entry['RS'])],
+                [int(rs) for rs in clinvar_entry.get('RS', '').split('|')],
                 clinvar_entry['VLD'],
                 clinvar_entry['PMC'],
                 variation_id,
-                combined_significance[0]
+                combined_significance[0] if combined_significance else None
             ]
 
             for mutation_id in self.get_or_make_mutations(line):
@@ -331,8 +331,10 @@ class ClinVarImporter(MutationImporter):
                     old = self.data_as_dict(clinvar_mutations[pointer])
                     new = self.data_as_dict(values, mutation_id=mutation_id)
 
-                    if old['db_snp_ids'] != [new['db_snp_ids']]:
-                        clinvar_mutations[pointer][1].append(int(new['db_snp_ids']))
+                    new_rs = [int(rs) for rs in (new['db_snp_ids'] or '').split('|')]
+                    for rs in new_rs:
+                        if rs not in old['db_snp_ids']:
+                            clinvar_mutations[pointer][1].append(rs)
 
                     # if either of the dbSNP entries is validated, the mutation is validated
                     # (the same with presence in PubMed)
