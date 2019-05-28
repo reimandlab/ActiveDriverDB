@@ -108,6 +108,8 @@ class MutationImporter(BioImporter, MutationExporter):
 
         print(f'Loaded {self.model_name}.')
 
+    parse_kwargs = []
+
     def _load(self, path, update, **kwargs):
 
         self.base_importer.prepare()
@@ -117,7 +119,8 @@ class MutationImporter(BioImporter, MutationExporter):
         # as long as 'parse' uses 'get_or_make_mutation' method, it will
         # populate 'self.base_importer.mutations' with new tuples of data
         # necessary to create rows corresponding to 'Mutation' instances.
-        mutation_details = self.parse(path, **kwargs)
+        parse_kwargs = {k: v for k, v in kwargs.items() if k in self.parse_kwargs}
+        mutation_details = self.parse(path, **parse_kwargs)
 
         # first insert new 'Mutation' data
         self.base_importer.insert()
@@ -401,6 +404,7 @@ class ChunkedMutationImporter(MutationImporter):
     # (and the importer is able to handle chunk-by-chunk processing), what
     # should be the size of each chunk (in number of lines)
     chunk_size = None
+    parse_kwargs = ['chunk_start', 'chunk_size']
 
     @abstractmethod
     def count_lines(self, path) -> int:
