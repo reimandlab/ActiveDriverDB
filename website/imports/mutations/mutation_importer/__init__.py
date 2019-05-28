@@ -69,7 +69,7 @@ class MutationImporter(BioImporter, MutationExporter):
             raise Exception('path is required when no default_path is set')
         return path
 
-    def load(self, path=None, update=False, **ignored_kwargs):
+    def load(self, path=None, update=False, **kwargs):
         """Load, parse and insert mutations from given path.
 
         If update is True, old mutations will be updated and new added.
@@ -85,7 +85,7 @@ class MutationImporter(BioImporter, MutationExporter):
 
         path = self.choose_path(path)
 
-        self._load(path, update)
+        self._load(path, update, **kwargs)
 
         if self.broken_seq:
             report_file = 'broken_seq_' + self.model_name + '.log'
@@ -413,13 +413,16 @@ class ChunkedMutationImporter(MutationImporter):
     def parse(self, path, chunk_start, chunk_size):
         return self.parse_chunk(path, chunk_start, chunk_size)
 
-    def _load(self, path, update, **kwargs):
-
+    def _load(self, path, update, chunk=None):
+        total = self.count_lines(path)
         chunks = (
-            list(range(0, self.count_lines(path), self.chunk_size))
+            list(range(0, total, self.chunk_size))
             if self.chunk_size else
             [None]
         )
+        if chunk is not None:
+            print(f'Limitting imported chunks to {chunk+1}-th chunk out of {len(chunks)}')
+            chunks = [chunks[chunk]]
         for chunk_start in chunks:
+            print(f'Importing chunk from {chunk_start/total*100:.2f} to {(chunk_start + self.chunk_size)/total*100:.2f}:')
             super()._load(path, update, chunk_start=chunk_start, chunk_size=self.chunk_size)
-

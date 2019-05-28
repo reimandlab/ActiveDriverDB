@@ -299,6 +299,17 @@ class Mutations(CommandTarget):
             default=mutation_importers
         )
 
+
+    @load.argument
+    def chunk(self):
+        return argument_parameters(
+            '-c',
+            '--chunk',
+            type=int,
+            default=None,
+            help='Limit import to n-th chunk, starts with 0. By default None.'
+        )
+
     @export.argument
     def only_primary_isoforms(self):
         return argument_parameters(
