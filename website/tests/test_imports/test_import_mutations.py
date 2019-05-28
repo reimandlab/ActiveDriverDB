@@ -1,10 +1,14 @@
+from typing import Dict
+
 import pytest
 
 from imports.mutations import MutationImportManager, MutationImporter
 from database_testing import DatabaseTest
 from models import (
     Protein, InheritedMutation, Disease, ExomeSequencingMutation, The1000GenomesMutation, MIMPMutation,
-    Site, SiteType
+    Site, SiteType,
+    Mutation,
+    ClinicalData,
 )
 from models import MC3Mutation
 from database import db
@@ -36,11 +40,12 @@ mc3_mutations_updated = """\
 
 
 clinvar_mutations = """\
-Chr	Start	End	Ref	Alt	Func.refGene	Gene.refGene	GeneDetail.refGene	ExonicFunc.refGene	AAChange.refGene	V11	V12	V13	V14	V15	V16	V17	V18	V19	V20	V21
-17	7572973	7572973	C	A	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon7:c.G740T:p.R247L,TP53:NM_001276697:exon7:c.G659T:p.R220L,TP53:NM_001126118:exon10:c.G1019T:p.R340L,TP53:NM_000546:exon11:c.G1136T:p.R379L,TP53:NM_001126112:exon11:c.G1136T:p.R379L,TP53:NM_001276760:exon11:c.G1019T:p.R340L,TP53:NM_001276761:exon11:c.G1019T:p.R340L	.	.	.	17	7572973	rs863224682	C	A	.	.	RS=863224682;RSPOS=7572973;RV;dbSNPBuildID=146;SSR=0;SAO=1;VP=0x050060800a05000002100100;GENEINFO=TP53:7157;WGT=1;VC=SNV;PM;NSM;REF;U3;ASP;LSD;CLNALLE=1;CLNHGVS=NC_000017.10:g.7572973C>A;CLNSRC=.;CLNORIGIN=1;CLNSRCID=.;CLNSIG=0|0;CLNDSDB=MedGen:Orphanet:SNOMED_CT|MedGen:OMIM:ORPHA;CLNDSDBID=C0085390:ORPHA524:428850001|C3280492:614327:289539;CLNDBN=Li-Fraumeni_syndrome|Tumor_predisposition_syndrome;CLNREVSTAT=single|single;CLNACC=RCV000199273.1|RCV000219990.1
-17	7573987	7573987	G	T	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon6:c.C644A:p.A215D,TP53:NM_001276697:exon6:c.C563A:p.A188D,TP53:NM_001126118:exon9:c.C923A:p.A308D,TP53:NM_000546:exon10:c.C1040A:p.A347D,TP53:NM_001126112:exon10:c.C1040A:p.A347D,TP53:NM_001276760:exon10:c.C923A:p.A308D,TP53:NM_001276761:exon10:c.C923A:p.A308D	.	.	.	17	7573987	rs397516434	G	T	.	.	RS=397516434;RSPOS=7573987;RV;dbSNPBuildID=138;SSR=0;SAO=1;VP=0x050060800a05000002100100;GENEINFO=TP53:7157;WGT=1;VC=SNV;PM;NSM;REF;U3;ASP;LSD;CLNALLE=1;CLNHGVS=NC_000017.10:g.7573987G>T;CLNSRC=.;CLNORIGIN=1;CLNSRCID=.;CLNSIG=0;CLNDSDB=MedGen;CLNDSDBID=CN169374;CLNDBN=not_specified;CLNREVSTAT=no_criteria;CLNACC=RCV000036529.2
-17	7576914	7576914	T	C	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon5:c.A536G:p.N179S,TP53:NM_001126116:exon5:c.A536G:p.N179S,TP53:NM_001126117:exon5:c.A536G:p.N179S,TP53:NM_001276697:exon5:c.A455G:p.N152S,TP53:NM_001276698:exon5:c.A455G:p.N152S,TP53:NM_001276699:exon5:c.A455G:p.N152S,TP53:NM_001126118:exon8:c.A815G:p.N272S,TP53:NM_000546:exon9:c.A932G:p.N311S,TP53:NM_001126112:exon9:c.A932G:p.N311S,TP53:NM_001126113:exon9:c.A932G:p.N311S,TP53:NM_001126114:exon9:c.A932G:p.N311S,TP53:NM_001276695:exon9:c.A815G:p.N272S,TP53:NM_001276696:exon9:c.A815G:p.N272S,TP53:NM_001276760:exon9:c.A815G:p.N272S,TP53:NM_001276761:exon9:c.A815G:p.N272S	.	.	.	17	7576914	rs56184981	T	C,G	.	.	RS=56184981;RSPOS=7576914;dbSNPBuildID=129;SSR=0;SAO=1;VP=0x050268000a05000002100100;GENEINFO=TP53:7157;WGT=1;VC=SNV;PM;PMC;S3D;NSM;REF;ASP;LSD;CLNALLE=2;CLNHGVS=NC_000017.10:g.7576914T>G;CLNSRC=.;CLNORIGIN=1;CLNSRCID=.;CLNSIG=0;CLNDSDB=MedGen:Orphanet:SNOMED_CT;CLNDSDBID=C0085390:ORPHA524:428850001;CLNDBN=Li-Fraumeni_syndrome;CLNREVSTAT=single;CLNACC=RCV000205077.1
-17	7578269	7578269	G	A	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon2:c.C184T:p.L62F,TP53:NM_001126116:exon2:c.C184T:p.L62F,TP53:NM_001126117:exon2:c.C184T:p.L62F,TP53:NM_001276697:exon2:c.C103T:p.L35F,TP53:NM_001276698:exon2:c.C103T:p.L35F,TP53:NM_001276699:exon2:c.C103T:p.L35F,TP53:NM_001126118:exon5:c.C463T:p.L155F,TP53:NM_000546:exon6:c.C580T:p.L194F,TP53:NM_001126112:exon6:c.C580T:p.L194F,TP53:NM_001126113:exon6:c.C580T:p.L194F,TP53:NM_001126114:exon6:c.C580T:p.L194F,TP53:NM_001276695:exon6:c.C463T:p.L155F,TP53:NM_001276696:exon6:c.C463T:p.L155F,TP53:NM_001276760:exon6:c.C463T:p.L155F,TP53:NM_001276761:exon6:c.C463T:p.L155F	.	.	.	17	7578269	rs587780071	G	A	.	.	RS=587780071;RSPOS=7578269;RV;dbSNPBuildID=142;SSR=0;SAO=1;VP=0x050060000a05000002100100;GENEINFO=TP53:7157;WGT=1;VC=SNV;PM;NSM;REF;ASP;LSD;CLNALLE=1;CLNHGVS=NC_000017.10:g.7578269G>A;CLNSRC=.;CLNORIGIN=1;CLNSRCID=.;CLNSIG=5;CLNDSDB=MedGen;CLNDSDBID=CN221809;CLNDBN=not_provided;CLNREVSTAT=single;CLNACC=RCV000115728.2
+Chr	Start	End	Ref	Alt	Func.refGene	Gene.refGene	GeneDetail.refGene	ExonicFunc.refGene	AAChange.refGene	Otherinfo
+17	7572973	7572973	C	A	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon7:c.G740T:p.R247L,TP53:NM_001276697:exon7:c.G659T:p.R220L,TP53:NM_001126118:exon10:c.G1019T:p.R340L,TP53:NM_000546:exon11:c.G1136T:p.R379L,TP53:NM_001126112:exon11:c.G1136T:p.R379L,TP53:NM_001276760:exon11:c.G1019T:p.R340L,TP53:NM_001276761:exon11:c.G1019T:p.R340L	.	.	.	17	7572973	216463	C	A	.	.	ALLELEID=213384;CLNDISDB=MedGen:C0027672,SNOMED_CT:699346009|MedGen:C0085390,Orphanet:ORPHA524,SNOMED_CT:428850001|MedGen:CN517202;CLNDN=Hereditary_cancer-predisposing_syndrome|Li-Fraumeni_syndrome|not_provided;CLNHGVS=NC_000017.10:g.7572973C>A;CLNREVSTAT=criteria_provided,_multiple_submitters,_no_conflicts;CLNSIG=Uncertain_significance;CLNVC=single_nucleotide_variant;CLNVCSO=SO:0001483;GENEINFO=TP53:7157;MC=SO:0001583|missense_variant,SO:0001624|3_prime_UTR_variant;ORIGIN=1;RS=863224682
+17	7573987	7573987	G	T	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon6:c.C644A:p.A215D,TP53:NM_001276697:exon6:c.C563A:p.A188D,TP53:NM_001126118:exon9:c.C923A:p.A308D,TP53:NM_000546:exon10:c.C1040A:p.A347D,TP53:NM_001126112:exon10:c.C1040A:p.A347D,TP53:NM_001276760:exon10:c.C923A:p.A308D,TP53:NM_001276761:exon10:c.C923A:p.A308D	.	.	.	17	7573987	43587	G	T	.	.	ALLELEID=52756;CLNDISDB=MedGen:C0027672,SNOMED_CT:699346009|MedGen:C0085390,Orphanet:ORPHA524,SNOMED_CT:428850001|MedGen:CN169374|MedGen:CN517202;CLNDN=Hereditary_cancer-predisposing_syndrome|Li-Fraumeni_syndrome|not_specified|not_provided;CLNHGVS=NC_000017.10:g.7573987G>T;CLNREVSTAT=criteria_provided,_conflicting_interpretations;CLNSIG=Conflicting_interpretations_of_pathogenicity;CLNSIGCONF=Likely_pathogenic(2)%3BPathogenic(1)%3BUncertain_significance(2);CLNVC=single_nucleotide_variant;CLNVCSO=SO:0001483;GENEINFO=TP53:7157;MC=SO:0001583|missense_variant,SO:0001624|3_prime_UTR_variant;ORIGIN=1;RS=397516434
+17	7576914	7576914	T	C	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon5:c.A536G:p.N179S,TP53:NM_001126116:exon5:c.A536G:p.N179S,TP53:NM_001126117:exon5:c.A536G:p.N179S,TP53:NM_001276697:exon5:c.A455G:p.N152S,TP53:NM_001276698:exon5:c.A455G:p.N152S,TP53:NM_001276699:exon5:c.A455G:p.N152S,TP53:NM_001126118:exon8:c.A815G:p.N272S,TP53:NM_000546:exon9:c.A932G:p.N311S,TP53:NM_001126112:exon9:c.A932G:p.N311S,TP53:NM_001126113:exon9:c.A932G:p.N311S,TP53:NM_001126114:exon9:c.A932G:p.N311S,TP53:NM_001276695:exon9:c.A815G:p.N272S,TP53:NM_001276696:exon9:c.A815G:p.N272S,TP53:NM_001276760:exon9:c.A815G:p.N272S,TP53:NM_001276761:exon9:c.A815G:p.N272S	.	.	.	17	7576914	406589	T	C	.	.	ALLELEID=402538;CLNDISDB=MedGen:C0085390,Orphanet:ORPHA524,SNOMED_CT:428850001;CLNDN=Li-Fraumeni_syndrome;CLNHGVS=NC_000017.10:g.7576914T>C;CLNREVSTAT=criteria_provided,_single_submitter;CLNSIG=Uncertain_significance;CLNVC=single_nucleotide_variant;CLNVCSO=SO:0001483;GENEINFO=TP53:7157;MC=SO:0001583|missense_variant;ORIGIN=1;RS=56184981
+17	7578269	7578269	G	A	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon2:c.C184T:p.L62F,TP53:NM_001126116:exon2:c.C184T:p.L62F,TP53:NM_001126117:exon2:c.C184T:p.L62F,TP53:NM_001276697:exon2:c.C103T:p.L35F,TP53:NM_001276698:exon2:c.C103T:p.L35F,TP53:NM_001276699:exon2:c.C103T:p.L35F,TP53:NM_001126118:exon5:c.C463T:p.L155F,TP53:NM_000546:exon6:c.C580T:p.L194F,TP53:NM_001126112:exon6:c.C580T:p.L194F,TP53:NM_001126113:exon6:c.C580T:p.L194F,TP53:NM_001126114:exon6:c.C580T:p.L194F,TP53:NM_001276695:exon6:c.C463T:p.L155F,TP53:NM_001276696:exon6:c.C463T:p.L155F,TP53:NM_001276760:exon6:c.C463T:p.L155F,TP53:NM_001276761:exon6:c.C463T:p.L155F	.	.	.	17	7578269	127817	G	A	.	.	ALLELEID=133274;CLNDISDB=Human_Phenotype_Ontology:HP:0001402,MedGen:C2239176,OMIM:114550,Orphanet:ORPHA88673,SNOMED_CT:187769009,SNOMED_CT:25370001|Human_Phenotype_Ontology:HP:0006725,MedGen:C0281361|Human_Phenotype_Ontology:HP:0006740,MedGen:C0279680|Human_Phenotype_Ontology:HP:0030078,MeSH:C538231,MedGen:C0152013|Human_Phenotype_Ontology:HP:0030692,MeSH:D001932,MedGen:C0006118,SNOMED_CT:126952004|Human_Phenotype_Ontology:HP:0100013,MeSH:D001943,MedGen:C1458155,Orphanet:ORPHA180250,SNOMED_CT:126926005|Human_Phenotype_Ontology:HP:0100834,MeSH:D015179,MedGen:C0009404,SNOMED_CT:126837005|MeSH:C535575,MedGen:C1168401,OMIM:275355,Orphanet:ORPHA67037|MeSH:D002583,MedGen:CN236667|MeSH:D005909,MedGen:C0017636,Orphanet:ORPHA360,SNOMED_CT:63634009|MedGen:C0279663|MedGen:CN517202;CLNDN=Hepatocellular_carcinoma|Pancreatic_adenocarcinoma|Transitional_cell_carcinoma_of_the_bladder|Lung_adenocarcinoma|Neoplasm_of_brain|Neoplasm_of_the_breast|Neoplasm_of_the_large_intestine|Squamous_cell_carcinoma_of_the_head_and_neck|Uterine_cervical_neoplasms|Glioblastoma|Ovarian_Serous_Cystadenocarcinoma|not_provided;CLNHGVS=NC_000017.10:g.7578269G>A;CLNREVSTAT=criteria_provided,_single_submitter;CLNSIG=Likely_pathogenic;CLNVC=single_nucleotide_variant;CLNVCSO=SO:0001483;CLNVI=UniProtKB_(protein):P04637#VAR_044997;GENEINFO=TP53:7157;MC=SO:0001583|missense_variant;ORIGIN=3;RS=587780071
+17	7572994	7572994	T	G	exonic	TP53	.	nonsynonymous SNV	TP53:NM_001126115:exon7:c.A719C:p.K240T,TP53:NM_001276697:exon7:c.A638C:p.K213T,TP53:NM_001126118:exon10:c.A998C:p.K333T,TP53:NM_000546:exon11:c.A1115C:p.K372T,TP53:NM_001126112:exon11:c.A1115C:p.K372T,TP53:NM_001276760:exon11:c.A998C:p.K333T,TP53:NM_001276761:exon11:c.A998C:p.K333T	.	.	.	17	7572994	439315	T	G	.	.	ALLELEID=432939;CLNDISDB=MedGen:CN169374;CLNDN=not_specified;CLNHGVS=NC_000017.10:g.7572994T>G;CLNREVSTAT=criteria_provided,_single_submitter;CLNSIG=Uncertain_significance;CLNVC=single_nucleotide_variant;CLNVCSO=SO:0001483;GENEINFO=TP53:7157;MC=SO:0001583|missense_variant;ORIGIN=1;RS=876658876
 """
 
 
@@ -186,33 +191,103 @@ class TestImport(DatabaseTest):
             source_name = 'clinvar'
 
             muts_import_manager.perform(
-                'load', proteins, [source_name], {source_name: muts_filename}
+                'load', proteins, [source_name], {source_name: muts_filename},
+                clinvar_xml_path='tests/test_imports/clinvar_subset.xml'
             )
 
             mutations = InheritedMutation.query.all()
-            # the second mutations has "not_specified" disease, should be skipped
-            assert len(mutations) == 2
+            # the last mutations has only a "not_specified" disease, should be skipped
+            # nb such variants have associated cross references, such as:
+            # https://www.ncbi.nlm.nih.gov/medgen/CN517202
+            assert len(mutations) == 4
 
-            first_row_mutation = proteins['NM_000546'].mutations[1]
-            assert first_row_mutation.position == 379
+            tp53_protein = proteins['NM_000546']
+
+            #
+            # First mutation
+            #
+
+            first_row_mutation = Mutation.query.filter_by(protein=tp53_protein, position=379).one()
             assert first_row_mutation.alt == 'L'
 
             diseases = Disease.query.all()
-            assert len(diseases) == 2
+            assert len(diseases) == 13
 
-            clinvar = first_row_mutation.meta_ClinVar
-            assert clinvar.db_snp_ids == ['863224682']  # rs863224682
+            clinvar: InheritedMutation = first_row_mutation.meta_ClinVar
+            assert clinvar.db_snp_ids == {863224682}  # rs863224682
             assert not clinvar.is_validated
-            assert not clinvar.is_low_freq_variation
-
-            assert clinvar.sig_code == [0, 0]
-            assert clinvar.disease_name == ['Li-Fraumeni syndrome', 'Tumor predisposition syndrome']
+            assert clinvar.variation_id == 216463
 
             assert first_row_mutation.sig_code == [0, 0]
-            assert first_row_mutation.disease_name == ['Li-Fraumeni syndrome', 'Tumor predisposition syndrome']
+            assert clinvar.combined_significance == 'Uncertain significance'
 
-            third_row_mutation = proteins['NM_000546'].mutations[0]
+            assert (
+                clinvar.disease_name == first_row_mutation.disease_name ==
+                ['Hereditary cancer-predisposing syndrome', 'Li-Fraumeni syndrome']
+            )
+
+            first_mutation_associations = clinvar.clinical_associations_by_disease_name
+
+            cps_variant_association = first_mutation_associations['Hereditary cancer-predisposing syndrome']
+            assert cps_variant_association.sig_code == 0
+            assert cps_variant_association.significance == 'Uncertain significance'
+
+            cancer_predisposing_syndrome = cps_variant_association.disease
+            assert cancer_predisposing_syndrome.name == 'Hereditary cancer-predisposing syndrome'
+            assert cancer_predisposing_syndrome.medgen_id == 'C0027672'
+            assert cancer_predisposing_syndrome.snomed_ct_id == 699346009
+
+            #
+            # Second mutation
+            #
+
+            second_row_mutation = Mutation.query.filter_by(protein=tp53_protein, position=347).one()
+
+            clinvar: InheritedMutation = second_row_mutation.meta_ClinVar
+            assert clinvar.variation_id == 43587
+
+            assert clinvar.combined_significance == 'Conflicting interpretations of pathogenicity'
+            second_mutation_associations = clinvar.clinical_associations_by_disease_name
+
+            # the "not specified" and "not provided" reports should be filtered out
+            assert len(second_mutation_associations) == 2
+
+            cps_variant_association = second_mutation_associations['Hereditary cancer-predisposing syndrome']
+            assert cps_variant_association.significance == 'Likely pathogenic'
+            assert cps_variant_association.rev_status == 'criteria provided, single submitter'
+
+            li_fraumeni_syndrome_association = second_mutation_associations['Li-Fraumeni syndrome']
+            assert li_fraumeni_syndrome_association.significance == 'Uncertain significance'
+
+            li_fraumeni_syndrome = li_fraumeni_syndrome_association.disease
+            assert li_fraumeni_syndrome.medgen_id == 'C0085390'
+            assert li_fraumeni_syndrome.snomed_ct_id == 428850001
+            assert li_fraumeni_syndrome.orhpanet_id == 'ORPHA524'
+
+            #
+            # Third mutation
+            #
+
+            third_row_mutation = Mutation.query.filter_by(protein=tp53_protein, position=311).one()
             assert third_row_mutation.meta_ClinVar.disease_name == ['Li-Fraumeni syndrome']
+
+            #
+            # Fourth mutation
+            #
+
+            fourth_row_mutation = Mutation.query.filter_by(protein=tp53_protein, position=194).one()
+            assert fourth_row_mutation.alt == 'F'
+            clinvar: InheritedMutation = fourth_row_mutation.meta_ClinVar
+            fourth_mutation_associations = clinvar.clinical_associations_by_disease_name
+            hepatocellular_carcinoma_association = fourth_mutation_associations['Hepatocellular carcinoma']
+
+            hepatocellular_carcinoma: Disease = hepatocellular_carcinoma_association.disease
+            assert hepatocellular_carcinoma.hpo_id == 'HP:0001402'
+            assert hepatocellular_carcinoma.omim_id == 114550
+            assert hepatocellular_carcinoma.orhpanet_id == 'ORPHA88673'
+            assert hepatocellular_carcinoma.medgen_id == 'C2239176'
+            # TODO: this is somehow unpredictable when it comes to SNOMED CT as it has multiple IDs:
+            #  SNOMED_CT:187769009,SNOMED_CT:25370001
 
     def test_esp_import(self):
 

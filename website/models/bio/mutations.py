@@ -4,12 +4,13 @@ from functools import lru_cache
 from typing import Type, Iterable, Mapping, List, Dict
 
 from sqlalchemy import select, func, or_, and_, exists
-from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.associationproxy import association_proxy, _AssociationSet
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property, Comparator, hybrid_method
 from sqlalchemy.orm import synonym, RelationshipProperty
 
 from database import db
+from database.types import ScalarSet
 from helpers.models import generic_aggregator
 
 from .diseases import ClinicalData
@@ -304,6 +305,7 @@ class TCGAMutation(CancerMutation, BioModel):
 class InheritedMutation(MappedMutationDetails, BioModel):
     """Metadata for inherited diseased mutations from ClinVar from NCBI
 
+    Roughly corresponds to VCV in 2017+ ClinVar
     Columns description come from source VCF file headers.
     """
     name = 'ClinVar'
@@ -311,12 +313,14 @@ class InheritedMutation(MappedMutationDetails, BioModel):
     value_type = 'count'
 
     # RS: dbSNP ID (i.e. rs number)
-    db_snp_ids = db.Column(db.PickleType)
+    db_snp_ids = db.Column(ScalarSet(separator=',', element_type=int), default=set)
 
-    # MUT: Is mutation (journal citation, explicit fact):
-    # a low frequency variation that is cited
-    # in journal and other reputable sources
-    is_low_freq_variation = db.Column(db.Boolean)
+    # ClinVar Variation ID, see PMC5753237 "New and improved VCF files"
+    # VCV (Variation in ClinVar) level of aggregation
+    # Note: the full VCV identifier is prefixed and padded with zeros:
+    # >>> <MeasureSet Type="Variant" ID="216463" Acc="VCV000216463" Version="1">
+    # but we only store the actual integer (see "ID" in the example above)
+    variation_id = db.Column(db.Integer, unique=True)
 
     # VLD: This bit is set if the variant has 2+ minor allele
     # count based on frequency or genotype data
@@ -327,9 +331,24 @@ class InheritedMutation(MappedMutationDetails, BioModel):
 
     clin_data = db.relationship('ClinicalData', uselist=True)
 
+    # combined_significance = association_proxy('clin_data', 'combined_significance')
+
+    # CLNSIG: Variant Clinical Significance, as reported by ClinVar
+    # https://www.ncbi.nlm.nih.gov/clinvar/docs/variation_report/
+    # combined on variation level (VCV level)
+    combined_significance = db.Column(db.String(64))
+
     sig_code = association_proxy('clin_data', 'sig_code')
+
     disease_name = association_proxy('clin_data', 'disease_name')
     disease_id = association_proxy('clin_data', 'disease_id')
+
+    @property
+    def clinical_associations_by_disease_name(self) -> Dict[str, ClinicalData]:
+        return {
+            association.disease.name: association
+            for association in self.clin_data
+        }
 
     def get_value(self, filter=lambda x: x):
         return len(filter(self.clin_data))
@@ -350,7 +369,6 @@ class InheritedMutation(MappedMutationDetails, BioModel):
         return {
             'dbSNP id': self.db_snp_ids or [],
             'Is validated': bool(self.is_validated),
-            'Is low frequency variation': bool(self.is_low_freq_variation),
             'Is in PubMed Central': bool(self.is_in_pubmed_central),
             'Clinical': [
                 d.to_json()

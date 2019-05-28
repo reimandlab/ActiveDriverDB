@@ -1,4 +1,5 @@
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from database import db
 
@@ -7,8 +8,34 @@ from .model import BioModel
 
 class Disease(BioModel):
 
-    # CLNDBN: Variant disease name
+    # CLNDN: Variant disease name;
+    # "ClinVar's preferred disease name for the concept specified by disease identifiers in CLNDISDB"
     name = db.Column(db.String(255), nullable=False, unique=True, index=True)
+
+    # MedGen identifier
+    medgen_id = db.Column(db.String(16))
+
+    # OMIM identifier
+    omim_id = db.Column(db.Integer)
+
+    # Snomed CT
+    snomed_ct_id = db.Column(db.Integer)
+
+    # Orphanet
+    orhpanet_id = db.Column(db.String(16))
+
+    # Human_Phenotype_Ontology, e.g. HP:0002145
+    hpo_id = db.Column(db.String(16))
+
+    clinvar_types = {
+        'Disease',
+        'DrugResponse',
+        'Finding',
+        'PhenotypeInstruction',
+        'TraitChoice'
+    }
+
+    clinvar_type = db.Column(db.Enum(*clinvar_types))
 
 
 class ClinicalData(BioModel):
@@ -24,10 +51,15 @@ class ClinicalData(BioModel):
         5: 'Pathogenic',
         6: 'Drug response',
         7: 'Histocompatibility',
-        255: 'Other'
+        255: 'Other',
+        # following significances have no mapped ASN.1 terms,
+        # thus we will use negative numbers:
+        -1: 'Confers sensitivity',
+        -2: 'Risk factor',
+        -3: 'Association',
+        -4: 'Protective',   # TODO?
+        -5: 'Affects'
     }
-
-    # CLNSIG: Variant Clinical Significance:
     sig_code = db.Column(db.Integer)
 
     # CLNDBN: Variant disease name
@@ -39,21 +71,32 @@ class ClinicalData(BioModel):
     def significance(self):
         return self.significance_codes.get(self.sig_code, None)
 
-    # CLNREVSTAT: ?
-    # no_assertion - No assertion provided,
-    # no_criteria - No assertion criteria provided,
-    # single - Criteria provided single submitter,
-    # mult - Criteria provided multiple submitters no conflicts,
-    # conf - Criteria provided conflicting interpretations,
-    # exp - Reviewed by expert panel,
-    # guideline - Practice guideline
-    rev_status = db.Column(db.Text)
+    stars_by_status = {
+        'practice guideline': 4,
+        'reviewed by expert panel': 3,
+        'criteria provided, multiple submitters, no conflicts': 2,
+        'criteria provided, conflicting interpretations': 1,
+        'criteria provided, single submitter': 1,
+        'no assertion for the individual variant': 0,
+        'no assertion criteria provided': 0,
+        'no assertion provided': 0
+    }
+
+    # Corresponds to number of starts the entry receives
+    # See: https://www.ncbi.nlm.nih.gov/clinvar/docs/review_status/
+    # e.g. "practice guideline" - four gold starts
+    rev_status = db.Column(db.Enum(*stars_by_status))
+
+    @hybrid_property
+    def gold_stars(self):
+        return self.stars_by_status[self.rev_status]
 
     def to_json(self, filter=lambda x: x):
         return {
             'Disease': self.disease_name,
             'Significance': self.significance,
-            'Review status': self.rev_status
+            'Review status': self.rev_status,
+            'Gold stars': self.gold_stars
         }
 
     significance_subsets = {

@@ -42,11 +42,13 @@ def create_test_mutations():
                 clin_data=[
                     ClinicalData(
                         disease=Disease(name='Disease X'),
-                        sig_code=1
+                        sig_code=1,
+                        rev_status='practice guideline'
                     ),
                     ClinicalData(
                         disease=Disease(name='Disease Y'),
-                        sig_code=1
+                        sig_code=1,
+                        rev_status='no assertion provided'
                     )
                 ]
             ),
