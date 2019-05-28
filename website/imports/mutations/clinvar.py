@@ -308,7 +308,7 @@ class ClinVarImporter(MutationImporter):
 
             # should correspond to insert keys!
             clinvar_mutation_values = [
-                [int(rs) for rs in clinvar_entry.get('RS', '').split('|')],
+                [int(rs) for rs in (clinvar_entry['RS'] or '').split('|') if rs],
                 clinvar_entry['VLD'],
                 clinvar_entry['PMC'],
                 variation_id,
@@ -331,7 +331,7 @@ class ClinVarImporter(MutationImporter):
                     old = self.data_as_dict(clinvar_mutations[pointer])
                     new = self.data_as_dict(values, mutation_id=mutation_id)
 
-                    new_rs = [int(rs) for rs in (new['db_snp_ids'] or '').split('|')]
+                    new_rs = [int(rs) for rs in (new['db_snp_ids'] or '').split('|') if rs]
                     for rs in new_rs:
                         if rs not in old['db_snp_ids']:
                             clinvar_mutations[pointer][1].append(rs)
