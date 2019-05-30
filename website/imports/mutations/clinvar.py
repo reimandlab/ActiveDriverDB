@@ -29,8 +29,6 @@ class ClinVarImporter(MutationImporter):
     insert_keys = (
         'mutation_id',
         'db_snp_ids',
-        'is_validated',
-        'is_in_pubmed_central',
         'combined_significances',
     )
 
@@ -58,8 +56,6 @@ class ClinVarImporter(MutationImporter):
 
     clinvar_keys = (
         'RS',
-        'VLD',
-        'PMC',
         'CLNDISDB',
         'CLNDN',
         'CLNSIG',
@@ -308,15 +304,13 @@ class ClinVarImporter(MutationImporter):
             # should correspond to insert keys!
             clinvar_mutation_values = [
                 {int(rs) for rs in (clinvar_entry['RS'] or '').split('|') if rs},
-                clinvar_entry['VLD'],
-                clinvar_entry['PMC'],
                 set(combined_significances)
             ]
 
             for mutation_id in self.get_or_make_mutations(line):
 
                 # take care of duplicates
-                duplicated = self.look_after_duplicates(mutation_id, clinvar_mutations, values[:3])
+                duplicated = self.look_after_duplicates(mutation_id, clinvar_mutations, values[:1])
                 if duplicated:
                     duplicates += 1
                     continue
@@ -330,13 +324,6 @@ class ClinVarImporter(MutationImporter):
                     retained_values = clinvar_mutations[pointer]
                     old = self.data_as_dict(retained_values)
                     new = self.data_as_dict(clinvar_mutation_values, mutation_id=mutation_id)
-
-                    # if either of the dbSNP entries is validated, the mutation is validated
-                    # (the same with presence in PubMed)
-                    for key in ['is_validated', 'is_in_pubmed_central']:
-                        if old[key] != new[key] and new[key]:
-                            index = self.insert_keys.index(key)
-                            retained_values[index] = True
 
                     for key in ['db_snp_ids', 'combined_significances']:
                         index = self.insert_keys.index(key)

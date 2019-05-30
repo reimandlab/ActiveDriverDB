@@ -225,7 +225,6 @@ class TestImport(DatabaseTest):
 
             clinvar: InheritedMutation = first_row_mutation.meta_ClinVar
             assert clinvar.db_snp_ids == {863224682}  # rs863224682
-            assert not clinvar.is_validated
             assert clinvar.variation_ids == {216463}
 
             assert first_row_mutation.sig_code == [0, 0]

@@ -315,12 +315,14 @@ class InheritedMutation(MappedMutationDetails, BioModel):
     # RS: dbSNP ID (i.e. rs number)
     db_snp_ids = db.Column(ScalarSet(element_type=int), default=set)
 
+    # TODO: use dbSNP to retrieve the VLD & PMC data?
+
     # VLD: This bit is set if the variant has 2+ minor allele
     # count based on frequency or genotype data
-    is_validated = db.Column(db.Boolean)
+    # is_validated = db.Column(db.Boolean)
 
     # PMC: Links exist to PubMed Central article
-    is_in_pubmed_central = db.Column(db.Boolean)
+    # is_in_pubmed_central = db.Column(db.Boolean)
 
     clin_data = db.relationship('ClinicalData', uselist=True)
 
@@ -369,8 +371,8 @@ class InheritedMutation(MappedMutationDetails, BioModel):
     def to_json(self, filter=lambda x: x):
         return {
             'dbSNP id': self.db_snp_ids or [],
-            'Is validated': bool(self.is_validated),
-            'Is in PubMed Central': bool(self.is_in_pubmed_central),
+            # 'Is validated': bool(self.is_validated),
+            # 'Is in PubMed Central': bool(self.is_in_pubmed_central),
             'Clinical': [
                 d.to_json()
                 for d in filter(self.clin_data)
