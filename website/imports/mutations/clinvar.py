@@ -331,7 +331,7 @@ class ClinVarImporter(MutationImporter):
                         index = self.insert_keys.index(key)
                         retained_values[index].update(new[key])
 
-                    print(f'Merged SNVs of the same protein mutation ({mutation_id}):\n{new}\nand\n{old}')
+                    print(f'Merged SNVs of the same protein mutation ({mutation_id}):\n\t{new}\nand\n\t{old}\n')
                 else:
                     # only add the protein-level mutation once
                     self.protect_from_duplicates(mutation_id, clinvar_mutations)
