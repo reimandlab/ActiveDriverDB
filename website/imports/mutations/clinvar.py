@@ -185,12 +185,6 @@ class ClinVarImporter(MutationImporter):
                 else:
                     disease.clinvar_type = trait_type
 
-                disease_association: ClinicalData = (
-                    ClinicalData.query
-                    .filter(ClinicalData.disease == disease)
-                    .filter(ClinicalData.variation_id == variation_id)
-                ).one()
-
                 significance_annotations = reference.findall('ClinicalSignificance')
 
                 assert len(significance_annotations) == 1
@@ -202,8 +196,16 @@ class ClinVarImporter(MutationImporter):
 
                 sig_code = self.inverse_significance_map[significance.lower()]
 
-                disease_association.sig_code = sig_code
-                disease_association.rev_status = review_status
+                disease_associations: ClinicalData = (
+                    ClinicalData.query
+                    .filter(ClinicalData.disease == disease)
+                    .filter(ClinicalData.variation_id == variation_id)
+                )
+
+                for disease_association in disease_associations:
+
+                    disease_association.sig_code = sig_code
+                    disease_association.rev_status = review_status
 
         db.session.commit()
 

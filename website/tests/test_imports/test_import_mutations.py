@@ -90,6 +90,9 @@ msh2 = {
     'NM_000251': 'MAVQPKETLQLESAAEVGFVRFFQGMPEKPTTTVRLFDRGDFYTAHGEDALLAAREVFKTQGVIKYMGPAGAKNLQSVVLSKMNFESFVKDLLLVRQYRVEVYKNRAGNKASKENDWYLAYKASPGNLSQFEDILFGNNDMSASIGVVGVKMSAVDGQRQVGVGYVDSIQRKLGLCEFPDNDQFSNLEALLIQIGPKECVLPGGETAGDMGKLRQIIQRGGILITERKKADFSTKDIYQDLNRLLKGKKGEQMNSAVLPEMENQVAVSSLSAVIKFLELLSDDSNFGQFELTTFDFSQYMKLDIAAVRALNLFQGSVEDTTGSQSLAALLNKCKTPQGQRLVNQWIKQPLMDKNRIEERLNLVEAFVEDAELRQTLQEDLLRRFPDLNRLAKKFQRQAANLQDCYRLYQGINQLPNVIQALEKHEGKHQKLLLAVFVTPLTDLRSDFSKFQEMIETTLDMDQVENHEFLVKPSFDPNLSELREIMNDLEKKMQSTLISAARDLGLDPGKQIKLDSSAQFGYYFRVTCKEEKVLRNNKNFSTVDIQKNGVKFTNSKLTSLNEEYTKNKTEYEEAQDAIVKEIVNISSGYVEPMQTLNDVLAQLDAVVSFAHVSNGAPVPYVRPAILEKGQGRIILKASRHACVEVQDEIAFIPNDVYFEKDKQMFHIITGPNMGGKSTYIRQTGVIVLMAQIGCFVPCESAEVSIVDCILARVGAGDSQLKGVSTFMAEMLETASILRSATKDSLIIIDELGRGTSTYDGFGLAWAISEYIATKIGAFCMFATHFHELTALANQIPTVNNLHVTALTTEETLTMLYQVKKGVCDQSFGIHVAELANFPKHVIECAKQKALELEEFQYIGESQGYDIMEPAAKKCYLEREQGEKIIQEFLSKVKQMPFTEMSEENITIKLKQLKAEVIAKNNSFVNEIISRIKVTT'
 }
 
+tp53_alt = {
+    'NM_001126115': 'MFCQLAKTCPVQLWVDSTPPPGTRVRAMAIYKQSQHMTEVVRRCPHHERCSDSDGLAPPQHLIRVEGNLRVEYLDDRNTFRHSVVVPYEPPEVGSDCTTIHYNYMCNSSCMGGMNRRPILTIITLEDSSGNLLGRNSFEVRVCACPGRDRRTEEENLRKKGEPHHELPPGSTKRALPNNTSSSPQPKKKPLDGEYFTLQIRGRERFEMFRELNEALELKDAQAGKEPGGSRAHSSHLKSKKGQSTSRHKKLMFKTEGPDSD*'
+}
 
 # Mocked: for test simplicity hypermutated sample is the one more than two mutations.
 # The first three mutations are from the same sample, the last one is from different one.
@@ -195,7 +198,7 @@ class TestImport(DatabaseTest):
 
     def test_clinvar_import(self):
         muts_filename = make_named_gz_file(clinvar_mutations)
-        proteins = create_proteins({**tp53, **lama4, **msh2})
+        proteins = create_proteins({**tp53, **lama4, **msh2, **tp53_alt})
 
         with self.app.app_context():
             source_name = 'clinvar'
@@ -205,13 +208,24 @@ class TestImport(DatabaseTest):
                 clinvar_xml_path='tests/test_imports/clinvar_subset.xml'
             )
 
+            tp53_protein = proteins['NM_000546']
+            assert Mutation.query.filter_by(protein=tp53_protein).count() == 5
+
+            tp53_protein_alt = proteins['NM_001126115']
+            assert Mutation.query.filter_by(protein=tp53_protein_alt).count() == 4
+
             mutations = InheritedMutation.query.all()
-            # one mutation has only a "not_specified" disease, should be skipped
+
+            # one TP53 mutation has only a "not_specified" disease, should be skipped
             # nb such variants have associated cross references, such as:
             # https://www.ncbi.nlm.nih.gov/medgen/CN517202
-            assert len(mutations) == 7
 
-            tp53_protein = proteins['NM_000546']
+            assert len(mutations) == (
+                5     # NM_000546 TP53 mutations (out of 6, one has only not_specified)
+                + 4   # NM_001126115 TP 53 mutations (out of 5, one has only not_specified)
+                + 1   # LAMA4
+                + 1   # MSH2 (out of two mapping to the same)
+            )
 
             #
             # First mutation
