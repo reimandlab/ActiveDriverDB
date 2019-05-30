@@ -2449,4 +2449,334 @@
 		</ClinVarAssertion>
 	</ClinVarSet>
 
+	<ClinVarSet ID="40088869">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_000251.2(MSH2):c.2352T&gt;G (p.Phe784Leu) AND Hereditary nonpolyposis colon cancer</Title>
+		<ReferenceClinVarAssertion DateCreated="2018-10-10" DateLastUpdated="2019-03-30" ID="1614033">
+			<ClinVarAccession Acc="RCV000686602" Version="1" Type="RCV" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2018-06-26">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="38572681">
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="566716" Acc="VCV000566716" Version="1">
+				<Measure Type="single nucleotide variant" ID="560697">
+					<Name>
+						<ElementValue Type="Preferred">NM_000251.2(MSH2):c.2352T&gt;G (p.Phe784Leu)</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.2352T&gt;G" Accession="LRG_218t1" Type="HGVS, coding, LRG">LRG_218t1:c.2352T&gt;G</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.2352T&gt;G" Accession="NM_000251" Version="2" Type="HGVS, coding, RefSeq">NM_000251.2:c.2352T&gt;G</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.80290T&gt;G" Accession="LRG_218" Type="HGVS, genomic, LRG">LRG_218:g.80290T&gt;G</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.80290T&gt;G" Accession="NG_007110" Version="2" Type="HGVS, genomic, RefSeqGene">NG_007110.2:g.80290T&gt;G</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.47478413T&gt;G" Accession="NC_000002" Version="12" Type="HGVS, genomic, top level" integerValue="38">NC_000002.12:g.47478413T&gt;G</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.47705552T&gt;G" Accession="NC_000002" Version="11" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000002.11:g.47705552T&gt;G</Attribute>
+						<XRef ID="37" DB="ClinVar"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Phe784Leu" Accession="LRG_218p1" Type="HGVS, protein">LRG_218p1:p.Phe784Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Phe784Leu" Accession="NP_000242" Version="1" Type="HGVS, protein, RefSeq">NP_000242.1:p.Phe784Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_000251.2:c.2352T&gt;G" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">F784L</Attribute>
+					</AttributeSet>
+					<CytogeneticLocation>2p21</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="2" Accession="NC_000002.12" start="47478413" stop="47478413" display_start="47478413" display_stop="47478413" variantLength="1" referenceAllele="T" alternateAllele="G" positionVCF="47478413" referenceAlleleVCF="T" alternateAlleleVCF="G"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="2" Accession="NC_000002.11" start="47705552" stop="47705552" display_start="47705552" display_stop="47705552" variantLength="1" referenceAllele="T" alternateAllele="G" positionVCF="47705552" referenceAlleleVCF="T" alternateAlleleVCF="G"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">mutS homolog 2</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">MSH2</ElementValue>
+						</Symbol>
+						<AttributeSet>
+							<Attribute dateValue="2015-07-09" Type="Haploinsufficiency">Sufficient evidence for dosage pathogenicity</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=MSH2</URL>
+							</Citation>
+						</AttributeSet>
+						<AttributeSet>
+							<Attribute dateValue="2015-07-09" Type="Triplosensitivity">No evidence available</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=MSH2</URL>
+							</Citation>
+						</AttributeSet>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="2" Accession="NC_000002.12" start="47403067" stop="47634501" display_start="47403067" display_stop="47634501" Strand="+"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="2" Accession="NC_000002.11" start="47630205" stop="47710366" display_start="47630205" display_stop="47710366" variantLength="80162" Strand="+"/>
+						<XRef ID="4436" DB="Gene"/>
+						<XRef Type="MIM" ID="609309" DB="OMIM"/>
+						<XRef ID="HGNC:7325" DB="HGNC"/>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2013 (PubMed 23788249) for reporting incidental findings in exons.</Comment>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2016 (PubMed 27854360) for reporting incidental findings in exons.</Comment>
+					</MeasureRelationship>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_000251.2(MSH2):c.2352T&gt;G (p.Phe784Leu)</ElementValue>
+				</Name>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="37727">
+				<Trait ID="38245" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Hereditary nonpolyposis colon cancer</ElementValue>
+						<XRef ID="443090" DB="Orphanet"/>
+					</Name>
+					<XRef ID="C0009405" DB="MedGen"/>
+					<XRef ID="443090" DB="Orphanet"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="1586282" SubmissionName="SUB4474525">
+			<ClinVarSubmissionID localKey="4474252|MedGen:C0009405" submittedAssembly="GRCh37" submitter="Invitae" submitterDate="2018-08-29"/>
+			<ClinVarAccession Acc="SCV000814127" Version="1" Type="SCV" OrgID="500031" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2018-06-26">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+				<Comment Type="public">This sequence change replaces phenylalanine with leucine at codon 784 of the MSH2 protein (p.Phe784Leu). The phenylalanine residue is highly conserved and there is a small physicochemical difference between phenylalanine and leucine. This variant is not present in population databases (ExAC no frequency). This variant has not been reported in the literature in individuals with MSH2-related disease. Algorithms developed to predict the effect of missense changes on protein structure and function are either unavailable or do not agree on the potential impact of this missense change (SIFT: "Deleterious"; PolyPhen-2: "Probably Damaging"; Align-GVGD: "Class C15"). In summary, the available evidence is currently insufficient to determine the role of this variant in disease. Therefore, it has been classified as a Variant of Uncertain Significance.</Comment>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="Invitae" ID="4474252"/>
+			<AttributeSet>
+				<Attribute Type="AssertionMethod">Nykamp K et al. (Genet Med 2017)</Attribute>
+				<Citation>
+					<ID Source="PubMed">28492532</ID>
+				</Citation>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<AttributeSet>
+						<Attribute Type="HGVS">NM_000251.2:c.2352T&gt;G</Attribute>
+					</AttributeSet>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">MSH2</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Hereditary nonpolyposis colon cancer</ElementValue>
+					</Name>
+					<XRef DB="MedGen" ID="C0009405" Type="CUI"/>
+				</Trait>
+			</TraitSet>
+			<Citation Type="general">
+				<ID Source="PubMed">28492532</ID>
+			</Citation>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+	<ClinVarSet ID="40175990">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_016356.4(DCDC2):c.1208G&gt;A (p.Arg403His) AND not specified</Title>
+		<ReferenceClinVarAssertion DateCreated="2018-12-15" DateLastUpdated="2019-03-30" ID="1681151">
+			<ClinVarAccession Acc="RCV000727868" Version="1" Type="RCV" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2017-11-10">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Likely benign</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="38609364">
+					<Attribute integerValue="7" Type="VariantAlleles"/>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="466322" Acc="VCV000466322" Version="1">
+				<Measure Type="single nucleotide variant" ID="455557">
+					<Name>
+						<ElementValue Type="Preferred">NM_016356.4(DCDC2):c.1208G&gt;A (p.Arg403His)</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.1208G&gt;A" Accession="NM_016356" Version="4" Type="HGVS, coding, RefSeq">NM_016356.4:c.1208G&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.209845G&gt;A" Accession="NG_012829" Version="2" Type="HGVS, genomic, RefSeqGene">NG_012829.2:g.209845G&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.24178448C&gt;T" Accession="NC_000006" Version="12" Type="HGVS, genomic, top level" integerValue="38">NC_000006.12:g.24178448C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.24178676C&gt;T" Accession="NC_000006" Version="11" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000006.11:g.24178676C&gt;T</Attribute>
+						<XRef ID="37" DB="ClinVar"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg403His" Accession="NP_057440" Version="2" Type="HGVS, protein, RefSeq">NP_057440.2:p.Arg403His</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="Location">NM_016356.3:exon 9</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="Location">NM_016356.4:exon 9</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_016356.4:c.1208G&gt;A" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">R403H</Attribute>
+					</AttributeSet>
+					<AlleleFrequencyList>
+						<AlleleFrequency Value="0.00208" Source="NHLBI Exome Sequencing Project (ESP) Exome Variant Server"/>
+						<AlleleFrequency Value="0.00220" Source="1000 Genomes Project"/>
+						<AlleleFrequency Value="0.00062" Source="Exome Aggregation Consortium (ExAC)"/>
+						<AlleleFrequency Value="0.00191" Source="The Genome Aggregation Database (gnomAD)"/>
+						<AlleleFrequency Value="0.00047" Source="The Genome Aggregation Database (gnomAD), exomes"/>
+						<AlleleFrequency Value="0.00237" Source="Trans-Omics for Precision Medicine (TOPMed)"/>
+					</AlleleFrequencyList>
+					<GlobalMinorAlleleFrequency Value="0.00220" Source="1000 Genomes Project" MinorAllele="T"/>
+					<CytogeneticLocation>6p22.3</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="6" Accession="NC_000006.12" start="24178448" stop="24178448" display_start="24178448" display_stop="24178448" variantLength="1" referenceAllele="C" alternateAllele="T" positionVCF="24178448" referenceAlleleVCF="C" alternateAlleleVCF="T"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="6" Accession="NC_000006.11" start="24178676" stop="24178676" display_start="24178676" display_stop="24178676" variantLength="1" referenceAllele="C" alternateAllele="T" positionVCF="24178676" referenceAlleleVCF="C" alternateAlleleVCF="T"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">doublecortin domain containing 2</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">DCDC2</ElementValue>
+						</Symbol>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="6" Accession="NC_000006.12" start="24171755" stop="24383292" display_start="24171755" display_stop="24383292" Strand="-"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="6" Accession="NC_000006.11" start="24171982" stop="24383519" display_start="24171982" display_stop="24383519" variantLength="211538" Strand="-"/>
+						<XRef ID="51473" DB="Gene"/>
+						<XRef Type="MIM" ID="605755" DB="OMIM"/>
+						<XRef ID="HGNC:18141" DB="HGNC"/>
+					</MeasureRelationship>
+					<XRef Type="rs" ID="139858268" DB="dbSNP"/>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_016356.4(DCDC2):c.1208G&gt;A (p.Arg403His)</ElementValue>
+				</Name>
+				<XRef ID="CA3654488" DB="ClinGen"/>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="9590">
+				<Trait ID="16789" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">not specified</ElementValue>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">AllHighlyPenetrant</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Type="public definition">The term 'not specified' was created for use in ClinVar so that submitters can convey the concept that a variant is benign, likely benign, or of uncertain significance for an unspecified set of disorders.  This usage was introduced in 2014 to replace AllHighlyPenetrant.</Attribute>
+					</AttributeSet>
+					<XRef ID="CN169374" DB="MedGen"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="1672227" SubmissionName="SUB4534263">
+			<ClinVarSubmissionID localKey="61885_000000" localKeyIsSubmitted="1" submittedAssembly="GRCh37" submitter="EGL Genetic Diagnostics,Eurofins Clinical Diagnostics" submitterDate="2018-09-19"/>
+			<ClinVarAccession Acc="SCV000855359" Version="1" Type="SCV" OrgID="500060" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2017-11-10">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Likely benign</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="EGL Genetic Diagnostics" ID="61885"/>
+			<AttributeSet>
+				<Attribute Type="AssertionMethod">EGL_Classification_Definitions_2015</Attribute>
+				<Citation>
+					<URL>https://submit.ncbi.nlm.nih.gov/ft/byid/dn5yhybg/egl_classification_definitions_2015.pdf</URL>
+				</Citation>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+					<Gender>mixed</Gender>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="VariantAlleles" integerValue="7"/>
+				</ObservedData>
+				<ObservedData>
+					<Attribute Type="SingleHeterozygote" integerValue="7"/>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="single nucleotide variant">
+					<AttributeSet>
+						<Attribute Type="Location">NM_016356.4:Ex9</Attribute>
+					</AttributeSet>
+					<SequenceLocation Assembly="GRCh37" Chr="6" alternateAllele="T" referenceAllele="C" start="24178676" stop="24178676" variantLength="1"/>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">DCDC2</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+					<XRef DB="dbSNP" ID="139858268" Type="rsNumber"/>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">not specified</ElementValue>
+					</Name>
+				</Trait>
+			</TraitSet>
+			<Citation>
+				<URL>http://www.egl-eurofins.com/emvclass/emvclass.php?approved_symbol=DCDC2</URL>
+			</Citation>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
 </ReleaseSet>

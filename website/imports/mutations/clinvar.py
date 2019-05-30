@@ -31,8 +31,7 @@ class ClinVarImporter(MutationImporter):
         'db_snp_ids',
         'is_validated',
         'is_in_pubmed_central',
-        'variation_id',
-        'combined_significance',
+        'combined_significances',
     )
 
     def __init__(self, *args, **kwargs):
@@ -102,7 +101,7 @@ class ClinVarImporter(MutationImporter):
 
         variants_of_interest = {
             variation_id
-            for variation_id, in db.session.query(InheritedMutation.variation_id)
+            for variation_id, in db.session.query(ClinicalData.variation_id)
         }
 
         # otherwise there is no point...
@@ -130,7 +129,7 @@ class ClinVarImporter(MutationImporter):
                 rcv_accession = reference.find('ClinVarAccession')
                 assert rcv_accession.attrib['Type'] == 'RCV'
 
-                rcv_accession = rcv_accession.attrib['Acc']
+                # rcv_accession = rcv_accession.attrib['Acc']
 
                 # variation or variation set, corresponds to InheritedMutation in our database
                 variation_set = reference.find('MeasureSet')
@@ -190,12 +189,10 @@ class ClinVarImporter(MutationImporter):
                 else:
                     disease.clinvar_type = trait_type
 
-                mutation = InheritedMutation.query.filter_by(variation_id=variation_id).one()
-
                 disease_association: ClinicalData = (
                     ClinicalData.query
                     .filter(ClinicalData.disease == disease)
-                    .filter(ClinicalData.inherited_id == mutation.id)
+                    .filter(ClinicalData.variation_id == variation_id)
                 ).one()
 
                 significance_annotations = reference.findall('ClinicalSignificance')
@@ -207,7 +204,9 @@ class ClinVarImporter(MutationImporter):
                 significance = significance_annotation.find('Description').text
                 review_status = significance_annotation.find('ReviewStatus').text
 
-                disease_association.sig_code = self.inverse_significance_map[significance.lower()]
+                sig_code = self.inverse_significance_map[significance.lower()]
+
+                disease_association.sig_code = sig_code
                 disease_association.rev_status = review_status
 
         db.session.commit()
@@ -221,7 +220,7 @@ class ClinVarImporter(MutationImporter):
 
         clinvar_entry = make_metadata_ordered_dict(self.clinvar_keys, metadata)
 
-        disease_names, diseases_ids, combined_significance, significances_set = (
+        disease_names, diseases_ids, combined_significances, significances_set = (
             (entry.split('|') if entry else [])
             for entry in
             (
@@ -248,12 +247,12 @@ class ClinVarImporter(MutationImporter):
             for disease_ids_map in diseases_ids_map
         ]
 
-        combined_significance = [
+        combined_significances = [
             significance.replace('_', ' ')
-            for significance in combined_significance
+            for significance in combined_significances
         ]
 
-        assert len(combined_significance) <= 1
+        assert len(combined_significances) <= 1
         assert not significances_set or len(significances_set) == 1
 
         # those lengths should be always equal
@@ -276,7 +275,7 @@ class ClinVarImporter(MutationImporter):
 
         return (
             at_least_one_meaningful_sub_entry, clinvar_entry, sub_entries_cnt,
-            disease_names, diseases_ids, combined_significance, variation_id
+            disease_names, diseases_ids, combined_significances, variation_id
         )
 
     def parse(self, path):
@@ -293,7 +292,7 @@ class ClinVarImporter(MutationImporter):
             try:
                 (
                     at_least_one_significant_sub_entry, clinvar_entry, sub_entries_cnt,
-                    disease_names, diseases_ids, combined_significance, variation_id
+                    disease_names, diseases_ids, combined_significances, variation_id
                 ) = self.parse_metadata(line)
             except MalformedRawError as e:
                 print(str(e) + '\n', line)
@@ -308,17 +307,16 @@ class ClinVarImporter(MutationImporter):
 
             # should correspond to insert keys!
             clinvar_mutation_values = [
-                [int(rs) for rs in (clinvar_entry['RS'] or '').split('|') if rs],
+                {int(rs) for rs in (clinvar_entry['RS'] or '').split('|') if rs},
                 clinvar_entry['VLD'],
                 clinvar_entry['PMC'],
-                variation_id,
-                combined_significance[0] if combined_significance else None
+                set(combined_significances)
             ]
 
             for mutation_id in self.get_or_make_mutations(line):
 
                 # take care of duplicates
-                duplicated = self.look_after_duplicates(mutation_id, clinvar_mutations, values[:4])
+                duplicated = self.look_after_duplicates(mutation_id, clinvar_mutations, values[:3])
                 if duplicated:
                     duplicates += 1
                     continue
@@ -326,35 +324,33 @@ class ClinVarImporter(MutationImporter):
                 # take care of nearly-duplicates
                 same_mutation_pointers = self.mutations_details_pointers_grouped_by_unique_mutations[mutation_id]
                 assert len(same_mutation_pointers) <= 1
+
                 if same_mutation_pointers:
                     pointer = same_mutation_pointers[0]
-                    old = self.data_as_dict(clinvar_mutations[pointer])
+                    retained_values = clinvar_mutations[pointer]
+                    old = self.data_as_dict(retained_values)
                     new = self.data_as_dict(clinvar_mutation_values, mutation_id=mutation_id)
-
-                    for rs in new['db_snp_ids']:
-                        if rs not in old['db_snp_ids']:
-                            clinvar_mutations[pointer][1].append(rs)
 
                     # if either of the dbSNP entries is validated, the mutation is validated
                     # (the same with presence in PubMed)
                     for key in ['is_validated', 'is_in_pubmed_central']:
                         if old[key] != new[key] and new[key]:
                             index = self.insert_keys.index(key)
-                            clinvar_mutations[pointer][index] = True
+                            retained_values[index] = True
 
-                    if old['variation_id'] != new['variation_id']:
-                        print(f'Merge failed: different ids: {old["variation_id"]} != {new["variation_id"]}')
-                        continue
+                    for key in ['db_snp_ids', 'combined_significances']:
+                        index = self.insert_keys.index(key)
+                        retained_values[index].update(new[key])
 
-                    print(
-                        f'Merged details referring to the same mutation ({mutation_id}):'
-                        f'{new} into {old}'
-                    )
-                    continue
+                    print(f'Merged SNVs of the same protein mutation ({mutation_id}):\n{new}\nand\n{old}')
+                else:
+                    # only add the protein-level mutation once
+                    self.protect_from_duplicates(mutation_id, clinvar_mutations)
+                    clinvar_mutations.append([mutation_id, *clinvar_mutation_values])
 
-                self.protect_from_duplicates(mutation_id, clinvar_mutations)
-
-                clinvar_mutations.append([mutation_id, *clinvar_mutation_values])
+                # then add the disease-mutation relations;
+                # if these are caused by multiple SNVs (and thus have different variant_id),
+                # add them for each of SNVs separately as each can have different sig_code:
 
                 for i in range(sub_entries_cnt):
                     # disease names matching is case insensitive;
@@ -399,6 +395,7 @@ class ClinVarImporter(MutationImporter):
                         (
                             len(clinvar_mutations),
                             disease_id,
+                            variation_id
                         )
                     )
 
@@ -431,7 +428,7 @@ class ClinVarImporter(MutationImporter):
         self.insert_list(clinvar_mutations)
         bulk_orm_insert(
             ClinicalData,
-            ('inherited_id', 'disease_id'),
+            ('inherited_id', 'disease_id', 'variation_id'),
             clinvar_data
         )
 

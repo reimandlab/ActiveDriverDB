@@ -4,7 +4,7 @@ from functools import lru_cache
 from typing import Type, Iterable, Mapping, List, Dict
 
 from sqlalchemy import select, func, or_, and_, exists
-from sqlalchemy.ext.associationproxy import association_proxy, _AssociationSet
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property, Comparator, hybrid_method
 from sqlalchemy.orm import synonym, RelationshipProperty
@@ -313,14 +313,7 @@ class InheritedMutation(MappedMutationDetails, BioModel):
     value_type = 'count'
 
     # RS: dbSNP ID (i.e. rs number)
-    db_snp_ids = db.Column(ScalarSet(separator=',', element_type=int), default=set)
-
-    # ClinVar Variation ID, see PMC5753237 "New and improved VCF files"
-    # VCV (Variation in ClinVar) level of aggregation
-    # Note: the full VCV identifier is prefixed and padded with zeros:
-    # >>> <MeasureSet Type="Variant" ID="216463" Acc="VCV000216463" Version="1">
-    # but we only store the actual integer (see "ID" in the example above)
-    variation_id = db.Column(db.Integer, unique=True)
+    db_snp_ids = db.Column(ScalarSet(element_type=int), default=set)
 
     # VLD: This bit is set if the variant has 2+ minor allele
     # count based on frequency or genotype data
@@ -336,12 +329,20 @@ class InheritedMutation(MappedMutationDetails, BioModel):
     # CLNSIG: Variant Clinical Significance, as reported by ClinVar
     # https://www.ncbi.nlm.nih.gov/clinvar/docs/variation_report/
     # combined on variation level (VCV level)
-    combined_significance = db.Column(db.String(64))
+    combined_significances = db.Column(ScalarSet(separator='|'), default=set)
 
     sig_code = association_proxy('clin_data', 'sig_code')
 
     disease_name = association_proxy('clin_data', 'disease_name')
     disease_id = association_proxy('clin_data', 'disease_id')
+
+    # Because there are many possible SNVs for each protein mutations,
+    # multiple variation ids are to be collected:
+    variation_ids_list = association_proxy('clin_data', 'variation_id')
+
+    @hybrid_property
+    def variation_ids(self):
+        return set(self.variation_ids_list)
 
     @property
     def clinical_associations_by_disease_name(self) -> Dict[str, ClinicalData]:

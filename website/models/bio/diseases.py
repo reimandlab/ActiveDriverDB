@@ -71,6 +71,8 @@ class ClinicalData(BioModel):
     def significance(self):
         return self.significance_codes.get(self.sig_code, None)
 
+    has_significance_conflict = db.Column(db.Boolean, default=False)
+
     stars_by_status = {
         'practice guideline': 4,
         'reviewed by expert panel': 3,
@@ -104,6 +106,13 @@ class ClinicalData(BioModel):
         'strict': ['Pathogenic', 'Drug response', 'Likely pathogenic'],
         'not_benign': ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Uncertain significance', 'Other'],
     }
+
+    # ClinVar Variation ID, see PMC5753237 "New and improved VCF files"
+    # VCV (Variation in ClinVar) level of aggregation
+    # Note: the full VCV identifier is prefixed and padded with zeros:
+    # >>> <MeasureSet Type="Variant" ID="216463" Acc="VCV000216463" Version="1">
+    # but we only store the actual integer (see "ID" in the example above)
+    variation_id = db.Column(db.Integer)
 
 
 class Cancer(BioModel):
