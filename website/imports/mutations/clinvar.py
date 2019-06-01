@@ -43,7 +43,10 @@ class ClinVarImporter(MutationImporter):
 
     @staticmethod
     def _beautify_disease_name(name):
-        return name.replace('_', ' ')
+        # edge cases:
+        # B_Lymphoblastic_Leukemia/Lymphoma_with_t(v%3B11q23.3)%3B_KMT2A_Rearranged
+        # Ataxia___Neurologic_
+        return name.replace('___', ' _ ').replace('_', ' ').replace('%3B', ';')
 
     def iterate_lines(self, path):
         return tsv_file_iterator(path, self.header, file_opener=gzip_open_text)
@@ -78,6 +81,8 @@ class ClinVarImporter(MutationImporter):
 
     def import_disease_associations(self):
         from xml.etree import ElementTree
+        from os.path import getsize
+        from tqdm import tqdm
         import gzip
 
         significance_map = {
@@ -122,11 +127,22 @@ class ClinVarImporter(MutationImporter):
 
         opener = gzip.open if self.xml_path.endswith('.gz') else open
 
+        total_size = 0
         with opener(self.xml_path) as clinvar_full_release:
-            tree = ElementTree.iterparse(clinvar_full_release)
+            for line in clinvar_full_release:
+                total_size += len(line)
 
-            for status, element in tree:
-                if status != 'end' or element.tag != 'ClinVarSet':
+        step = 0
+
+        with opener(self.xml_path) as clinvar_full_release:
+            tree = iter(ElementTree.iterparse(clinvar_full_release, events=('start', 'end')))
+            event, root = next(tree)
+
+            progress_bar = tqdm(total=1000)
+            last_progress = 0
+
+            for event, element in tree:
+                if event != 'end' or element.tag != 'ClinVarSet':
                     continue
 
                 reference = element.find('ReferenceClinVarAssertion')
@@ -170,7 +186,7 @@ class ClinVarImporter(MutationImporter):
 
                 if species not in accepted_species:
                     if species not in skipped_species:
-                        print(f'Skipping non-human species: {species}')
+                        print(f'Skipping non-human species: "{species}"')
                         skipped_species.add(species)
                     continue
 
@@ -195,6 +211,9 @@ class ClinVarImporter(MutationImporter):
                 if trait_name in ignored_traits:
                     continue
 
+                if 'Mucolipidosis, Type' in trait_name:
+                    trait_name.replace('Mucolipidosis, Type', 'Mucolipidosis')
+
                 try:
                     disease = Disease.query.filter_by(name=trait_name).one()
                 except:
@@ -206,7 +225,7 @@ class ClinVarImporter(MutationImporter):
                     if disease.clinvar_type != trait_type:
                         if disease.name not in conflicting_types:
                             conflicting_types.add(disease.name)
-                            print(f'Conflicting trait types for "{disease}": "{disease.clinvar_type}" != "{trait_type}"')
+                            print(f'Conflicting trait types for "{disease.name}": "{disease.clinvar_type}" != "{trait_type}"')
                 else:
                     disease.clinvar_type = trait_type
 
@@ -249,6 +268,19 @@ class ClinVarImporter(MutationImporter):
                     disease_association.rev_status = review_status
                     if additional_significances:
                         disease_association.additional_significances = set(additional_significances)
+
+                element.clear()
+
+                step += 1
+
+                if step % 500 == 0:
+                    progress = int(clinvar_full_release.tell() / total_size * 1000)
+
+                    if progress != last_progress:
+                        progress_bar.update(progress - last_progress)
+                        last_progress = progress
+
+                    root.clear()
 
         print(skipped_diseases)
         print(skipped_significances)
