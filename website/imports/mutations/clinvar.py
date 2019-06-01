@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Mapping
 
 from sqlalchemy.orm.exc import NoResultFound
@@ -79,6 +80,19 @@ class ClinVarImporter(MutationImporter):
         from xml.etree import ElementTree
         import gzip
 
+        significance_map = {
+            'pathologic': 'pathogenic',
+            'probable-pathogenic': 'likely pathogenic',
+            'cancer': 'pathogenic',
+            'untested': 'not provided',
+            'variant of unknown significance': 'uncertain significance',
+            'uncertain': 'uncertain significance',
+            'drug-response': 'drug response',
+            'probable-non-pathogenic': 'likely benign',
+            'probably not pathogenic': 'likely benign',
+            'non-pathogenic': 'benign',
+        }
+
         ignored_traits = {
             'not specified',
             'not provided'
@@ -89,11 +103,14 @@ class ClinVarImporter(MutationImporter):
             'variation to included disease',
             'confers sensitivity'
         }
+        skipped_significances = defaultdict(int)
 
         accepted_species = {'Human', 'human'}
         skipped_species = set()
 
         skipped_variation_types = set()
+        conflicting_types = set()
+        skipped_diseases = set()
 
         variants_of_interest = {
             variation_id
@@ -178,10 +195,18 @@ class ClinVarImporter(MutationImporter):
                 if trait_name in ignored_traits:
                     continue
 
-                disease = Disease.query.filter_by(name=trait_name).one()
+                try:
+                    disease = Disease.query.filter_by(name=trait_name).one()
+                except:
+                    skipped_diseases.add(trait_name)
+                    print(f'Disease "{trait_name}" entry not found, skipping')
+                    continue
 
                 if disease.clinvar_type:
-                    assert disease.clinvar_type == trait_type
+                    if disease.clinvar_type != trait_type:
+                        if disease.name not in conflicting_types:
+                            conflicting_types.add(disease.name)
+                            print(f'Conflicting trait types for "{disease}": "{disease.clinvar_type}" != "{trait_type}"')
                 else:
                     disease.clinvar_type = trait_type
 
@@ -191,10 +216,26 @@ class ClinVarImporter(MutationImporter):
 
                 significance_annotation = significance_annotations[0]
 
-                significance = significance_annotation.find('Description').text
+                significance = significance_annotation.find('Description').text.lower()
                 review_status = significance_annotation.find('ReviewStatus').text
 
-                sig_code = self.inverse_significance_map[significance.lower()]
+                if significance in significance_map:
+                    significance = significance_map[significance]
+
+                additional_significances = None
+
+                if significance not in self.inverse_significance_map:
+                    if significance not in skipped_significances:
+                        assign_to = 'other'
+                        first_significance, *additional_significances = significance.split(',')
+                        if first_significance in self.inverse_significance_map:
+                            assign_to = first_significance
+                        print(f'Unmapped significance status: "{significance}", assigning "{assign_to}"')
+                        significance = assign_to
+                    skipped_significances[significance] += 1
+                    significance = 'other'
+
+                sig_code = self.inverse_significance_map[significance]
 
                 disease_associations: ClinicalData = (
                     ClinicalData.query
@@ -206,6 +247,11 @@ class ClinVarImporter(MutationImporter):
 
                     disease_association.sig_code = sig_code
                     disease_association.rev_status = review_status
+                    if additional_significances:
+                        disease_association.additional_significances = set(additional_significances)
+
+        print(skipped_diseases)
+        print(skipped_significances)
 
         db.session.commit()
 

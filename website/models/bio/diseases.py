@@ -2,6 +2,7 @@ from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 
 from database import db
+from database.types import ScalarSet
 
 from .model import BioModel
 
@@ -43,6 +44,7 @@ class ClinicalData(BioModel):
     inherited_id = db.Column(db.Integer, db.ForeignKey('inheritedmutation.id'))
 
     significance_codes = {
+        # TODO: using simple enum might be better
         0: 'Uncertain significance',
         1: 'Not provided',
         2: 'Benign',
@@ -58,9 +60,19 @@ class ClinicalData(BioModel):
         -2: 'Risk factor',
         -3: 'Association',
         -4: 'Protective',   # TODO?
-        -5: 'Affects'
+        -5: 'Affects',
+        # following codes are aggregate codes,
+        # based on data from multiple submissions
+        # these use negative, brginning at -100
+        -100: 'Pathogenic/Likely pathogenic',
+        -101: 'Benign/Likely benign',
+        -102: 'Conflicting interpretations of pathogenicity',
+        -103: 'Conflicting data from submitters'
     }
     sig_code = db.Column(db.Integer)
+
+    # secondary annotations of significance
+    additional_significances = db.Column(ScalarSet(), default=set)
 
     # CLNDBN: Variant disease name
     disease_id = db.Column(db.Integer, db.ForeignKey('disease.id'))
