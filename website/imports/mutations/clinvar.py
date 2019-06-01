@@ -212,7 +212,8 @@ class ClinVarImporter(MutationImporter):
                     continue
 
                 if 'Mucolipidosis, Type' in trait_name:
-                    trait_name.replace('Mucolipidosis, Type', 'Mucolipidosis')
+                    print(f'Working around changed name for {trait_name}')
+                    trait_name = trait_name.replace('Mucolipidosis, Type', 'Mucolipidosis')
 
                 try:
                     disease = Disease.query.filter_by(name=trait_name).one()
@@ -225,7 +226,11 @@ class ClinVarImporter(MutationImporter):
                     if disease.clinvar_type != trait_type:
                         if disease.name not in conflicting_types:
                             conflicting_types.add(disease.name)
-                            print(f'Conflicting trait types for "{disease.name}": "{disease.clinvar_type}" != "{trait_type}"')
+                            action = ''
+                            if trait_type == 'Disease':
+                                disease.clinvar_type = trait_type
+                                action = ': overwritting the old type with "Disease"'
+                            print(f'Conflicting trait types for "{disease.name}": "{disease.clinvar_type}" != "{trait_type}"{action}')
                 else:
                     disease.clinvar_type = trait_type
 
@@ -244,6 +249,7 @@ class ClinVarImporter(MutationImporter):
                 additional_significances = None
 
                 if significance not in self.inverse_significance_map:
+                    skipped_significances[significance] += 1
                     if significance not in skipped_significances:
                         assign_to = 'other'
                         first_significance, *additional_significances = significance.split(',')
@@ -251,7 +257,6 @@ class ClinVarImporter(MutationImporter):
                             assign_to = first_significance
                         print(f'Unmapped significance status: "{significance}", assigning "{assign_to}"')
                         significance = assign_to
-                    skipped_significances[significance] += 1
                     significance = 'other'
 
                 sig_code = self.inverse_significance_map[significance]
@@ -273,7 +278,7 @@ class ClinVarImporter(MutationImporter):
 
                 step += 1
 
-                if step % 500 == 0:
+                if step % 550 == 0:
                     progress = int(clinvar_full_release.tell() / total_size * 1000)
 
                     if progress != last_progress:
