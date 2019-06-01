@@ -103,14 +103,15 @@ class ClinicalData(BioModel):
 
     @hybrid_property
     def gold_stars(self):
-        return self.stars_by_status[self.rev_status]
+        return self.stars_by_status.get(self.rev_status, -1)
 
     def to_json(self, filter=lambda x: x):
         return {
             'Disease': self.disease_name,
             'Significance': self.significance,
-            'Review status': self.rev_status,
-            'Gold stars': self.gold_stars
+            'Status': self.rev_status,
+            'Stars': self.gold_stars,
+            'VCV': self.variation_id
         }
 
     significance_subsets = {

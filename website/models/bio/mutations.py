@@ -370,7 +370,7 @@ class InheritedMutation(MappedMutationDetails, BioModel):
 
     def to_json(self, filter=lambda x: x):
         return {
-            'dbSNP id': self.db_snp_ids or [],
+            'dbSNP id': list(self.db_snp_ids) or [],
             # 'Is validated': bool(self.is_validated),
             # 'Is in PubMed Central': bool(self.is_in_pubmed_central),
             'Clinical': [
