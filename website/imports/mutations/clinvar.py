@@ -211,16 +211,23 @@ class ClinVarImporter(MutationImporter):
                 if trait_name in ignored_traits:
                     continue
 
-                if 'Mucolipidosis, Type' in trait_name:
-                    print(f'Working around changed name for {trait_name}')
-                    trait_name = trait_name.replace('Mucolipidosis, Type', 'Mucolipidosis')
-
                 try:
                     disease = Disease.query.filter_by(name=trait_name).one()
                 except:
-                    skipped_diseases.add(trait_name)
-                    print(f'Disease "{trait_name}" entry not found, skipping')
-                    continue
+                    resolved = False
+                    if 'Mucolipidosis, Type' in trait_name:
+                        print(f'Working around changed name for {trait_name}')
+                        trait_name = trait_name.replace('Mucolipidosis, Type', 'Mucolipidosis')
+                        try:
+                            disease = Disease.query.filter_by(name=trait_name).one()
+                            resolved = True
+                        except:
+                            pass
+
+                    if not resolved:
+                        skipped_diseases.add(trait_name)
+                        print(f'Disease "{trait_name}" entry not found, skipping')
+                        continue
 
                 if disease.clinvar_type:
                     if disease.clinvar_type != trait_type:
