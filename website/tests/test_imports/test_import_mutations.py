@@ -1,14 +1,12 @@
-from typing import Dict
-
 import pytest
 
-from imports.mutations import MutationImportManager, MutationImporter
 from database_testing import DatabaseTest
+from imports.mutations import MutationImportManager, MutationImporter
+from imports.mutations.clinvar import ClinVarImporter
 from models import (
     Protein, InheritedMutation, Disease, ExomeSequencingMutation, The1000GenomesMutation, MIMPMutation,
     Site, SiteType,
-    Mutation,
-    ClinicalData,
+    Mutation
 )
 from models import MC3Mutation
 from database import db
@@ -195,6 +193,23 @@ class TestImport(DatabaseTest):
         sample, count = samples.popitem()
         assert sample == 'TCGA-02-0003-01A-01D-1490-08'
         assert count == 3
+
+    def test_clinvar_disease_names(self):
+        beutify = ClinVarImporter._beautify_disease_name
+        assert beutify('B_Lymphoblastic_Leukemia/Lymphoma_with_t(v%3B11q23.3)%3B_KMT2A_Rearranged') == 'B Lymphoblastic Leukemia/Lymphoma with t(v;11q23.3); KMT2A Rearranged'
+        assert beutify('Ataxia___Neurologic_(child_onset)') == 'Ataxia _ Neurologic (child onset)'
+
+    def test_clinvar_significance(self):
+        clinvar = ClinVarImporter()
+        pathogenic_code = clinvar.inverse_significance_map['pathogenic']
+
+        sig_code, additional_significances = clinvar.parse_significance('Pathogenic, association')
+        assert sig_code == pathogenic_code
+        assert additional_significances == ['association']
+
+        sig_code, additional_significances = clinvar.parse_significance('Pathogenic')
+        assert sig_code == pathogenic_code
+        assert additional_significances == []
 
     def test_clinvar_import(self):
         muts_filename = make_named_gz_file(clinvar_mutations)

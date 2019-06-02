@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from typing import Mapping
 
@@ -36,6 +37,7 @@ class ClinVarImporter(MutationImporter):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.xml_path = None
+        self.skipped_significances = defaultdict(int)
 
     def load(self, path=None, update=False, clinvar_xml_path=None, **ignored_kwargs):
         self.xml_path = clinvar_xml_path or self.default_xml_path
@@ -43,10 +45,13 @@ class ClinVarImporter(MutationImporter):
 
     @staticmethod
     def _beautify_disease_name(name):
-        # edge cases:
-        # B_Lymphoblastic_Leukemia/Lymphoma_with_t(v%3B11q23.3)%3B_KMT2A_Rearranged
-        # Ataxia___Neurologic_
-        return name.replace('___', ' _ ').replace('_', ' ').replace('%3B', ';')
+        if '___' in name:
+            # for edge cases use a robust regexpr
+            name = re.sub('([^_])_([^_])', r'\1 \2', name).replace('___', ' _ ')
+        else:
+            # but for 99% of data, simple .replace() is much faster:
+            name = name.replace('_', ' ')
+        return name.replace('%3B', ';')
 
     def iterate_lines(self, path):
         return tsv_file_iterator(path, self.header, file_opener=gzip_open_text)
@@ -79,24 +84,51 @@ class ClinVarImporter(MutationImporter):
         for code, name in ClinicalData.significance_codes.items()
     }
 
+    significance_map = {
+        'pathologic': 'pathogenic',
+        'probable-pathogenic': 'likely pathogenic',
+        'cancer': 'pathogenic',
+        'untested': 'not provided',
+        'variant of unknown significance': 'uncertain significance',
+        'uncertain': 'uncertain significance',
+        'drug-response': 'drug response',
+        'probable-non-pathogenic': 'likely benign',
+        'probably not pathogenic': 'likely benign',
+        'non-pathogenic': 'benign',
+    }
+
+    def parse_significance(self, significance):
+
+        significance = significance.lower()
+
+        if significance in self.significance_map:
+            significance = self.significance_map[significance]
+
+        additional_significances = []
+
+        if significance not in self.inverse_significance_map:
+            assign_to = 'other'
+
+            first_significance, *additional_significances = significance.split(',')
+
+            if first_significance in self.inverse_significance_map:
+                assign_to = first_significance
+
+            if significance not in self.skipped_significances:
+                print(f'Unmapped significance status: "{significance}", assigning "{assign_to}"')
+
+            self.skipped_significances[significance] += 1
+
+            significance = assign_to
+
+        sig_code = self.inverse_significance_map[significance]
+
+        return sig_code, [sig.strip() for sig in additional_significances]
+
     def import_disease_associations(self):
         from xml.etree import ElementTree
-        from os.path import getsize
         from tqdm import tqdm
         import gzip
-
-        significance_map = {
-            'pathologic': 'pathogenic',
-            'probable-pathogenic': 'likely pathogenic',
-            'cancer': 'pathogenic',
-            'untested': 'not provided',
-            'variant of unknown significance': 'uncertain significance',
-            'uncertain': 'uncertain significance',
-            'drug-response': 'drug response',
-            'probable-non-pathogenic': 'likely benign',
-            'probably not pathogenic': 'likely benign',
-            'non-pathogenic': 'benign',
-        }
 
         ignored_traits = {
             'not specified',
@@ -108,7 +140,7 @@ class ClinVarImporter(MutationImporter):
             'variation to included disease',
             'confers sensitivity'
         }
-        skipped_significances = defaultdict(int)
+        self.skipped_significances = defaultdict(int)
 
         accepted_species = {'Human', 'human'}
         skipped_species = set()
@@ -213,7 +245,7 @@ class ClinVarImporter(MutationImporter):
 
                 try:
                     disease = Disease.query.filter_by(name=trait_name).one()
-                except:
+                except NoResultFound:
                     resolved = False
                     if 'Mucolipidosis, Type' in trait_name:
                         print(f'Working around changed name for {trait_name}')
@@ -221,7 +253,7 @@ class ClinVarImporter(MutationImporter):
                         try:
                             disease = Disease.query.filter_by(name=trait_name).one()
                             resolved = True
-                        except:
+                        except NoResultFound:
                             pass
 
                     if not resolved:
@@ -236,7 +268,7 @@ class ClinVarImporter(MutationImporter):
                             action = ''
                             if trait_type == 'Disease':
                                 disease.clinvar_type = trait_type
-                                action = ': overwritting the old type with "Disease"'
+                                action = ': overwriting the old type with "Disease"'
                             print(f'Conflicting trait types for "{disease.name}": "{disease.clinvar_type}" != "{trait_type}"{action}')
                 else:
                     disease.clinvar_type = trait_type
@@ -247,26 +279,10 @@ class ClinVarImporter(MutationImporter):
 
                 significance_annotation = significance_annotations[0]
 
-                significance = significance_annotation.find('Description').text.lower()
+                significance = significance_annotation.find('Description').text
                 review_status = significance_annotation.find('ReviewStatus').text
 
-                if significance in significance_map:
-                    significance = significance_map[significance]
-
-                additional_significances = None
-
-                if significance not in self.inverse_significance_map:
-                    skipped_significances[significance] += 1
-                    if significance not in skipped_significances:
-                        assign_to = 'other'
-                        first_significance, *additional_significances = significance.split(',')
-                        if first_significance in self.inverse_significance_map:
-                            assign_to = first_significance
-                        print(f'Unmapped significance status: "{significance}", assigning "{assign_to}"')
-                        significance = assign_to
-                    significance = 'other'
-
-                sig_code = self.inverse_significance_map[significance]
+                sig_code, additional_significances = self.parse_significance(significance)
 
                 disease_associations: ClinicalData = (
                     ClinicalData.query
@@ -295,7 +311,7 @@ class ClinVarImporter(MutationImporter):
                     root.clear()
 
         print(skipped_diseases)
-        print(skipped_significances)
+        print(self.skipped_significances)
 
         db.session.commit()
 
