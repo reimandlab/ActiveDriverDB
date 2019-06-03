@@ -45,29 +45,28 @@ class ClinicalData(BioModel):
 
     significance_codes = {
         # TODO: using simple enum might be better
-        0: 'Uncertain significance',
-        1: 'Not provided',
+
+        # 10-20 and 100-110 are not true ASN.1 terms mappings,
+        # 100-110 are codes for aggregate significances
+        # based on data from multiple submissions
+        5: 'Pathogenic',
+        4: 'Likely pathogenic',
+        100: 'Pathogenic/Likely pathogenic',
         2: 'Benign',
         3: 'Likely benign',
-        4: 'Likely pathogenic',
-        5: 'Pathogenic',
+        101: 'Benign/Likely benign',
         6: 'Drug response',
         7: 'Histocompatibility',
+        11: 'Confers sensitivity',
+        12: 'Risk factor',
+        13: 'Association',
+        15: 'Affects',
+        14: 'Protective',   # TODO?
+        0: 'Uncertain significance',
         255: 'Other',
-        # following significances have no mapped ASN.1 terms,
-        # thus we will use negative numbers:
-        -1: 'Confers sensitivity',
-        -2: 'Risk factor',
-        -3: 'Association',
-        -4: 'Protective',   # TODO?
-        -5: 'Affects',
-        # following codes are aggregate codes,
-        # based on data from multiple submissions
-        # these use negative, brginning at -100
-        -100: 'Pathogenic/Likely pathogenic',
-        -101: 'Benign/Likely benign',
-        -102: 'Conflicting interpretations of pathogenicity',
-        -103: 'Conflicting data from submitters'
+        1: 'Not provided',
+        102: 'Conflicting interpretations of pathogenicity',
+        103: 'Conflicting data from submitters'
     }
     sig_code = db.Column(db.Integer)
 
