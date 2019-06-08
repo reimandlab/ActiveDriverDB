@@ -59,8 +59,8 @@ def get_protein_muts(gene_name, mut) -> List[SearchResult]:
 
     associated with given gene which are correct (i.e. they do not
     lie outside the range of a protein isoform and have the same
-    reference residues). To speed up the lookup we use precomputed
-    berkleydb hashmap.
+    reference residues).
+    To speed up the lookup we use precomputed hashmap.
     """
     ref, pos, alt = decode_raw_mutation(mut)
 

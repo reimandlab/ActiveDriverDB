@@ -27,7 +27,7 @@ def import_genome_proteome_mappings(
     bdb.reset()
     bdb.close()
 
-    path = current_app.config['BDB_DNA_TO_PROTEIN_PATH']
+    path = current_app.config['HDB_DNA_TO_PROTEIN_PATH']
 
     if bdb_dir:
         path = bdb_dir + '/' + basename(path)
@@ -135,7 +135,7 @@ def import_aminoacid_mutation_refseq_mappings(
     bdb_refseq.reset()
     bdb_refseq.close()
 
-    path = current_app.config['BDB_GENE_TO_ISOFORM_PATH']
+    path = current_app.config['HDB_GENE_TO_ISOFORM_PATH']
 
     if bdb_dir:
         path = bdb_dir + '/' + basename(path)

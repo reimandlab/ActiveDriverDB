@@ -1,4 +1,4 @@
-from berkley_db import BerkleyHashSet
+from hash_set_db import HashSet
 
 
 def are_the_same(view_one, view_two, cast):
@@ -15,9 +15,8 @@ def are_the_same(view_one, view_two, cast):
     )
 
 
-def test_berkley_hash_set(tmpdir):
-    db_file = str(tmpdir.join('test-bhs.db'))
-    bhs = BerkleyHashSet(db_file)
+def test_hash_set(tmpdir):
+    bhs = HashSet(tmpdir)
 
     # should be empty when first created
     assert dict(bhs.items()) == {}

@@ -1,21 +1,20 @@
+import shutil
+from pathlib import Path
+
 import gc
 import os
 from collections import defaultdict
 from contextlib import contextmanager
 
-from os.path import abspath
-from os.path import basename
-from os.path import dirname
-from os.path import join
 from typing import Iterable, Union
 
-import bsddb3 as bsddb
+from database.lightning import LightningInterface
 
 
 class SetWithCallback(set):
     """A set implementation that triggers callbacks on `add` or `update`.
 
-    It has an important use in BerkleyHashSet database implementation:
+    It has an important use in HashSet database implementation:
     it allows a user to modify sets like native Python's structures while all
     the changes are forwarded to the database, without additional user's action.
     """
@@ -36,50 +35,51 @@ class SetWithCallback(set):
         return new_method_with_callback
 
 
-class BerkleyDatabaseNotOpened(Exception):
+class DatabaseNotOpened(Exception):
     pass
 
 
 def require_open(func):
     def func_working_only_if_db_is_open(self, *args, **kwargs):
         if not self.is_open:
-            raise BerkleyDatabaseNotOpened
+            raise DatabaseNotOpened
         return func(self, *args, **kwargs)
     return func_working_only_if_db_is_open
 
 
-class BerkleyHashSet:
-    """A hash-indexed database where values are equivalent to Python's sets.
-
-    It uses Berkley database for storage and accesses it through bsddb3 module.
-    """
+class HashSet:
+    """A hash-indexed database where values are equivalent to Python's sets."""
 
     def __init__(self, name=None, integer_values=False):
         self.is_open = False
+        self.path: Path
         self.integer_values = integer_values
         if name:
             self.open(name)
 
-    def _create_path(self):
+    def _create_path(self, name):
         """Returns path to a file containing the database.
 
         The file is not guaranteed to exist, although the 'databases' directory
         will be created (if it does not exist).
         """
-        base_dir = abspath(dirname(__file__))
-        db_dir = join(base_dir, dirname(self.name))
+        self.name = name
+        name = Path(name)
+        base_dir = Path(__file__).parent.resolve()
+        db_dir = base_dir / name
+        print(db_dir)
         os.makedirs(db_dir, exist_ok=True)
-        return join(db_dir, basename(self.name))
+        return db_dir
 
-    def open(self, name, mode='c', cache_size=20480 * 8):
+    def open(self, name, readonly=False, cache_size=20480 * 8):
         """Open hash database in a given mode.
 
         By default it opens a database in read-write mode and in case
         if a database of given name does not exists it creates one.
         """
-        self.name = name
-        self.path = self._create_path()
-        self.db = bsddb.hashopen(self.path, mode, cachesize=cache_size)
+        path = self._create_path(name)
+        self.path = path
+        self.db = LightningInterface(path, map_size=cache_size, readonly=readonly)
         self.is_open = True
 
     def close(self):
@@ -113,7 +113,7 @@ class BerkleyHashSet:
         """
         decode = bytes.decode
         split = str.split
-        for key, value in self.db.iteritems():
+        for key, value in self.db.items():
             try:
                 yield key.decode(), filter(bool, split(decode(value), '|'))
             except (KeyError, AttributeError):
@@ -126,7 +126,7 @@ class BerkleyHashSet:
         """
         decode = bytes.decode
         split = str.split
-        for key, value in self.db.iteritems():
+        for key, value in self.db.items():
             try:
                 yield filter(bool, split(decode(value), '|'))
             except (KeyError, AttributeError):
@@ -185,7 +185,7 @@ class BerkleyHashSet:
     @require_open
     def drop(self, not_exists_ok=True):
         try:
-            os.remove(self.path)
+            shutil.rmtree(self.path, ignore_errors=True)
         except FileNotFoundError:
             if not_exists_ok:
                 pass
@@ -204,7 +204,7 @@ class BerkleyHashSet:
         self.open(self.name)
 
 
-class BerkleyHashSetWithCache(BerkleyHashSet):
+class HashSetWithCache(HashSet):
 
     def __init__(self, name=None, integer_values=False):
         self.in_cached_session = False

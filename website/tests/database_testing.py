@@ -18,8 +18,8 @@ class DatabaseTest(TestCase):
         'bio': 'sqlite://'
     }
 
-    BDB_DNA_TO_PROTEIN_PATH = '.test_databases/dtp.db'
-    BDB_GENE_TO_ISOFORM_PATH = '.test_databases/gti.db'
+    HDB_DNA_TO_PROTEIN_PATH = '.test_databases/dna_to_protein/'
+    HDB_GENE_TO_ISOFORM_PATH = '.test_databases/gene_to_isoform/'
     SQL_LEVENSTHEIN = False
     USE_LEVENSTHEIN_MYSQL_UDF = False
     CONTACT_LIST = ['dummy.maintainer@domain.org']
