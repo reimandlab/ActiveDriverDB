@@ -1,3 +1,4 @@
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from warnings import warn
 from apscheduler.schedulers import SchedulerNotRunningError
@@ -11,10 +12,11 @@ from models import User
 
 
 temporary_directories = []
+hash_sets_path = Path('.test_databases/')
 
 
 def test_hash_set_path(prefix):
-    directory = TemporaryDirectory(dir='.test_databases/', prefix=prefix)
+    directory = TemporaryDirectory(dir=hash_sets_path.resolve(), prefix=prefix)
     # keep the object in memory to prevent deletion
     temporary_directories.append(directory)
     return directory.name
