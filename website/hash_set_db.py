@@ -2,7 +2,6 @@ import shutil
 from pathlib import Path
 
 import gc
-import os
 from collections import defaultdict
 from contextlib import contextmanager
 
@@ -67,8 +66,7 @@ class HashSet:
         name = Path(name)
         base_dir = Path(__file__).parent.resolve()
         db_dir = base_dir / name
-        print(db_dir)
-        os.makedirs(db_dir, exist_ok=True)
+        db_dir.mkdir(parents=True, exist_ok=True)
         return db_dir
 
     def open(self, name, readonly=False, cache_size=20480 * 8):
