@@ -1,4 +1,5 @@
 import os
+
 from flask import Flask
 from flask_apscheduler import APScheduler
 from flask_assets import Environment
@@ -185,3 +186,5 @@ def create_app(config_filename='config.py', config_override={}):
     jinja_filters['pluralize'] = pluralize
 
     return app
+
+

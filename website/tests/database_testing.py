@@ -5,6 +5,7 @@ from apscheduler.schedulers import SchedulerNotRunningError
 from flask_testing import TestCase
 
 from app import create_app, scheduler
+from hash_set_db import path_relative_to_app
 from database import db
 from database import bdb
 from database import bdb_refseq
@@ -16,7 +17,7 @@ hash_sets_path = Path('.test_databases/')
 
 
 def test_hash_set_path(prefix):
-    parent = hash_sets_path.resolve()
+    parent = path_relative_to_app(hash_sets_path)
     parent.mkdir(parents=True, exist_ok=True)
     directory = TemporaryDirectory(dir=parent, prefix=prefix)
     # keep the object in memory to prevent deletion
@@ -35,6 +36,7 @@ class DatabaseTest(TestCase):
 
     HDB_DNA_TO_PROTEIN_PATH = test_hash_set_path('dna_to_protein')
     HDB_GENE_TO_ISOFORM_PATH = test_hash_set_path('gene_to_isoform')
+    HDB_READONLY = False
     SQL_LEVENSTHEIN = False
     USE_LEVENSTHEIN_MYSQL_UDF = False
     CONTACT_LIST = ['dummy.maintainer@domain.org']

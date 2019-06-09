@@ -25,7 +25,7 @@ from models import GeneList
 from models import GeneListEntry
 
 
-def get_proteins(cached_proteins={}, reload_cache=False):
+def get_proteins(cached_proteins={}, reload_cache=False, options=None):
     """Fetch all proteins from database as refseq => protein object mapping.
 
     By default proteins will be cached at first call and until cached_proteins
@@ -33,8 +33,11 @@ def get_proteins(cached_proteins={}, reload_cache=False):
     cached results from the first time will be returned."""
     if reload_cache:
         cached_proteins.clear()
+    query = Protein.query
+    if options:
+        query = query.options(options)
     if not cached_proteins:
-        for protein in Protein.query:
+        for protein in query:
             cached_proteins[protein.refseq] = protein
     return cached_proteins
 

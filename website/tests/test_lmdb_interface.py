@@ -19,3 +19,6 @@ def test_basic_interface(tmpdir):
         items_gathered.add((key, value))
 
     assert items_expected == items_gathered
+
+    assert b'x' in db
+    assert b'z' not in db

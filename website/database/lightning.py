@@ -30,5 +30,10 @@ class LightningInterface:
         with self.env.begin() as transaction:
             return transaction.stat()['entries']
 
+    def __contains__(self, item):
+        indicator = object()
+        with self.env.begin() as transaction:
+            return transaction.get(item, default=indicator) is not indicator
+
     def close(self):
         self.env.close()
