@@ -32,7 +32,7 @@ def import_genome_proteome_mappings(
     if bdb_dir:
         path = bdb_dir + '/' + basename(path)
 
-    bdb.open(path, size=1e11)
+    bdb.open(path, size=5*1e10)
 
     with bdb.cached_session():
         add = bdb.cached_add
@@ -146,7 +146,7 @@ def import_aminoacid_mutation_refseq_mappings(
     if bdb_dir:
         path = bdb_dir + '/' + basename(path)
 
-    bdb_refseq.open(path, size=1e9)
+    bdb_refseq.open(path, size=2*1e10)
 
     genes = {
         protein: protein.gene_name
