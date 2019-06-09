@@ -16,7 +16,9 @@ hash_sets_path = Path('.test_databases/')
 
 
 def test_hash_set_path(prefix):
-    directory = TemporaryDirectory(dir=hash_sets_path.resolve(), prefix=prefix)
+    parent = hash_sets_path.resolve()
+    parent.mkdir(parents=True, exist_ok=True)
+    directory = TemporaryDirectory(dir=parent, prefix=prefix)
     # keep the object in memory to prevent deletion
     temporary_directories.append(directory)
     return directory.name
