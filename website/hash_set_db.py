@@ -56,7 +56,7 @@ class HashSet:
         if name:
             self.open(name)
 
-    def _create_path(self, name):
+    def _create_path(self, name) -> Path:
         """Returns path to a file containing the database.
 
         The file is not guaranteed to exist, although the 'databases' directory
@@ -189,6 +189,8 @@ class HashSet:
                 pass
             else:
                 raise
+        finally:
+            self.path.mkdir(exist_ok=True)
 
     @require_open
     def reset(self):
