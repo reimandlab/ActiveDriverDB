@@ -130,12 +130,7 @@ class HashSet:
     def update(self, key, value):
         key = bytes(key, 'utf-8')
         try:
-            items = set(
-                filter(
-                    bool,
-                    self.db.get(key).split(b'|')
-                )
-            )
+            items = self._to_set(self.db.get(key))
         except (KeyError, AttributeError):
             items = set()
 
@@ -146,15 +141,19 @@ class HashSet:
 
     def _get(self, key):
         try:
-            items = set(
-                filter(
-                    bool,
-                    self.db.get(key).split(b'|')
-                )
-            )
+            items = self._to_set(self.db.get(key))
         except (KeyError, AttributeError):
             items = set()
         return items
+
+    @staticmethod
+    def _to_set(value: bytes):
+        return set(
+            filter(
+                bool,
+                value.split(b'|')
+            )
+        )
 
     def add(self, key, value):
         key = bytes(key, 'utf-8')
@@ -204,69 +203,44 @@ class HashSetWithCache(HashSet):
 
     def __init__(self, name=None, integer_values=False):
         self.in_cached_session = False
-        self.keys_on_disk = None
         self.cache = {}
         self.i = None
         super().__init__(name=name, integer_values=integer_values)
 
-    def _cached_get_with_old_values(self, key):
-        cache = self.cache
-        if key in cache:
-            return cache[key]
-        else:
-            items = self._get(key)
-            cache[key] = items
-            return items
-
-    def _cached_get_ignore_old_values(self, key):
-        if key in self.keys_on_disk:
-            return self._get(key)
-        return self.cache[key]
-
-    _cached_get = _cached_get_with_old_values
-
     def cached_add(self, key: str, value: str):
-        items = self._cached_get(bytes(key, 'utf-8'))
-        items.add(bytes(value, 'utf-8'))
+        self.cache[bytes(key, 'utf-8')].add(bytes(value, 'utf-8'))
 
     def cached_add_integer(self, key: str, value: int):
-        items = self._cached_get(bytes(key, 'utf-8'))
-        items.add(value)
+        self.cache[bytes(key, 'utf-8')].add(b'%d' % value)
 
     def flush_cache(self):
         assert self.in_cached_session
 
         with self.db.env.begin(write=True) as transaction:
             put = transaction.put
-            if self.integer_values:
-                for key, items in self.cache.items():
-                    value = '|'.join(map(str, items))
-                    put(key, bytes(value, 'utf-8'))
-            else:
-                for key, items in self.cache.items():
-                    put(key, b'|'.join(items))
+            get = transaction.get
+            to_set = self._to_set
 
-        self.keys_on_disk.update(self.cache.keys())
+            for key, items in self.cache.items():
+                old_values = get(key)  # will return None if the key does not exist in the db
+                if old_values:
+                    items.update(to_set(old_values))
+
+            for key, items in self.cache.items():
+                put(key, b'|'.join(items))
+
         self.cache = defaultdict(set)
 
         self.i += 1
-        if self.i % 1000 == 999:
+        if self.i % 100 == 99:
             gc.collect()
 
     @contextmanager
-    def cached_session(self, overwrite_db_values=False):
+    def cached_session(self):
         self.i = 0
         old_cache = self.cache
-        old_cached_get = self._cached_get
         self.in_cached_session = True
-        self.keys_on_disk = set()
         self.cache = defaultdict(set)
-
-        self._cached_get = (
-            self._cached_get_ignore_old_values
-            if overwrite_db_values else
-            self._cached_get_with_old_values
-        )
 
         yield
 
@@ -274,7 +248,6 @@ class HashSetWithCache(HashSet):
 
         self.flush_cache()
         self.cache = old_cache
-        self._cached_get = old_cached_get
         self.in_cached_session = False
 
 

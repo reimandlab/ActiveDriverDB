@@ -211,11 +211,27 @@ class Mappings(CommandTarget):
     @command
     def load(self, args):
         print(f'Importing {args.restrict_to or "all"} mappings')
-        proteins = get_proteins()
 
         if args.restrict_to != 'aminoacid_refseq':
+            from models import Gene, Protein
+            from database import db
+            from collections import namedtuple
+
+            protein = namedtuple('Protein', ('id', 'refseq', 'sequence', 'gene_name'))
+
+            proteins = {
+                data[1]: protein(*data)
+                for data in (
+                    db.session.query(Protein.id, Protein.refseq, Protein.sequence, Gene.name)
+                    .select_from(Protein).join(Protein.gene)
+                )
+            }
             import_genome_proteome_mappings(proteins, bdb_dir=args.path)
+
         if args.restrict_to != 'genome_proteome':
+            from sqlalchemy.orm import load_only
+            proteins = get_proteins(options=load_only('id', 'refseq', 'sequence'))
+
             import_aminoacid_mutation_refseq_mappings(proteins, bdb_dir=args.path)
 
     @load.argument
