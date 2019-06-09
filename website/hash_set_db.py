@@ -69,7 +69,7 @@ class HashSet:
         db_dir.mkdir(parents=True, exist_ok=True)
         return db_dir
 
-    def open(self, name, readonly=False, cache_size=20480 * 8):
+    def open(self, name, readonly=False, size=1e5, write_map=True, **kwargs):
         """Open hash database in a given mode.
 
         By default it opens a database in read-write mode and in case
@@ -77,7 +77,7 @@ class HashSet:
         """
         path = self._create_path(name)
         self.path = path
-        self.db = LightningInterface(path, map_size=cache_size, readonly=readonly)
+        self.db = LightningInterface(path, map_size=size, readonly=readonly, writemap=write_map, **kwargs)
         self.is_open = True
 
     def close(self):
@@ -238,19 +238,21 @@ class HashSetWithCache(HashSet):
     def flush_cache(self):
         assert self.in_cached_session
 
-        if self.integer_values:
-            for key, items in self.cache.items():
-                value = '|'.join(map(str, items))
-                self.db[key] = bytes(value, 'utf-8')
-        else:
-            for key, items in self.cache.items():
-                self.db[key] = b'|'.join(items)
+        with self.db.env.begin(write=True) as transaction:
+            put = transaction.put
+            if self.integer_values:
+                for key, items in self.cache.items():
+                    value = '|'.join(map(str, items))
+                    put(key, bytes(value, 'utf-8'))
+            else:
+                for key, items in self.cache.items():
+                    put(key, b'|'.join(items))
 
         self.keys_on_disk.update(self.cache.keys())
         self.cache = defaultdict(set)
 
         self.i += 1
-        if self.i % 10 == 9:
+        if self.i % 1000 == 999:
             gc.collect()
 
     @contextmanager

@@ -32,7 +32,7 @@ def import_genome_proteome_mappings(
     if bdb_dir:
         path = bdb_dir + '/' + basename(path)
 
-    bdb.open(path, cache_size=20480 * 8 * 8 * 8 * 8)
+    bdb.open(path, size=1e11)
 
     with bdb.cached_session(overwrite_db_values=True):
         for line in read_from_gz_files(mappings_dir, mappings_file_pattern, after_batch=bdb.flush_cache):
@@ -140,7 +140,7 @@ def import_aminoacid_mutation_refseq_mappings(
     if bdb_dir:
         path = bdb_dir + '/' + basename(path)
 
-    bdb_refseq.open(path, cache_size=20480 * 8 * 8 * 8 * 8)
+    bdb_refseq.open(path, size=1e11)
 
     genes = {
         protein: protein.gene.name
