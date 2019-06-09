@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 import gc
@@ -56,16 +55,14 @@ class HashSet:
         if name:
             self.open(name)
 
-    def _create_path(self, name):
+    def _create_path(self, name) -> Path:
         """Returns path to a file containing the database.
 
         The file is not guaranteed to exist, although the 'databases' directory
         will be created (if it does not exist).
         """
         self.name = name
-        name = Path(name)
-        base_dir = Path(__file__).parent.resolve()
-        db_dir = base_dir / name
+        db_dir = path_relative_to_app(name)
         db_dir.mkdir(parents=True, exist_ok=True)
         return db_dir
 
@@ -183,7 +180,8 @@ class HashSet:
     @require_open
     def drop(self, not_exists_ok=True):
         try:
-            shutil.rmtree(self.path, ignore_errors=True)
+            for f in self.path.glob('*'):
+                f.unlink()
         except FileNotFoundError:
             if not_exists_ok:
                 pass
@@ -278,3 +276,9 @@ class HashSetWithCache(HashSet):
         self.cache = old_cache
         self._cached_get = old_cached_get
         self.in_cached_session = False
+
+
+def path_relative_to_app(path):
+    path = Path(path)
+    base_dir = Path(__file__).parent.resolve()
+    return base_dir / path
