@@ -109,7 +109,7 @@ class MutationSearch:
     def parse_vcf(self, vcf_file):
 
         for line in vcf_file:
-            line = line.decode('latin1').strip()
+            line = line.strip()
             if line.startswith('#') or line.startswith('Chr	Start'):
                 continue
             data = line.split()
