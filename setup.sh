@@ -27,13 +27,13 @@ sudo npm install -g autoprefixer postcss-cli nunjucks
 # currently integration fails for new versions but the fix seems to be already implemented on master branch
 sudo npm install -g clean-css@3.4.24
 
-# install broker for celery (note: command is Debian/Ubuntu specific)
+# install broker for celery
 sudo apt-get install rabbitmq-server
 
 # generate keys (for testing only!)
 mkdir -p celery
 cd celery
-ssh-keygen -t rsa -b 4096 -f worker.key -q -N ''
+ssh-keygen -t rsa -b 4096 -f worker.key -q -N '' -m PEM
 yes '' | openssl req -new -key worker.key -out worker.csr
 openssl x509 -req -days 1 -in worker.csr -signkey worker.key -out worker.crt
 cd ..
