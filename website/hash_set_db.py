@@ -1,21 +1,18 @@
+from pathlib import Path
+
 import gc
-import os
 from collections import defaultdict
 from contextlib import contextmanager
 
-from os.path import abspath
-from os.path import basename
-from os.path import dirname
-from os.path import join
 from typing import Iterable, Union
 
-import bsddb3 as bsddb
+from database.lightning import LightningInterface
 
 
 class SetWithCallback(set):
     """A set implementation that triggers callbacks on `add` or `update`.
 
-    It has an important use in BerkleyHashSet database implementation:
+    It has an important use in HashSet database implementation:
     it allows a user to modify sets like native Python's structures while all
     the changes are forwarded to the database, without additional user's action.
     """
@@ -36,50 +33,48 @@ class SetWithCallback(set):
         return new_method_with_callback
 
 
-class BerkleyDatabaseNotOpened(Exception):
+class DatabaseNotOpened(Exception):
     pass
 
 
 def require_open(func):
     def func_working_only_if_db_is_open(self, *args, **kwargs):
         if not self.is_open:
-            raise BerkleyDatabaseNotOpened
+            raise DatabaseNotOpened
         return func(self, *args, **kwargs)
     return func_working_only_if_db_is_open
 
 
-class BerkleyHashSet:
-    """A hash-indexed database where values are equivalent to Python's sets.
-
-    It uses Berkley database for storage and accesses it through bsddb3 module.
-    """
+class HashSet:
+    """A hash-indexed database where values are equivalent to Python's sets."""
 
     def __init__(self, name=None, integer_values=False):
         self.is_open = False
+        self.path: Path
         self.integer_values = integer_values
         if name:
             self.open(name)
 
-    def _create_path(self):
+    def _create_path(self, name) -> Path:
         """Returns path to a file containing the database.
 
         The file is not guaranteed to exist, although the 'databases' directory
         will be created (if it does not exist).
         """
-        base_dir = abspath(dirname(__file__))
-        db_dir = join(base_dir, dirname(self.name))
-        os.makedirs(db_dir, exist_ok=True)
-        return join(db_dir, basename(self.name))
+        self.name = name
+        db_dir = path_relative_to_app(name)
+        db_dir.mkdir(parents=True, exist_ok=True)
+        return db_dir
 
-    def open(self, name, mode='c', cache_size=20480 * 8):
+    def open(self, name, readonly=False, size=1e5, write_map=True, **kwargs):
         """Open hash database in a given mode.
 
         By default it opens a database in read-write mode and in case
         if a database of given name does not exists it creates one.
         """
-        self.name = name
-        self.path = self._create_path()
-        self.db = bsddb.hashopen(self.path, mode, cachesize=cache_size)
+        path = self._create_path(name)
+        self.path = path
+        self.db = LightningInterface(path, map_size=size, readonly=readonly, writemap=write_map, **kwargs)
         self.is_open = True
 
     def close(self):
@@ -113,7 +108,7 @@ class BerkleyHashSet:
         """
         decode = bytes.decode
         split = str.split
-        for key, value in self.db.iteritems():
+        for key, value in self.db.items():
             try:
                 yield key.decode(), filter(bool, split(decode(value), '|'))
             except (KeyError, AttributeError):
@@ -126,7 +121,7 @@ class BerkleyHashSet:
         """
         decode = bytes.decode
         split = str.split
-        for key, value in self.db.iteritems():
+        for key, value in self.db.items():
             try:
                 yield filter(bool, split(decode(value), '|'))
             except (KeyError, AttributeError):
@@ -135,12 +130,7 @@ class BerkleyHashSet:
     def update(self, key, value):
         key = bytes(key, 'utf-8')
         try:
-            items = set(
-                filter(
-                    bool,
-                    self.db.get(key).split(b'|')
-                )
-            )
+            items = self._to_set(self.db.get(key))
         except (KeyError, AttributeError):
             items = set()
 
@@ -151,15 +141,19 @@ class BerkleyHashSet:
 
     def _get(self, key):
         try:
-            items = set(
-                filter(
-                    bool,
-                    self.db.get(key).split(b'|')
-                )
-            )
+            items = self._to_set(self.db.get(key))
         except (KeyError, AttributeError):
             items = set()
         return items
+
+    @staticmethod
+    def _to_set(value: bytes):
+        return set(
+            filter(
+                bool,
+                value.split(b'|')
+            )
+        )
 
     def add(self, key, value):
         key = bytes(key, 'utf-8')
@@ -185,12 +179,15 @@ class BerkleyHashSet:
     @require_open
     def drop(self, not_exists_ok=True):
         try:
-            os.remove(self.path)
+            for f in self.path.glob('*'):
+                f.unlink()
         except FileNotFoundError:
             if not_exists_ok:
                 pass
             else:
                 raise
+        finally:
+            self.path.mkdir(exist_ok=True)
 
     @require_open
     def reset(self):
@@ -204,71 +201,48 @@ class BerkleyHashSet:
         self.open(self.name)
 
 
-class BerkleyHashSetWithCache(BerkleyHashSet):
+class HashSetWithCache(HashSet):
 
     def __init__(self, name=None, integer_values=False):
         self.in_cached_session = False
-        self.keys_on_disk = None
         self.cache = {}
         self.i = None
         super().__init__(name=name, integer_values=integer_values)
 
-    def _cached_get_with_old_values(self, key):
-        cache = self.cache
-        if key in cache:
-            return cache[key]
-        else:
-            items = self._get(key)
-            cache[key] = items
-            return items
-
-    def _cached_get_ignore_old_values(self, key):
-        if key in self.keys_on_disk:
-            return self._get(key)
-        return self.cache[key]
-
-    _cached_get = _cached_get_with_old_values
-
     def cached_add(self, key: str, value: str):
-        items = self._cached_get(bytes(key, 'utf-8'))
-        items.add(bytes(value, 'utf-8'))
+        self.cache[bytes(key, 'utf-8')].add(bytes(value, 'utf-8'))
 
     def cached_add_integer(self, key: str, value: int):
-        items = self._cached_get(bytes(key, 'utf-8'))
-        items.add(value)
+        self.cache[bytes(key, 'utf-8')].add(b'%d' % value)
 
     def flush_cache(self):
         assert self.in_cached_session
 
-        if self.integer_values:
-            for key, items in self.cache.items():
-                value = '|'.join(map(str, items))
-                self.db[key] = bytes(value, 'utf-8')
-        else:
-            for key, items in self.cache.items():
-                self.db[key] = b'|'.join(items)
+        with self.db.env.begin(write=True) as transaction:
+            put = transaction.put
+            get = transaction.get
+            to_set = self._to_set
 
-        self.keys_on_disk.update(self.cache.keys())
+            for key, items in self.cache.items():
+                old_values = get(key)  # will return None if the key does not exist in the db
+                if old_values:
+                    items.update(to_set(old_values))
+
+            for key, items in self.cache.items():
+                put(key, b'|'.join(items))
+
         self.cache = defaultdict(set)
 
         self.i += 1
-        if self.i % 10 == 9:
+        if self.i % 100 == 99:
             gc.collect()
 
     @contextmanager
-    def cached_session(self, overwrite_db_values=False):
+    def cached_session(self):
         self.i = 0
         old_cache = self.cache
-        old_cached_get = self._cached_get
         self.in_cached_session = True
-        self.keys_on_disk = set()
         self.cache = defaultdict(set)
-
-        self._cached_get = (
-            self._cached_get_ignore_old_values
-            if overwrite_db_values else
-            self._cached_get_with_old_values
-        )
 
         yield
 
@@ -276,5 +250,10 @@ class BerkleyHashSetWithCache(BerkleyHashSet):
 
         self.flush_cache()
         self.cache = old_cache
-        self._cached_get = old_cached_get
         self.in_cached_session = False
+
+
+def path_relative_to_app(path):
+    path = Path(path)
+    base_dir = Path(__file__).parent.resolve()
+    return base_dir / path

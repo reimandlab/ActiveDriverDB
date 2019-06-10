@@ -30,8 +30,9 @@ SQLALCHEMY_BINDS = {
 SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 # -Hash-key databases settings
-BDB_DNA_TO_PROTEIN_PATH = 'databases/berkley_hash.db'
-BDB_GENE_TO_ISOFORM_PATH = 'databases/berkley_hash_refseq.db'
+HDB_DNA_TO_PROTEIN_PATH = 'databases/dna_to_protein/'
+HDB_GENE_TO_ISOFORM_PATH = 'databases/gene_to_isoform/'
+HDB_READONLY = False
 
 # -Application settings
 # counting everything in the database in order to prepare statistics might be

@@ -1,19 +1,6 @@
 #!/usr/bin/env bash
-# Install Berkley DB
-mkdir downloads
-cd downloads
-wget -N http://download.oracle.com/berkeley-db/db-6.2.23.NC.tar.gz -O db.NC.tar.gz
-tar -xzf db.NC.tar.gz
-cd db-6.2.23.NC/build_unix
-sudo ../dist/configure
-sudo make
-sudo make install
-cd ..
-cd ../..
-
-export BERKELEYDB_DIR=/usr/local/BerkeleyDB.6.2
-export LD_LIBRARY_PATH=/usr/local/BerkeleyDB.6.2/lib:$LD_LIBRARY_PATH
-sudo pip3 install bsddb3
+sudo apt-get install libffi-dev python3-dev build-essential
+pip install lmdb
 
 # Use examplar configuration for the beginning
 cd website
@@ -79,8 +66,8 @@ setfacl -m u:celery:rwx website/logs
 setfacl -m u:celery:rwx website/logs/app.log
 
 setfacl -m u:celery:rwx website/databases
-setfacl -m u:celery:rwx website/databases/berkley_hash_refseq.db
-setfacl -m u:celery:rwx website/databases/berkley_hash.db
+# setfacl -m u:celery:rwx website/databases/berkley_hash_refseq.db
+# setfacl -m u:celery:rwx website/databases/berkley_hash.db
 
 # redis
 sudo apt-get install redis-server

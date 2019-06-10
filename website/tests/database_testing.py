@@ -1,12 +1,28 @@
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from warnings import warn
 from apscheduler.schedulers import SchedulerNotRunningError
 from flask_testing import TestCase
 
 from app import create_app, scheduler
+from hash_set_db import path_relative_to_app
 from database import db
 from database import bdb
 from database import bdb_refseq
 from models import User
+
+
+temporary_directories = []
+hash_sets_path = Path('.test_databases/')
+
+
+def test_hash_set_path(prefix):
+    parent = path_relative_to_app(hash_sets_path)
+    parent.mkdir(parents=True, exist_ok=True)
+    directory = TemporaryDirectory(dir=parent, prefix=prefix)
+    # keep the object in memory to prevent deletion
+    temporary_directories.append(directory)
+    return directory.name
 
 
 class DatabaseTest(TestCase):
@@ -18,8 +34,9 @@ class DatabaseTest(TestCase):
         'bio': 'sqlite://'
     }
 
-    BDB_DNA_TO_PROTEIN_PATH = '.test_databases/dtp.db'
-    BDB_GENE_TO_ISOFORM_PATH = '.test_databases/gti.db'
+    HDB_DNA_TO_PROTEIN_PATH = test_hash_set_path('dna_to_protein')
+    HDB_GENE_TO_ISOFORM_PATH = test_hash_set_path('gene_to_isoform')
+    HDB_READONLY = False
     SQL_LEVENSTHEIN = False
     USE_LEVENSTHEIN_MYSQL_UDF = False
     CONTACT_LIST = ['dummy.maintainer@domain.org']

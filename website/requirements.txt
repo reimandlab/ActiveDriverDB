@@ -18,7 +18,6 @@ mysqlclient
 tqdm
 python-Levenshtein
 flask_login
-bsddb3
 Flask-Mail
 jinja2_pluralize
 yuicompressor
@@ -36,4 +35,3 @@ pyBigWig
 pyinterval
 cryptography
 Werkzeug==0.15.2
-
