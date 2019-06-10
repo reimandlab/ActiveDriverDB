@@ -431,8 +431,8 @@ class TestSearchView(ViewTest):
             follow_redirects=True
         )
 
-        assert raw_response.json['status'] == 'PENDING'
-        assert raw_response.json['progress'] == 0
+        assert raw_response.json['status'] in {'PENDING', 'PROGRESS'}
+        assert raw_response.json['progress'] >= 0
 
         remaining_trials = 100
 

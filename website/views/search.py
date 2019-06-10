@@ -274,7 +274,14 @@ class SearchView(FlaskView):
             store_on_server = request.form.get('store_on_server', False)
 
             if not use_celery:
-                mutation_search = MutationSearch(vcf_file, textarea_query, filter_manager)
+                if vcf_file:
+                    vcf_file = [
+                        line.decode()
+                        for line in vcf_file
+                    ]
+                mutation_search = MutationSearch(
+                    vcf_file, textarea_query, filter_manager
+                )
 
             if store_on_server:
                 name = request.form.get('dataset_name', None)
