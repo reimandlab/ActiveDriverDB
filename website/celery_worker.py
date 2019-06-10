@@ -1,5 +1,5 @@
 from app import celery
 from app import create_app
 
-app = create_app(config_override={'HDB_READONLY': True})
+app = create_app(config_override={'HDB_READONLY': True, 'LOAD_VIEWS': False})
 celery

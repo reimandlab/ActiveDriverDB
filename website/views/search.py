@@ -1,5 +1,7 @@
-import json
+import codecs
+import pickle
 from collections import defaultdict
+from typing import Dict
 from urllib.parse import unquote
 
 from flask import make_response, redirect, abort
@@ -200,10 +202,37 @@ def make_widgets(filter_manager):
     }
 
 
+class SearchTask:
+
+    def __init__(self, vcf_file, textarea_query: str, filter_manager: SearchViewFilters, dataset_uri=None):
+        self.vcf_file = vcf_file
+        self.textarea_query = textarea_query
+        self.filter_manager = filter_manager
+        self.dataset_uri = dataset_uri
+
+    def serialize(self) -> Dict:
+        return {
+            'vcf_file': self.vcf_file,
+            'textarea_query': self.textarea_query,
+            'filter_manager': codecs.encode(pickle.dumps(self.filter_manager), 'base64').decode(),
+            'dataset_uri': self.dataset_uri
+        }
+
+    @classmethod
+    def from_serialized(cls, vcf_file, textarea_query, filter_manager, dataset_uri):
+        return cls(
+            vcf_file,
+            textarea_query,
+            pickle.loads(codecs.decode(filter_manager.encode(), 'base64')),
+            dataset_uri
+        )
+
+
 @celery.task
-def search_task(vcf_file, textarea_query, filter_manager, dataset_uri=None):
-    mutation_search = MutationSearch(vcf_file, textarea_query, filter_manager)
-    return mutation_search, dataset_uri
+def search_task(task_data):
+    task = SearchTask.from_serialized(**task_data)
+    mutation_search = MutationSearch(task.vcf_file, task.textarea_query, task.filter_manager)
+    return mutation_search, task.dataset_uri
 
 
 class SearchView(FlaskView):
@@ -358,11 +387,13 @@ class SearchView(FlaskView):
 
             if use_celery:
                 mutation_search = search_task.delay(
-                    # vcf_file is not serializable but list of lines is
-                    vcf_file.readlines() if vcf_file else None,
-                    textarea_query,
-                    filter_manager,
-                    dataset.uri if store_on_server else None
+                    SearchTask(
+                        # vcf_file is not serializable but list of lines is
+                        vcf_file.readlines() if vcf_file else None,
+                        textarea_query,
+                        pickle.dumps(filter_manager),
+                        dataset_uri=dataset.uri if store_on_server else None
+                    ).serialize()
                 )
 
                 return redirect(url_for('SearchView:progress', task_id=mutation_search.task_id))
