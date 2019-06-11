@@ -204,6 +204,8 @@ def cancer_mutations(result, significant=True):
         result['all_active_mutations']
     )
 
+    cancer_by_code = {cancer.code: cancer.name for cancer in Cancer.query}
+
     mutations = mutations.assign(cancer_name=Series(
         cancer_by_code[mutation.cancer_type]
         for mutation in mutations.itertuples(index=False)
@@ -223,7 +225,6 @@ def merged_cancer_mutations(site_type):
 @cases(site_type=site_types)
 def cancers_ontology(site_type, significant=True, vector=False):
     result = pan_cancer_analysis(site_type)
-    cancer_by_code = {cancer.code: cancer.name for cancer in Cancer.query}
 
     mutations = cancer_mutations(result, significant=significant)
 

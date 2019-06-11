@@ -5,7 +5,7 @@ from pandas import DataFrame
 from sqlalchemy import and_
 from sqlalchemy.orm import aliased
 
-from models import SiteType, Site, Protein, Mutation, source_manager, InheritedMutation, db, MC3Mutation
+from models import SiteType, Site, Protein, Mutation, source_manager, InheritedMutation, db
 
 
 def site_type_filter_from_str(query, site=Site):
@@ -26,7 +26,7 @@ def site_type_filter_from_str(query, site=Site):
     return site_filter
 
 
-def ptm_sites_proximity(type_1: str, type_2: str, distance: int=7, only_preferred=True) -> int:
+def ptm_sites_proximity(type_1: str, type_2: str, distance: int = 7, only_preferred=True) -> int:
     site_1 = Site
     site_2 = aliased(Site)
 
@@ -124,7 +124,7 @@ def glycosylation_muts(only_preferred=True):
     return df
 
 
-def ptm_sites_in_proximity(type_1: str, type_2: str, distance: int=7, only_preferred=True) -> int:
+def ptm_sites_in_proximity(type_1: str, type_2: str, distance: int = 7, only_preferred=True):
     site_1 = Site
     site_2 = aliased(Site)
 
@@ -159,7 +159,7 @@ def count_ptm_sites_in_proximity(*args, **kwargs):
     return sites.count()
 
 
-def mutated_ptm_sites_in_proximity(mutation_source, type_1: str, type_2: str, mutation_filter=True, distance: int=7, only_preferred=True) -> int:
+def mutated_ptm_sites_in_proximity(mutation_source, type_1: str, type_2: str, mutation_filter=True, distance: int = 7, only_preferred=True):
     sites, (site_1, site_2) = ptm_sites_in_proximity(type_1, type_2, distance, only_preferred)
     for site in (site_1, site_2):
         sites = sites.filter(
@@ -192,7 +192,6 @@ def mutated_sites_overlap(site_type_name, cases, only_preferred=True, additional
 
 
 def total_mutated_sites_overlap(site_type_name, cases, other_type_names, only_preferred=True):
-    results = {}
     all_sites = set()
     for source, additional_filter in cases:
         for type_query in other_type_names:

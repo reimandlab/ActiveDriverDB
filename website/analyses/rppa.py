@@ -1,6 +1,5 @@
 from collections import defaultdict
 from statistics import mean
-from functools import lru_cache
 
 from numpy import isnan
 from pandas import read_table, MultiIndex, concat
@@ -106,7 +105,6 @@ def differential_expression_ptm_muts(gene, modification_type, cancer_name=None, 
         }
         print(len(limited_muts))
 
-        #print(len(muts))
         for row in muts.itertuples(index=False):
             k = (int(row.position), row.mut_residue, row.isoform)
             print(k,k in limited_muts)
