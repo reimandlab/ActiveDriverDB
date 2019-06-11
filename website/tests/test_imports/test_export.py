@@ -149,8 +149,6 @@ class TestExport(DatabaseTest):
         filename = make_named_temp_file()
 
         with self.app.app_context():
-            from models import clear_cache
-            clear_cache()
 
             test_models = create_test_models()
             db.session.add_all(test_models.values())

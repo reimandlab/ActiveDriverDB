@@ -9,8 +9,8 @@ from hash_set_db import path_relative_to_app
 from database import db
 from database import bdb
 from database import bdb_refseq
-from models import User
-
+from helpers.cache import purge_all_caches
+from models import User, clear_cache
 
 temporary_directories = []
 hash_sets_path = Path('.test_databases/')
@@ -114,6 +114,12 @@ class DatabaseTest(TestCase):
         self.client.post = client_post
 
     def tearDown(self):
+
+        # lru cache for site types
+        clear_cache()
+
+        # disk caches
+        purge_all_caches()
 
         db.session.remove()
         db.drop_all()
