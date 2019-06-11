@@ -1,19 +1,6 @@
 #!/usr/bin/env bash
-# Install Berkley DB
-mkdir downloads
-cd downloads
-wget -N http://download.oracle.com/berkeley-db/db-6.2.23.NC.tar.gz -O db.NC.tar.gz
-tar -xzf db.NC.tar.gz
-cd db-6.2.23.NC/build_unix
-sudo ../dist/configure
-sudo make
-sudo make install
-cd ..
-cd ../..
-
-export BERKELEYDB_DIR=/usr/local/BerkeleyDB.6.2
-export LD_LIBRARY_PATH=/usr/local/BerkeleyDB.6.2/lib:$LD_LIBRARY_PATH
-sudo pip3 install bsddb3
+sudo apt-get install libffi-dev python3-dev build-essential
+pip install lmdb
 
 # Use examplar configuration for the beginning
 cd website
@@ -40,13 +27,13 @@ sudo npm install -g autoprefixer postcss-cli nunjucks
 # currently integration fails for new versions but the fix seems to be already implemented on master branch
 sudo npm install -g clean-css@3.4.24
 
-# install broker for celery (note: command is Debian/Ubuntu specific)
+# install broker for celery
 sudo apt-get install rabbitmq-server
 
 # generate keys (for testing only!)
 mkdir -p celery
 cd celery
-ssh-keygen -t rsa -b 4096 -f worker.key -q -N ''
+ssh-keygen -t rsa -b 4096 -f worker.key -q -N '' -m PEM
 yes '' | openssl req -new -key worker.key -out worker.csr
 openssl x509 -req -days 1 -in worker.csr -signkey worker.key -out worker.crt
 cd ..
@@ -57,8 +44,8 @@ sudo useradd -g celery celery
 
 cp celeryd .autogen_celeryd
 
-sed "s|^CELERY_BIN=.*|CELERY_BIN=\"$(whereis celery | cut -f 2 -d ' ')\"|" .autogen_celeryd
-sed "s|^CELERYD_CHDIR=.*|CELERYD_CHDIR=\"$(pwd)\/website\"|" .autogen_celeryd
+sed "s|^CELERY_BIN=.*|CELERY_BIN=\"$(which celery)\"|" .autogen_celeryd -i
+sed "s|^CELERYD_CHDIR=.*|CELERYD_CHDIR=\"$(pwd)\/website\"|" .autogen_celeryd -i
 
 echo "Please modify /etc/default/celeryd script to adjust absolute paths to celery executable and website dir"
 sudo cp .autogen_celeryd /etc/default/celeryd
@@ -78,9 +65,8 @@ setfacl -m u:celery:rwx website
 setfacl -m u:celery:rwx website/logs
 setfacl -m u:celery:rwx website/logs/app.log
 
-setfacl -m u:celery:rwx website/databases
-setfacl -m u:celery:rwx website/databases/berkley_hash_refseq.db
-setfacl -m u:celery:rwx website/databases/berkley_hash.db
+setfacl -R -m u:celery:rwx celery
+setfacl -R -m u:celery:rwx website/databases
 
 # redis
 sudo apt-get install redis-server
@@ -96,7 +82,8 @@ sudo apt-get install r-base
 sudo apt-get install r-base-dev
 
 # install ActiveDriver and progress bar
-# R -e 'install.packages(c("ActiveDriver", "pbmcapply"))'
+# R -e 'install.packages("ActiveDriver")'
+sudo R -e 'install.packages("pbmcapply")'
 
 # fetch forked copy of ActiveDriver
 cd website
@@ -119,11 +106,13 @@ cd ..
 # sudo apt-get install libcurl4-gnutls-dev
 # sudo R -e 'install.packages("RCurl", repos = "http://cran.us.r-project.org")'
 
-sudo R -e 'source("https://bioconductor.org/biocLite.R"); biocLite(c("S4Vectors", "GenomicRanges", "Biostrings", "BiocGenerics"))'
+sudo R -e 'install.packages("BiocManager")'
+sudo R -e 'BiocManager::install(c("S4Vectors", "GenomicRanges", "Biostrings", "BiocGenerics"))'
 #sudo R -e 'install.packages("devtools", repos = "http://cran.us.r-project.org")'
 #sudo R -e 'devtools::install("rmimp", dependencies = TRUE)'
 
 sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
+export R_INSTALL_STAGED=false
 sudo R -e 'install.packages("rmimp", repos=NULL)'
 
 # sudo apt-get install libcairo2-dev - needed for svglite

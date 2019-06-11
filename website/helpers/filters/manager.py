@@ -297,7 +297,11 @@ class FilterManager:
         if args.get('clear_filters'):
             filters_list = self._parse_fallback_query({})
         elif args.get('fallback'):
-            filters_list = self._parse_fallback_query(dict(args))
+            data = {
+                key: value[0] if isinstance(value, list) and len(value) == 1 else value
+                for key, value in args.to_dict(flat=False).items()
+            }
+            filters_list = self._parse_fallback_query(data)
         else:
             filters_list = self._parse_string(
                 args.get('filters', '')
@@ -419,7 +423,11 @@ class FilterManager:
 
             query_string = '&'.join(
                 [
-                    arg + '=' + value[0]
+                    arg + '=' + (
+                        value[0]
+                        if (isinstance(value, list) and len(value) == 1) else
+                        value
+                    )
                     for arg, value in args.items()
                     if not (arg.startswith('filter[') or arg == 'fallback')
                 ]

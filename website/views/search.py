@@ -1,4 +1,4 @@
-import json
+import pickle
 from collections import defaultdict
 from urllib.parse import unquote
 
@@ -22,21 +22,20 @@ from models import (
     OrderedDict,
     List,
 )
+from search.filters import SearchViewFilters
 from search.mutation import MutationSearch
 from models import Gene
 from models import Mutation
 from models import UsersMutationsDataset
 from sqlalchemy import exists, or_, text
-from helpers.filters.manager import quote_if_needed, FilterManager
-from helpers.filters import Filter
+from helpers.filters.manager import quote_if_needed
 from helpers.widgets import FilterWidget
 from search.mutation_result import SearchResult
+from search.task import SearchTask, search_task
 from views.gene import prepare_subqueries
 from search.protein_mutations import get_protein_muts
 from database import db, levenshtein_sorted, bdb
 from search.gene import GeneMatch, search_feature_engines
-
-search_features = [engine.name for engine in search_feature_engines]
 
 
 def create_engines(options=None):
@@ -120,55 +119,6 @@ def search_proteins(
     return results[:limit]
 
 
-class Feature:
-    """Target class for feature filtering"""
-    pass
-
-
-class Search:
-    pass
-
-
-class SearchViewFilters(FilterManager):
-
-    def __init__(self, **kwargs):
-
-        available_features = search_features
-        active_features = set(available_features) - {'summary'}
-
-        filters = [
-            # Why default = False? Due to used widget: checkbox.
-            # It is not possible to distinguish between user not asking for
-            # all mutations (so sending nothing in post, since un-checking it
-            # will cause it to be skipped in the form) or user doing nothing
-
-            # Why or? Take a look on table:
-            # is_ptm    show all muts (by default only ptm)     include?
-            # 0         0                                       0
-            # 0         1                                       1
-            # 1         0                                       1
-            # 1         1                                       1
-            Filter(
-                Mutation, 'is_ptm', comparators=['or'],
-                default=False
-            ),
-            Filter(
-                Protein, 'has_ptm_mutations', comparators=['eq'],
-                as_sqlalchemy=True
-            ),
-            Filter(
-                Feature, 'name', comparators=['in'],
-                default=list(active_features),
-                choices=available_features,
-            ),
-            Filter(
-                Search, 'query', comparators=['eq'],
-            ),
-        ]
-        super().__init__(filters)
-        self.update_from_request(request)
-
-
 def make_widgets(filter_manager):
     return {
         'proteins': {
@@ -198,12 +148,6 @@ def make_widgets(filter_manager):
             ),
         ]
     }
-
-
-@celery.task
-def search_task(vcf_file, textarea_query, filter_manager, dataset_uri=None):
-    mutation_search = MutationSearch(vcf_file, textarea_query, filter_manager)
-    return mutation_search, dataset_uri
 
 
 class SearchView(FlaskView):
@@ -330,7 +274,14 @@ class SearchView(FlaskView):
             store_on_server = request.form.get('store_on_server', False)
 
             if not use_celery:
-                mutation_search = MutationSearch(vcf_file, textarea_query, filter_manager)
+                if vcf_file:
+                    vcf_file = [
+                        line.decode()
+                        for line in vcf_file
+                    ]
+                mutation_search = MutationSearch(
+                    vcf_file, textarea_query, filter_manager
+                )
 
             if store_on_server:
                 name = request.form.get('dataset_name', None)
@@ -358,11 +309,13 @@ class SearchView(FlaskView):
 
             if use_celery:
                 mutation_search = search_task.delay(
-                    # vcf_file is not serializable but list of lines is
-                    vcf_file.readlines() if vcf_file else None,
-                    textarea_query,
-                    filter_manager,
-                    dataset.uri if store_on_server else None
+                    SearchTask(
+                        # vcf_file is not serializable but list of lines is
+                        vcf_file.readlines() if vcf_file else None,
+                        textarea_query,
+                        pickle.dumps(filter_manager),
+                        dataset_uri=dataset.uri if store_on_server else None
+                    ).serialize()
                 )
 
                 return redirect(url_for('SearchView:progress', task_id=mutation_search.task_id))
@@ -376,6 +329,9 @@ class SearchView(FlaskView):
                 )
                 return redirect(url_for('SearchView:mutations'))
             mutation_search, dataset_uri = celery_task.result
+
+            from helpers.pickle import unpickle_str
+            mutation_search = unpickle_str(mutation_search)
 
             if dataset_uri:
                 url = url_for(

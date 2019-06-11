@@ -25,18 +25,19 @@ class BaseMutationsImporter:
 
         key = (pos, protein_id, alt)
         if key in self.mutations:
-            mutation_id = self.mutations[key][0]
+            return self.mutations[key][0]
         else:
-            try:
-                mutation = Mutation.query.filter_by(
-                    position=pos, protein_id=protein_id, alt=alt
-                ).one()
-                mutation_id = mutation.id
-            except NoResultFound:
+
+            mutation_id = db.session.query(Mutation.id).filter_by(
+                position=pos, protein_id=protein_id, alt=alt
+            ).scalar()
+
+            if mutation_id is None:
                 self.highest_base_id += 1
                 mutation_id = self.highest_base_id
                 self.mutations[key] = (mutation_id, is_ptm)
-        return mutation_id
+
+            return mutation_id
 
     def insert(self):
         for chunk in chunked_list(self.mutations.items()):

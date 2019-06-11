@@ -33,10 +33,10 @@ def fast_gzip_read(file_name, mode='r', processes=4, as_str=False):
     if mode != 'r':
         raise ValueError('Only "r" mode is supported')
 
-    command = 'pigz -d -p ' + str(processes) + ' -c %s'
+    command = f'pigz -d -p {processes} -c {file_name}'
 
     p = subprocess.Popen(
-        (command % file_name).split(' '),
+        command.split(' '),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         universal_newlines=as_str
@@ -72,6 +72,11 @@ def count_lines(file_object):
     return count
 
 
+def count_lines_tsv_gz(filename):
+    with fast_gzip_read(filename) as f:
+        return sum(1 for _ in f)
+
+
 def iterate_tsv_gz_file(
         filename, file_header=None
 ):
@@ -81,8 +86,7 @@ def iterate_tsv_gz_file(
 
     Progress bar is embedded.
     """
-    with fast_gzip_read(filename) as f:
-        data_lines_count = sum(1 for _ in f)
+    data_lines_count = count_lines_tsv_gz(filename)
 
     with fast_gzip_read(filename) as f:
         if file_header:
@@ -98,11 +102,16 @@ def iterate_tsv_gz_file(
             yield line
 
 
-def tsv_file_iterator(
-    filename, file_header=None, file_opener=open, mode='r'
-):
+def count_lines_tsv(filename, file_opener=open, mode='r'):
     with file_opener(filename, mode=mode) as f:
-        data_lines_count = count_lines(f)
+        return count_lines(f)
+
+
+def tsv_file_iterator(
+    filename, file_header=None, file_opener=open, mode='r',
+    skip=None, limit=None
+):
+    data_lines_count = count_lines_tsv(filename, file_opener=file_opener, mode=mode)
 
     with file_opener(filename, mode=mode) as f:
         if file_header:
@@ -114,8 +123,20 @@ def tsv_file_iterator(
                     'expected: %s, found: %s' % (file_header, header)
                 )
 
-        for line in tqdm(f, total=data_lines_count, unit=' lines'):
-            yield line.rstrip().split('\t')
+        if skip:
+            for _ in range(skip):
+                f.readline()
+
+        if limit:
+            total = min([data_lines_count, limit])
+            for line in tqdm(f, total=total, unit=' lines'):
+                yield line.rstrip().split('\t')
+                limit -= 1
+                if limit <= 0:
+                    return
+        else:
+            for line in tqdm(f, total=data_lines_count, unit=' lines'):
+                yield line.rstrip().split('\t')
 
 
 def parse_tsv_file(

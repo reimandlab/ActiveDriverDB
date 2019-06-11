@@ -34,6 +34,7 @@ class MutationImportManager:
         return {
             importer.name: importer
             for importer in MutationImporter.subclassess
+            if not importer.__abstractmethods__
         }
 
     def select(self, restrict_to: List[str]):

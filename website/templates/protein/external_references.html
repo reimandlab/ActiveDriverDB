@@ -1,6 +1,7 @@
 {% set references = protein.external_references %}
 {% set target = 'target="_blank"' | safe %}
 {% from "help.html" import help with context %}
+{% from "utils.html" import uniprot_link %}
 
 <div class="panel panel-default external-references panel-with-btn">
   <div class="panel-heading">
@@ -12,7 +13,7 @@
     </div>
     <div class="heading-right">
       <div class="source-acknowledgement">
-        Mappings retrieved from NCBI & Uniprot.
+        Mappings retrieved from NCBI & UniProt.
       </div>
     </div>
   </div>
@@ -48,24 +49,14 @@
     {% if references.uniprot_entries %}
       <dl class="uniprot">
         <dt>
-          Uniprot
+          UniProt
           {{ help('external-reference-uniprot', 'small-top') }}
         </dt>
         <dd>
           <div class="table">
           {% for uniprot in references.uniprot_entries | sort(attribute='reviewed', reverse=True) %}
             <ul class="list-inline">
-              <li>
-                {% set reviewed = "reviewed" if uniprot.reviewed else "unreviewed" %}
-                <div class="status-indicator {{ reviewed }}" title="{{ reviewed | title }} entry">
-                  <span class="glyphicon glyphicon-file"></span>
-                  {% if uniprot.reviewed %}
-                    <span class="glyphicon glyphicon-star-empty star"></span>
-                  {% endif %}
-                </div>
-                <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ uniprot.accession }}</a>{% if uniprot.isoform != 1 %},
-                  <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}#{{ uniprot.accession }}-{{ uniprot.isoform }}" {{ target }}>isoform {{ uniprot.isoform }}</a>
-                {% endif %}
+              <li> {{ uniprot_link(uniprot, target) }}
               <li><a href="http://www.phosphosite.org/uniprotAccAction?id={{ uniprot.accession }}" {{ target }}>PhosphoSitePlus</a>
               <li><a href="http://pfam.xfam.org/protein?acc={{ uniprot.accession }}" {{ target }}>PFAM</a>
               <li><a href="http://string-db.org/newstring_cgi/show_network_section.pl?identifier={{ uniprot.accession }}" {{ target }}>STRING</a>

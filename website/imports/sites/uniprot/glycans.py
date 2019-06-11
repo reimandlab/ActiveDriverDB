@@ -10,7 +10,7 @@ link_types = ['S', 'N', 'C', 'O']
 class GlycosylationUniprotImporter(UniprotImporter):
     """Imports glycosylation sites from SwissProt."""
 
-    source_name = 'Uniprot'
+    source_name = 'UniProt'
     site_types = [
         'glycosylation',
         *[f'{link_type}-glycosylation' for link_type in link_types]

@@ -1,0 +1,2782 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ReleaseSet Dated="2019-05-03" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Type="full" xsi:noNamespaceSchemaLocation="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/xsd_public/clinvar_public_1.57.xsd">
+
+	<ClinVarSet ID="39090288">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_000546.5(TP53):c.1136G&gt;T (p.Arg379Leu) AND Li-Fraumeni syndrome</Title>
+		<ReferenceClinVarAssertion DateCreated="2015-10-11" DateLastUpdated="2019-03-30" ID="474580">
+			<ClinVarAccession Acc="RCV000199273" Version="1" Type="RCV" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2015-06-09">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="38069197">
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="216463" Acc="VCV000216463" Version="1">
+				<Measure Type="single nucleotide variant" ID="213384">
+					<Name>
+						<ElementValue Type="Preferred">NM_000546.5(TP53):c.1136G&gt;T (p.Arg379Leu)</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.*155G&gt;T" Accession="LRG_321t4" Type="HGVS, coding, LRG">LRG_321t4:c.*155G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*155G&gt;T" Accession="LRG_321t7" Type="HGVS, coding, LRG">LRG_321t7:c.*155G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*243G&gt;T" Accession="LRG_321t3" Type="HGVS, coding, LRG">LRG_321t3:c.*243G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*243G&gt;T" Accession="LRG_321t6" Type="HGVS, coding, LRG">LRG_321t6:c.*243G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1019G&gt;T" Accession="LRG_321t8" Type="HGVS, coding, LRG">LRG_321t8:c.1019G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1136G&gt;T" Accession="LRG_321t1" Type="HGVS, coding, LRG">LRG_321t1:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1136G&gt;T" Accession="LRG_321t2" Type="HGVS, coding, LRG">LRG_321t2:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.740G&gt;T" Accession="LRG_321t5" Type="HGVS, coding, LRG">LRG_321t5:c.740G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*155G&gt;T" Accession="NM_001126113" Version="2" Type="HGVS, coding, RefSeq">NM_001126113.2:c.*155G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*155G&gt;T" Accession="NM_001126117" Version="1" Type="HGVS, coding, RefSeq">NM_001126117.1:c.*155G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*243G&gt;T" Accession="NM_001126114" Version="2" Type="HGVS, coding, RefSeq">NM_001126114.2:c.*243G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*243G&gt;T" Accession="NM_001126116" Version="1" Type="HGVS, coding, RefSeq">NM_001126116.1:c.*243G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1019G&gt;T" Accession="NM_001126118" Version="1" Type="HGVS, coding, RefSeq">NM_001126118.1:c.1019G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1136G&gt;T" Accession="NM_000546" Version="5" Type="HGVS, coding, RefSeq">NM_000546.5:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1136G&gt;T" Accession="NM_001126112" Version="2" Type="HGVS, coding, RefSeq">NM_001126112.2:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.740G&gt;T" Accession="NM_001126115" Version="1" Type="HGVS, coding, RefSeq">NM_001126115.1:c.740G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.22896G&gt;T" Accession="LRG_321" Type="HGVS, genomic, LRG">LRG_321:g.22896G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.22896G&gt;T" Accession="NG_017013" Version="2" Type="HGVS, genomic, RefSeqGene">NG_017013.2:g.22896G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7669655C&gt;A" Accession="NC_000017" Version="11" Type="HGVS, genomic, top level" integerValue="38">NC_000017.11:g.7669655C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7572973C&gt;A" Accession="NC_000017" Version="10" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000017.10:g.7572973C&gt;A</Attribute>
+						<XRef ID="37" DB="ClinVar"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1136G&gt;T" Accession="NM_000546" Version="4" Type="HGVS, previous">NM_000546.4:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg247Leu" Accession="LRG_321p5" Type="HGVS, protein">LRG_321p5:p.Arg247Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg340Leu" Accession="LRG_321p8" Type="HGVS, protein">LRG_321p8:p.Arg340Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg379Leu" Accession="LRG_321p1" Type="HGVS, protein">LRG_321p1:p.Arg379Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg247Leu" Accession="NP_001119587" Version="1" Type="HGVS, protein, RefSeq">NP_001119587.1:p.Arg247Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg340Leu" Accession="NP_001119590" Version="1" Type="HGVS, protein, RefSeq">NP_001119590.1:p.Arg340Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg379Leu" Accession="NP_000537" Version="3" Type="HGVS, protein, RefSeq">NP_000537.3:p.Arg379Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg379Leu" Accession="NP_001119584" Version="1" Type="HGVS, protein, RefSeq">NP_001119584.1:p.Arg379Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">3 prime UTR variant</Attribute>
+						<XRef ID="SO:0001624" DB="Sequence Ontology"/>
+						<XRef ID="NM_001126113.2:c.*155G&gt;T" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_000546.5:c.1136G&gt;T" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">R247L</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">R340L</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">R379L</Attribute>
+					</AttributeSet>
+					<CytogeneticLocation>17p13.1</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7669655" stop="7669655" display_start="7669655" display_stop="7669655" variantLength="1" referenceAllele="C" alternateAllele="A" positionVCF="7669655" referenceAlleleVCF="C" alternateAlleleVCF="A"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7572973" stop="7572973" display_start="7572973" display_stop="7572973" variantLength="1" referenceAllele="C" alternateAllele="A" positionVCF="7572973" referenceAlleleVCF="C" alternateAlleleVCF="A"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">tumor protein p53</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Haploinsufficiency">Sufficient evidence for dosage pathogenicity</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Triplosensitivity">No evidence available</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7668402" stop="7687550" display_start="7668402" display_stop="7687550" Strand="-"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7571719" stop="7590867" display_start="7571719" display_stop="7590867" variantLength="19149" Strand="-"/>
+						<XRef ID="7157" DB="Gene"/>
+						<XRef Type="MIM" ID="191170" DB="OMIM"/>
+						<XRef ID="HGNC:11998" DB="HGNC"/>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2013 (PubMed 23788249) for reporting incidental findings in exons.</Comment>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2016 (PubMed 27854360) for reporting incidental findings in exons.</Comment>
+					</MeasureRelationship>
+					<XRef Type="rs" ID="863224682" DB="dbSNP"/>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_000546.5(TP53):c.1136G&gt;T (p.Arg379Leu)</ElementValue>
+				</Name>
+				<XRef ID="CA338506" DB="ClinGen"/>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="2589">
+				<Trait ID="10539" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Li-Fraumeni syndrome</ElementValue>
+						<XRef ID="li-fraumeni-syndrome" DB="Genetics Home Reference"/>
+						<XRef ID="428850001" DB="SNOMED CT"/>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Sarcoma family syndrome of Li and Fraumeni</ElementValue>
+					</Name>
+					<Symbol>
+						<ElementValue Type="Preferred">LFS</ElementValue>
+					</Symbol>
+					<AttributeSet>
+						<Attribute Type="public definition">Li-Fraumeni syndrome (LFS) is a cancer predisposition syndrome associated with the development of the following classic tumors: soft tissue sarcoma, osteosarcoma, pre-menopausal breast cancer, brain tumors, adrenocortical carcinoma (ACC), and leukemias. In addition, a variety of other neoplasms may occur. LFS-related cancers often occur in childhood or young adulthood and survivors have an increased risk for multiple primary cancers. Age-specific cancer risks have been calculated.</Attribute>
+						<XRef ID="NBK1311" DB="GeneReviews"/>
+					</AttributeSet>
+					<Citation Type="review" Abbrev="GeneReviews">
+						<ID Source="PubMed">20301488</ID>
+						<ID Source="BookShelf">NBK1311</ID>
+					</Citation>
+					<Citation Type="practice guideline" Abbrev="ACS, 2007">
+						<ID Source="PubMed">17392385</ID>
+					</Citation>
+					<Citation Type="practice guideline" Abbrev="ASCO, 2014">
+						<ID Source="PubMed">24493721</ID>
+					</Citation>
+					<XRef ID="C0085390" DB="MedGen"/>
+					<XRef Type="Phenotypic series" ID="PS151623" DB="OMIM"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="469719" SubmissionName="2015September">
+			<ClinVarSubmissionID localKey="NM_000546.5:c.1136G&gt;T|MedGen:C0085390" submitter="Invitae" submitterDate="2015-09-11"/>
+			<ClinVarAccession Acc="SCV000254625" Version="2" Type="SCV" OrgID="500031" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2015-06-09">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+				<Comment Type="public">This sequence change replaces arginine with leucine at codon 379 of the TP53 protein (p.Arg379Leu). The arginine residue is moderately conserved and there is a moderate physicochemical difference between arginine and leucine. This variant has not been published in the literature and is not present in population databases. Algorithms developed to predict the effect of missense changes on protein structure and function (SIFT, PolyPhen-2, Align-GVGD) all suggest that this variant is likely to be tolerated, but these predictions have not been confirmed by published functional studies. In summary, this is a novel missense change that is not predicted to affect protein function or cause disease. However the evidence is insufficient at this time to prove that conclusively. It has been classified as a Variant of Uncertain Significance.</Comment>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<AttributeSet>
+				<Attribute Type="AssertionMethod">Invitae Variant Classification Sherloc (09022015)</Attribute>
+				<Citation>
+					<ID Source="PubMed">28492532</ID>
+				</Citation>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<AttributeSet>
+						<Attribute Type="HGVS">NM_000546.5:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Li-Fraumeni syndrome</ElementValue>
+					</Name>
+					<XRef DB="MedGen" ID="C0085390" Type="CUI"/>
+				</Trait>
+			</TraitSet>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+
+
+	<ClinVarSet ID="39135143">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_000546.5(TP53):c.1136G&gt;T (p.Arg379Leu) AND Hereditary cancer-predisposing syndrome</Title>
+		<ReferenceClinVarAssertion DateCreated="2016-05-28" DateLastUpdated="2019-03-30" ID="524725">
+			<ClinVarAccession Acc="RCV000219990" Version="2" Type="RCV" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2017-03-09">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+					<NumberTested>1</NumberTested>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="38092035">
+					<Attribute integerValue="1" Type="VariantAlleles"/>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="216463" Acc="VCV000216463" Version="1">
+				<Measure Type="single nucleotide variant" ID="213384">
+					<Name>
+						<ElementValue Type="Preferred">NM_000546.5(TP53):c.1136G&gt;T (p.Arg379Leu)</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.*155G&gt;T" Accession="LRG_321t4" Type="HGVS, coding, LRG">LRG_321t4:c.*155G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*155G&gt;T" Accession="LRG_321t7" Type="HGVS, coding, LRG">LRG_321t7:c.*155G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*243G&gt;T" Accession="LRG_321t3" Type="HGVS, coding, LRG">LRG_321t3:c.*243G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*243G&gt;T" Accession="LRG_321t6" Type="HGVS, coding, LRG">LRG_321t6:c.*243G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1019G&gt;T" Accession="LRG_321t8" Type="HGVS, coding, LRG">LRG_321t8:c.1019G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1136G&gt;T" Accession="LRG_321t1" Type="HGVS, coding, LRG">LRG_321t1:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1136G&gt;T" Accession="LRG_321t2" Type="HGVS, coding, LRG">LRG_321t2:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.740G&gt;T" Accession="LRG_321t5" Type="HGVS, coding, LRG">LRG_321t5:c.740G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*155G&gt;T" Accession="NM_001126113" Version="2" Type="HGVS, coding, RefSeq">NM_001126113.2:c.*155G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*155G&gt;T" Accession="NM_001126117" Version="1" Type="HGVS, coding, RefSeq">NM_001126117.1:c.*155G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*243G&gt;T" Accession="NM_001126114" Version="2" Type="HGVS, coding, RefSeq">NM_001126114.2:c.*243G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*243G&gt;T" Accession="NM_001126116" Version="1" Type="HGVS, coding, RefSeq">NM_001126116.1:c.*243G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1019G&gt;T" Accession="NM_001126118" Version="1" Type="HGVS, coding, RefSeq">NM_001126118.1:c.1019G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1136G&gt;T" Accession="NM_000546" Version="5" Type="HGVS, coding, RefSeq">NM_000546.5:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1136G&gt;T" Accession="NM_001126112" Version="2" Type="HGVS, coding, RefSeq">NM_001126112.2:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.740G&gt;T" Accession="NM_001126115" Version="1" Type="HGVS, coding, RefSeq">NM_001126115.1:c.740G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.22896G&gt;T" Accession="LRG_321" Type="HGVS, genomic, LRG">LRG_321:g.22896G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.22896G&gt;T" Accession="NG_017013" Version="2" Type="HGVS, genomic, RefSeqGene">NG_017013.2:g.22896G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7669655C&gt;A" Accession="NC_000017" Version="11" Type="HGVS, genomic, top level" integerValue="38">NC_000017.11:g.7669655C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7572973C&gt;A" Accession="NC_000017" Version="10" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000017.10:g.7572973C&gt;A</Attribute>
+						<XRef ID="37" DB="ClinVar"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1136G&gt;T" Accession="NM_000546" Version="4" Type="HGVS, previous">NM_000546.4:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg247Leu" Accession="LRG_321p5" Type="HGVS, protein">LRG_321p5:p.Arg247Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg340Leu" Accession="LRG_321p8" Type="HGVS, protein">LRG_321p8:p.Arg340Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg379Leu" Accession="LRG_321p1" Type="HGVS, protein">LRG_321p1:p.Arg379Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg247Leu" Accession="NP_001119587" Version="1" Type="HGVS, protein, RefSeq">NP_001119587.1:p.Arg247Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg340Leu" Accession="NP_001119590" Version="1" Type="HGVS, protein, RefSeq">NP_001119590.1:p.Arg340Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg379Leu" Accession="NP_000537" Version="3" Type="HGVS, protein, RefSeq">NP_000537.3:p.Arg379Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg379Leu" Accession="NP_001119584" Version="1" Type="HGVS, protein, RefSeq">NP_001119584.1:p.Arg379Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">3 prime UTR variant</Attribute>
+						<XRef ID="SO:0001624" DB="Sequence Ontology"/>
+						<XRef ID="NM_001126113.2:c.*155G&gt;T" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_000546.5:c.1136G&gt;T" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">R247L</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">R340L</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">R379L</Attribute>
+					</AttributeSet>
+					<CytogeneticLocation>17p13.1</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7669655" stop="7669655" display_start="7669655" display_stop="7669655" variantLength="1" referenceAllele="C" alternateAllele="A" positionVCF="7669655" referenceAlleleVCF="C" alternateAlleleVCF="A"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7572973" stop="7572973" display_start="7572973" display_stop="7572973" variantLength="1" referenceAllele="C" alternateAllele="A" positionVCF="7572973" referenceAlleleVCF="C" alternateAlleleVCF="A"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">tumor protein p53</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Haploinsufficiency">Sufficient evidence for dosage pathogenicity</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Triplosensitivity">No evidence available</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7668402" stop="7687550" display_start="7668402" display_stop="7687550" Strand="-"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7571719" stop="7590867" display_start="7571719" display_stop="7590867" variantLength="19149" Strand="-"/>
+						<XRef ID="7157" DB="Gene"/>
+						<XRef Type="MIM" ID="191170" DB="OMIM"/>
+						<XRef ID="HGNC:11998" DB="HGNC"/>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2013 (PubMed 23788249) for reporting incidental findings in exons.</Comment>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2016 (PubMed 27854360) for reporting incidental findings in exons.</Comment>
+					</MeasureRelationship>
+					<XRef Type="rs" ID="863224682" DB="dbSNP"/>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_000546.5(TP53):c.1136G&gt;T (p.Arg379Leu)</ElementValue>
+				</Name>
+				<XRef ID="CA338506" DB="ClinGen"/>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="13598">
+				<Trait ID="18746" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Hereditary cancer-predisposing syndrome</ElementValue>
+						<XRef ID="699346009" DB="SNOMED CT"/>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Neoplastic Syndromes, Hereditary</ElementValue>
+						<XRef ID="D009386" DB="MeSH"/>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Tumor predisposition</ElementValue>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Cancer predisposition</ElementValue>
+						<XRef ID="Hereditary+Cancer/3345" DB="Genetic Alliance"/>
+					</Name>
+					<AttributeSet>
+						<Attribute Type="keyword">Neoplasm</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="keyword">Hereditary cancer syndrome</Attribute>
+					</AttributeSet>
+					<Citation Type="practice guideline" Abbrev="IARC, 2008">
+						<ID Source="pmc">3075918</ID>
+					</Citation>
+					<Citation Type="practice guideline" Abbrev="ACMG/NSGC, 2015">
+						<ID Source="PubMed">25394175</ID>
+					</Citation>
+					<XRef ID="C0027672" DB="MedGen"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="512258" SubmissionName="SUB4348735">
+			<ClinVarSubmissionID localKey="a882103" localKeyIsSubmitted="1" submittedAssembly="GRCh37" submitter="Ambry Genetics" submitterDate="2018-07-30"/>
+			<ClinVarAccession Acc="SCV000275804" Version="4" Type="SCV" OrgID="61756" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2017-03-09">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+				<Comment Type="public">Lines of evidence used in support of classification: Insufficient or conflicting evidence</Comment>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="Ambry Genetics" ID="a882103"/>
+			<AttributeSet>
+				<Attribute Type="AssertionMethod">Ambry Autosomal Dominant and X-Linked criteria (3/2017)</Attribute>
+				<Citation>
+					<URL>https://submit.ncbi.nlm.nih.gov/ft/byid/10Jq49tz/AD_XL_ClassificationScheme_03.2017_Ambry.pdf</URL>
+				</Citation>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+					<NumberTested>1</NumberTested>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="VariantAlleles" integerValue="1"/>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<AttributeSet>
+						<Attribute Type="HGVS">NM_000546.4:c.1136G&gt;T</Attribute>
+					</AttributeSet>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Hereditary cancer-predisposing syndrome</ElementValue>
+					</Name>
+					<XRef DB="MedGen" ID="C0027672" Type="CUI"/>
+				</Trait>
+			</TraitSet>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+	<ClinVarSet ID="40528555">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp) AND Hereditary cancer-predisposing syndrome</Title>
+		<ReferenceClinVarAssertion DateCreated="2017-06-30" DateLastUpdated="2019-04-19" ID="1132968">
+			<ClinVarAccession Acc="RCV000492626" Version="1" Type="RCV" DateUpdated="2019-04-19"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2013-11-04">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Likely pathogenic</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+					<NumberTested>1</NumberTested>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="38973149">
+					<Attribute integerValue="1" Type="VariantAlleles"/>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="43587" Acc="VCV000043587" Version="2">
+				<Measure Type="single nucleotide variant" ID="52756">
+					<Name>
+						<ElementValue Type="Preferred">NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp)</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="LRG_321t3" Type="HGVS, coding, LRG">LRG_321t3:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="LRG_321t6" Type="HGVS, coding, LRG">LRG_321t6:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="LRG_321t4" Type="HGVS, coding, LRG">LRG_321t4:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="LRG_321t7" Type="HGVS, coding, LRG">LRG_321t7:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="LRG_321t1" Type="HGVS, coding, LRG">LRG_321t1:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="LRG_321t2" Type="HGVS, coding, LRG">LRG_321t2:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.644C&gt;A" Accession="LRG_321t5" Type="HGVS, coding, LRG">LRG_321t5:c.644C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.923C&gt;A" Accession="LRG_321t8" Type="HGVS, coding, LRG">LRG_321t8:c.923C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="NM_001126114" Version="2" Type="HGVS, coding, RefSeq">NM_001126114.2:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="NM_001126116" Version="1" Type="HGVS, coding, RefSeq">NM_001126116.1:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="NM_001126113" Version="2" Type="HGVS, coding, RefSeq">NM_001126113.2:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="NM_001126117" Version="1" Type="HGVS, coding, RefSeq">NM_001126117.1:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_000546" Version="5" Type="HGVS, coding, RefSeq">NM_000546.5:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_001126112" Version="2" Type="HGVS, coding, RefSeq">NM_001126112.2:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.644C&gt;A" Accession="NM_001126115" Version="1" Type="HGVS, coding, RefSeq">NM_001126115.1:c.644C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.923C&gt;A" Accession="NM_001126118" Version="1" Type="HGVS, coding, RefSeq">NM_001126118.1:c.923C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.21882C&gt;A" Accession="LRG_321" Type="HGVS, genomic, LRG">LRG_321:g.21882C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.21882C&gt;A" Accession="NG_017013" Version="2" Type="HGVS, genomic, RefSeqGene">NG_017013.2:g.21882C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7670669G&gt;T" Accession="NC_000017" Version="11" Type="HGVS, genomic, top level" integerValue="38">NC_000017.11:g.7670669G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7573987G&gt;T" Accession="NC_000017" Version="10" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000017.10:g.7573987G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="HGVS, incomplete">c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_000546" Version="4" Type="HGVS, previous">NM_000546.4:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala215Asp" Accession="LRG_321p5" Type="HGVS, protein">LRG_321p5:p.Ala215Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala308Asp" Accession="LRG_321p8" Type="HGVS, protein">LRG_321p8:p.Ala308Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="LRG_321p1" Type="HGVS, protein">LRG_321p1:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala215Asp" Accession="NP_001119587" Version="1" Type="HGVS, protein, RefSeq">NP_001119587.1:p.Ala215Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala308Asp" Accession="NP_001119590" Version="1" Type="HGVS, protein, RefSeq">NP_001119590.1:p.Ala308Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="NP_000537" Version="3" Type="HGVS, protein, RefSeq">NP_000537.3:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="NP_001119584" Version="1" Type="HGVS, protein, RefSeq">NP_001119584.1:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="Location">NM_000546.4:exon 10</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">3 prime UTR variant</Attribute>
+						<XRef ID="SO:0001624" DB="Sequence Ontology"/>
+						<XRef ID="NM_001126113.2:c.*59C&gt;A" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_000546.5:c.1040C&gt;A" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A215D</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A308D</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A347D</Attribute>
+					</AttributeSet>
+					<CytogeneticLocation>17p13.1</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7670669" stop="7670669" display_start="7670669" display_stop="7670669" variantLength="1" referenceAllele="G" alternateAllele="T" positionVCF="7670669" referenceAlleleVCF="G" alternateAlleleVCF="T"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7573987" stop="7573987" display_start="7573987" display_stop="7573987" variantLength="1" referenceAllele="G" alternateAllele="T" positionVCF="7573987" referenceAlleleVCF="G" alternateAlleleVCF="T"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">tumor protein p53</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Haploinsufficiency">Sufficient evidence for dosage pathogenicity</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Triplosensitivity">No evidence available</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7668402" stop="7687550" display_start="7668402" display_stop="7687550" Strand="-"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7571719" stop="7590867" display_start="7571719" display_stop="7590867" variantLength="19149" Strand="-"/>
+						<XRef ID="7157" DB="Gene"/>
+						<XRef Type="MIM" ID="191170" DB="OMIM"/>
+						<XRef ID="HGNC:11998" DB="HGNC"/>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2013 (PubMed 23788249) for reporting incidental findings in exons.</Comment>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2016 (PubMed 27854360) for reporting incidental findings in exons.</Comment>
+					</MeasureRelationship>
+					<XRef Type="rs" ID="397516434" DB="dbSNP"/>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp)</ElementValue>
+				</Name>
+				<XRef ID="CA000022" DB="ClinGen"/>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="13598">
+				<Trait ID="18746" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Hereditary cancer-predisposing syndrome</ElementValue>
+						<XRef ID="699346009" DB="SNOMED CT"/>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Neoplastic Syndromes, Hereditary</ElementValue>
+						<XRef ID="D009386" DB="MeSH"/>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Tumor predisposition</ElementValue>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Cancer predisposition</ElementValue>
+						<XRef ID="Hereditary+Cancer/3345" DB="Genetic Alliance"/>
+					</Name>
+					<AttributeSet>
+						<Attribute Type="keyword">Neoplasm</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="keyword">Hereditary cancer syndrome</Attribute>
+					</AttributeSet>
+					<Citation Type="practice guideline" Abbrev="IARC, 2008">
+						<ID Source="pmc">3075918</ID>
+					</Citation>
+					<Citation Type="practice guideline" Abbrev="ACMG/NSGC, 2015">
+						<ID Source="PubMed">25394175</ID>
+					</Citation>
+					<XRef ID="C0027672" DB="MedGen"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="1132177" SubmissionName="SUB4348735">
+			<ClinVarSubmissionID localKey="a6536" localKeyIsSubmitted="1" submittedAssembly="GRCh37" submitter="Ambry Genetics" submitterDate="2018-07-30"/>
+			<ClinVarAccession Acc="SCV000581153" Version="3" Type="SCV" OrgID="61756" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2013-11-04">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Likely pathogenic</Description>
+				<Citation>
+					<ID Source="PubMed">16007150</ID>
+				</Citation>
+				<Comment Type="public">Lines of evidence used in support of classification: Deficient protein function in appropriate functional assay(s),Rarity in general population databases (dbsnp, esp, 1000 genomes),In silico models in agreement (deleterious) and/or completely conserved position in appropriate species,Other data supporting pathogenic classification</Comment>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="Ambry Genetics" ID="a6536"/>
+			<AttributeSet>
+				<Attribute Type="AssertionMethod">Ambry Autosomal Dominant and X-Linked criteria (10/2015)</Attribute>
+				<Citation>
+					<URL>https://submit.ncbi.nlm.nih.gov/ft/byid/aH4uL7vL/mid-7377_ambry_classification_scheme_oct_2015.pdf</URL>
+				</Citation>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+					<NumberTested>1</NumberTested>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="VariantAlleles" integerValue="1"/>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<AttributeSet>
+						<Attribute Type="HGVS">NM_000546.4:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Hereditary cancer-predisposing syndrome</ElementValue>
+					</Name>
+					<XRef DB="MedGen" ID="C0027672" Type="CUI"/>
+				</Trait>
+			</TraitSet>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+	<ClinVarSet ID="40506693">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp) AND not specified</Title>
+		<ReferenceClinVarAssertion DateCreated="2013-05-02" DateLastUpdated="2019-04-19" ID="108375">
+			<ClinVarAccession Acc="RCV000036529" Version="2" Type="RCV" DateUpdated="2019-04-19"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2008-07-21">
+				<ReviewStatus>no assertion criteria provided</ReviewStatus>
+				<Description>Uncertain significance</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>not provided</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="38954466">
+					<Attribute integerValue="1" Type="VariantAlleles"/>
+				</ObservedData>
+				<ObservedData ID="38954466">
+					<Attribute integerValue="1" Type="NumFamiliesWithVariant"/>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="43587" Acc="VCV000043587" Version="2">
+				<Measure Type="single nucleotide variant" ID="52756">
+					<Name>
+						<ElementValue Type="Preferred">NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp)</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="LRG_321t3" Type="HGVS, coding, LRG">LRG_321t3:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="LRG_321t6" Type="HGVS, coding, LRG">LRG_321t6:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="LRG_321t4" Type="HGVS, coding, LRG">LRG_321t4:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="LRG_321t7" Type="HGVS, coding, LRG">LRG_321t7:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="LRG_321t1" Type="HGVS, coding, LRG">LRG_321t1:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="LRG_321t2" Type="HGVS, coding, LRG">LRG_321t2:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.644C&gt;A" Accession="LRG_321t5" Type="HGVS, coding, LRG">LRG_321t5:c.644C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.923C&gt;A" Accession="LRG_321t8" Type="HGVS, coding, LRG">LRG_321t8:c.923C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="NM_001126114" Version="2" Type="HGVS, coding, RefSeq">NM_001126114.2:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="NM_001126116" Version="1" Type="HGVS, coding, RefSeq">NM_001126116.1:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="NM_001126113" Version="2" Type="HGVS, coding, RefSeq">NM_001126113.2:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="NM_001126117" Version="1" Type="HGVS, coding, RefSeq">NM_001126117.1:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_000546" Version="5" Type="HGVS, coding, RefSeq">NM_000546.5:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_001126112" Version="2" Type="HGVS, coding, RefSeq">NM_001126112.2:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.644C&gt;A" Accession="NM_001126115" Version="1" Type="HGVS, coding, RefSeq">NM_001126115.1:c.644C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.923C&gt;A" Accession="NM_001126118" Version="1" Type="HGVS, coding, RefSeq">NM_001126118.1:c.923C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.21882C&gt;A" Accession="LRG_321" Type="HGVS, genomic, LRG">LRG_321:g.21882C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.21882C&gt;A" Accession="NG_017013" Version="2" Type="HGVS, genomic, RefSeqGene">NG_017013.2:g.21882C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7670669G&gt;T" Accession="NC_000017" Version="11" Type="HGVS, genomic, top level" integerValue="38">NC_000017.11:g.7670669G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7573987G&gt;T" Accession="NC_000017" Version="10" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000017.10:g.7573987G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="HGVS, incomplete">c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_000546" Version="4" Type="HGVS, previous">NM_000546.4:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala215Asp" Accession="LRG_321p5" Type="HGVS, protein">LRG_321p5:p.Ala215Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala308Asp" Accession="LRG_321p8" Type="HGVS, protein">LRG_321p8:p.Ala308Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="LRG_321p1" Type="HGVS, protein">LRG_321p1:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala215Asp" Accession="NP_001119587" Version="1" Type="HGVS, protein, RefSeq">NP_001119587.1:p.Ala215Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala308Asp" Accession="NP_001119590" Version="1" Type="HGVS, protein, RefSeq">NP_001119590.1:p.Ala308Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="NP_000537" Version="3" Type="HGVS, protein, RefSeq">NP_000537.3:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="NP_001119584" Version="1" Type="HGVS, protein, RefSeq">NP_001119584.1:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="Location">NM_000546.4:exon 10</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">3 prime UTR variant</Attribute>
+						<XRef ID="SO:0001624" DB="Sequence Ontology"/>
+						<XRef ID="NM_001126113.2:c.*59C&gt;A" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_000546.5:c.1040C&gt;A" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A215D</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A308D</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A347D</Attribute>
+					</AttributeSet>
+					<CytogeneticLocation>17p13.1</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7670669" stop="7670669" display_start="7670669" display_stop="7670669" variantLength="1" referenceAllele="G" alternateAllele="T" positionVCF="7670669" referenceAlleleVCF="G" alternateAlleleVCF="T"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7573987" stop="7573987" display_start="7573987" display_stop="7573987" variantLength="1" referenceAllele="G" alternateAllele="T" positionVCF="7573987" referenceAlleleVCF="G" alternateAlleleVCF="T"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">tumor protein p53</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Haploinsufficiency">Sufficient evidence for dosage pathogenicity</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Triplosensitivity">No evidence available</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7668402" stop="7687550" display_start="7668402" display_stop="7687550" Strand="-"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7571719" stop="7590867" display_start="7571719" display_stop="7590867" variantLength="19149" Strand="-"/>
+						<XRef ID="7157" DB="Gene"/>
+						<XRef Type="MIM" ID="191170" DB="OMIM"/>
+						<XRef ID="HGNC:11998" DB="HGNC"/>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2013 (PubMed 23788249) for reporting incidental findings in exons.</Comment>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2016 (PubMed 27854360) for reporting incidental findings in exons.</Comment>
+					</MeasureRelationship>
+					<XRef Type="rs" ID="397516434" DB="dbSNP"/>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp)</ElementValue>
+				</Name>
+				<XRef ID="CA000022" DB="ClinGen"/>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="9590">
+				<Trait ID="16789" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">not specified</ElementValue>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">AllHighlyPenetrant</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Type="public definition">The term 'not specified' was created for use in ClinVar so that submitters can convey the concept that a variant is benign, likely benign, or of uncertain significance for an unspecified set of disorders.  This usage was introduced in 2014 to replace AllHighlyPenetrant.</Attribute>
+					</AttributeSet>
+					<XRef ID="CN169374" DB="MedGen"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="101384" SubmissionName="SUB3719835">
+			<ClinVarSubmissionID localKey="20660894|not specified" submittedAssembly="GRCh37" submitter="Laboratory for Molecular Medicine,Partners HealthCare Personalized Medicine" submitterDate="2018-02-23"/>
+			<ClinVarAccession Acc="SCV000060184" Version="4" Type="SCV" OrgID="21766" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2008-07-21">
+				<ReviewStatus>no assertion criteria provided</ReviewStatus>
+				<Description>Uncertain significance</Description>
+				<Citation>
+					<ID Source="PubMed">16007150</ID>
+				</Citation>
+				<Citation>
+					<ID Source="PubMed">12826609</ID>
+				</Citation>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="Laboratory for Molecular Medicine" ID="20660894"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>not provided</AffectedStatus>
+					<FamilyData NumFamiliesWithVariant="1"/>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="VariantAlleles" integerValue="1"/>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<Name>
+						<ElementValue Type="Alternate">NM_000546.5:c.1040C&gt;A</ElementValue>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">p.Ala347Asp</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Type="HGVS">NC_000017.10:g.7573987G&gt;T</Attribute>
+					</AttributeSet>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">not specified</ElementValue>
+					</Name>
+				</Trait>
+			</TraitSet>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+
+	<ClinVarSet ID="40516058">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp) AND not provided</Title>
+		<ReferenceClinVarAssertion DateCreated="2016-10-09" DateLastUpdated="2019-04-19" ID="617822">
+			<ClinVarAccession Acc="RCV000255021" Version="3" Type="RCV" DateUpdated="2019-04-19"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2018-05-29">
+				<ReviewStatus>criteria provided, multiple submitters, no conflicts</ReviewStatus>
+				<Description>Pathogenic/Likely pathogenic</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>yes</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="38965579">
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="38965954">
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="43587" Acc="VCV000043587" Version="2">
+				<Measure Type="single nucleotide variant" ID="52756">
+					<Name>
+						<ElementValue Type="Preferred">NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp)</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="LRG_321t3" Type="HGVS, coding, LRG">LRG_321t3:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="LRG_321t6" Type="HGVS, coding, LRG">LRG_321t6:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="LRG_321t4" Type="HGVS, coding, LRG">LRG_321t4:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="LRG_321t7" Type="HGVS, coding, LRG">LRG_321t7:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="LRG_321t1" Type="HGVS, coding, LRG">LRG_321t1:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="LRG_321t2" Type="HGVS, coding, LRG">LRG_321t2:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.644C&gt;A" Accession="LRG_321t5" Type="HGVS, coding, LRG">LRG_321t5:c.644C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.923C&gt;A" Accession="LRG_321t8" Type="HGVS, coding, LRG">LRG_321t8:c.923C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="NM_001126114" Version="2" Type="HGVS, coding, RefSeq">NM_001126114.2:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="NM_001126116" Version="1" Type="HGVS, coding, RefSeq">NM_001126116.1:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="NM_001126113" Version="2" Type="HGVS, coding, RefSeq">NM_001126113.2:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="NM_001126117" Version="1" Type="HGVS, coding, RefSeq">NM_001126117.1:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_000546" Version="5" Type="HGVS, coding, RefSeq">NM_000546.5:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_001126112" Version="2" Type="HGVS, coding, RefSeq">NM_001126112.2:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.644C&gt;A" Accession="NM_001126115" Version="1" Type="HGVS, coding, RefSeq">NM_001126115.1:c.644C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.923C&gt;A" Accession="NM_001126118" Version="1" Type="HGVS, coding, RefSeq">NM_001126118.1:c.923C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.21882C&gt;A" Accession="LRG_321" Type="HGVS, genomic, LRG">LRG_321:g.21882C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.21882C&gt;A" Accession="NG_017013" Version="2" Type="HGVS, genomic, RefSeqGene">NG_017013.2:g.21882C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7670669G&gt;T" Accession="NC_000017" Version="11" Type="HGVS, genomic, top level" integerValue="38">NC_000017.11:g.7670669G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7573987G&gt;T" Accession="NC_000017" Version="10" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000017.10:g.7573987G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="HGVS, incomplete">c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_000546" Version="4" Type="HGVS, previous">NM_000546.4:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala215Asp" Accession="LRG_321p5" Type="HGVS, protein">LRG_321p5:p.Ala215Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala308Asp" Accession="LRG_321p8" Type="HGVS, protein">LRG_321p8:p.Ala308Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="LRG_321p1" Type="HGVS, protein">LRG_321p1:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala215Asp" Accession="NP_001119587" Version="1" Type="HGVS, protein, RefSeq">NP_001119587.1:p.Ala215Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala308Asp" Accession="NP_001119590" Version="1" Type="HGVS, protein, RefSeq">NP_001119590.1:p.Ala308Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="NP_000537" Version="3" Type="HGVS, protein, RefSeq">NP_000537.3:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="NP_001119584" Version="1" Type="HGVS, protein, RefSeq">NP_001119584.1:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="Location">NM_000546.4:exon 10</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">3 prime UTR variant</Attribute>
+						<XRef ID="SO:0001624" DB="Sequence Ontology"/>
+						<XRef ID="NM_001126113.2:c.*59C&gt;A" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_000546.5:c.1040C&gt;A" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A215D</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A308D</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A347D</Attribute>
+					</AttributeSet>
+					<CytogeneticLocation>17p13.1</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7670669" stop="7670669" display_start="7670669" display_stop="7670669" variantLength="1" referenceAllele="G" alternateAllele="T" positionVCF="7670669" referenceAlleleVCF="G" alternateAlleleVCF="T"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7573987" stop="7573987" display_start="7573987" display_stop="7573987" variantLength="1" referenceAllele="G" alternateAllele="T" positionVCF="7573987" referenceAlleleVCF="G" alternateAlleleVCF="T"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">tumor protein p53</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Haploinsufficiency">Sufficient evidence for dosage pathogenicity</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Triplosensitivity">No evidence available</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7668402" stop="7687550" display_start="7668402" display_stop="7687550" Strand="-"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7571719" stop="7590867" display_start="7571719" display_stop="7590867" variantLength="19149" Strand="-"/>
+						<XRef ID="7157" DB="Gene"/>
+						<XRef Type="MIM" ID="191170" DB="OMIM"/>
+						<XRef ID="HGNC:11998" DB="HGNC"/>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2013 (PubMed 23788249) for reporting incidental findings in exons.</Comment>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2016 (PubMed 27854360) for reporting incidental findings in exons.</Comment>
+					</MeasureRelationship>
+					<XRef Type="rs" ID="397516434" DB="dbSNP"/>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp)</ElementValue>
+				</Name>
+				<XRef ID="CA000022" DB="ClinGen"/>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="9460">
+				<Trait ID="17556" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">not provided</ElementValue>
+						<XRef ID="13DG0619" DB="Developmental Genetics Unit,King Faisal Specialist Hospital &amp; Research Centre"/>
+					</Name>
+					<AttributeSet>
+						<Attribute Type="public definition">The term 'not provided' is registered in MedGen to support identification of submissions to ClinVar for which no condition was named when assessing the variant. 'not provided' differs from 'not specified', which is used when a variant is asserted to be benign, likely benign, or of uncertain significance for conditions that have not been specified.</Attribute>
+					</AttributeSet>
+					<XRef ID="CN517202" DB="MedGen"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="616627" SubmissionName="SUB5098196">
+			<ClinVarSubmissionID localKey="GDX:62833|Not Provided" submittedAssembly="GRCh37" submitter="GeneDx" submitterDate="2019-01-29"/>
+			<ClinVarAccession Acc="SCV000321974" Version="7" Type="SCV" OrgID="26957" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-04-17"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2018-05-29">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Pathogenic</Description>
+				<Comment Type="public">This variant is denoted TP53 c.1040C&gt;A at the cDNA level, p.Ala347Asp (A347D) at the protein level, and results in the change of an Alanine to an Aspartic Acid (GCC&gt;GAC). This variant has been reported in at least two families with sarcoma and/or breast cancer (Villani 2016). Although in silico analysis supports that this variant does not alter protein structure/function, TP53 Ala347Asp has been demonstrated to decrease transactivation activity and prohibit tetramer formation in a yeast-based in vitro assay (Kawaguchi 2005). This variant is also reported as having non-functional transactivation in the International Agency for Research on Cancer TP53 database based on functional assays by Kato et al. (2003). TP53 Ala347Asp was not observed in large population cohorts (Lek 2016). This variant is located within the tetramerization domain and the nuclear export signal region (Zhang 2001, Bode 2004, Pessoa 2014). Based on currently available evidence, we consider TP53 Ala347Asp to be pathogenic.</Comment>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="GeneDx" ID="GDX:62833"/>
+			<AttributeSet>
+				<Attribute Type="AssertionMethod">GeneDX Variant Classification(06012015)</Attribute>
+				<Citation>
+					<URL>https://submit.ncbi.nlm.nih.gov/ft/byid/7oynscmk/mdi-5616_26957_genedx_interprules_final_061215.pdf</URL>
+				</Citation>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>yes</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<AttributeSet>
+						<Attribute Type="HGVS">NM_000546.4:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<SequenceLocation Assembly="GRCh37" Chr="17" alternateAllele="T" referenceAllele="G" start="7573987" stop="7573987" variantLength="1"/>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Not Provided</ElementValue>
+					</Name>
+				</Trait>
+			</TraitSet>
+		</ClinVarAssertion>
+		<ClinVarAssertion ID="1165954" SubmissionName="SUB2915479">
+			<ClinVarSubmissionID localKey="NM_000546.5:c.1040C&gt;A|not provided" submittedAssembly="GRCh37" submitter="Quest Diagnostics Nichols Institute San Juan Capistrano" submitterDate="2017-08-01"/>
+			<ClinVarAccession Acc="SCV000602259" Version="1" Type="SCV" OrgID="500110" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2017-03-29">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Likely pathogenic</Description>
+				<Citation>
+					<ID Source="PubMed">26572807</ID>
+				</Citation>
+				<Citation>
+					<ID Source="PubMed">27834926</ID>
+				</Citation>
+				<Citation>
+					<ID Source="PubMed">26447779</ID>
+				</Citation>
+				<Citation>
+					<ID Source="PubMed">16007150</ID>
+				</Citation>
+				<Citation>
+					<ID Source="PubMed">12826609</ID>
+				</Citation>
+				<Citation>
+					<ID Source="PubMed">27501770</ID>
+				</Citation>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<AttributeSet>
+				<Attribute Type="AssertionMethod">Quest pathogenicity assessment criteria</Attribute>
+				<Citation>
+					<ID Source="PubMed">26467025</ID>
+				</Citation>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<Name>
+						<ElementValue Type="Alternate">p.Ala347Asp</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Type="HGVS">NM_000546.5:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">not provided</ElementValue>
+					</Name>
+				</Trait>
+			</TraitSet>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+
+	<ClinVarSet ID="40522727">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp) AND Li-Fraumeni syndrome</Title>
+		<ReferenceClinVarAssertion DateCreated="2017-04-16" DateLastUpdated="2019-04-19" ID="1089455">
+			<ClinVarAccession Acc="RCV000468537" Version="1" Type="RCV" DateUpdated="2019-04-19"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2016-09-20">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="38968879">
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="43587" Acc="VCV000043587" Version="2">
+				<Measure Type="single nucleotide variant" ID="52756">
+					<Name>
+						<ElementValue Type="Preferred">NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp)</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="LRG_321t3" Type="HGVS, coding, LRG">LRG_321t3:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="LRG_321t6" Type="HGVS, coding, LRG">LRG_321t6:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="LRG_321t4" Type="HGVS, coding, LRG">LRG_321t4:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="LRG_321t7" Type="HGVS, coding, LRG">LRG_321t7:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="LRG_321t1" Type="HGVS, coding, LRG">LRG_321t1:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="LRG_321t2" Type="HGVS, coding, LRG">LRG_321t2:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.644C&gt;A" Accession="LRG_321t5" Type="HGVS, coding, LRG">LRG_321t5:c.644C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.923C&gt;A" Accession="LRG_321t8" Type="HGVS, coding, LRG">LRG_321t8:c.923C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="NM_001126114" Version="2" Type="HGVS, coding, RefSeq">NM_001126114.2:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*147C&gt;A" Accession="NM_001126116" Version="1" Type="HGVS, coding, RefSeq">NM_001126116.1:c.*147C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="NM_001126113" Version="2" Type="HGVS, coding, RefSeq">NM_001126113.2:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.*59C&gt;A" Accession="NM_001126117" Version="1" Type="HGVS, coding, RefSeq">NM_001126117.1:c.*59C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_000546" Version="5" Type="HGVS, coding, RefSeq">NM_000546.5:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_001126112" Version="2" Type="HGVS, coding, RefSeq">NM_001126112.2:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.644C&gt;A" Accession="NM_001126115" Version="1" Type="HGVS, coding, RefSeq">NM_001126115.1:c.644C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.923C&gt;A" Accession="NM_001126118" Version="1" Type="HGVS, coding, RefSeq">NM_001126118.1:c.923C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.21882C&gt;A" Accession="LRG_321" Type="HGVS, genomic, LRG">LRG_321:g.21882C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.21882C&gt;A" Accession="NG_017013" Version="2" Type="HGVS, genomic, RefSeqGene">NG_017013.2:g.21882C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7670669G&gt;T" Accession="NC_000017" Version="11" Type="HGVS, genomic, top level" integerValue="38">NC_000017.11:g.7670669G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7573987G&gt;T" Accession="NC_000017" Version="10" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000017.10:g.7573987G&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="HGVS, incomplete">c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.1040C&gt;A" Accession="NM_000546" Version="4" Type="HGVS, previous">NM_000546.4:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala215Asp" Accession="LRG_321p5" Type="HGVS, protein">LRG_321p5:p.Ala215Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala308Asp" Accession="LRG_321p8" Type="HGVS, protein">LRG_321p8:p.Ala308Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="LRG_321p1" Type="HGVS, protein">LRG_321p1:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala215Asp" Accession="NP_001119587" Version="1" Type="HGVS, protein, RefSeq">NP_001119587.1:p.Ala215Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala308Asp" Accession="NP_001119590" Version="1" Type="HGVS, protein, RefSeq">NP_001119590.1:p.Ala308Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="NP_000537" Version="3" Type="HGVS, protein, RefSeq">NP_000537.3:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Ala347Asp" Accession="NP_001119584" Version="1" Type="HGVS, protein, RefSeq">NP_001119584.1:p.Ala347Asp</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="Location">NM_000546.4:exon 10</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">3 prime UTR variant</Attribute>
+						<XRef ID="SO:0001624" DB="Sequence Ontology"/>
+						<XRef ID="NM_001126113.2:c.*59C&gt;A" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_000546.5:c.1040C&gt;A" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A215D</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A308D</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">A347D</Attribute>
+					</AttributeSet>
+					<CytogeneticLocation>17p13.1</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7670669" stop="7670669" display_start="7670669" display_stop="7670669" variantLength="1" referenceAllele="G" alternateAllele="T" positionVCF="7670669" referenceAlleleVCF="G" alternateAlleleVCF="T"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7573987" stop="7573987" display_start="7573987" display_stop="7573987" variantLength="1" referenceAllele="G" alternateAllele="T" positionVCF="7573987" referenceAlleleVCF="G" alternateAlleleVCF="T"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">tumor protein p53</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Haploinsufficiency">Sufficient evidence for dosage pathogenicity</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Triplosensitivity">No evidence available</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7668402" stop="7687550" display_start="7668402" display_stop="7687550" Strand="-"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7571719" stop="7590867" display_start="7571719" display_stop="7590867" variantLength="19149" Strand="-"/>
+						<XRef ID="7157" DB="Gene"/>
+						<XRef Type="MIM" ID="191170" DB="OMIM"/>
+						<XRef ID="HGNC:11998" DB="HGNC"/>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2013 (PubMed 23788249) for reporting incidental findings in exons.</Comment>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2016 (PubMed 27854360) for reporting incidental findings in exons.</Comment>
+					</MeasureRelationship>
+					<XRef Type="rs" ID="397516434" DB="dbSNP"/>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_000546.5(TP53):c.1040C&gt;A (p.Ala347Asp)</ElementValue>
+				</Name>
+				<XRef ID="CA000022" DB="ClinGen"/>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="2589">
+				<Trait ID="10539" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Li-Fraumeni syndrome</ElementValue>
+						<XRef ID="li-fraumeni-syndrome" DB="Genetics Home Reference"/>
+						<XRef ID="428850001" DB="SNOMED CT"/>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Sarcoma family syndrome of Li and Fraumeni</ElementValue>
+					</Name>
+					<Symbol>
+						<ElementValue Type="Preferred">LFS</ElementValue>
+					</Symbol>
+					<AttributeSet>
+						<Attribute Type="public definition">Li-Fraumeni syndrome (LFS) is a cancer predisposition syndrome associated with the development of the following classic tumors: soft tissue sarcoma, osteosarcoma, pre-menopausal breast cancer, brain tumors, adrenocortical carcinoma (ACC), and leukemias. In addition, a variety of other neoplasms may occur. LFS-related cancers often occur in childhood or young adulthood and survivors have an increased risk for multiple primary cancers. Age-specific cancer risks have been calculated.</Attribute>
+						<XRef ID="NBK1311" DB="GeneReviews"/>
+					</AttributeSet>
+					<Citation Type="review" Abbrev="GeneReviews">
+						<ID Source="PubMed">20301488</ID>
+						<ID Source="BookShelf">NBK1311</ID>
+					</Citation>
+					<Citation Type="practice guideline" Abbrev="ACS, 2007">
+						<ID Source="PubMed">17392385</ID>
+					</Citation>
+					<Citation Type="practice guideline" Abbrev="ASCO, 2014">
+						<ID Source="PubMed">24493721</ID>
+					</Citation>
+					<XRef ID="C0085390" DB="MedGen"/>
+					<XRef Type="Phenotypic series" ID="PS151623" DB="OMIM"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="1058208" SubmissionName="2017March_Invitae">
+			<ClinVarSubmissionID localKey="671020|MedGen:C0085390" submittedAssembly="GRCh37" submitter="Invitae" submitterDate="2017-03-14"/>
+			<ClinVarAccession Acc="SCV000545289" Version="2" Type="SCV" OrgID="500031" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2016-09-20">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+				<Comment Type="public">This sequence change replaces alanine with aspartic acid at codon 347 of the TP53 protein (p.Ala347Asp). The alanine residue is highly conserved and there is a moderate physicochemical difference between alanine and aspartic acid. This variant is not present in population databases (ExAC no frequency). This variant has been reported in the literature in two unrelated individuals being tested for suspected Li-Fraumeni syndrome. The first individual was affected with high-grade pleomorphic sarcoma at age 19 years, while the second individual was diagnosed with breast cancer at 49 years old. No additional family members were reported to have cancer (PMID: 27501770). This variant was also observed in the IARC TP53 database in a large family affected with cancer, although the specifics of the related cancers were unspecified for many of the family members (PMID: 17311302). ClinVar contains an entry for this variant (Variation ID: 43587). Experimental studies have shown that this missense change affects the ability of TP53 to form a tetramer and transcriptionally transactivate its targets in a yeast-based functional assay (PMID: 16007150, 12826609). In summary, this variant is a rare missense change that has been shown to disrupt TP53 protein function. While it is absent from the population and reported in affected individuals, the available evidence is currently insufficient to determine its role in disease. Without further genetic data, it has been classified as a Variant of Uncertain Significance.</Comment>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="Invitae" ID="671020"/>
+			<AttributeSet>
+				<Attribute Type="AssertionMethod">Invitae Variant Classification Sherloc (09022015)</Attribute>
+				<Citation>
+					<ID Source="PubMed">28492532</ID>
+				</Citation>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<AttributeSet>
+						<Attribute Type="HGVS">NM_000546.5:c.1040C&gt;A</Attribute>
+					</AttributeSet>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<XRef DB="MedGen" ID="C0085390" Type="CUI"/>
+				</Trait>
+			</TraitSet>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+
+	<ClinVarSet ID="40882804">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_000038.5(APC):c.7214A&gt;C (p.Asn2405Thr) AND Familial adenomatous polyposis 1</Title>
+		<ReferenceClinVarAssertion DateCreated="2017-12-26" DateLastUpdated="2019-05-02" ID="1267995">
+			<ClinVarAccession Acc="RCV000533249" Version="1" Type="RCV" DateUpdated="2019-05-02"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2017-03-04">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="39379536">
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="422215" Acc="VCV000422215" Version="2">
+				<Measure Type="single nucleotide variant" ID="406589">
+					<Name>
+						<ElementValue Type="Preferred">NM_000038.5(APC):c.7214A&gt;C (p.Asn2405Thr)</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.7214A&gt;C" Accession="NM_000038" Version="4" Type="HGVS, coding">NM_000038.4:c.7214A&gt;C</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.7214A&gt;C" Accession="LRG_130t1" Type="HGVS, coding, LRG">LRG_130t1:c.7214A&gt;C</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.7160A&gt;C" Accession="NM_001127511" Version="2" Type="HGVS, coding, RefSeq">NM_001127511.2:c.7160A&gt;C</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.7214A&gt;C" Accession="NM_000038" Version="5" Type="HGVS, coding, RefSeq">NM_000038.5:c.7214A&gt;C</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.7214A&gt;C" Accession="NM_001127510" Version="2" Type="HGVS, coding, RefSeq">NM_001127510.2:c.7214A&gt;C</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.155288A&gt;C" Accession="LRG_130" Type="HGVS, genomic, LRG">LRG_130:g.155288A&gt;C</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.155288A&gt;C" Accession="NG_008481" Version="4" Type="HGVS, genomic, RefSeqGene">NG_008481.4:g.155288A&gt;C</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.112842808A&gt;C" Accession="NC_000005" Version="10" Type="HGVS, genomic, top level" integerValue="38">NC_000005.10:g.112842808A&gt;C</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.112178505A&gt;C" Accession="NC_000005" Version="9" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000005.9:g.112178505A&gt;C</Attribute>
+						<XRef ID="37" DB="ClinVar"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Asn2405Thr" Accession="LRG_130p1" Type="HGVS, protein">LRG_130p1:p.Asn2405Thr</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Asn2405Thr" Accession="LRG_130p2" Type="HGVS, protein">LRG_130p2:p.Asn2405Thr</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Asn2387Thr" Accession="NP_001120983" Version="2" Type="HGVS, protein, RefSeq">NP_001120983.2:p.Asn2387Thr</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Asn2405Thr" Accession="NP_000029" Version="2" Type="HGVS, protein, RefSeq">NP_000029.2:p.Asn2405Thr</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Asn2405Thr" Accession="NP_001120982" Version="1" Type="HGVS, protein, RefSeq">NP_001120982.1:p.Asn2405Thr</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_000038.5:c.7214A&gt;C" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">N2387T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">N2405T</Attribute>
+					</AttributeSet>
+					<CytogeneticLocation>5q22.2</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="5" Accession="NC_000005.10" start="112842808" stop="112842808" display_start="112842808" display_stop="112842808" variantLength="1" referenceAllele="A" alternateAllele="C" positionVCF="112842808" referenceAlleleVCF="A" alternateAlleleVCF="C"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="5" Accession="NC_000005.9" start="112178505" stop="112178505" display_start="112178505" display_stop="112178505" variantLength="1" referenceAllele="A" alternateAllele="C" positionVCF="112178505" referenceAlleleVCF="A" alternateAlleleVCF="C"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">APC regulator of WNT signaling pathway</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">APC</ElementValue>
+						</Symbol>
+						<AttributeSet>
+							<Attribute dateValue="2012-07-06" Type="Haploinsufficiency">Sufficient evidence for dosage pathogenicity</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=APC</URL>
+							</Citation>
+						</AttributeSet>
+						<AttributeSet>
+							<Attribute dateValue="2012-07-06" Type="Triplosensitivity">No evidence available</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=APC</URL>
+							</Citation>
+						</AttributeSet>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="5" Accession="NC_000005.10" start="112707505" stop="112846239" display_start="112707505" display_stop="112846239" Strand="+"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="5" Accession="NC_000005.9" start="112043201" stop="112181935" display_start="112043201" display_stop="112181935" variantLength="138735" Strand="+"/>
+						<XRef ID="324" DB="Gene"/>
+						<XRef Type="MIM" ID="611731" DB="OMIM"/>
+						<XRef ID="HGNC:583" DB="HGNC"/>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2013 (PubMed 23788249) for reporting incidental findings in exons.</Comment>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2016 (PubMed 27854360) for reporting incidental findings in exons.</Comment>
+					</MeasureRelationship>
+					<XRef Type="rs" ID="730881258" DB="dbSNP"/>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_000038.5(APC):c.7214A&gt;C (p.Asn2405Thr)</ElementValue>
+				</Name>
+				<XRef ID="CA16037042" DB="ClinGen"/>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="6265">
+				<Trait ID="15929" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Familial adenomatous polyposis 1</ElementValue>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Familial Adenomatous Polyposis</ElementValue>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">POLYPOSIS, ADENOMATOUS INTESTINAL</ElementValue>
+						<XRef Type="MIM" ID="175100" DB="OMIM"/>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">FAMILIAL ADENOMATOUS POLYPOSIS 1, ATTENUATED</ElementValue>
+						<XRef Type="Allelic variant" ID="611731.0021" DB="OMIM"/>
+						<XRef Type="Allelic variant" ID="611731.0028" DB="OMIM"/>
+						<XRef Type="Allelic variant" ID="611731.0034" DB="OMIM"/>
+						<XRef Type="Allelic variant" ID="611731.0035" DB="OMIM"/>
+						<XRef Type="Allelic variant" ID="611731.0036" DB="OMIM"/>
+						<XRef Type="Allelic variant" ID="611731.0038" DB="OMIM"/>
+						<XRef Type="Allelic variant" ID="611731.0042" DB="OMIM"/>
+						<XRef Type="Allelic variant" ID="611731.0043" DB="OMIM"/>
+						<XRef Type="Allelic variant" ID="611731.0049" DB="OMIM"/>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">APC-Associated Polyposis Conditions</ElementValue>
+						<XRef ID="NBK1345" DB="GeneReviews"/>
+					</Name>
+					<Symbol>
+						<ElementValue Type="Preferred">FAP1</ElementValue>
+						<XRef Type="MIM" ID="175100" DB="OMIM"/>
+					</Symbol>
+					<AttributeSet>
+						<Attribute Type="public definition">APC-associated polyposis conditions include: familial adenomatous polyposis (FAP), attenuated FAP, and gastric adenocarcinoma and proximal polyposis of the stomach (GAPPS). FAP is a colon cancer predisposition syndrome in which hundreds to thousands of adenomatous colonic polyps develop, beginning, on average, at age 16 years (range 7-36 years). By age 35 years, 95% of individuals with FAP have polyps; without colectomy, colon cancer is inevitable. The mean age of colon cancer diagnosis in untreated individuals is 39 years (range 34-43 years). Extracolonic manifestations are variably present and include: polyps of the gastric fundus and duodenum, osteomas, dental anomalies, congenital hypertrophy of the retinal pigment epithelium (CHRPE), soft tissue tumors, desmoid tumors, and associated cancers. Attenuated FAP is characterized by multiple colonic polyps (average of 30), more proximally located polyps, and a diagnosis of colon cancer at a later age than in FAP. Certain extracolonic manifestations, such as gastric and duodenal polyps or cancers, are variably present in attenuated FAP; risk management may be substantially different between FAP and attenuated FAP. GAPPS is characterized by gastric fundic gland polyposis, increased risk of gastric cancer, and limited colonic involvement in most individuals reported.</Attribute>
+						<XRef ID="NBK1345" DB="GeneReviews"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="disease mechanism" integerValue="273">loss of function</Attribute>
+						<XRef ID="GTR000172265" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000321103" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000326160" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000330056" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000500363" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000500599" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000500894" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000501393" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000501394" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000501794" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000508954" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000512300" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000512645" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000515534" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000515885" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000515899" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000520026" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000520047" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000520069" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000520077" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000520394" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000520865" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000520868" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000520869" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000520870" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000520872" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000521915" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000522559" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000527982" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000527984" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000528912" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000529017" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000530028" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000530118" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000530120" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000530202" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000552245" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000552290" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000552303" DB="Genetic Testing Registry (GTR)"/>
+						<XRef ID="GTR000558907" DB="Genetic Testing Registry (GTR)"/>
+					</AttributeSet>
+					<Citation Type="review" Abbrev="GeneReviews">
+						<ID Source="PubMed">20301519</ID>
+						<ID Source="BookShelf">NBK1345</ID>
+					</Citation>
+					<Citation Type="practice guideline" Abbrev="ASCRS, 2001">
+						<ID Source="PubMed">11598466</ID>
+					</Citation>
+					<Citation Type="practice guideline" Abbrev="NSGC, 2004">
+						<ID Source="PubMed">15604628</ID>
+					</Citation>
+					<Citation Type="Translational/Evidence-based" Abbrev="EuroGenetest, 2011">
+						<ID Source="PubMed">21368914</ID>
+					</Citation>
+					<Citation Type="Recommendation" Abbrev="ACMG, 2013">
+						<ID Source="PubMed">23788249</ID>
+					</Citation>
+					<Citation Type="practice guideline" Abbrev="ASCO/ESMO, 2015">
+						<ID Source="PubMed">25452455</ID>
+					</Citation>
+					<Citation Type="practice guideline" Abbrev="ACMG, 2014">
+						<ID Source="PubMed">24310308</ID>
+					</Citation>
+					<Citation Type="practice guideline" Abbrev="ACG, 2015">
+						<ID Source="PubMed">25645574</ID>
+					</Citation>
+					<Citation Type="Recommendation" Abbrev="ACMG, 2015">
+						<ID Source="PubMed">25356965</ID>
+					</Citation>
+					<Citation Type="Recommendation" Abbrev="ACMG, 2016">
+						<ID Source="PubMed">27854360</ID>
+						<ID Source="DOI">10.1038/gim.2016.190</ID>
+					</Citation>
+					<XRef ID="C2713442" DB="MedGen"/>
+					<XRef Type="MIM" ID="175100" DB="OMIM"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="1240241" SubmissionName="SUB3109251">
+			<ClinVarSubmissionID localKey="658901|MedGen:C2713442" submittedAssembly="GRCh37" submitter="Invitae" submitterDate="2017-10-05"/>
+			<ClinVarAccession Acc="SCV000647702" Version="1" Type="SCV" OrgID="500031" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-05-02"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2017-03-04">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+				<Comment Type="public">This sequence change replaces asparagine with threonine at codon 2405 of the APC protein (p.Asn2405Thr). The asparagine residue is weakly conserved and there is a small physicochemical difference between asparagine and threonine. This variant is not present in population databases (ExAC no frequency) and has not been reported in the literature in individuals with an APC-related disease. Algorithms developed to predict the effect of missense changes on protein structure and function output the following: (SIFT: "Tolerated"; PolyPhen-2: "Benign"; Align-GVGD: "Class C0"). The threonine amino acid residue is found in multiple mammalian species, suggesting that this missense change does not adversely affect protein function. These predictions have not been confirmed by published functional studies. In summary, this variant is a novel missense change that is not predicted to affect protein function. There is no indication that it causes disease, but the available evidence is currently insufficient to prove that conclusively. Therefore, it has been classified as a Variant of Uncertain Significance.</Comment>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="Invitae" ID="658901"/>
+			<AttributeSet>
+				<Attribute Type="AssertionMethod">Invitae Variant Classification Sherloc (09022015)</Attribute>
+				<Citation>
+					<ID Source="PubMed">28492532</ID>
+				</Citation>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<AttributeSet>
+						<Attribute Type="HGVS">NM_000038.5:c.7214A&gt;C</Attribute>
+					</AttributeSet>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">APC</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<XRef DB="MedGen" ID="C2713442" Type="CUI"/>
+				</Trait>
+			</TraitSet>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+
+
+	<ClinVarSet ID="40521993">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_000546.5(TP53):c.580C&gt;T (p.Leu194Phe) AND Neoplasm of the large intestine</Title>
+		<ReferenceClinVarAssertion DateCreated="2017-03-07" DateLastUpdated="2019-04-19" ID="1023879">
+			<ClinVarAccession Acc="RCV000439186" Version="1" Type="RCV" DateUpdated="2019-04-19"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2016-05-31">
+				<ReviewStatus>no assertion criteria provided</ReviewStatus>
+				<Description>Likely pathogenic</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<AttributeSet>
+				<Attribute Type="ModeOfInheritance" integerValue="265">Somatic mutation</Attribute>
+				<XRef ID="ENST00000269305:c.580C&gt;T" DB="Database of Curated Mutations (DoCM)"/>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>somatic</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>yes</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>literature only</MethodType>
+				</Method>
+				<ObservedData ID="38969530">
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="127817" Acc="VCV000127817" Version="2">
+				<Measure Type="single nucleotide variant" ID="133274">
+					<Name>
+						<ElementValue Type="Preferred">NM_000546.5(TP53):c.580C&gt;T (p.Leu194Phe)</ElementValue>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">p.L194F:CTT&gt;TTT</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="LRG_321t5" Type="HGVS, coding, LRG">LRG_321t5:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="LRG_321t6" Type="HGVS, coding, LRG">LRG_321t6:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="LRG_321t7" Type="HGVS, coding, LRG">LRG_321t7:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.463C&gt;T" Accession="LRG_321t8" Type="HGVS, coding, LRG">LRG_321t8:c.463C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="LRG_321t1" Type="HGVS, coding, LRG">LRG_321t1:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="LRG_321t2" Type="HGVS, coding, LRG">LRG_321t2:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="LRG_321t3" Type="HGVS, coding, LRG">LRG_321t3:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="LRG_321t4" Type="HGVS, coding, LRG">LRG_321t4:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="NM_001126115" Version="1" Type="HGVS, coding, RefSeq">NM_001126115.1:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="NM_001126116" Version="1" Type="HGVS, coding, RefSeq">NM_001126116.1:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="NM_001126117" Version="1" Type="HGVS, coding, RefSeq">NM_001126117.1:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.463C&gt;T" Accession="NM_001126118" Version="1" Type="HGVS, coding, RefSeq">NM_001126118.1:c.463C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="NM_000546" Version="5" Type="HGVS, coding, RefSeq">NM_000546.5:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="NM_001126112" Version="2" Type="HGVS, coding, RefSeq">NM_001126112.2:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="NM_001126113" Version="2" Type="HGVS, coding, RefSeq">NM_001126113.2:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="NM_001126114" Version="2" Type="HGVS, coding, RefSeq">NM_001126114.2:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.17600C&gt;T" Accession="LRG_321" Type="HGVS, genomic, LRG">LRG_321:g.17600C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.17600C&gt;T" Accession="NG_017013" Version="2" Type="HGVS, genomic, RefSeqGene">NG_017013.2:g.17600C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7674951G&gt;A" Accession="NC_000017" Version="11" Type="HGVS, genomic, top level" integerValue="38">NC_000017.11:g.7674951G&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7578269G&gt;A" Accession="NC_000017" Version="10" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000017.10:g.7578269G&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="NM_000546" Version="4" Type="HGVS, previous">NM_000546.4:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu155Phe" Accession="LRG_321p8" Type="HGVS, protein">LRG_321p8:p.Leu155Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="LRG_321p1" Type="HGVS, protein">LRG_321p1:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="LRG_321p3" Type="HGVS, protein">LRG_321p3:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="LRG_321p4" Type="HGVS, protein">LRG_321p4:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="P04637" Type="HGVS, protein">P04637:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="LRG_321p5" Type="HGVS, protein">LRG_321p5:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="LRG_321p6" Type="HGVS, protein">LRG_321p6:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="LRG_321p7" Type="HGVS, protein">LRG_321p7:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu155Phe" Accession="NP_001119590" Version="1" Type="HGVS, protein, RefSeq">NP_001119590.1:p.Leu155Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="NP_000537" Version="3" Type="HGVS, protein, RefSeq">NP_000537.3:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="NP_001119584" Version="1" Type="HGVS, protein, RefSeq">NP_001119584.1:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="NP_001119585" Version="1" Type="HGVS, protein, RefSeq">NP_001119585.1:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="NP_001119586" Version="1" Type="HGVS, protein, RefSeq">NP_001119586.1:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="NP_001119587" Version="1" Type="HGVS, protein, RefSeq">NP_001119587.1:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="NP_001119588" Version="1" Type="HGVS, protein, RefSeq">NP_001119588.1:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="NP_001119589" Version="1" Type="HGVS, protein, RefSeq">NP_001119589.1:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_000546.5:c.580C&gt;T" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">L155F</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">L194F</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">L62F</Attribute>
+					</AttributeSet>
+					<CytogeneticLocation>17p13.1</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7674951" stop="7674951" display_start="7674951" display_stop="7674951" variantLength="1" referenceAllele="G" alternateAllele="A" positionVCF="7674951" referenceAlleleVCF="G" alternateAlleleVCF="A"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7578269" stop="7578269" display_start="7578269" display_stop="7578269" variantLength="1" referenceAllele="G" alternateAllele="A" positionVCF="7578269" referenceAlleleVCF="G" alternateAlleleVCF="A"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">tumor protein p53</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Haploinsufficiency">Sufficient evidence for dosage pathogenicity</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Triplosensitivity">No evidence available</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7668402" stop="7687550" display_start="7668402" display_stop="7687550" Strand="-"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7571719" stop="7590867" display_start="7571719" display_stop="7590867" variantLength="19149" Strand="-"/>
+						<XRef ID="7157" DB="Gene"/>
+						<XRef Type="MIM" ID="191170" DB="OMIM"/>
+						<XRef ID="HGNC:11998" DB="HGNC"/>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2013 (PubMed 23788249) for reporting incidental findings in exons.</Comment>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2016 (PubMed 27854360) for reporting incidental findings in exons.</Comment>
+					</MeasureRelationship>
+					<XRef ID="P04637#VAR_044997" DB="UniProtKB"/>
+					<XRef Type="rs" ID="587780071" DB="dbSNP"/>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_000546.5(TP53):c.580C&gt;T (p.Leu194Phe)</ElementValue>
+				</Name>
+				<XRef ID="CA000278" DB="ClinGen"/>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="31428">
+				<Trait ID="31583" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Neoplasm of the large intestine</ElementValue>
+						<XRef ID="HP:0100834" DB="Human Phenotype Ontology"/>
+						<XRef ID="126837005" DB="SNOMED CT"/>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Large intestine tumor</ElementValue>
+						<XRef ID="HP:0100834" DB="Human Phenotype Ontology"/>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Colorectal Neoplasms</ElementValue>
+					</Name>
+					<Citation Type="practice guideline" Abbrev="ESMO, 2012">
+						<ID Source="PubMed">23012255</ID>
+					</Citation>
+					<XRef ID="D015179" DB="MeSH"/>
+					<XRef ID="C0009404" DB="MedGen"/>
+					<XRef Type="primary" ID="HP:0100834" DB="Human Phenotype Ontology"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="974141" SubmissionName="DoCM_7-13-16">
+			<ClinVarSubmissionID localKey="ENST00000269305:c.580C&gt;T|MeSH:D015179" submittedAssembly="GRCh37" submitter="Database of Curated Mutations (DoCM)" submitterDate="2016-07-18"/>
+			<ClinVarAccession Acc="SCV000508866" Version="1" Type="SCV" OrgID="505871" OrganizationCategory="resource" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2016-05-31">
+				<ReviewStatus>no assertion criteria provided</ReviewStatus>
+				<Description>Likely pathogenic</Description>
+				<Citation>
+					<ID Source="PubMed">26619011</ID>
+				</Citation>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="Database of Curated Mutations" ID="ENST00000269305:c.580C&gt;T"/>
+			<AttributeSet>
+				<Attribute Type="ModeOfInheritance">Somatic mutation</Attribute>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>somatic</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>yes</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>literature only</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<SequenceLocation Assembly="GRCh37" Chr="17" alternateAllele="A" referenceAllele="G" start="7578269" stop="7578269" variantLength="1"/>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<XRef DB="MeSH" ID="D015179"/>
+				</Trait>
+			</TraitSet>
+			<Citation>
+				<URL>http://docm.genome.wustl.edu/variants/ENST00000269305:c.580C&gt;T</URL>
+			</Citation>
+			<StudyDescription>This is the initial submission of DoCM to ClinVar. DoCM is the database of curated mutations in cancer and seeks to leverage the community to outline all functionally important somatic cancer variants in the literature.</StudyDescription>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+
+	<ClinVarSet ID="40522045">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_000546.5(TP53):c.580C&gt;T (p.Leu194Phe) AND Squamous cell carcinoma of the head and neck</Title>
+		<ReferenceClinVarAssertion DateCreated="2017-03-07" DateLastUpdated="2019-04-19" ID="1024536">
+			<ClinVarAccession Acc="RCV000439843" Version="1" Type="RCV" DateUpdated="2019-04-19"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2016-05-31">
+				<ReviewStatus>no assertion criteria provided</ReviewStatus>
+				<Description>Likely pathogenic</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<AttributeSet>
+				<Attribute Type="ModeOfInheritance" integerValue="265">Somatic mutation</Attribute>
+				<XRef ID="ENST00000269305:c.580C&gt;T" DB="Database of Curated Mutations (DoCM)"/>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>somatic</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>yes</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>literature only</MethodType>
+				</Method>
+				<ObservedData ID="38969343">
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="127817" Acc="VCV000127817" Version="2">
+				<Measure Type="single nucleotide variant" ID="133274">
+					<Name>
+						<ElementValue Type="Preferred">NM_000546.5(TP53):c.580C&gt;T (p.Leu194Phe)</ElementValue>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">p.L194F:CTT&gt;TTT</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="LRG_321t5" Type="HGVS, coding, LRG">LRG_321t5:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="LRG_321t6" Type="HGVS, coding, LRG">LRG_321t6:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="LRG_321t7" Type="HGVS, coding, LRG">LRG_321t7:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.463C&gt;T" Accession="LRG_321t8" Type="HGVS, coding, LRG">LRG_321t8:c.463C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="LRG_321t1" Type="HGVS, coding, LRG">LRG_321t1:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="LRG_321t2" Type="HGVS, coding, LRG">LRG_321t2:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="LRG_321t3" Type="HGVS, coding, LRG">LRG_321t3:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="LRG_321t4" Type="HGVS, coding, LRG">LRG_321t4:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="NM_001126115" Version="1" Type="HGVS, coding, RefSeq">NM_001126115.1:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="NM_001126116" Version="1" Type="HGVS, coding, RefSeq">NM_001126116.1:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.184C&gt;T" Accession="NM_001126117" Version="1" Type="HGVS, coding, RefSeq">NM_001126117.1:c.184C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.463C&gt;T" Accession="NM_001126118" Version="1" Type="HGVS, coding, RefSeq">NM_001126118.1:c.463C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="NM_000546" Version="5" Type="HGVS, coding, RefSeq">NM_000546.5:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="NM_001126112" Version="2" Type="HGVS, coding, RefSeq">NM_001126112.2:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="NM_001126113" Version="2" Type="HGVS, coding, RefSeq">NM_001126113.2:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="NM_001126114" Version="2" Type="HGVS, coding, RefSeq">NM_001126114.2:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.17600C&gt;T" Accession="LRG_321" Type="HGVS, genomic, LRG">LRG_321:g.17600C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.17600C&gt;T" Accession="NG_017013" Version="2" Type="HGVS, genomic, RefSeqGene">NG_017013.2:g.17600C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7674951G&gt;A" Accession="NC_000017" Version="11" Type="HGVS, genomic, top level" integerValue="38">NC_000017.11:g.7674951G&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.7578269G&gt;A" Accession="NC_000017" Version="10" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000017.10:g.7578269G&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.580C&gt;T" Accession="NM_000546" Version="4" Type="HGVS, previous">NM_000546.4:c.580C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu155Phe" Accession="LRG_321p8" Type="HGVS, protein">LRG_321p8:p.Leu155Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="LRG_321p1" Type="HGVS, protein">LRG_321p1:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="LRG_321p3" Type="HGVS, protein">LRG_321p3:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="LRG_321p4" Type="HGVS, protein">LRG_321p4:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="P04637" Type="HGVS, protein">P04637:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="LRG_321p5" Type="HGVS, protein">LRG_321p5:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="LRG_321p6" Type="HGVS, protein">LRG_321p6:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="LRG_321p7" Type="HGVS, protein">LRG_321p7:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu155Phe" Accession="NP_001119590" Version="1" Type="HGVS, protein, RefSeq">NP_001119590.1:p.Leu155Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="NP_000537" Version="3" Type="HGVS, protein, RefSeq">NP_000537.3:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="NP_001119584" Version="1" Type="HGVS, protein, RefSeq">NP_001119584.1:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="NP_001119585" Version="1" Type="HGVS, protein, RefSeq">NP_001119585.1:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu194Phe" Accession="NP_001119586" Version="1" Type="HGVS, protein, RefSeq">NP_001119586.1:p.Leu194Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="NP_001119587" Version="1" Type="HGVS, protein, RefSeq">NP_001119587.1:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="NP_001119588" Version="1" Type="HGVS, protein, RefSeq">NP_001119588.1:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Leu62Phe" Accession="NP_001119589" Version="1" Type="HGVS, protein, RefSeq">NP_001119589.1:p.Leu62Phe</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_000546.5:c.580C&gt;T" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">L155F</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">L194F</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">L62F</Attribute>
+					</AttributeSet>
+					<CytogeneticLocation>17p13.1</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7674951" stop="7674951" display_start="7674951" display_stop="7674951" variantLength="1" referenceAllele="G" alternateAllele="A" positionVCF="7674951" referenceAlleleVCF="G" alternateAlleleVCF="A"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7578269" stop="7578269" display_start="7578269" display_stop="7578269" variantLength="1" referenceAllele="G" alternateAllele="A" positionVCF="7578269" referenceAlleleVCF="G" alternateAlleleVCF="A"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">tumor protein p53</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">TP53</ElementValue>
+						</Symbol>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Haploinsufficiency">Sufficient evidence for dosage pathogenicity</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<AttributeSet>
+							<Attribute dateValue="2016-09-08" Type="Triplosensitivity">No evidence available</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=TP53</URL>
+							</Citation>
+						</AttributeSet>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="17" Accession="NC_000017.11" start="7668402" stop="7687550" display_start="7668402" display_stop="7687550" Strand="-"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="17" Accession="NC_000017.10" start="7571719" stop="7590867" display_start="7571719" display_stop="7590867" variantLength="19149" Strand="-"/>
+						<XRef ID="7157" DB="Gene"/>
+						<XRef Type="MIM" ID="191170" DB="OMIM"/>
+						<XRef ID="HGNC:11998" DB="HGNC"/>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2013 (PubMed 23788249) for reporting incidental findings in exons.</Comment>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2016 (PubMed 27854360) for reporting incidental findings in exons.</Comment>
+					</MeasureRelationship>
+					<XRef ID="P04637#VAR_044997" DB="UniProtKB"/>
+					<XRef Type="rs" ID="587780071" DB="dbSNP"/>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_000546.5(TP53):c.580C&gt;T (p.Leu194Phe)</ElementValue>
+				</Name>
+				<XRef ID="CA000278" DB="ClinGen"/>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="1717">
+				<Trait ID="4210" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Squamous cell carcinoma of the head and neck</ElementValue>
+						<XRef ID="Squamous+cell+carcinoma+of+the+head+and+neck/6853" DB="Genetic Alliance"/>
+						<XRef ID="8503" DB="Office of Rare Diseases"/>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">Squamous cell carcinoma, head and neck, somatic</ElementValue>
+					</Name>
+					<Symbol>
+						<ElementValue Type="Preferred">HNSCC</ElementValue>
+						<XRef Type="MIM" ID="275355" DB="OMIM"/>
+						<XRef ID="8503" DB="Office of Rare Diseases"/>
+					</Symbol>
+					<Symbol>
+						<ElementValue Type="Alternate">midline carcinoma</ElementValue>
+					</Symbol>
+					<AttributeSet>
+						<Attribute Type="public definition">Squamous cell carcinoma is a cancer that arises from particular cells called squamous cells. Squamous cells are found in the outer layer of skin and in the mucous membranes, which are the moist tissues that line body cavities such as the airways and intestines. Head and neck squamous cell carcinoma (HNSCC) develops in the mucous membranes of the mouth, nose, and throat.HNSCC is classified by its location: it can occur in the mouth (oral cavity), the middle part of the throat near the mouth (oropharynx), the space behind the nose (nasal cavity and paranasal sinuses), the upper part of the throat near the nasal cavity (nasopharynx), the voicebox (larynx), or the lower part of the throat near the larynx (hypopharynx). Depending on the location, the cancer can cause abnormal patches or open sores (ulcers) in the mouth and throat, unusual bleeding or pain in the mouth, sinus congestion that does not clear, sore throat, earache, pain when swallowing or difficulty swallowing, a hoarse voice, difficulty breathing, or enlarged lymph nodes.HNSCC can spread (metastasize) to other parts of the body, such as the lymph nodes or lungs. If it spreads, the cancer has a worse prognosis and can be fatal. About half of affected individuals survive more than five years after diagnosis.</Attribute>
+						<XRef ID="head-and-neck-squamous-cell-carcinoma" DB="Genetics Home Reference"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="keyword">Hereditary cancer syndrome</Attribute>
+					</AttributeSet>
+					<XRef ID="C535575" DB="MeSH"/>
+					<XRef ID="C1168401" DB="MedGen"/>
+					<XRef ID="67037" DB="Orphanet"/>
+					<XRef Type="MIM" ID="275355" DB="OMIM"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="974138" SubmissionName="DoCM_7-13-16">
+			<ClinVarSubmissionID localKey="ENST00000269305:c.580C&gt;T|MeSH:C535575" submittedAssembly="GRCh37" submitter="Database of Curated Mutations (DoCM)" submitterDate="2016-07-18"/>
+			<ClinVarAccession Acc="SCV000508863" Version="1" Type="SCV" OrgID="505871" OrganizationCategory="resource" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2016-05-31">
+				<ReviewStatus>no assertion criteria provided</ReviewStatus>
+				<Description>Likely pathogenic</Description>
+				<Citation>
+					<ID Source="PubMed">26619011</ID>
+				</Citation>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="Database of Curated Mutations" ID="ENST00000269305:c.580C&gt;T"/>
+			<AttributeSet>
+				<Attribute Type="ModeOfInheritance">Somatic mutation</Attribute>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>somatic</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>yes</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>literature only</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<SequenceLocation Assembly="GRCh37" Chr="17" alternateAllele="A" referenceAllele="G" start="7578269" stop="7578269" variantLength="1"/>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<XRef DB="MeSH" ID="C535575"/>
+				</Trait>
+			</TraitSet>
+			<Citation>
+				<URL>http://docm.genome.wustl.edu/variants/ENST00000269305:c.580C&gt;T</URL>
+			</Citation>
+			<StudyDescription>This is the initial submission of DoCM to ClinVar. DoCM is the database of curated mutations in cancer and seeks to leverage the community to outline all functionally important somatic cancer variants in the literature.</StudyDescription>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+	<ClinVarSet ID="40088869">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_000251.2(MSH2):c.2352T&gt;G (p.Phe784Leu) AND Hereditary nonpolyposis colon cancer</Title>
+		<ReferenceClinVarAssertion DateCreated="2018-10-10" DateLastUpdated="2019-03-30" ID="1614033">
+			<ClinVarAccession Acc="RCV000686602" Version="1" Type="RCV" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2018-06-26">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="38572681">
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="566716" Acc="VCV000566716" Version="1">
+				<Measure Type="single nucleotide variant" ID="560697">
+					<Name>
+						<ElementValue Type="Preferred">NM_000251.2(MSH2):c.2352T&gt;G (p.Phe784Leu)</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.2352T&gt;G" Accession="LRG_218t1" Type="HGVS, coding, LRG">LRG_218t1:c.2352T&gt;G</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="c.2352T&gt;G" Accession="NM_000251" Version="2" Type="HGVS, coding, RefSeq">NM_000251.2:c.2352T&gt;G</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.80290T&gt;G" Accession="LRG_218" Type="HGVS, genomic, LRG">LRG_218:g.80290T&gt;G</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.80290T&gt;G" Accession="NG_007110" Version="2" Type="HGVS, genomic, RefSeqGene">NG_007110.2:g.80290T&gt;G</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.47478413T&gt;G" Accession="NC_000002" Version="12" Type="HGVS, genomic, top level" integerValue="38">NC_000002.12:g.47478413T&gt;G</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.47705552T&gt;G" Accession="NC_000002" Version="11" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000002.11:g.47705552T&gt;G</Attribute>
+						<XRef ID="37" DB="ClinVar"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Phe784Leu" Accession="LRG_218p1" Type="HGVS, protein">LRG_218p1:p.Phe784Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Phe784Leu" Accession="NP_000242" Version="1" Type="HGVS, protein, RefSeq">NP_000242.1:p.Phe784Leu</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_000251.2:c.2352T&gt;G" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">F784L</Attribute>
+					</AttributeSet>
+					<CytogeneticLocation>2p21</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="2" Accession="NC_000002.12" start="47478413" stop="47478413" display_start="47478413" display_stop="47478413" variantLength="1" referenceAllele="T" alternateAllele="G" positionVCF="47478413" referenceAlleleVCF="T" alternateAlleleVCF="G"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="2" Accession="NC_000002.11" start="47705552" stop="47705552" display_start="47705552" display_stop="47705552" variantLength="1" referenceAllele="T" alternateAllele="G" positionVCF="47705552" referenceAlleleVCF="T" alternateAlleleVCF="G"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">mutS homolog 2</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">MSH2</ElementValue>
+						</Symbol>
+						<AttributeSet>
+							<Attribute dateValue="2015-07-09" Type="Haploinsufficiency">Sufficient evidence for dosage pathogenicity</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=MSH2</URL>
+							</Citation>
+						</AttributeSet>
+						<AttributeSet>
+							<Attribute dateValue="2015-07-09" Type="Triplosensitivity">No evidence available</Attribute>
+							<Citation>
+								<URL>https://www.ncbi.nlm.nih.gov/projects/dbvar/ISCA/isca_gene.cgi?sym=MSH2</URL>
+							</Citation>
+						</AttributeSet>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="2" Accession="NC_000002.12" start="47403067" stop="47634501" display_start="47403067" display_stop="47634501" Strand="+"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="2" Accession="NC_000002.11" start="47630205" stop="47710366" display_start="47630205" display_stop="47710366" variantLength="80162" Strand="+"/>
+						<XRef ID="4436" DB="Gene"/>
+						<XRef Type="MIM" ID="609309" DB="OMIM"/>
+						<XRef ID="HGNC:7325" DB="HGNC"/>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2013 (PubMed 23788249) for reporting incidental findings in exons.</Comment>
+						<Comment DataSource="NCBI curation" Type="public">This gene is cited in the ACMG recommendations of 2016 (PubMed 27854360) for reporting incidental findings in exons.</Comment>
+					</MeasureRelationship>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_000251.2(MSH2):c.2352T&gt;G (p.Phe784Leu)</ElementValue>
+				</Name>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="37727">
+				<Trait ID="38245" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Hereditary nonpolyposis colon cancer</ElementValue>
+						<XRef ID="443090" DB="Orphanet"/>
+					</Name>
+					<XRef ID="C0009405" DB="MedGen"/>
+					<XRef ID="443090" DB="Orphanet"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="1586282" SubmissionName="SUB4474525">
+			<ClinVarSubmissionID localKey="4474252|MedGen:C0009405" submittedAssembly="GRCh37" submitter="Invitae" submitterDate="2018-08-29"/>
+			<ClinVarAccession Acc="SCV000814127" Version="1" Type="SCV" OrgID="500031" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2018-06-26">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Uncertain significance</Description>
+				<Comment Type="public">This sequence change replaces phenylalanine with leucine at codon 784 of the MSH2 protein (p.Phe784Leu). The phenylalanine residue is highly conserved and there is a small physicochemical difference between phenylalanine and leucine. This variant is not present in population databases (ExAC no frequency). This variant has not been reported in the literature in individuals with MSH2-related disease. Algorithms developed to predict the effect of missense changes on protein structure and function are either unavailable or do not agree on the potential impact of this missense change (SIFT: "Deleterious"; PolyPhen-2: "Probably Damaging"; Align-GVGD: "Class C15"). In summary, the available evidence is currently insufficient to determine the role of this variant in disease. Therefore, it has been classified as a Variant of Uncertain Significance.</Comment>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="Invitae" ID="4474252"/>
+			<AttributeSet>
+				<Attribute Type="AssertionMethod">Nykamp K et al. (Genet Med 2017)</Attribute>
+				<Citation>
+					<ID Source="PubMed">28492532</ID>
+				</Citation>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="Description">not provided</Attribute>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="Variation">
+					<AttributeSet>
+						<Attribute Type="HGVS">NM_000251.2:c.2352T&gt;G</Attribute>
+					</AttributeSet>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">MSH2</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">Hereditary nonpolyposis colon cancer</ElementValue>
+					</Name>
+					<XRef DB="MedGen" ID="C0009405" Type="CUI"/>
+				</Trait>
+			</TraitSet>
+			<Citation Type="general">
+				<ID Source="PubMed">28492532</ID>
+			</Citation>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+	<ClinVarSet ID="40175990">
+		<RecordStatus>current</RecordStatus>
+		<Title>NM_016356.4(DCDC2):c.1208G&gt;A (p.Arg403His) AND not specified</Title>
+		<ReferenceClinVarAssertion DateCreated="2018-12-15" DateLastUpdated="2019-03-30" ID="1681151">
+			<ClinVarAccession Acc="RCV000727868" Version="1" Type="RCV" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2017-11-10">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Likely benign</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData ID="38609364">
+					<Attribute integerValue="7" Type="VariantAlleles"/>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant" ID="466322" Acc="VCV000466322" Version="1">
+				<Measure Type="single nucleotide variant" ID="455557">
+					<Name>
+						<ElementValue Type="Preferred">NM_016356.4(DCDC2):c.1208G&gt;A (p.Arg403His)</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Change="c.1208G&gt;A" Accession="NM_016356" Version="4" Type="HGVS, coding, RefSeq">NM_016356.4:c.1208G&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.209845G&gt;A" Accession="NG_012829" Version="2" Type="HGVS, genomic, RefSeqGene">NG_012829.2:g.209845G&gt;A</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.24178448C&gt;T" Accession="NC_000006" Version="12" Type="HGVS, genomic, top level" integerValue="38">NC_000006.12:g.24178448C&gt;T</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="g.24178676C&gt;T" Accession="NC_000006" Version="11" Type="HGVS, genomic, top level, previous" integerValue="37">NC_000006.11:g.24178676C&gt;T</Attribute>
+						<XRef ID="37" DB="ClinVar"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Change="p.Arg403His" Accession="NP_057440" Version="2" Type="HGVS, protein, RefSeq">NP_057440.2:p.Arg403His</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="Location">NM_016356.3:exon 9</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="Location">NM_016356.4:exon 9</Attribute>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="MolecularConsequence">missense variant</Attribute>
+						<XRef ID="SO:0001583" DB="Sequence Ontology"/>
+						<XRef ID="NM_016356.4:c.1208G&gt;A" DB="RefSeq"/>
+					</AttributeSet>
+					<AttributeSet>
+						<Attribute Type="ProteinChange1LetterCode">R403H</Attribute>
+					</AttributeSet>
+					<AlleleFrequencyList>
+						<AlleleFrequency Value="0.00208" Source="NHLBI Exome Sequencing Project (ESP) Exome Variant Server"/>
+						<AlleleFrequency Value="0.00220" Source="1000 Genomes Project"/>
+						<AlleleFrequency Value="0.00062" Source="Exome Aggregation Consortium (ExAC)"/>
+						<AlleleFrequency Value="0.00191" Source="The Genome Aggregation Database (gnomAD)"/>
+						<AlleleFrequency Value="0.00047" Source="The Genome Aggregation Database (gnomAD), exomes"/>
+						<AlleleFrequency Value="0.00237" Source="Trans-Omics for Precision Medicine (TOPMed)"/>
+					</AlleleFrequencyList>
+					<GlobalMinorAlleleFrequency Value="0.00220" Source="1000 Genomes Project" MinorAllele="T"/>
+					<CytogeneticLocation>6p22.3</CytogeneticLocation>
+					<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="6" Accession="NC_000006.12" start="24178448" stop="24178448" display_start="24178448" display_stop="24178448" variantLength="1" referenceAllele="C" alternateAllele="T" positionVCF="24178448" referenceAlleleVCF="C" alternateAlleleVCF="T"/>
+					<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="6" Accession="NC_000006.11" start="24178676" stop="24178676" display_start="24178676" display_stop="24178676" variantLength="1" referenceAllele="C" alternateAllele="T" positionVCF="24178676" referenceAlleleVCF="C" alternateAlleleVCF="T"/>
+					<MeasureRelationship Type="within single gene">
+						<Name>
+							<ElementValue Type="Preferred">doublecortin domain containing 2</ElementValue>
+						</Name>
+						<Symbol>
+							<ElementValue Type="Preferred">DCDC2</ElementValue>
+						</Symbol>
+						<SequenceLocation Assembly="GRCh38" AssemblyAccessionVersion="GCF_000001405.38" AssemblyStatus="current" Chr="6" Accession="NC_000006.12" start="24171755" stop="24383292" display_start="24171755" display_stop="24383292" Strand="-"/>
+						<SequenceLocation Assembly="GRCh37" AssemblyAccessionVersion="GCF_000001405.25" AssemblyStatus="previous" Chr="6" Accession="NC_000006.11" start="24171982" stop="24383519" display_start="24171982" display_stop="24383519" variantLength="211538" Strand="-"/>
+						<XRef ID="51473" DB="Gene"/>
+						<XRef Type="MIM" ID="605755" DB="OMIM"/>
+						<XRef ID="HGNC:18141" DB="HGNC"/>
+					</MeasureRelationship>
+					<XRef Type="rs" ID="139858268" DB="dbSNP"/>
+				</Measure>
+				<Name>
+					<ElementValue Type="Preferred">NM_016356.4(DCDC2):c.1208G&gt;A (p.Arg403His)</ElementValue>
+				</Name>
+				<XRef ID="CA3654488" DB="ClinGen"/>
+			</MeasureSet>
+			<TraitSet Type="Disease" ID="9590">
+				<Trait ID="16789" Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">not specified</ElementValue>
+					</Name>
+					<Name>
+						<ElementValue Type="Alternate">AllHighlyPenetrant</ElementValue>
+					</Name>
+					<AttributeSet>
+						<Attribute Type="public definition">The term 'not specified' was created for use in ClinVar so that submitters can convey the concept that a variant is benign, likely benign, or of uncertain significance for an unspecified set of disorders.  This usage was introduced in 2014 to replace AllHighlyPenetrant.</Attribute>
+					</AttributeSet>
+					<XRef ID="CN169374" DB="MedGen"/>
+				</Trait>
+			</TraitSet>
+		</ReferenceClinVarAssertion>
+		<ClinVarAssertion ID="1672227" SubmissionName="SUB4534263">
+			<ClinVarSubmissionID localKey="61885_000000" localKeyIsSubmitted="1" submittedAssembly="GRCh37" submitter="EGL Genetic Diagnostics,Eurofins Clinical Diagnostics" submitterDate="2018-09-19"/>
+			<ClinVarAccession Acc="SCV000855359" Version="1" Type="SCV" OrgID="500060" OrganizationCategory="laboratory" OrgType="primary" DateUpdated="2019-03-31"/>
+			<RecordStatus>current</RecordStatus>
+			<ClinicalSignificance DateLastEvaluated="2017-11-10">
+				<ReviewStatus>criteria provided, single submitter</ReviewStatus>
+				<Description>Likely benign</Description>
+			</ClinicalSignificance>
+			<Assertion Type="variation to disease"/>
+			<ExternalID DB="EGL Genetic Diagnostics" ID="61885"/>
+			<AttributeSet>
+				<Attribute Type="AssertionMethod">EGL_Classification_Definitions_2015</Attribute>
+				<Citation>
+					<URL>https://submit.ncbi.nlm.nih.gov/ft/byid/dn5yhybg/egl_classification_definitions_2015.pdf</URL>
+				</Citation>
+			</AttributeSet>
+			<ObservedIn>
+				<Sample>
+					<Origin>germline</Origin>
+					<Species TaxonomyId="9606">human</Species>
+					<AffectedStatus>unknown</AffectedStatus>
+					<Gender>mixed</Gender>
+				</Sample>
+				<Method>
+					<MethodType>clinical testing</MethodType>
+				</Method>
+				<ObservedData>
+					<Attribute Type="VariantAlleles" integerValue="7"/>
+				</ObservedData>
+				<ObservedData>
+					<Attribute Type="SingleHeterozygote" integerValue="7"/>
+				</ObservedData>
+			</ObservedIn>
+			<MeasureSet Type="Variant">
+				<Measure Type="single nucleotide variant">
+					<AttributeSet>
+						<Attribute Type="Location">NM_016356.4:Ex9</Attribute>
+					</AttributeSet>
+					<SequenceLocation Assembly="GRCh37" Chr="6" alternateAllele="T" referenceAllele="C" start="24178676" stop="24178676" variantLength="1"/>
+					<MeasureRelationship Type="variant in gene">
+						<Symbol>
+							<ElementValue Type="Preferred">DCDC2</ElementValue>
+						</Symbol>
+					</MeasureRelationship>
+					<XRef DB="dbSNP" ID="139858268" Type="rsNumber"/>
+				</Measure>
+			</MeasureSet>
+			<TraitSet Type="Disease">
+				<Trait Type="Disease">
+					<Name>
+						<ElementValue Type="Preferred">not specified</ElementValue>
+					</Name>
+				</Trait>
+			</TraitSet>
+			<Citation>
+				<URL>http://www.egl-eurofins.com/emvclass/emvclass.php?approved_symbol=DCDC2</URL>
+			</Citation>
+		</ClinVarAssertion>
+	</ClinVarSet>
+
+</ReleaseSet>

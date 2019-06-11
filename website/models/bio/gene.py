@@ -19,7 +19,7 @@ class GeneListEntry(BioModel):
 
 
 class GeneList(BioModel):
-    name = db.Column(db.String(256), nullable=False, unique=True, index=True)
+    name = db.Column(db.String(255), nullable=False, unique=True, index=True)
     entries = db.relationship(GeneListEntry)
 
     # some gene lists are specific only to one type of mutations:

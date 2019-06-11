@@ -10,6 +10,7 @@ from sqlalchemy.ext.hybrid import hybrid_property, Comparator, hybrid_method
 from sqlalchemy.orm import synonym, RelationshipProperty
 
 from database import db
+from database.types import ScalarSet
 from helpers.models import generic_aggregator
 
 from .diseases import ClinicalData
@@ -281,6 +282,7 @@ class PCAWGMutation(CancerMutation, BioModel):
     details_manager = create_cancer_meta_manager('PCAWG')
     pcawg_cancer_code = association_proxy('cancer', 'code')
     cancer_code = pcawg_cancer_code
+    is_visible = False
 
 
 class MC3Mutation(CancerMutation, BioModel):
@@ -303,6 +305,7 @@ class TCGAMutation(CancerMutation, BioModel):
 class InheritedMutation(MappedMutationDetails, BioModel):
     """Metadata for inherited diseased mutations from ClinVar from NCBI
 
+    Roughly corresponds to VCV in 2017+ ClinVar
     Columns description come from source VCF file headers.
     """
     name = 'ClinVar'
@@ -310,25 +313,45 @@ class InheritedMutation(MappedMutationDetails, BioModel):
     value_type = 'count'
 
     # RS: dbSNP ID (i.e. rs number)
-    db_snp_ids = db.Column(db.PickleType)
+    db_snp_ids = db.Column(ScalarSet(element_type=int), default=set)
 
-    # MUT: Is mutation (journal citation, explicit fact):
-    # a low frequency variation that is cited
-    # in journal and other reputable sources
-    is_low_freq_variation = db.Column(db.Boolean)
+    # TODO: use dbSNP to retrieve the VLD & PMC data?
 
     # VLD: This bit is set if the variant has 2+ minor allele
     # count based on frequency or genotype data
-    is_validated = db.Column(db.Boolean)
+    # is_validated = db.Column(db.Boolean)
 
     # PMC: Links exist to PubMed Central article
-    is_in_pubmed_central = db.Column(db.Boolean)
+    # is_in_pubmed_central = db.Column(db.Boolean)
 
     clin_data = db.relationship('ClinicalData', uselist=True)
 
+    # combined_significance = association_proxy('clin_data', 'combined_significance')
+
+    # CLNSIG: Variant Clinical Significance, as reported by ClinVar
+    # https://www.ncbi.nlm.nih.gov/clinvar/docs/variation_report/
+    # combined on variation level (VCV level)
+    combined_significances = db.Column(ScalarSet(separator='|'), default=set)
+
     sig_code = association_proxy('clin_data', 'sig_code')
+
     disease_name = association_proxy('clin_data', 'disease_name')
     disease_id = association_proxy('clin_data', 'disease_id')
+
+    # Because there are many possible SNVs for each protein mutations,
+    # multiple variation ids are to be collected:
+    variation_ids_list = association_proxy('clin_data', 'variation_id')
+
+    @hybrid_property
+    def variation_ids(self):
+        return set(self.variation_ids_list)
+
+    @property
+    def clinical_associations_by_disease_name(self) -> Dict[str, ClinicalData]:
+        return {
+            association.disease.name: association
+            for association in self.clin_data
+        }
 
     def get_value(self, filter=lambda x: x):
         return len(filter(self.clin_data))
@@ -347,10 +370,9 @@ class InheritedMutation(MappedMutationDetails, BioModel):
 
     def to_json(self, filter=lambda x: x):
         return {
-            'dbSNP id': self.db_snp_ids or [],
-            'Is validated': bool(self.is_validated),
-            'Is low frequency variation': bool(self.is_low_freq_variation),
-            'Is in PubMed Central': bool(self.is_in_pubmed_central),
+            'dbSNP id': list(self.db_snp_ids) or [],
+            # 'Is validated': bool(self.is_validated),
+            # 'Is in PubMed Central': bool(self.is_in_pubmed_central),
             'Clinical': [
                 d.to_json()
                 for d in filter(self.clin_data)

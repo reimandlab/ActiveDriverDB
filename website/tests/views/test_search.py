@@ -1,5 +1,8 @@
 import re
 from io import BytesIO
+from time import sleep
+
+from celery import Celery
 
 from view_testing import ViewTest, relative_location
 from miscellaneous import mock_proteins_and_genes
@@ -56,6 +59,15 @@ def entries_with_type(response, type_name):
 
 
 class TestSearchView(ViewTest):
+
+    def test_search_task_serialization(self):
+        from search.task import SearchTask
+        from search.filters import SearchViewFilters
+        filters = SearchViewFilters()
+        task = SearchTask(vcf_file='', textarea_query='', filter_manager=filters)
+        serialized = task.serialize()
+        task_recreated = SearchTask.from_serialized(**serialized)
+        assert isinstance(task_recreated.filter_manager, SearchViewFilters)
 
     def view_module(self):
         from website.views import search
@@ -401,6 +413,9 @@ class TestSearchView(ViewTest):
         assert unauthorized_save_response.status_code == 200
 
     def test_save_search_with_celery(self):
+        """Assumes that fully configured celery worker is available and running,
+
+        together with a broker and results backends."""
         self.app.config['USE_CELERY'] = True
         self.login('user@domain.org', 'password', create=True)
 
@@ -418,14 +433,42 @@ class TestSearchView(ViewTest):
             follow_redirects=True
         )
 
-        assert raw_response.json['status'] == 'PENDING'
-        assert raw_response.json['progress'] == 0
+        assert raw_response.json['status'] in {'PENDING', 'PROGRESS'}
+        assert raw_response.json['progress'] >= 0
 
-        # TODO: this test needs to include loading and final redirection
-        # attempts made so far failed, but pytest celery_session_worker
-        # and CELERY_TASK_ALWAYS_EAGER are the most promising ideas
+        remaining_trials = 100
+
+        last_status = None
+        last_progress = None
+
+        while remaining_trials != 0:
+            raw_response = self.client.get(
+                location.replace('/progress/', '/raw_progress/'),
+                follow_redirects=True
+            )
+
+            last_status = raw_response.json['status']
+            last_progress = raw_response.json['progress']
+
+            if last_status == 'SUCCESS':
+                break
+
+            sleep(0.1)
+            remaining_trials -= 1
+
+        assert last_status == 'SUCCESS'
+        assert last_progress == 10000
 
         self.app.config['USE_CELERY'] = False
+
+    def test_celery_worker_integrity(self):
+        import celery_worker
+
+        # celery was set-up
+        assert isinstance(celery_worker.celery, Celery)
+
+        # search task is declared to celery worker
+        assert celery_worker.search_task
 
     def basic_save_search(self, name='Test Dataset', query='chr18 19282310 T C'):
         save_response = self.search_mutations(

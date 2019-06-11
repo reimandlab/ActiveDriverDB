@@ -1,4 +1,5 @@
 import os
+
 from flask import Flask
 from flask_apscheduler import APScheduler
 from flask_assets import Environment
@@ -90,9 +91,9 @@ def create_app(config_filename='config.py', config_override={}):
     db.init_app(app)
     db.create_all(bind='__all__')
 
-    mode = app.config.get('BDB_MODE', 'c')
-    bdb.open(app.config['BDB_DNA_TO_PROTEIN_PATH'], mode=mode)
-    bdb_refseq.open(app.config['BDB_GENE_TO_ISOFORM_PATH'], mode=mode)
+    readonly = app.config.get('HDB_READONLY', False)
+    bdb.open(app.config['HDB_DNA_TO_PROTEIN_PATH'], readonly=readonly)
+    bdb_refseq.open(app.config['HDB_GENE_TO_ISOFORM_PATH'], readonly=readonly)
 
     if app.config['USE_LEVENSTHEIN_MYSQL_UDF']:
         with app.app_context():
@@ -133,12 +134,15 @@ def create_app(config_filename='config.py', config_override={}):
     import sys
     sys.path.insert(0, '..')
 
-    with app.app_context():
+    load_views = app.config.get('LOAD_VIEWS', True)
 
-        from website.views import views
+    if load_views:
+        with app.app_context():
 
-        for view in views:
-            view.register(app)
+            from website.views import views
+
+            for view in views:
+                view.register(app)
 
     #
     # Register functions for Jinja
@@ -154,22 +158,32 @@ def create_app(config_filename='config.py', config_override={}):
     ])
     app.jinja_loader = template_loader
 
-    from website.views.cms import substitute_variables
-    from website.views.cms import thousand_separated_number
-    from website.views.cms import ContentManagementSystem
-    from jinja2_pluralize import pluralize
-    import json
-
     # csrf adds hooks in before_request to validate token
     app.before_request(csrf.csrf_protect)
 
     app.jinja_env.trim_blocks = True
     app.jinja_env.lstrip_blocks = True
 
+    app.dependency_manager = DependencyManager(app)
+
+    if load_views:
+        # TODO: this requires accessing views to load CMS functions;
+        #  optimally, the CMS logic would be moved out from views.
+        register_jinja_functions(app)
+
+    return app
+
+
+def register_jinja_functions(app):
+
+    from website.views.cms import substitute_variables
+    from website.views.cms import thousand_separated_number
+    from website.views.cms import ContentManagementSystem
+    from jinja2_pluralize import pluralize
+    import json
+
     jinja_globals = app.jinja_env.globals
     jinja_filters = app.jinja_env.filters
-
-    app.dependency_manager = DependencyManager(app)
 
     jinja_globals['dependency'] = app.dependency_manager.get_dependency
     jinja_globals['system_menu'] = ContentManagementSystem._system_menu
@@ -183,5 +197,3 @@ def create_app(config_filename='config.py', config_override={}):
     jinja_filters['json'] = json.dumps
     jinja_filters['substitute_allowed_variables'] = substitute_variables
     jinja_filters['pluralize'] = pluralize
-
-    return app

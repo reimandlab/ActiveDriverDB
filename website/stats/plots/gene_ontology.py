@@ -3,7 +3,7 @@ from pandas import DataFrame
 from analyses import pan_cancer_analysis, clinvar_analysis
 from helpers.plots import bar_plot
 
-from ..store import cases, counter
+from ..store import cases
 from .common import site_types_with_any
 
 

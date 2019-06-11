@@ -1,13 +1,13 @@
 from warnings import warn
 
-from models import MIMPMutation
+from models import MIMPMutation, SiteType
 from helpers.bioinf import decode_raw_mutation
-from helpers.parsers import tsv_file_iterator
+from helpers.parsers import tsv_file_iterator, count_lines_tsv
 
-from .mutation_importer import MutationImporter
+from .mutation_importer import ChunkedMutationImporter
 
 
-class MIMPImporter(MutationImporter):
+class MIMPImporter(ChunkedMutationImporter):
     # load("all_mimp_annotations_p085.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
@@ -28,15 +28,27 @@ class MIMPImporter(MutationImporter):
         'probability',
         'site_id'
     )
+    site_type = 'phosphorylation'
+    chunk_size = round(24227847 / 5)   # should be optimal for 8 GB of memory
 
     def iterate_lines(self, path):
         return tsv_file_iterator(path, self.header)
 
-    def parse(self, path):
+    def iterate_chunk(self, path, chunk_start, chunk_size):
+        header = self.header if chunk_size == 0 else None
+        return tsv_file_iterator(path, header, skip=chunk_start, limit=chunk_size)
+
+    def count_lines(self, path) -> int:
+        return count_lines_tsv(path)
+
+    def parse_chunk(self, path, chunk_start, chunk_size):
         mimps = []
+        site_type = SiteType.query.filter_by(name=self.site_type).one()
+        skipped_predictions = 0
+        mismatched_sequences = 0
 
         def parser(line):
-            nonlocal mimps
+            nonlocal mimps, skipped_predictions, mismatched_sequences
 
             refseq = line[0]
             mut = line[1]
@@ -52,7 +64,7 @@ class MIMPImporter(MutationImporter):
             try:
                 assert ref == protein.sequence[pos - 1]
             except (AssertionError, IndexError):
-                self.broken_seq[refseq].append((protein.id, alt))
+                mismatched_sequences += 1
                 return
 
             assert line[13] in ('gain', 'loss')
@@ -66,22 +78,20 @@ class MIMPImporter(MutationImporter):
                 site
                 for site in protein.sites
                 if site.position == psite_pos
+                and any(t == site_type for t in site.types)
             ]
 
-            if len(affected_sites) != 1:
+            # as this is site-type specific and only one site object of given type should be placed at a position,
+            # we can should assume that the selection above will always produce less than two sites
+            assert len(affected_sites) <= 1
+
+            if not affected_sites:
                 warning = UserWarning(
-                    'Skipping %s: %s%s%s (for site at position %s): ' % (
-                       refseq, ref, pos, alt, psite_pos
-                    ) +
-                    'MIMP site does not match to the database - ' +
-                    (
-                        'too many (%s) sites found.' % len(affected_sites)
-                        if affected_sites else
-                        'given site not found.'
-                    )
+                    f'Skipping {refseq}: {ref}{pos}{alt} (for site at position {psite_pos}): '
+                    'MIMP site does not match to the database - given site not found.'
                 )
-                print(warning)
                 warn(warning)
+                skipped_predictions += 1
                 return
 
             site_id = affected_sites[0].id
@@ -98,8 +108,14 @@ class MIMPImporter(MutationImporter):
                 )
             )
 
-        for line in self.iterate_lines(path):
+        for line in self.iterate_chunk(path, chunk_start, chunk_size):
             parser(line)
+
+        if skipped_predictions:
+            ratio = skipped_predictions / (skipped_predictions + len(mimps))
+            print(f'In this chunk skipped {skipped_predictions} MIMP predictions ({ratio * 100}%)')
+
+        print(f'Skipped {mismatched_sequences} mismatched sequences')
 
         return mimps
 

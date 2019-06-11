@@ -2,6 +2,20 @@
 {% from 'macros.njk' import list_site_kinases %}
 {% from 'mimp.njk' import as_list_items %}
 
+{% macro gold_stars(count, title='') %}
+  {% if count == -1 %}
+  {% else %}
+    <span title="{{ title }}" class="gold-stars">
+    {% for i in range(count) %}
+      <span class="glyphicon glyphicon-star gold"></span>
+    {% endfor %}
+    {% for i in range(4 - count) %}
+        <span class="glyphicon glyphicon-star-empty"></span>
+    {% endfor %}
+    </span>
+  {% endif %}
+{% endmacro %}
+
 PTM mutation type: {{ mutation.category }}<br>
 Mutation {{ mutation.pos }} {{ mutation.ref }} → {{ mutation.alt }}<br>
 Mutation {{ value_type | lower }}: {{ mutation.value }}<br>
@@ -39,10 +53,14 @@ Affected PTM site{{ 's' if mutation.sites | length > 1 }}:
             {% if column == 'Clinical' %}
                 {% for sub_value in value %}
                     <li> {{ sub_value['Disease'] }}
-                    <ul>
-                        <li> Significance: {{ sub_value['Significance'] }}
-                        <li> Review status: {{ sub_value['Review status'] }}
-                    </ul>
+                    <div>
+                        {% if not sub_value['Significance'] %}
+                            Missing significance information
+                        {% endif %}
+                            {{ sub_value['Significance'] }}
+                        {{ gold_stars(sub_value['Stars'], sub_value['Status']) }}
+                        <a href="https://www.ncbi.nlm.nih.gov/clinvar/variation/{{ sub_value['VCV'] }}">{{ sub_value['VCV'] }}</a>
+                    </div>
                 {% endfor %}
             {% elif column == 'dbSNP id' %}
                 <li> {{ column }}:

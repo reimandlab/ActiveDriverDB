@@ -117,7 +117,7 @@ class MotifsCounter:
 
     def gather_muts_and_sites(
         self, mutations: BaseQuery, sites: BaseQuery,
-        show_progress=True, occurrences_in: List[MutationSource]=None, intersection=None
+        show_progress=True, occurrences_in: List[MutationSource] = None, intersection=None
     ) -> MotifsData:
         """If occurrences_in is provided, the count of mutations will
         represent number of occurrences of mutations in provided

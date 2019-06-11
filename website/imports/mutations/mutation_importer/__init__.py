@@ -1,3 +1,4 @@
+import gc
 import gzip
 from abc import abstractmethod
 from collections import defaultdict
@@ -68,7 +69,7 @@ class MutationImporter(BioImporter, MutationExporter):
             raise Exception('path is required when no default_path is set')
         return path
 
-    def load(self, path=None, update=False, **ignored_kwargs):
+    def load(self, path=None, update=False, **kwargs):
         """Load, parse and insert mutations from given path.
 
         If update is True, old mutations will be updated and new added.
@@ -83,23 +84,8 @@ class MutationImporter(BioImporter, MutationExporter):
         print(f'Loading {self.model_name}:')
 
         path = self.choose_path(path)
-        self.base_importer.prepare()
 
-        # as long as 'parse' uses 'get_or_make_mutation' method, it will
-        # populate 'self.base_importer.mutations' with new tuples of data
-        # necessary to create rows corresponding to 'Mutation' instances.
-        mutation_details = self.parse(path)
-
-        # first insert new 'Mutation' data
-        self.base_importer.insert()
-
-        # then insert or update details about mutation (so self.model entries)
-        if update:
-            self.update_details(mutation_details)
-        else:
-            self.insert_details(mutation_details)
-
-        self.commit()
+        self._load(path, update, **kwargs)
 
         if self.broken_seq:
             report_file = 'broken_seq_' + self.model_name + '.log'
@@ -121,6 +107,34 @@ class MutationImporter(BioImporter, MutationExporter):
             )
 
         print(f'Loaded {self.model_name}.')
+
+    parse_kwargs = []
+
+    def _load(self, path, update, **kwargs):
+
+        self.base_importer.prepare()
+
+        gc.collect()
+
+        # as long as 'parse' uses 'get_or_make_mutation' method, it will
+        # populate 'self.base_importer.mutations' with new tuples of data
+        # necessary to create rows corresponding to 'Mutation' instances.
+        parse_kwargs = {k: v for k, v in kwargs.items() if k in self.parse_kwargs}
+        mutation_details = self.parse(path, **parse_kwargs)
+
+        # first insert new 'Mutation' data
+        self.base_importer.insert()
+
+        # then insert or update details about mutation (so self.model entries)
+        if update:
+            self.update_details(mutation_details)
+        else:
+            self.insert_details(mutation_details)
+
+        self.commit()
+
+        db.session.expire_all()
+        gc.collect()
 
     def test_line(self, line):
         """Whether the line should be imported/exported or not"""
@@ -384,3 +398,35 @@ class MutationImporter(BioImporter, MutationExporter):
         self.mutations_details_pointers_grouped_by_unique_mutations[mutation_id].append(new_pointer)
 
 
+class ChunkedMutationImporter(MutationImporter):
+
+    # if the input file is so large that it needs to be processed in chunks
+    # (and the importer is able to handle chunk-by-chunk processing), what
+    # should be the size of each chunk (in number of lines)
+    chunk_size = None
+    parse_kwargs = ['chunk_start', 'chunk_size']
+
+    @abstractmethod
+    def count_lines(self, path) -> int:
+        pass
+
+    @abstractmethod
+    def parse_chunk(self, path, chunk_start, chunk_size):
+        pass
+
+    def parse(self, path, chunk_start, chunk_size):
+        return self.parse_chunk(path, chunk_start, chunk_size)
+
+    def _load(self, path, update, chunk=None):
+        total = self.count_lines(path)
+        chunks = (
+            list(range(0, total, self.chunk_size))
+            if self.chunk_size else
+            [None]
+        )
+        if chunk is not None:
+            print(f'Limitting imported chunks to {chunk+1}-th chunk out of {len(chunks)}')
+            chunks = [chunks[chunk]]
+        for chunk_start in chunks:
+            print(f'Importing chunk from {chunk_start/total*100:.2f} to {(chunk_start + self.chunk_size)/total*100:.2f}:')
+            super()._load(path, update, chunk_start=chunk_start, chunk_size=self.chunk_size)

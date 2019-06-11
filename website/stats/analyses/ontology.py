@@ -2,13 +2,12 @@ import re
 from tempfile import NamedTemporaryFile
 from pathlib import Path
 from base64 import b64encode
-from typing import Dict, Counter
-
-import networkx
-from collections.__init__ import defaultdict
+from typing import Dict
+from collections import Counter, defaultdict
 from functools import lru_cache
 
-import obonet as obonet
+import networkx
+import obonet
 from Levenshtein._levenshtein import ratio
 from matplotlib import colors
 from matplotlib.cm import get_cmap
@@ -86,7 +85,7 @@ class Ontology:
 
     def __init__(self, obo_path):
         self.ontology = obonet.read_obo(obo_path)
-        # initialize cached propertry with side effects
+        # initialize cached property with side effects
         self.by_name
 
     @property
@@ -209,7 +208,7 @@ class Ontology:
                             break
 
                         for synonym in data.get('synonym', []):
-                            match = re.match('"(.*?)" (.*?) \[.*\]', synonym)
+                            match = re.match(r'"(.*?)" (.*?) \[.*\]', synonym)
                             synonym_name, similarity = match.group(1, 2)
                             if synonym_name.lower() == term.lower():
                                 if similarity in ['EXACT', 'NARROW']:
@@ -301,7 +300,7 @@ class Ontology:
         return detected_nodes
 
     def propagate_terms_counts(self, starting_nodes):
-        propagated_terms = Counter()# defaultdict(int)
+        propagated_terms = Counter()
 
         for starting_node, count in starting_nodes.items():
 

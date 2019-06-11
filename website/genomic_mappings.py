@@ -1,9 +1,9 @@
 from typing import List
 
-from berkley_db import BerkleyHashSetWithCache
+from hash_set_db import HashSetWithCache
 
 
-class GenomicMappings(BerkleyHashSetWithCache):
+class GenomicMappings(HashSetWithCache):
 
     def add_genomic_mut(self, chrom, dna_pos, dna_ref, dna_alt, aa_mut, strand='+', exon='EX1', is_ptm=False):
         """Add a genomic mutation mapping to provided 'mut' aminoacid mutation.

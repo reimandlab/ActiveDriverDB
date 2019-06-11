@@ -47,6 +47,15 @@ Q5RFJ2	OrthoDB	EOG091G0VKY
 Q5RFJ2	TreeFam	TF102002\
 """
 
+idmapping_tp53_dat = """\
+P04637	RefSeq_NT	NM_001276697.1
+P04637	RefSeq_NT	NM_001276698.1
+P04637	RefSeq_NT	NM_001276699.1
+P04637-1	RefSeq_NT	NM_000546.5
+P04637-1	RefSeq_NT	NM_001126112.2
+P04637-2	RefSeq_NT	NM_001126114.2\
+"""
+
 refseq_data = """\
 #tax_id	GeneID	Symbol	RSG	LRG	RNA	t	Protein	p	Category
 9606	29974	A1CF	NG_029916.1		NM_001198819.1		NP_001185748.1		reference standard
@@ -105,7 +114,7 @@ class TestImport(DatabaseTest):
 
             references = load_external_references(uniprot_filename, refseq_filename, reflink_filename)
 
-            # there are 3 references we would like to have extracted
+            # there are references for 3 proteins we would like to have extracted
             assert len(references) == 3
 
             protein = proteins_we_have['NM_011739']
@@ -132,7 +141,7 @@ class TestImport(DatabaseTest):
             assert len(protein.external_references.uniprot_entries) == 1
             uniprot_entry = protein.external_references.uniprot_entries[0]
             assert uniprot_entry.accession == 'Q5RFJ2'
-            assert uniprot_entry.isoform == 1
+            assert uniprot_entry.isoform is None
             assert uniprot_entry.reviewed is False
 
             # check if protein without references stays clear
@@ -148,3 +157,68 @@ class TestImport(DatabaseTest):
             # check the protein with refseq references and gene with entrez id
             assert tp53_protein.external_references.refseq_np == 'NP_000537'
             assert tp53.entrez_id == 7157
+
+    def test_uniprot_multiple_isoforms(self):
+
+        uniprot_filename = make_named_temp_file(data=idmapping_tp53_dat, opener=gzip.open, mode='wt')
+        reflink_filename = make_named_temp_file(data=reflink_data, opener=gzip.open, mode='wt', suffix='.gz')
+        refseq_filename = make_named_temp_file(data=refseq_data)
+
+        refseqs = [
+            # the chosen, canonical isoform - this one should be chosen as primary as it is the oldest canonical isoform
+            'NM_000546',
+            # another, also canonical isoform
+            'NM_001126112',
+            # second isoform
+            'NM_001126114',
+            # associated with the reviewed Uniprot entry, but not bound to any specific isoform
+            'NM_001276697',
+            'NM_001276698',
+            'NM_001276699',
+        ]
+
+        tp53 = Gene(name='TP53')
+        tp53_proteins = {
+            refseq_nm: Protein(refseq=refseq_nm, gene=tp53)
+            for refseq_nm in refseqs
+        }
+
+        with self.app.app_context():
+            # let's pretend that we already have some proteins in our db
+            db.session.add_all(tp53_proteins.values())
+
+            references = load_external_references(uniprot_filename, refseq_filename, reflink_filename)
+
+            # there are references for six proteins we would like to have extracted
+            assert len(references) == 6
+
+            uniprot_entries = {}
+
+            # all the isoforms should have one uniprot entry, mapped to 'P04637':
+            for protein in tp53_proteins.values():
+                entries = protein.external_references.uniprot_entries
+                print(protein)
+                assert len(entries) == 1
+                entry = entries[0]
+                assert entry.accession == 'P04637'
+                uniprot_entries[protein.refseq] = entry
+
+            # are canonical isoforms associated with the first isoform?
+            a = uniprot_entries['NM_000546']
+            b = uniprot_entries['NM_001126112']
+            assert a.isoform == 1
+            assert b.isoform == 1
+
+            # and is it the same object?
+            assert a == b
+
+            # is the second isoform mapped to the second isoform?
+            assert uniprot_entries['NM_001126114'].isoform == 2
+
+            # are the loosely associated sequences bound to the NULL isoform entry?
+            loosely_associated = ['NM_001276697', 'NM_001276698', 'NM_001276699']
+            assert all(
+                uniprot_entries[refseq].isoform is None
+                for refseq in loosely_associated
+            )
+

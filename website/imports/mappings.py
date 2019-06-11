@@ -27,14 +27,15 @@ def import_genome_proteome_mappings(
     bdb.reset()
     bdb.close()
 
-    path = current_app.config['BDB_DNA_TO_PROTEIN_PATH']
+    path = current_app.config['HDB_DNA_TO_PROTEIN_PATH']
 
     if bdb_dir:
         path = bdb_dir + '/' + basename(path)
 
-    bdb.open(path, cache_size=20480 * 8 * 8 * 8 * 8)
+    bdb.open(path, size=5*1e10)
 
-    with bdb.cached_session(overwrite_db_values=True):
+    with bdb.cached_session():
+        add = bdb.cached_add
         for line in read_from_gz_files(mappings_dir, mappings_file_pattern, after_batch=bdb.flush_cache):
             try:
                 chrom, pos, ref, alt, prot = line.rstrip().split('\t')
@@ -57,7 +58,12 @@ def import_genome_proteome_mappings(
                 except ValueError as e:
                     print(e, line)
                     continue
-                assert refseq.startswith('NM_')
+
+                try:
+                    assert refseq.startswith('NM_')
+                except AssertionError as e:
+                    print(e, line)
+                    continue
                 # refseq = int(refseq[3:])
                 # name and refseq are redundant with respect one to another
 
@@ -117,7 +123,7 @@ def import_genome_proteome_mappings(
                     is_ptm_related
                 )
 
-                bdb.cached_add(snv, item)
+                add(snv, item)
 
     return broken_seq
 
@@ -135,19 +141,20 @@ def import_aminoacid_mutation_refseq_mappings(
     bdb_refseq.reset()
     bdb_refseq.close()
 
-    path = current_app.config['BDB_GENE_TO_ISOFORM_PATH']
+    path = current_app.config['HDB_GENE_TO_ISOFORM_PATH']
 
     if bdb_dir:
         path = bdb_dir + '/' + basename(path)
 
-    bdb_refseq.open(path, cache_size=20480 * 8 * 8 * 8 * 8)
+    bdb_refseq.open(path, size=2*1e10)
 
     genes = {
-        protein: protein.gene.name
+        protein: protein.gene_name
         for protein in proteins.values()
     }
 
-    with bdb_refseq.cached_session(overwrite_db_values=True):
+    with bdb_refseq.cached_session():
+        add = bdb_refseq.cached_add_integer
         for line in read_from_gz_files(mappings_dir, mappings_file_pattern, after_batch=bdb_refseq.flush_cache):
             try:
                 chrom, pos, ref, alt, prot = line.rstrip().split('\t')
@@ -199,7 +206,7 @@ def import_aminoacid_mutation_refseq_mappings(
                     if broken_sequence_tuple:
                         continue
 
-                    bdb_refseq.cached_add_integer(
+                    add(
                         genes[protein] + ' ' + aa_ref + str(aa_pos) + aa_alt,
                         protein.id
                     )

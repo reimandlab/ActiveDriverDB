@@ -25,7 +25,7 @@ from models import GeneList
 from models import GeneListEntry
 
 
-def get_proteins(cached_proteins={}, reload_cache=False):
+def get_proteins(cached_proteins={}, reload_cache=False, options=None):
     """Fetch all proteins from database as refseq => protein object mapping.
 
     By default proteins will be cached at first call and until cached_proteins
@@ -33,8 +33,11 @@ def get_proteins(cached_proteins={}, reload_cache=False):
     cached results from the first time will be returned."""
     if reload_cache:
         cached_proteins.clear()
+    query = Protein.query
+    if options:
+        query = query.options(options)
     if not cached_proteins:
-        for protein in Protein.query:
+        for protein in query:
             cached_proteins[protein.refseq] = protein
     return cached_proteins
 
@@ -243,7 +246,7 @@ def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='dat
                 # only one isoform ?
                 # print('No isoform specified for', full_uniprot, refseq_nm)
                 uniprot = full_uniprot
-                isoform = 1
+                isoform = None   # indicates "no isoform specified"
 
             reference, new = get_or_create(ProteinReferences, protein=protein)
             uniprot_entry, new_uniprot = get_or_create(UniprotEntry, accession=uniprot, isoform=isoform)
@@ -438,7 +441,12 @@ def select_preferred_isoform(gene):
 
         isoform_age_in_refseq_db = int(isoform.refseq[3:])
 
-        return isoform.is_swissprot_canonical_isoform, isoform.length, -isoform_age_in_refseq_db
+        return (
+            isoform.is_swissprot_canonical_isoform,
+            isoform.is_swissprot_isoform,
+            isoform.length,
+            -isoform_age_in_refseq_db
+        )
 
     isoforms = sorted(gene.isoforms, key=isoform_ordering, reverse=True)
 
@@ -1124,8 +1132,8 @@ def pathways(path='data/hsapiens.pathways.NAME.gmt'):
 
         if gene_set_name.startswith('GO'):
             pathway.gene_ontology = int(gene_set_name[3:])
-        elif gene_set_name.startswith('REAC'):
-            pathway.reactome = int(gene_set_name[5:])
+        elif gene_set_name.startswith('REAC:R-HSA-'):
+            pathway.reactome = int(gene_set_name[11:])
         else:
             raise Exception(
                 'Unknown gene set name: "%s"' % gene_set_name

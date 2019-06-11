@@ -204,6 +204,8 @@ def cancer_mutations(result, significant=True):
         result['all_active_mutations']
     )
 
+    cancer_by_code = {cancer.code: cancer.name for cancer in Cancer.query}
+
     mutations = mutations.assign(cancer_name=Series(
         cancer_by_code[mutation.cancer_type]
         for mutation in mutations.itertuples(index=False)
@@ -223,7 +225,6 @@ def merged_cancer_mutations(site_type):
 @cases(site_type=site_types)
 def cancers_ontology(site_type, significant=True, vector=False):
     result = pan_cancer_analysis(site_type)
-    cancer_by_code = {cancer.code: cancer.name for cancer in Cancer.query}
 
     mutations = cancer_mutations(result, significant=significant)
 
@@ -250,7 +251,7 @@ def diseases_wordcloud(site_type, significant=True):
     result = clinvar_analysis(site_type.name)
     mutations = disease_mutations(result)
     print(
-        'Copy-pase following text into a wordcloud generation program, '
+        'Copy-paste following text into a wordcloud generation program, '
         'e.g. https://www.jasondavies.com/wordcloud/'
     )
     print(' '.join(mutations.disease))
@@ -276,7 +277,7 @@ def cancer_census_enrichment(site_type):
     p_values = {}
     for name, analysis in analyses.items():
         result = analysis(site_type)
-        ct, enrichment, p_value = active_driver_genes_enrichment(result)
-        results[name] = enrichment
-        p_values[name] = p_value
+        observed_count, expected_count, contingency_table, oddsratio, pvalue = active_driver_genes_enrichment(result)
+        results[name] = oddsratio
+        p_values[name] = pvalue
     return [results.keys(), results.values(), p_values.values()]

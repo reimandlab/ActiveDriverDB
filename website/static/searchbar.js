@@ -18,13 +18,11 @@ var SearchBar = function ()
         template: default_template_result
     }
 
-    function update_results(raw_result, original_query) {
+    function update_results(results, original_query) {
 
         // if we've got a result of an old query, it's not interesting anymore
         if(original_query !== current_query)
             return false
-
-        var results = JSON.parse(raw_result)
 
         if(!results.entries.length)
         {

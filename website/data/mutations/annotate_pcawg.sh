@@ -1,21 +1,5 @@
 #!/bin/bash
-if [ -f annovar.latest.tar.gz ];
-then
-    tar -xvzf annovar.latest.tar.gz
-    rm annovar.latest.tar.gz
-else
-    if [ ! -d annovar ];
-    then
-        echo "Please, download annovar into data/mutations directory and run data/mutations/annotate_mc3.sh script then"
-        exit 1
-    fi
-fi
-
-if [ ! -d humandb ];
-then
-    ./annovar/annotate_variation.pl -buildver hg19 -downdb -webfrom annovar refGene humandb/
-fi
-
+./ensure_annovar.sh
 file=mutations_PANCAN_minus_skin_lymph_esophagus_liver.txt
 
 ./annovar/table_annovar.pl $file humandb/ -buildver hg19 -out pcawg_annotated -remove -protocol refGene -operation g -nastring . -thread 2 -otherinfo

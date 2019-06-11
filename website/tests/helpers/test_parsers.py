@@ -51,3 +51,20 @@ def test_parse_tsv_file(tmpdir):
         parse,
         file_header=['gene', 'id', 'some column with spaces']
     )
+
+    counter = 0
+
+
+def test_tsv_file_iterator(tmpdir):
+    some_tsv_text = ('1', '2', '3', '4')
+    temp_file = tmpdir.join('some_tsv_file.tsv')
+    temp_file.write('\n'.join(some_tsv_text))
+    file_name = str(temp_file)
+
+    def test(**kwargs):
+        return sum(parsers.tsv_file_iterator(file_name, **kwargs), [])
+
+    assert ['2', '3', '4'] == test(skip=1)
+    assert ['4'] == test(skip=3)
+    assert ['3', '4'] == test(skip=2, limit=2)
+    assert ['3'] == test(skip=2, limit=1)

@@ -7,6 +7,8 @@ from diskcache import Cache as DiskCache
 
 class Cache(DiskCache):
 
+    caches = []
+
     def __init__(self, directory, *args, cache_root=None, **kwargs):
         if not cache_root:
             cache_root = Path(__file__).absolute().parent.parent
@@ -14,6 +16,12 @@ class Cache(DiskCache):
         if not path.is_absolute():
             path = cache_root / path
         super().__init__(str(path), *args, **kwargs)
+        self.caches.append(self)
+
+
+def purge_all_caches():
+    for cache in Cache.caches:
+        cache.clear()
 
 
 def cache_decorator(cache: Cache) -> Callable:

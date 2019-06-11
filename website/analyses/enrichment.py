@@ -598,8 +598,8 @@ def genes_enrichment(observed_genes, reference_set):
     return observed_count, expected_count, contingency_table, oddsratio, pvalue
 
 
-def active_driver_genes_enrichment(analysis_result):
-    cancer_genes = load_cancer_census()
+def active_driver_genes_enrichment(analysis_result, cancer_census_path='data/census.csv'):
+    cancer_genes = load_cancer_census(cancer_census_path)
     observed_genes = {
         Gene.query.filter_by(name=gene_name).one()
         for gene_name in analysis_result['top_fdr'].gene
@@ -841,7 +841,7 @@ def are_glycosylation_sites_enriched(source_name: str, population_name: str, dis
 
 def sites_mutated_ratio(
     path='static/plot.png', width=1400, height=900, dpi=72,
-    exclude: List[str]=None, glycosylation='together'
+    exclude: List[str] = None, glycosylation='together'
 ):
     from pandas import DataFrame
     from helpers.ggplot2 import GG

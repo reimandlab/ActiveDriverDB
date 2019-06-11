@@ -1,6 +1,6 @@
 from database import db
 from .model_testing import ModelTest
-from models import Protein, Site, Gene
+from models import Protein, Site, Gene, Mutation, KinaseGroup, Kinase
 
 
 class ProteinTest(ModelTest):
@@ -36,7 +36,7 @@ class ProteinTest(ModelTest):
 
     def test_is_preferred_isoform(self):
 
-        proteins = [Protein(refseq='NM_%i' % i) for i in range(5)]
+        proteins = [Protein(refseq=f'NM_{i}') for i in range(5)]
         preferred = proteins[0]
         g = Gene(name='XYZ', isoforms=proteins, preferred_isoform=preferred)
         db.session.add(g)
@@ -50,3 +50,27 @@ class ProteinTest(ModelTest):
 
         for i in range(1, 5):
             assert not proteins[i].is_preferred_isoform
+
+    def test_mutations_count(self):
+
+        for count in [0, 1, 2, 10]:
+            protein = Protein(refseq=f'NM_000{count}', sequence='X' * 20)
+            mutations = [
+                Mutation(position=i, alt='Y', protein=protein)
+                for i in range(count)
+            ]
+            db.session.add(protein)
+            db.session.add_all(mutations)
+
+            assert protein.mutations_count == count
+
+    def test_models_repr(self):
+
+        group = KinaseGroup(name='Group 1')
+        kinase_a = Kinase(name='A', group=group)
+        kinase_b = Kinase(name='B', group=group)
+
+        group_repr = '<KinaseGroup Group 1, with 2 kinases>'
+        assert repr(group) == group_repr
+        assert repr(kinase_a) == f'<Kinase A belonging to {group_repr} group>'
+        assert repr(kinase_b) == f'<Kinase B belonging to {group_repr} group>'

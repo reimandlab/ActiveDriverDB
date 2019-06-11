@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "utils.html" import uniprot_link %}
 
 {% block title %} {{ gene.name }} - {{ super() }} {% endblock %}
 
@@ -60,7 +61,7 @@
         Full name
       </th>
       <th data-sortable=true>
-        Uniprot ID
+        UniProt ID
       </th>
       <th data-sortable=true>
         Residues
@@ -78,7 +79,7 @@
     </thead>
     <tbody>
     {% for isoform in gene.isoforms or '' %}
-      <tr class="{{ 'preferred' if  isoform.is_preferred_isoform }}">
+      <tr class="{{ 'preferred' if isoform.is_preferred_isoform }}">
         <td>
           {{ isoform.refseq }} {% if isoform.is_preferred_isoform %} <span class="preferred">Preferred</span> {% endif %}
         </td>
@@ -89,17 +90,7 @@
           {% set references = isoform.external_references %}
           <ul class="external-references list-unstyled">
           {% for uniprot in references.uniprot_entries | sort(attribute='reviewed', reverse=True) %}
-              <li class="uniprot">
-                {% set reviewed = "reviewed" if uniprot.reviewed else "unreviewed" %}
-                <div class="status-indicator {{ reviewed }}" title="{{ reviewed | title }} entry">
-                  <span class="glyphicon glyphicon-file"></span>
-                  {% if uniprot.reviewed %}
-                    <span class="glyphicon glyphicon-star-empty star"></span>
-                  {% endif %}
-                </div>
-                <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}" {{ target }}>{{ uniprot.accession }}</a>{% if uniprot.isoform != 1 %},
-                <a href="http://www.uniprot.org/uniprot/{{ uniprot.accession }}#{{ uniprot.accession }}-{{ uniprot.isoform }}" {{ target }}>isoform&nbsp;{{ uniprot.isoform }}</a>
-              {% endif %}
+              <li class="uniprot">{{ uniprot_link(uniprot) }}
           {% endfor %}
           </ul>
         </td>
@@ -119,14 +110,16 @@
         <td>
           <ul class="list-unstyled">
             <li><a href="{{ url_for('SequenceView:show', refseq=isoform.refseq) }}">
-              Sequence View
-              ({{ isoform.sites | length }} PTM sites,
-              {{ isoform.confirmed_mutations_count }} mutations)
+              Sequence
+              <ul>
+                <li>{{ isoform.sites | length }} PTM sites,
+                <li>{{ isoform.confirmed_mutations_count }} mutations
+              </ul>
             </a>
             {# Note: fetching interactors may be slow sometimes, although very useful #}
             {% set interactors = isoform.interactors_count %}
             <li><a href="{{ url_for('NetworkView:show', refseq=isoform.refseq) }}" class="{{ 'inactive' if not interactors }}">
-              Network View
+              Network
               {% if interactors %}
                 ({{ interactors }} PTM enzymes)
               {% endif %}
