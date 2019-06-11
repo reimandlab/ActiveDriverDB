@@ -56,6 +56,13 @@ mutations_count = {'TP53': 189, 'EEF2': 3, 'PEPD': 3, 'ENDOG': 0}
 ptm_mutations_count = {'TP53': 139, 'EEF2': 1, 'PEPD': 0, 'ENDOG': 0}
 
 
+cancer_census = """\
+gene_symbol
+TP53
+CYSLTR2
+"""
+
+
 def load_cancer_data():
 
     genes = {
@@ -124,15 +131,9 @@ def load_cancer_data():
     db.session.add_all(proteins.values())
     db.session.add_all(genes.values())
     db.session.add_all(sites)
+    db.session.commit()
 
     return phosphorylation
-
-
-cancer_census = """\
-gene_symbol
-TP53
-CYSLTR2
-"""
 
 
 class ActiveDriverTest(DatabaseTest):
