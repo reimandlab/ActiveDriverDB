@@ -2,6 +2,8 @@ import re
 from io import BytesIO
 from time import sleep
 
+from celery import Celery
+
 from view_testing import ViewTest, relative_location
 from miscellaneous import mock_proteins_and_genes
 
@@ -463,7 +465,7 @@ class TestSearchView(ViewTest):
         import celery_worker
 
         # celery was set-up
-        assert celery_worker.celery
+        assert isinstance(celery_worker.celery, Celery)
 
         # search task is declared to celery worker
         assert celery_worker.search_task
