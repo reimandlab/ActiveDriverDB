@@ -18,7 +18,10 @@ from database import get_or_create, db
 from exports.protein_data import sites_ac
 from helpers.cache import cache_decorator, Cache
 from imports import MutationImportManager
-from models import Gene, GeneList, GeneListEntry, MC3Mutation, MutationSource, ClinicalData, InheritedMutation, Protein, Mutation
+from models import (
+    Gene, GeneList, GeneListEntry, MC3Mutation, MutationSource, ClinicalData, InheritedMutation, Protein,
+    Mutation, SiteType,
+)
 
 from ._paths import ANALYSES_OUTPUT_PATH
 
@@ -54,7 +57,7 @@ def series_from_preferred_isoforms(trait, subset=None) -> Series:
         sequences.append(sequence)
         names.append(gene.name)
 
-    series = Series(sequences, names)
+    series = Series(sequences, index=names)
 
     if subset is not None:
         series = series[series.index.isin(subset)]
@@ -69,14 +72,17 @@ cached = cache_decorator(cache)
 
 
 @cached
-def prepare_active_driver_data(mutation_source: str, site_type=None, mutation_query=None, sites=None):
+def prepare_active_driver_data(mutation_source: str, site_type: Union[SiteType, str] = None, mutation_query=None, sites=None):
     if sites is None:
         sites = export_and_load(sites_ac)
+
+    if isinstance(site_type, SiteType):
+        site_type = site_type.name
 
     if site_type:
         sites = sites[sites['type'].str.contains(site_type)]
 
-    genes_with_sites = sites.gene
+    genes_with_sites = set(sites.gene)
     gc.collect()
 
     importer_class = manager.importers[mutation_source]
@@ -90,6 +96,7 @@ def prepare_active_driver_data(mutation_source: str, site_type=None, mutation_qu
     gc.collect()
 
     sequences = series_from_preferred_isoforms('sequence', subset=genes_with_sites)
+    print(sequences)
     sequences = sequences.str.rstrip('*')
 
     disorder = series_from_preferred_isoforms('disorder_map', subset=genes_with_sites)
@@ -144,7 +151,7 @@ def profile_genes_with_active_sites(enriched_genes, background=None) -> DataFram
 ActiveDriverResult = Mapping[str, Union[DataFrame, 'ActiveDriverResult']]
 
 
-def process_result(result, sites, fdr_cutoff=0.05) -> ActiveDriverResult:
+def process_result(result, sites, fdr_cutoff=0.05, gprofiler=True) -> ActiveDriverResult:
 
     if not result:
         return {}
@@ -157,8 +164,10 @@ def process_result(result, sites, fdr_cutoff=0.05) -> ActiveDriverResult:
 
     enriched_genes = enriched.gene.unique()
 
-    result['profile'] = profile_genes_with_active_sites(enriched_genes)
-    result['profile_against_genes_with_sites'] = profile_genes_with_active_sites(enriched_genes, all_genes)
+    if gprofiler:
+        result['profile'] = profile_genes_with_active_sites(enriched_genes)
+        result['profile_against_genes_with_sites'] = profile_genes_with_active_sites(enriched_genes, all_genes)
+
     result['top_fdr'] = enriched.reset_index(drop=True)
 
     return result
@@ -216,9 +225,18 @@ def create_gene_list(name: str, list_data: DataFrame, mutation_source: MutationS
     return gene_list
 
 
-@cached
-def per_cancer_analysis(site_type: str):
+def describe_site_type(site_type: Union[str, SiteType]):
+    if isinstance(site_type, SiteType):
+        site_type = site_type.name
+    if site_type is None:
+        return 'all'
+    return site_type
 
+
+@cached
+def per_cancer_analysis(site_type: SiteType, **kwargs):
+
+    type_name = describe_site_type(site_type)
     sequences, disorder, all_mutations, sites = prepare_active_driver_data('mc3', site_type)
 
     results = {}
@@ -226,37 +244,38 @@ def per_cancer_analysis(site_type: str):
     for cancer_type in all_mutations.cancer_type.unique():
         mutations = all_mutations[all_mutations.cancer_type == cancer_type]
         result = run_active_driver(sequences, disorder, mutations, sites)
-        result = process_result(result, sites)
+        result = process_result(result, sites, **kwargs)
         results[cancer_type] = result
-        create_gene_list(f'ActiveDriver: {cancer_type} in {site_type} sites', result['top_fdr'], MC3Mutation)
+        create_gene_list(f'ActiveDriver: {cancer_type} in {type_name} sites', result['top_fdr'], MC3Mutation)
 
-    save_all(f'per_cancer-{site_type}', results)
+    save_all(f'per_cancer-{type_name}', results)
 
     return results
 
 
-def source_specific_analysis(mutations_source, site_type=None, mutation_query=None):
+def source_specific_analysis(mutations_source, site_type: SiteType = None, mutation_query=None, **kwargs):
 
+    type_name = describe_site_type(site_type)
     sequences, disorder, mutations, sites = prepare_active_driver_data(mutations_source, site_type, mutation_query)
     result = run_active_driver(sequences, disorder, mutations, sites, mc_cores=1)
-    result = process_result(result, sites)
+    result = process_result(result, sites, **kwargs)
     source = manager.importers[mutations_source].model
-    create_gene_list(f'ActiveDriver: {source.name} {site_type} sites', result['top_fdr'], source)
+    create_gene_list(f'ActiveDriver: {source.name} {type_name} sites', result['top_fdr'], source)
 
-    save_all(f'{mutations_source}-{site_type}', result)
+    save_all(f'{mutations_source}-{type_name}', result)
 
     return result
 
 
 @cached
-def pan_cancer_analysis(site_type: str):
-    return source_specific_analysis('mc3', site_type)
+def pan_cancer_analysis(site_type: SiteType, **kwargs):
+    return source_specific_analysis('mc3', site_type, **kwargs)
 
 
 @cached
-def clinvar_analysis(site_type: str, mode='strict'):
+def clinvar_analysis(site_type: SiteType, mode='strict', **kwargs):
     significances = ClinicalData.significance_subsets[mode]
-    return source_specific_analysis('clinvar', site_type, mutation_query=f'significance in {significances}')
+    return source_specific_analysis('clinvar', site_type, mutation_query=f'significance in {significances}', **kwargs)
 
 
 def mutations_from_significant_genes(result: ActiveDriverResult, mutation_model=MC3Mutation, cancer_type=None, keep_model=False):

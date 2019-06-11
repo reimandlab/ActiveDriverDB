@@ -1,5 +1,3 @@
-from itertools import chain
-
 import pytest
 from io import StringIO
 from helpers import parsers

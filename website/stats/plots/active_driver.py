@@ -276,7 +276,7 @@ def cancer_census_enrichment(site_type):
     p_values = {}
     for name, analysis in analyses.items():
         result = analysis(site_type)
-        ct, enrichment, p_value = active_driver_genes_enrichment(result)
-        results[name] = enrichment
-        p_values[name] = p_value
+        observed_count, expected_count, contingency_table, oddsratio, pvalue = active_driver_genes_enrichment(result)
+        results[name] = oddsratio
+        p_values[name] = pvalue
     return [results.keys(), results.values(), p_values.values()]
