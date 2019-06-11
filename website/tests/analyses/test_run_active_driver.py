@@ -56,6 +56,13 @@ mutations_count = {'TP53': 189, 'EEF2': 3, 'PEPD': 3, 'ENDOG': 0}
 ptm_mutations_count = {'TP53': 139, 'EEF2': 1, 'PEPD': 0, 'ENDOG': 0}
 
 
+cancer_census = """\
+gene_symbol
+TP53
+CYSLTR2
+"""
+
+
 def load_cancer_data():
 
     genes = {
@@ -124,15 +131,9 @@ def load_cancer_data():
     db.session.add_all(proteins.values())
     db.session.add_all(genes.values())
     db.session.add_all(sites)
+    db.session.commit()
 
     return phosphorylation
-
-
-cancer_census = """\
-gene_symbol
-TP53
-CYSLTR2
-"""
 
 
 class ActiveDriverTest(DatabaseTest):
@@ -141,8 +142,8 @@ class ActiveDriverTest(DatabaseTest):
 
         phosphorylation = load_cancer_data()
 
-        results = active_driver.pan_cancer_analysis(phosphorylation, gprofiler=False)
-        top = results['top_fdr']
+        top_results = active_driver.pan_cancer_analysis(phosphorylation, gprofiler=False)
+        top = top_results['top_fdr']
 
         assert len(top) == 1
         significant = top.iloc[0]
@@ -160,19 +161,19 @@ class ActiveDriverTest(DatabaseTest):
 
     def test_active_driver_genes_enrichment(self):
 
-        phosphorylations = load_cancer_data()
+        phosphorylation = load_cancer_data()
+
+        top_results = active_driver.pan_cancer_analysis(phosphorylation, gprofiler=False)
 
         g = Gene(name='CYSLTR2')
         p = Protein(refseq='NM_020377', gene=g)
         db.session.add_all([g, p])
 
-        result = active_driver.pan_cancer_analysis(phosphorylations)
-
         census_path = make_named_temp_file(cancer_census)
         (
             observed_count, expected_count,
             contingency_table, oddsratio, pvalue
-        ) = active_driver_genes_enrichment(result, cancer_census_path=census_path)
+        ) = active_driver_genes_enrichment(top_results, cancer_census_path=census_path)
 
         assert observed_count == 1
         # TODO: create more comprehensive example to validate remaining values
