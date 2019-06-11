@@ -16,7 +16,7 @@ from .common import site_types
 def gather_ptm_muts_impacts(
     source: MutationSource,
     site_type: SiteType,
-    limit_to_genes: List[str]=None,
+    limit_to_genes: List[str] = None,
     occurrences=True,
     limit_to_muts=False,
     muts_filter=None
@@ -36,8 +36,8 @@ def gather_ptm_muts_impacts(
     try:
         motifs_counter = MotifsCounter(site_type, mode='change_of_motif')
     except NoKnownMotifs as error:
-        warn(f'Impacts collection failed, due to: {error}')
-        return {}
+        warn(f'This site type has no motifs defined: {error}')
+        motifs_counter = None
 
     sites = (
         Site.query.filter(SiteType.fuzzy_filter(site_type, join=True))
@@ -68,11 +68,13 @@ def gather_ptm_muts_impacts(
     if muts_filter is not None:
         mutations = mutations.filter(muts_filter)
 
-    motifs_data = motifs_counter.gather_muts_and_sites(mutations, sites, occurrences_in=[source])
-
     all_breaking_muts = set()
-    for motif_name, breaking_muts in motifs_data.muts_breaking_sites_motif.items():
-        all_breaking_muts.update(breaking_muts)
+
+    if motifs_counter:
+        motifs_data = motifs_counter.gather_muts_and_sites(mutations, sites, occurrences_in=[source])
+
+        for motif_name, breaking_muts in motifs_data.muts_breaking_sites_motif.items():
+            all_breaking_muts.update(breaking_muts)
 
     mutations = mutations.filter(Mutation.affected_sites.any(SiteType.fuzzy_filter(site_type, join=True)))
     if limit_to_genes is not None:

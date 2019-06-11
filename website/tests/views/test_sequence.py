@@ -15,7 +15,8 @@ def test_protein_data():
     return {
         'refseq': 'NM_000123',
         'gene': Gene(name='SomeGene'),
-        'sequence': 'MART'
+        'sequence': 'MART',
+        'disorder_map': '0100'
     }
 
 
