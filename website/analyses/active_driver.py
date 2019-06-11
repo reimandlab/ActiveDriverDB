@@ -51,6 +51,8 @@ def series_from_preferred_isoforms(trait, subset=None) -> Series:
     sequences = []
     names = []
     for gene in tqdm(Gene.query.all()):
+        if subset and gene.name not in subset:
+            continue
         if not gene.preferred_isoform:
             continue
         sequence = getattr(gene.preferred_isoform, trait)
@@ -58,9 +60,6 @@ def series_from_preferred_isoforms(trait, subset=None) -> Series:
         names.append(gene.name)
 
     series = Series(sequences, index=names)
-
-    if subset is not None:
-        series = series[series.index.isin(subset)]
 
     return series
 
@@ -96,7 +95,6 @@ def prepare_active_driver_data(mutation_source: str, site_type: Union[SiteType, 
     gc.collect()
 
     sequences = series_from_preferred_isoforms('sequence', subset=genes_with_sites)
-    print(sequences)
     sequences = sequences.str.rstrip('*')
 
     disorder = series_from_preferred_isoforms('disorder_map', subset=genes_with_sites)
@@ -110,9 +108,12 @@ def run_active_driver(sequences, disorder, mutations, sites, mc_cores=None, prog
     if not mc_cores:
         mc_cores = cpu_count()
 
+    data = [sequences, disorder, mutations, sites]
+
     arguments = [
-        pandas2ri.py2ri(python_object)
-        for python_object in [sequences, disorder, mutations, sites]
+        # fillna() works around rpy2's NaN memory bug
+        pandas2ri.py2ri(python_object.fillna(''))
+        for python_object in data
     ]
 
     active_driver = load_active_driver()
