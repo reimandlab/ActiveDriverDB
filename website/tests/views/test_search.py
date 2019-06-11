@@ -459,6 +459,15 @@ class TestSearchView(ViewTest):
 
         self.app.config['USE_CELERY'] = False
 
+    def test_celery_worker_integrity(self):
+        import celery_worker
+
+        # celery was set-up
+        assert celery_worker.celery
+
+        # search task is declared to celery worker
+        assert celery_worker.search_task
+
     def basic_save_search(self, name='Test Dataset', query='chr18 19282310 T C'):
         save_response = self.search_mutations(
             mutations=query,
