@@ -142,7 +142,7 @@ class ActiveDriverTest(DatabaseTest):
 
         phosphorylation = load_cancer_data()
 
-        top_results = active_driver.pan_cancer_analysis(phosphorylation, gprofiler=False)
+        top_results = active_driver.pan_cancer_analysis(phosphorylation, gprofiler=False, progress_bar=False)
         top = top_results['top_fdr']
 
         assert len(top) == 1
@@ -152,7 +152,7 @@ class ActiveDriverTest(DatabaseTest):
         # by default, the list should be trimmed at FDR cutoff of 0.05
         assert significant.fdr <= 0.05
 
-        results = active_driver.pan_cancer_analysis(phosphorylation, gprofiler=False, fdr_cutoff=inf)
+        results = active_driver.pan_cancer_analysis(phosphorylation, gprofiler=False, fdr_cutoff=inf, progress_bar=False)
         full = results['top_fdr']
 
         assert len(full) == 2
@@ -163,7 +163,7 @@ class ActiveDriverTest(DatabaseTest):
 
         phosphorylation = load_cancer_data()
 
-        top_results = active_driver.pan_cancer_analysis(phosphorylation, gprofiler=False)
+        top_results = active_driver.pan_cancer_analysis(phosphorylation, gprofiler=False, progress_bar=False)
 
         g = Gene(name='CYSLTR2')
         p = Protein(refseq='NM_020377', gene=g)

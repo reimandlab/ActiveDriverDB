@@ -237,6 +237,8 @@ def describe_site_type(site_type: Union[str, SiteType]):
 @cached
 def per_cancer_analysis(site_type: SiteType, **kwargs):
 
+    bar = kwargs.pop('progress_bar', True)
+
     type_name = describe_site_type(site_type)
     sequences, disorder, all_mutations, sites = prepare_active_driver_data('mc3', site_type)
 
@@ -244,7 +246,7 @@ def per_cancer_analysis(site_type: SiteType, **kwargs):
 
     for cancer_type in all_mutations.cancer_type.unique():
         mutations = all_mutations[all_mutations.cancer_type == cancer_type]
-        result = run_active_driver(sequences, disorder, mutations, sites)
+        result = run_active_driver(sequences, disorder, mutations, sites, progress_bar=bar)
         result = process_result(result, sites, **kwargs)
         results[cancer_type] = result
         create_gene_list(f'ActiveDriver: {cancer_type} in {type_name} sites', result['top_fdr'], MC3Mutation)
@@ -256,9 +258,11 @@ def per_cancer_analysis(site_type: SiteType, **kwargs):
 
 def source_specific_analysis(mutations_source, site_type: SiteType = None, mutation_query=None, **kwargs):
 
+    bar = kwargs.pop('progress_bar', True)
+
     type_name = describe_site_type(site_type)
     sequences, disorder, mutations, sites = prepare_active_driver_data(mutations_source, site_type, mutation_query)
-    result = run_active_driver(sequences, disorder, mutations, sites, mc_cores=1)
+    result = run_active_driver(sequences, disorder, mutations, sites, mc_cores=1, progress_bar=bar)
     result = process_result(result, sites, **kwargs)
     source = manager.importers[mutations_source].model
     create_gene_list(f'ActiveDriver: {source.name} {type_name} sites', result['top_fdr'], source)

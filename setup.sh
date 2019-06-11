@@ -82,8 +82,8 @@ sudo apt-get install r-base
 sudo apt-get install r-base-dev
 
 # install ActiveDriver and progress bar
-# R -e 'install.packages(c("ActiveDriver"))'
-R -e 'install.packages(c("pbmcapply"))'
+# R -e 'install.packages("ActiveDriver")'
+sudo R -e 'install.packages("pbmcapply")'
 
 # fetch forked copy of ActiveDriver
 cd website
@@ -106,11 +106,13 @@ cd ..
 # sudo apt-get install libcurl4-gnutls-dev
 # sudo R -e 'install.packages("RCurl", repos = "http://cran.us.r-project.org")'
 
-sudo R -e 'source("https://bioconductor.org/biocLite.R"); biocLite(c("S4Vectors", "GenomicRanges", "Biostrings", "BiocGenerics"))'
+sudo R -e 'install.packages("BiocManager")'
+sudo R -e 'BiocManager::install(c("S4Vectors", "GenomicRanges", "Biostrings", "BiocGenerics"))'
 #sudo R -e 'install.packages("devtools", repos = "http://cran.us.r-project.org")'
 #sudo R -e 'devtools::install("rmimp", dependencies = TRUE)'
 
 sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
+export R_INSTALL_STAGED=false
 sudo R -e 'install.packages("rmimp", repos=NULL)'
 
 # sudo apt-get install libcairo2-dev - needed for svglite

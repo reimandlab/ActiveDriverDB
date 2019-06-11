@@ -3,7 +3,7 @@ networkx
 obonet
 diskcache
 numpy
-pandas==0.24.2
+pandas==0.23.4
 sqlalchemy==1.2.18
 beautifulsoup4
 rpy2==2.9.2

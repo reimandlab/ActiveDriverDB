@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Iterable, Mapping
 
 from numpy import percentile
-from rpy2.rinterface._rinterface import SexpVector, ListSexpVector
 from rpy2.rlike.container import TaggedList
 from rpy2.robjects import StrVector, r, IntVector
 from rpy2.robjects.packages import importr
