@@ -251,7 +251,7 @@ def diseases_wordcloud(site_type, significant=True):
     result = clinvar_analysis(site_type.name)
     mutations = disease_mutations(result)
     print(
-        'Copy-pase following text into a wordcloud generation program, '
+        'Copy-paste following text into a wordcloud generation program, '
         'e.g. https://www.jasondavies.com/wordcloud/'
     )
     print(' '.join(mutations.disease))

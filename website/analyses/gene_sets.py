@@ -164,7 +164,7 @@ def run_all(site_type: str, gene_sets: Mapping[str, Path]=GENE_SETS, gene_set_fi
 
 
 def generate_enrichment_maps(paths, cytoscape_path):
-    """Generate cystoscape
+    """Generate Cytoscape
     `cytoscape_path` should point to a dir with 'cytoscape.sh' script in it.
     """
 
