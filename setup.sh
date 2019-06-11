@@ -82,7 +82,8 @@ sudo apt-get install r-base
 sudo apt-get install r-base-dev
 
 # install ActiveDriver and progress bar
-# R -e 'install.packages(c("ActiveDriver", "pbmcapply"))'
+# R -e 'install.packages(c("ActiveDriver"))'
+R -e 'install.packages(c("pbmcapply"))'
 
 # fetch forked copy of ActiveDriver
 cd website
