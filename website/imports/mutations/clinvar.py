@@ -502,11 +502,11 @@ class ClinVarImporter(MutationImporter):
         return clinvar_mutations, clinvar_data, new_diseases.values()
 
     def export_details_headers(self):
-        return ['disease', 'significance']
+        return ['disease', 'significance', 'has_significance_conflict']
 
     def export_details(self, mutation):
         return [
-            [d.disease_name, d.significance]
+            [d.disease_name, d.significance or '', str(d.has_significance_conflict)]
             for d in mutation.clin_data
         ]
 
