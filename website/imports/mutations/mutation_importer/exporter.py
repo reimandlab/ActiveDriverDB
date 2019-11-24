@@ -137,7 +137,7 @@ class MutationExporter:
         )
         return os.path.join(directory, name)
 
-    def export(self, path=None, only_preferred=False):
+    def export(self, path=None, only_primary_isoforms=False):
         """Export all mutations from this source in ActiveDriver compatible format.
 
         Source specific data export can be implemented with export_details method,
@@ -145,12 +145,12 @@ class MutationExporter:
         """
 
         if not path:
-            path = self.generate_export_path(only_preferred)
+            path = self.generate_export_path(only_primary_isoforms)
 
         with gzip.open(path, 'wt') as f:
 
             f.write('\t'.join(self.export_header))
 
-            for mutation_data in self.iterate_export(only_preferred=only_preferred):
+            for mutation_data in self.iterate_export(only_preferred=only_primary_isoforms):
 
                 f.write('\n' + '\t'.join(mutation_data))
