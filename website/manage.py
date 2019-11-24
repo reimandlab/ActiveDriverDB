@@ -287,7 +287,7 @@ class Mutations(CommandTarget):
 
     @command
     def export(self, args):
-        if args.type == 'proteome':
+        if args.type == 'proteomic':
             self.action('export', args)
         else:
             assert args.type == 'genomic_ptm'
@@ -340,9 +340,10 @@ class Mutations(CommandTarget):
         return argument_parameters(
             '-t',
             '--type',
+            default='proteomic',
             choices=['proteomic', 'genomic_ptm'],
             help='What type of mutations should be exported: proteomic or genomic_ptm (genomic affecting PTM).'
-                 'By default proteomic mutations will be exported',
+                 ' By default proteomic mutations will be exported',
         )
 
 
