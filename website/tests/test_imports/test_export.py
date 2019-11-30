@@ -66,9 +66,9 @@ class TestExport(DatabaseTest):
                 'clinvar',
                 {},
                 [
-                    b'gene\tisoform\tposition\twt_residue\tmut_residue\tdisease\tsignificance\n',
-                    b'SOMEGENE\tNM_0001\t1\tA\tE\tSome disease\tPathogenic\n',
-                    b'SOMEGENE\tNM_0001\t1\tA\tE\tOther disease\tBenign'
+                    b'gene\tisoform\tposition\twt_residue\tmut_residue\tdisease\tsignificance\thas_significance_conflict\n',
+                    b'SOMEGENE\tNM_0001\t1\tA\tE\tSome disease\tPathogenic\tFalse\n',
+                    b'SOMEGENE\tNM_0001\t1\tA\tE\tOther disease\tBenign\tFalse'
                 ]
             )
         )
