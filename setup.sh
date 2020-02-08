@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 sudo apt-get install libffi-dev python3-dev build-essential
-pip install lmdb
 
 # Use examplar configuration for the beginning
 cd website
