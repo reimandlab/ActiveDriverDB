@@ -3,7 +3,7 @@ import pytest
 from database_testing import DatabaseTest
 from models import MC3Mutation
 
-from tests.analyses.test_run_active_driver import load_cancer_data
+from .test_run_active_driver import load_cancer_data
 
 
 class PTMMutationsAnalysisTest(DatabaseTest):
