@@ -34,5 +34,5 @@ scikit-learn
 pyBigWig
 pyinterval
 cryptography
-Werkzeug==0.15.2
+Werkzeug==0.15.3
 lmdb
