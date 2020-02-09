@@ -447,7 +447,8 @@ def create_parser():
         automigrate,
         help=(
             'should a basic auto migration on relational databases'
-            'be performed? It will only create new tables'
+            ' be performed? It will create new tables, columns and'
+            ' suggest other updates.'
         )
     )
 
