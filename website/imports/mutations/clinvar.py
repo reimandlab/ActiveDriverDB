@@ -302,11 +302,21 @@ class ClinVarImporter(MutationImporter):
                     .filter(ClinicalData.variation_id == variation_id)
                 )
 
+                association_values = {
+                    'sig_code': sig_code,
+                    'rev_status': review_status,
+                    'origin': origin
+                }
+
                 for disease_association in disease_associations:
 
-                    assert not disease_association.sig_code or disease_association.sig_code == sig_code
-                    assert not disease_association.rev_status or disease_association.rev_status == review_status
-                    assert not disease_association.origin or disease_association.origin == origin
+                    for key, value in association_values.items():
+                        old_value = getattr(disease_association, key)
+                        if old_value and old_value != value:
+                            print(
+                                f'Warning: {key} was already set to {old_value} for {variation_id}/{disease},'
+                                f'while the new value is {value} (accession: {rcv_accession})'
+                            )
 
                     disease_association.sig_code = sig_code
                     disease_association.rev_status = review_status
