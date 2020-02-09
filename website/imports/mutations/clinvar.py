@@ -372,6 +372,11 @@ class ClinVarImporter(MutationImporter):
         db.session.commit()
         print(f'Removed {empty_mutations_cnt} ClinVar mutations without associations')
 
+        print('Removing diseases without associations...')
+        removed_diseases = Disease.query.filter(~Disease.associations.any()).delete(synchronize_session='fetch')
+        print(f'removing {removed_diseases} diseases')
+        db.session.commit()
+
     def _load(self, path, update, **kwargs):
         skip_removal = kwargs.pop('skip_removal', False)
         super()._load(path, update, **kwargs)

@@ -75,7 +75,7 @@ class ClinicalData(BioModel):
 
     # CLNDBN: Variant disease name
     disease_id = db.Column(db.Integer, db.ForeignKey('disease.id'))
-    disease = db.relationship('Disease')
+    disease = db.relationship('Disease', backref='associations')
     disease_name = association_proxy('disease', 'name')
 
     # where was this association observed? e.g. somatic or germline

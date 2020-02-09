@@ -223,6 +223,10 @@ class TestImport(DatabaseTest):
                 clinvar_xml_path='tests/test_imports/clinvar_subset.xml'
             )
 
+            # compare with the version without removal where all 15 disease are present
+            diseases = Disease.query.all()
+            assert len(diseases) == 3
+
             tp53_protein = proteins['NM_000546']
             assert Mutation.query.filter_by(protein=tp53_protein).count() == 5
 
@@ -248,9 +252,6 @@ class TestImport(DatabaseTest):
 
             first_row_mutation = Mutation.query.filter_by(protein=tp53_protein, position=379).one()
             assert first_row_mutation.alt == 'L'
-
-            diseases = Disease.query.all()
-            assert len(diseases) == 15
 
             clinvar: InheritedMutation = first_row_mutation.meta_ClinVar
             assert clinvar.db_snp_ids == {863224682}  # rs863224682
@@ -314,6 +315,9 @@ class TestImport(DatabaseTest):
             # it is excluded; compare with the edge cases test below
             assert msh2_clinvar.variation_ids == {566716}
 
+            # Diseases with no mutations should get removed:
+            assert Disease.query.filter_by(name='Hepatocellular carcinoma').count() == 0
+
     def test_clinvar_edge_cases(self):
         """Same as above, but without the removal of filtered out mutations to simplify testing or edge cases"""
         muts_filename = make_named_gz_file(clinvar_mutations)
@@ -327,6 +331,9 @@ class TestImport(DatabaseTest):
                 clinvar_xml_path='tests/test_imports/clinvar_subset.xml',
                 skip_removal=True
             )
+
+            diseases = Disease.query.all()
+            assert len(diseases) == 15
 
             tp53_protein = proteins['NM_000546']
             assert Mutation.query.filter_by(protein=tp53_protein).count() == 5
@@ -363,6 +370,7 @@ class TestImport(DatabaseTest):
             assert hepatocellular_carcinoma.medgen_id == 'C2239176'
             # TODO: this is somehow unpredictable when it comes to SNOMED CT as it has multiple IDs:
             #  SNOMED_CT:187769009,SNOMED_CT:25370001
+            assert len(hepatocellular_carcinoma.associations) >= 1
 
             # NB: there is no fifth mutation (it has no named disease associations)
 
