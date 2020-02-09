@@ -6,7 +6,7 @@ from pandas import DataFrame
 from sqlalchemy.orm import load_only
 from tqdm import tqdm
 
-from database import db, fast_count
+from database import db
 from helpers.patterns import abstract_property
 from models import Gene, Protein, Mutation
 

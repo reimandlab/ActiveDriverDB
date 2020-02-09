@@ -213,7 +213,7 @@ class TestImport(DatabaseTest):
 
     def test_clinvar_import(self):
         muts_filename = make_named_gz_file(clinvar_mutations)
-        proteins = create_proteins({**tp53, **lama4, **msh2, **tp53_alt})
+        proteins = create_proteins({**tp53, **lama4, **msh2})
 
         with self.app.app_context():
             source_name = 'clinvar'
@@ -226,9 +226,6 @@ class TestImport(DatabaseTest):
             tp53_protein = proteins['NM_000546']
             assert Mutation.query.filter_by(protein=tp53_protein).count() == 5
 
-            tp53_protein_alt = proteins['NM_001126115']
-            assert Mutation.query.filter_by(protein=tp53_protein_alt).count() == 4
-
             mutations = InheritedMutation.query.all()
 
             # one TP53 mutation has only a "not_specified" disease, should be skipped
@@ -236,9 +233,12 @@ class TestImport(DatabaseTest):
             # https://www.ncbi.nlm.nih.gov/medgen/CN517202
 
             assert len(mutations) == (
-                5     # NM_000546 TP53 mutations (out of 6, one has only not_specified)
-                + 4   # NM_001126115 TP 53 mutations (out of 5, one has only not_specified)
-                + 1   # LAMA4
+                2     # NM_000546 TP53 mutations
+                #   out of 6:
+                #      - one has only not_specified
+                #      - two are of somatic (squamous and large intestine)
+                #      - one is missing in the XML file (thus unknown origin)
+                + 0   # LAMA4 (one mutation which is missing in the XML files, thus has unknown origin, thus deleted)
                 + 1   # MSH2 (out of two mapping to the same)
             )
 
@@ -269,6 +269,7 @@ class TestImport(DatabaseTest):
             cps_variant_association = first_mutation_associations['Hereditary cancer-predisposing syndrome']
             assert cps_variant_association.sig_code == 0
             assert cps_variant_association.significance == 'Uncertain significance'
+            assert cps_variant_association.origin == 'germline'
 
             cancer_predisposing_syndrome = cps_variant_association.disease
             assert cancer_predisposing_syndrome.name == 'Hereditary cancer-predisposing syndrome'
@@ -303,11 +304,46 @@ class TestImport(DatabaseTest):
             assert li_fraumeni_syndrome.orhpanet_id == 'ORPHA524'
 
             #
-            # Third mutation
+            # MSH2 - merging multiple Single Nucleotide Variants responsible for the same coding variation
             #
+            msh2_protein = proteins['NM_000251']
+            msh2_mutation = Mutation.query.filter_by(protein=msh2_protein, position=784).one()
+            msh2_clinvar: InheritedMutation = msh2_mutation.meta_ClinVar
 
-            third_row_mutation = Mutation.query.filter_by(protein=tp53_protein, position=311).one()
-            assert third_row_mutation.meta_ClinVar.disease_name == ['Li-Fraumeni syndrome']
+            # note: there is also 455557 but it has "non specified" disease, and when removal is active
+            # it is excluded; compare with the edge cases test below
+            assert msh2_clinvar.variation_ids == {566716}
+
+    def test_clinvar_edge_cases(self):
+        """Same as above, but without the removal of filtered out mutations to simplify testing or edge cases"""
+        muts_filename = make_named_gz_file(clinvar_mutations)
+        proteins = create_proteins({**tp53, **lama4, **msh2})
+
+        with self.app.app_context():
+            source_name = 'clinvar'
+
+            muts_import_manager.perform(
+                'load', proteins, [source_name], {source_name: muts_filename},
+                clinvar_xml_path='tests/test_imports/clinvar_subset.xml',
+                skip_removal=True
+            )
+
+            tp53_protein = proteins['NM_000546']
+            assert Mutation.query.filter_by(protein=tp53_protein).count() == 5
+
+            mutations = InheritedMutation.query.all()
+
+            # one TP53 mutation has only a "not_specified" disease, should be skipped
+            # nb such variants have associated cross references, such as:
+            # https://www.ncbi.nlm.nih.gov/medgen/CN517202
+
+            assert len(mutations) == (
+                    5     # NM_000546 TP53 mutations
+                    #   out of 6:
+                    #      - one has only not_specified
+                    + 1   # LAMA4
+                    + 1   # MSH2
+            )
 
             #
             # Fourth mutation
@@ -318,6 +354,7 @@ class TestImport(DatabaseTest):
             clinvar: InheritedMutation = fourth_row_mutation.meta_ClinVar
             fourth_mutation_associations = clinvar.clinical_associations_by_disease_name
             hepatocellular_carcinoma_association = fourth_mutation_associations['Hepatocellular carcinoma']
+            assert hepatocellular_carcinoma_association.origin is None
 
             hepatocellular_carcinoma: Disease = hepatocellular_carcinoma_association.disease
             assert hepatocellular_carcinoma.hpo_id == 'HP:0001402'
@@ -354,6 +391,7 @@ class TestImport(DatabaseTest):
             msh2_mutation = Mutation.query.filter_by(protein=msh2_protein, position=784).one()
             msh2_clinvar: InheritedMutation = msh2_mutation.meta_ClinVar
 
+            # note: 455557 but has "non specified" disease but when the removal is not active, it is not being removed
             assert msh2_clinvar.variation_ids == {455557, 566716}
 
     def test_esp_import(self):

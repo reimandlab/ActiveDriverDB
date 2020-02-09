@@ -1,10 +1,10 @@
 import re
 from collections import defaultdict
-from typing import Mapping
+from typing import Mapping, Iterable
 
 from sqlalchemy.orm.exc import NoResultFound
 from models import InheritedMutation, Disease
-from models import ClinicalData
+from models import ClinicalData, or_
 from helpers.parsers import tsv_file_iterator
 from helpers.parsers import gzip_open_text
 from database.bulk import get_highest_id, bulk_orm_insert, restart_autoincrement
@@ -40,6 +40,10 @@ class ClinVarImporter(MutationImporter):
         self.skipped_significances = defaultdict(int)
 
     def load(self, path=None, update=False, clinvar_xml_path=None, **ignored_kwargs):
+        print(
+            'Please note that the annovar and XML database needs to be based on the same ClinVar release'
+            ' to avoid incorrect removal of variants which are missing metadata (i.e. not found in the XML file)'
+        )
         self.xml_path = clinvar_xml_path or self.default_xml_path
         super().load(path, update, **ignored_kwargs)
 
@@ -126,6 +130,7 @@ class ClinVarImporter(MutationImporter):
         return sig_code, [sig.strip() for sig in additional_significances]
 
     def import_disease_associations(self):
+        """Add disease association details to the already imported mutation-disease associations"""
         from xml.etree import ElementTree
         from tqdm import tqdm
         import gzip
@@ -140,6 +145,10 @@ class ClinVarImporter(MutationImporter):
             'variation to included disease',
             'confers sensitivity'
         }
+
+        print('Only including assertions: ', accepted_assertions)
+        print('Ignoring traits: ', ignored_traits)
+
         self.skipped_significances = defaultdict(int)
 
         accepted_species = {'Human', 'human'}
@@ -214,13 +223,16 @@ class ClinVarImporter(MutationImporter):
                     # (non-synonymous SNVs only), this will speed things up
                     continue
 
-                species = reference.find('ObservedIn/Sample/Species').text
+                sample = reference.find('ObservedIn/Sample')
+                species = sample.find('Species').text
 
                 if species not in accepted_species:
                     if species not in skipped_species:
                         print(f'Skipping non-human species: "{species}"')
                         skipped_species.add(species)
                     continue
+
+                origin = sample.find('Origin').text
 
                 assert reference.find('RecordStatus').text == 'current'
 
@@ -284,7 +296,7 @@ class ClinVarImporter(MutationImporter):
 
                 sig_code, additional_significances = self.parse_significance(significance)
 
-                disease_associations: ClinicalData = (
+                disease_associations: Iterable[ClinicalData] = (
                     ClinicalData.query
                     .filter(ClinicalData.disease == disease)
                     .filter(ClinicalData.variation_id == variation_id)
@@ -292,8 +304,16 @@ class ClinVarImporter(MutationImporter):
 
                 for disease_association in disease_associations:
 
+                    assert not disease_association.sig_code or disease_association.sig_code == sig_code
+                    assert not disease_association.rev_status or disease_association.rev_status == review_status
+                    assert not disease_association.origin or disease_association.origin == origin
+
                     disease_association.sig_code = sig_code
                     disease_association.rev_status = review_status
+                    # IMPORTANT: every "continue" up to this point means that the mutation
+                    # will be removed in remove_muts_without_origin(), because origin will not be set
+                    disease_association.origin = origin
+
                     if additional_significances:
                         disease_association.additional_significances = set(additional_significances)
 
@@ -312,12 +332,42 @@ class ClinVarImporter(MutationImporter):
 
         print(skipped_diseases)
         print(self.skipped_significances)
-
         db.session.commit()
 
+    def remove_muts_without_origin(self):
+
+        origin_blacklist = {
+            'not applicable',
+            'not provided',
+            'not-reported',
+            'somatic',
+            'tested-inconclusive',
+            'unknown'
+        }
+
+        print('ClinVar mutations origin blacklist: ', origin_blacklist)
+
+        print('Removing ClinVar associations with blacklisted or missing origin; NOTE:')
+        print('\torigin is not set also when the mutation was skipped due to other reasons, such as non-human species')
+        removed_cnt = ClinicalData.query.filter(
+            or_(ClinicalData.origin == None, ClinicalData.origin.in_(origin_blacklist))
+        ).delete(synchronize_session='fetch')
+        db.session.commit()
+        print(f'Removed {removed_cnt} associations')
+
+        print('Removing orphaned ClinVar mutations (with no associations)')
+        empty_mutations_cnt = InheritedMutation.query.filter(~InheritedMutation.clin_data.any()).delete(
+            synchronize_session='fetch'
+        )
+        db.session.commit()
+        print(f'Removed {empty_mutations_cnt} ClinVar mutations without associations')
+
     def _load(self, path, update, **kwargs):
+        skip_removal = kwargs.pop('skip_removal', False)
         super()._load(path, update, **kwargs)
         self.import_disease_associations()
+        if not skip_removal:
+            self.remove_muts_without_origin()
 
     def parse_metadata(self, line):
         metadata = line[20].split(';')

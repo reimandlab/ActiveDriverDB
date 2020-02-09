@@ -78,6 +78,9 @@ class ClinicalData(BioModel):
     disease = db.relationship('Disease')
     disease_name = association_proxy('disease', 'name')
 
+    # where was this association observed? e.g. somatic or germline
+    origin = db.Column(db.String(32))
+
     @property
     def significance(self):
         return self.significance_codes.get(self.sig_code, None)
