@@ -970,20 +970,22 @@ def calculate_interactors():
 
 ListData = namedtuple('ListData', 'name path mutations_source')
 
+ACTIVE_DRIVER_RESULTS_DIR = 'data/ActiveDriver/2020-02-14/'
+
 
 @importer
 def active_driver_gene_lists(
         lists=(
             ListData(
-                name='Cancer (TCGA PanCancerAtlas)',
-                path='data/mc3.activedriver.2017-11-28.txt',
-                mutations_source=MC3Mutation
-            ),
-            ListData(
-                name='Clinical (ClinVar)',
-                path='data/ActiveDriver1_result_pvalue_less_0.01_InheritedMutation-2017-02-16.txt',
-                mutations_source=InheritedMutation
+                name=f'{label}: {subset} sites',
+                path=ACTIVE_DRIVER_RESULTS_DIR + f'{subset}_{source_path}_results.tsv',
+                mutations_source=source
             )
+            for (source, source_path), label in {
+                (InheritedMutation, 'inherited'): 'Clinical (ClinVar, excluding somatic)',
+                (MC3Mutation, 'mc3'): 'Cancer (TCGA PanCancerAtlas)',
+            }.items()
+            for subset in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination']
         ),
         fdr_cutoff=0.01
 ):
