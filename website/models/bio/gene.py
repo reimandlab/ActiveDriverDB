@@ -4,8 +4,10 @@ from sqlalchemy.orm import backref
 from werkzeug.utils import cached_property
 
 from database import db, count_expression
+from database.types import ScalarSet
 from .model import BioModel, make_association_table
 from .protein import Protein
+from .sites import SiteType
 
 
 class GeneListEntry(BioModel):
@@ -24,6 +26,36 @@ class GeneList(BioModel):
 
     # some gene lists are specific only to one type of mutations:
     mutation_source_name = db.Column(db.String(256))
+
+
+class PathwaysListEntry(BioModel):
+    pathways_list_id = db.Column(db.Integer, db.ForeignKey('pathwayslist.id'))
+
+    # adjusted.p.val
+    fdr = db.Column(db.Float(precision=53))
+
+    pathway_id = db.Column(db.Integer, db.ForeignKey('pathway.id'))
+    pathway = db.relationship('Pathway')
+
+    # the overlap as reported by ActivePathways
+    overlap = db.Column(ScalarSet(), default=set)
+
+    # pathway size at the time of the computation of the ActivePathways (term.size)
+    # just so we can check it in an unlikely case of the the pathways going out of
+    # sync with the ActivePathways results
+    pathway_size = db.Column(db.Integer)
+
+
+class PathwaysList(BioModel):
+    name = db.Column(db.String(255), nullable=False, unique=True, index=True)
+    entries = db.relationship(PathwaysListEntry)
+
+    # some lists are specific only to one type of mutations
+    mutation_source_name = db.Column(db.String(256))
+
+    # and/or to only one type of PTM site
+    site_type_id = db.Column(db.Integer, db.ForeignKey('sitetype.id'))
+    site_type = db.relationship(SiteType)
 
 
 class Gene(BioModel):

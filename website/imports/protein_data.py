@@ -2,6 +2,7 @@ import gzip
 from collections import defaultdict, namedtuple
 from warnings import warn
 
+from pandas import read_table
 from tqdm import tqdm
 from database import db, create_key_model_dict
 from database import get_or_create
@@ -23,6 +24,7 @@ from models import Protein
 from models import Pathway
 from models import GeneList
 from models import GeneListEntry
+from models import PathwaysList, PathwaysListEntry
 
 
 def get_proteins(cached_proteins={}, reload_cache=False, options=None):
@@ -968,24 +970,26 @@ def calculate_interactors():
         protein.interactors_count = protein._calc_interactors_count()
 
 
-ListData = namedtuple('ListData', 'name path mutations_source')
+ListData = namedtuple('ListData', 'name path mutations_source site_type_name')
 
 ACTIVE_DRIVER_RESULTS_DIR = 'data/ActiveDriver/2020-02-14/'
+ACTIVE_PATHWAYS_RESULTS_DIR = 'data/ActivePathways/2020-02-25/'
 
 
 @importer
 def active_driver_gene_lists(
         lists=(
             ListData(
-                name=f'{label}: {subset} sites',
-                path=ACTIVE_DRIVER_RESULTS_DIR + f'{subset}_{source_path}_results.tsv',
-                mutations_source=source
+                name=f'{label}: {site_type} sites',
+                path=ACTIVE_DRIVER_RESULTS_DIR + f'{site_type}_{source_path}_results.tsv',
+                mutations_source=source,
+                site_type_name=site_type
             )
             for (source, source_path), label in {
                 (InheritedMutation, 'inherited'): 'Clinical (ClinVar, excluding somatic)',
                 (MC3Mutation, 'mc3'): 'Cancer (TCGA PanCancerAtlas)',
             }.items()
-            for subset in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination']
+            for site_type in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination']
         ),
         fdr_cutoff=0.01
 ):
@@ -998,8 +1002,7 @@ def active_driver_gene_lists(
     for list_data in lists:
         if list_data.name in current_gene_lists:
             print(
-                'Skipping gene list %s: already present in database' %
-                list_data.name
+                f'Skipping gene list {list_data.name}: already present in database'
             )
             continue
 
@@ -1077,8 +1080,8 @@ def full_gene_names(path='data/Homo_sapiens.gene_info.gz'):
     covered = len(genes_covered)
     count = Gene.query.count()
     print(
-        'Imported full gene names for %s genes (%s percent of %s total in database, %s percent of those %s having Entrez ID)' %
-        (covered, covered * 100 // count, count, covered * 100//len(known_genes), len(known_genes))
+        f'Imported full gene names for {covered} genes ({covered * 100 // count} percent of {count} total in database,'
+        f' {covered * 100 // len(known_genes)} percent of those {len(known_genes)} having Entrez ID)'
     )
 
 
@@ -1137,15 +1140,103 @@ def pathways(path='data/hsapiens.pathways.NAME.gmt'):
         elif gene_set_name.startswith('REAC:R-HSA-'):
             pathway.reactome = int(gene_set_name[11:])
         else:
-            raise Exception(
-                'Unknown gene set name: "%s"' % gene_set_name
-            )
+            raise Exception(f'Unknown gene set name: "{gene_set_name}"')
 
     parse_tsv_file(path, parser)
 
     print(len(new_genes), 'new genes created')
 
     return pathways
+
+
+@importer
+def active_pathways_lists(
+        lists=(
+            ListData(
+                name=f'{label}: {site_type} pathways',
+                path=ACTIVE_PATHWAYS_RESULTS_DIR + f'{site_type}_{source_path}_pathways.tsv',
+                mutations_source=source,
+                site_type_name=site_type
+            )
+            for (source, source_path), label in {
+                (InheritedMutation, 'inherited'): 'Clinical (ClinVar, excluding somatic)',
+                (MC3Mutation, 'mc3'): 'Cancer (TCGA PanCancerAtlas)',
+            }.items()
+            for site_type in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination']
+        ),
+        fdr_cutoff=0.01
+):
+    current_pathway_lists = [
+        existing_list.name
+        for existing_list in PathwaysList.query.all()
+    ]
+    pathways_lists = []
+
+    for list_data in lists:
+        if list_data.name in current_pathway_lists:
+            print(f'Skipping gene list {list_data.name}: already present in database')
+            continue
+
+        pathways_list = PathwaysList(
+            name=list_data.name,
+            mutation_source_name=(
+                list_data.mutations_source.name
+                if list_data.mutations_source
+                else None
+            ),
+            site_type=(
+                SiteType.query.filter_by(name=list_data.site_type_name).one()
+                if list_data.site_type_name != 'all' else
+                None
+            )
+        )
+
+        input_table = read_table(list_data.path)
+
+        to_high_fdr_count = 0
+        list_entries = []
+
+        for index, row in input_table.iterrows():
+
+            fdr = row['adjusted.p.val']
+            gene_set_id = row['term.id']
+            gene_set_name = row['term.name']
+
+            if fdr >= fdr_cutoff:
+                to_high_fdr_count += 1
+                return
+
+            identifier = {}
+            if gene_set_id.startswith('GO'):
+                identifier['gene_ontology'] = int(gene_set_id[3:])
+            elif gene_set_id.startswith('REAC:R-HSA-'):
+                identifier['reactome'] = int(gene_set_id[11:])
+            else:
+                raise ValueError('Unknown pathway identifier type')
+
+            pathway, created = get_or_create(Pathway, **identifier)
+            assert not created
+
+            if pathway.description != gene_set_name:
+                warn(f'{identifier} pathway name differs, old := {pathway.description}, new := {gene_set_name}')
+
+            overlap = row['overlap'].split(',')
+            overlap_set = set(overlap)
+            assert len(overlap) == len(overlap_set)
+
+            entry = PathwaysListEntry(
+                pathway=pathway,
+                fdr=fdr,
+                overlap=overlap_set,
+                pathway_size=row['term.size']
+            )
+            list_entries.append(entry)
+
+        pathways_list.entries = list_entries
+
+        pathways_lists.append(pathways_list)
+
+    return pathways_lists
 
 
 @importer
@@ -1159,7 +1250,7 @@ def precompute_ptm_mutations():
         if is_ptm_related != mutation.precomputed_is_ptm:
             mismatch += 1
             mutation.precomputed_is_ptm = is_ptm_related
-    print('Precomputed values of %s mutations has been computed and updated' % mismatch)
+    print(f'Precomputed values of {mismatch} mutations has been computed and updated')
     return []
 
 

@@ -34,7 +34,10 @@ class TestImport(DatabaseTest):
 
         with self.app.app_context():
             gene_lists = load_active_driver_gene_lists(lists=(
-                ListData(name='TCGA list', path=filename, mutations_source=TCGAMutation),
+                ListData(
+                    name='TCGA list', path=filename, mutations_source=TCGAMutation,
+                    site_type_name=None
+                ),
             ))
 
         # one gene list returned (TCGA)
@@ -62,7 +65,10 @@ class TestImport(DatabaseTest):
 
         with self.app.app_context():
             gene_lists = load_active_driver_gene_lists(lists=(
-                ListData(name='TCGA list', path=filename, mutations_source=TCGAMutation),
+                ListData(
+                    name='TCGA list', path=filename, mutations_source=TCGAMutation,
+                    site_type_name=None
+                ),
             ))
 
         # no duplicate lists should be created
