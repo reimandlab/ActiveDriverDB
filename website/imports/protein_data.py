@@ -1174,7 +1174,7 @@ def active_pathways_lists(
 
     for list_data in lists:
         if list_data.name in current_pathway_lists:
-            print(f'Skipping gene list {list_data.name}: already present in database')
+            print(f'Skipping pathways list {list_data.name}: already present in database')
             continue
 
         pathways_list = PathwaysList(
@@ -1204,7 +1204,7 @@ def active_pathways_lists(
 
             if fdr >= fdr_cutoff:
                 to_high_fdr_count += 1
-                return
+                continue
 
             identifier = {}
             if gene_set_id.startswith('GO'):
