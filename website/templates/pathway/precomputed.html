@@ -1,0 +1,43 @@
+{% extends "pathway/browse.html" %}
+{% from "text_entry.html" import text with context %}
+
+{% block page_title %}
+  Significant pathways - {{ gene_list.name }}
+{% endblock %}
+
+{% block breadcrumb %}
+  {{ super() }}
+  <li class="active">{{ gene_list.name }}</li>
+{% endblock %}
+
+{% block description %}
+  {{ text('pathways-precomputed') }}
+  <p>
+    The prediction bases on PTM mutations from {{ gene_list.name }} dataset.
+    Click here to see full list of
+    <a href="{{ url_for('GeneView:list', list_name=gene_list.name) }}">top genes with PTM mutations in {{ dataset.name }}</a>.
+  </p>
+{% endblock %}
+
+{% block js_table_init %}
+  $(function ()
+  {
+    var additional_columns = [
+      {
+        title: '# Significant genes',
+        valign: 'middle',
+        align: 'center',
+        sortable: true,
+        field: 'significant_genes_count',
+      },
+      {
+        title: '# Significant / # All',
+        valign: 'middle',
+        align: 'center',
+        field: 'ratio',
+        formatter: function(x){return (x * 100).toFixed(2) + '%'}
+      },
+    ]
+    initTable($('#table'), query, additional_columns)
+  })
+{% endblock %}

@@ -19,7 +19,7 @@ def search_filter(query):
         return Pathway.description.like('%' + query + '%')
 
 
-def search_sort(query, q, sort_column, order=True):
+def search_sort(query, q, sort_column, order):
     if sort_column is None or sort_column in ['Pathway.description', 'description', Pathway.description]:
         return levenshtein_sorted(query, Pathway.description, q), True
     return query, False
@@ -155,15 +155,12 @@ class PathwaysView(FlaskView):
         lists = PathwaysList.query.all()
         return template('pathway/lists.html', lists=lists)
 
-    def list(self, list_name):
-        return template('pathway/list.html', list_name=list_name)
-
     def list(self, pathways_list_name):
         query = request.args.get('query', '')
         pathways_list = PathwaysList.query.filter_by(name=pathways_list_name).first_or_404()
         dataset = source_manager.source_by_name[pathways_list.mutation_source_name]
         return template(
-            'pathway/significant.html',
+            'pathway/precomputed.html',
             gene_list=pathways_list,
             dataset=dataset,
             endpoint='list_data',
@@ -177,8 +174,8 @@ class PathwaysView(FlaskView):
 
             return (
                 db.session.query(Pathway, PathwaysListEntry)
-                .select_from(PathwaysListEntry)
-                .join(Pathway)
+                .select_from(Pathway)
+                .join(PathwaysListEntry)
                 .filter(PathwaysListEntry.pathways_list_id == pathways_list_id)
                 .filter(PathwaysListEntry.fdr < 0.1)
             )
@@ -191,6 +188,7 @@ class PathwaysView(FlaskView):
             json = pathway.to_json()
             json['ratio'] = len(significant_genes) / all_genes
             json['significant_genes_count'] = len(significant_genes)
+            json['fdr'] = pathways_list_entry.fdr
 
             return json
 
