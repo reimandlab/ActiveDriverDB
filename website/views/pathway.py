@@ -21,7 +21,7 @@ def search_filter(query):
 
 def search_sort(query, q, sort_column, order):
     if sort_column is None or sort_column in ['Pathway.description', 'description', Pathway.description]:
-        return levenshtein_sorted(query, Pathway.description, q), True
+        return levenshtein_sorted(query, Pathway.description, q, order), True
     return query, False
 
 
