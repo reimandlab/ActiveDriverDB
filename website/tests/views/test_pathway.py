@@ -1,5 +1,5 @@
 from database import db
-from models import Pathway, Gene, GeneList, GeneListEntry
+from models import Pathway, Gene, GeneList, GeneListEntry, PathwaysList, PathwaysListEntry
 from view_testing import ViewTest
 
 
@@ -9,24 +9,24 @@ def create_pathways():
     genes = [Gene(name=name) for name in 'KRAS NRAS AKAP13 NF1 BCR'.split()]
     significant_genes = [Gene(name=name) for name in 'TP53 AKT1 TXN GPI AKT3 FN TSC1'.split()]
 
-    pathways = [
-        Pathway(
+    pathways = {
+        'TP53 regulation': Pathway(
             description='TP53 Regulates Transcription of DNA Repair Genes',
             reactome=6796648,
             genes=genes + significant_genes
         ),
-        Pathway(
+        'Small pathway': Pathway(
             description='A pathway with more than 5 significant genes but less than 10 at all',
             reactome=679,
             genes=significant_genes
         ),
-        Pathway(
+        'Ras GO': Pathway(
             description='Ras protein signal transduction',
             gene_ontology=33277,
             genes=genes
         ),
-    ]
-    db.session.add_all(pathways)
+    }
+    db.session.add_all(pathways.values())
     return locals()
 
 
@@ -55,7 +55,7 @@ class TestPathwaysView(ViewTest):
         response = self.client.get('/pathways/with_significant_genes/')
         assert response.status_code == 200
 
-        response = self.client.get('/pathways/significant_data/%s' % gene_list.id)
+        response = self.client.get(f'/pathways/significant_data/{gene_list.id}')
 
         # only one pathway has more than 10 genes with at least 5 of them significant
         assert response.json['total'] == 1
@@ -70,6 +70,46 @@ class TestPathwaysView(ViewTest):
         }
         for key, value in expected_values.items():
             assert pathway[key] == value
+
+    def test_list(self):
+        created = create_pathways()
+        pathways = created['pathways']
+        overlap = {gene.name for gene in created['significant_genes']}
+        pathways_list = PathwaysList(
+            name='Pathways enriched in germline mutations',
+            mutation_source_name='ClinVar',
+            entries=[
+                PathwaysListEntry(
+                    pathway=pathways['TP53 regulation'],
+                    fdr=0.15,
+                    overlap=overlap,   # seven significant genes
+                    pathway_size=12
+                ),
+                PathwaysListEntry(
+                    pathway=pathways['Small pathway'],
+                    fdr=0.01,
+                    overlap=overlap,
+                    pathway_size=7
+                )
+            ]
+        )
+        db.session.add(pathways_list)
+        db.session.commit()
+
+        response = self.client.get('/pathways/lists/')
+        assert response.status_code == 200
+
+        response = self.client.get(f'/pathways/list/{pathways_list.name}')
+        assert response.status_code == 200
+
+        response = self.client.get(f'/pathways/list_data/{pathways_list.id}')
+
+        # only one pathway has FDR lower than 0.1
+        assert response.json['total'] == 1
+
+        pathway = response.json['rows'].pop()
+
+        assert pathway['description'] == pathways['Small pathway'].description
 
     def test_show_pathway(self):
         create_pathways()

@@ -4,7 +4,7 @@ from flask_classful import FlaskView
 from flask_classful import route
 
 from database import db, levenshtein_sorted
-from models import Pathway, GeneList, GeneListEntry, Protein, Gene, source_manager, PathwaysList
+from models import Pathway, GeneList, GeneListEntry, Protein, Gene, source_manager, PathwaysList, PathwaysListEntry
 from sqlalchemy import or_, func, and_, text
 from helpers.views import AjaxTableView
 
@@ -145,24 +145,60 @@ class PathwaysView(FlaskView):
         ajax_view = AjaxTableView.from_query(
             query=query_constructor,
             results_mapper=mapper,
-            search_filter=lambda q: Pathway.description.like(q + '%'),
+            search_filter=search_filter,
             search_sort=search_sort
         )
-        """
-        filters_class=GeneViewFilters,
-        count_query=(
-            db.session.query(
-                GeneListEntry.id
-            )
-                .select_from(GeneListEntry)
-                .join(Gene, GeneListEntry.gene_id == Gene.id)
-                .join(Protein, Protein.id == Gene.preferred_isoform_id)
-                .filter(GeneListEntry.gene_list_id == gene_list.id)
-        ),
-        sort='fdr'
-        """
+
         return ajax_view(self)
 
     def lists(self):
         lists = PathwaysList.query.all()
         return template('pathway/lists.html', lists=lists)
+
+    def list(self, list_name):
+        return template('pathway/list.html', list_name=list_name)
+
+    def list(self, pathways_list_name):
+        query = request.args.get('query', '')
+        pathways_list = PathwaysList.query.filter_by(name=pathways_list_name).first_or_404()
+        dataset = source_manager.source_by_name[pathways_list.mutation_source_name]
+        return template(
+            'pathway/significant.html',
+            gene_list=pathways_list,
+            dataset=dataset,
+            endpoint='list_data',
+            endpoint_kwargs={'pathways_list_id': pathways_list.id},
+            query=query
+        )
+
+    def list_data(self, pathways_list_id):
+
+        def query_constructor(sql_filters, joins):
+
+            return (
+                db.session.query(Pathway, PathwaysListEntry)
+                .select_from(PathwaysListEntry)
+                .join(Pathway)
+                .filter(PathwaysListEntry.pathways_list_id == pathways_list_id)
+                .filter(PathwaysListEntry.fdr < 0.1)
+            )
+
+        def mapper(results):
+            pathway, pathways_list_entry = results
+            all_genes = pathways_list_entry.pathway_size
+            significant_genes = pathways_list_entry.overlap
+
+            json = pathway.to_json()
+            json['ratio'] = len(significant_genes) / all_genes
+            json['significant_genes_count'] = len(significant_genes)
+
+            return json
+
+        ajax_view = AjaxTableView.from_query(
+            query=query_constructor,
+            results_mapper=mapper,
+            search_filter=search_filter,
+            search_sort=search_sort
+        )
+
+        return ajax_view(self)
