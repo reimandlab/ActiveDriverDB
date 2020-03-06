@@ -37,7 +37,22 @@
         field: 'ratio',
         formatter: function(x){return (x * 100).toFixed(2) + '%'}
       },
+      {
+        title: 'FDR',
+        sortable: true,
+        valign: 'middle',
+        align: 'center',
+        field: 'fdr',
+        formatter: fdrFormatter
+      }
     ]
     initTable($('#table'), query, additional_columns)
   })
+{% endblock %}
+
+{% block other_js %}
+function fdrFormatter(value, row, index)
+{
+    return value.toPrecision(2)
+}
 {% endblock %}
