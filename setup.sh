@@ -7,7 +7,7 @@ mv example_config.py config.py
 cd ..
 
 # install sass gem
-gem install sass
+sudo npm install -g sass
 
 git clone https://github.com/juanmirocks/Levenshtein-MySQL-UDF
 cd Levenshtein-MySQL-UDF
