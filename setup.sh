@@ -118,7 +118,7 @@ sudo R -e 'install.packages("rmimp", repos=NULL)'
 sudo R -e 'install.packages(c("ggseqlogo", "ggplot2", "svglite"), repos = "http://cran.us.r-project.org")'
 
 # needed only if using sqlite3 for tests
-sudo apt-get install sqlite3-pcre
+sudo apt-get install sqlite3 sqlite3-pcre
 
 # pip3 install pygraphviz
 # on ubuntu:
