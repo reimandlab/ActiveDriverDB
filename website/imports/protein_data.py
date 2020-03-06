@@ -1209,13 +1209,17 @@ def active_pathways_lists(
             identifier = {}
             if gene_set_id.startswith('GO'):
                 identifier['gene_ontology'] = int(gene_set_id[3:])
-            elif gene_set_id.startswith('REAC:R-HSA-'):
-                identifier['reactome'] = int(gene_set_id[11:])
+            elif gene_set_id.startswith('REAC:'):
+                assert not gene_set_id[5:].startswith('R-HSA-')
+                identifier['reactome'] = int(gene_set_id[5:])
             else:
-                raise ValueError('Unknown pathway identifier type')
+                raise ValueError(f'Unknown pathway identifier type for {gene_set_id}')
 
             pathway, created = get_or_create(Pathway, **identifier)
-            assert not created
+
+            if created:
+                warn(f'New pathway added to database: {pathway}')
+                pathway.description = gene_set_name
 
             if pathway.description != gene_set_name:
                 warn(f'{identifier} pathway name differs, old := {pathway.description}, new := {gene_set_name}')
