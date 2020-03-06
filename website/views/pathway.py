@@ -19,7 +19,7 @@ def search_filter(query):
         return Pathway.description.like('%' + query + '%')
 
 
-def search_sort(query, q, sort_column, order):
+def search_sort(query, q, sort_column, order=True):
     if sort_column is None or sort_column in ['Pathway.description', 'description', Pathway.description]:
         return levenshtein_sorted(query, Pathway.description, q), True
     return query, False
