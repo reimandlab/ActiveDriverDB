@@ -1174,7 +1174,7 @@ def active_pathways_lists(
 
     for list_data in lists:
         if list_data.name in current_pathway_lists:
-            print(f'Skipping gene list {list_data.name}: already present in database')
+            print(f'Skipping pathways list {list_data.name}: already present in database')
             continue
 
         pathways_list = PathwaysList(
@@ -1204,18 +1204,22 @@ def active_pathways_lists(
 
             if fdr >= fdr_cutoff:
                 to_high_fdr_count += 1
-                return
+                continue
 
             identifier = {}
             if gene_set_id.startswith('GO'):
                 identifier['gene_ontology'] = int(gene_set_id[3:])
-            elif gene_set_id.startswith('REAC:R-HSA-'):
-                identifier['reactome'] = int(gene_set_id[11:])
+            elif gene_set_id.startswith('REAC:'):
+                assert not gene_set_id[5:].startswith('R-HSA-')
+                identifier['reactome'] = int(gene_set_id[5:])
             else:
-                raise ValueError('Unknown pathway identifier type')
+                raise ValueError(f'Unknown pathway identifier type for {gene_set_id}')
 
             pathway, created = get_or_create(Pathway, **identifier)
-            assert not created
+
+            if created:
+                warn(f'New pathway added to database: {pathway}')
+                pathway.description = gene_set_name
 
             if pathway.description != gene_set_name:
                 warn(f'{identifier} pathway name differs, old := {pathway.description}, new := {gene_set_name}')
