@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "text_entry.html" import text with context %}
+
+{% block title %} Pathways lists - {{ super() }} {% endblock %}
+
+
+{% block breadcrumb %}
+  {{ super() }}
+  <li class="active">Pathway lists</li>
+{% endblock %}
+
+
+{% block content %}
+
+  <h3>Pathway lists</h3>
+
+  <div>
+    {{ text('pathways-lists-top') }}
+
+    <table class="table">
+      <tr>
+        <th>Name</th>
+        <th>Pathways count</th>
+      </tr>
+      {% for list in lists %}
+        <tr>
+          <td>
+            <a href="{{ url_for(
+                'PathwayView:list',
+                list_name=list.name,
+                filters=('Mutation.sources:in:' + list.mutation_source_name if list.mutation_source_name else None)
+            ) }}">
+              {{ list.name }}
+            </a>
+          </td>
+          <td>
+            {{ list.entries | length }}
+          </td>
+        </tr>
+      {% endfor %}
+
+    </table>
+
+    {{ text('pathways-lists-down') }}
+  </div>
+
+{% endblock %}

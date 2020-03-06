@@ -4,7 +4,7 @@ from flask_classful import FlaskView
 from flask_classful import route
 
 from database import db, levenshtein_sorted
-from models import Pathway, GeneList, GeneListEntry, Protein, Gene, source_manager
+from models import Pathway, GeneList, GeneListEntry, Protein, Gene, source_manager, PathwaysList
 from sqlalchemy import or_, func, and_, text
 from helpers.views import AjaxTableView
 
@@ -162,3 +162,7 @@ class PathwaysView(FlaskView):
         sort='fdr'
         """
         return ajax_view(self)
+
+    def lists(self):
+        lists = PathwaysList.query.all()
+        return template('pathway/lists.html', lists=lists)
