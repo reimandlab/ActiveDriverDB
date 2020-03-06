@@ -19,18 +19,31 @@
 
     <table class="table">
       <tr>
-        <th>Pathways list</th>
+        <th>PTM/mutations subset</th>
+        <th>Significant pathways list</th>
+        <th>All pathways with significant genes list</th>
         <th>Corresponding genes list</th>
         <th>Genes count</th>
       </tr>
       {% for list in lists %}
         <tr>
           <td>
+            {{ list.name }}
+          </td>
+          <td>
+            <a href="{{ url_for(
+                'PathwaysView:list',
+                pathways_list_name=list.name
+            ) }}">
+              ActivePathways
+            </a>
+          </td>
+          <td>
             <a href="{{ url_for(
                 'PathwaysView:with_significant_genes',
                 significant_gene_list_name=list.name
             ) }}">
-              Pathways: {{ list.name }}
+              All pathways with significant genes
             </a>
           </td>
           <td>
@@ -39,7 +52,7 @@
                 list_name=list.name,
                 filters=('Mutation.sources:in:' + list.mutation_source_name if list.mutation_source_name else None)
             ) }}">
-              Gene list: {{ list.name }}
+              Gene list
             </a>
           </td>
           <td>
