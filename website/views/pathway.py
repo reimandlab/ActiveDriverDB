@@ -73,8 +73,33 @@ class PathwaysView(FlaskView):
         return jsonify(data)
 
     def index(self):
-        lists = GeneList.query.all()
-        return template('pathway/index.html', lists=lists)
+        gene_lists = GeneList.query.all()
+        pathways_lists = PathwaysList.query.all()
+
+        matched_lists = [
+            {
+                'site_type': pathways_list.site_type,
+                'mutation_source': pathways_list.mutation_source_name,
+                'pathways_list': pathways_list
+            }
+            for pathways_list in pathways_lists
+        ]
+
+        for gene_list in gene_lists:
+            matched = False
+            for l in matched_lists:
+                if gene_list.mutation_source_name == l['mutation_source'] and gene_list.site_type == l['site_type']:
+                    matched = True
+                    l['gene_list'] = gene_list
+            if not matched:
+                matched_lists.append({
+                    'pathways_list': None,
+                    'gene_list': gene_list,
+                    'site_type': gene_list.site_type,
+                    'mutation_source': gene_list.mutation_source_name
+                })
+
+        return template('pathway/index.html', lists=matched_lists)
 
     def all(self):
         query = request.args.get('query', '')

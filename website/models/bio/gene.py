@@ -20,12 +20,19 @@ class GeneListEntry(BioModel):
     gene = db.relationship('Gene')
 
 
-class GeneList(BioModel):
+class ListModel(BioModel):
     name = db.Column(db.String(255), nullable=False, unique=True, index=True)
-    entries = db.relationship(GeneListEntry)
 
-    # some gene lists are specific only to one type of mutations:
+    # some lists are specific only to one type of mutations:
     mutation_source_name = db.Column(db.String(256))
+
+    # and/or to only one type of PTM site
+    site_type_id = db.Column(db.Integer, db.ForeignKey('sitetype.id'))
+    site_type = db.relationship(SiteType)
+
+
+class GeneList(ListModel):
+    entries = db.relationship(GeneListEntry)
 
 
 class PathwaysListEntry(BioModel):
@@ -46,16 +53,8 @@ class PathwaysListEntry(BioModel):
     pathway_size = db.Column(db.Integer)
 
 
-class PathwaysList(BioModel):
-    name = db.Column(db.String(255), nullable=False, unique=True, index=True)
+class PathwaysList(ListModel):
     entries = db.relationship(PathwaysListEntry)
-
-    # some lists are specific only to one type of mutations
-    mutation_source_name = db.Column(db.String(256))
-
-    # and/or to only one type of PTM site
-    site_type_id = db.Column(db.Integer, db.ForeignKey('sitetype.id'))
-    site_type = db.relationship(SiteType)
 
 
 class Gene(BioModel):
