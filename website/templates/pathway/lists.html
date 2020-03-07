@@ -6,7 +6,8 @@
 
 {% block breadcrumb %}
   {{ super() }}
-  <li class="active">Pathway lists</li>
+  <li><a href="{{ url_for('PathwaysView:index') }}">Pathways</a></li>
+  <li class="active">Significant</li>
 {% endblock %}
 
 
