@@ -1217,6 +1217,7 @@ def active_pathways_lists(
             if created:
                 warn(f'New pathway added to database: {pathway}')
                 pathway.description = gene_set_name
+                db.session.add(pathway)
 
             if pathway.description != gene_set_name:
                 warn(f'{identifier} pathway name differs, old := {pathway.description}, new := {gene_set_name}')

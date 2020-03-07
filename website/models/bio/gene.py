@@ -147,8 +147,8 @@ class Gene(BioModel):
 class Pathway(BioModel):
     description = db.Column(db.Text)
 
-    gene_ontology = db.Column(db.Integer)
-    reactome = db.Column(db.Integer)
+    gene_ontology = db.Column(db.Integer, unique=True)
+    reactome = db.Column(db.Integer, unique=True)
 
     association_table = make_association_table('pathway.id', Gene.id)
 
