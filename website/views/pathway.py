@@ -190,7 +190,7 @@ class PathwaysView(FlaskView):
         dataset = source_manager.source_by_name[pathways_list.mutation_source_name]
         return template(
             'pathway/precomputed.html',
-            gene_list=pathways_list,
+            pathways_list=pathways_list,
             dataset=dataset,
             endpoint='list_data',
             endpoint_kwargs={'pathways_list_id': pathways_list.id},
