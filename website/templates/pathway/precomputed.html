@@ -2,21 +2,17 @@
 {% from "text_entry.html" import text with context %}
 
 {% block page_title %}
-  Significant pathways - {{ gene_list.name }}
+  Significant pathways - {{ pathways_list.name }}
 {% endblock %}
 
 {% block breadcrumb %}
   {{ super() }}
-  <li class="active">{{ gene_list.name }}</li>
+  <li><a href="{{ url_for('PathwaysView:lists') }}">Significant</a></li>
+  <li class="active">{{ pathways_list.name }}</li>
 {% endblock %}
 
 {% block description %}
   {{ text('pathways-precomputed') }}
-  <p>
-    The prediction bases on PTM mutations from {{ gene_list.name }} dataset.
-    Click here to see full list of
-    <a href="{{ url_for('GeneView:list', list_name=gene_list.name) }}">top genes with PTM mutations in {{ dataset.name }}</a>.
-  </p>
 {% endblock %}
 
 {% block js_table_init %}
