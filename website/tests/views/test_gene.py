@@ -40,7 +40,7 @@ class TestGeneView(ViewTest):
         with self.app.app_context():
             from imports.protein_data import ListData
             gene_lists = load_active_driver_gene_lists(lists=(
-                ListData(name='TCGA', path=filename, mutations_source=TCGAMutation),
+                ListData(name='TCGA', path=filename, mutations_source=TCGAMutation, site_type_name='all'),
             ))
         db.session.add_all(gene_lists)
 
@@ -50,7 +50,7 @@ class TestGeneView(ViewTest):
             mut = Mutation()
             MC3Mutation(mutation=mut)
 
-            p = Protein(refseq='NM_000%s' % i, mutations=[mut])
+            p = Protein(refseq=f'NM_000{i}', mutations=[mut])
             gene.isoforms = [p]
             gene.preferred_isoform = p
 
@@ -77,7 +77,7 @@ class TestGeneView(ViewTest):
 
         gene_names = ('BRCA1', 'BRCA2', 'TP53')
         for i, name in enumerate(gene_names):
-            p = Protein(refseq='NM_000%s' % i)
+            p = Protein(refseq=f'NM_000{i}')
             gene = Gene(name=name, isoforms=[p], preferred_isoform=p)
             genes.append(gene)
 

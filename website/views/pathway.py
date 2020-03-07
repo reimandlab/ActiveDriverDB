@@ -4,7 +4,7 @@ from flask_classful import FlaskView
 from flask_classful import route
 
 from database import db, levenshtein_sorted
-from models import Pathway, GeneList, GeneListEntry, Protein, Gene, source_manager
+from models import Pathway, GeneList, GeneListEntry, Protein, Gene, source_manager, PathwaysList, PathwaysListEntry
 from sqlalchemy import or_, func, and_, text
 from helpers.views import AjaxTableView
 
@@ -16,12 +16,12 @@ def search_filter(query):
             Pathway.reactome.like(query + '%')
         )
     else:
-        return Pathway.description.like('%' + query + '%')
+        return Pathway.description.ilike('%' + query + '%')
 
 
 def search_sort(query, q, sort_column, order):
     if sort_column is None or sort_column in ['Pathway.description', 'description', Pathway.description]:
-        return levenshtein_sorted(query, Pathway.description, q), True
+        return levenshtein_sorted(query, Pathway.description, q, order), True
     return query, False
 
 
@@ -73,8 +73,37 @@ class PathwaysView(FlaskView):
         return jsonify(data)
 
     def index(self):
-        lists = GeneList.query.all()
-        return template('pathway/index.html', lists=lists)
+        gene_lists = GeneList.query.all()
+        pathways_lists = PathwaysList.query.all()
+
+        matched_lists = [
+            {
+                'site_type': pathways_list.site_type,
+                'mutation_source': pathways_list.mutation_source_name,
+                'pathways_list': pathways_list
+            }
+            for pathways_list in pathways_lists
+        ]
+
+        for gene_list in gene_lists:
+            matched = False
+            for l in matched_lists:
+                if gene_list.mutation_source_name == l['mutation_source'] and gene_list.site_type == l['site_type']:
+                    matched = True
+                    l['gene_list'] = gene_list
+            if not matched:
+                matched_lists.append({
+                    'pathways_list': None,
+                    'gene_list': gene_list,
+                    'site_type': gene_list.site_type,
+                    'mutation_source': gene_list.mutation_source_name
+                })
+
+        for matched_list in matched_lists:
+            matched_list['mutation_source_name'] = matched_list['mutation_source']
+            matched_list['mutation_source'] = source_manager.source_by_name[matched_list['mutation_source']]
+
+        return template('pathway/index.html', lists=matched_lists)
 
     def all(self):
         query = request.args.get('query', '')
@@ -90,7 +119,7 @@ class PathwaysView(FlaskView):
         gene_list = GeneList.query.filter_by(name=significant_gene_list_name).first_or_404()
         dataset = source_manager.source_by_name[gene_list.mutation_source_name]
         return template(
-            'pathway/significant.html',
+            'pathway/with_significant_genes.html',
             gene_list=gene_list,
             dataset=dataset,
             endpoint='significant_data',
@@ -145,20 +174,58 @@ class PathwaysView(FlaskView):
         ajax_view = AjaxTableView.from_query(
             query=query_constructor,
             results_mapper=mapper,
-            search_filter=lambda q: Pathway.description.like(q + '%'),
+            search_filter=search_filter,
             search_sort=search_sort
         )
-        """
-        filters_class=GeneViewFilters,
-        count_query=(
-            db.session.query(
-                GeneListEntry.id
+
+        return ajax_view(self)
+
+    def lists(self):
+        lists = PathwaysList.query.all()
+        return template('pathway/lists.html', lists=lists)
+
+    def list(self, pathways_list_name):
+        query = request.args.get('query', '')
+        pathways_list = PathwaysList.query.filter_by(name=pathways_list_name).first_or_404()
+        dataset = source_manager.source_by_name[pathways_list.mutation_source_name]
+        return template(
+            'pathway/precomputed.html',
+            pathways_list=pathways_list,
+            dataset=dataset,
+            endpoint='list_data',
+            endpoint_kwargs={'pathways_list_id': pathways_list.id},
+            query=query
+        )
+
+    def list_data(self, pathways_list_id):
+
+        def query_constructor(sql_filters, joins):
+
+            return (
+                db.session.query(Pathway, PathwaysListEntry)
+                .select_from(Pathway)
+                .join(PathwaysListEntry)
+                .filter(PathwaysListEntry.pathways_list_id == pathways_list_id)
+                .filter(PathwaysListEntry.fdr < 0.1)
             )
-                .select_from(GeneListEntry)
-                .join(Gene, GeneListEntry.gene_id == Gene.id)
-                .join(Protein, Protein.id == Gene.preferred_isoform_id)
-                .filter(GeneListEntry.gene_list_id == gene_list.id)
-        ),
-        sort='fdr'
-        """
+
+        def mapper(results):
+            pathway, pathways_list_entry = results
+            all_genes = pathways_list_entry.pathway_size
+            significant_genes = pathways_list_entry.overlap
+
+            json = pathway.to_json()
+            json['ratio'] = len(significant_genes) / all_genes
+            json['significant_genes_count'] = len(significant_genes)
+            json['fdr'] = pathways_list_entry.fdr
+
+            return json
+
+        ajax_view = AjaxTableView.from_query(
+            query=query_constructor,
+            results_mapper=mapper,
+            search_filter=search_filter,
+            search_sort=search_sort
+        )
+
         return ajax_view(self)

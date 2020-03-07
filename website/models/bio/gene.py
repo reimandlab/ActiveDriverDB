@@ -1,11 +1,14 @@
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.declarative.base import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 from werkzeug.utils import cached_property
 
 from database import db, count_expression
+from database.types import ScalarSet
 from .model import BioModel, make_association_table
 from .protein import Protein
+from .sites import SiteType
 
 
 class GeneListEntry(BioModel):
@@ -18,12 +21,46 @@ class GeneListEntry(BioModel):
     gene = db.relationship('Gene')
 
 
-class GeneList(BioModel):
+class ListModel:
     name = db.Column(db.String(255), nullable=False, unique=True, index=True)
+
+    # some lists are specific only to one type of mutations:
+    mutation_source_name = db.Column(db.String(256))
+
+    # and/or to only one type of PTM site
+    @declared_attr
+    def site_type_id(self):
+        return db.Column(db.Integer, db.ForeignKey('sitetype.id'))
+
+    @declared_attr
+    def site_type(self):
+        return db.relationship(SiteType)
+
+
+class GeneList(ListModel, BioModel):
     entries = db.relationship(GeneListEntry)
 
-    # some gene lists are specific only to one type of mutations:
-    mutation_source_name = db.Column(db.String(256))
+
+class PathwaysListEntry(BioModel):
+    pathways_list_id = db.Column(db.Integer, db.ForeignKey('pathwayslist.id'))
+
+    # adjusted.p.val
+    fdr = db.Column(db.Float(precision=53))
+
+    pathway_id = db.Column(db.Integer, db.ForeignKey('pathway.id'))
+    pathway = db.relationship('Pathway')
+
+    # the overlap as reported by ActivePathways
+    overlap = db.Column(ScalarSet(), default=set)
+
+    # pathway size at the time of the computation of the ActivePathways (term.size)
+    # just so we can check it in an unlikely case of the the pathways going out of
+    # sync with the ActivePathways results
+    pathway_size = db.Column(db.Integer)
+
+
+class PathwaysList(ListModel, BioModel):
+    entries = db.relationship(PathwaysListEntry)
 
 
 class Gene(BioModel):
@@ -110,8 +147,8 @@ class Gene(BioModel):
 class Pathway(BioModel):
     description = db.Column(db.Text)
 
-    gene_ontology = db.Column(db.Integer)
-    reactome = db.Column(db.Integer)
+    gene_ontology = db.Column(db.Integer, unique=True)
+    reactome = db.Column(db.Integer, unique=True)
 
     association_table = make_association_table('pathway.id', Gene.id)
 

@@ -166,7 +166,7 @@ class AjaxTableView:
                 query, sort_key = prepare_for_sorting(query, sort_key)
 
             if phrase and search_sort:
-                query, sorted_by_search = search_sort(query, phrase, sort_key)
+                query, sorted_by_search = search_sort(query, phrase, sort_key, ordering_function)
 
             if not sorted_by_search and sort_key:
                 query = query.order_by(

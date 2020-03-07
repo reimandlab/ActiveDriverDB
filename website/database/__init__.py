@@ -5,6 +5,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql.expression import func
+from sqlalchemy import desc
 from tqdm import tqdm
 
 from hash_set_db import HashSetWithCache
@@ -40,12 +41,11 @@ def has_or_any(field, *args, **kwargs):
     return method(*args, **kwargs)
 
 
-def levenshtein_sorted(sql_query, column, query):
+def levenshtein_sorted(sql_query, column, query, order=desc):
     from flask import current_app
-    from sqlalchemy import desc
     if current_app.config['SQL_LEVENSTHEIN']:
         sql_query = sql_query.order_by(
-            desc(
+            order(
                 func.levenshtein_ratio(func.lower(column), query.lower())
             )
         )

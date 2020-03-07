@@ -2,21 +2,17 @@
 {% from "text_entry.html" import text with context %}
 
 {% block page_title %}
-  Significant pathways - {{ gene_list.name }}
+  Significant pathways - {{ pathways_list.name }}
 {% endblock %}
 
 {% block breadcrumb %}
   {{ super() }}
-  <li class="active">{{ gene_list.name }}</li>
+  <li><a href="{{ url_for('PathwaysView:lists') }}">Significant</a></li>
+  <li class="active">{{ pathways_list.name }}</li>
 {% endblock %}
 
 {% block description %}
-  {{ text('pathways-significant') }}
-  <p>
-    The prediction bases on PTM mutations from {{ gene_list.name }} dataset.
-    Click here to see full list of
-    <a href="{{ url_for('GeneView:list', list_name=gene_list.name) }}">top genes with PTM mutations in {{ dataset.name }}</a>.
-  </p>
+  {{ text('pathways-precomputed') }}
 {% endblock %}
 
 {% block js_table_init %}
@@ -37,7 +33,22 @@
         field: 'ratio',
         formatter: function(x){return (x * 100).toFixed(2) + '%'}
       },
+      {
+        title: 'FDR',
+        sortable: true,
+        valign: 'middle',
+        align: 'center',
+        field: 'fdr',
+        formatter: fdrFormatter
+      }
     ]
     initTable($('#table'), query, additional_columns)
   })
+{% endblock %}
+
+{% block other_js %}
+function fdrFormatter(value, row, index)
+{
+    return value.toPrecision(2)
+}
 {% endblock %}
