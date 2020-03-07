@@ -19,41 +19,48 @@
 
     <table class="table">
       <tr>
-        <th>PTM/mutations subset</th>
-        <th>Significant pathways list (ActivePathways)</th>
+        <th>Mutations</th>
+        <th>PTM</th>
+        <th>Significant pathways list</th>
+        <th title='Number of significant pathways'>Pathways*</th>
         <th>Pathways with significant genes</th>
         <th>Corresponding genes list</th>
-        <th>Genes count</th>
+        <th title='Number of significant genes'>Genes*</th>
       </tr>
       {% for list in lists %}
         <tr>
           <td>
-            {{ list.mutation_source }},
-            {{ list.site_type }} sites
+            {{ list.mutation_source }}
+          </td>
+          <td>
+            {{ list.site_type or 'all' }} sites
           </td>
           <td>
             <a href="{{ url_for(
                 'PathwaysView:list',
-                pathways_list_name=list.name
+                pathways_list_name=list.pathways_list.name
             ) }}">
-              {{ list.pathways_list.name }}
+              ActivePathways
             </a>
+          </td>
+          <td>
+            {{ list.pathways_list.entries | length }}
           </td>
           <td>
             <a href="{{ url_for(
                 'PathwaysView:with_significant_genes',
-                significant_gene_list_name=list.name
+                significant_gene_list_name=list.gene_list.name
             ) }}">
-              Pathways with genes from {{ list.gene_list.name }}
+              Reactome pathways with significant genes
             </a>
           </td>
           <td>
             <a href="{{ url_for(
                 'GeneView:list',
-                list_name=list.name,
+                list_name=list.gene_list.name,
                 filters=('Mutation.sources:in:' + list.mutation_source_name if list.mutation_source_name else None)
             ) }}">
-              {{ list.gene_list.name }}
+              Significant genes
             </a>
           </td>
           <td>
