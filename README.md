@@ -32,7 +32,7 @@ source virtual_environment/bin/activate
 cd website
 python3 -m pip install -r requirements.txt
 ```
-In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given. An additional requirement is `bsddb3` package, which is often easier to install system-wide with your package manager (on Debian named `python3-bsddb3`). You may need to add a symbolic link to the package inside of your virtual environment.
+In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given.
 
 ### Backend
 
