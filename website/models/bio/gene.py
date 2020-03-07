@@ -1,4 +1,5 @@
 from sqlalchemy.ext.associationproxy import association_proxy
+from sqlalchemy.ext.declarative.base import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
 from werkzeug.utils import cached_property
@@ -20,18 +21,23 @@ class GeneListEntry(BioModel):
     gene = db.relationship('Gene')
 
 
-class ListModel(BioModel):
+class ListModel:
     name = db.Column(db.String(255), nullable=False, unique=True, index=True)
 
     # some lists are specific only to one type of mutations:
     mutation_source_name = db.Column(db.String(256))
 
     # and/or to only one type of PTM site
-    site_type_id = db.Column(db.Integer, db.ForeignKey('sitetype.id'))
-    site_type = db.relationship(SiteType)
+    @declared_attr
+    def site_type_id(self):
+        return db.Column(db.Integer, db.ForeignKey('sitetype.id'))
+
+    @declared_attr
+    def site_type(self):
+        return db.relationship(SiteType)
 
 
-class GeneList(ListModel):
+class GeneList(ListModel, BioModel):
     entries = db.relationship(GeneListEntry)
 
 
@@ -53,7 +59,7 @@ class PathwaysListEntry(BioModel):
     pathway_size = db.Column(db.Integer)
 
 
-class PathwaysList(ListModel):
+class PathwaysList(ListModel, BioModel):
     entries = db.relationship(PathwaysListEntry)
 
 
