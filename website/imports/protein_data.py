@@ -1007,7 +1007,7 @@ def active_driver_gene_lists(
         }.items()
         for site_type in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination']
     ),
-    fdr_cutoff=0.01
+    fdr_cutoff=0.05
 ):
     current_gene_lists = [
         existing_list.name
@@ -1173,7 +1173,7 @@ def active_pathways_lists(
             }.items()
             for site_type in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination']
         ),
-        fdr_cutoff=0.01
+        fdr_cutoff=0.05
 ):
     current_pathway_lists = [
         existing_list.name
