@@ -82,6 +82,33 @@ class StatisticsTest(DatabaseTest):
 
         assert in_many_sources == 1
 
+    def test_sites_stats(self):
+
+        from models import Site, SiteType
+
+        site_counts = {
+            'glycosylation': 100,
+            'N-glycosylation': 10,
+            'O-glycosylation': 5,
+            'phosphorylation': 25
+        }
+
+        for site_type, count in site_counts.items():
+            site_type = SiteType(name=site_type)
+            for _ in range(count):
+                site = Site(types={site_type})
+                db.session.add(site)
+
+        from stats import Statistics
+        statistics = Statistics()
+        statistics.calc_all(limit_to='(glycosylation|sites)')
+        statistics = statistics.get_all()
+
+        assert statistics['glycosylations_with_subtype'] == 15
+        assert statistics['glycosylations_without_subtype_ratio'] == 100 / 115
+
+        assert statistics['sites'] == sum(site_counts.values())
+
     def test_interactions(self):
 
         from models import Protein, Site, Kinase, KinaseGroup
