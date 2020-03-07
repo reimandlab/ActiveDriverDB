@@ -30,7 +30,7 @@
       {% for list in lists %}
         <tr>
           <td>
-            {{ list.mutation_source }}
+            {{ list.mutation_source.name }}
           </td>
           <td>
             {{ list.site_type or 'all' }} sites

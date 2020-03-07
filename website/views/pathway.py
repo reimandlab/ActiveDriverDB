@@ -99,6 +99,10 @@ class PathwaysView(FlaskView):
                     'mutation_source': gene_list.mutation_source_name
                 })
 
+        for matched_list in matched_lists:
+            matched_list['mutations_source_name'] = matched_list['mutation_source']
+            matched_list['mutations_source'] = source_manager.source_by_name[matched_list['mutation_source']]
+
         return template('pathway/index.html', lists=matched_lists)
 
     def all(self):
@@ -115,7 +119,7 @@ class PathwaysView(FlaskView):
         gene_list = GeneList.query.filter_by(name=significant_gene_list_name).first_or_404()
         dataset = source_manager.source_by_name[gene_list.mutation_source_name]
         return template(
-            'pathway/significant.html',
+            'pathway/with_significant_genes.html',
             gene_list=gene_list,
             dataset=dataset,
             endpoint='significant_data',
