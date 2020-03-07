@@ -1,3 +1,4 @@
+from functools import partial
 from itertools import combinations
 from typing import List
 
@@ -5,7 +6,7 @@ from sqlalchemy import and_, func, distinct, or_
 
 import models
 from database import db, fast_count
-from models import Mutation, are_details_managed, MC3Mutation, source_manager, MutationSource
+from models import Mutation, are_details_managed, MC3Mutation, source_manager, MutationSource, UserUploadedMutation
 
 from .store import counter
 from .store.store import CountStore
@@ -73,8 +74,11 @@ class Statistics(CountStore):
         return counts
 
     @staticmethod
-    def count_by_sources(sources: List[MutationSource]):
-        return Mutation.query.filter(Mutation.in_sources(*sources)).count()
+    def count_by_sources(sources: List[MutationSource], only_confirmed=False):
+        query = Mutation.query.filter(Mutation.in_sources(*sources))
+        if only_confirmed:
+            query = query.filter_by(is_confirmed=True)
+        return query.count()
 
     def __init__(self):
 
@@ -82,10 +86,14 @@ class Statistics(CountStore):
             # dirty trick: 1KGenomes is not a valid name in Python
             name = 'mutations_' + source_model.name.replace('1', 'T')
 
-            def muts_counter(_self):
-                return self.count_by_sources([source_model])
+            if source_model == UserUploadedMutation:
+                continue
 
-            self.register(counter(muts_counter, name=name))
+            def muts_counter(_self, source):
+                print(source)
+                return self.count_by_sources([source])
+
+            self.register(counter(partial(muts_counter, source=source_model), name=name))
 
         for source_model in filter(lambda model: are_details_managed(model), source_manager.all):
             name = f'mutations_{source_model.name}_annotations'

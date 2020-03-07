@@ -34,21 +34,25 @@ class StatisticsTest(DatabaseTest):
 
     def test_mutations_count(self):
 
-        mutation_models = {
-            model.name: model
-            for model in [
-                models.MIMPMutation,
-                models.The1000GenomesMutation,
-                models.MC3Mutation,
-                models.ExomeSequencingMutation,
-                models.InheritedMutation
-            ]
+        mutation_counts = {
+            models.MIMPMutation: 100,
+            models.The1000GenomesMutation: 3,
+            models.MC3Mutation: 5,
+            models.ExomeSequencingMutation: 2,
+            models.InheritedMutation: 4
         }
 
-        for name, model in mutation_models.items():
-            m = models.Mutation()
-            metadata = model(mutation=m)
-            db.session.add(metadata)
+        mutation_models = {
+            model.name: model
+            for model in mutation_counts.keys()
+        }
+
+        for model, count in mutation_counts.items():
+            for _ in range(count):
+                m = models.Mutation()
+                metadata = model(mutation=m)
+                db.session.add(metadata)
+            db.session.commit()
 
         stats = self.exposed_stats(limit_to='mutations')
 
@@ -56,12 +60,12 @@ class StatisticsTest(DatabaseTest):
             return model_name.replace('1', 'T')
 
         for name, model in mutation_models.items():
-            assert stats['muts'][get_var_name(name)] == 1
+            assert stats['muts'][get_var_name(name)] == mutation_counts[model]
 
-        assert stats['muts']['all'] == len(mutation_models)
+        assert stats['muts']['all'] == sum(mutation_counts.values())
 
         # confirmed are all without mimp
-        assert stats['muts']['all_confirmed'] == len(mutation_models) - 1
+        assert stats['muts']['all_confirmed'] == 3 + 5 + 2 + 4
 
     def test_from_many_sources(self):
 
