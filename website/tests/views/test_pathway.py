@@ -1,3 +1,5 @@
+from flask import url_for
+
 from database import db
 from models import Pathway, Gene, GeneList, GeneListEntry, PathwaysList, PathwaysListEntry
 from view_testing import ViewTest
@@ -5,7 +7,7 @@ from view_testing import ViewTest
 
 def create_pathways():
 
-    # not necessarily true ;)
+    # mock data
     genes = [Gene(name=name) for name in 'KRAS NRAS AKAP13 NF1 BCR'.split()]
     significant_genes = [Gene(name=name) for name in 'TP53 AKT1 TXN GPI AKT3 FN TSC1'.split()]
 
@@ -30,6 +32,47 @@ def create_pathways():
     return locals()
 
 
+def create_gene_list(created):
+    gene_list = GeneList(
+        name='ClinVar',
+        entries=[
+            GeneListEntry(gene=gene, fdr=0.001, p=0.001)
+            for gene in created['significant_genes']
+        ],
+        mutation_source_name='ClinVar'
+    )
+    db.session.add(gene_list)
+    db.session.commit()
+
+    return gene_list
+
+
+def create_pathways_list(created):
+    overlap = {gene.name for gene in created['significant_genes']}
+    pathways = created['pathways']
+    pathways_list = PathwaysList(
+        name='Pathways enriched in germline mutations',
+        mutation_source_name='ClinVar',
+        entries=[
+            PathwaysListEntry(
+                pathway=pathways['TP53 regulation'],
+                fdr=0.15,
+                overlap=overlap,  # seven significant genes
+                pathway_size=12
+            ),
+            PathwaysListEntry(
+                pathway=pathways['Small pathway'],
+                fdr=0.01,
+                overlap=overlap,
+                pathway_size=7
+            )
+        ]
+    )
+    db.session.add(pathways_list)
+    db.session.commit()
+    return pathways_list
+
+
 class TestPathwaysView(ViewTest):
 
     def test_details(self):
@@ -43,14 +86,7 @@ class TestPathwaysView(ViewTest):
     def test_with_significant_genes(self):
         created = create_pathways()
 
-        gene_list = GeneList(
-            name='ClinVar',
-            entries=[
-                GeneListEntry(gene=gene, fdr=0.001, p=0.001)
-                for gene in created['significant_genes']
-            ])
-        db.session.add(gene_list)
-        db.session.commit()
+        gene_list = create_gene_list(created)
 
         response = self.client.get('/pathways/with_significant_genes/')
         assert response.status_code == 200
@@ -74,27 +110,8 @@ class TestPathwaysView(ViewTest):
     def test_list(self):
         created = create_pathways()
         pathways = created['pathways']
-        overlap = {gene.name for gene in created['significant_genes']}
-        pathways_list = PathwaysList(
-            name='Pathways enriched in germline mutations',
-            mutation_source_name='ClinVar',
-            entries=[
-                PathwaysListEntry(
-                    pathway=pathways['TP53 regulation'],
-                    fdr=0.15,
-                    overlap=overlap,   # seven significant genes
-                    pathway_size=12
-                ),
-                PathwaysListEntry(
-                    pathway=pathways['Small pathway'],
-                    fdr=0.01,
-                    overlap=overlap,
-                    pathway_size=7
-                )
-            ]
-        )
-        db.session.add(pathways_list)
-        db.session.commit()
+
+        pathways_list = create_pathways_list(created)
 
         response = self.client.get('/pathways/lists/')
         assert response.status_code == 200
@@ -119,6 +136,18 @@ class TestPathwaysView(ViewTest):
 
         response = self.client.get(f'/pathways/list_data/{pathways_list.id}?search=TP53')
         assert response.json['total'] == 0
+
+    def test_index(self):
+        created = create_pathways()
+        pathways_list = create_pathways_list(created)
+        gene_list = create_gene_list(created)
+
+        response = self.client.get(f'/pathways/')
+        assert response.status_code == 200
+        html = response.data.decode()
+
+        assert url_for('PathwaysView:list', pathways_list_name=pathways_list.name) in html
+        assert url_for('PathwaysView:with_significant_genes', significant_gene_list_name=gene_list.name) in html
 
     def test_show_pathway(self):
         create_pathways()

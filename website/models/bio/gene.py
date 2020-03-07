@@ -24,8 +24,8 @@ class GeneListEntry(BioModel):
 class ListModel:
     name = db.Column(db.String(255), nullable=False, unique=True, index=True)
 
-    # some lists are specific only to one type of mutations:
-    mutation_source_name = db.Column(db.String(256))
+    # lists are specific only to one type of mutations:
+    mutation_source_name = db.Column(db.String(256), nullable=False)
 
     # and/or to only one type of PTM site
     @declared_attr
