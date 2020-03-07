@@ -16,7 +16,7 @@ def search_filter(query):
             Pathway.reactome.like(query + '%')
         )
     else:
-        return Pathway.description.like('%' + query + '%')
+        return Pathway.description.ilike('%' + query + '%')
 
 
 def search_sort(query, q, sort_column, order):

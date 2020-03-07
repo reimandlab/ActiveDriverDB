@@ -111,6 +111,15 @@ class TestPathwaysView(ViewTest):
 
         assert pathway['description'] == pathways['Small pathway'].description
 
+        # test filtering
+        response = self.client.get(f'/pathways/list_data/{pathways_list.id}?search=A pathway with more than')
+        assert response.json['total'] == 1
+        response = self.client.get(f'/pathways/list_data/{pathways_list.id}?search=pathway&order=asc&offset=0&limit=25')
+        assert response.json['total'] == 1
+
+        response = self.client.get(f'/pathways/list_data/{pathways_list.id}?search=TP53')
+        assert response.json['total'] == 0
+
     def test_show_pathway(self):
         create_pathways()
         response = self.client.get('/pathways/reactome/6796648/')
