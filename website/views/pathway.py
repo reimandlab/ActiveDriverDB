@@ -100,8 +100,8 @@ class PathwaysView(FlaskView):
                 })
 
         for matched_list in matched_lists:
-            matched_list['mutations_source_name'] = matched_list['mutation_source']
-            matched_list['mutations_source'] = source_manager.source_by_name[matched_list['mutation_source']]
+            matched_list['mutation_source_name'] = matched_list['mutation_source']
+            matched_list['mutation_source'] = source_manager.source_by_name[matched_list['mutation_source']]
 
         return template('pathway/index.html', lists=matched_lists)
 
