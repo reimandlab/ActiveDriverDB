@@ -36,7 +36,7 @@ class TestImport(DatabaseTest):
             gene_lists = load_active_driver_gene_lists(lists=(
                 ListData(
                     name='TCGA list', path=filename, mutations_source=TCGAMutation,
-                    site_type_name=None
+                    site_type_name='all'
                 ),
             ))
 
@@ -67,7 +67,7 @@ class TestImport(DatabaseTest):
             gene_lists = load_active_driver_gene_lists(lists=(
                 ListData(
                     name='TCGA list', path=filename, mutations_source=TCGAMutation,
-                    site_type_name=None
+                    site_type_name='all'
                 ),
             ))
 
