@@ -20,7 +20,7 @@
     <table class="table">
       <tr>
         <th>Mutations</th>
-        <th>PTM</th>
+        <th>PTM type</th>
         <th>Significant pathways list</th>
         <th title='Number of significant pathways'>Pathways*</th>
         <th>Pathways with significant genes</th>
@@ -30,10 +30,10 @@
       {% for list in lists %}
         <tr>
           <td>
-            {{ list.mutation_source.name }}
+            {{ list.mutation_source.display_name }}
           </td>
           <td>
-            {{ list.site_type or 'all' }} sites
+            {{ list.site_type or 'all' }}
           </td>
           <td>
             <a href="{{ url_for(
