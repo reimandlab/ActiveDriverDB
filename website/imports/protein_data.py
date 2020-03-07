@@ -1162,7 +1162,7 @@ def pathways(path='data/hsapiens.pathways.NAME.gmt'):
 def active_pathways_lists(
         lists=(
             ListData(
-                name=f'{label}: {site_type} pathways',
+                name=f'{label}: {site_type} sites',
                 path=ACTIVE_PATHWAYS_RESULTS_DIR + f'{site_type}_{source_path}_pathways.tsv',
                 mutations_source=source,
                 site_type_name=site_type
