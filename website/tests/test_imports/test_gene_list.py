@@ -33,12 +33,15 @@ class TestImport(DatabaseTest):
         filename = make_named_temp_file(raw_gene_list)
 
         with self.app.app_context():
-            gene_lists = load_active_driver_gene_lists(lists=(
-                ListData(
-                    name='TCGA list', path=filename, mutations_source=TCGAMutation,
-                    site_type_name='all'
+            gene_lists = load_active_driver_gene_lists(
+                lists=(
+                    ListData(
+                        name='TCGA list', path=filename, mutations_source=TCGAMutation,
+                        site_type_name='all'
+                    ),
                 ),
-            ))
+                fdr_cutoff=0.01
+            )
 
         # one gene list returned (TCGA)
         assert len(gene_lists) == 1
