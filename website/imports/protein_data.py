@@ -972,8 +972,8 @@ def calculate_interactors():
 
 ListData = namedtuple('ListData', 'name path mutations_source site_type_name')
 
-ACTIVE_DRIVER_RESULTS_DIR = 'data/ActiveDriver/2020-02-14/'
-ACTIVE_PATHWAYS_RESULTS_DIR = 'data/ActivePathways/2020-02-25/'
+ACTIVE_DRIVER_RESULTS_DIR = 'data/ActiveDriver/2020-03-09/'
+ACTIVE_PATHWAYS_RESULTS_DIR = 'data/ActivePathways/2020-03-09/'
 
 
 def list_data_to_kwargs(list_data):
@@ -1094,8 +1094,22 @@ def full_gene_names(path='data/Homo_sapiens.gene_info.gz'):
     )
 
 
+def pathway_identifiers(gene_set_id):
+
+    identifier = {}
+    if gene_set_id.startswith('GO'):
+        identifier['gene_ontology'] = int(gene_set_id[3:])
+    elif gene_set_id.startswith('REAC:R-HSA-'):
+        identifier['reactome'] = int(gene_set_id[5:])
+    elif gene_set_id == 'REAC:0000000':  # REACTOME root term
+        return
+    else:
+        raise ValueError(f'Unknown pathway identifier type for {gene_set_id}')
+    return identifier
+
+
 @importer
-def pathways(path='data/hsapiens.pathways.NAME.gmt'):
+def pathways(path=ACTIVE_PATHWAYS_RESULTS_DIR + 'hsapiens.pathways.NAME.gmt'):
     """Loads pathways from given '.gmt' file.
 
     New genes may be created and should automatically be added
@@ -1118,6 +1132,12 @@ def pathways(path='data/hsapiens.pathways.NAME.gmt'):
 
         """
         gene_set_name = data[0]
+        identifiers = pathway_identifiers(gene_set_name)
+
+        if not identifiers:
+            print(f'Skipping {gene_set_name} pathway')
+            return
+
         # Entry description can by empty
         entry_description = data[1].strip()
 
@@ -1143,13 +1163,10 @@ def pathways(path='data/hsapiens.pathways.NAME.gmt'):
             description=entry_description,
             genes=pathway_genes
         )
+        pathways.append(pathway)
 
-        if gene_set_name.startswith('GO'):
-            pathway.gene_ontology = int(gene_set_name[3:])
-        elif gene_set_name.startswith('REAC:R-HSA-'):
-            pathway.reactome = int(gene_set_name[11:])
-        else:
-            raise Exception(f'Unknown gene set name: "{gene_set_name}"')
+        for key, value in identifiers.items():
+            setattr(pathway, key, value)
 
     parse_tsv_file(path, parser)
 
@@ -1203,14 +1220,11 @@ def active_pathways_lists(
                 to_high_fdr_count += 1
                 continue
 
-            identifier = {}
-            if gene_set_id.startswith('GO'):
-                identifier['gene_ontology'] = int(gene_set_id[3:])
-            elif gene_set_id.startswith('REAC:'):
-                assert not gene_set_id[5:].startswith('R-HSA-')
-                identifier['reactome'] = int(gene_set_id[5:])
-            else:
-                raise ValueError(f'Unknown pathway identifier type for {gene_set_id}')
+            identifier = pathway_identifiers(gene_set_id)
+
+            if not identifier:
+                print(f'Skipping {gene_set_id}')
+                continue
 
             pathway, created = get_or_create(Pathway, **identifier)
 
