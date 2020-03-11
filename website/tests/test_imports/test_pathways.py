@@ -1,6 +1,6 @@
 import pytest
 
-from imports.protein_data import active_pathways_lists as load_active_pathways_lists, ListData
+from imports.protein_data import active_pathways_lists as load_active_pathways_lists, ListData, pathway_identifiers
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
 from database import db
@@ -15,6 +15,11 @@ GO:0050801	ion homeostasis	0.0445298831877082	727	CASR,FGF23,SCN1B,UMOD,SNCA,KCN
 
 
 class TestImport(DatabaseTest):
+
+    def test_id_parsing(self):
+        assert pathway_identifiers('GO:0070268') == {'gene_ontology': 70268}
+        assert pathway_identifiers('REAC:R-HSA-1059683') == {'reactome': 1059683}
+        assert pathway_identifiers('REAC:0000000') is None
 
     def test_pathways_lists(self):
         filename = make_named_temp_file(raw_pathways_list)

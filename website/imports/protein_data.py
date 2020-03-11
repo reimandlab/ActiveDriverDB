@@ -1100,7 +1100,7 @@ def pathway_identifiers(gene_set_id):
     if gene_set_id.startswith('GO'):
         identifier['gene_ontology'] = int(gene_set_id[3:])
     elif gene_set_id.startswith('REAC:R-HSA-'):
-        identifier['reactome'] = int(gene_set_id[5:])
+        identifier['reactome'] = int(gene_set_id[11:])
     elif gene_set_id == 'REAC:0000000':  # REACTOME root term
         return
     else:
