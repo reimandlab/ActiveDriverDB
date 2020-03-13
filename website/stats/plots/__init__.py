@@ -7,7 +7,7 @@ from helpers.plots import bar_plot
 from models import Plot, Site, Protein, DataError
 from stats.plots import (
     ptm_variability, proteins_variability, most_mutated_sites, active_driver, ptm_mutations,
-    gene_ontology, motifs, mimp, enrichment
+    motifs, mimp, enrichment
 )
 from stats.plots.common import site_types_names
 from ..store import cases, CountStore
@@ -38,7 +38,6 @@ plot_modules = [
     most_mutated_sites,
     active_driver,
     ptm_mutations,
-    gene_ontology,
     motifs,
     mimp,
     enrichment,

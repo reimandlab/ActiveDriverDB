@@ -1,6 +1,5 @@
 from collections import Counter
 from operator import attrgetter
-from pathlib import Path
 from types import FunctionType
 from typing import Mapping
 
@@ -13,7 +12,6 @@ from analyses.enrichment import active_driver_genes_enrichment
 from database import db
 from helpers.plots import bar_plot, stacked_bar_plot
 from models import Mutation, Protein, Gene, Site, MC3Mutation, Cancer, InheritedMutation, MutationSource
-from stats.analyses.ontology import Ontology, draw_ontology_graph
 
 from ..store import cases
 from .common import site_types_with_any, site_types
@@ -158,45 +156,6 @@ def cancers(site_type):
     )
 
 
-def ontology_plots(
-    terms, analysis_name, vector=True, thresholds=(70, 75, 80, 85, 90, 95), allow_misses=True,
-    limit_to=None, unflatten=900
-):
-
-    predefined_ontologies = {
-        'phenotypes': 'data/hp.obo',
-        'diseases': 'data/HumanDO.obo',
-        'mondo': 'data/mondo.obo'
-    }
-
-    ontology_subsets = {
-        'mondo': [None, 'disease', 'disease characteristic']
-    }
-
-    ontologies = {
-        name: Ontology(path)
-        for name, path in predefined_ontologies.items()
-        if not limit_to or name in limit_to
-    }
-
-    path = Path('analyses_output') / 'active_driver_plots' / analysis_name
-    path.mkdir(parents=True, exist_ok=True)
-
-    plots = {}
-    for name, ontology in ontologies.items():
-        subsets = ontology_subsets.get(name, [None])
-        for subset in subsets:
-            for above_percentile in thresholds:
-                graph = ontology.process_graph(terms, above_percentile, root_name=subset, allow_misses=allow_misses, show_progress=True)
-                plot = draw_ontology_graph(
-                    graph,
-                    path / f'{name}_{above_percentile}{"_" + subset if subset else ""}.{"svg" if vector else "png"}',
-                    unflatten
-                )
-                plots[name, subset, above_percentile] = plot
-    return plot
-
-
 def cancer_mutations(result, significant=True):
     mutations = (
         mutations_from_significant_genes(result, mutation_model=MC3Mutation)
@@ -222,21 +181,6 @@ def merged_cancer_mutations(site_type):
         all_cancer_mutations.append(mutations)
 
 
-@cases(site_type=site_types)
-def cancers_ontology(site_type, significant=True, vector=False):
-    result = pan_cancer_analysis(site_type)
-
-    mutations = cancer_mutations(result, significant=significant)
-
-    terms = counts_by('cancer_name', mutations)
-
-    return ontology_plots(
-        terms, 'cancers', vector,
-        [0, 70, 75, 80, 85, 90, 95],
-        allow_misses=False, limit_to=['diseases', 'mondo']
-    )
-
-
 def disease_mutations(result, significant=True):
     mutations = (
         mutations_from_significant_genes(result, mutation_model=InheritedMutation)
@@ -255,15 +199,6 @@ def diseases_wordcloud(site_type, significant=True):
         'e.g. https://www.jasondavies.com/wordcloud/'
     )
     print(' '.join(mutations.disease))
-
-
-@cases(site_type=site_types)
-def diseases_ontology(site_type, significant=True, vector=False):
-    result = clinvar_analysis(site_type.name)
-    mutations = disease_mutations(result)
-    terms = counts_by('disease', mutations)
-
-    return ontology_plots(terms, 'diseases', vector)
 
 
 @cases(site_type=site_types)
