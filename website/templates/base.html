@@ -75,7 +75,7 @@
     <div class="minor-top-navigation">
       <ol class="breadcrumb">
         {% block breadcrumb %}
-          <li><a href="/">Home</a></li>
+          <li><a href="{{ url_for('ContentManagementSystem:index') }}">Home</a></li>
         {% endblock %}
       </ol>
       <div class="user-menu">
