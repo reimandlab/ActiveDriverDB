@@ -961,6 +961,39 @@ def clean_from_wrong_proteins(soft=True):
 
 
 @importer
+def clean_from_orphaned_mutations(soft=True):
+    """After running clean_from_wrong_proteins() some mutations may be orphaned,
+
+    i.e. have no parent proteins, if those were imported before clean-up.
+    This functions removes such mutations.
+    """
+    orphaned = Mutation.query.filter(Mutation.protein == None)
+    orphaned_count = orphaned.count()
+    total = Mutation.query.count()
+    print(f'Removing {orphaned_count} orphaned mutations ({orphaned_count / total * 100:.2f}%)')
+
+    removed_details = defaultdict(int)
+
+    from database.manage import remove
+
+    for mutation in tqdm(orphaned, total=orphaned_count):
+
+        assert mutation.protein is None
+        remove(mutation, soft)
+
+    from models import source_manager
+
+    for source in source_manager.all:
+        if hasattr(source, 'query'):
+            details_query = source.query.filter(source.mutation==None)
+            for mut in tqdm(details_query, total=details_query.count()):
+                remove(mut, soft)
+                removed_details[source.name] += 1
+
+    print(f'Removed {removed_details}')
+
+
+@importer
 def calculate_interactors():
     print('Precalculating interactors counts:')
 
