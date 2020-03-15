@@ -2,7 +2,6 @@
 import argparse
 from typing import Mapping
 
-from eralchemy import render_er
 from flask import current_app
 from sqlalchemy import MetaData
 from sqlalchemy.exc import OperationalError
@@ -401,6 +400,7 @@ def run_shell(args):
 
 
 def entity_diagram(args, app=None):
+    from eralchemy import render_er
     if not app:
         app = create_app(config_override=CONFIG)
     for database_bind in args.databases:
