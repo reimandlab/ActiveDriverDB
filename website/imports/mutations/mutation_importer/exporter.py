@@ -116,7 +116,7 @@ class MutationExporter:
     @property
     def export_header(self):
         return [
-           'gene', 'isoform', 'position',  'wt_residue', 'mut_residue'
+            'gene', 'isoform', 'position', 'wt_residue', 'mut_residue'
         ] + self.export_details_headers()
 
     def generate_export_path(self, only_preferred, prefix=''):
@@ -125,7 +125,7 @@ class MutationExporter:
         directory = os.path.join('exported', 'mutations')
         os.makedirs(directory, exist_ok=True)
 
-        name_template = '{prefix}{model_name}{restrictions}-{date}.tsv.gz'
+        name_template = '{prefix}{model_name}{restrictions}_{date}.tsv.gz'
 
         name = name_template.format(
             prefix=prefix,
@@ -133,7 +133,7 @@ class MutationExporter:
             restrictions=(
                 '-primary_isoforms_only' if only_preferred else ''
             ),
-            date=export_time
+            date=export_time.strftime('%Y-%m-%d_%H-%M')
         )
         return os.path.join(directory, name)
 
