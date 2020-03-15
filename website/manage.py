@@ -2,11 +2,13 @@
 import argparse
 from typing import Mapping
 
+from eralchemy import render_er
 from flask import current_app
+from sqlalchemy import MetaData
 from sqlalchemy.exc import OperationalError
 
 from app import create_app
-from database import bdb
+from database import bdb, get_engine
 from database import bdb_refseq
 from database import db
 from database.manage import remove_model, reset_relational_db
@@ -398,6 +400,16 @@ def run_shell(args):
             code.interact(local=locals())
 
 
+def entity_diagram(args, app=None):
+    if not app:
+        app = create_app(config_override=CONFIG)
+    for database_bind in args.databases:
+        engine = get_engine(database_bind, app)
+        meta = MetaData()
+        meta.reflect(bind=engine)
+        render_er(meta, f'{database_bind}_model_sqlalchemy.{args.format}')
+
+
 def create_parser():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers(help='sub-commands')
@@ -439,6 +451,29 @@ def create_parser():
         '-c',
         '--command',
         type=str
+    )
+
+    er_parser = new_subparser(
+        subparsers,
+        'er_diagram',
+        entity_diagram,
+        help='plot entity-relationship diagram'
+    )
+
+    er_parser.add_argument(
+        '-d',
+        '--databases',
+        type=str,
+        nargs='*',
+        choices=database_binds,
+        default=database_binds,
+    )
+
+    er_parser.add_argument(
+        '-f',
+        '--format',
+        type=str,
+        default='png'
     )
 
     migrate_parser = new_subparser(
