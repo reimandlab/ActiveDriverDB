@@ -168,9 +168,12 @@ class SiteImporter(BioImporter):
 
         if protein_sequence[pos] != site.residue:
             self.issues_counter['sequence mismatch'] += 1
+            protein_id = ''
+            if hasattr(site, 'refseq'):
+                protein_id = site.refseq
             warn(
                 f'Protein sequence at {pos} ({protein_sequence[pos]})'
-                f' differs from {site.residue} for: {self.repr_site(site)}.'
+                f' differs from {site.residue} for: {protein_id} {self.repr_site(site)}.'
             )
             return nan
 

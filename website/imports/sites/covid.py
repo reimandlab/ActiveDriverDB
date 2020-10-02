@@ -65,7 +65,7 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
         )
 
         # select significant sites only
-        sites = sites.loc[is_site_significant]
+        sites = sites.loc[is_site_significant].copy()
 
         sites['residue'] = sites.site.str[0]
         is_canonical = sites['residue'].isin({'S', 'T', 'Y'})
