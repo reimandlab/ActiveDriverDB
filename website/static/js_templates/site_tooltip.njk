@@ -1,7 +1,19 @@
 {{ site.start + 7 }}
-{%  for type in site.types %}
+<ul>
+{% for type in site.type %}
   <li>{{ type }}</li>
 {% endfor %}
-<br>
-{{ site.sources | join(',') }}
-{{ site.associations }}
+</ul>
+Sources: {{ site.sources | join(', ') }}
+{% if site.associations %}
+  Associations:
+  <ul>
+  {% for association in site.associations %}
+    <li>{{ association.site_type }} change associated with {{ association.event }}:</li>
+    <ul>
+      <li>{{ association.effect_size_type }}: {{ association.effect_size }}</li>
+      <li>adjusted p-value: {{ association.adjusted_p_value }}</li>
+    </ul>
+  {% endfor %}
+  </ul>
+{% endif %}
