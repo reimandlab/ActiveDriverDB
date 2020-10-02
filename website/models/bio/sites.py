@@ -3,6 +3,7 @@ from functools import lru_cache
 
 from pathlib import Path
 from sys import float_info
+from typing import List
 
 from sqlalchemy import func, case
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
@@ -152,7 +153,7 @@ def default_residue(context):
 
 
 class SiteSource(BioModel):
-    name = db.Column(db.String(16), unique=True)
+    name = db.Column(db.String(32), unique=True)
 
 
 def extract_padded_sequence(protein: 'Protein', left: int, right: int):
@@ -203,6 +204,8 @@ class Site(BioModel):
         collection_class=set,
         backref='sites'
     )
+
+    associations: List['RegulatorySiteAssociation']
 
     @client_side_defaults('pmid')
     def __init__(self, *args, **kwargs):
