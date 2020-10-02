@@ -32,7 +32,7 @@ class SiteType(BioModel):
     # this table can be pre-fetched into the application
     # memory on start, as it is not supposed to change after
     # the initial import
-    name = db.Column(db.String(16), unique=True)
+    name = db.Column(db.String(32), unique=True)
 
     def find_modified_residues(self) -> set:
         return {site.residue for site in self.sites}
