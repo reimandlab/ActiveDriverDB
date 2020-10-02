@@ -114,7 +114,7 @@ def basic_auto_migrate_relational_db(app, bind):
                 if columns_to_update:
                     print(
                         '\nFollowing columns in `%s` table differ in definitions '
-                        'from those in specified in models:' % table.name
+                        f'from those specified in models: {table.name}'
                     )
                 for column, old_definition, new_definition in columns_to_update:
                     agreed = got_permission(
