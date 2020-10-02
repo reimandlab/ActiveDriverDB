@@ -189,3 +189,11 @@ cd ..
 # Conservation track from UCSC
 wget -N http://hgdownload.cse.ucsc.edu/goldenpath/hg19/phyloP100way/hg19.100way.phyloP100way.bw
 wget -N http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz
+
+mkdir -p sites
+cd sites
+# https://data.mendeley.com/datasets/dpkbh2g9hy/1
+echo "attempting to download zip from https://data.mendeley.com/datasets/dpkbh2g9hy/1"
+wget https://md-datasets-cache-zipfiles-prod.s3.eu-west-1.amazonaws.com/dpkbh2g9hy-1.zip
+unzip dpkbh2g9hy-1.zip
+cd ..

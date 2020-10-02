@@ -1,3 +1,4 @@
+from .covid import CovidPhosphoImporter
 from .hprd import HPRDImporter
 from .uniprot import GlycosylationUniprotImporter, OthersUniprotImporter
 from .psp import PhosphoSitePlusImporter
@@ -10,4 +11,5 @@ __all__ = [
     OthersUniprotImporter,
     PhosphoSitePlusImporter,
     PhosphoELMImporter,
+    CovidPhosphoImporter
 ]
