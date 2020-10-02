@@ -97,6 +97,28 @@ class UniprotIsoformsTrait:
         if isoform in self.sequences.canonical or isoform.endswith('-1'):
             return True
 
+    def get_sequence_of_protein(self, site):
+        """Return sequence of a protein on which the site is described.
+
+        Having no information describing which isoform is canonical
+        the best way to determine which isoform to use is to check if
+        an isoform is a splice variant; if it is not a splice variant,
+        we know that it has to be a canonical isoform.
+        """
+        try:
+            return self.sequences.splice[site.sequence_accession]
+        except KeyError:
+            if hasattr(site, 'primary_accession'):
+                primary_accession = site.primary_accession
+            elif site.sequence_accession.endswith('-1'):
+                primary_accession = site.sequence_accession[:-2]
+            else:
+                return
+            try:
+                return self.sequences.canonical[primary_accession]
+            except KeyError:
+                warn(f'No sequence for {site.sequence_accession} found!')
+
 
 class UniprotSequenceAccessionTrait:
 
@@ -113,7 +135,7 @@ class UniprotSequenceAccessionTrait:
         return sites.merge(canonical_mapping, on='protein_accession')
 
 
-class UniprotImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait):
+class UniprotImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, SiteImporter):
     """UniProt/SwissProt sites importer.
 
     The data can be exported and downloaded using sparql: http://sparql.uniprot.org
@@ -144,22 +166,6 @@ class UniprotImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait):
         SiteImporter.__init__(self)
         UniprotToRefSeqTrait.__init__(self, mappings_path)
         UniprotIsoformsTrait.__init__(self, sprot_canonical_path, sprot_splice_variants_path)
-
-    def get_sequence_of_protein(self, site):
-        """Return sequence of a protein on which the site is described.
-
-        Having no information describing which isoform is canonical
-        the best way to determine which isoform to use is to check if
-        an isoform is a splice variant; if it is not a splice variant,
-        we know that it has to be a canonical isoform.
-        """
-        try:
-            return self.sequences.splice[site.sequence_accession]
-        except KeyError:
-            try:
-                return self.sequences.canonical[site.primary_accession]
-            except KeyError:
-                warn(f'No sequence for {site.sequence_accession} found!')
 
     @abstractmethod
     def extract_site_mod_type(self, sites: DataFrame) -> DataFrame:
