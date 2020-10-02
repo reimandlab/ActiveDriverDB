@@ -2,7 +2,9 @@ import re
 from functools import lru_cache
 
 from pathlib import Path
-from sqlalchemy import func
+from sys import float_info
+
+from sqlalchemy import func, case
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
 
 from database import db, client_side_defaults
@@ -373,16 +375,61 @@ class EventModulatingPTM(BioModel):
     reference = db.Column(db.String(255))
 
 
+infinities = {
+    1: float('Inf'),
+    -1: -float('Inf')
+}
+reverse_infinities = {
+    value: representation
+    for representation, value in infinities.items()
+}
+
+
 class RegulatorySiteAssociation(BioModel):
     event_id = db.Column(db.Integer, db.ForeignKey('eventmodulatingptm.id'))
     event = db.relationship(EventModulatingPTM, backref='associations')
 
-    effect_size = db.Column(db.Float)
-    adjusted_p_value = db.Column(db.Float)
+    finite_effect_size = db.Column(db.Float(precision=53))
+    infinite_effect_size = db.Column(db.Integer, nullable=True)
+    adjusted_p_value = db.Column(db.Float(precision=53))
     effect_size_types = {
         'log2FC': 'log2 fold change'
     }
     effect_size_type = db.Column(db.Enum(*effect_size_types))
+
+    @hybrid_property
+    def effect_size(self):
+        """Infinity handling is implemented via special hybrid variable
+        as MySQL does not support infinite values."""
+        if self.infinite_effect_size is None:
+            return self.finite_effect_size
+        else:
+            return infinities[self.infinite_effect_size]
+
+    @effect_size.expression
+    def effect_size(self):
+        return case(
+            [
+                (
+                    self.infinite_effect_size == 1,
+                    float_info.max
+                ),
+                (
+                    self.infinite_effect_size == -1,
+                    -float_info.max
+                )
+            ],
+            else_=self.finite_effect_size
+        )
+
+    @effect_size.setter
+    def effect_size(self, value):
+        if value in reverse_infinities:
+            self.infinite_effect_size = reverse_infinities[value]
+            self.finite_effect_size = None
+        else:
+            self.finite_effect_size = value
+            self.infinite_effect_size = None
 
     site_type_id = db.Column(db.Integer, db.ForeignKey('sitetype.id'))
     site_type = db.relationship(SiteType, backref='regulatory_associations')

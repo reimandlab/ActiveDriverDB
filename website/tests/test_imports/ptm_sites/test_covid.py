@@ -72,12 +72,12 @@ TREAQAGARAGGPPESVEGEAPPAPPEAQR
 
 ALTERNATIVE = ''
 
-
 SITES = """\
 Gene_Name	uniprot	site	Inf_24Hr.log2FC	Ctrl_24Hr.adj.pvalue	Inf_24Hr.adj.pvalue
 AAAS	Q9NRG9	S495	-0.25	0.84	0.79
 AAGAB	Q6PD74	S310	0.07	0.99	0.95
 ZYX	Q15942	S308	-3.95	0.066	0.00011
+ZYX	Q15942	S7	-Inf	0.066	0.0
 ZSCAN18	Q8TBC5	G208	1.51	0.35	0.0031
 """
 
@@ -117,7 +117,7 @@ class TestImport(DatabaseTest):
 
         sites = importer.load_sites(make_named_temp_file(SITES, suffix='.tsv'))
 
-        assert len(sites) == 2
+        assert len(sites) == 4
 
         db.session.add_all(sites)
         db.session.commit()
@@ -131,13 +131,15 @@ class TestImport(DatabaseTest):
 
         assert set(sites_by_protein.keys()) == {protein_zyx.refseq, protein_zyx_alt.refseq}
 
-        zyx_sites = sites_by_protein['NM_003461']
-        assert len(zyx_sites) == 1
+        zyx_sites = {
+            site.position: site
+            for site in sites_by_protein['NM_003461']
+        }
+        assert len(zyx_sites) == 2
 
-        site = zyx_sites[0]
+        site = zyx_sites[308]
 
         assert site.residue == 'S'
-        assert site.position == 308
         assert site.types_names == {'phosphorylation (SARS-CoV-2)'}
 
         assert len(site.associations) == 2
@@ -145,6 +147,14 @@ class TestImport(DatabaseTest):
         assert association.event.name == 'SARS-CoV-2 infection'
 
         assert association.adjusted_p_value == 0.00011
+        assert association.finite_effect_size == -3.95
+        assert association.infinite_effect_size is None
         assert association.effect_size == -3.95
         assert association.effect_size_type == 'log2FC'
         assert association.site_type.name == 'phosphorylation (SARS-CoV-2)'
+
+        inf_site = zyx_sites[7]
+        inf_association = list(inf_site.associations)[0]
+        assert inf_association.finite_effect_size is None
+        assert inf_association.infinite_effect_size == -1
+        assert inf_association.effect_size == float('-inf')
