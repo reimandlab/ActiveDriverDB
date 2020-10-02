@@ -1,0 +1,7 @@
+{{ site.start + 7 }}
+{%  for type in site.types %}
+  <li>{{ type }}</li>
+{% endfor %}
+<br>
+{{ site.sources | join(',') }}
+{{ site.associations }}

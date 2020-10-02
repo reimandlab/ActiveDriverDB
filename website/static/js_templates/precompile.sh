@@ -10,6 +10,7 @@ nunjucks-precompile macros.njk > precompiled/protein.js
 nunjucks-precompile mimp.njk >> precompiled/protein.js
 nunjucks-precompile motif_image.njk >> precompiled/protein.js
 nunjucks-precompile needle_tooltip.njk >> precompiled/protein.js
+nunjucks-precompile site_tooltip.njk >> precompiled/protein.js
 nunjucks-precompile row_details.njk >> precompiled/protein.js
 nunjucks-precompile short_url_popup.njk >> precompiled/protein.js
 nunjucks-precompile kinase_tooltip.njk >> precompiled/protein.js

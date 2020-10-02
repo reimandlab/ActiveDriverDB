@@ -238,7 +238,10 @@
         site_tooltip.init({
             id: 'site',
             template: function(d){
-                return (d.start + 7) + ' ' + d.type + '<br>' + d.sources
+                return nunjucks.render(
+                    'site_tooltip.njk',
+                    {site: d}
+                );
             },
             viewport: plot.parentNode
         })
