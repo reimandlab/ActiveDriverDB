@@ -147,3 +147,4 @@ class TestImport(DatabaseTest):
         assert association.adjusted_p_value == 0.00011
         assert association.effect_size == -3.95
         assert association.effect_size_type == 'log2FC'
+        assert association.site_type.name == 'phosphorylation (SARS-CoV-2)'

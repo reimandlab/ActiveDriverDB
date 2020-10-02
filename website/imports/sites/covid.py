@@ -7,7 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound
 import imports.protein_data as importers
 from imports.sites.site_importer import SiteImporter
 from imports.sites.uniprot.importer import UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait
-from models import Site, EventModulatingPTM, RegulatorySiteAssociation
+from models import Site, EventModulatingPTM, RegulatorySiteAssociation, SiteType
 
 
 class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait, SiteImporter):
@@ -119,6 +119,7 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
             effect_size=log2_fold_change,
             adjusted_p_value=adj_p_val,
             effect_size_type='log2FC',
+            site_type=self.site_types_map[mod_type],
             site=site
         )
         site.associations.add(association)
