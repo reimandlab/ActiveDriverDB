@@ -1,4 +1,5 @@
 from operator import attrgetter
+from typing import Iterable
 
 from flask import jsonify
 from flask import redirect
@@ -13,7 +14,7 @@ from helpers.tracks import MutationsTrack
 from helpers.tracks import SequenceTrack
 from helpers.tracks import Track
 from helpers.tracks import TrackElement
-from models import Domain, source_manager, SiteType
+from models import Domain, source_manager, SiteType, Site
 from models import Mutation
 from .abstract_protein import AbstractProteinView, GracefulFilterManager, ProteinRepresentation
 from ._commons import represent_mutation
@@ -53,13 +54,23 @@ def prepare_tracks(protein, raw_mutations):
     return tracks
 
 
-def prepare_sites(sites):
+def prepare_sites(sites: Iterable[Site]):
     return [
         {
             'start': site.position - 7,
             'end': site.position + 7,
-            'type': ', '.join(site.types_names),
-            'sources': [source.name for source in site.sources]
+            'type': list(site.types_names),
+            'sources': [source.name for source in site.sources],
+            'associations': [
+                {
+                    'effect_size_type': association.effect_size_type,
+                    'effect_size': association.effect_size,
+                    'adjusted_p_value': association.adjusted_p_value,
+                    'event': association.event.name,
+                    'site_type': association.site_type.name
+                }
+                for association in site.associations
+            ]
         } for site in sites
     ]
 
@@ -125,7 +136,6 @@ class SequenceRepresentation(ProteinRepresentation):
                     }
                     for motif, position in motifs
                 ]
-
 
             needle['summary'] = field.summary(data_filter)
             needle['value'] = field.get_value(data_filter)
