@@ -8,7 +8,7 @@ from imports.sites.site_importer import SiteImporter
 from imports.sites.uniprot.importer import UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait
 
 
-class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait):
+class PhosphoSitePlusImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait, SiteImporter):
     """PhosphoSitePlus(R) site importer.
 
     To use this importer one need to download relevant files from:
@@ -78,13 +78,6 @@ class PhosphoSitePlusImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoform
 
             return self.sequence_offset - length
         return self.sequence_offset
-
-    def add_nm_refseq_identifiers(self, sites: DataFrame):
-        return sites.merge(
-            self.mappings,
-            left_on='sequence_accession',
-            right_on='uniprot'
-        )
 
     def add_kinases(self, sites):
         sites = sites.merge(

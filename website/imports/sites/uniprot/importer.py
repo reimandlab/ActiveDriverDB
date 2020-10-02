@@ -44,6 +44,13 @@ class UniprotToRefSeqTrait:
 
         return mappings.drop(columns=['type'])
 
+    def add_nm_refseq_identifiers(self, sites: DataFrame):
+        return sites.merge(
+            self.mappings,
+            left_on='sequence_accession',
+            right_on='uniprot'
+        )
+
 
 class UniprotIsoformsTrait:
 
@@ -153,13 +160,6 @@ class UniprotImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait):
                 return self.sequences.canonical[site.primary_accession]
             except KeyError:
                 warn(f'No sequence for {site.sequence_accession} found!')
-
-    def add_nm_refseq_identifiers(self, sites: DataFrame):
-        return sites.merge(
-            self.mappings,
-            left_on='sequence_accession',
-            right_on='uniprot'
-        )
 
     @abstractmethod
     def extract_site_mod_type(self, sites: DataFrame) -> DataFrame:

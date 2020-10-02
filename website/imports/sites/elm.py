@@ -1,11 +1,11 @@
-from pandas import read_table, DataFrame, Series
+from pandas import read_table
 
 import imports.protein_data as importers
 from imports.sites.site_importer import SiteImporter
 from imports.sites.uniprot.importer import UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait
 
 
-class PhosphoELMImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait):
+class PhosphoELMImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait, SiteImporter):
     """Phospho.ELM site importer.
 
     To use this importer one need to download relevant files from:
@@ -29,20 +29,12 @@ class PhosphoELMImporter(SiteImporter, UniprotToRefSeqTrait, UniprotIsoformsTrai
     def __init__(
         self, sprot_canonical=None, sprot_splice=None, mappings_path=None,
      ):
-
         SiteImporter.__init__(self)
         UniprotToRefSeqTrait.__init__(self, mappings_path)
         UniprotIsoformsTrait.__init__(self, sprot_canonical, sprot_splice)
 
     def get_sequence_of_protein(self, site) -> str:
         return site.protein_sequence
-
-    def add_nm_refseq_identifiers(self, sites: DataFrame):
-        return sites.merge(
-            self.mappings,
-            left_on='sequence_accession',
-            right_on='uniprot'
-        )
 
     def load_sites(self, dump_file_path='data/sites/ELM/phosphoELM_all_2015-04.dump'):
 
