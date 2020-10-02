@@ -28,7 +28,8 @@ from models import Model
 
 muts_import_manager = MutationImportManager()
 database_binds = ('bio', 'cms')
-CONFIG = {'LOAD_STATS': False, 'SCHEDULER_ENABLED': False, 'USE_CELERY': False}
+# loading views can hinder migration as it would load models which might not be compatible with the current version
+CONFIG = {'LOAD_STATS': False, 'SCHEDULER_ENABLED': False, 'USE_CELERY': False, 'LOAD_VIEWS': False}
 
 
 def calc_statistics(args, app=None, stores=None):
