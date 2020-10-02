@@ -2,11 +2,12 @@ from typing import List
 from warnings import warn
 
 from pandas import read_table, read_excel
+from sqlalchemy.orm.exc import NoResultFound
 
 import imports.protein_data as importers
 from imports.sites.site_importer import SiteImporter
 from imports.sites.uniprot.importer import UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait
-from models import Site
+from models import Site, EventModulatingPTM, RegulatorySiteAssociation
 
 
 class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait, SiteImporter):
@@ -39,6 +40,9 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
     source_name = 'Vero E6 (Bouhaddou et al., 2020)'
     site_types = ['phosphorylation (SARS-CoV-2)']
     adj_p_threshold = 0.05
+
+    event_name = 'SARS-CoV-2 infection'
+    event_reference = '(Bouhaddou et al., 2020)'
 
     def __init__(
         self, sprot_canonical=None, sprot_splice=None, mappings_path=None,
@@ -75,7 +79,11 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
         sites['position'] = sites.site.str[1:].apply(int)
         assert all(sites['position'] > 0)
 
-        sites.rename(columns={'uniprot': 'protein_accession'}, inplace=True)
+        sites.rename(columns={
+            'uniprot': 'protein_accession',
+            'Inf_24Hr.adj.pvalue': 'adj_p_val',
+            'Inf_24Hr.log2FC': 'log2_fold_change'
+        }, inplace=True)
 
         sites['mod_type'] = 'phosphorylation (SARS-CoV-2)'
 
@@ -84,7 +92,35 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
 
         mapped_sites = self.map_sites_to_isoforms(sites)
 
-        mapped_sites['kinases'] = None
-        mapped_sites['pub_med_ids'] = None
+        try:
+            event = EventModulatingPTM.query.filter_by(name=self.event_name).one()
+            event.reference = self.event_reference
+        except NoResultFound:
+            event = EventModulatingPTM(
+                name=self.event_name,
+                reference=self.event_reference
+            )
 
-        return self.create_site_objects(mapped_sites)
+        mapped_sites['event'] = event
+
+        return self.create_site_objects(
+            mapped_sites,
+            columns=['refseq', 'position', 'residue', 'mod_type', 'adj_p_val', 'log2_fold_change', 'event']
+        )
+
+    def add_site(
+            self, refseq, position: int, residue, mod_type,
+            adj_p_val: float, log2_fold_change: float, event: EventModulatingPTM
+    ):
+        site, created = super().add_site(refseq, position, residue, mod_type)
+
+        association = RegulatorySiteAssociation(
+            event=event,
+            effect_size=log2_fold_change,
+            adjusted_p_value=adj_p_val,
+            effect_size_type='log2FC',
+            site=site
+        )
+        site.associations.add(association)
+
+        return site, created

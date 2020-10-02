@@ -366,3 +366,26 @@ class SiteMotif(BioModel):
         path /= f'{safe_name}_{self.id}.svg'
 
         return path
+
+
+class EventModulatingPTM(BioModel):
+    name = db.Column(db.String(255), unique=True)
+    reference = db.Column(db.String(255))
+
+
+class RegulatorySiteAssociation(BioModel):
+    event_id = db.Column(db.Integer, db.ForeignKey('eventmodulatingptm.id'))
+    event = db.relationship(EventModulatingPTM, backref='associations')
+
+    effect_size = db.Column(db.Float)
+    adjusted_p_value = db.Column(db.Float)
+    effect_size_types = {
+        'log2FC': 'log2 fold change'
+    }
+    effect_size_type = db.Column(db.Enum(*effect_size_types))
+
+    site_type_id = db.Column(db.Integer, db.ForeignKey('sitetype.id'))
+    site_type = db.relationship(SiteType, backref='regulatory_associations')
+
+    site_id = db.Column(db.Integer, db.ForeignKey('site.id'))
+    site = db.relationship(Site, backref=db.backref('associations', collection_class=set))

@@ -4,7 +4,7 @@ from database import db
 from database_testing import DatabaseTest
 from imports.sites.covid import CovidPhosphoImporter
 from miscellaneous import make_named_gz_file, make_named_temp_file
-from models import Protein, Site
+from models import Protein, Site, RegulatorySiteAssociation
 
 MAPPINGS = """\
 Q9NRG9-2	RefSeq_NT	NM_001173466.1
@@ -134,7 +134,16 @@ class TestImport(DatabaseTest):
         zyx_sites = sites_by_protein['NM_003461']
         assert len(zyx_sites) == 1
 
-        assert zyx_sites[0].residue == 'S'
-        assert zyx_sites[0].position == 308
-        assert zyx_sites[0].types_names == {'phosphorylation (SARS-CoV-2)'}
+        site = zyx_sites[0]
 
+        assert site.residue == 'S'
+        assert site.position == 308
+        assert site.types_names == {'phosphorylation (SARS-CoV-2)'}
+
+        assert len(site.associations) == 2
+        association: RegulatorySiteAssociation = next(iter(site.associations))
+        assert association.event.name == 'SARS-CoV-2 infection'
+
+        assert association.adjusted_p_value == 0.00011
+        assert association.effect_size == -3.95
+        assert association.effect_size_type == 'log2FC'
