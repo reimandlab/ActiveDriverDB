@@ -1,6 +1,3 @@
-import gzip
-from tempfile import TemporaryDirectory
-
 from database import db
 from database_testing import DatabaseTest
 from imports.sites.elm import PhosphoELMImporter
@@ -44,32 +41,27 @@ class TestImport(DatabaseTest):
 
         db.session.add(protein)
 
-        with TemporaryDirectory() as dir_path:
+        importer = PhosphoELMImporter(
+            make_named_gz_file(CANONICAL),
+            make_named_gz_file(ALTERNATIVE),
+            make_named_gz_file(MAPPINGS)
+        )
 
-            with gzip.open(dir_path + '/O-GalNAc_site_dataset.gz', 'wt') as f:
-                f.write(SITES)
+        sites = importer.load_sites(make_named_temp_file(SITES))
 
-            importer = PhosphoELMImporter(
-                make_named_gz_file(CANONICAL),
-                make_named_gz_file(ALTERNATIVE),
-                make_named_gz_file(MAPPINGS)
-            )
+        assert len(sites) == 2
 
-            sites = importer.load_sites(make_named_temp_file(SITES))
+        sites_by_pos = {site.position: site for site in sites}
 
-            assert len(sites) == 2
+        assert sites_by_pos[236].residue == sites_by_pos[242].residue == 'S'
+        assert sites_by_pos[236].types_names == sites_by_pos[242].types_names == {'phosphorylation'}
 
-            sites_by_pos = {site.position: site for site in sites}
+        assert sites_by_pos[236].pmid == {17360704}
 
-            assert sites_by_pos[236].residue == sites_by_pos[242].residue == 'S'
-            assert sites_by_pos[236].types_names == sites_by_pos[242].types_names == {'phosphorylation'}
+        # N.N. should be ignored
+        assert sites_by_pos[242].pmid == {18669648}
 
-            assert sites_by_pos[236].pmid == {17360704}
+        assert {kinase.name for kinase in sites_by_pos[236].kinases} == {'P70S6K'}
+        assert {group.name for group in sites_by_pos[236].kinase_groups} == {'RSK'}
 
-            # N.N. should be ignored
-            assert sites_by_pos[242].pmid == {18669648}
-
-            assert {kinase.name for kinase in sites_by_pos[236].kinases} == {'P70S6K'}
-            assert {group.name for group in sites_by_pos[236].kinase_groups} == {'RSK'}
-
-            assert len(sites_by_pos[242].kinases) == 0
+        assert len(sites_by_pos[242].kinases) == 0
