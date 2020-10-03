@@ -15,34 +15,6 @@ class MismatchError(ValueError):
     pass
 
 
-def gather_scores(score_tracks, regions_with_sites_by_protein, show_progress=True, verbose=True) -> List[float]:
-    """Aggregate scores from given regions of given proteins into a single list"""
-    all_scores = []
-    skipped = set()
-    progress = progress_bar if show_progress else no_progress_bar
-
-    proteins_and_regions = progress(
-        regions_with_sites_by_protein.items(),
-        total=len(regions_with_sites_by_protein)
-    )
-
-    for protein, sites_interval in proteins_and_regions:
-        try:
-            scores = score_tracks[protein]
-        except KeyError:
-            skipped.add(protein)
-            continue
-
-        for i in sites_interval:
-            score = scores[i]
-            all_scores.append(score)
-
-    if verbose and skipped:
-        print('Skipped:', ', '.join([protein.gene.name for protein in skipped]))
-
-    return all_scores
-
-
 def extract_track(protein_data: DataFrame, protein, chrom: str, bw) -> List[float]:
     """Extract scores from given BigWig file for coding region of given protein.
 
