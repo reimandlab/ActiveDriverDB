@@ -22,7 +22,7 @@ yuicompressor
 flask-recaptcha
 flask-limiter
 flask_apscheduler
-celery==4.3
+celery==4.3.1
 amqp
 redis
 gprofiler-official
