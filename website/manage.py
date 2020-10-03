@@ -422,7 +422,6 @@ def entity_diagram(args, app=None):
 
 class HelpFormatter(argparse.RawTextHelpFormatter):
     def _fill_text(self, text: Text, width: int, indent: Text) -> Text:
-        print(text)
         if '\n' in text:
             return text
         return super()._fill_text(text, width, indent)
