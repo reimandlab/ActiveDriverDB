@@ -8,7 +8,7 @@ mkdir -p precompiled
 
 compile () {
     echo "Compiling $1" >&2
-    nunjucks-precompile -j  $1
+    npx nunjucks-precompile -j  $1
 }
 
 # protein view templates

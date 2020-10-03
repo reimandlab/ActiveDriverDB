@@ -12,7 +12,7 @@ printf "\n"
 
 # compile sass into css files
 echo 'Compiling sass files'
-sass --update .:. --no-source-map --error-css
+npx sass --update .:. --no-source-map --error-css
 
 echo 'Adding prefixes'
 npx postcss sass/*.css --replace --use autoprefixer --verbose
