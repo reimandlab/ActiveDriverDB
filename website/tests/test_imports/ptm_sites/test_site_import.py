@@ -7,10 +7,11 @@ from pytest import warns
 
 from database import db, create_key_model_dict
 from database_testing import DatabaseTest
+from imports.protein_data import precompute_ptm_mutations
 from imports.sites.site_importer import SiteImporter
 from imports.sites.site_mapper import find_all, find_all_regex
 from imports.sites.site_mapper import SiteMapper
-from models import Protein, Gene
+from models import Protein, Gene, Mutation, MC3Mutation, MIMPMutation, Site
 
 
 def test_find_all():
@@ -79,6 +80,41 @@ class TestImport(DatabaseTest):
         for site, sequence, offset in cases:
             assert importer.extract_site_surrounding_sequence(site) == sequence
             assert importer.determine_left_offset(site) == offset
+
+    def test_precompute_ptm_mutations(self):
+        protein = Protein(refseq='NM_0001', sequence='MSSSGTPDLPVLLTDLKIQYTKIFINNEWHDSVSGK')
+        db.session.add(protein)
+
+        site = Site(position=2, residue='S', protein=protein)
+        db.session.add(site)
+
+        mutations = {
+            1: Mutation(position=1, alt='X', protein=protein),
+            2: Mutation(position=2, alt='X', protein=protein),
+            3: Mutation(position=3, alt='X', protein=protein)
+        }
+
+        metadata = [
+            # confirmed ptm mutation
+            MC3Mutation(mutation=mutations[1]),
+            # confirmed ptm mutation with a non-confirmed extra annotation
+            MC3Mutation(mutation=mutations[2]),
+            MIMPMutation(mutation=mutations[2]),
+            # non-confirmed ptm mutation
+            MIMPMutation(mutation=mutations[3])
+        ]
+        db.session.add_all(metadata)
+        db.session.commit()
+
+        assert not mutations[1].precomputed_is_ptm
+        assert not mutations[2].precomputed_is_ptm
+        assert not mutations[3].precomputed_is_ptm
+
+        precompute_ptm_mutations.load()
+
+        assert mutations[1].precomputed_is_ptm
+        assert mutations[2].precomputed_is_ptm
+        assert not mutations[3].precomputed_is_ptm
 
     def test_map_site_to_isoform(self):
 
