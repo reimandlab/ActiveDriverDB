@@ -212,7 +212,7 @@
   {% endassets %}
   <script type="text/javascript">
 
-    nunjucks.configure('/static/js_templates', {autoescape: true});
+    nunjucks.configure('/static/js_templates', {autoescape: true, web: {useCache: true}});
 
     affix($('#sticky_box'), $('footer'));
 
