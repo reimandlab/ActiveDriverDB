@@ -76,6 +76,15 @@ class ManageTest(DatabaseTest):
         assert '--sources' in help_message
         assert '--only_primary_isoforms' not in help_message   # this is export parameter should not be there
 
+        help_message = get_help('load protein_related -h')
+        assert '--importers' in help_message
+        # a few of the expected choices included:
+        assert '- sequences' in help_message
+        assert '- domains' in help_message
+        # sites included:
+        assert '- hprd' in help_message
+        assert '- phospho_site_plus' in help_message
+
         # test export help
         help_message = get_help('export mutations -h')
         assert '--sources' in help_message
