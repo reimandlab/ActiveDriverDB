@@ -5,30 +5,10 @@ from abc import ABC, abstractmethod
 from flask import Markup
 
 
-def css_prefixer(_in, out, **kw):
-    input = _in.read().encode('utf-8')
-    if not input:
-        return
-    cat = Popen(['cat'], stdin=PIPE, stdout=PIPE)
-    cat.stdin.write(input)
-    postcss = Popen(['npx', 'postcss', '--use', 'autoprefixer'], stdin=cat.stdout, stdout=PIPE, stderr=PIPE)
-    cat.stdin.close()
-    cat.terminate()
-    postcss.wait()
-    postcss_error = postcss.stderr.read().decode('utf-8')
-    output = postcss.stdout.read().decode('utf-8')
-    if postcss_error:
-        print('Input:', input)
-        print('Output:', output)
-        raise ValueError(postcss_error)
-    assert output
-    out.write(output)
-
-
 def css_bundle(name, *args):
     return Bundle(
         *args,
-        filters=[css_prefixer, 'cleancss'],
+        filters=['cleancss'],
         output='min/' + name + '.css'
     )
 

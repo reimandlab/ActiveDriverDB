@@ -6,9 +6,6 @@ cd website
 mv example_config.py config.py
 cd ..
 
-# install sass gem
-sudo npm install -g sass
-
 git clone https://github.com/juanmirocks/Levenshtein-MySQL-UDF
 cd Levenshtein-MySQL-UDF
 gcc -o levenshtein.so -fPIC -shared levenshtein.c -I /usr/include/mysql/
@@ -20,7 +17,12 @@ cd ..
 rm -rf Levenshtein-MySQL-UDF
 
 # install autoprefixer, clean-css and nunjucks
-sudo npm install -g autoprefixer@^9 postcss-cli@^8 postcss@^8 nunjucks
+npm install -g autoprefixer@^9 postcss-cli@^8 postcss@^8 nunjucks sass
+
+# fix nunjucks to add jinja-compat mode for precompile
+wget https://github.com/mozilla/nunjucks/commit/5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
+patch node_modules/nunjucks/bin/precompile 5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
+rm 5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
 
 # to be replaced with 'clean-css clean-css-cli' after a new release of webassets:
 # currently integration fails for new versions but the fix seems to be already implemented on master branch
