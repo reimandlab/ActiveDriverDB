@@ -20,7 +20,7 @@ cd ..
 rm -rf Levenshtein-MySQL-UDF
 
 # install autoprefixer, clean-css and nunjucks
-sudo npm install -g autoprefixer postcss-cli nunjucks
+sudo npm install -g autoprefixer@^9 postcss-cli@^8 postcss@^8 nunjucks
 
 # to be replaced with 'clean-css clean-css-cli' after a new release of webassets:
 # currently integration fails for new versions but the fix seems to be already implemented on master branch
