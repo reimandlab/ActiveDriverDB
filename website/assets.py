@@ -16,9 +16,10 @@ def css_prefixer(_in, out, **kw):
     cat.terminate()
     postcss.wait()
     postcss_error = postcss.stderr.read().decode('utf-8')
-    if postcss_error:
-        raise ValueError(postcss_error)
     output = postcss.stdout.read().decode('utf-8')
+    if postcss_error:
+        print(output)
+        raise ValueError(postcss_error)
     assert output
     out.write(output)
 
