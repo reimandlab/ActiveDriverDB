@@ -377,19 +377,20 @@ def new_subparser(subparsers, name, func, **kwargs):
     return subparser
 
 
-def run_shell(args):
+def run_shell(args, readfunc=None):
     print('Starting interactive shell...')
     app = create_app(config_override=CONFIG)
     with app.app_context():
+
+        import models
+        locals().update(vars(models))
+
         if args.command:
             print(f'Executing supplied command: "{args.command}"')
             exec(args.command)
 
         print('You can access current application using "app" variable.')
         print('Database, models and statistics modules are pre-loaded.')
-
-        import models
-        locals().update(vars(models))
 
         fallback = False
         if not args.raw:
@@ -402,7 +403,10 @@ def run_shell(args):
 
         if fallback or args.raw:
             import code
-            code.interact(local=locals())
+            kwargs = dict(local=locals())
+            if readfunc:
+                kwargs['readfunc'] = readfunc
+            return code.interact(**kwargs)
 
 
 def entity_diagram(args, app=None):

@@ -1,4 +1,5 @@
 from argparse import Namespace
+from types import SimpleNamespace
 
 from database_testing import DatabaseTest
 from flask import current_app
@@ -34,6 +35,25 @@ class ManageTest(DatabaseTest):
                 raise
         msg, errors = self.capsys.readouterr()
         return msg, errors
+
+    def run_shell(self, command=None):
+        def read_func(prompt):
+            return 'exit();'
+        try:
+            manage.run_shell(SimpleNamespace(command=command, raw=True), readfunc=read_func)
+        except SystemExit:
+            pass
+        msg, errors = self.capsys.readouterr()
+        return msg, errors
+
+    def test_run_shell(self):
+        result, stderr = self.run_shell('')
+        assert 'InteractiveConsole' in stderr
+        assert 'Starting interactive shell...' in result
+
+        # models are pre-loaded, commands are executed
+        result, stderr = self.run_shell('print(Protein)')
+        assert 'models.bio.protein.Protein' in result
 
     def test_help(self):
 
