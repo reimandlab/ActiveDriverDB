@@ -96,7 +96,11 @@
                   <div class="site {{ type }}">
                     <div class="color"></div>
                   </div>
-                  <div class="name">{{ type }}</div>
+                  {% if type == 'multi_ptm' %}
+                    <div class="name">multiple types</div>
+                  {% else %}
+                    <div class="name">{{ type }}</div>
+                  {% endif %}
                 </div>
               {% endfor %}
             </div>
