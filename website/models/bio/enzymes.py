@@ -1,8 +1,11 @@
+from typing import List
+
 from database import db
 
 from .model import BioModel
 from .model import make_association_table
 from .sites import SiteType
+from .protein import Protein
 
 
 class Kinase(BioModel):
@@ -16,6 +19,8 @@ class Kinase(BioModel):
     name = db.Column(db.String(80), unique=True, index=True)
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     group_id = db.Column(db.Integer, db.ForeignKey('kinasegroup.id'))
+    group: 'KinaseGroup'
+    protein: 'Protein'
 
     site_type_table = make_association_table('kinase.id', SiteType.id)
     is_involved_in = db.relationship(
@@ -50,7 +55,7 @@ class KinaseGroup(BioModel):
     may be equivalent to a `family` in some publications / datasets.
     """
     name = db.Column(db.String(80), unique=True, index=True)
-    kinases = db.relationship(
+    kinases: List['Kinase'] = db.relationship(
         'Kinase',
         order_by='Kinase.name',
         backref='group'

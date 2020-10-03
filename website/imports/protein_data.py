@@ -1,5 +1,7 @@
 import gzip
 from collections import defaultdict, namedtuple
+from functools import partial
+from typing import Callable, Type
 from warnings import warn
 
 from pandas import read_table
@@ -10,7 +12,7 @@ from helpers.bioinf import aa_symbols
 from helpers.parsers import parse_fasta_file, iterate_tsv_gz_file
 from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
-from imports.importer import create_simple_importer, BioImporter
+from imports.importer import simple_importer, BioImporter
 from models import (
     Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType, SiteType,
     SiteMotif,
@@ -44,10 +46,14 @@ def get_proteins(cached_proteins={}, reload_cache=False, options=None):
     return cached_proteins
 
 
-importer = create_simple_importer(BioImporter)
+def simple_bio_importer(requires=None) -> Callable[[Callable], Type[BioImporter]]:
+    return simple_importer(BioImporter, requires=requires)
 
 
-@importer
+independent_bio_importer = simple_bio_importer()
+
+
+@independent_bio_importer
 def proteins_and_genes(path='data/protein_data.tsv'):
     """Create proteins and genes based on data in a given file.
 
@@ -164,7 +170,7 @@ def proteins_and_genes(path='data/protein_data.tsv'):
     return proteins.values()
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes])
 def sequences(path='data/all_RefGene_proteins.fa'):
     proteins = get_proteins()
 
@@ -195,7 +201,7 @@ def sequences(path='data/all_RefGene_proteins.fa'):
     print('%s new sequences saved' % new_count)
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes])
 def protein_summaries(path='data/refseq_summary.tsv.gz'):
 
     known_proteins = get_proteins()
@@ -215,7 +221,7 @@ def protein_summaries(path='data/refseq_summary.tsv.gz'):
         known_proteins[refseq].summary = summary
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes])
 def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='data/LRG_RefSeqGene', refseq_link='data/refseq_link.tsv.gz'):
     from models import Protein
     from models import ProteinReferences
@@ -456,7 +462,7 @@ def select_preferred_isoform(gene):
 
 
 # TODO: move after mappings import?
-@importer
+@simple_bio_importer(requires=[proteins_and_genes, external_references])
 def select_preferred_isoforms():
     """Perform selection of preferred isoform on all genes in database.
 
@@ -478,7 +484,7 @@ def select_preferred_isoforms():
             print(f'Gene {name} has no isoforms')
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes])
 def conservation(path='data/hg19.100way.phyloP100way.bw', ref_gene_path='data/refGene.txt.gz'):
     from helpers.bioinf import read_genes_data
     from analyses.conservation.scores import scores_for_proteins
@@ -506,7 +512,7 @@ def conservation(path='data/hg19.100way.phyloP100way.bw', ref_gene_path='data/re
         )
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes])
 def disorder(path='data/all_RefGene_disorder.fa'):
     # library(seqinr)
     # load("all_RefGene_disorder.fa.rsav")
@@ -538,7 +544,7 @@ def disorder(path='data/all_RefGene_disorder.fa'):
             protein.disorder_map = protein.disorder_map[:protein.length]
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes])
 def domains(path='data/biomart_protein_domains_20072016.txt'):
     proteins = get_proteins()
 
@@ -654,7 +660,7 @@ def domains(path='data/biomart_protein_domains_20072016.txt'):
     return new_domains
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes, domains])
 def domains_hierarchy(path='data/ParentChildTreeFile.txt'):
     """Add domains hierarchy basing on InterPro tree file.
 
@@ -744,7 +750,7 @@ def domains_hierarchy(path='data/ParentChildTreeFile.txt'):
     return new_domains
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes, domains, domains_hierarchy])
 def domains_types(path='data/interpro.xml.gz'):
     from xml.etree import ElementTree
     import gzip
@@ -766,7 +772,7 @@ def domains_types(path='data/interpro.xml.gz'):
         domain.type = entry.get('type')
 
 
-@importer
+@independent_bio_importer
 def cancers(path='data/cancer_types.txt'):
     print('Loading cancer data:')
 
@@ -802,7 +808,7 @@ def get_preferred_gene_isoform(gene_name):
     return gene.preferred_isoform
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes])
 def kinase_mappings(path='data/curated_kinase_IDs.txt'):
     """Create kinases from `kinase_name gene_name` mappings.
 
@@ -854,7 +860,7 @@ def kinase_mappings(path='data/curated_kinase_IDs.txt'):
     return new_kinases
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes, kinase_mappings])
 def kinase_classification(path='data/regphos_kinome_scraped_clean.txt'):
 
     known_kinases = create_key_model_dict(Kinase, 'name', True)
@@ -906,7 +912,7 @@ def kinase_classification(path='data/regphos_kinome_scraped_clean.txt'):
     return new_groups
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes])
 def clean_from_wrong_proteins(soft=True):
     """Removes proteins with premature or lacking stop codon.
 
@@ -952,7 +958,7 @@ def clean_from_wrong_proteins(soft=True):
             # remove object
             del proteins[protein.refseq]
 
-    select_preferred_isoforms()
+    select_preferred_isoforms.load()
 
     print('Removed proteins of sequences:')
     print('\twith stop codon inside (excluding the last pos.):', stop_inside)
@@ -960,7 +966,7 @@ def clean_from_wrong_proteins(soft=True):
     print('\twithout stop codon at all:', lack_of_stop)
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes, clean_from_wrong_proteins])
 def clean_from_orphaned_mutations(soft=True):
     """After running clean_from_wrong_proteins() some mutations may be orphaned,
 
@@ -985,7 +991,7 @@ def clean_from_orphaned_mutations(soft=True):
 
     for source in source_manager.all:
         if hasattr(source, 'query'):
-            details_query = source.query.filter(source.mutation==None)
+            details_query = source.query.filter(source.mutation == None)
             for mut in tqdm(details_query, total=details_query.count()):
                 remove(mut, soft)
                 removed_details[source.name] += 1
@@ -993,7 +999,11 @@ def clean_from_orphaned_mutations(soft=True):
     print(f'Removed {removed_details}')
 
 
-@importer
+from . import sites as site_importers_module
+site_importers = site_importers_module.__all__
+
+
+@simple_bio_importer(requires=[proteins_and_genes, *site_importers])
 def calculate_interactors():
     print('Precalculating interactors counts:')
 
@@ -1025,7 +1035,7 @@ def list_data_to_kwargs(list_data):
     }
 
 
-@importer
+@independent_bio_importer
 def active_driver_gene_lists(
     lists=(
         ListData(
@@ -1091,7 +1101,7 @@ def active_driver_gene_lists(
     return gene_lists
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes])
 def full_gene_names(path='data/Homo_sapiens.gene_info.gz'):
     expected_header = [
         '#tax_id', 'GeneID', 'Symbol', 'LocusTag', 'Synonyms', 'dbXrefs', 'chromosome', 'map_location',
@@ -1141,7 +1151,7 @@ def pathway_identifiers(gene_set_id):
     return identifier
 
 
-@importer
+@independent_bio_importer
 def pathways(path=ACTIVE_PATHWAYS_RESULTS_DIR + 'hsapiens.pathways.NAME.gmt'):
     """Loads pathways from given '.gmt' file.
 
@@ -1208,7 +1218,7 @@ def pathways(path=ACTIVE_PATHWAYS_RESULTS_DIR + 'hsapiens.pathways.NAME.gmt'):
     return pathways
 
 
-@importer
+@independent_bio_importer
 def active_pathways_lists(
         lists=(
             ListData(
@@ -1288,7 +1298,7 @@ def active_pathways_lists(
     return pathways_lists
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes, *site_importers])
 def precompute_ptm_mutations():
     print('Counting mutations...')
     total = Mutation.query.filter_by(is_confirmed=True).count()
@@ -1303,7 +1313,7 @@ def precompute_ptm_mutations():
     return []
 
 
-@importer
+@independent_bio_importer
 def drugbank(path='data/drugbank/drugbank.tsv'):
 
     drugs = set()
@@ -1342,7 +1352,7 @@ def drugbank(path='data/drugbank/drugbank.tsv'):
     return drugs
 
 
-@importer
+@simple_bio_importer(requires=[proteins_and_genes, *site_importers])
 def sites_motifs(data=None):
 
     motifs_data = [

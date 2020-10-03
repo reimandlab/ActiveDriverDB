@@ -1,4 +1,4 @@
-from imports.protein_data import kinase_classification as load_kinase_classification
+from imports.protein_data import kinase_classification as kinase_classification_importer
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
 from database import db
@@ -45,7 +45,7 @@ class TestImport(DatabaseTest):
         add_to_session()
 
         with self.app.app_context():
-            new_groups = load_kinase_classification(filename)
+            new_groups = kinase_classification_importer.load(filename)
 
         assert len(new_groups) == 1
         new_group = new_groups[0]

@@ -1,3 +1,5 @@
+from typing import List
+
 from sqlalchemy import select, case, exists, and_, func, distinct
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -43,7 +45,7 @@ class ProteinReferences(BioModel):
     refseq_ng = db.Column(db.String(32))
 
     # ensembl peptides
-    ensembl_peptides = db.relationship('EnsemblPeptide',  backref='reference')
+    ensembl_peptides = db.relationship('EnsemblPeptide', backref='reference')
 
     uniprot_association_table = make_association_table(
         'proteinreferences.id',
@@ -62,6 +64,7 @@ class Protein(BioModel):
 
     gene_id = db.Column(db.Integer, db.ForeignKey('gene.id', use_alter=True))
     gene_name = association_proxy('gene', 'name')
+    gene: 'Gene'
 
     external_references = db.relationship(
         'ProteinReferences',
@@ -119,23 +122,23 @@ class Protein(BioModel):
     cds_start = db.Column(db.Integer)
     cds_end = db.Column(db.Integer)
 
-    sites = db.relationship(
+    sites: List['Site'] = db.relationship(
         'Site',
         order_by='Site.position',
         backref='protein',
         lazy='immediate'
     )
-    mutations = db.relationship(
+    mutations: List['Mutation'] = db.relationship(
         'Mutation',
         order_by='Mutation.position',
         lazy='dynamic',
         backref='protein'
     )
-    domains = db.relationship(
+    domains: List['Domain'] = db.relationship(
         'Domain',
         backref='protein'
     )
-    kinase = db.relationship(
+    kinase: List['Kinase'] = db.relationship(
         'Kinase',
         backref='protein'
     )
@@ -408,6 +411,7 @@ class InterproDomain(BioModel):
 
     # What is the interpro domain above in hierarchy tree
     parent_id = db.Column(db.Integer, db.ForeignKey('interprodomain.id'))
+    parent: 'InterproDomain'
 
     # Relation with backref allowing easy tree traversal
     children = db.relationship(
@@ -433,6 +437,7 @@ class InterproDomain(BioModel):
 class Domain(BioModel):
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
     interpro_id = db.Column(db.Integer, db.ForeignKey('interprodomain.id'))
+    interpro: InterproDomain
 
     start = db.Column(db.Integer)
     end = db.Column(db.Integer)

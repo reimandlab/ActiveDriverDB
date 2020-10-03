@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from typing import Mapping
+from typing import Mapping, Text
 
 from flask import current_app
 from sqlalchemy import MetaData
@@ -69,6 +69,11 @@ class ImportersMixin:
 
     @staticmethod
     def importers_choice(data_importers):
+        new_line = '\n    '
+        importers_descriptions = [
+            f'\n- {name} {new_line + importer.__doc__ if importer.__doc__ else ""}'
+            for name, importer in data_importers.items()
+        ]
         return argument_parameters(
             '-i',
             '--importers',
@@ -76,8 +81,8 @@ class ImportersMixin:
             help=(
                 'What should be imported?'
                 ' Available choices are: ' +
-                ', '.join(data_importers) + '.'
-                ' By default all data will be imported.'
+                ''.join(importers_descriptions) +
+                '\nBy default everything will be imported.'
                 ' The order of imports matters; preferable order'
                 ' is the same as order of choices listed above.'
             ),
@@ -367,7 +372,7 @@ class All(CommandTarget):
 
 
 def new_subparser(subparsers, name, func, **kwargs):
-    subparser = subparsers.add_parser(name, **kwargs)
+    subparser = subparsers.add_parser(name, formatter_class=HelpFormatter, **kwargs)
     subparser.set_defaults(func=func)
     return subparser
 
@@ -411,8 +416,16 @@ def entity_diagram(args, app=None):
         render_er(meta, f'{database_bind}_model_sqlalchemy.{args.format}')
 
 
+class HelpFormatter(argparse.RawTextHelpFormatter):
+    def _fill_text(self, text: Text, width: int, indent: Text) -> Text:
+        print(text)
+        if '\n' in text:
+            return text
+        return super()._fill_text(text, width, indent)
+
+
 def create_parser():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=HelpFormatter)
     subparsers = parser.add_subparsers(help='sub-commands')
 
     data_subcommands = ['load', 'remove', 'export', 'update']
@@ -420,12 +433,13 @@ def create_parser():
     command_subparsers = {
         subcommand: subparsers.add_parser(
             subcommand,
+            formatter_class=HelpFormatter,
             help='{0} data from specified category'.format(subcommand)
         )
         for subcommand in data_subcommands
     }
 
-    create_command_subparsers(command_subparsers)
+    create_command_subparsers(command_subparsers, formatter_class=HelpFormatter)
 
     new_subparser(
         subparsers,

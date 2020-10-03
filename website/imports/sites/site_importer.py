@@ -11,7 +11,8 @@ from sqlalchemy.orm import load_only, joinedload
 from tqdm import tqdm
 
 from database import db, get_or_create, create_key_model_dict
-from imports import BioImporter, protein_data as importers
+from imports.importer import BioImporter
+from imports.protein_data import kinase_mappings, proteins_and_genes
 # those should be moved somewhere else
 from imports.protein_data import get_preferred_gene_isoform
 from imports.sites.site_mapper import SiteMapper
@@ -59,7 +60,7 @@ def get_or_create_kinases(chosen_kinases_names, known_kinases, known_kinase_grou
 
 class SiteImporter(BioImporter):
 
-    requires = {importers.kinase_mappings, importers.proteins_and_genes}
+    requires = {kinase_mappings, proteins_and_genes}
 
     # used for cross-isoform mapping
     sequence_offset = 7

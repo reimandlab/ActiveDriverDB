@@ -12,6 +12,8 @@ from models.cms import BadWord, Page, User
 
 class IndexPage(CMSImporter):
 
+    requires = []
+
     def load(self):
         if Page.query.filter_by(address='index').first():
             warn('Index page already exists, skipping...')
@@ -33,6 +35,8 @@ class IndexPage(CMSImporter):
 
 class BadWordsImporter(CMSImporter):
 
+    requires = []
+
     def load(self, path='data/bad-words.txt'):
 
         list_of_profanities = []
@@ -49,6 +53,8 @@ class BadWordsImporter(CMSImporter):
 
 
 class RootAccount(CMSImporter):
+
+    requires = []
 
     def load(self):
         print('Creating root user account')

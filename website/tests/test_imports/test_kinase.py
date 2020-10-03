@@ -1,4 +1,4 @@
-from imports.protein_data import kinase_mappings as load_kinase_mappings
+from imports.protein_data import kinase_mappings as kinase_mappings_importer
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
 from database import db
@@ -40,7 +40,7 @@ class TestImport(DatabaseTest):
         filename = make_named_temp_file(curated_kinases_list)
 
         with self.app.app_context():
-            new_kinases = load_kinase_mappings(filename)
+            new_kinases = kinase_mappings_importer.load(filename)
 
             # new kinases shall be created only for the 5 gene which are
             # already present in the database, but out of these 5 genes

@@ -1,6 +1,6 @@
 import gzip
 
-from imports.protein_data import external_references as load_external_references
+from imports.protein_data import external_references as external_references_importer
 from database_testing import DatabaseTest
 from models import Protein, Gene
 from database import db
@@ -112,7 +112,7 @@ class TestImport(DatabaseTest):
             db.session.add_all(proteins_we_have.values())
             db.session.add(tp53_protein)
 
-            references = load_external_references(uniprot_filename, refseq_filename, reflink_filename)
+            references = external_references_importer.load(uniprot_filename, refseq_filename, reflink_filename)
 
             # there are references for 3 proteins we would like to have extracted
             assert len(references) == 3
@@ -187,7 +187,7 @@ class TestImport(DatabaseTest):
             # let's pretend that we already have some proteins in our db
             db.session.add_all(tp53_proteins.values())
 
-            references = load_external_references(uniprot_filename, refseq_filename, reflink_filename)
+            references = external_references_importer.load(uniprot_filename, refseq_filename, reflink_filename)
 
             # there are references for six proteins we would like to have extracted
             assert len(references) == 6

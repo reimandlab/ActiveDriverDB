@@ -32,14 +32,14 @@ class TestGeneView(ViewTest):
 
         from miscellaneous import make_named_temp_file
         from test_imports.test_gene_list import raw_gene_list
-        from imports.protein_data import active_driver_gene_lists as load_active_driver_gene_lists
+        from imports.protein_data import active_driver_gene_lists as active_driver_gene_lists_importer
 
         filename = make_named_temp_file(raw_gene_list)
 
         # create gene list and genes
         with self.app.app_context():
             from imports.protein_data import ListData
-            gene_lists = load_active_driver_gene_lists(lists=(
+            gene_lists = active_driver_gene_lists_importer.load(lists=(
                 ListData(name='TCGA', path=filename, mutations_source=TCGAMutation, site_type_name='all'),
             ))
         db.session.add_all(gene_lists)

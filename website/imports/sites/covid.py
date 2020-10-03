@@ -7,7 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound
 import imports.protein_data as importers
 from imports.sites.site_importer import SiteImporter
 from imports.sites.uniprot.importer import UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait
-from models import Site, EventModulatingPTM, RegulatorySiteAssociation, SiteType
+from models import Site, EventModulatingPTM, RegulatorySiteAssociation
 
 
 class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait, SiteImporter):

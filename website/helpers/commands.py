@@ -68,7 +68,7 @@ class CommandTarget(metaclass=Register):
         return function and function.__dict__.get('is_command', False)
 
 
-def create_command_subparsers(command_parsers):
+def create_command_subparsers(command_parsers, **top_kwargs):
     handlers = [
         command_target()
         for command_target in CommandTarget
@@ -81,7 +81,8 @@ def create_command_subparsers(command_parsers):
 
                 subparser = subparsers.add_parser(
                     handler.name,
-                    help=handler.description.format(command=command)
+                    help=handler.description.format(command=command),
+                    **top_kwargs
                 )
                 command_func = getattr(handler, command)
                 subparser.set_defaults(func=command_func)

@@ -12,7 +12,7 @@ class TestImport(DatabaseTest):
         db.session.add(n_glycosylation)
         db.session.commit()
 
-        motifs = sites_motifs([
+        motifs = sites_motifs.load([
             [
                 'N-glycosylation', 'N-linked Typical Motif', '.{7}N[^P][ST].{5}',
                 [' ' * 7 + 'N S' + ' ' * 5, ' ' * 7 + 'N T' + ' ' * 5]

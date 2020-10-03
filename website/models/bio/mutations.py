@@ -809,6 +809,7 @@ class Mutation(BioModel, MutatedMotifs):
     position = db.Column(db.Integer)
     alt = db.Column(db.String(1))
     protein_id = db.Column(db.Integer, db.ForeignKey('protein.id'))
+    protein: 'Protein'
 
     # To speed up results retrieval one can precompute value of
     # 'is_ptm' property. It does not carry meaningful information

@@ -12,22 +12,20 @@ class ImportManager:
             for importer in importer_abstract_class.registry
             if not ignore or importer not in ignore
         ]
+        self.ordered_importers = self.resolve_import_order()
         self.importers_by_name = {
             importer.name: importer
-            for importer in self.importers
+            for importer in self.ordered_importers
         }
 
     def import_all(self):
+        self.import_selected(importers_subset=self.ordered_importers)
 
-        ordered_importers = self.resolve_import_order()
-        importers_names = [importer.name for importer in ordered_importers]
-
-        self.import_selected(importers_subset=importers_names)
-
-    def import_selected(self, importers_subset: List[str]=None):
+    def import_selected(self, importers_subset: List[str] = None):
 
         if not importers_subset:
-            importers_subset = self.importers_by_name.keys()
+            print('Importing all')
+            importers_subset = [importer.name for importer in self.ordered_importers]
 
         for importer_name in importers_subset:
             importer = self.importers_by_name[importer_name]()
@@ -47,15 +45,28 @@ class ImportManager:
 
         ordered = []
 
+        past_unordered = set()
+
         while unordered:
-            importer = unordered.pop()
+            if tuple(unordered) in past_unordered:
+                raise ValueError('Cycle detected', unordered)
+            past_unordered.add(tuple(unordered))
+
+            importer = unordered.pop(0)
 
             requirements_satisfied = True
 
             for requirement in importer.requires:
 
                 if requirement not in ordered:
-                    unordered.pop(requirement)
+                    try:
+                        unordered.remove(requirement)
+                        print(unordered)
+                    except ValueError as e:
+                        raise ValueError(
+                            f'It might be that the requirement {requirement.name}'
+                            f' is not registered among the top-level importers ({e})'
+                        )
                     unordered = [requirement, importer] + unordered
                     requirements_satisfied = False
                     break

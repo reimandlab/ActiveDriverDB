@@ -1,4 +1,4 @@
-from imports.protein_data import active_driver_gene_lists as load_active_driver_gene_lists, ListData
+from imports.protein_data import active_driver_gene_lists as active_driver_gene_lists_importer, ListData
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
 from database import db
@@ -33,7 +33,7 @@ class TestImport(DatabaseTest):
         filename = make_named_temp_file(raw_gene_list)
 
         with self.app.app_context():
-            gene_lists = load_active_driver_gene_lists(
+            gene_lists = active_driver_gene_lists_importer.load(
                 lists=(
                     ListData(
                         name='TCGA list', path=filename, mutations_source=TCGAMutation,
@@ -67,7 +67,7 @@ class TestImport(DatabaseTest):
         db.session.add_all(gene_lists)
 
         with self.app.app_context():
-            gene_lists = load_active_driver_gene_lists(lists=(
+            gene_lists = active_driver_gene_lists_importer.load(lists=(
                 ListData(
                     name='TCGA list', path=filename, mutations_source=TCGAMutation,
                     site_type_name='all'

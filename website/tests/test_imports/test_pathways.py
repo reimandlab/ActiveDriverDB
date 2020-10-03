@@ -1,6 +1,6 @@
 import pytest
 
-from imports.protein_data import active_pathways_lists as load_active_pathways_lists, ListData, pathway_identifiers
+from imports.protein_data import active_pathways_lists as active_pathways_lists_importer, ListData, pathway_identifiers
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
 from database import db
@@ -43,7 +43,7 @@ class TestImport(DatabaseTest):
             ]
 
             with pytest.warns(UserWarning, match='pathway name differs'):
-                pathways_lists = load_active_pathways_lists(lists=lists)
+                pathways_lists = active_pathways_lists_importer.load(lists=lists)
 
         # one pathways list returned (TCGA)
         assert len(pathways_lists) == 1
@@ -70,7 +70,7 @@ class TestImport(DatabaseTest):
         db.session.add_all(pathways_lists)
 
         with self.app.app_context():
-            new_pathways = load_active_pathways_lists(lists=[
+            new_pathways = active_pathways_lists_importer.load(lists=[
                 ListData(
                     name='TCGA list', path=filename, mutations_source=TCGAMutation,
                     site_type_name='acetylation'

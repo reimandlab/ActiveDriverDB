@@ -3,7 +3,7 @@ from collections import defaultdict
 from database import db
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file, make_named_gz_file
-from imports.protein_data import domains as load_domains, domains_hierarchy, domains_types
+from imports.protein_data import domains as domains_importer, domains_hierarchy, domains_types
 from models import Protein, Gene, InterproDomain
 
 # domain ranges slightly modified to test more combinations
@@ -70,7 +70,7 @@ class TestImport(DatabaseTest):
 
         filename = make_named_gz_file(minimal_interpro_xml)
 
-        new_objects = domains_types(filename)
+        new_objects = domains_types.load(filename)
 
         assert domain_one.type == 'Domain'
         assert domain_three.type == 'Family'
@@ -85,7 +85,7 @@ class TestImport(DatabaseTest):
         db.session.add_all([existing_top_level_domain, existing_domain])
 
         filename = make_named_temp_file(domains_hierarchy_data)
-        new_domains = domains_hierarchy(filename)
+        new_domains = domains_hierarchy.load(filename)
 
         assert len(new_domains) == 16 - 2
 
@@ -132,7 +132,7 @@ class TestImport(DatabaseTest):
 
         filename = make_named_temp_file(domains_data)
 
-        new_domains = load_domains(filename)
+        new_domains = domains_importer.load(filename)
 
         assert len(new_domains) == 6
         assert len(proteins[0].domains) == 2

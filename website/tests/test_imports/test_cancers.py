@@ -1,4 +1,4 @@
-from imports.protein_data import cancers as load_cancers
+from imports.protein_data import cancers as cancers_importer
 from database_testing import DatabaseTest
 from miscellaneous import make_named_temp_file
 from database import db
@@ -17,7 +17,7 @@ class TestImport(DatabaseTest):
         filename = make_named_temp_file(cancers_list)
 
         with self.app.app_context():
-            cancers = load_cancers(path=filename)
+            cancers = cancers_importer.load(path=filename)
 
         # two cancers should be returned
         assert len(cancers) == 2

@@ -1,3 +1,5 @@
+from typing import List
+
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative.base import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -91,7 +93,7 @@ class Gene(BioModel):
     # an integer should suffice up to 2,147,483,647 genes.
     entrez_id = db.Column(db.Integer)
 
-    isoforms = db.relationship(
+    isoforms: List['Protein'] = db.relationship(
         'Protein',
         backref=backref('gene', lazy='immediate'),
         foreign_keys='Protein.gene_id'

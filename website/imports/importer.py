@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+from typing import Type, Callable
 
 from sqlalchemy.util import classproperty
 
@@ -44,17 +45,23 @@ class CMSImporter(AbstractImporter, metaclass=AbstractRegistry):
     pass
 
 
-def create_simple_importer(importer_abstract_class):
-    def importer(func):
+def simple_importer(importer_abstract_class: Type[AbstractImporter], requires=None) -> Callable[[Callable], Type[AbstractImporter]]:
+    def importer(func) -> Type[AbstractImporter]:
 
         class FunctionImporter(importer_abstract_class):
 
-            def load(self, *args, **kwargs):
+            @staticmethod
+            def load(*args, **kwargs):
                 return func(*args, **kwargs)
 
-        FunctionImporter.__name__ = func.__name__
+            def __repr__(self):
+                return f'<{func.__module__}.{func.__name__} importer>'
 
-        return FunctionImporter().load
+        FunctionImporter.requires = requires or []
+        FunctionImporter.__name__ = f'{func.__name__}Importer'
+        FunctionImporter.__doc__ = func.__doc__
+
+        return FunctionImporter   # type: Type[AbstractImporter]
     return importer
 
 

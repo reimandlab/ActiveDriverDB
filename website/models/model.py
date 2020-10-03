@@ -11,6 +11,9 @@ class Model(db.Model):
 
     id: int
 
+    # just for mypy
+    query: db.Query
+
     @declared_attr
     def __tablename__(cls):
         return cls.__name__.lower()
