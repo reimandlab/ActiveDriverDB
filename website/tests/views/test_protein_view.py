@@ -46,7 +46,7 @@ class TestProteinView(ViewTest):
 
         for site_repr in response.json:
             print(site_repr)
-            if site_repr['type'] == 'phosphorylation':
+            if site_repr['type'] == ['phosphorylation']:
                 phosphorylation_site_repr = site_repr
 
         assert phosphorylation_site_repr
