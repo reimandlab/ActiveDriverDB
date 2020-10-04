@@ -547,9 +547,21 @@ class ClinVarImporter(MutationImporter):
                         if recorded_name != name:
                             print(
                                 f'Note: {name} and {recorded_name} diseases were merged'
-                                f'(identical in case-insensitive comparison)'
+                                f' (identical in case-insensitive comparison)'
                             )
-                        assert recorded_ids == disease_ids
+                        different_ids = [
+                            id_label
+                            for i, (id_label, id_name) in enumerate(self.disease_id_clinvar_to_db.items())
+                            if recorded_ids[i] != disease_ids[i]
+                        ]
+                        if any(different_ids):
+                            print(
+                                f'Note: {name} identifiers differ from {recorded_name} identifiers'
+                                f' {disease_ids} vs {recorded_ids} ({different_ids} differ).'
+                                f' The newer set of ids ({disease_ids}) was kept.'
+                            )
+
+                        assert len(disease_ids) != len(recorded_ids)
 
                     clinvar_data.append(
                         (
