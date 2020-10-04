@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from flask import Flask
 from flask_apscheduler import APScheduler
@@ -24,6 +25,22 @@ recaptcha = ReCaptcha()
 limiter = Limiter(key_func=get_remote_address)
 scheduler = APScheduler()
 celery = Celery()
+
+
+def setup_logging(path: Path):
+    import logging
+    from logging.handlers import RotatingFileHandler
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    file_handler = RotatingFileHandler(
+        path.as_posix(),
+        maxBytes=10 * 1024 * 1024,
+        backupCount=5
+    )
+    file_handler.setLevel(logging.WARNING)
+    root_logger = logging.getLogger()
+    root_logger.addHandler(file_handler)
 
 
 def create_app(config_filename='config.py', config_override={}):
@@ -70,19 +87,7 @@ def create_app(config_filename='config.py', config_override={}):
     # Error logging
     #
     if not app.debug:
-        import logging
-        from logging.handlers import RotatingFileHandler
-
-        os.makedirs('logs', exist_ok=True)
-
-        file_handler = RotatingFileHandler(
-            'logs/app.log',
-            maxBytes=10*1024*1024,
-            backupCount=5
-        )
-        file_handler.setLevel(logging.WARNING)
-        root_logger = logging.getLogger()
-        root_logger.addHandler(file_handler)
+        setup_logging(Path(app.config.get('LOGS_PATH', 'logs/app.log')))
 
     #
     # Database creation

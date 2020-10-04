@@ -39,6 +39,7 @@ HDB_READONLY = False
 # quite slow. It is helpful to turn stats generation off to speed up debugging.
 LOAD_STATS = True
 CONTACT_LIST = ['some_maintainer@domain.org', 'other_maintainer@domain.org']
+LOGS_PATH = 'logs/app.log'
 
 # Should the system load local copies of third party dependencies or use content delivery networks?
 #
