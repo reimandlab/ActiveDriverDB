@@ -1,5 +1,5 @@
 import re
-from collections import Iterable
+from collections.abc import Iterable
 
 
 def is_iterable_but_not_str(obj):
