@@ -6,7 +6,7 @@ from tqdm import tqdm
 
 import models
 from database import db
-from models import Mutation, Protein, Site, source_manager, SiteType
+from models import Mutation, Protein, Site, source_manager
 from imports.protein_data import ensure_mutations_are_precomputed
 
 
@@ -68,6 +68,7 @@ def mutation_sources():
 
 
 TableChunk = Dict[str, Dict[str, int]]
+
 
 def source_specific_proteins_with_ptm_mutations() -> TableChunk:
 
@@ -167,6 +168,9 @@ def source_specific_nucleotide_mappings() -> TableChunk:
 
 
 def mutations_in_sites() -> TableChunk:
+
+    # is_ptm_distal relies on precomputation
+    ensure_mutations_are_precomputed('mutations_in_sites')
 
     muts_in_ptm_sites = {}
     mimp_muts = {}

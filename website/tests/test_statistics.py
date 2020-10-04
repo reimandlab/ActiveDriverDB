@@ -168,9 +168,7 @@ class StatisticsTest(DatabaseTest):
         table = generate_source_specific_summary_table()
         assert table
 
-    def test_table_source_specific_mutated_sites(self):
-        from stats.table import source_specific_mutated_sites
-
+    def create_test_mutations_and_sites(self):
         protein = Protein(refseq='NM_0001', sequence='MSSSGTPDLPVLLTDLKIQYTKIFINNEWHDSVSGK')
         db.session.add(protein)
 
@@ -203,12 +201,12 @@ class StatisticsTest(DatabaseTest):
                 count=2
             ),
             InheritedMutation(
-                mutation=mutations[1],
+                mutation=mutations[2],
                 # the number of disease associations does NOT count
                 clin_data=[ClinicalData(), ClinicalData()]
             ),
+            MIMPMutation(mutation=mutations[2]),   # mutation at position 2 is both a ClinVar and MIMP mutation
             # NOT affecting site 2S (non-confirmed mutation)
-            MIMPMutation(mutation=mutations[2]),
             MIMPMutation(mutation=mutations[3]),
             # affecting hydroxylation site 10P
             InheritedMutation(mutation=mutations[10], clin_data=[ClinicalData()]),
@@ -220,6 +218,11 @@ class StatisticsTest(DatabaseTest):
         ]
         db.session.add_all(metadata)
         db.session.commit()
+
+    def test_table_source_specific_mutated_sites(self):
+        from stats.table import source_specific_mutated_sites
+
+        self.create_test_mutations_and_sites()
 
         # raises if not mutations were precomputed
         with raises(ValueError):
@@ -259,3 +262,29 @@ class StatisticsTest(DatabaseTest):
         assert sites_affected.loc['any type', '1KGenomes'] == 1
         assert sites_affected.loc['any type', 'ESP6500'] == 1
         assert sites_affected.loc['any type', 'Any mutation'] == 2
+
+    def test_table_mutations_in_sites(self):
+        from stats.table import mutations_in_sites
+
+        self.create_test_mutations_and_sites()
+
+        with raises(ValueError):
+            mutations_in_sites()
+
+        precompute_ptm_mutations.load()
+        db.session.commit()
+
+        mutations = mutations_in_sites()
+
+        mimp = mutations['Mutations - with network-rewiring effect']
+        assert mimp['MC3'] == 0
+        # mutation at position 2 is both a ClinVar and MIMP mutation
+        assert mimp['ClinVar'] == 1
+        assert mimp['1KGenomes'] == 0
+        assert mimp['ESP6500'] == 0
+
+        in_ptm_sites = mutations['Mutations - in PTM sites']
+        assert in_ptm_sites['MC3'] == 1
+        assert in_ptm_sites['ClinVar'] == 2
+        assert in_ptm_sites['1KGenomes'] == 1
+        assert in_ptm_sites['ESP6500'] == 1
