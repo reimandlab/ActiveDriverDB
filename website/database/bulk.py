@@ -33,22 +33,11 @@ def get_highest_id(model):
 
 
 def bulk_orm_insert(model, keys, data):
+    # note: it is also possible to use a lower-level "bulk_raw_insert"
+    # (search in repository at 27c516d218e33b82fbb9b08a8dfafd1093dc7978)
     for chunk in chunked_list(data):
         db.session.bulk_insert_mappings(
             model,
-            [
-                dict(zip(keys, entry))
-                for entry in chunk
-            ]
-        )
-        db.session.flush()
-
-
-def bulk_raw_insert(table, keys, data, bind=None):
-    engine = get_engine(bind)
-    for chunk in chunked_list(data):
-        engine.execute(
-            table.insert(),
             [
                 dict(zip(keys, entry))
                 for entry in chunk
