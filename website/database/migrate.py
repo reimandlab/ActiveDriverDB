@@ -6,23 +6,17 @@ from helpers.commands import got_permission
 
 
 def add_column(engine, table_name, definition):
-    sql = 'ALTER TABLE `%s` ADD %s' % (table_name, definition)
+    sql = f'ALTER TABLE `{table_name}` ADD {definition}'
     engine.execute(sql)
 
 
 def drop_column(engine, table_name, column_name):
-    sql = (
-        'ALTER TABLE `%s` DROP `%s`'
-        % (table_name, column_name)
-    )
+    sql = f'ALTER TABLE `{table_name}` DROP `{column_name}`'
     engine.execute(sql)
 
 
 def update_column(engine, table_name, column_definition):
-    sql = (
-        'ALTER TABLE `%s` MODIFY COLUMN %s'
-        % (table_name, column_definition)
-    )
+    sql = f'ALTER TABLE `{table_name}` MODIFY COLUMN {column_definition}'
     engine.execute(sql)
 
 
@@ -30,11 +24,11 @@ def set_foreign_key_checks(engine, active=True):
     if db.session.bind.dialect.name == 'sqlite':
         warn('Sqlite foreign key checks managements is not supported')
         return
-    engine.execute('SET FOREIGN_KEY_CHECKS=%s;' % 1 if active else 0)
+    engine.execute(f'SET FOREIGN_KEY_CHECKS={1 if active else 0};')
 
 
 def set_unique_checks(engine, active=True):
-    engine.execute('SET UNIQUE_CHECKS=%s;' % 1 if active else 0)
+    engine.execute(f'SET UNIQUE_CHECKS={1 if active else 0};')
 
 
 def get_column_names(table):
