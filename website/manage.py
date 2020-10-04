@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from contextlib import contextmanager
 from typing import Mapping, Text
 
 from flask import current_app
@@ -11,7 +12,7 @@ from database import bdb, get_engine
 from database import bdb_refseq
 from database import db
 from database.manage import remove_model, reset_relational_db
-from database.migrate import basic_auto_migrate_relational_db
+from database.migrate import basic_auto_migrate_relational_db, set_foreign_key_checks, set_unique_checks
 from exports.protein_data import EXPORTERS
 from helpers.commands import CommandTarget
 from helpers.commands import argument
@@ -268,6 +269,16 @@ class Mappings(CommandTarget):
         print('Removing mappings database completed.')
 
 
+@contextmanager
+def disabled_constraints(bind: str):
+    engine = get_engine(bind, current_app)
+    set_foreign_key_checks(engine, active=False)
+    set_unique_checks(engine, active=False)
+    yield
+    set_foreign_key_checks(engine, active=True)
+    set_unique_checks(engine, active=True)
+
+
 class Mutations(CommandTarget):
 
     description = 'should only mutations be {command}ed without db restart'
@@ -286,7 +297,11 @@ class Mutations(CommandTarget):
 
     @command
     def load(self, args):
-        self.action('load', args)
+        if args.disable_constraints:
+            with disabled_constraints('bio'):
+                self.action('load', args)
+        else:
+            self.action('load', args)
 
     @command
     def remove(self, args):
@@ -331,6 +346,21 @@ class Mutations(CommandTarget):
             type=int,
             default=None,
             help='Limit import to n-th chunk, starts with 0. By default None.'
+        )
+
+    @load.argument
+    def disable_constraints(self):
+        return argument_parameters(
+            '-d',
+            '--disable-constraints',
+            action='store_true',
+            help=(
+                'Imports can be accelerated by disabling unique and foreign key constraints'
+                ' for the duration of the import operation. While this is officially recommended'
+                ' by MySQL for bulk imports, MySQL does NOT check the constraints after re-enabling'
+                ' them once the import is finished. Therefore, manual investigation as described in:'
+                ' https://stackoverflow.com/q/2250775/ is required.'
+            )
         )
 
     @export.argument

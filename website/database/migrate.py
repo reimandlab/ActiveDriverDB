@@ -33,6 +33,10 @@ def set_foreign_key_checks(engine, active=True):
     engine.execute('SET FOREIGN_KEY_CHECKS=%s;' % 1 if active else 0)
 
 
+def set_unique_checks(engine, active=True):
+    engine.execute('SET UNIQUE_CHECKS=%s;' % 1 if active else 0)
+
+
 def get_column_names(table):
     return set((i.name for i in table.c))
 
