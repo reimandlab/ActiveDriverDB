@@ -1,6 +1,14 @@
+from pandas import DataFrame
+from pytest import raises
+
+from imports.protein_data import precompute_ptm_mutations
 from database_testing import DatabaseTest
 from database import db
 import models
+from models import (
+    Protein, Site, Mutation, MIMPMutation, InheritedMutation, MC3Mutation, The1000GenomesMutation,
+    SiteType, ClinicalData, ExomeSequencingMutation,
+)
 
 
 class StatisticsTest(DatabaseTest):
@@ -155,5 +163,99 @@ class StatisticsTest(DatabaseTest):
     def test_table_generation(self):
         from stats.table import generate_source_specific_summary_table
 
+        # TODO only_primary?
+
         table = generate_source_specific_summary_table()
         assert table
+
+    def test_table_source_specific_mutated_sites(self):
+        from stats.table import source_specific_mutated_sites
+
+        protein = Protein(refseq='NM_0001', sequence='MSSSGTPDLPVLLTDLKIQYTKIFINNEWHDSVSGK')
+        db.session.add(protein)
+
+        phosphorylation = SiteType(name='phosphorylation')
+        hydroxylation = SiteType(name='hydroxylation')
+
+        site_2 = Site(position=2, residue='S', protein=protein, types={phosphorylation})
+        site_10 = Site(position=10, residue='P', protein=protein, types={hydroxylation})
+        db.session.add_all([site_2, site_10])
+
+        mutations = {
+            # affecting phosphorylation site 2S
+            1: Mutation(position=1, alt='X', protein=protein),
+            2: Mutation(position=2, alt='X', protein=protein),
+            3: Mutation(position=3, alt='X', protein=protein),
+            # affecting hydroxylation site 10P
+            10: Mutation(position=10, alt='X', protein=protein),
+            11: Mutation(position=11, alt='X', protein=protein),
+            12: Mutation(position=12, alt='X', protein=protein),
+            # NOT affecting any of the sites
+            30: Mutation(position=30, alt='X', protein=protein),
+            31: Mutation(position=31, alt='X', protein=protein),
+        }
+
+        metadata = [
+            # affecting phosphorylation site 2S
+            MC3Mutation(
+                mutation=mutations[1],
+                # the number of patients should NOT count
+                count=2
+            ),
+            InheritedMutation(
+                mutation=mutations[1],
+                # the number of disease associations does NOT count
+                clin_data=[ClinicalData(), ClinicalData()]
+            ),
+            # NOT affecting site 2S (non-confirmed mutation)
+            MIMPMutation(mutation=mutations[2]),
+            MIMPMutation(mutation=mutations[3]),
+            # affecting hydroxylation site 10P
+            InheritedMutation(mutation=mutations[10], clin_data=[ClinicalData()]),
+            The1000GenomesMutation(mutation=mutations[11]),
+            ExomeSequencingMutation(mutation=mutations[12]),
+            # NOT affecting any of the sites
+            MC3Mutation(mutation=mutations[30], count=3),
+            MC3Mutation(mutation=mutations[31], count=1),
+        ]
+        db.session.add_all(metadata)
+        db.session.commit()
+
+        # raises if not mutations were precomputed
+        with raises(ValueError):
+            source_specific_mutated_sites()
+
+        precompute_ptm_mutations.load()
+        db.session.commit()
+
+        sites_affected = DataFrame(source_specific_mutated_sites())
+
+        # two site types + any type
+        assert len(sites_affected.index) == 3
+        sites_affected.index = [
+            site_type.name or 'any type'
+            for site_type in sites_affected.index
+        ]
+
+        assert set(sites_affected.index) == {'hydroxylation', 'phosphorylation', 'any type'}
+
+        # affecting phosphorylation site 2S
+        assert sites_affected.loc['phosphorylation', 'MC3'] == 1
+        assert sites_affected.loc['phosphorylation', 'ClinVar'] == 1
+        assert sites_affected.loc['phosphorylation', '1KGenomes'] == 0
+        assert sites_affected.loc['phosphorylation', 'ESP6500'] == 0
+        assert sites_affected.loc['phosphorylation', 'Any mutation'] == 1
+
+        # affecting hydroxylation site 10P
+        assert sites_affected.loc['hydroxylation', 'MC3'] == 0
+        assert sites_affected.loc['hydroxylation', 'ClinVar'] == 1
+        assert sites_affected.loc['hydroxylation', '1KGenomes'] == 1
+        assert sites_affected.loc['hydroxylation', 'ESP6500'] == 1
+        assert sites_affected.loc['hydroxylation', 'Any mutation'] == 1
+
+        # any site type
+        assert sites_affected.loc['any type', 'MC3'] == 1
+        assert sites_affected.loc['any type', 'ClinVar'] == 2
+        assert sites_affected.loc['any type', '1KGenomes'] == 1
+        assert sites_affected.loc['any type', 'ESP6500'] == 1
+        assert sites_affected.loc['any type', 'Any mutation'] == 2

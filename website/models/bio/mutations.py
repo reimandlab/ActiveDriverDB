@@ -196,6 +196,8 @@ class MutationDetails:
 
 class MappedMutationDetails(MutationDetails):
 
+    mutation: 'Mutation'
+
     @declared_attr
     def mutation_id(cls):
         return db.Column(db.Integer, db.ForeignKey('mutation.id'), unique=True)

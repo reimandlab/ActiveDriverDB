@@ -72,6 +72,7 @@ class SiteType(BioModel):
 
     @classmethod
     def fuzzy_filter(cls, other_type, join=False, site=None):
+        """Requires SiteType join!"""
         site = site if site is not None else Site
 
         matched_types_ids = [

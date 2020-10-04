@@ -1,18 +1,20 @@
 from collections import defaultdict
-from typing import Iterable
+from typing import Iterable, Dict, Callable
 
 from sqlalchemy import func, distinct, case, literal_column, and_
 from tqdm import tqdm
 
 import models
 from database import db
-from models import Mutation, Protein, Site, source_manager
+from models import Mutation, Protein, Site, source_manager, SiteType
+from imports.protein_data import ensure_mutations_are_precomputed
 
 
 def count_mutated_sites(
-    site_types: Iterable[models.SiteType]=tuple(), model=None,
+    site_types: Iterable[models.SiteType] = tuple(), model=None,
     only_primary=False, disordered=None, custom_filter=None
 ):
+    ensure_mutations_are_precomputed('count_mutated_sites')
     filters = [
         Mutation.protein_id == Protein.id,
         Site.protein_id == Protein.id,
@@ -41,6 +43,9 @@ def count_mutated_sites(
                 else_=literal_column('NULL')
             )))
         )
+        .select_from(Site)
+        .join(Site.types)
+        .join(Protein)
         .filter(and_(*filters))
         .join(Mutation, Site.protein_id == Mutation.protein_id)
     )
@@ -62,10 +67,12 @@ def mutation_sources():
     }
 
 
-def source_specific_proteins_with_ptm_mutations():
+TableChunk = Dict[str, Dict[str, int]]
+
+def source_specific_proteins_with_ptm_mutations() -> TableChunk:
 
     source_models = mutation_sources()
-    source_models['merged'] = None
+    source_models['Any mutation'] = None
 
     proteins_with_ptm_muts = {}
     kinases = {}
@@ -95,7 +102,7 @@ def source_specific_proteins_with_ptm_mutations():
     }
 
 
-def source_specific_nucleotide_mappings():
+def source_specific_nucleotide_mappings() -> TableChunk:
     from database import bdb
     from genomic_mappings import decode_csv
     from models import Mutation
@@ -123,7 +130,7 @@ def source_specific_nucleotide_mappings():
 
     # add merged
     i = str(len(sources_map))
-    sources_map[i] = 'merged'
+    sources_map[i] = 'Any mutation'
     print('Loading merged mutations:')
 
     query = (
@@ -159,14 +166,10 @@ def source_specific_nucleotide_mappings():
     }
 
 
-def source_specific_mutated_sites():
+def mutations_in_sites() -> TableChunk:
 
     muts_in_ptm_sites = {}
     mimp_muts = {}
-    mutated_sites = defaultdict(dict)
-
-    site_type_queries = [models.SiteType(name='')]  # empty will match all sites
-    site_type_queries.extend(models.SiteType.query)
 
     for name, model in mutation_sources().items():
         count = (
@@ -186,6 +189,19 @@ def source_specific_mutated_sites():
                 )
             ).count()
         )
+    return {
+        'Mutations - in PTM sites': muts_in_ptm_sites,
+        'Mutations - with network-rewiring effect': mimp_muts,
+    }
+
+
+def source_specific_mutated_sites() -> TableChunk:
+    site_type_queries = [models.SiteType(name='')]  # empty will match all sites
+    site_type_queries.extend(models.SiteType.query)
+
+    mutated_sites = defaultdict(dict)
+
+    for name, model in mutation_sources().items():
 
         for site_type in tqdm(site_type_queries):
             mutated_sites[name][site_type] = count_mutated_sites([site_type], model)
@@ -195,16 +211,12 @@ def source_specific_mutated_sites():
     for site_type in tqdm(site_type_queries):
         all_mutated_sites[site_type] = count_mutated_sites([site_type])
 
-    mutated_sites['merged'] = all_mutated_sites
+    mutated_sites['Any mutation'] = all_mutated_sites
 
-    return {
-        'Mutations - in PTM sites': muts_in_ptm_sites,
-        'Mutations - with network-rewiring effect': mimp_muts,
-        'PTM sites affected by mutations': mutated_sites
-    }
+    return mutated_sites
 
 
-def sites_counts():
+def sites_counts() -> TableChunk:
     counts = {}
     for site_type in models.SiteType.available_types(include_any=True):
         count = site_type.filter(Site.query).count()
@@ -215,16 +227,17 @@ def sites_counts():
 def generate_source_specific_summary_table():
     from gc import collect
 
-    table_chunks = [
-        source_specific_proteins_with_ptm_mutations,
-        source_specific_mutated_sites,
-        source_specific_nucleotide_mappings,
-        sites_counts
-    ]
+    table_chunks: Dict[str, Callable[[], TableChunk]] = {
+        'Proteins': source_specific_proteins_with_ptm_mutations,
+        'Mutations in sites': mutations_in_sites,
+        'PTM sites affected by mutations': source_specific_mutated_sites,
+        'Nucleotide mappings': source_specific_nucleotide_mappings,
+        'Sites': sites_counts
+    }
     table = {}
-    for table_chunk_generator in table_chunks:
+    for chunk_name, table_chunk_generator in table_chunks.items():
         chunk = table_chunk_generator()
-        table.update(chunk)
+        table[chunk_name] = chunk
         collect()
 
     print(table)
