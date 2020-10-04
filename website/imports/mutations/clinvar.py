@@ -552,7 +552,7 @@ class ClinVarImporter(MutationImporter):
                         different_ids = [
                             id_label
                             for i, (id_label, id_name) in enumerate(self.disease_id_clinvar_to_db.items())
-                            if recorded_ids[i] != disease_ids[i]
+                            if str(recorded_ids[i]) != str(disease_ids[i])
                         ]
                         if any(different_ids):
                             print(
