@@ -560,8 +560,8 @@ class ClinVarImporter(MutationImporter):
                                 f' {disease_ids} vs {recorded_ids} ({different_ids} differ).'
                                 f' The newer set of ids ({disease_ids}) was kept.'
                             )
-
-                        assert len(disease_ids) != len(recorded_ids)
+                        # not all ids differ (at least some are the same)
+                        assert len(different_ids) != len(recorded_ids)
 
                     clinvar_data.append(
                         (
