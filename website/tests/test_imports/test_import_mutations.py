@@ -199,6 +199,27 @@ class TestImport(DatabaseTest):
         assert beutify('B_Lymphoblastic_Leukemia/Lymphoma_with_t(v%3B11q23.3)%3B_KMT2A_Rearranged') == 'B Lymphoblastic Leukemia/Lymphoma with t(v;11q23.3); KMT2A Rearranged'
         assert beutify('Ataxia___Neurologic_(child_onset)') == 'Ataxia _ Neurologic (child onset)'
 
+    def test_compare_ids(self):
+        old_ids = {
+            'MedGen': None,
+            'OMIM': 123,
+            'SNOMED_CT': None,
+            'Orphanet': 'abc',
+            'HPT': None
+        }
+        new_ids = {
+            'MedGen': None,
+            'OMIM': 123,
+            'SNOMED_CT': None,
+            'Orphanet': 'abcd',
+            'HPT': None
+        }
+        result = ClinVarImporter.compare_ids(list(old_ids.values()), 'OLD', list(new_ids.values()), 'NEW')
+        assert result == (
+            'Note: NEW identifiers differ from OLD identifiers Orphanet: abc (old) vs abcd (new).'
+            ' The following remain the same: OMIM (123). The newer set of ids were kept.'
+        )
+
     def test_clinvar_significance(self):
         clinvar = ClinVarImporter()
         pathogenic_code = clinvar.inverse_significance_map['pathogenic']

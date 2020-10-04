@@ -447,6 +447,37 @@ class ClinVarImporter(MutationImporter):
             disease_names, diseases_ids, combined_significances, variation_id
         )
 
+    @classmethod
+    def compare_ids(cls, recorded_ids, recorded_name, disease_ids, name):
+        """recorded = old"""
+        out = None
+        different_ids = [
+            id_label
+            for i, (id_label, id_name) in enumerate(cls.disease_id_clinvar_to_db.items())
+            if str(recorded_ids[i]) != str(disease_ids[i])
+        ]
+        if any(different_ids):
+            kept_ids = dict(zip(cls.disease_id_clinvar_to_db, disease_ids))
+            old_ids = dict(zip(cls.disease_id_clinvar_to_db, recorded_ids))
+            different_ids_values = ', '.join([
+                f'{id_label}: {old_ids[id_label]} (old) vs {kept_ids[id_label]} (new)'
+                for id_label in different_ids
+            ])
+            same_ids_labels = ', '.join(
+                f'{id_label} ({old_ids[id_label]})'
+                for id_label in cls.disease_id_clinvar_to_db
+                if id_label not in different_ids and old_ids[id_label]
+            )
+            out = (
+                f'Note: {name} identifiers differ from {recorded_name} identifiers'
+                f' {different_ids_values}. The following remain the same: {same_ids_labels}.'
+                f' The newer set of ids were kept.'
+            )
+        # not all ids differ (at least some are the same)
+        assert len(different_ids) != len(recorded_ids)
+
+        return out
+
     def parse(self, path):
         clinvar_mutations = []
         clinvar_data = []
@@ -549,19 +580,9 @@ class ClinVarImporter(MutationImporter):
                                 f'Note: {name} and {recorded_name} diseases were merged'
                                 f' (identical in case-insensitive comparison)'
                             )
-                        different_ids = [
-                            id_label
-                            for i, (id_label, id_name) in enumerate(self.disease_id_clinvar_to_db.items())
-                            if str(recorded_ids[i]) != str(disease_ids[i])
-                        ]
-                        if any(different_ids):
-                            print(
-                                f'Note: {name} identifiers differ from {recorded_name} identifiers'
-                                f' {disease_ids} vs {recorded_ids} ({different_ids} differ).'
-                                f' The newer set of ids ({disease_ids}) was kept.'
-                            )
-                        # not all ids differ (at least some are the same)
-                        assert len(different_ids) != len(recorded_ids)
+                        notice = self.compare_ids(recorded_ids, recorded_name, disease_ids, name)
+                        if notice:
+                            print(notice)
 
                     clinvar_data.append(
                         (
