@@ -272,11 +272,16 @@ class Mappings(CommandTarget):
 @contextmanager
 def disabled_constraints(bind: str):
     engine = get_engine(bind, current_app)
+    print('Disabling FOREIGN KEY and UNIQUE constraints...')
     set_foreign_key_checks(engine, active=False)
     set_unique_checks(engine, active=False)
     yield
     set_foreign_key_checks(engine, active=True)
     set_unique_checks(engine, active=True)
+    print(
+        'Re-enabled FOREIGN KEY and UNIQUE constraints.'
+        ' Please make sure to check the integrity of the database!'
+    )
 
 
 class Mutations(CommandTarget):
