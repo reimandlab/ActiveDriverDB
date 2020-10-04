@@ -23,7 +23,7 @@ class ClinVarImporter(MutationImporter):
     name = 'clinvar'
     model = InheritedMutation
     default_path = 'data/mutations/clinvar_muts_annotated.txt.gz'
-    default_xml_path = 'data/mutations/ClinVarFullRelease_2019-05.xml.gz'
+    default_xml_path = 'data/mutations/ClinVarFullRelease_2020-10.xml.gz'
     header = [
         'Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
         'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'Otherinfo',
@@ -346,7 +346,7 @@ class ClinVarImporter(MutationImporter):
 
     def remove_muts_without_origin(self):
 
-        origin_blacklist = {
+        origin_exclusion_list = {
             'not applicable',
             'not provided',
             'not-reported',
@@ -355,12 +355,12 @@ class ClinVarImporter(MutationImporter):
             'unknown'
         }
 
-        print('ClinVar mutations origin blacklist: ', origin_blacklist)
+        print('ClinVar mutations origin exclusion list: ', origin_exclusion_list)
 
         print('Removing ClinVar associations with blacklisted or missing origin; NOTE:')
         print('\torigin is not set also when the mutation was skipped due to other reasons, such as non-human species')
         removed_cnt = ClinicalData.query.filter(
-            or_(ClinicalData.origin == None, ClinicalData.origin.in_(origin_blacklist))
+            or_(ClinicalData.origin == None, ClinicalData.origin.in_(origin_exclusion_list))
         ).delete(synchronize_session='fetch')
         db.session.commit()
         print(f'Removed {removed_cnt} associations')

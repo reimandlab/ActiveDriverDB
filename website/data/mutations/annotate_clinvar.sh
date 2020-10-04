@@ -1,6 +1,6 @@
 #!/bin/bash
 ./ensure_annovar.sh
-file=clinvar_20190520.vcf.gz
+file=clinvar_20201003.vcf.gz
 gunzip ${file} -c > clinvar.avinput
 
 ./annovar/table_annovar.pl clinvar.avinput humandb/ -buildver hg19 -out clinvar_annotated -remove -protocol refGene -operation g -nastring . -thread 2 -otherinfo -vcfinput
