@@ -457,10 +457,10 @@ class ClinVarImporter(MutationImporter):
             if str(recorded_ids[i]) != str(disease_ids[i])
         ]
         if any(different_ids):
-            kept_ids = dict(zip(cls.disease_id_clinvar_to_db, disease_ids))
+            new_ids = dict(zip(cls.disease_id_clinvar_to_db, disease_ids))
             old_ids = dict(zip(cls.disease_id_clinvar_to_db, recorded_ids))
             different_ids_values = ', '.join([
-                f'{id_label}: {old_ids[id_label]} (old) vs {kept_ids[id_label]} (new)'
+                f'{id_label}: {old_ids[id_label]} (old) vs {new_ids[id_label]} (new)'
                 for id_label in different_ids
             ])
             same_ids_labels = ', '.join(
@@ -584,8 +584,9 @@ class ClinVarImporter(MutationImporter):
                         if notice:
                             print(notice)
                         if disease:
+                            new_ids = dict(zip(self.disease_id_clinvar_to_db, disease_ids))
                             for id_to_update in different_ids:
-                                setattr(disease, id_to_update, disease_ids[id_to_update])
+                                setattr(disease, id_to_update, new_ids[id_to_update])
                             print(f'The ids of the {recorded_name} were updated.')
                         else:
                             print(
