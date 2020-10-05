@@ -583,16 +583,17 @@ class ClinVarImporter(MutationImporter):
                         notice, different_ids = self.compare_ids(recorded_ids, recorded_name, disease_ids, name)
                         if notice:
                             print(notice)
-                        if disease:
-                            new_ids = dict(zip(self.disease_id_clinvar_to_db, disease_ids))
-                            for id_to_update in different_ids:
-                                setattr(disease, id_to_update, new_ids[id_to_update])
-                            print(f'The ids of the {recorded_name} were updated.')
-                        else:
-                            print(
-                                'No ids updates were performed as the ids came from newly added disease;'
-                                ' this might be a ClinVar integrity issue.'
-                            )
+                        if different_ids:
+                            if disease:
+                                new_ids = dict(zip(self.disease_id_clinvar_to_db, disease_ids))
+                                for id_to_update in different_ids:
+                                    setattr(disease, id_to_update, new_ids[id_to_update])
+                                print(f'The ids of the {recorded_name} were updated.')
+                            else:
+                                print(
+                                    'No ids updates were performed as the ids came from newly added disease;'
+                                    ' this might be a ClinVar integrity issue.'
+                                )
 
                     clinvar_data.append(
                         (
