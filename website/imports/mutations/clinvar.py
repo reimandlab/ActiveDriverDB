@@ -471,12 +471,11 @@ class ClinVarImporter(MutationImporter):
             out = (
                 f'Note: {name} identifiers differ from {recorded_name} identifiers'
                 f' {different_ids_values}. The following remain the same: {same_ids_labels}.'
-                f' The newer set of ids were kept.'
             )
         # not all ids differ (at least some are the same)
         assert len(different_ids) != len(recorded_ids)
 
-        return out
+        return out, different_ids
 
     def parse(self, path):
         clinvar_mutations = []
@@ -558,6 +557,7 @@ class ClinVarImporter(MutationImporter):
                     if key in new_diseases:
                         disease_id, (recorded_name, *recorded_ids) = new_diseases[key]
                         merged = True
+                        disease = None
                     else:
                         try:
                             disease = Disease.query.filter(Disease.name.ilike(name)).one()
@@ -580,9 +580,18 @@ class ClinVarImporter(MutationImporter):
                                 f'Note: {name} and {recorded_name} diseases were merged'
                                 f' (identical in case-insensitive comparison)'
                             )
-                        notice = self.compare_ids(recorded_ids, recorded_name, disease_ids, name)
+                        notice, different_ids = self.compare_ids(recorded_ids, recorded_name, disease_ids, name)
                         if notice:
                             print(notice)
+                        if disease:
+                            for id_to_update in different_ids:
+                                setattr(disease, id_to_update, disease_ids[id_to_update])
+                            print(f'The ids of the {recorded_name} were updated.')
+                        else:
+                            print(
+                                'No ids updates were performed as the ids came from newly added disease;'
+                                ' this might be a ClinVar integrity issue.'
+                            )
 
                     clinvar_data.append(
                         (

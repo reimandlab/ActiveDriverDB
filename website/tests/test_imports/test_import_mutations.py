@@ -214,10 +214,11 @@ class TestImport(DatabaseTest):
             'Orphanet': 'abcd',
             'HPT': None
         }
-        result = ClinVarImporter.compare_ids(list(old_ids.values()), 'OLD', list(new_ids.values()), 'NEW')
+        result, different = ClinVarImporter.compare_ids(list(old_ids.values()), 'OLD', list(new_ids.values()), 'NEW')
+        assert different == ['Orphanet']
         assert result == (
             'Note: NEW identifiers differ from OLD identifiers Orphanet: abc (old) vs abcd (new).'
-            ' The following remain the same: OMIM (123). The newer set of ids were kept.'
+            ' The following remain the same: OMIM (123).'
         )
 
     def test_clinvar_significance(self):
