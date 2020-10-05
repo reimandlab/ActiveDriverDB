@@ -270,18 +270,24 @@ class Mappings(CommandTarget):
 
 
 @contextmanager
-def disabled_constraints(bind: str):
-    engine = get_engine(bind, current_app)
-    print('Disabling FOREIGN KEY and UNIQUE constraints...')
-    set_foreign_key_checks(engine, active=False)
-    set_unique_checks(engine, active=False)
-    yield
-    set_foreign_key_checks(engine, active=True)
-    set_unique_checks(engine, active=True)
-    print(
-        'Re-enabled FOREIGN KEY and UNIQUE constraints.'
-        ' Please make sure to check the integrity of the database!'
-    )
+def disabled_constraints(bind: str, allow_failures=True, app=None):
+    if not app:
+        app = create_app(config_override=CONFIG)
+    with app.app_context():
+        engine = get_engine(bind, app)
+        print(engine)
+        print('Disabling FOREIGN KEY and UNIQUE constraints...')
+        disabled = set_foreign_key_checks(engine, active=False)
+        assert allow_failures or disabled
+        disabled = set_unique_checks(engine, active=False)
+        assert allow_failures or disabled
+        yield
+        set_foreign_key_checks(engine, active=True)
+        set_unique_checks(engine, active=True)
+        print(
+            'Re-enabled FOREIGN KEY and UNIQUE constraints.'
+            ' Please make sure to check the integrity of the database!'
+        )
 
 
 class Mutations(CommandTarget):
@@ -303,7 +309,7 @@ class Mutations(CommandTarget):
     @command
     def load(self, args):
         if args.disable_constraints:
-            with disabled_constraints('bio'):
+            with disabled_constraints('bio', allow_failures=False):
                 self.action('load', args)
         else:
             self.action('load', args)
@@ -567,7 +573,7 @@ def run_manage(parsed_args, app=None):
         except OperationalError as e:
             if e.orig.args[0] == 1071:
                 print('Please run: ')
-                for bind in ['bio', 'cms']:
+                for bind in database_binds:
                     engine = db.get_engine(app, bind)
                     print(f'ALTER DATABASE `{engine.url.database}` CHARACTER SET utf8;')
                 print('to be able to continue.')

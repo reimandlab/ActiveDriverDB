@@ -22,18 +22,20 @@ def update_column(engine, table_name, column_definition):
 
 def set_foreign_key_checks(engine, active=True):
     sql = f'SET FOREIGN_KEY_CHECKS={1 if active else 0};'
-    if db.session.bind.dialect.name == 'sqlite':
+    if engine.dialect.name == 'sqlite':
         warn('Sqlite foreign key checks managements is not supported')
-        return
+        return False
     engine.execute(sql)
+    return True
 
 
 def set_unique_checks(engine, active=True):
     sql = f'SET UNIQUE_CHECKS={1 if active else 0};'
-    if db.session.bind.dialect.name == 'sqlite':
+    if engine.dialect.name == 'sqlite':
         warn('Sqlite unique key checks managements is not supported')
-        return
+        return False
     engine.execute(sql)
+    return True
 
 
 def get_column_names(table):
