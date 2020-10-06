@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict
-from typing import Mapping, Iterable
+from typing import Mapping, Iterable, Dict
 
 from sqlalchemy.orm.exc import NoResultFound
 from models import InheritedMutation, Disease
@@ -158,10 +158,12 @@ class ClinVarImporter(MutationImporter):
         conflicting_types = set()
         skipped_diseases = set()
 
+        print('Collecting identifiers of variants to consider...')
         variants_of_interest = {
             variation_id
             for variation_id, in db.session.query(ClinicalData.variation_id)
         }
+        print('Identifiers collection done.')
 
         # otherwise there is no point...
         assert variants_of_interest
@@ -174,6 +176,15 @@ class ClinVarImporter(MutationImporter):
                 total_size += len(line)
 
         step = 0
+
+        variants_of_interest = {
+            variation_id
+            for variation_id, in db.session.query(ClinicalData.variation_id)
+        }
+        diseases: Dict[str, Disease] = {
+            disease.name.lower(): disease
+            for disease in Disease.query.all()
+        }
 
         with opener(self.xml_path) as clinvar_full_release:
             tree = iter(ElementTree.iterparse(clinvar_full_release, events=('start', 'end')))
@@ -255,18 +266,19 @@ class ClinVarImporter(MutationImporter):
                 if trait_name in ignored_traits:
                     continue
 
-                try:
-                    disease = Disease.query.filter_by(name=trait_name).one()
-                except NoResultFound:
+                if trait_name.lower() in diseases:
+                    disease = diseases[trait_name.lower()]
+                else:
                     resolved = False
                     if 'Mucolipidosis, Type' in trait_name:
                         print(f'Working around changed name for {trait_name}')
                         trait_name = trait_name.replace('Mucolipidosis, Type', 'Mucolipidosis')
-                        try:
-                            disease = Disease.query.filter_by(name=trait_name).one()
+                        if trait_name.lower() in diseases:
+                            disease = diseases[trait_name.lower()]
+                            print('Workaround was successful')
                             resolved = True
-                        except NoResultFound:
-                            pass
+                        else:
+                            print('Workaround did not help')
 
                     if not resolved:
                         skipped_diseases.add(trait_name)
@@ -298,7 +310,7 @@ class ClinVarImporter(MutationImporter):
 
                 disease_associations: Iterable[ClinicalData] = (
                     ClinicalData.query
-                    .filter(ClinicalData.disease == disease)
+                    .filter(ClinicalData.disease_id == disease.id)
                     .filter(ClinicalData.variation_id == variation_id)
                 )
 
@@ -588,6 +600,7 @@ class ClinVarImporter(MutationImporter):
                                 new_ids = dict(zip(self.disease_id_clinvar_to_db, disease_ids))
                                 for id_to_update in different_ids:
                                     setattr(disease, id_to_update, new_ids[id_to_update])
+                                db.session.commit()
                                 print(f'The ids of the {recorded_name} were updated.')
                             else:
                                 print(

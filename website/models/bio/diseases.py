@@ -1,3 +1,4 @@
+from sqlalchemy import Index
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -130,6 +131,9 @@ class ClinicalData(BioModel):
     # >>> <MeasureSet Type="Variant" ID="216463" Acc="VCV000216463" Version="1">
     # but we only store the actual integer (see "ID" in the example above)
     variation_id = db.Column(db.Integer)
+
+
+Index('variation_and_disease_index', ClinicalData.variation_id, ClinicalData.disease_id)
 
 
 class Cancer(BioModel):
