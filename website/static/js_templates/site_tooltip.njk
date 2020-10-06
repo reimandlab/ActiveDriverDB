@@ -6,7 +6,7 @@
 </ul>
 Sources: {{ site.sources | join(', ') }}
 {% if site.associations %}
-  Associations:
+  <br>Associations:
   <ul>
   {% for association in site.associations %}
     <li>{{ association.site_type }} change associated with {{ association.event }}:</li>
