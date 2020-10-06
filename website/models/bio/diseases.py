@@ -17,7 +17,9 @@ class Disease(BioModel):
     medgen_id = db.Column(db.String(16))
 
     # OMIM identifier
-    omim_id = db.Column(db.Integer)
+    # OMIM ids are usually integers, but there are also Phenotypic Series ids (e.g. PS114580)
+    # which require a prefix so we need a string
+    omim_id = db.Column(db.String(16))
 
     # Snomed CT
     snomed_ct_id = db.Column(db.Integer)
