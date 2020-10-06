@@ -12,7 +12,7 @@ from database import bdb, get_engine
 from database import bdb_refseq
 from database import db
 from database.manage import remove_model, reset_relational_db
-from database.migrate import basic_auto_migrate_relational_db, set_foreign_key_checks, set_unique_checks
+from database.migrate import basic_auto_migrate_relational_db, set_foreign_key_checks, set_unique_checks, set_autocommit
 from exports.protein_data import EXPORTERS
 from helpers.commands import CommandTarget
 from helpers.commands import argument
@@ -271,6 +271,7 @@ class Mappings(CommandTarget):
 
 @contextmanager
 def disabled_constraints(bind: str, allow_failures=True, app=None):
+    from database import db
     if not app:
         app = create_app(config_override=CONFIG)
     with app.app_context():
@@ -281,9 +282,13 @@ def disabled_constraints(bind: str, allow_failures=True, app=None):
         assert allow_failures or disabled
         disabled = set_unique_checks(engine, active=False)
         assert allow_failures or disabled
+        disabled = set_autocommit(engine, active=False)
+        assert allow_failures or disabled
         yield
+        db.session.commit()
         set_foreign_key_checks(engine, active=True)
         set_unique_checks(engine, active=True)
+        set_autocommit(engine, active=True)
         print(
             'Re-enabled FOREIGN KEY and UNIQUE constraints.'
             ' Please make sure to check the integrity of the database!'

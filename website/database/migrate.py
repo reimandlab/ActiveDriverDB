@@ -29,6 +29,15 @@ def set_foreign_key_checks(engine, active=True):
     return True
 
 
+def set_autocommit(engine, active=True):
+    sql = f'SET AUTOCOMMIT={1 if active else 0};'
+    if engine.dialect.name == 'sqlite':
+        warn('Sqlite autocommit managements is not supported')
+        return False
+    engine.execute(sql)
+    return True
+
+
 def set_unique_checks(engine, active=True):
     sql = f'SET UNIQUE_CHECKS={1 if active else 0};'
     if engine.dialect.name == 'sqlite':
