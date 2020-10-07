@@ -8,7 +8,7 @@ from models import Protein, Gene, InterproDomain
 
 # domain ranges slightly modified to test more combinations
 domains_data = """\
-Ensembl Gene ID	Ensembl Transcript ID	Ensembl Protein ID	Chromosome Name	Gene Start (bp)	Gene End (bp)	RefSeq mRNA [e.g. NM_001195597]	Interpro ID	Interpro Short Description	Interpro Description	Interpro end	Interpro start
+Gene stable ID	Transcript stable ID	Protein stable ID	Chromosome/scaffold name	Gene start (bp)	Gene end (bp)	RefSeq mRNA ID	Interpro ID	Interpro Short Description	Interpro Description	Interpro end	Interpro start
 ENSG00000104129	ENST00000220496	ENSP00000220496	15	41060067	41099675	NM_018163	IPR001623	DnaJ_domain	DnaJ domain	31	13
 ENSG00000104129	ENST00000220496	ENSP00000220496	15	41060067	41099675	NM_018163	IPR001623	DnaJ_domain	DnaJ domain	46	31
 ENSG00000078043	ENST00000585916	ENSP00000465676	18	44388353	44500123	NM_004671	IPR003034	SAP_dom	SAP domain	65	1
@@ -22,22 +22,22 @@ ENSG00000078043	ENST00000585916	ENSP00000465676	18	44388353	44500123	NM_004671	I
 
 # head of data/ParentChildTreeFile.txt*
 domains_hierarchy_data = """\
-IPR000008::C2 domain::
---IPR002420::Phosphatidylinositol 3-kinase, C2 domain::
---IPR014020::Tensin phosphatase, C2 domain::
---IPR033884::Calpain C2 domain::
-IPR000010::Cystatin domain::
---IPR025760::Fetuin-A-type cystatin domain::
---IPR025764::Fetuin-B-type cystatin domain::
---IPR027358::Kininogen-type cystatin domain::
-IPR000053::Thymidine/pyrimidine-nucleoside phosphorylase::
---IPR013466::Thymidine phosphorylase/AMP phosphorylase::
-----IPR017713::AMP phosphorylase::
-----IPR028579::Putative thymidine phosphorylase::
---IPR018090::Pyrimidine-nucleoside phosphorylase, bacterial/eukaryotic::
-----IPR013465::Thymidine phosphorylase::
-IPR000056::Ribulose-phosphate 3-epimerase-like::
---IPR026019::Ribulose-phosphate 3-epimerase::
+IPR000008::C2 domain
+--IPR002420::Phosphatidylinositol 3-kinase, C2 domain
+--IPR014020::Tensin phosphatase, C2 domain
+--IPR033884::Calpain C2 domain
+IPR000010::Cystatin domain
+--IPR025760::Fetuin-A-type cystatin domain
+--IPR025764::Fetuin-B-type cystatin domain
+--IPR027358::Kininogen-type cystatin domain
+IPR000053::Thymidine/pyrimidine-nucleoside phosphorylase
+--IPR013466::Thymidine phosphorylase/AMP phosphorylase
+----IPR017713::AMP phosphorylase
+----IPR028579::Putative thymidine phosphorylase
+--IPR018090::Pyrimidine-nucleoside phosphorylase, bacterial/eukaryotic
+----IPR013465::Thymidine phosphorylase
+IPR000056::Ribulose-phosphate 3-epimerase-like
+--IPR026019::Ribulose-phosphate 3-epimerase
 """
 
 

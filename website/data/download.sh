@@ -32,6 +32,35 @@ rm ucsc_download.sh
 # full gene name
 wget ftp://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz
 
+## Interpro domains
+
+# fetch domains from Ensembl biomart
+
+domains_query=$(tr '\n' ' ' <<- EOQ
+<?xml version="1.0" encoding="UTF-8"?>
+  <!DOCTYPE Query>
+  <Query  virtualSchemaName = "default" formatter = "TSV" header = "1" uniqueRows = "1" count = "" datasetConfigVersion = "0.6" >
+
+    <Dataset name = "hsapiens_gene_ensembl" interface = "default" >
+      <Filter name = "with_refseq_mrna" excluded = "0"/>
+      <Attribute name = "ensembl_gene_id" />
+      <Attribute name = "ensembl_transcript_id" />
+      <Attribute name = "ensembl_peptide_id" />
+      <Attribute name = "chromosome_name" />
+      <Attribute name = "start_position" />
+      <Attribute name = "end_position" />
+      <Attribute name = "refseq_mrna" />
+      <Attribute name = "interpro" />
+      <Attribute name = "interpro_short_description" />
+      <Attribute name = "interpro_description" />
+      <Attribute name = "interpro_end" />
+      <Attribute name = "interpro_start" />
+    </Dataset>
+  </Query>
+EOQ
+)
+wget -O domains.tsv "http://grch37.ensembl.org/biomart/martservice?query=$domains_query"
+
 # hierarchy tree
 wget ftp://ftp.ebi.ac.uk/pub/databases/interpro/ParentChildTreeFile.txt
 
@@ -61,6 +90,7 @@ echo 'Gene sets from MSigDB need to be downloaded directly from: software.broadi
 cd ..
 
 
+
 #  All below are dropbox-dependent ===
 
 mkdir -p drugbank
@@ -68,7 +98,7 @@ cd drugbank
 wget https://www.dropbox.com/s/r4rfureo1h2h31y/drugbank.tsv
 cd ..
 
-# wget https://www.dropbox.com/s/wdxnyvf7lkbihnp/biomart_protein_domains_20072016.txt
+
 wget https://www.dropbox.com/s/pjf7nheutez3w6r/curated_kinase_IDs.txt
 
 echo 'Downloading mutations:'

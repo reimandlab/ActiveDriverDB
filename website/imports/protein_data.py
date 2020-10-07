@@ -545,7 +545,7 @@ def disorder(path='data/all_RefGene_disorder.fa'):
 
 
 @simple_bio_importer(requires=[proteins_and_genes])
-def domains(path='data/biomart_protein_domains_20072016.txt'):
+def domains(path='data/domains.tsv'):
     proteins = get_proteins()
 
     print('Loading domains:')
@@ -558,9 +558,9 @@ def domains(path='data/biomart_protein_domains_20072016.txt'):
     not_matching_chrom = []
 
     header = [
-        'Ensembl Gene ID', 'Ensembl Transcript ID', 'Ensembl Protein ID',
-        'Chromosome Name', 'Gene Start (bp)', 'Gene End (bp)',
-        'RefSeq mRNA [e.g. NM_001195597]', 'Interpro ID',
+        'Gene stable ID', 'Transcript stable ID', 'Protein stable ID',
+        'Chromosome/scaffold name', 'Gene start (bp)', 'Gene end (bp)',
+        'RefSeq mRNA ID', 'Interpro ID',
         'Interpro Short Description', 'Interpro Description',
         'Interpro end', 'Interpro start'
     ]
@@ -680,7 +680,7 @@ def domains_hierarchy(path='data/ParentChildTreeFile.txt'):
 
     print('Loading InterPro hierarchy:')
 
-    expr = compile('^(?P<dashes>-*)(?P<interpro_id>\w*)::(?P<desc>.*?)::$')
+    expr = compile(r'^(?P<dashes>-*)(?P<interpro_id>\w*)::(?P<desc>.*?)$')
 
     previous_level = 0
     domains_stack = []
