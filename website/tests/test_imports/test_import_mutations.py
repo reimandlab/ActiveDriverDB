@@ -387,7 +387,7 @@ class TestImport(DatabaseTest):
 
             hepatocellular_carcinoma: Disease = hepatocellular_carcinoma_association.disease
             assert hepatocellular_carcinoma.hpo_id == 'HP:0001402'
-            assert hepatocellular_carcinoma.omim_id == 114550
+            assert hepatocellular_carcinoma.omim_id == '114550'
             assert hepatocellular_carcinoma.orhpanet_id == 'ORPHA88673'
             assert hepatocellular_carcinoma.medgen_id == 'C2239176'
             # TODO: this is somehow unpredictable when it comes to SNOMED CT as it has multiple IDs:
