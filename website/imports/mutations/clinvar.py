@@ -26,7 +26,9 @@ class ClinVarImporter(MutationImporter):
     default_xml_path = 'data/mutations/ClinVarFullRelease_2020-10.xml.gz'
     header = [
         'Chr', 'Start', 'End', 'Ref', 'Alt', 'Func.refGene', 'Gene.refGene',
-        'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene', 'Otherinfo',
+        'GeneDetail.refGene', 'ExonicFunc.refGene', 'AAChange.refGene',
+        'Otherinfo1', 'Otherinfo2', 'Otherinfo3', 'Otherinfo4', 'Otherinfo5',
+        'Otherinfo6', 'Otherinfo7', 'Otherinfo8', 'Otherinfo9', 'Otherinfo10', 'Otherinfo11'
     ]
     insert_keys = (
         'mutation_id',
