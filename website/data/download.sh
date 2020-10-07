@@ -210,7 +210,10 @@ wget -N http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz
 mkdir -p sites
 cd sites
 # https://data.mendeley.com/datasets/dpkbh2g9hy/1
+mkdir -p COVID
+cd COVID
 echo "attempting to download zip from https://data.mendeley.com/datasets/dpkbh2g9hy/1"
 wget https://md-datasets-cache-zipfiles-prod.s3.eu-west-1.amazonaws.com/dpkbh2g9hy-1.zip
 unzip dpkbh2g9hy-1.zip
+cd ..
 cd ..

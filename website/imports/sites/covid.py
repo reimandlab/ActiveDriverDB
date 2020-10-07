@@ -51,7 +51,7 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
         UniprotToRefSeqTrait.__init__(self, mappings_path)
         UniprotIsoformsTrait.__init__(self, sprot_canonical, sprot_splice)
 
-    def load_sites(self, file_path='data/sites/Supplemental Tables/TableS1.xlsx') -> List[Site]:
+    def load_sites(self, file_path='data/sites/COVID/Supplemental Tables/TableS1.xlsx') -> List[Site]:
         if file_path.endswith('.xlsx'):
             sites = read_excel(file_path, sheet_name='PhosphoDataFiltered')
         else:
