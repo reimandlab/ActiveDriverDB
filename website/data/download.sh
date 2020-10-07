@@ -89,16 +89,10 @@ wget http://download.baderlab.org/EM_Genesets/current_release/Human/symbol/DrugT
 echo 'Gene sets from MSigDB need to be downloaded directly from: software.broadinstitute.org/gsea/msigdb/'
 cd ..
 
-
+echo 'Please download DrugBank manually'
+!unzip drugbank_all_full_database.xml.zip
 
 #  All below are dropbox-dependent ===
-
-mkdir -p drugbank
-cd drugbank
-wget https://www.dropbox.com/s/r4rfureo1h2h31y/drugbank.tsv
-cd ..
-
-
 wget https://www.dropbox.com/s/pjf7nheutez3w6r/curated_kinase_IDs.txt
 
 echo 'Downloading mutations:'
