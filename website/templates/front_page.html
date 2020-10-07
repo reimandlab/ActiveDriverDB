@@ -137,11 +137,12 @@
 
   var main_search_bar = SearchBar()
   var mutation_template = decodeURIComponent('<a href="{{ url_for('MutationView:show', refseq='{{ refseq }}', position='{{ pos }}', alt='{{ alt }}') }}" class="list-group-item">{{ '{{ name }} {{ badges }}' }}</a>');
+  var protein_template = decodeURIComponent('<a href="{{ url_for('SequenceView:show', refseq='{{ preferred_isoform }}') }}" class="list-group-item">{{ '{{ name }} {{ badges }}' }}</a>');
 
   main_search_bar.init({
       box: $('.front-search-box'),
       autocomplete_url: '{{ url_for('SearchView:autocomplete_all') }}',
-      template: advanced_searchbar_templator(mutation_template)
+      template: advanced_searchbar_templator(mutation_template, protein_template)
   })
 
   particlesJS.load('particles-js', 'static/particlesjs-config.json', function() { });

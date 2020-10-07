@@ -202,7 +202,7 @@ function badge(name) {
 }
 
 
-function advanced_searchbar_templator(mutation_template)
+function advanced_searchbar_templator(mutation_template, protein_template)
 {
 
     function template_mutation(result, name)
@@ -243,12 +243,19 @@ function advanced_searchbar_templator(mutation_template)
             switch(result.type)
             {
                 case 'gene':
-                    link = '<a href="/protein/show/' + result.preferred_isoform + '" class="list-group-item">' + result.name
+                    var badges = '';
 
                     if(result.isoforms_count > 1)
-                        link += badge(result.isoforms_count + ' isoforms')
+                        badges += badge(result.isoforms_count + ' isoforms')
 
-                    return link + '</a>'
+                    return format(
+                        protein_template,
+                        {
+                            preferred_isoform: result.preferred_isoform,
+                            name: result.name,
+                            badges: badges
+                        }
+                    )
 
                 case 'aminoacid mutation':
                     name = result.mutation.name + ' (' + result.protein.refseq + ')';

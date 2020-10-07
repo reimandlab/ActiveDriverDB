@@ -132,12 +132,15 @@ var p = console.log
  */
 function format(template, variables)
 {
-    for(var variable in variables)
-    {
-        var regexp = new RegExp('{{ ' + variable + ' }}', 'g');
-        template = template.replace(regexp, variables[variable]);
-    }
-    return template;
+    return template.replace(
+        /{{ (\w+) }}/g,
+        function (full_match, match) {
+            if (!(match in variables)) {
+                console.warn(match, 'not found in', variables, 'for', template);
+            }
+            return variables[match]
+        }
+    );
 }
 
 function set_csrf_token(token)
