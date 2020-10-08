@@ -1,6 +1,7 @@
 from collections import defaultdict
 
-from models import Drug, Gene
+from models import Gene
+from models.bio.drug import Drug, DrugTarget
 
 
 def represent_mutation(mutation, data_filter, representation_type=dict):
@@ -31,7 +32,7 @@ def drugs_interacting_with_kinases(filter_manager, kinases):
             q,
             Gene.id.in_(kinase_gene_ids)
         ),
-        lambda query: query.join(Drug.target_genes)
+        lambda query: query.join(DrugTarget)
     )
     drugs_by_kinase = defaultdict(set)
     for drug in drugs:

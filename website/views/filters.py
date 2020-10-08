@@ -1,6 +1,7 @@
 from sqlalchemy import exists
 
-from models import MC3Mutation, DrugGroup, Drug, Disease, source_manager, SiteType, PCAWGMutation
+from models import MC3Mutation, Disease, source_manager, SiteType, PCAWGMutation
+from models.bio.drug import DrugGroup, Drug
 from models import Cancer
 from models import Mutation
 from models import Site

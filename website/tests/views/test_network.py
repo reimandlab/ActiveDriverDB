@@ -1,5 +1,6 @@
 from view_testing import ViewTest
-from models import Protein, KinaseGroup, Drug, DrugGroup, MIMPMutation, SiteType
+from models import Protein, KinaseGroup, MIMPMutation, SiteType
+from models.bio.drug import DrugGroup, Drug, DrugTarget
 from models import Gene
 from models import Site
 from models import Kinase
@@ -45,10 +46,13 @@ def create_network():
     drug = Drug(
         name='Drug targeting ' + known_interactor_of_x.name,
         drug_bank_id='DB01',
-        target_genes=[known_interactor_of_x.protein.gene],
         # by default only approved drugs are shown
         groups={DrugGroup(name='approved')}
     )
+
+    target = DrugTarget()
+    target.gene = known_interactor_of_x.protein.gene
+    target.drug = drug
 
     group = KinaseGroup(
         name='Group of kinases',

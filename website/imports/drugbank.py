@@ -1,21 +1,22 @@
+from typing import List, Dict
 from xml.etree import ElementTree
+
+from pandas import DataFrame
 
 
 def extract_drugs(path: str):
     root = ElementTree.iterparse(path, events=['start', 'end'])
 
     namespace = '{http://www.drugbank.ca}'
-    drug = {}
+    drug: dict = {}
     drugs = []
     parents = ['grandroot', 'root']
 
-
-    def append_or_create(drug, key, value):
-        if key not in drug:
-            drug[key] = [value]
+    def append_or_create(obj: dict, key: str, value):
+        if key not in obj:
+            obj[key] = [value]
         else:
-            drug[key].append(value)
-
+            obj[key].append(value)
 
     for event, elem in root:
 
@@ -47,22 +48,32 @@ def extract_drugs(path: str):
                 append_or_create(drug, 'groups', elem.text)
 
             if tag == 'affected-organism':
+                append_or_create(drug, 'affected_organisms', elem.text)
+
             if grandparent == 'target':
+                target = drug['targets'][-1]
                 if parent == 'actions' and tag == 'action':
-                    append_or_create(drug['targets'][-1], 'actions', elem.text)
+                    append_or_create(target, 'actions', elem.text)
                 if parent == 'polypeptide' and tag == 'gene-name':
-                    drug['targets'][-1]['gene_name'] = elem.text
+                    target['polypeptides'][-1]['gene_name'] = elem.text
                 if parent == 'polypeptide' and tag == 'id':
-                    drug['targets'][-1]['drugbank_target_id'] = elem.text
+                    target['drugbank_target_id'] = elem.text
 
             if parent == 'target':
+                target = drug['targets'][-1]
                 if tag == 'organism':
-                    drug['targets'][-1]['organism'] = elem.text
+                    target['organism'] = elem.text
                 if tag == 'polypeptide':
-                    drug['targets'][-1]['protein_id'] = elem.get('id')
-                    drug['targets'][-1]['protein_id_source'] = elem.get('source')
+                    append_or_create(
+                        target,
+                        'polypeptides',
+                        {
+                            'protein_id': elem.get('id'),
+                            'protein_id_source': elem.get('source')
+                        }
+                    )
                 if tag == 'name':
-                    drug['targets'][-1]['target_name'] = elem.text
+                    target['target_name'] = elem.text
 
         if event == 'end':
 
@@ -78,38 +89,46 @@ def extract_drugs(path: str):
     return drugs
 
 
-def extract_targets(drugs):
+def extract_targets(drugs: List[Dict]) -> List[Dict]:
     targets = []
     for drug in drugs:
         for target in drug.get('targets', []):
-            targets.append(
-                {
-                    **target,
-                    **{
-                        'drug_' + key: value
-                        for key, value in drug.items()
+            for polypeptide in target.get('polypeptides', []):
+                targets.append(
+                    {
+                        **target,
+                        **{
+                            'drug_' + key: value
+                            for key, value in drug.items()
+                            if key != 'targets'
+                        },
+                        **polypeptide
                     }
-                }
-            )
-    return DataFrame(targets).drop(columns=['drug_targets'])
+                )
+    return targets
 
 
-def extract_targets_for_addb():
-    drugs = extract_drugs('full database.xml')
-    targets = extract_targets(drugs)
+def replace_missing(x, replacement_factory):
+    return replacement_factory() if x != x else x
+
+
+def prepare_targets(path: str) -> DataFrame:
+    drugs = extract_drugs(path)
+    targets = DataFrame(extract_targets(drugs))
 
     is_target_in_human = (targets.organism == 'Humans')
     is_target_protein_or_gene = (~targets.protein_id.isna() | ~targets.gene_name.isna())
 
     filtered_targets = targets[is_target_in_human & is_target_protein_or_gene].copy()
-    filtered_targets['drug_groups'] = filtered_targets['drug_groups'].str.join(';')
-    filtered_targets['actions'] = filtered_targets['actions'].str.join(';')
-    assert set(filtered_targets['protein_id_source']) == {'Swiss-Prot', 'TrEMBL'}
+    assert set(filtered_targets['protein_id_source']) - {'Swiss-Prot', 'TrEMBL'} == set()
+
+    for column in ['drug_groups', 'actions']:
+        filtered_targets[column] = filtered_targets[column].apply(replace_missing, replacement_factory=list)
 
     final_targets = filtered_targets[[
         'drug_id', 'drug_name', 'drug_type', 'drug_groups',
         'drug_created', 'drug_updated',
-        'gene_name', 'protein_id',  'actions'
+        'gene_name', 'protein_id', 'actions'
     ]]
 
-    return final_targets.fillna('')
+    return final_targets

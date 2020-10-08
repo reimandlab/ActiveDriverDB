@@ -1,6 +1,5 @@
 import gzip
 from collections import defaultdict, namedtuple
-from functools import partial
 from typing import Callable, Type
 from warnings import warn
 
@@ -14,9 +13,10 @@ from helpers.parsers import parse_tsv_file
 from helpers.parsers import parse_text_file
 from imports.importer import simple_importer, BioImporter
 from models import (
-    Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, Drug, DrugGroup, DrugType, SiteType,
+    Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, SiteType,
     SiteMotif,
 )
+from models.bio.drug import DrugGroup, DrugType, Drug, DrugTarget
 from models import Gene
 from models import InterproDomain
 from models import Cancer
@@ -27,6 +27,7 @@ from models import Pathway
 from models import GeneList
 from models import GeneListEntry
 from models import PathwaysList, PathwaysListEntry
+from .drugbank import prepare_targets
 
 
 def get_proteins(cached_proteins={}, reload_cache=False, options=None):
@@ -1329,40 +1330,44 @@ def ensure_mutations_are_precomputed(context: str):
 
 
 @independent_bio_importer
-def drugbank(path='data/drugbank/drugbank.tsv'):
+def drugbank(path='data/full database.xml'):
 
+    print('Parsing DrugBank XML...')
+    drug_targets = prepare_targets(path)
+
+    print('Preparing database objects...')
     drugs = set()
 
-    # in case we need to query drugbank, it's better to keep names compat.
-    drug_type_map = {
-        'BiotechDrug': 'biotech',
-        'SmallMoleculeDrug': 'small molecule'
-    }
-
-    def parser(data):
-        drug_id, gene_name, drug_name, drug_groups, drug_type_name = data
-        target_gene = Gene.query.filter_by(name=gene_name).first()
+    for _, record in drug_targets.iterrows():
+        # drug_id, gene_name, drug_name, drug_groups, drug_type_name = data
+        target_gene = Gene.query.filter_by(name=record.gene_name).first()
 
         if target_gene:
-            drug, created = get_or_create(Drug, name=drug_name)
+            drug, created = get_or_create(Drug, name=record.drug_name)
             if created:
                 drugs.add(drug)
-            drug.target_genes.append(target_gene)
-            drug.drug_bank_id = drug_id
 
-            for drug_group_name in drug_groups.split(';'):
-                if drug_group_name != 'NA':
+                for drug_group_name in record.drug_groups:
                     drug_group, created = get_or_create(DrugGroup, name=drug_group_name)
                     drug.groups.add(drug_group)
 
-            if drug_type_name != 'NA':
-                drug_type, created = get_or_create(DrugType, name=drug_type_map[drug_type_name])
-                drug.type = drug_type
+                if record.drug_type:
+                    drug_type, created = get_or_create(DrugType, name=record.drug_type)
+                    drug.type = drug_type
 
-    # TODO: the header has type and group swapped
-    header = 'DRUG_id	GENE_symbol	DRUG_name	DRUG_type	DRUG_group'.split('\t')
+                # not in use currently
+                # drug.description = record.description
 
-    parse_tsv_file(path, parser, header)
+            elif drug.drug_bank_id != record.drug_id:
+                print(f'Warning: {drug} had a different DrugBank id ({drug.drug_bank_id}); updated to {record.drug_id}')
+            drug.drug_bank_id = record.drug_id
+
+            association = DrugTarget()
+            association.actions = set(record.actions)
+            association.drug = drug
+            association.gene = target_gene
+        else:
+            print(f'Target gene {record.gene_name} not found for drug {record.drug_name}')
 
     return drugs
 

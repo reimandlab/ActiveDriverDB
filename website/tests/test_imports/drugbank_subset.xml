@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<drugbank xmlns="http://www.drugbank.ca" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.drugbank.ca http://www.drugbank.ca/docs/drugbank.xsd" version="5.1" exported-on="2020-07-02">
+    <drug type="biotech" created="2005-06-13" updated="2020-06-12">
+        <drugbank-id primary="true">DB00001</drugbank-id>
+        <drugbank-id>BTD00024</drugbank-id>
+        <name>Lepirudin</name>
+        <description>Lepirudin is identical to natural hirudin except for substitution of leucine for isoleucine at the N-terminal end of the molecule and the absence of a sulfate group on the tyrosine at position 63. It is produced via yeast cells. Bayer ceased the production of lepirudin (Refludan) effective May 31, 2012.</description>
+        <cas-number>138068-37-8</cas-number>
+        <groups>
+            <group>approved</group>
+        </groups>
+        <indication>For the treatment of heparin-induced thrombocytopenia</indication>
+        <pharmacodynamics>Lepirudin is used to break up clots and to reduce thrombocytopenia. It binds to thrombin and prevents thrombus or clot formation. It is a highly potent, selective, and essentially irreversible inhibitor of thrombin and clot-bond thrombin. Lepirudin requires no cofactor for its anticoagulant action. Lepirudin is a recombinant form of hirudin, an endogenous anticoagulant found in medicinal leeches.</pharmacodynamics>
+        <mechanism-of-action>Lepirudin forms a stable non-covalent complex with alpha-thrombin, thereby abolishing its ability to cleave fibrinogen and initiate the clotting cascade. The inhibition of thrombin prevents the blood clotting cascade. </mechanism-of-action>
+        <toxicity>In case of overdose (eg, suggested by excessively high aPTT values) the risk of bleeding is increased.</toxicity>
+        <metabolism>Lepirudin is thought to be metabolized by release of amino acids via catabolic hydrolysis of the parent drug. However, con-clusive data are not available. About 48% of the administration dose is excreted in the urine which consists of unchanged drug (35%) and other fragments of the parent drug.</metabolism>
+        <absorption>Bioavailability is 100% following injection.</absorption>
+        <half-life>Approximately 1.3 hours</half-life>
+        <protein-binding/>
+        <route-of-elimination>Lepirudin is thought to be metabolized by release of amino acids via catabolic hydrolysis of the parent drug. About 48% of the administration dose is excreted in the urine which consists of unchanged drug (35%) and other fragments of the parent drug.</route-of-elimination>
+        <affected-organisms>
+            <affected-organism>Humans and other mammals</affected-organism>
+        </affected-organisms>
+        <pathways>
+            <pathway>
+                <smpdb-id>SMP0000278</smpdb-id>
+                <name>Lepirudin Action Pathway</name>
+                <category>drug_action</category>
+                <drugs>
+                    <drug>
+                        <drugbank-id>DB00001</drugbank-id>
+                        <name>Lepirudin</name>
+                    </drug>
+                    <drug>
+                        <drugbank-id>DB01022</drugbank-id>
+                        <name>Phylloquinone</name>
+                    </drug>
+                </drugs>
+                <enzymes>
+                    <uniprot-id>P00734</uniprot-id>
+                    <uniprot-id>P00748</uniprot-id>
+                </enzymes>
+            </pathway>
+        </pathways>
+        <targets>
+            <target>
+                <id>BE0000048</id>
+                <name>Prothrombin</name>
+                <organism>Humans</organism>
+                <actions>
+                    <action>inhibitor</action>
+                </actions>
+                <known-action>yes</known-action>
+                <polypeptide id="P00734" source="Swiss-Prot">
+                    <name>Prothrombin</name>
+                    <general-function>Thrombospondin receptor activity</general-function>
+                    <specific-function>Thrombin, which cleaves bonds after Arg and Lys, converts fibrinogen to fibrin and activates factors V, VII, VIII, XIII, and, in complex with thrombomodulin, protein C. Functions in blood homeostasis, inflammation and wound healing.</specific-function>
+                    <gene-name>F2</gene-name>
+                    <locus>11p11-q12</locus>
+                    <cellular-location>Secreted</cellular-location>
+                    <transmembrane-regions/>
+                    <signal-regions>1-24</signal-regions>
+                    <theoretical-pi>5.7</theoretical-pi>
+                    <molecular-weight>70036.295</molecular-weight>
+                    <chromosome-location>11</chromosome-location>
+                    <organism ncbi-taxonomy-id="9606">Humans</organism>
+                </polypeptide>
+            </target>
+        </targets>
+        <enzymes/>
+        <carriers/>
+        <transporters/>
+    </drug>
+    <drug type="biotech" created="2005-06-13" updated="2020-07-01">
+        <drugbank-id primary="true">DB00002</drugbank-id>
+        <drugbank-id>BTD00071</drugbank-id>
+        <drugbank-id>BIOD00071</drugbank-id>
+        <name>Cetuximab</name>
+        <description>Cetuximab is an epidermal growth factor receptor binding FAB. Cetuximab is composed of the Fv (variable; antigen-binding) regions of the 225 murine EGFr monoclonal antibody specific for the N-terminal portion of human EGFr with human IgG1 heavy and kappa light chain constant (framework) regions. Cetuximab is marketed under the brand Erbitux® by Eli Lilly and Company. In the United States, a regimen of cetuximab costs approximately $30,790 for an eight-week course.</description>
+        <cas-number>205923-56-4</cas-number>
+        <unii>PQX0D8J21J</unii>
+        <state>liquid</state>
+        <groups>
+            <group>approved</group>
+        </groups>
+        <indication>Cetuximab, used in combination with irinotecan, is indicated for the treatment of EGFR-expressing, metastatic colorectal carcinoma in patients who are refractory to irinotecan-based chemotherapy. Cetuximab administered as a single agent is indicated for the treatment of EGFR-expressing, metastatic colorectal carcinoma in patients who are intolerant to irinotecan-based chemotherapy.</indication>
+        <pharmacodynamics>Used in the treatment of colorectal cancer, cetuximab binds specifically to the epidermal growth factor receptor (EGFr, HER1, c-ErbB-1) on both normal and tumor cells. EGFr is over-expressed in many colorectal cancers. Cetuximab competitively inhibits the binding of epidermal growth factor (EGF) and other ligands, such as transforming growth factor–alpha. Binding of cetuximab to the EGFr blocks phosphorylation and activation of receptor-associated kinases, resulting in inhibition of cell growth, induction of apoptosis, decreased matrix metalloproteinase secretion and reduced vascular endothelial growth factor production.</pharmacodynamics>
+        <mechanism-of-action>Cetuximab binds to the epidermal growth factor receptor (EGFr) on both normal and tumor cells. EGFr is over-expressed in many colorectal cancers. Cetuximab competitively inhibits the binding of epidermal growth factor (EGF) and TGF alpha, thereby reducing their effects on cell growth and metastatic spread.</mechanism-of-action>
+        <toxicity>Pulmonary Toxicity&#13;
+            &#13;
+            Interstitial lung disease (ILD) was reported in 3 of 633 (&lt;0.5%) patients with advanced colorectal cancer receiving cetuximab. Interstitial pneumonitis with non-cardiogenic pulmonary edema resulting in death was reported in one case. Two patients had pre-existing fibrotic lung disease and experienced an acute exacerbation of their disease while receiving cetuximab in combination with irinotecan. In the clinical investigational program, an additional case of interstitial pneumonitis was reported in a patient with head and neck cancer treated with cetuximab and cisplatin. The onset of symptoms occurred between the fourth and eleventh doses of treatment in all reported cases.</toxicity>
+        <metabolism/>
+        <absorption/>
+        <pathways>
+            <pathway>
+                <smpdb-id>SMP0000474</smpdb-id>
+                <name>Cetuximab Action Pathway</name>
+                <category>drug_action</category>
+                <drugs>
+                    <drug>
+                        <drugbank-id>DB00002</drugbank-id>
+                        <name>Cetuximab</name>
+                    </drug>
+                </drugs>
+                <enzymes>
+                    <uniprot-id>P00533</uniprot-id>
+                </enzymes>
+            </pathway>
+        </pathways>
+        <reactions/>
+        <snp-adverse-drug-reactions/>
+        <targets>
+            <target position="1">
+                <id>BE0000767</id>
+                <name>Epidermal growth factor receptor</name>
+                <organism>Humans</organism>
+                <actions>
+                    <action>antagonist</action>
+                </actions>
+                <known-action>yes</known-action>
+                <polypeptide id="P00533" source="Swiss-Prot">
+                    <name>Epidermal growth factor receptor</name>
+                    <general-function>Ubiquitin protein ligase binding</general-function>
+                    <specific-function>Receptor tyrosine kinase binding ligands of the EGF family and activating several signaling cascades to convert extracellular cues into appropriate cellular responses. Known ligands include EGF, TGFA/TGF-alpha, amphiregulin, epigen/EPGN, BTC/betacellulin, epiregulin/EREG and HBEGF/heparin-binding EGF. Ligand binding triggers receptor homo- and/or heterodimerization and autophosphorylation on key cytoplasmic residues. The phosphorylated receptor recruits adapter proteins like GRB2 which in turn activates complex downstream signaling cascades. Activates at least 4 major downstream signaling cascades including the RAS-RAF-MEK-ERK, PI3 kinase-AKT, PLCgamma-PKC and STATs modules. May also activate the NF-kappa-B signaling cascade. Also directly phosphorylates other proteins like RGS16, activating its GTPase activity and probably coupling the EGF receptor signaling to the G protein-coupled receptor signaling. Also phosphorylates MUC1 and increases its interaction with SRC and CTNNB1/beta-catenin.Isoform 2 may act as an antagonist of EGF action.</specific-function>
+                    <gene-name>EGFR</gene-name>
+                    <locus>7p12</locus>
+                    <cellular-location>Cell membrane</cellular-location>
+                    <organism ncbi-taxonomy-id="9606">Humans</organism>
+                </polypeptide>
+            </target>
+            <target position="2">
+                <id>BE0000901</id>
+                <name>Low affinity immunoglobulin gamma Fc region receptor III-B</name>
+                <organism>Humans</organism>
+                <actions/>
+                <known-action>unknown</known-action>
+                <polypeptide id="O75015" source="Swiss-Prot">
+                    <name>Low affinity immunoglobulin gamma Fc region receptor III-B</name>
+                    <general-function/>
+                    <specific-function>Receptor for the Fc region of immunoglobulins gamma. Low affinity receptor. Binds complexed or aggregated IgG and also monomeric IgG. Contrary to III-A, is not capable to mediate antibody-dependent cytotoxicity and phagocytosis. May serve as a trap for immune complexes in the peripheral circulation which does not activate neutrophils.</specific-function>
+                    <gene-name>FCGR3B</gene-name>
+                    <locus>1q23</locus>
+                    <cellular-location>Cell membrane</cellular-location>
+                    <transmembrane-regions/>
+                    <signal-regions>1-16</signal-regions>
+                    <theoretical-pi>6.71</theoretical-pi>
+                    <molecular-weight>26215.64</molecular-weight>
+                    <chromosome-location>1</chromosome-location>
+                    <organism ncbi-taxonomy-id="9606">Humans</organism>
+                </polypeptide>
+            </target>
+            <target position="5">
+                <id>BE0002096</id>
+                <name>Complement C1q subcomponent subunit C</name>
+                <organism>Humans</organism>
+                <actions/>
+                <known-action>unknown</known-action>
+                <polypeptide id="P02747" source="Swiss-Prot">
+                    <name>Complement C1q subcomponent subunit C</name>
+                    <general-function/>
+                    <specific-function>C1q associates with the proenzymes C1r and C1s to yield C1, the first component of the serum complement system. The collagen-like regions of C1q interact with the Ca(2+)-dependent C1r(2)C1s(2) proenzyme complex, and efficient activation of C1 takes place on interaction of the globular heads of C1q with the Fc regions of IgG or IgM antibody present in immune complexes.</specific-function>
+                    <gene-name>C1QC</gene-name>
+                    <organism ncbi-taxonomy-id="9606">Humans</organism>
+                </polypeptide>
+            </target>
+            <target position="7">
+                <id>BE0000710</id>
+                <name>High affinity immunoglobulin gamma Fc receptor I</name>
+                <organism>Humans</organism>
+                <actions/>
+                <known-action>unknown</known-action>
+                <polypeptide id="P12314" source="Swiss-Prot">
+                    <name>High affinity immunoglobulin gamma Fc receptor I</name>
+                    <general-function>Receptor signaling protein activity</general-function>
+                    <specific-function>High affinity receptor for the Fc region of immunoglobulins gamma. Functions in both innate and adaptive immune responses.</specific-function>
+                    <gene-name>FCGR1A</gene-name>
+                    <locus>1q21.2-q21.3</locus>
+                    <cellular-location>Cell membrane</cellular-location>
+                    <transmembrane-regions>293-313</transmembrane-regions>
+                    <signal-regions>1-15</signal-regions>
+                    <theoretical-pi>8.08</theoretical-pi>
+                    <molecular-weight>42631.525</molecular-weight>
+                    <chromosome-location>1</chromosome-location>
+                    <organism ncbi-taxonomy-id="9606">Humans</organism>
+                </polypeptide>
+            </target>
+            <target position="8">
+                <id>BE0002098</id>
+                <name>Low affinity immunoglobulin gamma Fc region receptor II-a</name>
+                <organism>Humans</organism>
+                <actions/>
+                <known-action>unknown</known-action>
+                <polypeptide id="P12318" source="Swiss-Prot">
+                    <name>Low affinity immunoglobulin gamma Fc region receptor II-a</name>
+                    <general-function/>
+                    <specific-function>Binds to the Fc region of immunoglobulins gamma. Low affinity receptor. By binding to IgG it initiates cellular responses against pathogens and soluble antigens. Promotes phagocytosis of opsonized antigens.</specific-function>
+                    <gene-name>FCGR2A</gene-name>
+                    <locus>1q23</locus>
+                    <cellular-location>Cell membrane</cellular-location>
+                    <transmembrane-regions>218-240</transmembrane-regions>
+                    <signal-regions>1-33</signal-regions>
+                    <theoretical-pi>6.78</theoretical-pi>
+                    <molecular-weight>35000.42</molecular-weight>
+                    <chromosome-location>1</chromosome-location>
+                    <organism ncbi-taxonomy-id="9606">Humans</organism>
+                </polypeptide>
+            </target>
+        </targets>
+        <enzymes/>
+        <carriers/>
+        <transporters/>
+    </drug>
+    <drug type="biotech" created="2005-06-13" updated="2020-07-01">
+        <drugbank-id primary="true">DB00003</drugbank-id>
+        <drugbank-id>BTD00001</drugbank-id>
+        <drugbank-id>BIOD00001</drugbank-id>
+        <name>Dornase alfa</name>
+        <description>Dornase alfa is a biosynthetic form of human deoxyribunuclease I (DNase I) enzyme. It is produced in genetically modified Chinese hamster ovary (CHO) cells using recombinant DNA technology. The 260-amino acid sequence of dornase alfa is identical to the endogenous human enzyme. Dornase alfa cleaves extracellular DNA to 5´-phosphodinucleotide and 5´-phosphooligonucleotide end products without affecting intracellular DNA. In individuals with cystic fibrosis, extracellular DNA, which is an extremely viscous anion, is released by degenerating leukocytes that accumulate during inflammatory responses to infections. Enzymatic breakdown of this extracellular DNA appears to reduce sputum viscosity and viscoelasticity.</description>
+        <cas-number>143831-71-4</cas-number>
+        <unii>953A26OA1Y</unii>
+        <state>liquid</state>
+        <groups>
+            <group>approved</group>
+        </groups>
+        <synthesis-reference/>
+        <indication>Used as adjunct therapy in the treatment of cystic fibrosis. </indication>
+        <pharmacodynamics>Cystic fibrosis (CF) is a disease characterized by the retention of viscous purulent secretions in the airways. These thick secretions contribute both to reduced pulmonary function and to frequent pulmonary infection. Purulent pulmonary secretions of individuals with cystic fibrosis contain very high concentrations of extracellular DNA released by degenerating leukocytes that accumulate in response to these infections. Dornase alfa hydrolyzes the DNA in sputum of CF patients and reduces sputum viscosity and viscoelasticity. The enzyme does not appear to affect sputum in the absence of an inflammatory response to infection, nor does it affect the sputum of healthy individuals. </pharmacodynamics>
+        <mechanism-of-action>Dornase alfa is a biosynthetic form of human DNase I. The enzyme is involved in endonucleolytic cleavage of extracellular DNA to 5´-phosphodinucleotide and 5´-phosphooligonucleotide end products. It has no effect on intracellular DNA. Optimal activity is dependent on the presence of divalent cations such as calcium and magnesium. Extracellular DNA is a viscous anionic polymer and its breakdown appears to improve the viscosity and viscoelasticity of purulent sputum of individuals with CF, thus reducing airflow obstruction. Dornase alfa does not seem to have any effect on non-purulent sputum.</mechanism-of-action>
+        <toxicity>Adverse reactions occur at a frequency of &lt; 1/1000 and are usually mild and transient in nature. Reported adverse effects include chest pain (pleuritic/non-cardiac), fever, dyspepsia, voice alteration (hoarseness), pharyngitis, dyspnea, laryngitis, rhinitis, decreased lung function, rash, urticaria, and conjunctivitis. There is no evidence of carcinogenic or mutagenic properties. The safety of dornase alfa has not been studied in pregnant women, nursing women and children under the age of 5 years old. </toxicity>
+        <metabolism>While no conclusive studies have yet been published, dornase alfa is expected to be metabolized by proteases in biofluids. </metabolism>
+        <absorption>Studies in rats and monkeys after inhalation of dornase alfa shows very little systemic absorption (less than 15% for rats and less than 2% for monkeys). The results were also witnessed in patients. Dornase alfa is also associated with very low accumulation with no serum concentration greater than 10ng/mL observed no matter the dose administered. Bioavailability: mean sputum concentrations of dornase alfa can be measured after 15 minutes. Onset is achieved within 3 to 7 days. Peak concentrations are achieved after 9 days.</absorption>
+        <half-life/>
+        <protein-binding/>
+        <route-of-elimination/>
+        <volume-of-distribution>In studies in rats and monkeys, the initial volume of distribution is similar to the serum volume. Concentrations in sputum decline rapidly after inhalation.</volume-of-distribution>
+        <clearance>Studies in rats indicate that, following aerosol administration, the disappearance half-life of dornase alfa from the lungs is 11 hours. In humans, sputum DNase levels declined below half of those detected immediately post-administration within 2 hours but effects on sputum rheology persisted beyond 12 hours.</clearance>
+        <pathways/>
+        <reactions/>
+        <snp-effects/>
+        <snp-adverse-drug-reactions/>
+        <targets>
+            <target>
+                <id>BE0004796</id>
+                <name>DNA</name>
+                <organism>Humans</organism>
+                <actions/>
+                <known-action>yes</known-action>
+            </target>
+        </targets>
+        <enzymes/>
+        <carriers/>
+        <transporters/>
+    </drug>
+    <drug type="biotech" created="2005-06-13" updated="2020-07-01">
+      <drugbank-id primary="true">DB00005</drugbank-id>
+      <drugbank-id>BTD00052</drugbank-id>
+      <drugbank-id>BIOD00052</drugbank-id>
+      <name>Etanercept</name>
+      <description>Dimeric fusion protein consisting of the extracellular ligand-binding portion of the human 75 kilodalton (p75) tumor necrosis factor receptor (TNFR) linked to the Fc portion of human IgG1. The Fc component of etanercept contains the CH2 domain, the CH3 domain and hinge region, but not the CH1 domain of IgG1. Etanercept is produced by recombinant DNA technology in a Chinese hamster ovary (CHO) mammalian cell expression system. It consists of 934 amino acids.</description>
+      <cas-number>185243-69-0</cas-number>
+      <unii>OP401G7OJC</unii>
+      <state>liquid</state>
+      <groups>
+        <group>approved</group>
+        <group>investigational</group>
+      </groups>
+      <indication>Etanercept is indicated for the treatment of moderately to severely active rheumatoid arthritis in adults and chronic moderate to severe plaque psoriasis in adults. It is also used to manage signs and symptoms of polyarticular idiopathic arthritis in those aged 4 to 17 after insufficient response to one or more disease-modifying anti-rheumatic drugs. Etanercept is also used to improve psoriatic arthritis and ankylosing spondylitis. </indication>
+      <pharmacodynamics>Etanercept binds specifically to tumor necrosis factor (TNF) and thereby modulates biological processes that are induced or regulated by TNF. Such processes or molecules affected include the level of adhesion molecules expressed, as well as serum levels of cytokines and matrix metalloproteinase-3, also known as stromelysin. In animal models, etanarcept has been demonstrated to affect inflammation, such as in murine collagen-induced arthritis.</pharmacodynamics>
+      <mechanism-of-action>There are two distinct receptors for TNF (TNFRs), a 55 kilodalton protein (p55) and a 75 kilodalton protein (p75). The biological activity of TNF is dependent upon binding to either cell surface receptor (p75 or p55). Etanercept is a dimeric soluble form of the p75 TNF receptor that can bind to two TNF molecules, thereby effectively removing them from circulation.&#13;
+    &#13;
+    TNF is a naturally occurring cytokine that is involved in normal inflammatory and immune responses. Increased levels of TNF are found in tissues and fluids of those with rheumatoid arthritis, psoriatic arthritis, ankylosing spondylitis (AS), and plaque psoriasis. </mechanism-of-action>
+      <toxicity/>
+      <metabolism/>
+      <absorption>Bioavailability following sub-Q administration is approximately 60%. Peak plasma concentrations achieved within 69 hours. </absorption>
+      <half-life>102 +/- 30 hrs in individuals with rheumatoid arthritis and 68 hours in healthy adults.</half-life>
+      <protein-binding/>
+      <route-of-elimination/>
+      <volume-of-distribution/>
+      <affected-organisms>
+        <affected-organism>Humans and other mammals</affected-organism>
+      </affected-organisms>
+      <pathways/>
+      <reactions/>
+      <snp-effects/>
+      <snp-adverse-drug-reactions/>
+      <targets>
+        <target position="9">
+          <id>BE0009995</id>
+          <name>Complement component 1q (C1q)</name>
+          <organism>Humans</organism>
+          <actions>
+            <action>ligand</action>
+          </actions>
+          <known-action>unknown</known-action>
+          <polypeptide id="P02745" source="Swiss-Prot">
+            <name>Complement C1q subcomponent subunit A</name>
+            <general-function/>
+            <specific-function>C1q associates with the proenzymes C1r and C1s to yield C1, the first component of the serum complement system. The collagen-like regions of C1q interact with the Ca(2+)-dependent C1r(2)C1s(2) proenzyme complex, and efficient activation of C1 takes place on interaction of the globular heads of C1q with the Fc regions of IgG or IgM antibody present in immune complexes.</specific-function>
+            <gene-name>C1QA</gene-name>
+            <locus>1p36.12</locus>
+            <cellular-location>Secreted</cellular-location>
+            <transmembrane-regions/>
+            <signal-regions>1-22</signal-regions>
+            <theoretical-pi>9.45</theoretical-pi>
+            <molecular-weight>26016.47</molecular-weight>
+            <chromosome-location>1</chromosome-location>
+            <organism ncbi-taxonomy-id="9606">Humans</organism>
+          </polypeptide>
+          <polypeptide id="P02746" source="Swiss-Prot">
+            <name>Complement C1q subcomponent subunit B</name>
+            <general-function/>
+            <specific-function>C1q associates with the proenzymes C1r and C1s to yield C1, the first component of the serum complement system. The collagen-like regions of C1q interact with the Ca(2+)-dependent C1r(2)C1s(2) proenzyme complex, and efficient activation of C1 takes place on interaction of the globular heads of C1q with the Fc regions of IgG or IgM antibody present in immune complexes.</specific-function>
+            <gene-name>C1QB</gene-name>
+            <locus>1p36.12</locus>
+            <cellular-location>Secreted</cellular-location>
+            <transmembrane-regions/>
+            <signal-regions>1-27</signal-regions>
+            <theoretical-pi>8.87</theoretical-pi>
+            <molecular-weight>26721.62</molecular-weight>
+            <chromosome-location>1</chromosome-location>
+            <organism ncbi-taxonomy-id="9606">Humans</organism>
+          </polypeptide>
+          <polypeptide id="P02747" source="Swiss-Prot">
+            <name>Complement C1q subcomponent subunit C</name>
+            <general-function/>
+            <specific-function>C1q associates with the proenzymes C1r and C1s to yield C1, the first component of the serum complement system. The collagen-like regions of C1q interact with the Ca(2+)-dependent C1r(2)C1s(2) proenzyme complex, and efficient activation of C1 takes place on interaction of the globular heads of C1q with the Fc regions of IgG or IgM antibody present in immune complexes.</specific-function>
+            <gene-name>C1QC</gene-name>
+            <locus>1p36.11</locus>
+            <cellular-location>Secreted</cellular-location>
+            <transmembrane-regions/>
+            <signal-regions>1-28</signal-regions>
+            <theoretical-pi>8.58</theoretical-pi>
+            <molecular-weight>25773.56</molecular-weight>
+            <chromosome-location>1</chromosome-location>
+            <organism ncbi-taxonomy-id="9606">Humans</organism>
+          </polypeptide>
+        </target>
+      </targets>
+      <enzymes/>
+      <carriers/>
+      <transporters/>
+    </drug>
+</drugbank>

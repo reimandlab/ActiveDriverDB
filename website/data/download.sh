@@ -89,7 +89,10 @@ wget http://download.baderlab.org/EM_Genesets/current_release/Human/symbol/DrugT
 echo 'Gene sets from MSigDB need to be downloaded directly from: software.broadinstitute.org/gsea/msigdb/'
 cd ..
 
-echo 'Please download DrugBank manually'
+echo 'Downloading DrugBank:'
+read -s -p "Enter DrugBank account e-mail: " drugbank_email
+read -s -p "Enter DrugBank account password: " drugbank_password
+curl -Lfv -o drugbank_all_full_database.xml.zip -u "$drugbank_email:$drugbank_password" https://go.drugbank.com/releases/5-1-7/downloads/all-full-database
 !unzip drugbank_all_full_database.xml.zip
 
 #  All below are dropbox-dependent ===

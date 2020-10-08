@@ -40,5 +40,5 @@ class Model(db.Model):
             return f'<{self.__class__.__name__}: {description}>'
 
         except Exception as e:
-            warn(f'Could not generate repr for: {self} ({e}')
+            warn(f'Could not generate repr for: {self.__tablename__} ({e}')
             return super().__repr__()
