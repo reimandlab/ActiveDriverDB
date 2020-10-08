@@ -138,7 +138,8 @@ class UniprotSequenceAccessionTrait:
 class UniprotImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, SiteImporter):
     """UniProt/SwissProt sites importer.
 
-    The data can be exported and downloaded using sparql: http://sparql.uniprot.org
+    The data can be exported and downloaded using sparql: http://sparql.uniprot.org,
+    but for convenience check the pre-baked URLS in `download.sh`
     Relevant terms definition are available at: http://www.uniprot.org/docs/ptmlist
 
     The sparql code is available in `uniprot.sparql` file.
