@@ -93,7 +93,7 @@ echo 'Downloading DrugBank:'
 read -s -p "Enter DrugBank account e-mail: " drugbank_email
 read -s -p "Enter DrugBank account password: " drugbank_password
 curl -Lfv -o drugbank_all_full_database.xml.zip -u "$drugbank_email:$drugbank_password" https://go.drugbank.com/releases/5-1-7/downloads/all-full-database
-!unzip drugbank_all_full_database.xml.zip
+unzip drugbank_all_full_database.xml.zip
 
 #  All below are dropbox-dependent ===
 wget https://www.dropbox.com/s/pjf7nheutez3w6r/curated_kinase_IDs.txt
