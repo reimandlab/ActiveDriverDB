@@ -25,7 +25,7 @@
     {{ dependency('nunjucks') }}
   {% else %}
     {{ dependency('nunjucks_slim') }}
-    <script type="text/javascript" src="/static/js_templates/precompiled/network.js"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js_templates/precompiled/network.js') }}"></script>
   {% endif %}
   #}
   {{ dependency('nunjucks') }}
@@ -303,7 +303,7 @@
 
 
     <script type="text/javascript">
-    nunjucks.configure('/static/js_templates', {autoescape: true});
+    nunjucks.configure("{{ url_for('static', filename='js_templates') }}", {autoescape: true, web: {useCache: true}});
     nunjucks.installJinjaCompat()
 
     affix($('#sticky_box'), $('footer'));
