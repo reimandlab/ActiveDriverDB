@@ -196,7 +196,9 @@ class UniprotImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, SiteImporter):
 
         sites = read_csv(path)
 
-        sites.position = to_numeric(sites.position.str.replace('\^.*', ''))
+        sites.columns = [column.strip() for column in sites.columns]
+
+        sites.position = to_numeric(sites.position.str.replace(r'\^.*', ''))
 
         extracted_data = self.extract_site_mod_type(sites)
 

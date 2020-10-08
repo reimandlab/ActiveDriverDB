@@ -82,7 +82,7 @@ class GlycosylationData(UniprotCaseData):
     alternative = ''
 
     sites = """\
-    primary_accession,sequence_accession,position,data,eco,source
+    primary_accession, sequence_accession, position, data, eco, source
     "P01889","P01889-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
     "P01891","P01891-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
     "Q2M3G0","Q2M3G0-4","1188"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",
