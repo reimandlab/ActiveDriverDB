@@ -5,7 +5,8 @@ from sqlalchemy.ext.declarative.base import declared_attr
 
 from database import db
 from database.types import ScalarSet
-from models import BioModel, make_association_table, Gene
+from .model import BioModel, make_association_table
+from .gene import Gene
 
 
 class DrugGroup(BioModel):

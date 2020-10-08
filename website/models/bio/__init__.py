@@ -4,3 +4,4 @@ from .protein import *
 from .gene import *
 from .enzymes import *
 from .sites import *
+from .drug import *
