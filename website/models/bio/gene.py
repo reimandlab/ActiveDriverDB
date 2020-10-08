@@ -110,6 +110,7 @@ class Gene(BioModel):
         post_update=True
     )
     preferred_refseq = association_proxy('preferred_isoform', 'refseq')
+    drugs = association_proxy('targeted_by', 'drug')
 
     @cached_property
     def alternative_isoforms(self):
