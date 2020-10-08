@@ -53,6 +53,7 @@ def create_network():
     target = DrugTarget()
     target.gene = known_interactor_of_x.protein.gene
     target.drug = drug
+    target.actions = {'antagonist', 'inhibitor'}
 
     group = KinaseGroup(
         name='Group of kinases',
@@ -130,11 +131,12 @@ class TestNetworkView(ViewTest):
         assert kinase['name'] == 'Kinase Y'
 
         # test kinase drugs
-        drugs = kinase['drugs_targeting_kinase_gene']
-        assert len(drugs) == 1
-        drug = drugs[0]
+        targets = kinase['drugs_targeting_kinase_gene']
+        assert len(targets) == 1
+        drug = targets[0]['drug']
         assert drug['name'] == 'Drug targeting Kinase Y'
         assert drug['drugbank'] == 'DB01'
+        assert set(targets[0]['interaction']['actions']) == {'antagonist', 'inhibitor'}
 
         # test sites
         assert len(representation['sites']) == 2

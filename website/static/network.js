@@ -915,14 +915,14 @@ var Network = function ()
         kinase_nodes.forEach(function(kinase) {
             var kinase_drugs = []
             kinase.drugs_targeting_kinase_gene.forEach(
-                function(drug_data)
+                function(target_data)
                 {
                     var drug_node = {
-                        name: drug_data.name,
+                        name: target_data['drug'].name,
                         r: config.radius,
                         type: types.drug,
                         group: kinase.group,
-                        data: drug_data
+                        data: target_data
                     }
                     addEdge(drug_node, kinase)
                     kinase_drugs.push(drug_node)

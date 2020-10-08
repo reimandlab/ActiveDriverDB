@@ -92,7 +92,7 @@ class NetworkRepresentation(ProteinRepresentation):
 
         protein_kinases_names = [kinase.name for kinase in kinases]
 
-        drugs_by_kinase = drugs_interacting_with_kinases(filter_manager, kinases)
+        targets_by_kinase = drugs_interacting_with_kinases(filter_manager, kinases)
 
         kinase_reprs = []
         for kinase, count in kinases_counts.items():
@@ -101,7 +101,13 @@ class NetworkRepresentation(ProteinRepresentation):
                 json_repr['protein']['mutations_count'] = count
 
             json_repr['drugs_targeting_kinase_gene'] = [
-                drug.to_json() for drug in drugs_by_kinase[kinase.protein.gene]
+                {
+                    'drug': target.drug.to_json(),
+                    'interaction': {
+                        'actions': list(target.actions)
+                    }
+                }
+                for target in targets_by_kinase[kinase.protein.gene]
             ]
             kinase_reprs.append(json_repr)
 
@@ -261,7 +267,7 @@ class NetworkRepresentation(ProteinRepresentation):
                     continue
                 impact = choose_impact(site_mutations, site, kinase_name, site_mimp_kinases)
                 drugs = kinase['drugs_targeting_kinase_gene']
-                drugs = ','.join([drug['name'] for drug in drugs]) or ''
+                drugs = ','.join([drug['drug']['name'] for drug in drugs]) or ''
                 row = protein_and_site + [impact, kinase_name, drugs]
                 content.append('\t'.join(row))
 

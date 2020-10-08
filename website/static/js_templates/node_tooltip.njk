@@ -26,18 +26,27 @@
 {% endif %}
 
 {% if node.type === types.drug %}
+  {% set drug = node.data.drug %}
+  {% set interaction = node.data.interaction %}
   <div class="badges">
-  {% for group in node.data.groups %}
+  {% for group in drug.groups %}
     <div class="badge {{ group }}">{{ group }}</div>
   {% endfor %}
   </div>
   <div>
-  {% if node.data.type %}
-  {{ node.data.type | title }}
+  {% if drug.type %}
+  {{ drug.type | title }}
+  {% endif %}
   </div>
+  {% if interaction.actions %}
+    <div>
+    {% for action in interaction.actions %}
+      {{ action | title }}
+    {% endfor %}
+    </div>
   {% endif %}
   <p>
-    See more in DrugBank: <a href="https://www.drugbank.ca/drugs/{{ node.data.drugbank }}">{{ node.data.drugbank }}</a>
+    See more in DrugBank: <a href="https://www.drugbank.ca/drugs/{{ drug.drugbank }}">{{ drug.drugbank }}</a>
   </p>
 {% endif %}
 

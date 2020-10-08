@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Dict, Set
 
 from models import Gene
 from models.bio.drug import Drug, DrugTarget
@@ -22,7 +23,7 @@ def represent_mutation(mutation, data_filter, representation_type=dict):
     )
 
 
-def drugs_interacting_with_kinases(filter_manager, kinases):
+def drugs_interacting_with_kinases(filter_manager, kinases) -> Dict[Gene, Set[DrugTarget]]:
     from sqlalchemy import and_
 
     kinase_gene_ids = [kinase.protein.gene_id for kinase in kinases if kinase.protein]
@@ -34,8 +35,8 @@ def drugs_interacting_with_kinases(filter_manager, kinases):
         ),
         lambda query: query.join(DrugTarget)
     )
-    drugs_by_kinase = defaultdict(set)
+    targets_by_kinase = defaultdict(set)
     for drug in drugs:
-        for target_gene in drug.target_genes:
-            drugs_by_kinase[target_gene].add(drug)
-    return drugs_by_kinase
+        for target in drug.targets:
+            targets_by_kinase[target.gene].add(target)
+    return targets_by_kinase
