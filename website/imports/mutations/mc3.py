@@ -53,7 +53,7 @@ class MC3Importer(TCGAImporter):
             'Analyzing data to find hypermutated samples '
             '(samples with > 900 mutations - i.e. roughly 30 muts/megabase)'
         )
-        hypermutated = hypermutated_samples(path)
+        hypermutated = hypermutated_samples(path, sample_column=10)
         self.samples_to_skip = set(hypermutated.keys())
         hypermutated_count = len(self.samples_to_skip)
         print(f'{hypermutated_count} samples are hypermutated and will be skipped at import.')

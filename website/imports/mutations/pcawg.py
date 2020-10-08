@@ -13,8 +13,8 @@ class PCAWGImporter(TCGAImporter):
     header = None
 
     def decode_line(self, line):
-        patient_id = line[10]
-        cancer_name = line[11]
+        cancer_name = line[10]
+        patient_id = line[11]
         return cancer_name, patient_id
 
     def parse(self, path):
@@ -24,7 +24,7 @@ class PCAWGImporter(TCGAImporter):
             'Analyzing data to find hypermutated samples '
             '(samples with > 900 mutations - i.e. roughly 30 muts/megabase)'
         )
-        hypermutated = hypermutated_samples(path)
+        hypermutated = hypermutated_samples(path, sample_column=11)
         self.samples_to_skip = set(hypermutated.keys())
         hypermutated_count = len(self.samples_to_skip)
         print(f'{hypermutated_count} samples are hypermutated and will be skipped at import.')

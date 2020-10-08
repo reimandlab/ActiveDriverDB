@@ -7,7 +7,7 @@ from .stats import Statistics
 from .venn import VennDiagrams
 
 
-def hypermutated_samples(path, threshold=900):
+def hypermutated_samples(path, sample_column: int, threshold=900):
     from helpers.parsers import iterate_tsv_gz_file
 
     samples_cnt = Counter()
@@ -16,7 +16,7 @@ def hypermutated_samples(path, threshold=900):
 
     for line in iterate_tsv_gz_file(path):
         total += 1
-        muts[','.join([line[0], '%x' % int(line[1]), '%x' % int(line[2]), line[3], line[4]])].add(line[10])
+        muts[','.join([line[0], '%x' % int(line[1]), '%x' % int(line[2]), line[3], line[4]])].add(line[sample_column])
 
     for samples in muts.values():
         for sample in samples:
