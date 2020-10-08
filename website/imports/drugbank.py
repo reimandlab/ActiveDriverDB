@@ -108,6 +108,14 @@ def extract_targets(drugs: List[Dict]) -> List[Dict]:
     return targets
 
 
+def select_human_protein_or_gene_targets(targets: DataFrame):
+    is_target_in_human = (targets.organism == 'Humans')
+    is_target_protein_or_gene = (~targets.protein_id.isna() | ~targets.gene_name.isna())
+
+    filtered_targets = targets[is_target_in_human & is_target_protein_or_gene].copy()
+    return filtered_targets
+
+
 def replace_missing(x, replacement_factory):
     return replacement_factory() if x != x else x
 
@@ -116,10 +124,8 @@ def prepare_targets(path: str) -> DataFrame:
     drugs = extract_drugs(path)
     targets = DataFrame(extract_targets(drugs))
 
-    is_target_in_human = (targets.organism == 'Humans')
-    is_target_protein_or_gene = (~targets.protein_id.isna() | ~targets.gene_name.isna())
+    filtered_targets = select_human_protein_or_gene_targets(targets)
 
-    filtered_targets = targets[is_target_in_human & is_target_protein_or_gene].copy()
     assert set(filtered_targets['protein_id_source']) - {'Swiss-Prot', 'TrEMBL'} == set()
 
     for column in ['drug_groups', 'actions']:
