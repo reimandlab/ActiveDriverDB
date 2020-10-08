@@ -57,6 +57,11 @@ class DrugType(BioModel):
 
 
 class Drug(BioModel):
+    """
+    In case of strange collation encoding errors (due to utf characters in names),
+    checkout: https://stackoverflow.com/a/1008336/
+    """
+
     name = db.Column(db.String(128))
     drug_bank_id = db.Column(db.String(32))
     description = db.Column(db.Text)
