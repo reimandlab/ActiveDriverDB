@@ -63,7 +63,8 @@ class Drug(BioModel):
     checkout: https://stackoverflow.com/a/1008336/
     """
 
-    name = db.Column(db.String(128))
+    # as of October 2020 the longest name had 217 characters
+    name = db.Column(db.String(255))
     drug_bank_id = db.Column(db.String(32))
     description = db.Column(db.Text)
 
