@@ -33,16 +33,21 @@ def extract_drugs(path: str):
             if tag == 'target':
                 append_or_create(drug, 'targets', {})
 
+            if parent == 'target':
+                if tag == 'polypeptide':
+                    append_or_create(target, 'polypeptides', {})
+
+        if event == 'end':
+
+            if parent == tag:
+                parents.pop()
+                parent = parents[-1]
+                grandparent = parents[-2]
+
             if tag == 'drug' and parent == 'drugbank':
                 drug['type'] = elem.get('type')
                 drug['created'] = elem.get('created')
                 drug['updated'] = elem.get('updated')
-
-            if grandparent == 'drugbank' and parent == 'drug':
-                if tag == 'drugbank-id' and elem.get('primary', 'false') == 'true':
-                    drug['id'] = elem.text
-                if tag == 'name':
-                    drug['name'] = elem.text
 
             if tag == 'group':
                 append_or_create(drug, 'groups', elem.text)
@@ -64,28 +69,26 @@ def extract_drugs(path: str):
                 if tag == 'organism':
                     target['organism'] = elem.text
                 if tag == 'polypeptide':
-                    append_or_create(
-                        target,
-                        'polypeptides',
-                        {
-                            'protein_id': elem.get('id'),
-                            'protein_id_source': elem.get('source')
-                        }
-                    )
+                    target['polypeptides'][-1]['protein_id'] = elem.get('id')
+                    target['polypeptides'][-1]['protein_id_source'] = elem.get('source')
                 if tag == 'name':
                     target['target_name'] = elem.text
 
-        if event == 'end':
-
-            if parent == tag:
-                parents.pop()
-                parent = parents[-1]
+            if grandparent == 'drugbank' and parent == 'drug':
+                if tag == 'drugbank-id' and elem.get('primary', 'false') == 'true':
+                    drug['id'] = elem.text
+                if tag == 'name':
+                    if not elem.text:
+                        raise ValueError(f'Name missing for {drug}; {elem.keys()} {elem.items()}')
+                    drug['name'] = elem.text
 
             if tag == 'drug' and parent == 'drugbank':
+                if not drug['name']:
+                    raise ValueError(f'No drug name for {drug}')
                 drugs.append(drug)
                 drug = {}
 
-        elem.clear()
+            elem.clear()
     return drugs
 
 

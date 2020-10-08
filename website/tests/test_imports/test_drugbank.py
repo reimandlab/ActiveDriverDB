@@ -63,3 +63,7 @@ class TestImport(DatabaseTest):
         etanercep = drugs_by_name['Etanercept']
         assert etanercep.target_genes == [c10qa, c10qb, c10qc]
 
+    def test_drugs_parse(self):
+        from imports.drugbank import extract_drugs
+        drugs = extract_drugs(DRUG_BANK_SUBSET_PATH)
+        assert len(drugs) == 4
