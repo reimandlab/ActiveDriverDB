@@ -52,7 +52,7 @@ def get_column_names(table):
 
 
 def basic_auto_migrate_relational_db(app, bind):
-    """Inspired with http://stackoverflow.com/questions/2103274/"""
+    """Inspired by http://stackoverflow.com/questions/2103274/"""
 
     from sqlalchemy import Table
     from sqlalchemy import MetaData
