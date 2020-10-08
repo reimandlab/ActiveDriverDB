@@ -84,6 +84,9 @@ class Drug(BioModel):
             'drugbank': self.drug_bank_id
         }
 
+    def __repr__(self):
+        return f'<Drug {self.drug_bank_id}: {self.name}>'
+
 
 class DrugTarget(BioModel):
     """Gene/protein target of a drug.
