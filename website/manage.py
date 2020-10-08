@@ -276,7 +276,6 @@ def disabled_constraints(bind: str, allow_failures=True, app=None):
         app = create_app(config_override=CONFIG)
     with app.app_context():
         engine = get_engine(bind, app)
-        print(engine)
         print('Disabling FOREIGN KEY and UNIQUE constraints...')
         disabled = set_foreign_key_checks(engine, active=False)
         assert allow_failures or disabled

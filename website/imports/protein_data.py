@@ -1338,9 +1338,9 @@ def drugbank(path='data/full database.xml'):
     print('Preparing database objects...')
     drugs = set()
 
-    unqiue_gene_targets = drug_targets.drop_duplicates(subset=['drug_name', 'gene_name'])
+    unique_gene_targets = drug_targets.drop_duplicates(subset=['drug_name', 'gene_name'])
 
-    for _, record in unqiue_gene_targets.iterrows():
+    for _, record in tqdm(unique_gene_targets.iterrows(), total=unique_gene_targets):
         # drug_id, gene_name, drug_name, drug_groups, drug_type_name = data
         target_gene = Gene.query.filter_by(name=record.gene_name).first()
 
