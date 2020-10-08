@@ -186,7 +186,7 @@ class TestImport(DatabaseTest):
         from stats import hypermutated_samples
         muts_filename = make_named_gz_file(with_hypermutated_samples)
 
-        samples = hypermutated_samples(muts_filename, threshold=2)
+        samples = hypermutated_samples(muts_filename, sample_column=10, threshold=2)
         # there should be one hypermutated sample
         assert len(samples) == 1
 
