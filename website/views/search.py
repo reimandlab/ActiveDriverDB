@@ -503,9 +503,8 @@ def suggest_matching_cancers(query, count=2):
                 'GeneView:list',
                 list_name=tcga_list.name,
                 filters=(
-                    'Mutation.sources:in:%s' % tcga_list.mutation_source_name
-                    +
-                    ';Mutation.mc3_cancer_code:in:%s' % cancer.code
+                    f'Mutation.sources:in:{tcga_list.mutation_source_name}'
+                    f';Mutation.mc3_cancer_code:in:{cancer.code}'
                 )
             )
         }
@@ -531,12 +530,11 @@ def suggest_matching_diseases(q, count=3):
                 Disease.name,
                 potential_disease
             )
-         ).first()
+        ).first()
         if disease:
             return json_message(
-                'Do you wish to search for <i>%s</i> mutations? '
+                f'Do you wish to search for <i>{disease.name}</i> mutations? '
                 'Please specify gene, using: <code>{disease} in {gene}</code> schema'
-                % disease.name
             )
 
     if q.endswith(' in'):
@@ -595,9 +593,8 @@ def suggest_matching_diseases(q, count=3):
                         'SequenceView:show',
                         refseq=refseq,
                         filters=(
-                            'Mutation.sources:in:%s' % InheritedMutation.name
-                            +
-                            ';Mutation.disease_name:in:%s' % quote_if_needed(disease)
+                            f'Mutation.sources:in:{InheritedMutation.name}'
+                            f';Mutation.disease_name:in:{quote_if_needed(disease)}'
                         )
                     )
                 }
@@ -620,9 +617,8 @@ def suggest_matching_diseases(q, count=3):
                 'GeneView:list',
                 list_name=clinvar_list.name,
                 filters=(
-                    'Mutation.sources:in:%s' % clinvar_list.mutation_source_name
-                    +
-                    ';Mutation.disease_name:in:%s' % quote_if_needed(disease.name)
+                    f'Mutation.sources:in:{clinvar_list.mutation_source_name}'
+                    f';Mutation.disease_name:in:{quote_if_needed(disease.name)}'
                 )
             )
         }
@@ -676,7 +672,7 @@ def suggest_matching_pathways(query, count=2):
     if len(pathways) > count:
         items.append(
             {
-                'name': 'Show all pathways matching <i>%s</i>' % query,
+                'name': f'Show all pathways matching <i>{query}</i>',
                 'type': 'see_more',
                 'url': url_for('PathwaysView:all', query=query)
             }
@@ -717,8 +713,8 @@ def match_aa_mutation(gene, mut, query):
         # return json_message('No isoforms for %s found' % gene)
         return []
 
-    all_parts = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)(?P<alt>\D)', mut)
-    ref_and_pos = re.fullmatch('(?P<ref>\D)(?P<pos>(\d)+)', mut)
+    all_parts = re.fullmatch(r'(?P<ref>\D)(?P<pos>(\d)+)(?P<alt>\D)', mut)
+    ref_and_pos = re.fullmatch(r'(?P<ref>\D)(?P<pos>(\d)+)', mut)
 
     if all_parts:
         mut_data = all_parts.groupdict()
@@ -749,16 +745,15 @@ def match_aa_mutation(gene, mut, query):
 
         if not valid:
             return json_message(
-                'Given reference residue <code>%s</code> does not match any of %s isoforms of %s gene at position <code>%s</code>'
-                %
-                (ref, len(gene_obj.isoforms), gene, pos)
+                f'Given reference residue <code>{ref}</code> does not match any of'
+                f' {len(gene_obj.isoforms)} isoforms of {gene} gene at position <code>{pos}</code>'
             )
 
     if ref_and_pos:
         # if ref is correct and ask user to specify alt
         return json_message('Awaiting for <code>{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
 
-    only_ref = re.fullmatch('(?P<ref>\D)', mut)
+    only_ref = re.fullmatch(r'(?P<ref>\D)', mut)
     if only_ref:
         # prompt user to write more
         return json_message('Awaiting for <code>{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
