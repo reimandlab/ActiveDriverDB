@@ -609,21 +609,25 @@ def suggest_matching_diseases(q, count=3):
 
     clinvar_list = GeneList.query.filter_by(mutation_source_name=InheritedMutation.name).first()
 
-    items += [
-        {
-            'name': disease.name,
-            'type': 'disease',
-            'url': url_for(
-                'GeneView:list',
-                list_name=clinvar_list.name,
-                filters=(
-                    f'Mutation.sources:in:{clinvar_list.mutation_source_name}'
-                    f';Mutation.disease_name:in:{quote_if_needed(disease.name)}'
+    if not clinvar_list:
+        print('ClinVar gene list not present cannot suggest diseases just yet')
+
+    if clinvar_list:
+        items += [
+            {
+                'name': disease.name,
+                'type': 'disease',
+                'url': url_for(
+                    'GeneView:list',
+                    list_name=clinvar_list.name,
+                    filters=(
+                        f'Mutation.sources:in:{clinvar_list.mutation_source_name}'
+                        f';Mutation.disease_name:in:{quote_if_needed(disease.name)}'
+                    )
                 )
-            )
-        }
-        for disease in diseases
-    ]
+            }
+            for disease in diseases
+        ]
 
     return items
 
