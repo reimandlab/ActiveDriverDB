@@ -417,7 +417,7 @@ class ChunkedMutationImporter(MutationImporter):
     def parse(self, path, chunk_start, chunk_size):
         return self.parse_chunk(path, chunk_start, chunk_size)
 
-    def _load(self, path, update, chunk=None):
+    def _load(self, path, update, chunk=None, **kwargs):
         total = self.count_lines(path)
         chunks = (
             list(range(0, total, self.chunk_size))
@@ -425,7 +425,7 @@ class ChunkedMutationImporter(MutationImporter):
             [None]
         )
         if chunk is not None:
-            print(f'Limitting imported chunks to {chunk+1}-th chunk out of {len(chunks)}')
+            print(f'Limiting imported chunks to {chunk+1}-th chunk out of {len(chunks)}')
             chunks = [chunks[chunk]]
         for chunk_start in chunks:
             print(f'Importing chunk from {chunk_start/total*100:.2f} to {(chunk_start + self.chunk_size)/total*100:.2f}:')
