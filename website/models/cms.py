@@ -4,6 +4,7 @@ from contextlib import suppress
 from datetime import datetime
 from datetime import timedelta
 
+from flask import url_for
 from sqlalchemy import and_, not_
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
@@ -462,7 +463,10 @@ class PageMenuEntry(MenuEntry):
     )
 
     title = association_proxy('page', 'title')
-    url = association_proxy('page', 'url')
+
+    @property
+    def url(self):
+        return url_for('ContentManagementSystem:page', address=self.page.address)
 
     __mapper_args__ = {
         'polymorphic_identity': 'page_entry',
