@@ -283,6 +283,8 @@ class SiteImporter(BioImporter):
             return []
 
         sites = sites[columns]
+        assert not sites.duplicated().any()
+
         site_objects = []
         add_site = self.add_site
 

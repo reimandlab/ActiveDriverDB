@@ -122,6 +122,9 @@ class TestImport(DatabaseTest):
         db.session.add_all(sites)
         db.session.commit()
 
+        associations = RegulatorySiteAssociation.query.all()
+        assert len(associations) == 4
+
         sites = Site.query.all()
 
         sites_by_protein = defaultdict(list)
@@ -142,7 +145,7 @@ class TestImport(DatabaseTest):
         assert site.residue == 'S'
         assert site.types_names == {'phosphorylation (SARS-CoV-2)'}
 
-        assert len(site.associations) == 2
+        assert len(site.associations) == 1
         association: RegulatorySiteAssociation = next(iter(site.associations))
         assert association.event.name == 'SARS-CoV-2 infection'
 

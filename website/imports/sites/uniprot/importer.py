@@ -132,6 +132,8 @@ class UniprotSequenceAccessionTrait:
         canonical_mapping.rename(columns={'uniprot': 'sequence_accession'}, inplace=True)
         canonical_mapping.drop(columns=['refseq'], inplace=True)
 
+        canonical_mapping = canonical_mapping.drop_duplicates()
+
         return sites.merge(canonical_mapping, on='protein_accession')
 
 
