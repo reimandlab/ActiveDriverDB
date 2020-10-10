@@ -274,3 +274,58 @@ class TestImport(DatabaseTest):
             mapped_sites = mapper.map_sites_by_sequence(sites)
 
         assert len(mapped_sites) == 1
+
+    def test_mapping_both_isoforms_annotated(self):
+        """
+        Usually the sites come annotated on only one isoform of the protein.
+        However, they can be annotated to two sequences; it often happens
+        even when the source database annotates the only once if it uses
+        UniProt sequence identifier; this is because a single UniProt sequence
+        can be mapped to multiple refseq sequences. Either way, we end up with
+        two sites annotated on identical sequences of two isoforms.
+
+        In the following step, the naive mapping algorithm would cross-map them,
+        which is a correct behaviour because they are indeed identical; however,
+        starting from single site, mapped to one UniProt sequence which maps onto
+        two RefSeq sequences we would then end up with four records (two pairs of
+        identical records). Therefore, a de-duplication needs to be carried out.
+        """
+
+        gene_a = Gene(name='A', isoforms=[
+            # the full isoform of gene A
+            Protein(refseq='NM_01', sequence='AAAAAAAAAXAA'),
+            # a trimmed isoform of gene A
+            Protein(refseq='NM_02', sequence='AAAXAA'),
+        ])
+        db.session.add(gene_a)
+        db.session.commit()
+
+        sites = DataFrame([
+            {
+                'name': 'first side',
+                'gene': 'A',
+                'refseq': 'NM_01',
+                'position': 10,
+                'sequence': 'AXA',
+                'residue': 'X',
+                'left_sequence_offset': 1
+            },
+            {
+                'name': 'second site',
+                'gene': 'A',
+                'refseq': 'NM_02',
+                'position': 4,
+                'sequence': 'AXA',
+                'residue': 'X',
+                'left_sequence_offset': 1
+            }
+        ]).set_index('name')
+
+        mapper = SiteMapper(
+            create_key_model_dict(Protein, 'refseq'),
+            lambda s: f'{s.position}{s.residue}'
+        )
+
+        result = mapper.map_sites_by_sequence(sites)
+
+        assert len(result) == 2

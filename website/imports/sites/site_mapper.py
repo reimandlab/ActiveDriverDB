@@ -1,5 +1,6 @@
 import logging
 import re
+from collections import defaultdict
 from typing import List
 from warnings import warn
 
@@ -105,6 +106,10 @@ class SiteMapper:
         self.already_warned = set()
         self.has_gene_names = 'gene' in sites.columns
 
+        known_sites_by_refseq = defaultdict(list)
+        for site in sites.itertuples(index=False):
+            known_sites_by_refseq[site.refseq].append(site)
+
         for site in tqdm(sites.itertuples(index=False), total=len(sites)):
 
             was_mapped = False
@@ -124,6 +129,10 @@ class SiteMapper:
             # create rows with sites
             for isoform, matched_positions in positions.items():
 
+                # to check if any other of the sites is already mapped here;
+                # note: it will not raise as it is a defaultdict
+                input_sites_of_this_isoform = known_sites_by_refseq[isoform.refseq]
+
                 for position in matched_positions:
 
                     # _replace() returns new namedtuple with replaced values;
@@ -132,6 +141,34 @@ class SiteMapper:
                         refseq=isoform.refseq,
                         position=position
                     )
+
+                    if (
+                        # if a site were to be mapped to a place it was known to be at
+                        # it shall not be repeated (to avoid duplicates)
+                        any(
+                            # note: using equality comparison as site tuple can contain
+                            # non-hashable elements at this point
+                            existing_site == new_site
+                            for existing_site in input_sites_of_this_isoform
+                        )
+                        # however, if we are in the isoform from which we are mapping
+                        # so mapping onto itself, we should allow such matches
+                        # (as otherwise we would not get the source site!)
+                        and
+                        not (
+                            isoform.refseq == protein.refseq
+                            and
+                            site.position == new_site.position
+                        )
+                    ):
+                        # this site was already provided for this isoform at input,
+                        # if we were to add it here, the sites would be duplicated
+                        logger.info(
+                            f'{self.repr_site(new_site)} was already provided'
+                            f' for this isoform at input.'
+                        )
+                        continue
+
                     mapped_sites.append(new_site)
                     was_mapped = True
 
