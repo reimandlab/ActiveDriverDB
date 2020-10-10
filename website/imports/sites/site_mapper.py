@@ -92,12 +92,16 @@ class SiteMapper:
 
         Args:
             sites: data frame with sites, having (at least) following columns:
-                   'sequence', 'position', 'refseq', 'residue', 'left_sequence_offset'
+                   'sequence', 'position', 'refseq', 'residue', 'left_sequence_offset';
+                   and can provide optional 'gene' column
 
         Returns:
             Data frame of sites mapped to isoforms in database,
             including the sites in isoforms provided on input,
-            if those has been confirmed or adjusted.
+            if those has been confirmed or adjusted. An effort
+            will be made to avoid mapping two sites to the same
+            position, but lack of duplicates is not guaranteed
+            and drop_duplicates() is advised at a later stage.
         """
         print('Mapping sites to isoforms')
 
@@ -142,6 +146,10 @@ class SiteMapper:
                         position=position
                     )
 
+                    # NOTE: despite all hte effort below, duplicate results will happen,
+                    # because the input site might be remapped to a slightly different
+                    # place; that would be expensive to check, thus simple drop of
+                    # duplicates at a later stage is advised
                     if (
                         # if a site were to be mapped to a place it was known to be at
                         # it shall not be repeated (to avoid duplicates)
@@ -177,7 +185,7 @@ class SiteMapper:
 
         print(
             f'Successfully mapped {mapped_cnt} '
-            f'({mapped_cnt / len(sites) * 100.:2}%) sites.'
+            f'({mapped_cnt / len(sites) * 100:.2}%) sites.'
             f' Each site was on average mapped to'
             f' {len(mapped_sites) / len(sites):.2f} isoforms.'
         )
