@@ -1,3 +1,4 @@
+from re import escape
 from timeit import Timer
 from types import SimpleNamespace as RawSite
 from functools import partial
@@ -152,16 +153,35 @@ class TestImport(DatabaseTest):
             lambda s: f'{s.position}{s.residue}'
         )
 
-        sites = DataFrame.from_dict(data={
-            'good site A': ('A', 'NM_01', 10, 'AXA', 'X', 1),
-            'lost isoform': ('B', 'NM_03', 10, 'BYB', 'Y', 1)
-        }, orient='index')
+        sites = DataFrame([
+            {
+                'name': 'good site A',
+                'gene': 'A',
+                'refseq': 'NM_01',
+                'position': 10,
+                'sequence': 'AXA',
+                'residue': 'X',
+                'left_sequence_offset': 1
+            },
+            {
+                'name': 'lost isoform',
+                'gene': 'B',
+                'refseq': 'NM_03',
+                'position': 10,
+                'sequence': 'BYB',
+                'residue': 'Y',
+                'left_sequence_offset': 1
+            }
+        ]).set_index('name')
 
-        sites.columns = [
-            'gene', 'refseq', 'position', 'sequence', 'residue', 'left_sequence_offset'
-        ]
-
-        mapped_sites = mapper.map_sites_by_sequence(sites)
+        with warns(
+                UserWarning,
+                match=escape(
+                    'Site 10X was found on position(s): 4;'
+                    ' some are quite far away from the position in original isoform: 10'
+                )
+        ):
+            mapped_sites = mapper.map_sites_by_sequence(sites)
 
         sites_by_isoform = group_by_isoform(mapped_sites)
 
@@ -202,10 +222,10 @@ class TestImport(DatabaseTest):
             lambda s: f'{s.position}{s.residue}'
         )
 
-        # all sites in NM_01, the idea is to test
+        # all sites in NM_01, the idea is to test the edge cases
         sites = DataFrame.from_dict(data={
-            'site at N-terminus edge': ('T', 'NM_01', 1, '^AX', 'A', 2),
-            'site at C-terminus edge': ('T', 'NM_01', 9, 'YA$', 'A', 2),
+            'site at N-terminus edge': ('T', 'NM_01', 1, '^AX', 'A', 1),
+            'site at C-terminus edge': ('T', 'NM_01', 9, 'YA$', 'A', 1),
         }, orient='index')
 
         sites.columns = [
@@ -215,3 +235,42 @@ class TestImport(DatabaseTest):
         mapped_sites = mapper.map_sites_by_sequence(sites)
 
         assert len(mapped_sites) == 4
+
+    def test_wrong_position(self):
+
+        gene_w = Gene(name='W', isoforms=[
+            #                                 123456789
+            Protein(refseq='NM_01', sequence='AAAXAAAAA'),
+        ])
+
+        db.session.add(gene_w)
+        db.session.commit()
+
+        mapper = SiteMapper(
+            create_key_model_dict(Protein, 'refseq'),
+            lambda s: f'{s.position}{s.residue}'
+        )
+
+        sites = DataFrame([
+            {
+                'name': 'first side',
+                'gene': 'W',
+                'refseq': 'NM_01',
+                # should have been 4!
+                'position': 5,
+                'sequence': 'AXA',
+                'residue': 'X',
+                'left_sequence_offset': 1
+            }
+        ]).set_index('name')
+
+        with warns(
+                UserWarning,
+                match=escape(
+                    'Site: 5X does not appear on the exact given position in NM_01 isoform,'
+                    ' though it was re-mapped to: [4]'
+                )
+        ):
+            mapped_sites = mapper.map_sites_by_sequence(sites)
+
+        assert len(mapped_sites) == 1

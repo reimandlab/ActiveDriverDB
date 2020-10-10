@@ -108,7 +108,7 @@ class SiteMapper:
         for site in tqdm(sites.itertuples(index=False), total=len(sites)):
 
             was_mapped = False
-            protein = None
+            protein = self.proteins.get(site.refseq, None)
             positions = {}
 
             isoforms_to_map = self.choose_isoforms_to_map(site)
@@ -119,7 +119,7 @@ class SiteMapper:
 
             if protein:
                 matches = positions[protein]
-                self.collate_matches_with_expectations(matches, site)
+                self.compare_matches_with_expectations(matches, site)
 
             # create rows with sites
             for isoform, matched_positions in positions.items():
@@ -140,7 +140,9 @@ class SiteMapper:
 
         print(
             f'Successfully mapped {mapped_cnt} '
-            f'({mapped_cnt / len(sites) * 100}%) sites'
+            f'({mapped_cnt / len(sites) * 100.:2}%) sites.'
+            f' Each site was on average mapped to'
+            f' {len(mapped_sites) / len(sites):.2f} isoforms.'
         )
 
         return DataFrame(mapped_sites)
@@ -178,7 +180,7 @@ class SiteMapper:
                     inform = logger.info
 
                 inform(
-                    f'This site {self.repr_site(site)} was found on position(s): '
+                    f'Site {self.repr_site(site)} was found on position(s): '
                     f'{positions}; some are quite far away from the '
                     f'position in original isoform: {site.position}.'
                 )
@@ -214,11 +216,11 @@ class SiteMapper:
             return {protein}
         return []
 
-    def collate_matches_with_expectations(self, original_isoform_matches, site):
+    def compare_matches_with_expectations(self, original_isoform_matches, site):
 
         if not original_isoform_matches:
-            warn(f'The site: {self.repr_site(site)} was not found in {site.refseq}, '
+            warn(f'Site: {self.repr_site(site)} was not found in {site.refseq}, '
                  f'though it should appear in this isoform according to provided sites data.')
         elif all(match_pos != site.position for match_pos in original_isoform_matches):
-            warn(f'The site: {self.repr_site(site)} does not appear on the exact given position in '
+            warn(f'Site: {self.repr_site(site)} does not appear on the exact given position in '
                  f'{site.refseq} isoform, though it was re-mapped to: {original_isoform_matches}.')
