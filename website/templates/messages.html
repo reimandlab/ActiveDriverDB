@@ -11,5 +11,10 @@
         {{ system_setting('maintenace_text') }}
       </div>
     {% endif %}
+    {% if system_setting('alert_text') %}
+        <div class="alert alert-info">
+        {{ system_setting('alert_text') }}
+        </div>
+    {% endif %}
   </div>
 {% endwith %}

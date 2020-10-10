@@ -45,7 +45,7 @@ from exceptions import ValidationError
 
 BUILT_IN_SETTINGS = [
     'website_name', 'is_maintenance_mode_active', 'maintenace_text',
-    'email_sign_up_message', 'footer_text',
+    'email_sign_up_message', 'footer_text', 'alert_text'
 ]
 
 MENU_SLOT_NAMES = ['footer_menu', 'top_menu', 'side_menu']

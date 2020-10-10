@@ -5,7 +5,7 @@
 {% endfor %}
 </ul>
 Sources: {{ site.sources | join(', ') }}
-{% if site.associations %}
+{% if site.associations | length %}
   <br>Associations:
   <ul>
   {% for association in site.associations %}
