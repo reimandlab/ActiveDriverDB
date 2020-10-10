@@ -455,11 +455,11 @@ class PageMenuEntry(MenuEntry):
 
     page_id = db.Column(db.Integer, db.ForeignKey('page.id'))
     page = db.relationship(
-            'Page',
-            backref=db.backref(
-                'page_menu_entries',
-                cascade='all, delete-orphan'
-            )
+        'Page',
+        backref=db.backref(
+            'page_menu_entries',
+            cascade='all, delete-orphan'
+        )
     )
 
     title = association_proxy('page', 'title')
@@ -483,7 +483,14 @@ class CustomMenuEntry(MenuEntry):
     id = db.Column(db.Integer, db.ForeignKey('menuentry.id'), primary_key=True)
 
     title = db.Column(db.String(256))
-    url = db.Column(db.String(256))
+    address = db.Column(db.String(256))
+
+    @property
+    def url(self):
+        if self.address.startswith('/'):
+            return url_for('ContentManagementSystem:page', address=self.address.rstrip('/'))
+        else:
+            return self.address
 
     __mapper_args__ = {
         'polymorphic_identity': 'custom_entry',

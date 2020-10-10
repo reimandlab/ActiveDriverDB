@@ -593,7 +593,7 @@ class ContentManagementSystem(FlaskView):
         menu = Menu.query.get(menu_id)
         entry = CustomMenuEntry(
             title=request.form['title'],
-            url=request.form['url']
+            address=request.form['url']
         )
         menu.entries.append(entry)
         db.session.commit()
