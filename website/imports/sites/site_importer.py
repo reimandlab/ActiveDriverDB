@@ -282,7 +282,16 @@ class SiteImporter(BioImporter):
         if sites.empty:
             return []
 
+        assert not sites.duplicated().any()
+
         sites = sites[columns]
+
+        duplicated = sites.duplicated()
+
+        if duplicated.any():
+            print(f'Removing {sum(duplicated)} duplicated sites entries after mappping procedure...')
+            sites = sites.drop_duplicates()
+
         assert not sites.duplicated().any()
 
         site_objects = []
