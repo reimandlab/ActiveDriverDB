@@ -282,6 +282,19 @@ class SiteImporter(BioImporter):
         if sites.empty:
             return []
 
+        print('Replacing non-hashable collections with hashable equivalents to enable duplicates check')
+        hashable_equivalents = {
+            list: tuple,
+            set: frozenset
+        }
+
+        def identity(x):
+            return x
+
+        sites = sites.applymap(lambda x: hashable_equivalents.get(type(x), identity)(x))
+
+        print('Checking for duplicated sites data')
+
         assert not sites.duplicated().any()
 
         sites = sites[columns]
@@ -289,7 +302,7 @@ class SiteImporter(BioImporter):
         duplicated = sites.duplicated()
 
         if duplicated.any():
-            print(f'Removing {sum(duplicated)} duplicated sites entries after mappping procedure...')
+            print(f'Removing {sum(duplicated)} duplicated sites entries after mapping procedure...')
             sites = sites.drop_duplicates()
 
         assert not sites.duplicated().any()

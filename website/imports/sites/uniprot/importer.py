@@ -41,8 +41,12 @@ class UniprotToRefSeqTrait:
         mappings['refseq'], _ = mappings['refseq'].str.split('.', 1).str
 
         mappings.dropna(inplace=True)
+        mappings = mappings.drop(columns=['type'])
 
-        return mappings.drop(columns=['type'])
+        # after removing refseq version, we might get duplicates
+        mappings = mappings.drop_duplicates()
+
+        return mappings
 
     def add_nm_refseq_identifiers(self, sites: DataFrame):
         return sites.merge(
