@@ -368,6 +368,9 @@ class TestCMS(ViewTest):
         assert entries[0].title == 'ActiveDriverDB repository'
         assert entries[0].url == 'https://github.com/reimandlab/ActiveDriverDB'
 
+        relative_entry = CustomMenuEntry(title='Relative entry', address='/search/protein/')
+        assert relative_entry.url == '/search/protein/'
+
         self.logout()
 
     def test_remove_menu(self):
