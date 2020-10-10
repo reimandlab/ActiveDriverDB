@@ -27,20 +27,25 @@ from imports.mutations import MutationImportManager, MutationImporter
 from imports.mutations import get_proteins
 from models import Model
 
+
 muts_import_manager = MutationImportManager()
 database_binds = ('bio', 'cms')
 # loading views can hinder migration as it would load models which might not be compatible with the current version
 CONFIG = {'LOAD_STATS': False, 'SCHEDULER_ENABLED': False, 'USE_CELERY': False, 'LOAD_VIEWS': False}
 
 
-def calc_statistics(args, app=None, stores=None):
+def calc_statistics(args, app=None):
     if not app:
         app = create_app(config_override=CONFIG)
     with app.app_context():
-        if not stores:
-            from stats import store_classes
-            stores = store_classes
-        for store_class in stores:
+        from stats import store_classes
+        stores_map = {
+            store.__name__: store
+            for store in store_classes
+        }
+        print(f'Calculating {args.groups}')
+        for store_name in args.groups:
+            store_class = stores_map[store_name]
             store = store_class()
             store.calc_all()
         db.session.commit()
@@ -489,13 +494,22 @@ def create_parser():
 
     create_command_subparsers(command_subparsers, formatter_class=HelpFormatter)
 
-    new_subparser(
+    calc_stats = new_subparser(
         subparsers,
         'calc_stats',
         calc_statistics,
         help=(
-            'should statistics (counts of protein, pathways, mutation, etc) be recalculated?'
+            '(re)calculate statistics (counts of protein, pathways, mutation, etc)'
         )
+    )
+
+    calc_stats.add_argument(
+        '-g',
+        '--groups',
+        type=str,
+        nargs='*',
+        choices=['Statistics', 'VennDiagrams', 'Plots'],
+        default=['Statistics'],
     )
 
     shell_parser = new_subparser(
