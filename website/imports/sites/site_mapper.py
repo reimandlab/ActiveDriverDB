@@ -185,7 +185,7 @@ class SiteMapper:
 
         print(
             f'Successfully mapped {mapped_cnt} '
-            f'({mapped_cnt / len(sites) * 100:.2}%) sites.'
+            f'({mapped_cnt / len(sites) * 100:.2f}%) sites.'
             f' Each site was on average mapped to'
             f' {len(mapped_sites) / len(sites):.2f} isoforms.'
         )
