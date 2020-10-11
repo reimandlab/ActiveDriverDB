@@ -121,7 +121,7 @@ class TestSearchView(ViewTest):
             for accepted_gene_2_query in ('Gene_2', 'Gene', 'gene', 'Gene_2 ', ' gene', 'gene%20'):
                 print(route, accepted_gene_2_query)
                 response = self.client.get(
-                    'search/%s?filters=Search.query:eq:%s' % (route, accepted_gene_2_query),
+                    f'search/{route}?filters=Search.query:eq:{accepted_gene_2_query}',
                     follow_redirects=True
                 )
                 assert response.status_code == 200
@@ -137,7 +137,7 @@ class TestSearchView(ViewTest):
 
     def search_mutations(self, **data):
         return self.client.post(
-            '/search/mutations',
+            '/search/mutations/',
             data=data
         )
 
@@ -186,7 +186,7 @@ class TestSearchView(ViewTest):
         # VCF file test
         #
         response = self.client.post(
-            '/search/mutations',
+            '/search/mutations/',
             content_type='multipart/form-data',
             data={
                 'vcf-file': (BytesIO(VCF_FILE_CONTENT), 'exemplar_vcf.vcf')
@@ -341,7 +341,7 @@ class TestSearchView(ViewTest):
         # test suggestions
         response = autocomplete('cystic ')
         entry = entries_with_type(response, 'message')[0]
-        assert re.match('Do you wish to search for (.*?) mutations\?', entry['name'])
+        assert re.match(r'Do you wish to search for (.*?) mutations\?', entry['name'])
 
         # currently there are no mutations associated with any disease
         # so the auto-completion should not return any results
@@ -386,19 +386,19 @@ class TestSearchView(ViewTest):
         assert b'Test Dataset' in browse_response.data
 
         # and it should be accessible directly
-        browse_response = self.client.get('search/saved/%s' % dataset.uri)
+        browse_response = self.client.get(f'search/saved/{dataset.uri}')
         assert browse_response.status_code == 200
         assert b'Test Dataset' in browse_response.data
 
         self.logout()
 
         # forbidden from outside
-        browse_response = self.client.get('search/saved/%s' % dataset.uri)
+        browse_response = self.client.get(f'search/saved/{dataset.uri}')
         assert browse_response.status_code == 401
 
         # forbidden for strangers
         self.login('other_user@domain.org', 'password', create=True)
-        browse_response = self.client.get('search/saved/%s' % dataset.uri)
+        browse_response = self.client.get(f'search/saved/{dataset.uri}')
         assert browse_response.status_code == 401
         self.logout()
 
@@ -486,8 +486,8 @@ class TestSearchView(ViewTest):
         _, _, dataset = self.basic_save_search()
 
         # the user who added the dataset is allowed to delete it
-        with self.assert_flashes('Successfully removed <b>%s</b> dataset.' % dataset.name):
-            response = self.client.get('search/remove_saved/%s' % dataset.uri, follow_redirects=True)
+        with self.assert_flashes(f'Successfully removed <b>{dataset.name}</b> dataset.'):
+            response = self.client.get(f'search/remove_saved/{dataset.uri}', follow_redirects=True)
             assert response.status_code == 200
 
         # so we should be able to create the dataset again now
@@ -496,11 +496,11 @@ class TestSearchView(ViewTest):
 
         # but a stranger should not be able to remove it
         self.logout()
-        response = self.client.get('search/remove_saved/%s' % dataset.uri, follow_redirects=True)
+        response = self.client.get(f'search/remove_saved/{dataset.uri}', follow_redirects=True)
         assert response.status_code == 401
 
         # nor a different user
         self.login('other_user@domain.org', 'password', create=True)
-        response = self.client.get('search/remove_saved/%s' % dataset.uri, follow_redirects=True)
+        response = self.client.get(f'search/remove_saved/{dataset.uri}', follow_redirects=True)
         assert response.status_code == 401
 
