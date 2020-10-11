@@ -261,7 +261,7 @@ class SearchView(FlaskView):
             status=status
         ))
 
-    @route('/mutations', methods=['POST', 'GET'])
+    @route('/mutations/', methods=['POST', 'GET'])
     def mutations(self):
         """Render search form and results (if any) for proteins or mutations"""
         task_id = request.args.get('task_id', None)
