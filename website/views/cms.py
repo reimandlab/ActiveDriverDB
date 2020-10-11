@@ -164,7 +164,7 @@ def moderator_or_admin(f):
 
 
 def html_link(address, content):
-    return '<a href="/{0}">{1}</a>'.format(address, content)
+    return f'<a href="{address}">{content}</a>'
 
 
 def get_page(address, operation=''):
