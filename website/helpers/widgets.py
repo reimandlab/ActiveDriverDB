@@ -153,8 +153,10 @@ class FilterWidget(Widget):
 
     def __init__(
         self, title, template, filter, labels=None, disabled_label=None,
-        associated_comparator_widget=None, choices=None, **kwargs
+        associated_comparator_widget=None, choices=None, expanded=False,
+        **kwargs
     ):
+        self.expanded = expanded
         self.filter = filter
         if choices:
             data = choices

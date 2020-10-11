@@ -152,6 +152,7 @@ class CachedQueries:
 
         self.site_types = SiteType.query.all()
 
+
 cached_queries = CachedQueries()
 
 
@@ -214,6 +215,13 @@ def source_dependent_filters(protein=None):
     populations_esp = list(ExomeSequencingMutation.populations.values())
     significances = list(ClinicalData.significance_codes.keys())
 
+    default_significances = {'Pathogenic', 'Pathogenic/Likely pathogenic', 'Likely pathogenic'}
+    default_significance_codes = [
+        code
+        for code, significance in ClinicalData.significance_codes.items()
+        if significances in default_significances
+    ]
+
     return [
         MutationDetailsFilter(
             MC3Mutation, 'mc3_cancer_code',
@@ -251,7 +259,7 @@ def source_dependent_filters(protein=None):
             ClinicalData, 'sig_code',
             comparators=['in'],
             choices=significances,
-            default=significances,
+            default=default_significance_codes,
             source='ClinVar',
             multiple='any',
         ),
@@ -319,7 +327,10 @@ def create_dataset_specific_widgets(protein, filters_by_id, population_widgets=T
             'Clinical significance', 'checkbox_multiple',
             filter=filters_by_id['Mutation.sig_code'],
             all_selected_label='Any clinical significance class',
-            labels=ClinicalData.significance_codes.values()
+            labels=ClinicalData.significance_codes.values(),
+            # do not collapse this filter by default so that the user
+            # # is aware that we only show a subset of mutations
+            expanded=True
         ),
         FilterWidget(
             'Disease', 'checkbox_multiple',
