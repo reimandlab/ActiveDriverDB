@@ -10,7 +10,7 @@ from flask_login import current_user
 from helpers.filters import Filter
 from helpers.widgets import FilterWidget
 from models import Mutation
-from views._commons import drugs_interacting_with_kinases
+from views._commons import drugs_interacting_with_kinases, compress
 from views.abstract_protein import AbstractProteinView, get_raw_mutations, GracefulFilterManager, ProteinRepresentation
 from .filters import common_filters, ProteinFiltersData
 from .filters import create_widgets
@@ -430,7 +430,7 @@ class NetworkView(AbstractProteinView):
         return jsonify(response)
 
     def predicted_data(self, refseq):
-        return self.data(refseq, include_mimp_gain_kinases=True)
+        return compress(self.data(refseq, include_mimp_gain_kinases=True))
 
     def data(self, refseq, include_mimp_gain_kinases=False):
         """Internal endpoint used for network rendering and asynchronous updates"""
@@ -449,5 +449,5 @@ class NetworkView(AbstractProteinView):
             'filters': ProteinFiltersData(filter_manager, protein).to_json()
         }
 
-        return jsonify(response)
+        return compress(jsonify(response))
 

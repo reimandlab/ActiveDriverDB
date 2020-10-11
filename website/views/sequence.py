@@ -17,7 +17,7 @@ from helpers.tracks import TrackElement
 from models import Domain, source_manager, SiteType, Site
 from models import Mutation
 from .abstract_protein import AbstractProteinView, GracefulFilterManager, ProteinRepresentation
-from ._commons import represent_mutation
+from ._commons import represent_mutation, compress
 from .filters import common_filters, ProteinFiltersData
 from .filters import create_widgets
 
@@ -188,7 +188,7 @@ class SequenceView(AbstractProteinView):
             'filters': ProteinFiltersData(filter_manager, protein).to_json()
         }
 
-        return jsonify(response)
+        return compress(jsonify(response))
 
     def show(self, refseq):
         """Show a protein by:

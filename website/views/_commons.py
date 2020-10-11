@@ -1,5 +1,8 @@
+import gzip
 from collections import defaultdict
 from typing import Dict, Set
+
+from flask import request, Response
 
 from models import Gene
 from models.bio.drug import Drug, DrugTarget
@@ -40,3 +43,12 @@ def drugs_interacting_with_kinases(filter_manager, kinases) -> Dict[Gene, Set[Dr
         for target in drug.targets:
             targets_by_kinase[target.gene].add(target)
     return targets_by_kinase
+
+
+def compress(response: Response, level=7) -> Response:
+    if 'gzip' in request.headers.get('Accept-Encoding', '').lower():
+        data = response.data
+        response.data = gzip.compress(data, level)
+        response.headers['Content-length'] = len(data)
+        response.headers['Content-Encoding'] = 'gzip'
+    return response
