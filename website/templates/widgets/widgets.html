@@ -7,11 +7,16 @@
     {% endif %}
     <div class="{{ class }}">
       {% for filter in filters %}
-        {% set are_many = filter | attr('data') | list | length > 4 and not filter | attr('expand') %}
-        <div class="{{ 'list-collapsed' if are_many }}">
+        {% set are_many = filter | attr('data') | list | length > 4 %}
+        {% set expanded = filter | attr('expanded') %}
+        <div class="{{ 'list-collapsed' if are_many and not expanded }}">
           {{ render_widget(filter) }}
           {% if are_many %}
-            <a href="#" class="list-expand">more</a>
+              {% if expanded %}
+                <a href="#" class="list-expand">less</a>
+              {% else %}
+                <a href="#" class="list-expand">more</a>
+              {% endif %}
           {% endif %}
         </div>
       {% endfor %}

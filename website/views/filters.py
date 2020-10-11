@@ -219,7 +219,7 @@ def source_dependent_filters(protein=None):
     default_significance_codes = [
         code
         for code, significance in ClinicalData.significance_codes.items()
-        if significances in default_significances
+        if significance in default_significances
     ]
 
     return [
@@ -261,6 +261,7 @@ def source_dependent_filters(protein=None):
             choices=significances,
             default=default_significance_codes,
             source='ClinVar',
+            skip_if_default=False,
             multiple='any',
         ),
         # We use disease id by default (instead of disease name)
