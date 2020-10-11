@@ -238,6 +238,12 @@
             <div class="heading-right">
 
               <div class="btn-group zooming" role="group">
+                <button type="button" class="btn btn-default toggle-fullscreen" title="Fullscreen">
+                  <span class="glyphicon glyphicon-fullscreen"></span>
+                </button>
+              </div>
+
+              <div class="btn-group zooming" role="group">
                 <button type="button" class="btn btn-default zoom-in" title="Zoom in">
                   <span class="glyphicon glyphicon-zoom-in"></span>
                 </button>
@@ -482,6 +488,8 @@
             handler.apply(state.filters_query, true, true)
         }
     });
+
+    $('.toggle-fullscreen').click(function() { $('.visualisation').toggleClass('fullscreen') });
   </script>
     {{ super() }}
 {% endblock %}
