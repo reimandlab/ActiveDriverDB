@@ -208,9 +208,9 @@ def substitute_variables(string):
     return render_template_string(string, **USER_ACCESSIBLE_VARIABLES)
 
 
-def link_to_page(page):
+def link_to_page(page: Page):
     link_title = page.title or '[Page without a title]'
-    return html_link(page.address, link_title)
+    return html_link(url_for('ContentManagementSystem:page', address=page.address), link_title)
 
 
 def get_system_setting(name):
