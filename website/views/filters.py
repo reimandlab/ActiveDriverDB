@@ -222,6 +222,8 @@ def source_dependent_filters(protein=None):
         if significance in default_significances
     ]
 
+    gold_starts = [*sorted(ClinicalData.stars_by_status.values(), reverse=True), -1]
+
     return [
         MutationDetailsFilter(
             MC3Mutation, 'mc3_cancer_code',
@@ -262,6 +264,14 @@ def source_dependent_filters(protein=None):
             default=default_significance_codes,
             source='ClinVar',
             skip_if_default=False,
+            multiple='any',
+        ),
+        MutationDetailsFilter(
+            ClinicalData, 'gold_stars',
+            comparators=['in'],
+            choices=gold_starts,
+            default=gold_starts,
+            source='ClinVar',
             multiple='any',
         ),
         # We use disease id by default (instead of disease name)
@@ -338,6 +348,12 @@ def create_dataset_specific_widgets(protein, filters_by_id, population_widgets=T
             filter=filters_by_id['Mutation.disease_id'],
             all_selected_label='Any disease',
             labels=disease_names_by_id
+        ),
+        FilterWidget(
+            'Gold stars', 'checkbox_multiple',
+            filter=filters_by_id['Mutation.gold_stars'],
+            all_selected_label='Any number of stars',
+            labels=['4 stars', '3 stars', '2 stars', '1 star', '0 stars', 'unknown'],
         )
     ]
     if population_widgets:

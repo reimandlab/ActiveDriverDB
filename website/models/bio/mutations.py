@@ -335,6 +335,7 @@ class InheritedMutation(MappedMutationDetails, BioModel):
     combined_significances = db.Column(ScalarSet(separator='|'), default=set)
 
     sig_code = association_proxy('clin_data', 'sig_code')
+    gold_stars = association_proxy('clin_data', 'gold_stars')
 
     disease_name = association_proxy('clin_data', 'disease_name')
     disease_id = association_proxy('clin_data', 'disease_id')
@@ -829,6 +830,7 @@ class Mutation(BioModel, MutatedMotifs):
     mc3_cancer_code = details_proxy(MC3Mutation, 'mc3_cancer_code')
     pcawg_cancer_code = details_proxy(PCAWGMutation, 'pcawg_cancer_code')
     sig_code = details_proxy(InheritedMutation, 'sig_code')
+    gold_stars = details_proxy(InheritedMutation, 'gold_stars')
     disease_id = details_proxy(InheritedMutation, 'disease_id')
     disease_name = details_proxy(InheritedMutation, 'disease_name')
 

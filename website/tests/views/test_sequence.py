@@ -43,13 +43,13 @@ def create_test_mutations():
                 clin_data=[
                     ClinicalData(
                         disease=Disease(name='Disease X'),
-                        sig_code=1,
-                        rev_status='practice guideline'
+                        sig_code=5,  # pathogenic
+                        rev_status='reviewed by expert panel'  # 3 stars
                     ),
                     ClinicalData(
                         disease=Disease(name='Disease Y'),
-                        sig_code=1,
-                        rev_status='no assertion provided'
+                        sig_code=4,  # likely pathogenic
+                        rev_status='no assertion provided'  # 0 stars
                     )
                 ]
             ),
@@ -65,7 +65,16 @@ def create_test_mutations():
             meta_1KGenomes=[The1000GenomesMutation(
                 maf_afr=0.5,
                 maf_eur=0.2
-            )]
+            )],
+            meta_ClinVar=InheritedMutation(
+                clin_data=[
+                    ClinicalData(
+                        disease=Disease(name='Disease Z'),
+                        sig_code=2,  # benign
+                        rev_status='practice guideline'  # 0 stars
+                    ),
+                ]
+            )
         ),
         Mutation(
             position=4,
@@ -120,8 +129,35 @@ class TestSequenceView(ViewTest):
         # let's check clinvar source
         response = self.client.get('/sequence/representation_data/NM_000123?filters=Mutation.sources:in:ClinVar')
         muts = response.json['content']['mutations']
+
+        # only the mutation with pathogenic/likely pathogenic impact should get displayed by default
         assert len(muts) == 1
         assert len(muts[0]['meta']['MIMP']) == 3
+        assert len(muts[0]['meta']['ClinVar']['Clinical']) == 2
+
+        # allowing benign mutations should result in two mutations being displayed
+        response = self.client.get(
+            '/sequence/representation_data/NM_000123?filters='
+            'Mutation.sources:in:ClinVar;'
+            # 2 stands for benign, 4 and 5 are likely pathogenic and pathogenic
+            'Mutation.sig_code:in:5,4,2'
+        )
+        muts = response.json['content']['mutations']
+        assert len(muts) == 2
+
+        # filtering by 4 gold stars should lead to only the benign variant being displayed
+        response = self.client.get(
+            '/sequence/representation_data/NM_000123?filters='
+            'Mutation.sources:in:ClinVar;'
+            'Mutation.sig_code:in:5,4,2;'
+            'Mutation.gold_stars:in:4'
+        )
+        muts = response.json['content']['mutations']
+        assert len(muts) == 1
+        clinical = muts[0]['meta']['ClinVar']['Clinical']
+        assert len(clinical) == 1
+        assert clinical[0]['Significance'] == 'Benign'
+        assert clinical[0]['Stars'] == 4
 
     def test_details(self):
 
@@ -141,7 +177,7 @@ class TestSequenceView(ViewTest):
 
         for source, expected_meta in expected_source_meta.items():
             response = self.client.get(
-                uri + '?filters=Mutation.sources:in:%s' % source
+                uri + f'?filters=Mutation.sources:in:{source}'
             )
             assert response.status_code == 200
             assert response.content_type == 'application/json'

@@ -1,4 +1,4 @@
-from sqlalchemy import Index
+from sqlalchemy import Index, case
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -108,7 +108,12 @@ class ClinicalData(BioModel):
 
     @hybrid_property
     def gold_stars(self):
+        """-1 signifies unknown revision status"""
         return self.stars_by_status.get(self.rev_status, -1)
+
+    @gold_stars.expression
+    def gold_stars(self):
+        return case(self.stars_by_status, value=self.rev_status, else_=-1)
 
     def to_json(self, filter=lambda x: x):
         return {
