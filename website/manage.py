@@ -234,15 +234,13 @@ class Mappings(CommandTarget):
         if args.restrict_to != 'genome_proteome':
             from models import Gene, Protein
             from database import db
-            from collections import namedtuple
-
-            protein = namedtuple('Protein', ('id', 'refseq', 'sequence', 'gene_name'))
+            from sqlalchemy.orm import load_only, joinedload
 
             proteins = {
-                data[1]: protein(*data)
-                for data in (
-                    db.session.query(Protein.id, Protein.refseq, Protein.sequence, Gene.name)
-                    .select_from(Protein).join(Protein.gene)
+                protein.refseq: protein
+                for protein in Protein.query.options(
+                    load_only('id', 'refseq', 'sequence'),
+                    joinedload(Protein.gene)
                 )
             }
 
