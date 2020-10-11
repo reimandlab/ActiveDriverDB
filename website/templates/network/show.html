@@ -489,7 +489,11 @@
         }
     });
 
-    $('.toggle-fullscreen').click(function() { $('.visualisation').toggleClass('fullscreen') });
+    $('.toggle-fullscreen').click(function() {
+        $('.visualisation').toggleClass('fullscreen');
+        network.resize();
+        network.zoom_fit()
+    });
   </script>
     {{ super() }}
 {% endblock %}
