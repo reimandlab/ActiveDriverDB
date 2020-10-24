@@ -391,6 +391,15 @@ class Mutations(CommandTarget):
         )
 
     @export.argument
+    def only_confirmed_mutations(self):
+        return argument_parameters(
+            '-c',
+            '--only_confirmed_mutations',
+            action='store_true',
+            help='Restrict mutations export to confirmed mutations',
+        )
+
+    @export.argument
     def type(self):
         return argument_parameters(
             '-t',

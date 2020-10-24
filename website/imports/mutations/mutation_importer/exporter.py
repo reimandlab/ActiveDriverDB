@@ -23,7 +23,7 @@ class MutationExporter:
     def export_details(self, mutation):
         return [],  # returns a tuple with empty list inside
 
-    def iterate_export(self, only_preferred=False, mutation_filter=None, protein_filter=None, show_progress=True):
+    def iterate_export(self, only_preferred=False, mutation_filter=None, protein_filter=None):
         """Yield tuples with mutations data prepared for export.
 
         A single mutation will be spread over multiple rows if it is necessary
@@ -35,17 +35,10 @@ class MutationExporter:
             mutation_filter: SQLAlchemy filter for mutations
                 (to be applied to joined self.model and Mutations tables)
             protein_filter: SQLAlchemy filter for proteins
-            show_progress: wheter to show progress bar
 
         Returns:
             tuples with fields as returned by self.export_header
         """
-
-        # cache preferred isoforms in a set (to enable fast access)
-        preferred_isoforms = None
-
-        if only_preferred:
-            preferred_isoforms = set(i for i, in db.session.query(Gene.preferred_isoform_id))
 
         # cache genes and proteins
         query = (
@@ -137,7 +130,7 @@ class MutationExporter:
         )
         return os.path.join(directory, name)
 
-    def export(self, path=None, only_primary_isoforms=False):
+    def export(self, path=None, only_primary_isoforms=False, only_confirmed_mutations=False):
         """Export all mutations from this source in ActiveDriver compatible format.
 
         Source specific data export can be implemented with export_details method,
@@ -151,6 +144,13 @@ class MutationExporter:
 
             f.write('\t'.join(self.export_header))
 
-            for mutation_data in self.iterate_export(only_preferred=only_primary_isoforms):
+            mutation_filter = None
+            if only_confirmed_mutations:
+                mutation_filter = Mutation.is_confirmed
+
+            for mutation_data in self.iterate_export(
+                only_preferred=only_primary_isoforms,
+                mutation_filter=mutation_filter
+            ):
 
                 f.write('\n' + '\t'.join(mutation_data))

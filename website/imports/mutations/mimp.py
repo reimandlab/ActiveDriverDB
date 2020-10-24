@@ -8,6 +8,9 @@ from .mutation_importer import ChunkedMutationImporter
 
 
 class MIMPImporter(ChunkedMutationImporter):
+    """
+    As MIMP mutations are conditional on sites, these HAVE TO be imported after sites.
+    """
     # load("all_mimp_annotations_p085.rsav")
     # write.table(all_mimp_annotations, file="all_mimp_annotations.tsv",
     # row.names=F, quote=F, sep='\t')
