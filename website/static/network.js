@@ -327,6 +327,9 @@ var Network = function ()
             start: force.start,
             stop: force.stop,
             on: force.on,
+            set_size: function(size) {
+                force.size(size)
+            },
             hide_nodes_links: function(node)
             {
                 var to_remove = [];
@@ -1446,6 +1449,11 @@ var Network = function ()
         destroy: function()
         {
             svg.remove()
+        },
+        resize: function() {
+            resize();
+            force_manager.set_size(zoom.viewport_to_canvas([config.width, config.height]))
+            force_manager.start();
         }
     }
 
