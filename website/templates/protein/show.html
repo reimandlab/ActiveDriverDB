@@ -213,6 +213,7 @@
   <script type="text/javascript">
 
     nunjucks.configure("{{ url_for('static', filename='js_templates') }}", {autoescape: true, web: {useCache: true}});
+    nunjucks.installJinjaCompat()
 
     affix($('#sticky_box'), $('footer'));
 

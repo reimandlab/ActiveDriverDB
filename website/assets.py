@@ -102,12 +102,12 @@ class DependencyManager:
             'sha256-vtR0hSWRc3Tb26iuN2oZHt3KRUomwTufNIf5/4oeCyg='
         ),
         'nunjucks': JSResource(
-            'https://cdnjs.cloudflare.com/ajax/libs/nunjucks/3.0.1/nunjucks.min.js',
-            'sha256-sh9FYQZVVLprCQB3/IcNyCRrZwu9hZ+xLHhUszDfsK4='
+            'https://unpkg.com/nunjucks@3.2.2/browser/nunjucks.min.js',
+            'sha384-Agr8RcZvbrJ+zufFVEwsIwNl8IEbMbcaSYFxcF/jCSyTlSMuE/oa5Gq+RbFrqDVq'
         ),
         'nunjucks_slim': JSResource(
-            'https://cdnjs.cloudflare.com/ajax/libs/nunjucks/3.0.1/nunjucks-slim.min.js',
-            'sha256-tdB3uMy+X5YRM5JMGgy1oMtdSm1GwTEMmWb7q80e2+g='
+            'https://unpkg.com/nunjucks@3.2.2/browser/nunjucks-slim.min.js',
+            'sha384-OxMOQfBcEyvOccEr4qTHgR/rG//h/bK2Uy0sr9HsKlhdnzCz3xEyEAt+bpjD0gh/'
         ),
         'moment': JSResource(
             # requirement for bootstrap_sortable
