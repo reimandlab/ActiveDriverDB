@@ -109,3 +109,22 @@ class The1000GenomesImporter(MutationImporter):
 
     def export_genomic_clean_fields(self, fields):
         return fields[:12]
+
+
+    def export_details_headers(self):
+        return [
+            'maf_all',
+            'maf_eas',
+            'maf_amr',
+            'maf_afr',
+            'maf_eur',
+            'maf_sas',
+        ]
+
+    def export_details(self, mutation):
+        return [
+            [
+                str(getattr(mutation, attr))
+                for attr in self.export_details_headers()
+            ]
+        ]
