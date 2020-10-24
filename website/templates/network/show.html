@@ -20,15 +20,12 @@
   {{ dependency('bootstrap_table_css') }}
 
   {# Nunjucks templates #}
-  {#
   {% if is_debug_mode %}
     {{ dependency('nunjucks') }}
   {% else %}
     {{ dependency('nunjucks_slim') }}
     <script type="text/javascript" src="{{ url_for('static', filename='js_templates/precompiled/network.js') }}"></script>
   {% endif %}
-  #}
-  {{ dependency('nunjucks') }}
 
   {{ dependency('clipboard.js') }}
 

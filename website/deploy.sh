@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd static
-wget -N https://raw.githubusercontent.com/reimandlab/needleplot/master/needleplot.js
+#wget -N https://raw.githubusercontent.com/reimandlab/needleplot/master/needleplot.js
 cd ..
 
 # precomiple nunjucks templates
