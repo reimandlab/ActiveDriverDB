@@ -29,10 +29,12 @@ function initTable($table, query, additional_columns)
 
     function pathway_formatter(value, row, index)
     {
-        if(row.reactome)
-            return '<a href="' + reactome_show.replace('0', row.reactome) + '">' + value + '</a>'
-        if(row.gene_ontology)
-            return '<a href="' + gene_ontology_show.replace('0', row.gene_ontology) + '">' + value + '</a>'
+        if(row.reactome) {
+            return '<a href="' + format(reactome_show, {id: row.reactome}) + '">' + value + '</a>'
+        }
+        if(row.gene_ontology) {
+            return '<a href="' + format(gene_ontology_show, {id: row.gene_ontology}) + '">' + value + '</a>'
+        }
         return value
     }
 

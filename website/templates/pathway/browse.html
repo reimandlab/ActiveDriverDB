@@ -57,6 +57,7 @@
     data-page-list="[10, 25, 50, 100, ALL]"
     data-side-pagination="server"
     data-url="{{ url_for('PathwaysView:' + endpoint, **endpoint_kwargs) }}"
+    {% block table_options %} {% endblock %}
   >
   </table>
 </div>
@@ -64,8 +65,8 @@
 <script>
   var reactome_url = decode_url_pattern('{{ url_for('PathwaysView:details', reactome_id="{{ reactome }}") }}');
   var gene_ontology_url = decode_url_pattern('{{ url_for('PathwaysView:details', gene_ontology_id="{{ gene_ontology }}") }}');
-  var reactome_show = decode_url_pattern('{{ url_for('PathwaysView:show', reactome_id="0") }}');
-  var gene_ontology_show = decode_url_pattern('{{ url_for('PathwaysView:show', gene_ontology_id="0") }}');
+  var reactome_show = decode_url_pattern('{{ url_for('PathwaysView:show', reactome_id="{{ id }}") }}');
+  var gene_ontology_show = decode_url_pattern('{{ url_for('PathwaysView:show', gene_ontology_id="{{ id }}") }}');
 
   nunjucks.configure('/static/js_templates', {autoescape: true})
 

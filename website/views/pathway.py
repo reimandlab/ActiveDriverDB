@@ -37,8 +37,8 @@ def get_pathway(gene_ontology_id, reactome_id):
 
 class PathwaysView(FlaskView):
 
-    @route('/gene_ontology/<int:gene_ontology_id>/', endpoint='PathwaysView:show')
-    @route('/reactome/<int:reactome_id>/', endpoint='PathwaysView:show')
+    @route('/gene_ontology/<gene_ontology_id>', endpoint='PathwaysView:show')
+    @route('/reactome/<reactome_id>', endpoint='PathwaysView:show')
     def show(self, gene_ontology_id=None, reactome_id=None):
 
         pathway = get_pathway(gene_ontology_id, reactome_id)

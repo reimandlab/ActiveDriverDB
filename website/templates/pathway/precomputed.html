@@ -15,6 +15,10 @@
   {{ text('pathways-precomputed') }}
 {% endblock %}
 
+{% block table_options %}
+      data-sort-name="fdr"
+{% endblock %}
+
 {% block js_table_init %}
   $(function ()
   {
