@@ -63,6 +63,7 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
             &
             (~(sites['Ctrl_24Hr.adj.pvalue'] < self.adj_p_threshold))
         )
+        print(f'Keeping {sum(is_site_significant)} out of {len(is_site_significant)} available sites')
 
         # select significant sites only
         sites = sites.loc[is_site_significant].copy()
@@ -71,10 +72,11 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
         is_canonical = sites['residue'].isin({'S', 'T', 'Y'})
         if any(~is_canonical):
             warn(
-                f'Removing {sum(~is_canonical)} phosphorylation sites '
-                f'mapped to non-canonical aminoacids: {set(sites[~is_canonical].residue)}'
+                f'Removing {sum(~is_canonical)} phosphorylation sites'
+                f' mapped to non-canonical aminoacids: {set(sites[~is_canonical].residue)}'
+                f' keeping {sum(is_canonical)} sites'
             )
-            sites = sites[is_canonical]
+            sites = sites[is_canonical].copy()
 
         sites['position'] = sites.site.str[1:].apply(int)
         assert all(sites['position'] > 0)
@@ -88,7 +90,9 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
         sites['mod_type'] = 'phosphorylation (SARS-CoV-2)'
 
         sites = self.add_sequence_accession(sites)
+        print(f'After mapping to UniProt sequence accessions got: {len(sites)} sites (each protein has multiple UniProt isoforms)')
         sites = self.add_nm_refseq_identifiers(sites)
+        print(f'After mapping to RefSeq identifiers got: {len(sites)} sites (each UniProt isoform can be mapped to one or more RefSeq isoforms)')
 
         mapped_sites = self.map_sites_to_isoforms(sites)
 

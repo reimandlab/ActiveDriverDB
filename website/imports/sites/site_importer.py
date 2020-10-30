@@ -82,14 +82,17 @@ class SiteImporter(BioImporter):
         self.issues_counter = Counter()
         # caching proteins and kinases allows for much faster
         # import later on, though it takes some time to cache
+        print('Cache-loading kinases')
         self.known_kinases = create_key_model_dict(Kinase, 'name', lowercase=True)
         self.known_groups = create_key_model_dict(KinaseGroup, 'name', lowercase=True)
+        print('Cache-loading sites')
         self.known_sites = create_key_model_dict(
             Site, ['protein_id', 'position', 'residue'],
             options=(
                 joinedload(Site.sources).joinedload('*')
             )
         )
+        print('Cache-loading proteins')
         self.proteins = create_key_model_dict(
             Protein, 'refseq',
             options=(
