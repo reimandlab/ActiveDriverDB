@@ -1,0 +1,5 @@
+term.id,term.name,adjusted.p.val,term.size,overlap
+GO:0055094,response to lipoprotein particle,0.0401151521276826,35,ITGB2|CASR|LPL
+GO:0071402,cellular response to lipoprotein particle stimulus,0.047567679261841,37,ITGB2|CASR|LPL
+GO:0071404,cellular response to low-density lipoprotein particle stimulus,0.0124814215847688,24,ITGB2|CASR|LPL
+REAC:R-HSA-381426,Regulation of Insulin-like Growth Factor (IGF) transport and uptake by Insulin-like Growth Factor Binding Proteins (IGFBPs),0.0225701589432267,124,VCAN|LTBP1|IGFBP3|CP|PAPPA

@@ -1,0 +1,6 @@
+term.id,term.name,adjusted.p.val,term.size,overlap
+GO:2000811,negative regulation of anoikis,0.0302587755075156,17,NTRK2|CEACAM6|NOTCH1
+REAC:R-HSA-1638091,Heparan sulfate/heparin (HS-GAG) metabolism,0.0101368755318656,55,VCAN|HSPG2|HS3ST3B1
+REAC:R-HSA-3000178,ECM proteoglycans,0.00747499883654524,75,VCAN|HSPG2|ITGAV
+REAC:R-HSA-381426,Regulation of Insulin-like Growth Factor (IGF) transport and uptake by Insulin-like Growth Factor Binding Proteins (IGFBPs),0.00165961266324676,124,VCAN|IGFBP6|SCG3|PROC|APOL1|F5
+REAC:R-HSA-8957275,Post-translational protein phosphorylation,0.0235679167204618,107,VCAN|SCG3|PROC|APOL1|F5

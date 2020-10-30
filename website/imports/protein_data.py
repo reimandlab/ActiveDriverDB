@@ -14,7 +14,7 @@ from helpers.parsers import parse_text_file
 from imports.importer import simple_importer, BioImporter
 from models import (
     Domain, UniprotEntry, MC3Mutation, InheritedMutation, Mutation, SiteType,
-    SiteMotif,
+    SiteMotif, PCAWGMutation
 )
 from models.bio.drug import DrugGroup, DrugType, Drug, DrugTarget
 from models import Gene
@@ -1016,8 +1016,8 @@ def calculate_interactors():
 
 ListData = namedtuple('ListData', 'name path mutations_source site_type_name')
 
-ACTIVE_DRIVER_RESULTS_DIR = 'data/ActiveDriver/2020-03-09/'
-ACTIVE_PATHWAYS_RESULTS_DIR = 'data/ActivePathways/2020-03-09/'
+ACTIVE_DRIVER_RESULTS_DIR = 'data/ActiveDriver/2020-10-27/'
+ACTIVE_PATHWAYS_RESULTS_DIR = 'data/ActivePathways/2020-10-27/'
 
 
 def list_data_to_kwargs(list_data):
@@ -1036,20 +1036,26 @@ def list_data_to_kwargs(list_data):
     }
 
 
+site_names = {
+    'phosphorylation_covid': 'phosphorylation (SARS-CoV-2)'
+}
+
+
 @independent_bio_importer
 def active_driver_gene_lists(
     lists=(
         ListData(
-            name=f'{label}: {site_type} sites',
-            path=ACTIVE_DRIVER_RESULTS_DIR + f'{site_type}_{source_path}_results.tsv',
+            name=f'{label}: {site_type_name.get(site_type, site_type)} sites',
+            path=ACTIVE_DRIVER_RESULTS_DIR + f'results_{source_path}_{site_type}.csv',
             mutations_source=source,
-            site_type_name=site_type
+            site_type_name=site_type_name.get(site_type, site_type)
         )
         for (source, source_path), label in {
             (InheritedMutation, 'inherited'): 'Clinical (ClinVar, excluding somatic)',
-            (MC3Mutation, 'mc3'): 'Cancer (TCGA PanCancerAtlas)',
+            (MC3Mutation, 'MC3'): 'Cancer (TCGA PanCancerAtlas)',
+            (PCAWGMutation, 'PCAWG'): 'Cancer (PCAWG)',
         }.items()
-        for site_type in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination']
+        for site_type in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination', 'phosphorylation_covid']
     ),
     fdr_cutoff=0.05
 ):
@@ -1093,7 +1099,7 @@ def active_driver_gene_lists(
             )
             list_entries.append(entry)
 
-        parse_tsv_file(list_data.path, parser, header)
+        parse_tsv_file(list_data.path, parser, header, sep=',')
 
         gene_list.entries = list_entries
 
@@ -1153,7 +1159,7 @@ def pathway_identifiers(gene_set_id):
 
 
 @independent_bio_importer
-def pathways(path=ACTIVE_PATHWAYS_RESULTS_DIR + 'hsapiens.pathways.NAME.gmt'):
+def pathways(path='data/hsapiens.pathways.NAME.gmt'):
     """Loads pathways from given '.gmt' file.
 
     New genes may be created and should automatically be added
@@ -1221,20 +1227,21 @@ def pathways(path=ACTIVE_PATHWAYS_RESULTS_DIR + 'hsapiens.pathways.NAME.gmt'):
 
 @independent_bio_importer
 def active_pathways_lists(
-        lists=(
-            ListData(
-                name=f'{label}: {site_type} sites',
-                path=ACTIVE_PATHWAYS_RESULTS_DIR + f'{site_type}_{source_path}_pathways.tsv',
-                mutations_source=source,
-                site_type_name=site_type
-            )
-            for (source, source_path), label in {
-                (InheritedMutation, 'inherited'): 'Clinical (ClinVar, excluding somatic)',
-                (MC3Mutation, 'mc3'): 'Cancer (TCGA PanCancerAtlas)',
-            }.items()
-            for site_type in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination']
-        ),
-        fdr_cutoff=0.05
+    lists=(
+        ListData(
+            name=f'{label}: {site_type} sites',
+            path=ACTIVE_PATHWAYS_RESULTS_DIR + f'AP_{source_path}_{site_type}.csv',
+            mutations_source=source,
+            site_type_name=site_type
+        )
+        for (source, source_path), label in {
+            (InheritedMutation, 'inherited'): 'Clinical (ClinVar, excluding somatic)',
+            (MC3Mutation, 'MC3'): 'Cancer (TCGA PanCancerAtlas)',
+            (PCAWGMutation, 'PCAWG'): 'Cancer (PCAWG)',
+        }.items()
+        for site_type in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination']
+    ),
+    fdr_cutoff=0.05
 ):
     current_pathway_lists = [
         existing_list.name
@@ -1249,7 +1256,7 @@ def active_pathways_lists(
 
         pathways_list = PathwaysList(**list_data_to_kwargs(list_data))
 
-        input_table = read_table(list_data.path)
+        input_table = read_table(list_data.path, sep=',')
 
         to_high_fdr_count = 0
         list_entries = []

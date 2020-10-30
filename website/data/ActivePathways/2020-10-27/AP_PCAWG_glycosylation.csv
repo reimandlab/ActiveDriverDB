@@ -1,0 +1,3 @@
+term.id,term.name,adjusted.p.val,term.size,overlap
+REAC:R-HSA-381426,Regulation of Insulin-like Growth Factor (IGF) transport and uptake by Insulin-like Growth Factor Binding Proteins (IGFBPs),0.00164969157774452,124,IGFBP3|VCAN|LTBP1|APP|NUCB1
+REAC:R-HSA-8957275,Post-translational protein phosphorylation,0.000787619799460168,107,IGFBP3|VCAN|LTBP1|APP|NUCB1

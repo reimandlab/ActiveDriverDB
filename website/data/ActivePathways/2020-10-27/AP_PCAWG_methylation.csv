@@ -1,0 +1,4 @@
+term.id,term.name,adjusted.p.val,term.size,overlap
+GO:0043401,steroid hormone mediated signaling pathway,0.0268193675146043,143,UFSP2|NR4A3|UBR5|CNOT2|SAFB
+GO:0071407,cellular response to organic cyclic compound,0.0110515188915114,591,AKT1|ACTB|UFSP2|NR4A3|UBR5|CTNNB1|CNOT2|SAFB|SHMT2
+REAC:R-HSA-3769402,Deactivation of the beta-catenin transactivating complex,0.00283183105047142,42,AKT1|BCL9L|CTNNB1|CHD8

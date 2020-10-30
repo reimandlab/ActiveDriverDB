@@ -109,13 +109,13 @@ def count_lines_tsv(filename, file_opener=open, mode='r'):
 
 def tsv_file_iterator(
     filename, file_header=None, file_opener=open, mode='r',
-    skip=None, limit=None
+    skip=None, limit=None, sep='\t'
 ):
     data_lines_count = count_lines_tsv(filename, file_opener=file_opener, mode=mode)
 
     with file_opener(filename, mode=mode) as f:
         if file_header:
-            header = f.readline().rstrip().split('\t')
+            header = f.readline().rstrip().split(sep)
             data_lines_count -= 1
             if header != file_header:
                 raise ParsingError(
@@ -130,17 +130,17 @@ def tsv_file_iterator(
         if limit:
             total = min([data_lines_count, limit])
             for line in tqdm(f, total=total, unit=' lines'):
-                yield line.rstrip().split('\t')
+                yield line.rstrip().split(sep)
                 limit -= 1
                 if limit <= 0:
                     return
         else:
             for line in tqdm(f, total=data_lines_count, unit=' lines'):
-                yield line.rstrip().split('\t')
+                yield line.rstrip().split(sep)
 
 
 def parse_tsv_file(
-    filename, parser, file_header=None, file_opener=open, mode='r'
+    filename, parser, file_header=None, file_opener=open, mode='r', sep='\t'
 ):
     """Utility function wrapping tsv (tab-separated values) file parser.
 
@@ -149,7 +149,7 @@ def parse_tsv_file(
 
     Progress bar is embedded.
     """
-    for line in tsv_file_iterator(filename, file_header, file_opener, mode):
+    for line in tsv_file_iterator(filename, file_header, file_opener, mode, sep=sep):
         parser(line)
 
 
