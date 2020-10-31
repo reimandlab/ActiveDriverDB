@@ -91,7 +91,7 @@ class MutationExporter:
                     str(mut.position), ref, mut.alt, *instance
                 )
 
-    def export_to_df(self, only_preferred=False, mutation_filter=None, protein_filter=None, show_progress=True) -> DataFrame:
+    def export_to_df(self, only_preferred=False, mutation_filter=None, protein_filter=None) -> DataFrame:
         """Export mutations to pandas.DataFrame. Arguments as in self.iterate_export."""
 
         mutations = [
@@ -99,8 +99,7 @@ class MutationExporter:
             for mutation in self.iterate_export(
                 only_preferred=only_preferred,
                 mutation_filter=mutation_filter,
-                protein_filter=protein_filter,
-                show_progress=show_progress
+                protein_filter=protein_filter
             )
         ]
 
