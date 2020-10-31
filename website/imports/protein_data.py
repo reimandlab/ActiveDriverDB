@@ -1321,21 +1321,6 @@ def precompute_ptm_mutations():
     return []
 
 
-def ensure_mutations_are_precomputed(context: str):
-    mutations_missing_precomputed_status = (
-        Mutation
-        .query
-        .filter_by(is_confirmed=True)
-        .filter(Mutation.precomputed_is_ptm == None)
-        .count()
-    )
-    if mutations_missing_precomputed_status != 0:
-        raise ValueError(
-            f'{context} requires mutation PTM status to be precomputed.'
-            f'Run `./manage.py load protein_related precompute_ptm_mutations` first'
-        )
-
-
 @independent_bio_importer
 def drugbank(path='data/full database.xml'):
 

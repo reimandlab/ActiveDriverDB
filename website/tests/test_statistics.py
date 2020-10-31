@@ -9,6 +9,7 @@ from models import (
     Protein, Site, Mutation, MIMPMutation, InheritedMutation, MC3Mutation, The1000GenomesMutation,
     SiteType, ClinicalData, ExomeSequencingMutation,
 )
+from test_models.test_mutation import create_mutations_with_impact_on_site_at_pos_1
 
 
 class StatisticsTest(DatabaseTest):
@@ -221,12 +222,11 @@ class StatisticsTest(DatabaseTest):
 
     def test_table_source_specific_mutated_sites(self):
         from stats.table import source_specific_mutated_sites
+        from stats.table import PROTEINS_CACHE
+
+        PROTEINS_CACHE.clear()
 
         self.create_test_mutations_and_sites()
-
-        # raises if not mutations were precomputed
-        with raises(ValueError):
-            source_specific_mutated_sites()
 
         precompute_ptm_mutations.load()
         db.session.commit()
@@ -235,11 +235,6 @@ class StatisticsTest(DatabaseTest):
 
         # two site types + any type
         assert len(sites_affected.index) == 3
-        sites_affected.index = [
-            site_type.name or 'any type'
-            for site_type in sites_affected.index
-        ]
-
         assert set(sites_affected.index) == {'hydroxylation', 'phosphorylation', 'any type'}
 
         # affecting phosphorylation site 2S
@@ -264,7 +259,10 @@ class StatisticsTest(DatabaseTest):
         assert sites_affected.loc['any type', 'Any mutation'] == 2
 
     def test_table_mutations_in_sites(self):
-        from stats.table import mutations_in_sites
+        from stats.table import mutations_in_sites, source_specific_mutations_in_sites
+        from stats.table import PROTEINS_CACHE
+
+        PROTEINS_CACHE.clear()
 
         self.create_test_mutations_and_sites()
 
@@ -283,8 +281,103 @@ class StatisticsTest(DatabaseTest):
         assert mimp['1KGenomes'] == 0
         assert mimp['ESP6500'] == 0
 
-        in_ptm_sites = mutations['Mutations - in PTM sites']
-        assert in_ptm_sites['MC3'] == 1
-        assert in_ptm_sites['ClinVar'] == 2
-        assert in_ptm_sites['1KGenomes'] == 1
-        assert in_ptm_sites['ESP6500'] == 1
+        expected = {
+            'MC3': 1,
+            'ClinVar': 2,
+            '1KGenomes': 1,
+            'ESP6500': 1,
+        }
+
+        in_ptm_sites = mutations_in_sites()['Mutations - in PTM sites']
+
+        for source, value in expected.items():
+            assert in_ptm_sites[source] == value
+
+        in_ptm_sites = source_specific_mutations_in_sites()
+
+        for source, value in expected.items():
+            assert in_ptm_sites[source]['any type'] == value
+
+    def test_table_mutations_in_sites_edge_cases(self):
+        from stats.table import mutations_in_sites, source_specific_mutations_in_sites
+        from stats.table import PROTEINS_CACHE
+
+        PROTEINS_CACHE.clear()
+
+        mutations = create_mutations_with_impact_on_site_at_pos_1()
+
+        protein = Protein(
+            refseq='NM_00001',
+            mutations=mutations.keys()
+        )
+
+        protein.sites = [Site(position=1), Site(position=50)]
+
+        db.session.add(protein)
+
+        db.session.add_all(
+            [
+                MC3Mutation(mutation=m)
+                for m in mutations.keys()
+            ]
+        )
+
+        precompute_ptm_mutations.load()
+        db.session.commit()
+
+        in_ptm_sites = mutations_in_sites()['Mutations - in PTM sites']
+        assert in_ptm_sites['MC3'] == 5
+
+        in_ptm_sites = source_specific_mutations_in_sites()
+        assert in_ptm_sites['MC3']['any type'] == 5
+
+    def test_table_sites_mutated_edge_cases(self):
+        from stats.table import source_specific_mutated_sites
+        from stats.table import PROTEINS_CACHE
+
+        all_mutations = create_mutations_with_impact_on_site_at_pos_1()
+        hydroxylation = SiteType(name='hydroxylation')
+        phosphorylation = SiteType(name='phosphorylation')
+
+        affected_sites = 0
+
+        for i, kind in enumerate(set(all_mutations.values())):
+
+            mutations = {
+                m: k
+                for m, k in all_mutations.items()
+                if k == kind
+            }
+
+            protein = Protein(
+                refseq=f'NM_0000{i}',
+                mutations=mutations.keys()
+            )
+
+            protein.sites = [Site(position=1, types={hydroxylation}), Site(position=50, types={phosphorylation})]
+
+            db.session.add(protein)
+
+            db.session.add_all(
+                [
+                    MC3Mutation(mutation=m)
+                    for m in mutations.keys()
+                ]
+            )
+
+            precompute_ptm_mutations.load()
+            db.session.commit()
+            PROTEINS_CACHE.clear()
+
+            sites_affected = DataFrame(source_specific_mutated_sites())
+
+            if kind != 'none':
+                affected_sites += 1
+            else:
+                affected_sites += 0
+
+            assert sites_affected.loc['any type', 'MC3'] == affected_sites
+            assert sites_affected.loc['hydroxylation', 'MC3'] == affected_sites
+            assert sites_affected.loc['phosphorylation', 'MC3'] == 0
+            assert sites_affected.loc['hydroxylation', 'ClinVar'] == 0
+            assert sites_affected.loc['hydroxylation', 'Any mutation'] == affected_sites
