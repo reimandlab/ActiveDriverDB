@@ -111,7 +111,7 @@ class SiteType(BioModel):
     @property
     def sub_types(self):
         return [
-            self.type_by_id[type_id]
+            self.type_by_id()[type_id]
             for type_name, type_id in self.id_by_name().items()
             if self.name in type_name and type_name != self.name
         ]

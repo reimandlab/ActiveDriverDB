@@ -388,15 +388,24 @@ class InheritedMutation(MappedMutationDetails, BioModel):
         ))
 
     @classmethod
-    def significance_filter(cls, mode):
+    def significance_set_filter(cls, mode: str):
+        return cls._significance_filter(ClinicalData.significance_subsets[mode])
+
+    @classmethod
+    def significance_filter(cls, significance: str):
+        return cls._significance_filter([significance])
+
+    @classmethod
+    def _significance_filter(cls, significances: List[str]):
+        """If used on mutation, requires: .join(InheritedMutation).join(ClinicalData)"""
         significance_to_code = {
             significance: code
             for code, significance in ClinicalData.significance_codes.items()
         }
-        return cls.clin_data.any(ClinicalData.sig_code.in_([
-            significance_to_code[sig]
-            for sig in ClinicalData.significance_subsets[mode]
-        ]))
+        return or_(*[
+            InheritedMutation.sig_code.contains(significance_to_code[sig])
+            for sig in significances
+        ])
 
 
 def population_manager(_name, _display_name):

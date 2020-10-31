@@ -64,8 +64,8 @@ def ptm_muts_enrichment(source, site_type, mode, repeats=1000000):
     sources_and_filters = {
         MC3Mutation: ('TCGA', None),
         InheritedMutation: (
-            'ClinVar (pathogenic, likely pathogenic, drug response)',
-            InheritedMutation.significance_filter('strict')
+            'ClinVar (pathogenic)',
+            InheritedMutation.significance_set_filter('pathogenic')
         )
     }
     name, filters = sources_and_filters[source]

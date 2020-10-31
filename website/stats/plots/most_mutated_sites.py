@@ -2,7 +2,7 @@ from collections import defaultdict
 from functools import partial
 
 from helpers.plots import bar_plot, stacked_bar_plot
-from models import MC3Mutation, InheritedMutation, SiteType, AnySiteType
+from models import MC3Mutation, InheritedMutation, SiteType, AnySiteType, ClinicalData
 
 from ..store import cases
 from .common import site_types_with_any
@@ -83,9 +83,8 @@ def mc3(site_type):
 
 
 clinvar_subsets = {
-    'all': None,
-    'strict': InheritedMutation.significance_filter('strict'),
-    'not_benign': InheritedMutation.significance_filter('not_benign')
+    'subset': InheritedMutation.significance_set_filter(subset) if subset != 'all' else None
+    for subset in ClinicalData.significance_subsets
 }
 clinvar_cases = cases(site_type=site_types_with_any, subset=clinvar_subsets).set_mode('product')
 

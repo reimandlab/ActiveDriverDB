@@ -125,9 +125,25 @@ class ClinicalData(BioModel):
         }
 
     significance_subsets = {
-        'all': ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Likely benign', 'Benign', 'Uncertain significance', 'Other', 'Not provided'],
-        'strict': ['Pathogenic', 'Drug response', 'Likely pathogenic'],
-        'not_benign': ['Pathogenic', 'Drug response', 'Likely pathogenic', 'Uncertain significance', 'Other'],
+        'pathogenic': [
+            'Pathogenic',
+            'Likely pathogenic',
+            'Pathogenic/Likely pathogenic',
+        ],
+        'pathogenic, drug response, or risk': [
+            'Pathogenic',
+            'Likely pathogenic',
+            'Pathogenic/Likely pathogenic',
+            'Risk factor',
+            'Confers sensitivity',
+            'Drug response'
+        ],
+        'benign or protective': [
+            'Benign',
+            'Likely benign',
+            'Benign/Likely benign',
+            'Protective'
+        ]
     }
 
     # ClinVar Variation ID, see PMC5753237 "New and improved VCF files"

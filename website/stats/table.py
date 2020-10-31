@@ -10,9 +10,10 @@ from models import Mutation, Protein, Site, source_manager
 from imports.protein_data import ensure_mutations_are_precomputed
 
 
-def count_mutated_sites(
+def count_mutated_sites_sql(
     site_types: Iterable[models.SiteType] = tuple(), model=None,
-    only_primary=False, disordered=None, custom_filter=None
+    only_primary=False, disordered=None, custom_filter=None,
+    scalar=True
 ):
     ensure_mutations_are_precomputed('count_mutated_sites')
     filters = [
@@ -55,9 +56,169 @@ def count_mutated_sites(
         query = query.filter(Mutation.is_confirmed == True)
 
     if only_primary:
-        query = query.join(Protein).filter(Protein.is_preferred_isoform)
+        query = query.filter(Protein.is_preferred_isoform)
 
-    return query.scalar()
+    if scalar:
+        return query.scalar()
+    return query
+
+
+PROTEINS_CACHE = {}
+
+def count_mutations_in_sites(
+    site_types: Iterable[models.SiteType] = tuple(), models=None,
+    only_primary=False,
+    custom_filters=None,
+    custom_joins=None
+):
+    def counter(mutations, sites):
+        count = 0
+        positions_of_matched_sites = [
+            site.position for site in sites
+        ]
+        for mutation in mutations:
+            mutation_position = mutation.position
+            for site_position in positions_of_matched_sites:
+                count += abs(mutation_position - site_position) < 8
+        return count
+
+    return count_ptm(
+        site_types=site_types, models=models, only_primary=only_primary,
+        counter=counter, custom_filters=custom_filters,
+        custom_joins=custom_joins
+    )
+
+
+def count_mutated_sites(
+    site_types: Iterable[models.SiteType] = tuple(), models=None,
+    only_primary=False,
+    custom_filters=None,
+    custom_joins=None
+):
+    def counter(mutations, sites):
+        count = 0
+        mutation_positions = {
+            mutation.position
+            for mutation in mutations
+        }
+        for site in sites:
+            site_position = site.position
+            for mutation_position in mutation_positions:
+                if abs(mutation_position - site_position) < 8:
+                    count += 1
+                    break
+        return count
+
+    return count_ptm(
+        site_types=site_types, models=models, only_primary=only_primary,
+        counter=counter, custom_filters=custom_filters,
+        custom_joins=custom_joins
+    )
+
+
+def count_sites(
+    site_types: Iterable[models.SiteType] = tuple(),
+    only_primary=False
+):
+    def counter(mutations, sites):
+        return len(sites)
+
+    return count_ptm(
+        counter=counter,
+        site_types=site_types, only_primary=only_primary
+    )
+
+
+def count_mutations(**kwargs):
+    def counter(mutations, sites):
+        return len(list(mutations))
+
+    return count_ptm(
+        counter=counter,
+        **kwargs
+    )
+
+
+def count_ptm(
+    counter, site_types: Iterable[models.SiteType] = tuple(), models=None,
+    only_primary=False, site_mode='any',
+    #disordered=None,
+    custom_filters=None,
+    custom_joins=None
+):
+    assert site_mode in {'any', 'all', 'none'}
+
+    from sqlalchemy.orm import load_only, subqueryload
+
+    site_types = set(site_types)
+    print(site_types, models)
+
+    if only_primary in PROTEINS_CACHE:
+        print('Reusing cached proteins...')
+        proteins = PROTEINS_CACHE[only_primary]
+    else:
+        print('Retriving and caching proteins...')
+        proteins = Protein.query.options(
+            load_only('id'),
+            subqueryload(Protein.sites)
+            #joinedload(Protein.sites)
+        )
+        print(proteins)
+        if only_primary:
+            proteins = proteins.filter(Protein.is_preferred_isoform)
+        proteins = proteins.all()
+        PROTEINS_CACHE[only_primary] = proteins
+
+    count = 0
+
+    is_any_site_type = len(site_types) == 1 and next(iter(site_types)).name == ''
+
+    mutation_query_base = (
+        Mutation.query
+        .options(load_only('position'))
+    )
+
+    if custom_joins:
+        for join in custom_joins:
+            mutation_query_base = mutation_query_base.join(join)
+
+    if custom_filters:
+        for filter in custom_filters:
+            mutation_query_base = mutation_query_base.filter(filter)
+
+    any_site_mode = site_mode == 'any'
+    none_site_mode = site_mode == 'none'
+
+    for protein in tqdm(proteins):
+        if none_site_mode:
+            sites = None
+        else:
+            if is_any_site_type:
+                sites = list(protein.sites)
+            elif any_site_mode:
+                sites = [
+                    site for site in protein.sites
+                    # if any in intersection
+                    if site_types & site.types
+                ]
+            else:
+                sites = [
+                    site for site in protein.sites
+                    # if all site_types are present in site.types
+                    if not site_types - site.types
+                ]
+            if not sites:
+                continue
+        from sqlalchemy import or_
+        mutations = (
+            mutation_query_base
+            .filter(Mutation.protein==protein)
+        )
+        if models:
+            mutations = mutations.filter(Mutation.in_sources(*models, conjunction=or_))
+        count += counter(mutations, sites)
+
+    return count
 
 
 def mutation_sources():
@@ -199,34 +360,107 @@ def mutations_in_sites() -> TableChunk:
     }
 
 
-def source_specific_mutated_sites() -> TableChunk:
-    site_type_queries = [models.SiteType(name='')]  # empty will match all sites
-    site_type_queries.extend(models.SiteType.query)
+def get_site_type_queries():
+    site_type_queries = {
+        'any type': [models.SiteType(name='')]   # empty will match all sites
+    }
+    site_type_queries.update({
+        type.name: [type]
+        for type in models.SiteType.query
+        #for type in [models.SiteType.query.first()]
+    })
 
-    mutated_sites = defaultdict(dict)
-
-    for name, model in mutation_sources().items():
-
-        for site_type in tqdm(site_type_queries):
-            mutated_sites[name][site_type] = count_mutated_sites([site_type], model)
-
-    all_mutated_sites = {}
-
-    for site_type in tqdm(site_type_queries):
-        all_mutated_sites[site_type] = count_mutated_sites([site_type])
-
-    mutated_sites['Any mutation'] = all_mutated_sites
-
-    return mutated_sites
+    site_types_with_subtypes = {
+        f'{type.name} (including subtypes)': [type, *type.sub_types]
+        for type in models.SiteType.query
+        if type.sub_types
+    }
+    site_type_queries.update(site_types_with_subtypes)
+    return site_type_queries
 
 
-def sites_counts() -> TableChunk:
+def get_mutation_groups():
+    groups = {
+        **{
+            f'ClinVar {subset_name}': dict(
+                models=[models.InheritedMutation],
+                custom_filters=[models.InheritedMutation.significance_set_filter(subset_name)],
+                custom_joins=[models.InheritedMutation, models.ClinicalData]
+            )
+            for subset_name in models.ClinicalData.significance_subsets
+        },
+        **{
+            name: dict(models=[model])
+            for name, model in mutation_sources().items()
+        },
+        **{
+            'Cancer': dict(models=[models.MC3Mutation, models.PCAWGMutation]),
+            'Population': dict(models=[models.ExomeSequencingMutation, models.The1000GenomesMutation]),
+            'Any mutation': dict(models=list(mutation_sources().values()))
+        }
+    }
+    return groups
+    return {
+        'Population': groups['Population']
+    }
+
+
+def source_specific(counter, only_primary=False) -> TableChunk:
+    site_type_queries = get_site_type_queries()
+
+    counts = defaultdict(dict)
+
+    mutations_groups = get_mutation_groups()
+
+    mutations_progress = tqdm(mutations_groups.items(), total=len(mutations_groups))
+    for name, kwargs in mutations_progress:
+        mutations_progress.set_postfix({'mutation': name})
+        site_progress = tqdm(site_type_queries.items(), total=len(site_type_queries))
+        for site_query_name, site_types in site_progress:
+            site_progress.set_postfix({'site': site_query_name})
+            counts[name][site_query_name] = counter(site_types, only_primary=only_primary, **kwargs)
+
+    return counts
+
+def source_specific_mutated_sites(only_primary=False) -> TableChunk:
+    return source_specific(counter=count_mutated_sites, only_primary=only_primary)
+
+
+def source_specific_mutations_in_sites(only_primary=False) -> TableChunk:
+    return source_specific(counter=count_mutations_in_sites, only_primary=only_primary)
+
+
+def sites_counts(only_primary=False, method='client-side') -> TableChunk:
+    assert method in {'client-side', 'server-side'}
+
     counts = {}
-    for site_type in models.SiteType.available_types(include_any=True):
-        count = site_type.filter(Site.query).count()
-        counts[site_type] = count
+
+    if method == 'server-side':
+        for site_type in models.SiteType.available_types(include_any=True):
+            query = site_type.filter(Site.query)
+            if only_primary:
+                query = query.join(Protein).filter(Protein.is_preferred_isoform)
+            count = query.count()
+            counts[site_type] = count
+    else:
+        site_type_queries = get_site_type_queries()
+        for site_query_name, site_types in tqdm(site_type_queries.items(), total=len(site_type_queries)):
+            counts[site_query_name] = count_sites(site_types, only_primary=only_primary)
+
     return {'PTM sites': counts}
 
+
+def mutations_counts(only_primary=False) -> TableChunk:
+    counts = {}
+
+    mutations_groups = get_mutation_groups()
+
+    mutations_progress = tqdm(mutations_groups.items(), total=len(mutations_groups))
+    for name, kwargs in mutations_progress:
+        mutations_progress.set_postfix({'mutation': name})
+        counts[name] = count_mutations(only_primary=only_primary, **kwargs, site_mode='none')
+
+    return {'Mutations': counts}
 
 def generate_source_specific_summary_table():
     from gc import collect
@@ -236,11 +470,14 @@ def generate_source_specific_summary_table():
         'Mutations in sites': mutations_in_sites,
         'PTM sites affected by mutations': source_specific_mutated_sites,
         'Nucleotide mappings': source_specific_nucleotide_mappings,
-        'Sites': sites_counts
+        'Sites': sites_counts,
+        'Mutations': mutations_counts
     }
     table = {}
     for chunk_name, table_chunk_generator in table_chunks.items():
+        print(chunk_name)
         chunk = table_chunk_generator()
+        print(chunk)
         table[chunk_name] = chunk
         collect()
 
