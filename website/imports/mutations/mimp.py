@@ -125,3 +125,15 @@ class MIMPImporter(ChunkedMutationImporter):
     def insert_details(self, mimps):
 
         self.insert_list(mimps)
+
+    def export_details_headers(self):
+        ignored = {'mutation_id', 'site_id'}
+        return [key for key in self.insert_keys if key not in ignored]
+
+    def export_details(self, mutation):
+        return [
+            [
+                str(getattr(mutation, attr))
+                for attr in self.export_details_headers()
+            ]
+        ]

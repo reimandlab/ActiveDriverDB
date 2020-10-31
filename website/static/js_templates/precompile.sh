@@ -15,6 +15,7 @@ compile () {
 compile macros.njk > precompiled/protein.js
 compile mimp.njk >> precompiled/protein.js
 compile motif_image.njk >> precompiled/protein.js
+compile mimp_image.njk >> precompiled/protein.js
 compile needle_tooltip.njk >> precompiled/protein.js
 compile site_tooltip.njk >> precompiled/protein.js
 compile row_details.njk >> precompiled/protein.js

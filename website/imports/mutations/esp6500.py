@@ -75,3 +75,14 @@ class ESP6500Importer(MutationImporter):
 
     def insert_details(self, esp_mutations):
         self.insert_list(esp_mutations)
+
+    def export_details_headers(self):
+        return ['maf_ea', 'maf_aa', 'maf_all']
+
+    def export_details(self, mutation):
+        return [
+            [
+                str(getattr(mutation, attr))
+                for attr in self.export_details_headers()
+            ]
+        ]
