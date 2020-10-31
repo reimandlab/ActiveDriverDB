@@ -1287,7 +1287,7 @@ def active_pathways_lists(
             if pathway.description != gene_set_name:
                 warn(f'{identifier} pathway name differs, old := {pathway.description}, new := {gene_set_name}')
 
-            overlap = row['overlap'].split(',')
+            overlap = row['overlap'].split('|')
             overlap_set = set(overlap)
             assert len(overlap) == len(overlap_set)
 

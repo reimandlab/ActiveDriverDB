@@ -151,7 +151,7 @@ class TestPathwaysView(ViewTest):
 
     def test_show_pathway(self):
         create_pathways()
-        response = self.client.get('/pathways/reactome/6796648/')
+        response = self.client.get('/pathways/reactome/6796648')
         assert response.status_code == 200
         html = response.data
         assert b'TP53 Regulates Transcription of DNA Repair Genes' in html

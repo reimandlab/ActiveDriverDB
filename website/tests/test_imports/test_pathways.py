@@ -8,10 +8,10 @@ from database import db
 from models import TCGAMutation, SiteType, Pathway
 
 raw_pathways_list = """\
-term.id	term.name	adjusted.p.val	term.size	overlap
-GO:0070268	cornification	0.000225929476177931	109	KRT17,KRT6A,KRT12,KRT16,KRT2,KRT10
-GO:0043588	skin development	0.0022511036831041	404	KRT17,KRT6A,KRT12,KRT16,KRT2,SMAD4,BCL11B,KRT10
-GO:0050801	ion homeostasis	0.0445298831877082	727	CASR,FGF23,SCN1B,UMOD,SNCA,KCNH2,PRNP,ANGPTL3,NOX1\
+term.id,term.name,adjusted.p.val,term.size,overlap
+GO:0070268,cornification,0.000225929476177931,109,KRT17|KRT6A|KRT12|KRT16|KRT2|KRT10
+GO:0043588,skin development,0.0022511036831041,404,KRT17|KRT6A|KRT12|KRT16|KRT2|SMAD4|BCL11B|KRT10
+GO:0050801,ion homeostasis,0.0445298831877082,727,CASR|FGF23|SCN1B|UMOD|SNCA|KCNH2|PRNP|ANGPTL3|NOX1\
 """
 
 # Excerpt from Gene Ontology
