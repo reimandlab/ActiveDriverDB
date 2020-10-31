@@ -401,7 +401,7 @@ def create_widgets(protein, filters_by_id, custom_datasets_names=None):
             filter=filters_by_id['Site.types'],
             disabled_label='Any site',
             hierarchy={
-                site_type.name: site_type.sub_types
+                site_type.name: [sub_type.name for sub_type in site_type.sub_types]
                 for site_type in cached_queries.site_types
                 if site_type.sub_types
             }
