@@ -562,6 +562,7 @@ def suggest_matching_diseases(q, count=3):
             query = (
                 db.session.query(
                     Disease.name,
+                    Disease.id,
                     Gene.name,
                     Protein.refseq,
                     muts
@@ -585,7 +586,7 @@ def suggest_matching_diseases(q, count=3):
 
             items += [
                 {
-                    'name': disease,
+                    'name': disease_name,
                     'gene': gene,
                     'refseq': refseq,
                     'type': 'disease_in_protein',
@@ -594,11 +595,11 @@ def suggest_matching_diseases(q, count=3):
                         refseq=refseq,
                         filters=(
                             f'Mutation.sources:in:{InheritedMutation.name}'
-                            f';Mutation.disease_name:in:{quote_if_needed(disease)}'
+                            f';Mutation.disease_id:in:{quote_if_needed(disease_id)}'
                         )
                     )
                 }
-                for disease, gene, refseq, muts in query
+                for disease_name, disease_id, gene, refseq, muts in query
             ]
 
     diseases = levenshtein_sorted(Disease.query.filter(
@@ -622,7 +623,7 @@ def suggest_matching_diseases(q, count=3):
                     list_name=clinvar_list.name,
                     filters=(
                         f'Mutation.sources:in:{clinvar_list.mutation_source_name}'
-                        f';Mutation.disease_name:in:{quote_if_needed(disease.name)}'
+                        f';Mutation.disease_id:in:{quote_if_needed(disease.id)}'
                     )
                 )
             }
