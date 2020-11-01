@@ -2,4 +2,5 @@
 omit =
     flask_sqlalchemy/*
     tests/*
+    stats/plots
     *.html
