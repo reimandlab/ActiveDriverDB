@@ -40,6 +40,21 @@
 {% endblock %}
 
 
+{% macro swatch(type) %}
+  <div class="swatch">
+    <div class="site {{ type }}">
+      <div class="color"></div>
+    </div>
+    {% if type == 'multi_ptm' %}
+      <div class="name">multiple types</div>
+    {% else %}
+      <div class="name">{{ type }}</div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+
+
 {% block content %}
 
   <h3>{{ protein.gene.name }} ({{ protein.refseq }}) {% if protein.gene.full_name %} - {{ protein.gene.full_name }} {% endif %}</h3>
@@ -91,17 +106,15 @@
                 Sites
                 {{ help('legend-sequence-sites', 'small-top') }}
               </h4>
-              {% for type in site_types %}
-                <div class="swatch">
-                  <div class="site {{ type }}">
-                    <div class="color"></div>
-                  </div>
-                  {% if type == 'multi_ptm' %}
-                    <div class="name">multiple types</div>
-                  {% else %}
-                    <div class="name">{{ type }}</div>
-                  {% endif %}
-                </div>
+              {% for type, sub_types in site_types.items() %}
+                {{ swatch(type) }}
+                {% if sub_types %}
+                  <ul class="list-unstyled">
+                  {% for sub_type in sub_types %}
+                    <li> {{ swatch(sub_type) }}
+                  {% endfor %}
+                  </ul>
+                {% endif %}
               {% endfor %}
             </div>
             <div class="legend">

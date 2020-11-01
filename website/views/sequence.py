@@ -1,3 +1,4 @@
+from functools import lru_cache
 from operator import attrgetter
 from typing import Iterable
 
@@ -156,6 +157,46 @@ class SequenceViewFilters(GracefulFilterManager):
         self.update_from_request(request)
 
 
+@lru_cache()
+def site_types_hierarchy(include_multi_ptm=True):
+    available_types = []
+
+    if include_multi_ptm:
+        available_types.append(SiteType(name='multi_ptm'))
+
+    available_types.extend(SiteType.available_types())
+
+    sub_types = {
+        sub_type
+        for site_type in available_types
+        for sub_type in site_type.sub_types
+    }
+
+    with_subtypes = {
+        site_type.name: [
+            (
+                sub_type.name
+                .replace('-glycosylation', '-linked')
+                .replace('phosphorylation (SARS-CoV-2)', 'SARS-CoV-2')
+            )
+            for sub_type in site_type.sub_types
+        ]
+        for site_type in available_types
+        if site_type.sub_types
+    }
+
+    without_subtypes = {
+        site_type.name: []
+        for site_type in available_types
+        if site_type.name not in with_subtypes and site_type not in sub_types
+    }
+
+    return {
+        **without_subtypes,
+        **with_subtypes
+    }
+
+
 class SequenceView(AbstractProteinView):
     """Single protein view: includes needleplot and sequence"""
 
@@ -210,6 +251,6 @@ class SequenceView(AbstractProteinView):
                 filter_manager.filters,
                 custom_datasets_names=user_datasets.values()
             ),
-            site_types=['multi_ptm'] + SiteType.available_types(),
+            site_types=site_types_hierarchy(),
             mutation_types=Mutation.types,
         )

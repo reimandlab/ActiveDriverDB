@@ -13,6 +13,10 @@
     vertical-align: top
     margin-right: 25px
 
+    ul
+      margin: 0
+      margin-left: 10px
+
 .swatch
   padding: 2px
 
@@ -48,17 +52,20 @@ div.color
   .glycosylation &
     background: $glycosylation
 
-  .N-glycosylation &
+  .N-glycosylation &, .N-linked &
     background: $glycosylation
 
-  .O-glycosylation &
+  .O-glycosylation &, .O-linked &
     background: $glycosylation
 
-  .C-glycosylation &
+  .C-glycosylation &, .C-linked &
     background: $glycosylation
 
-  .S-glycosylation &
+  .S-glycosylation &, .S-linked &
     background: $glycosylation
+
+  .SARS-CoV-2 &
+    background: $sars-cov-2
 
   .multi_ptm &
     background: rgb(8, 104, 172)
