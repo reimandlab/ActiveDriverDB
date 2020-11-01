@@ -1287,7 +1287,7 @@ def active_pathways_lists(
             if pathway.description != gene_set_name:
                 warn(f'{identifier} pathway name differs, old := {pathway.description}, new := {gene_set_name}')
 
-            overlap = row['overlap'].split(',')
+            overlap = row['overlap'].split('|')
             overlap_set = set(overlap)
             assert len(overlap) == len(overlap_set)
 
@@ -1319,21 +1319,6 @@ def precompute_ptm_mutations():
             mutation.precomputed_is_ptm = is_ptm_related
     print(f'Precomputed values of {mismatch} mutations has been computed and updated')
     return []
-
-
-def ensure_mutations_are_precomputed(context: str):
-    mutations_missing_precomputed_status = (
-        Mutation
-        .query
-        .filter_by(is_confirmed=True)
-        .filter(Mutation.precomputed_is_ptm == None)
-        .count()
-    )
-    if mutations_missing_precomputed_status != 0:
-        raise ValueError(
-            f'{context} requires mutation PTM status to be precomputed.'
-            f'Run `./manage.py load protein_related precompute_ptm_mutations` first'
-        )
 
 
 @independent_bio_importer

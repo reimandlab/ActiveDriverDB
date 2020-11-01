@@ -1,10 +1,10 @@
 from functools import partial
 from itertools import combinations
 
-from models import VennDiagram, Site, Protein, SiteType, SiteSource, Mutation
+from models import VennDiagram, Site, Protein, SiteType, SiteSource, Mutation, confirmed_mutation_sources
 
 from .store import CountStore, counter
-from .table import mutation_sources, count_mutated_sites
+from .table import count_mutated_sites
 
 
 def all_combinations(items, min_length=1):
@@ -96,7 +96,7 @@ class VennDiagrams(CountStore):
     def __init__(self):
 
         # generate venn diagrams of mutated sites percentage
-        for name, mutations_source in mutation_sources().items():
+        for name, mutations_source in confirmed_mutation_sources().items():
 
             count_mutated = partial(count_mutated_sites, model=mutations_source)
             sites_mutated = venn_diagram(model=SiteType, name=f'sites_mutated_{name}')(count_mutated)
@@ -109,7 +109,7 @@ class VennDiagrams(CountStore):
                 mutation_by_source, site_type=site_type
             )
             ptm_mutations_by_mutation_source = venn_diagram(
-                cases=mutation_sources().values(),
+                cases=confirmed_mutation_sources().values(),
                 name=f'{site_type.name}_mutations_by_source'
             )(count_mutations_affecting_ptms)
 
@@ -131,6 +131,6 @@ class VennDiagrams(CountStore):
     def sites_by_source(combination, only_primary=False):
         return sites_by_source(combination, only_primary=only_primary)
 
-    @venn_diagram(cases=mutation_sources().values())
+    @venn_diagram(cases=confirmed_mutation_sources().values())
     def mutation_by_source(combination):
         return mutation_by_source(combination)

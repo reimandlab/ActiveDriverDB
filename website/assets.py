@@ -1,5 +1,3 @@
-from subprocess import Popen, PIPE
-
 from flask_assets import Bundle
 from abc import ABC, abstractmethod
 from flask import Markup

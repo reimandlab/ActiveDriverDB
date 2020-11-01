@@ -1127,3 +1127,25 @@ class Mutation(BioModel, MutatedMotifs):
         )
 
 
+def confirmed_mutation_sources():
+    return {
+        source.name: source
+        for source in source_manager.confirmed
+    }
+
+
+def ensure_mutations_are_precomputed(context: str):
+    for source in confirmed_mutation_sources().values():
+        mutations_missing_precomputed_status = (
+            Mutation
+            .query
+            .filter(Mutation.in_sources(source))
+            .filter(Mutation.precomputed_is_ptm == None)
+            .count()
+        )
+        if mutations_missing_precomputed_status != 0:
+            raise ValueError(
+                f'{context} requires mutation PTM status to be precomputed for all mutations.'
+                f'\n{mutations_missing_precomputed_status} {source} mutations are missing precomputed status.'
+                f'\nRun `./manage.py load protein_related precompute_ptm_mutations` first'
+            )

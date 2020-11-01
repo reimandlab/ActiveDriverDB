@@ -5,6 +5,18 @@ from models import Protein
 from models import Site
 
 
+def create_mutations_with_impact_on_site_at_pos_1():
+    return {
+        Mutation(position=10): 'none',  # too far away
+        Mutation(position=9): 'none',
+        Mutation(position=8): 'distal',
+        Mutation(position=4): 'distal',
+        Mutation(position=3): 'proximal',
+        Mutation(position=2): 'proximal',
+        Mutation(position=1): 'direct'
+    }
+
+
 class MutationTest(ModelTest):
 
     def test_default_ref(self):
@@ -31,16 +43,7 @@ class MutationTest(ModelTest):
     def test_impact_on_specific_ptm(self):
 
         # case 0: there are no sites in the protein
-
-        mutations = {
-            Mutation(position=10): 'none',    # too far away
-            Mutation(position=9): 'none',
-            Mutation(position=8): 'distal',
-            Mutation(position=4): 'distal',
-            Mutation(position=3): 'proximal',
-            Mutation(position=2): 'proximal',
-            Mutation(position=1): 'direct'
-        }
+        mutations = create_mutations_with_impact_on_site_at_pos_1()
 
         protein = Protein(
             refseq='NM_00001',
