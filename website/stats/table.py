@@ -78,8 +78,13 @@ def count_mutations_in_sites(
         ]
         for mutation in mutations:
             mutation_position = mutation.position
+            affects_any_site = False
             for site_position in positions_of_matched_sites:
-                count += abs(mutation_position - site_position) < 8
+                if abs(mutation_position - site_position) < 8:
+                    affects_any_site = True
+                    break
+            if affects_any_site:
+                count += 1
         return count
 
     return count_ptm(
