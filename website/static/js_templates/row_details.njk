@@ -11,7 +11,7 @@ Number of affected sites: {{ mutation.cnt_ptm }}<br>
 {% if mutation.sites | length > 0 %}
   Affected site{{ 's' if mutation.sites | length > 1 }}:
   {% for site in mutation.sites %}
-    <div class="sub-cell">
+    <div class="sub-cell indented">
       Position: {{ site.position }}<br>
       Residue: {{ site.residue }}<br>
       Type: {{ site.type | replace(',', ', ') }}<br>
