@@ -81,6 +81,24 @@ class Protein(BioModel):
         return False
 
     @property
+    def best_uniprot_entry(self) -> UniprotEntry:
+        if self.external_references:
+            entries = self.external_references.uniprot_entries
+            if not entries:
+                return None
+            # try to get canonical swissprot isoform
+            for entry in entries:
+                if entry.reviewed and entry.isoform == 1:
+                    return entry
+            # if no canonical one, try to get any swissprot isoform
+            for entry in entries:
+                if entry.reviewed:
+                    return entry
+            # if no swissprot, return any isoform
+            return entries[0]
+        return None
+
+    @property
     def is_swissprot_isoform(self):
         if self.external_references:
             for entry in self.external_references.uniprot_entries:

@@ -51,13 +51,19 @@ def primary_isoforms(f):
 @file_exporter(default_path='exported/preferred_isoforms_sequences.fa')
 def sequences_ac(f):
     """Sequences as needed for Active Driver input.
-    Includes only data from primary (preferred) isoforms."""
+    Includes only data from primary (preferred) isoforms.
+
+    Should be parsable by Active Driver's `read_fasta()`.
+    """
 
     for gene in tqdm(Gene.query.all()):
-        if not gene.preferred_isoform:
+        preferred_isoform: Protein = gene.preferred_isoform
+        if not preferred_isoform:
             continue
-        f.write('>' + gene.name + '\n')
-        f.write(gene.preferred_isoform.sequence + '\n')
+        uniprot_entry = preferred_isoform.best_uniprot_entry
+        uniprot_data = '|UniProt=' + uniprot_entry.accession if uniprot_entry else ''
+        f.write('>' + gene.name + '|RefSeq=' + preferred_isoform.refseq + uniprot_data + '\n')
+        f.write(preferred_isoform.sequence + '\n')
 
 
 @file_exporter(default_path='exported/preferred_isoforms_disorder.fa')
