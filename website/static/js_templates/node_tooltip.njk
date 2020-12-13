@@ -41,7 +41,7 @@
   {% if interaction.actions %}
     <div>
     {% for action in interaction.actions %}
-      {{ action | title }}
+      <div class="badge">{{ action | title }}</div>
     {% endfor %}
     </div>
   {% endif %}
