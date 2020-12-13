@@ -94,7 +94,7 @@ def sites_ac(f):
             ','.join([k.name for k in site.kinases]),
             ','.join(map(str, site.pmid)),
             site.protein.refseq,
-            site.protein.best_uniprot_entry or ''
+            site.protein.best_uniprot_entry.accession if site.protein.best_uniprot_entry else ''
         ]
 
         f.write('\t'.join(data) + '\n')
