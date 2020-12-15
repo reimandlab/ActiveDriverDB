@@ -208,8 +208,15 @@ class UniprotImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, SiteImporter):
 
         extracted_data = self.extract_site_mod_type(sites)
 
-        # TODO: UniProt source often uses PubMed id as citation identifier - but not always!
-        # sites['pub_med_ids'] = sites.source.str.replace('http://purl.uniprot.org/citations/', '')
+        if sites.source.any():
+            sites['pub_med_ids'] = (
+                sites.source.where(sites.source.str.match(r'http://purl.uniprot.org/citations/\d+$'))
+                .str.replace('http://purl.uniprot.org/citations/', '')
+            )
+            sites['pub_med_ids'] = sites['pub_med_ids'].apply(lambda x: [int(x)] if x == x else None)
+        else:
+            warn('No site source data')
+            sites['pub_med_ids'] = None
 
         sites.drop(columns=['data', 'source'], inplace=True)
 
@@ -225,7 +232,7 @@ class UniprotImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, SiteImporter):
 
         mapped_sites = self.map_sites_to_isoforms(sites)
 
-        return self.create_site_objects(mapped_sites, ['refseq', 'position', 'residue', 'mod_type'])
+        return self.create_site_objects(mapped_sites, ['refseq', 'position', 'residue', 'mod_type', 'pub_med_ids'])
 
     def repr_site(self, site):
         return f'{site.sequence_accession}: ' + super().repr_site(site)

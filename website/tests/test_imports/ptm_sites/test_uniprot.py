@@ -85,7 +85,7 @@ class GlycosylationData(UniprotCaseData):
     primary_accession, sequence_accession, position, data, eco, source
     "P01889","P01889-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
     "P01891","P01891-1","110"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/19159218
-    "Q2M3G0","Q2M3G0-4","1188"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",
+    "Q2M3G0","Q2M3G0-4","1188"^^<http://www.w3.org/2001/XMLSchema#int>,"N-linked (GlcNAc...) asparagine","ECO_0000269",http://purl.uniprot.org/citations/1234
     """
 
     mappings = """\
@@ -228,6 +228,7 @@ class TestImport(DatabaseTest):
         sites_by_isoform = {site.protein.refseq: site for site in sites}
 
         assert sites_by_isoform['NM_001163941'].residue == sites_by_isoform['NM_178559'].residue == 'N'
+        assert sites_by_isoform['NM_001163941'].pmid == {1234}
 
     def test_splice_variants_handling(self):
         """Verify import of sites from a multi-splice variants entry (here: Q12797)"""
