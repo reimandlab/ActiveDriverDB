@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Iterable
 from warnings import warn
 
 from pandas import read_table, read_excel
@@ -43,6 +43,7 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
 
     event_name = 'SARS-CoV-2 infection'
     event_reference = '(Bouhaddou et al., 2020)'
+    pubmed_id = 32645325
 
     def __init__(
         self, sprot_canonical=None, sprot_splice=None, mappings_path=None,
@@ -106,17 +107,19 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
             )
 
         mapped_sites['event'] = event
+        mapped_sites['pub_med_ids'] = self.pubmed_id
+        mapped_sites['pub_med_ids'] = mapped_sites['pub_med_ids'].apply(lambda pubmed_id: [pubmed_id])
 
         return self.create_site_objects(
             mapped_sites,
-            columns=['refseq', 'position', 'residue', 'mod_type', 'adj_p_val', 'log2_fold_change', 'event']
+            columns=['refseq', 'position', 'residue', 'mod_type', 'pub_med_ids', 'adj_p_val', 'log2_fold_change', 'event']
         )
 
     def add_site(
-            self, refseq, position: int, residue, mod_type,
+            self, refseq, position: int, residue, mod_type, pub_med_ids: Iterable[int],
             adj_p_val: float, log2_fold_change: float, event: EventModulatingPTM
     ):
-        site, created = super().add_site(refseq, position, residue, mod_type)
+        site, created = super().add_site(refseq, position, residue, mod_type, pubmed_ids=pub_med_ids)
 
         association = RegulatorySiteAssociation(
             event=event,

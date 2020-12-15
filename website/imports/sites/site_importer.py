@@ -1,7 +1,7 @@
 import warnings
 from abc import abstractmethod
 from itertools import chain
-from typing import List, Set
+from typing import List, Set, Iterable
 from warnings import warn
 from collections import Counter
 
@@ -102,6 +102,7 @@ class SiteImporter(BioImporter):
                 .load_only('refseq')
             )
         )
+        # TODO: verify joinedloaded for collections
 
         # create site types
         site_type_objects = [
@@ -238,7 +239,7 @@ class SiteImporter(BioImporter):
 
         return mapped_sites
 
-    def add_site(self, refseq, position: int, residue, mod_type, pubmed_ids=None, kinases=None):
+    def add_site(self, refseq, position: int, residue, mod_type, pubmed_ids: Iterable[int] = None, kinases=None):
 
         protein = self.proteins[refseq]
         site_key = (protein.id, position, residue)
