@@ -35,7 +35,7 @@ class PhosphoSitePlusImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, Unipro
     source_name = 'PhosphoSitePlus'
     site_types = [
         'phosphorylation', 'O-glycosylation', 'glycosylation',
-        'acetylation', 'ubiquitination', 'methylation'
+        'acetylation', 'ubiquitination', 'methylation', 'sumoylation'
     ]
 
     site_datasets = {
@@ -44,7 +44,8 @@ class PhosphoSitePlusImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, Unipro
         'Acetylation': 'acetylation',
         'Methylation': 'methylation',
         'Phosphorylation': 'phosphorylation',
-        'Ubiquitination': 'ubiquitination'
+        'Ubiquitination': 'ubiquitination',
+        'Sumoylation': 'sumoylation'
     }
 
     def __init__(self, sprot_canonical=None, sprot_splice=None, mappings_path=None, dir_path='data/sites/PSP'):
@@ -146,7 +147,7 @@ class PhosphoSitePlusImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, Unipro
             {site.MS_LIT, site.LT_LIT}
             for site in sites.itertuples(index=False)
         ).values
-        # TODO: it should be possible to retrieve PUB MED ids from from MS_LIT and LT_LIT
+        # TODO: it should be possible to retrieve PUB MED ids from MS_LIT and LT_LIT
         # TODO: (or alternatively link to relevant place on PSP website)
         sites['pub_med_ids'] = None
 
