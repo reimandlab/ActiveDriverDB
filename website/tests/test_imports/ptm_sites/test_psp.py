@@ -219,3 +219,5 @@ class TestImport(DatabaseTest):
             site = sites[0]
             assert site.types_names == {'phosphorylation'}
             assert {kinase.name for kinase in site.kinases} == {'SRC', 'ABL1', 'FYN'}
+            assert site.psp_mass_spec_literature_evidence == 28
+            assert site.psp_low_throughput_literature_evidence == 21

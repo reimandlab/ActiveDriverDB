@@ -143,12 +143,6 @@ class PhosphoSitePlusImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, Unipro
 
         sites['mod_type'] = mod_type
 
-        sites['psp_ids'] = Series(
-            {site.MS_LIT, site.LT_LIT}
-            for site in sites.itertuples(index=False)
-        ).values
-        # TODO: it should be possible to retrieve PUB MED ids from MS_LIT and LT_LIT
-        # TODO: (or alternatively link to relevant place on PSP website)
         sites['pub_med_ids'] = None
 
         return sites
@@ -171,7 +165,20 @@ class PhosphoSitePlusImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, Unipro
 
         mapped_sites = self.map_sites_to_isoforms(sites)
 
-        return self.create_site_objects(mapped_sites)
+        return self.create_site_objects(
+            mapped_sites,
+            columns=['refseq', 'position', 'residue', 'mod_type', 'pub_med_ids', 'kinases', 'MS_LIT', 'LT_LIT']
+        )
+
+    def add_site(
+            self, refseq, position: int, residue, mod_type, pub_med_ids, kinases,
+            MS_LIT, LT_LIT
+    ):
+        site, created = super().add_site(refseq, position, residue, mod_type, pubmed_ids=pub_med_ids, kinases=kinases)
+        site.psp_mass_spec_literature_evidence = MS_LIT
+        site.psp_low_throughput_literature_evidence = LT_LIT
+
+        return site, created
 
     def repr_site(self, site):
         return f'{site.protein_accession}: ' + super().repr_site(site)

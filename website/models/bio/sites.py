@@ -181,6 +181,9 @@ class Site(BioModel):
     site_type_table = make_association_table('site.id', SiteType.id, index=True)
     types = db.relationship(SiteType, secondary=site_type_table, backref='sites', collection_class=set)
 
+    psp_mass_spec_literature_evidence = db.Column(db.Integer)
+    psp_low_throughput_literature_evidence = db.Column(db.Integer)
+
     @property
     def types_names(self):
         return {site_type.name for site_type in self.types}
