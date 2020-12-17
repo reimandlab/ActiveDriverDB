@@ -164,6 +164,8 @@ class SiteMapper:
                         # (as otherwise we would not get the source site!)
                         and
                         not (
+                            protein
+                            and
                             isoform.refseq == protein.refseq
                             and
                             site.position == new_site.position
