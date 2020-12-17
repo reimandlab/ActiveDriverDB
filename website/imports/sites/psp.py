@@ -23,6 +23,7 @@ class PhosphoSitePlusImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, Unipro
         Methylation_site_dataset.gz
         O-GlcNAc_site_dataset.gz
         O-GalNAc_site_dataset.gz
+        Sumoylation_site_dataset.gz
 
     and should be placed under data/sites/PSP directory.
 
