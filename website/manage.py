@@ -47,7 +47,7 @@ def calc_statistics(args, app=None):
         for store_name in args.groups:
             store_class = stores_map[store_name]
             store = store_class()
-            store.calc_all()
+            store.calc_all(limit_to=args.limit_to)
         db.session.commit()
 
 
@@ -517,6 +517,13 @@ def create_parser():
         nargs='*',
         choices=['Statistics', 'VennDiagrams', 'Plots', 'Datasets'],
         default=['Statistics'],
+    )
+
+    calc_stats.add_argument(
+        '-l',
+        '--limit_to',
+        type=str,
+        default=None
     )
 
     shell_parser = new_subparser(
