@@ -136,6 +136,7 @@ class PhosphoSitePlusImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, Unipro
         if only_literature:
             sites = sites.dropna(subset=['MS_LIT', 'LT_LIT'], how='all')
 
+        sites[['MS_LIT', 'LT_LIT']] = sites[['MS_LIT', 'LT_LIT']].fillna(0)
         sites = sites.query('ORGANISM == "human"')
 
         extracted_data = self.extract_details(sites)
