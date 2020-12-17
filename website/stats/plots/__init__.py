@@ -1,7 +1,7 @@
 from collections import defaultdict
 from warnings import warn
 
-from pandas import DataFrame
+from pandas import DataFrame, concat
 from tqdm import tqdm
 
 from helpers.plots import bar_plot
@@ -10,6 +10,7 @@ from stats.plots import (
     ptm_variability, proteins_variability, most_mutated_sites, active_driver, ptm_mutations,
     motifs, mimp, enrichment
 )
+from stats import table
 from stats.plots.common import site_types_names
 from ..store import cases, CountStore, counter
 from ..store.objects import StoreObject
@@ -95,6 +96,13 @@ class Plots(CountStore):
         return site_types_names, [counts[type_name] for type_name in site_types_names]
 
 
+def compute(callback, index, key, value):
+    return concat([
+        DataFrame(callback(only_primary=primary_isoforms)).assign(OnlyPrimary=primary_isoforms)
+        for primary_isoforms in [True, False]
+    ]).rename_axis(index=index).rename(columns={key: value})
+
+
 class Datasets(CountStore):
 
     storage_model = Dataset
@@ -102,12 +110,18 @@ class Datasets(CountStore):
 
     @counter
     def sites_counts(self):
-        from stats.table import sites_counts
-        from pandas import DataFrame, concat
+        return compute(
+            table.sites_counts,
+            index='SiteType',
+            key='PTM sites',
+            value='Count'
+        )
 
-        df = concat([
-            DataFrame(sites_counts(only_primary=primary_isoforms)).assign(OnlyPrimary=primary_isoforms)
-            for primary_isoforms in [True, False]
-        ]).rename_axis(index='SiteType').rename(columns={'PTM sites': 'Count'})
-
-        return df
+    @counter
+    def mutation_counts(self):
+        return compute(
+            table.mutations_counts,
+            index='MutationType',
+            key='Mutations',
+            value='Count'
+        )

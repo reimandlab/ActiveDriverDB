@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "help.html" import help with context %}
+{% from "text_entry.html" import text with context %}
+
+{% block title %}
+  Statistics - {{ super() }}
+{% endblock %}
+
+{% block head %}
+  {{ super() }}
+{% endblock %}
+
+
+{% block breadcrumb %}
+  {{ super() }}
+  <li class="active">{{ Statistics }}</li>
+{% endblock %}
+
+
+{% block content %}
+  <h3>Statistics</h3>
+
+  <div class="page-content">
+
+    <h4>PTM sites by type</h4>
+    {{
+      plot(
+        ggplot(datasets.sites_counts, aes(x='SiteType', y='Count'))
+        + facet_wrap('OnlyPrimary')
+        + geom_bar(stat='identity')
+      )
+    }}
+
+    <h4>Mutations</h4>
+    {{
+      plot(
+        ggplot(datasets.mutation_counts, aes(x='MutationType', y='Count'))
+        + facet_wrap('OnlyPrimary')
+        + geom_bar(stat='identity')
+      )
+      }}
+  </div>
+
+{% endblock %}
