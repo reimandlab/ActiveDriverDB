@@ -22,7 +22,7 @@ class DataFrameStore(TypeDecorator):
         return stream.getvalue()
 
     def compare_values(self, x, y):
-        return sum(hash_pandas_object(x)) == sum(hash_pandas_object(y))
+        return sum(hash_pandas_object(x)) == sum(hash_pandas_object(y)) and list(x.columns) == list(y.columns)
 
     def process_result_value(self, value: str, dialect) -> DataFrame:
         stream = StringIO(value)

@@ -38,7 +38,15 @@
         + facet_wrap('OnlyPrimary')
         + geom_bar(stat='identity')
       )
-      }}
+    }}
+
+    <h4>Proteins with PTM mutations</h4>
+    {{
+      plot(
+        ggplot(datasets.proteins_with_ptm_mutations, aes(x='MutationType', y='Count', fill='ProteinCategory'))
+        + geom_bar(stat='identity')
+      )
+    }}
   </div>
 
 {% endblock %}

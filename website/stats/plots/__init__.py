@@ -80,21 +80,6 @@ class Plots(CountStore):
 
         return site_types_names, values
 
-    @cases(only_preferred=[True, False])
-    @bar_plot
-    def sites_counts(self, only_preferred):
-        counts = defaultdict(int)
-
-        query = Site.query
-        if only_preferred:
-            query = query.join(Protein).filter(Protein.is_preferred_isoform)
-
-        for site in tqdm(query.all()):
-            for site_type in site.types:
-                counts[site_type.name] += 1
-
-        return site_types_names, [counts[type_name] for type_name in site_types_names]
-
 
 def compute(callback, index, key, value):
     return concat([
@@ -125,3 +110,9 @@ class Datasets(CountStore):
             key='Mutations',
             value='Count'
         )
+
+    @counter
+    def proteins_with_ptm_mutations(self):
+        return DataFrame(
+            table.source_specific_proteins_with_ptm_mutations()
+        ).stack().rename('Count').rename_axis(['MutationType', 'ProteinCategory']).reset_index()
