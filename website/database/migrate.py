@@ -127,16 +127,15 @@ def basic_auto_migrate_relational_db(app, bind):
 
                 if columns_to_update:
                     print(
-                        '\nFollowing columns in `%s` table differ in definitions '
-                        f'from those specified in models: {table.name}'
+                        f'\nFollowing columns in `{table.name}` table differ in definitions '
+                        f'from those specified in models: {columns_to_update}'
                     )
                 for column, old_definition, new_definition in columns_to_update:
                     agreed = got_permission(
-                        'Column: `%s`\n'
-                        'Old definition: %s\n'
-                        'New definition: %s\n'
+                        f'Column: `{column}`\n'
+                        f'Old definition: {old_definition}\n'
+                        f'New definition: {new_definition}\n'
                         'Update column definition?'
-                        % (column, old_definition, new_definition)
                     )
                     if agreed:
                         update_column(engine, table.name, new_definition)
@@ -146,8 +145,8 @@ def basic_auto_migrate_relational_db(app, bind):
 
             if unused_columns:
                 print(
-                    '\nFollowing columns in `%s` table are no longer used '
-                    'and can be safely removed:' % table.name
+                    f'\nFollowing columns in `{table.name}` table are no longer used '
+                    f'and can be safely removed: {unused_columns}'
                 )
                 for column in unused_columns:
                     if got_permission(f'Column: `{column}` - remove?'):
