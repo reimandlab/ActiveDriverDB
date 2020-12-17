@@ -8,7 +8,7 @@ from database import fast_count, yield_objects
 from imports import MutationImportManager
 from models import (
     Gene, InheritedMutation, MC3Mutation, ExomeSequencingMutation, The1000GenomesMutation, Mutation,
-    SiteType,
+    SiteType, PCAWGMutation,
 )
 from models import Site
 from models import Protein
@@ -167,6 +167,11 @@ def mutations_affecting_ptm_sites(f, sources):
 @exporter
 def mc3_muts_affecting_ptm_sites(path='exported/mc3_mutations_affecting_ptm_sites.tsv'):
     return mutations_affecting_ptm_sites([MC3Mutation], path=path)
+
+
+@exporter
+def pcawg_muts_affecting_ptm_sites(path='exported/pcawg_mutations_affecting_ptm_sites.tsv'):
+    return mutations_affecting_ptm_sites([PCAWGMutation], path=path)
 
 
 @exporter
