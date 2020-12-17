@@ -108,7 +108,7 @@ def count_ptm(
         print('Reusing cached proteins...')
         proteins = PROTEINS_CACHE[only_primary]
     else:
-        print('Retriving and caching proteins...')
+        print('Retrieving and caching proteins...')
         proteins = Protein.query.options(
             load_only('id'),
             subqueryload(Protein.sites)

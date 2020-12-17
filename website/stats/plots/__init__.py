@@ -1,16 +1,17 @@
 from collections import defaultdict
 from warnings import warn
 
+from pandas import DataFrame
 from tqdm import tqdm
 
 from helpers.plots import bar_plot
-from models import Plot, Site, Protein, DataError
+from models import Plot, Site, Protein, DataError, Dataset
 from stats.plots import (
     ptm_variability, proteins_variability, most_mutated_sites, active_driver, ptm_mutations,
     motifs, mimp, enrichment
 )
 from stats.plots.common import site_types_names
-from ..store import cases, CountStore
+from ..store import cases, CountStore, counter
 from ..store.objects import StoreObject
 
 
@@ -92,3 +93,21 @@ class Plots(CountStore):
                 counts[site_type.name] += 1
 
         return site_types_names, [counts[type_name] for type_name in site_types_names]
+
+
+class Datasets(CountStore):
+
+    storage_model = Dataset
+    default = DataFrame()
+
+    @counter
+    def sites_counts(self):
+        from stats.table import sites_counts
+        from pandas import DataFrame, concat
+
+        df = concat([
+            DataFrame(sites_counts(only_primary=primary_isoforms)).assign(OnlyPrimary=primary_isoforms)
+            for primary_isoforms in [True, False]
+        ]).rename_axis(index='SiteType').rename(columns={'PTM sites': 'Count'})
+
+        return df

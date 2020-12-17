@@ -13,6 +13,7 @@ from .objects import StoreObject, Counter, CaseGenerator
 class CountStore:
 
     storage_model = Count
+    default = 0
 
     def register(self, stored_object, name=None):
         if not name:
@@ -90,8 +91,13 @@ class CountStore:
         model = self.storage_model
 
         counts = {
-            counter_name: db.session.query(model.value).filter(model.name == counter_name).scalar() or 0
+            counter_name: db.session.query(model.value).filter(model.name == counter_name).scalar()
             for counter_name in self.counters.keys()
+        }
+
+        counts = {
+            name: value if value is not None else self.default
+            for name, value in counts.items()
         }
 
         return counts

@@ -14,7 +14,7 @@ from werkzeug.utils import cached_property
 
 import security
 from database import db, update
-from database.types import MediumPickle
+from database.types import MediumPickle, DataFrameStore
 from database.functions import utc_now, utc_days_after
 from exceptions import ValidationError
 from .model import Model
@@ -39,6 +39,12 @@ class Plot(CMSModel):
     """Holds a plot data"""
     name = db.Column(db.String(254), unique=True)
     value = db.Column(MediumPickle)
+
+
+class Dataset(CMSModel):
+    """Holds a dataset"""
+    name = db.Column(db.String(254), unique=True)
+    value = db.Column(DataFrameStore)
 
 
 class VennDiagram(CMSModel):

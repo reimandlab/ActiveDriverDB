@@ -199,6 +199,29 @@ def register_jinja_functions(app):
     jinja_globals['csrf_token'] = csrf.new_csrf_token
     jinja_globals['is_debug_mode'] = app.debug
 
+    import plotnine
+    import mpld3
+
+
+    from stats import STORES
+    jinja_globals['datasets'] = STORES['Datasets']
+    print(STORES['Datasets'])
+
+    def plot(ggplot_object, **kwargs):
+        fig = ggplot_object.draw()
+        from markupsafe import Markup
+        return Markup(mpld3.fig_to_html(fig, **kwargs))
+
+    jinja_globals['plot'] = plot
+    available_elements = {
+        'geom', 'stat', 'position', 'theme', 'element', 'scale', 'guide', 'expand',
+        'xlim', 'ylim', 'lims', 'ggplot', 'aes', 'annotate', 'arrow', 'annotation',
+        'coord', 'facet'
+    }
+    for key, value in vars(plotnine).items():
+        if key.split('_')[0] in available_elements:
+            jinja_globals[key] = value
+
     jinja_filters['json'] = json.dumps
     jinja_filters['substitute_allowed_variables'] = substitute_variables
     jinja_filters['pluralize'] = pluralize

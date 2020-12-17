@@ -167,12 +167,12 @@ def ptm_muts_all_together(site_type, with_facets=True):
         'legend.position': 'bottom',
         'strip.text': ggplot2.element_text(size=16),
     }
-    fill = 'observered_or_expected'
-    levels = ','.join([repr(a) for a in sorted(set(df['observered_or_expected']), reverse=True)])
+    fill = 'observed_or_expected'
+    levels = ','.join([repr(a) for a in sorted(set(df['observed_or_expected']), reverse=True)])
     fill = f'factor({fill}, levels = c({levels}))'
 
     if with_facets:
-        x = 'observered_or_expected'
+        x = 'observed_or_expected'
         x = f'factor({x}, levels = c({levels}))'
         d['max'] *= 1.1
         x_label = ''
@@ -211,7 +211,7 @@ def ptm_muts_all_together(site_type, with_facets=True):
 
 @cases(site_type=site_types_with_any)
 @grouped_box_plot
-def ptm_muts_all_togethaer(site_type):
+def ptm_muts_all_together_2(site_type):
     groups, significances = calc_ptm_muts_all_together(site_type)
     return groups
 

@@ -372,6 +372,10 @@ class ContentManagementSystem(FlaskView):
     def index(self):
         return template('front_page.html')
 
+    @route('/statistics/')
+    def statistics(self):
+        return self._template('statistics')
+
     @route('/<path:address>/')
     def page(self, address):
         page = get_page(address)

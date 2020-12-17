@@ -36,3 +36,5 @@ Werkzeug==0.15.3
 lmdb
 eralchemy
 xlrd
+plotnine
+mpld3

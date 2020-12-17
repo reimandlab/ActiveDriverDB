@@ -1,9 +1,35 @@
+from io import StringIO
+
+from pandas import DataFrame, read_csv
 from sqlalchemy import TypeDecorator, Text
 from sqlalchemy.dialects import mysql
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.mutable import MutableSet
 
 from database import db
+from pandas.util import hash_pandas_object
+
+
+class DataFrameStore(TypeDecorator):
+    """"""
+
+    impl = Text
+
+    def process_bind_param(self, value: DataFrame, dialect):
+        from io import StringIO
+        stream = StringIO()
+        value.to_csv(stream)
+        return stream.getvalue()
+
+    def compare_values(self, x, y):
+        return sum(hash_pandas_object(x)) == sum(hash_pandas_object(y))
+
+    def process_result_value(self, value: str, dialect) -> DataFrame:
+        stream = StringIO(value)
+        return read_csv(stream)
+
+    def copy(self, **kw):
+        return DataFrameStore(self.impl.length)
 
 
 class ScalarSet(TypeDecorator):
