@@ -515,7 +515,7 @@ def create_parser():
         '--groups',
         type=str,
         nargs='*',
-        choices=['Statistics', 'VennDiagrams', 'Plots'],
+        choices=['Statistics', 'VennDiagrams', 'Plots', 'Datasets'],
         default=['Statistics'],
     )
 
