@@ -34,6 +34,7 @@ class OthersUniprotImporter(UniprotImporter):
         'Dimethylated ': 'methylation',
         'Symmetric dimethyl': 'methylation',
         'Asymmetric dimethyl': 'methylation',
+        'N6-succinyl': 'succinylation'
     }
 
     source_name = 'UniProt'
