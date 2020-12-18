@@ -200,16 +200,19 @@ def register_jinja_functions(app):
     jinja_globals['is_debug_mode'] = app.debug
 
     import plotnine
-    import mpld3
 
+    import mpld3
 
     from stats import STORES
     jinja_globals['datasets'] = STORES['Datasets']
     print(STORES['Datasets'])
 
-    def plot(ggplot_object, **kwargs):
+    def plot(ggplot_object, width=950, height=480, dpi=100, interactive_legend=True, **kwargs):
         fig = ggplot_object.draw()
+        fig.set_size_inches(width / dpi, height / dpi)
+        fig.subplots_adjust(right=0.7)
         from markupsafe import Markup
+
         return Markup(mpld3.fig_to_html(fig, **kwargs))
 
     jinja_globals['plot'] = plot
