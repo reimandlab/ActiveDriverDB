@@ -200,6 +200,7 @@ def register_jinja_functions(app):
     jinja_globals['is_debug_mode'] = app.debug
 
     import plotnine
+    from mizani import formatters
 
     import mpld3
 
@@ -207,7 +208,7 @@ def register_jinja_functions(app):
     jinja_globals['datasets'] = STORES['Datasets']
     print(STORES['Datasets'])
 
-    def plot(ggplot_object, width=950, height=480, dpi=100, interactive_legend=True, **kwargs):
+    def plot(ggplot_object, width=950, height=480, dpi=100, **kwargs):
         fig = ggplot_object.draw()
         fig.set_size_inches(width / dpi, height / dpi)
         fig.subplots_adjust(right=0.7)
@@ -216,6 +217,11 @@ def register_jinja_functions(app):
         return Markup(mpld3.fig_to_html(fig, **kwargs))
 
     jinja_globals['plot'] = plot
+
+    for key, value in vars(formatters).items():
+        if key in formatters.__all__:
+            jinja_globals[key] = value
+
     available_elements = {
         'geom', 'stat', 'position', 'theme', 'element', 'scale', 'guide', 'expand',
         'xlim', 'ylim', 'lims', 'ggplot', 'aes', 'annotate', 'arrow', 'annotation',

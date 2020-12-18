@@ -26,8 +26,10 @@
     {{
       plot(
         ggplot(datasets.sites_counts, aes(x='SiteType', y='Count', fill='SiteType'))
-        + facet_wrap('OnlyPrimary')
+        + facet_wrap('OnlyPrimary', labeller='label_both')
         + geom_bar(stat='identity')
+        + scale_y_continuous(labels=scientific_format(digits=0))
+        + coord_flip()
         + theme_minimal()
       )
     }}
@@ -38,6 +40,7 @@
         ggplot(datasets.mutation_counts, aes(x='MutationType', y='Count', fill='MutationType'))
         + facet_wrap('OnlyPrimary', labeller='label_both')
         + geom_bar(stat='identity')
+        + scale_y_continuous(labels=scientific_format(digits=0))
         + coord_flip()
         + theme_minimal()
       )
@@ -46,8 +49,19 @@
     <h4>Proteins with PTM mutations</h4>
     {{
       plot(
-        ggplot(datasets.proteins_with_ptm_mutations, aes(x='MutationType', y='Count', fill='ProteinCategory'))
+        ggplot(
+          datasets.proteins_with_ptm_mutations
+          .assign(
+            Category=datasets.proteins_with_ptm_mutations.ProteinCategory.str.replace('with PTM muts', '')
+          ),
+          aes(x='MutationType', y='Count', fill='ProteinCategory')
+        )
         + geom_bar(stat='identity', position='dodge')
+        + geom_text(
+            aes(y=-0.5, label='Category'),
+             position=position_dodge(width=0.9),
+             color='gray', size=8, angle=45, va='top'
+        )
         + theme_minimal()
       )
     }}
