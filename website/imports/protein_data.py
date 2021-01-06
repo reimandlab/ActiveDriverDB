@@ -1,5 +1,6 @@
 import gzip
 from collections import defaultdict, namedtuple
+from pathlib import Path
 from typing import Callable, Type
 from warnings import warn
 
@@ -1016,8 +1017,8 @@ def calculate_interactors():
 
 ListData = namedtuple('ListData', 'name path mutations_source site_type_name')
 
-ACTIVE_DRIVER_RESULTS_DIR = 'data/ActiveDriver/2020-10-27/'
-ACTIVE_PATHWAYS_RESULTS_DIR = 'data/ActivePathways/2020-10-27/'
+ACTIVE_DRIVER_RESULTS_DIR = 'data/ActiveDriver/2021-01-06/'
+ACTIVE_PATHWAYS_RESULTS_DIR = 'data/ActivePathways/2021-01-06/'
 
 
 def list_data_to_kwargs(list_data):
@@ -1036,26 +1037,38 @@ def list_data_to_kwargs(list_data):
     }
 
 
-site_names = {
+site_type_name_map = {
     'phosphorylation_covid': 'phosphorylation (SARS-CoV-2)'
 }
+
+SITE_TYPES_ANALYSED = [
+    'all',
+    'acetylation',
+    'glycosylation',
+    'methylation',
+    'phosphorylation',
+    'phosphorylation_covid',
+    'succinylation',
+    'sumoylation',
+    'ubiquitination',
+]
 
 
 @independent_bio_importer
 def active_driver_gene_lists(
     lists=(
         ListData(
-            name=f'{label}: {site_type_name.get(site_type, site_type)} sites',
+            name=f'{label}: {site_type_name_map.get(site_type, site_type)} sites',
             path=ACTIVE_DRIVER_RESULTS_DIR + f'results_{source_path}_{site_type}.csv',
             mutations_source=source,
-            site_type_name=site_type_name.get(site_type, site_type)
+            site_type_name=site_type_name_map.get(site_type, site_type)
         )
         for (source, source_path), label in {
             (InheritedMutation, 'inherited'): 'Clinical (ClinVar, excluding somatic)',
             (MC3Mutation, 'MC3'): 'Cancer (TCGA PanCancerAtlas)',
             (PCAWGMutation, 'PCAWG'): 'Cancer (PCAWG)',
         }.items()
-        for site_type in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination', 'phosphorylation_covid']
+        for site_type in SITE_TYPES_ANALYSED
     ),
     fdr_cutoff=0.05
 ):
@@ -1239,7 +1252,7 @@ def active_pathways_lists(
             (MC3Mutation, 'MC3'): 'Cancer (TCGA PanCancerAtlas)',
             (PCAWGMutation, 'PCAWG'): 'Cancer (PCAWG)',
         }.items()
-        for site_type in ['all', 'acetylation', 'glycosylation', 'methylation', 'phosphorylation', 'ubiquitination']
+        for site_type in SITE_TYPES_ANALYSED
     ),
     fdr_cutoff=0.05
 ):
@@ -1250,6 +1263,11 @@ def active_pathways_lists(
     pathways_lists = []
 
     for list_data in lists:
+
+        if not Path(list_data.path).exists():
+            warn(f'Skipping pathways list {list_data.name}: file not found')
+            continue
+
         if list_data.name in current_pathway_lists:
             print(f'Skipping pathways list {list_data.name}: already present in database')
             continue

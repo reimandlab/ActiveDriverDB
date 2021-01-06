@@ -1,0 +1,2 @@
+term.id,term.name,adjusted.p.val,term.size,overlap
+GO:0000122,negative regulation of transcription by RNA polymerase II,0.0444235060768142,875,BCOR|GTF2IRD1|MGA|SMARCA4|MZF1|ETV5|TRIM28|ZNF254|PIAS4|UBC
