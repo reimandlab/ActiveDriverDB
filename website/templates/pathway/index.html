@@ -36,12 +36,16 @@
             {{ list.site_type or 'all' }}
           </td>
           <td>
+            {% if list.pathways_list.entries %}
             <a href="{{ url_for(
                 'PathwaysView:list',
                 pathways_list_name=list.pathways_list.name
             ) }}">
               ActivePathways
             </a>
+            {% else %}
+              No results
+            {% endif %}
           </td>
           <td>
             {{ list.pathways_list.entries | length }}
