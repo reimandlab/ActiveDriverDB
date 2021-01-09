@@ -23,10 +23,12 @@
   <div class="page-content">
 
     <h4>PTM sites by type</h4>
+    {% set isoforms_labeller = as_labeller({'TRUE': 'Primary isforoms only', 'FALSE': 'All protein isoforms'}) %}
+
     {{
       plot(
         ggplot(datasets.sites_counts, aes(x='SiteType', y='Count', fill='SiteType', tooltip='Count'))
-        + facet_wrap('OnlyPrimary', labeller='label_both')
+        + facet_wrap('OnlyPrimary', labeller=isoforms_labeller)
         + geom_bar_interactive(stat='identity')
         + scale_y_continuous(labels=scientific_format(digits=0))
         + coord_flip()
@@ -39,7 +41,7 @@
     {{
       plot(
         ggplot(datasets.mutation_counts, aes(x='MutationType', y='Count', fill='MutationType', tooltip='Count'))
-        + facet_wrap('OnlyPrimary', labeller='label_both')
+        + facet_wrap('OnlyPrimary', labeller=isoforms_labeller)
         + geom_bar_interactive(stat='identity')
         + scale_y_continuous(labels=scientific_format(digits=0))
         + coord_flip()

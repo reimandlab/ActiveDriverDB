@@ -1,8 +1,9 @@
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Dict
 
 from pandas import DataFrame
-from rpy2.robjects import default_converter, pandas2ri, numpy2ri
+from rpy2.robjects import default_converter, pandas2ri, numpy2ri, StrVector
 from rpy2.robjects.conversion import localconverter
 from rpy2.robjects.packages import importr
 import rpy2.robjects.lib.ggplot2 as ggplot2
@@ -51,6 +52,13 @@ def htmlwidget(interactive_plot, args):
     )
 
 
+def as_labeller(x: Dict[str, str], *args, **kwargs):
+    r_x = StrVector(list(x.values()))
+    r_x.names = list(x.keys())
+
+    return ggplot2.ggplot2.as_labeller(r_x, *args, **kwargs)
+
+
 def register_ggplot_functions(jinja_globals):
 
     def plot(ggplot_object, width=950, height=480, dpi=100, **kwargs):
@@ -85,6 +93,8 @@ def register_ggplot_functions(jinja_globals):
     for key, value in vars(ggplot2).items():
         if key.split('_')[0] in available_elements:
             jinja_globals[key] = value
+
+    jinja_globals['as_labeller'] = as_labeller
 
     for key, value in vars(ggiraph).items():
         if key.split('_')[0] in available_elements:

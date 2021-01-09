@@ -199,9 +199,24 @@ def register_jinja_functions(app):
     jinja_globals['csrf_token'] = csrf.new_csrf_token
     jinja_globals['is_debug_mode'] = app.debug
 
-
     from stats import STORES
-    jinja_globals['datasets'] = STORES['Datasets']
+
+    def rename_mutations(df):
+
+        from models import source_manager
+        mutation_to_label = {
+            mutation_source.name: mutation_source.display_name
+            for mutation_source in source_manager.all
+        }
+
+        if 'MutationType' in df.columns:
+            df['MutationType'] = df['MutationType'].apply(lambda code_name: mutation_to_label.get(code_name, code_name))
+        return df
+
+    jinja_globals['datasets'] = {
+        key: rename_mutations(value)
+        for key, value in STORES['Datasets'].items()
+    }
     print(STORES['Datasets'].keys())
 
     register_ggplot_functions(jinja_globals)
