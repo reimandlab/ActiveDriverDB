@@ -82,6 +82,11 @@ sudo apt-get install r-base
 # and R building dependencies
 sudo apt-get install r-base-dev
 
+sudo R -e 'install.packages("ggiraph")'
+sudo R -e 'install.packages("knitr")'
+sudo R -e 'install.packages("ggplot2")'
+sudo R -e 'install.packages("htmlwidgets")'
+
 # install ActiveDriver and progress bar
 # R -e 'install.packages("ActiveDriver")'
 sudo R -e 'install.packages("pbmcapply")'

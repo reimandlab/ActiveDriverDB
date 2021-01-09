@@ -19,7 +19,7 @@ from analyses.active_driver import ActiveDriverResult
 from helpers.cytoscape import CytoscapeCommand, Cytoscape, get
 from models import InterproDomain
 
-pandas2ri.activate()
+#pandas2ri.activate()
 
 output_dir = Path('analyses_output/active_pathway/')
 

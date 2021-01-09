@@ -25,24 +25,26 @@
     <h4>PTM sites by type</h4>
     {{
       plot(
-        ggplot(datasets.sites_counts, aes(x='SiteType', y='Count', fill='SiteType'))
+        ggplot(datasets.sites_counts, aes(x='SiteType', y='Count', fill='SiteType', tooltip='Count'))
         + facet_wrap('OnlyPrimary', labeller='label_both')
-        + geom_bar(stat='identity')
+        + geom_bar_interactive(stat='identity')
         + scale_y_continuous(labels=scientific_format(digits=0))
         + coord_flip()
         + theme_minimal()
+        + theme(legend_position='none')
       )
     }}
 
     <h4>Mutations</h4>
     {{
       plot(
-        ggplot(datasets.mutation_counts, aes(x='MutationType', y='Count', fill='MutationType'))
+        ggplot(datasets.mutation_counts, aes(x='MutationType', y='Count', fill='MutationType', tooltip='Count'))
         + facet_wrap('OnlyPrimary', labeller='label_both')
-        + geom_bar(stat='identity')
+        + geom_bar_interactive(stat='identity')
         + scale_y_continuous(labels=scientific_format(digits=0))
         + coord_flip()
         + theme_minimal()
+        + theme(legend_position='none')
       )
     }}
 
@@ -54,40 +56,16 @@
           .assign(
             Category=datasets.proteins_with_ptm_mutations.ProteinCategory.str.replace('with PTM muts', '')
           ),
-          aes(x='MutationType', y='Count', fill='ProteinCategory')
+          aes(x='MutationType', y='Count', fill='ProteinCategory', tooltip='Count')
         )
-        + geom_bar(stat='identity', position='dodge')
-        + geom_text(
-            aes(y=-0.5, label='Category'),
-             position=position_dodge(width=0.9),
-             color='gray', size=8, angle=45, va='top'
-        )
+        + geom_bar_interactive(stat='identity', position='dodge')
         + theme_minimal()
+        + theme(axis_text_x=element_text(angle=90, vjust=0.5, hjust=1))
+        + theme(legend_position='none')
       )
     }}
 
-  <style>
-    .mpld3-xgrid line, .mpld3-ygrid line {
-        opacity: 0.25
-    }
-  </style>
-
   <script>
-    // fix an issue with grid obstructing the paths
-    document.body.onload = function() {
-        document.querySelectorAll('.mpld3-paths-container').forEach(function(g) {
-                let axis_element = null;
-                for(let sibling of g.parentElement.children) {
-                    if (sibling.classList.contains('mpld3-ygrid')) {
-                        axis_element = sibling
-                    }
-                }
-                if (axis_element) {
-                    g.parentNode.insertBefore(g, axis_element.nextSibling)
-                }
-            }
-        )
-    }
   </script>
   </div>
 

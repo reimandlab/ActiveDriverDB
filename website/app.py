@@ -17,7 +17,7 @@ from database import bdb_refseq
 from assets import bundles
 from assets import DependencyManager
 from flask_celery import Celery
-
+from ggplot import register_ggplot_functions
 
 login_manager = LoginManager()
 mail = Mail()
@@ -199,37 +199,12 @@ def register_jinja_functions(app):
     jinja_globals['csrf_token'] = csrf.new_csrf_token
     jinja_globals['is_debug_mode'] = app.debug
 
-    import plotnine
-    from mizani import formatters
-
-    import mpld3
 
     from stats import STORES
     jinja_globals['datasets'] = STORES['Datasets']
-    print(STORES['Datasets'])
+    print(STORES['Datasets'].keys())
 
-    def plot(ggplot_object, width=950, height=480, dpi=100, **kwargs):
-        fig = ggplot_object.draw()
-        fig.set_size_inches(width / dpi, height / dpi)
-        fig.subplots_adjust(right=0.7)
-        from markupsafe import Markup
-
-        return Markup(mpld3.fig_to_html(fig, **kwargs))
-
-    jinja_globals['plot'] = plot
-
-    for key, value in vars(formatters).items():
-        if key in formatters.__all__:
-            jinja_globals[key] = value
-
-    available_elements = {
-        'geom', 'stat', 'position', 'theme', 'element', 'scale', 'guide', 'expand',
-        'xlim', 'ylim', 'lims', 'ggplot', 'aes', 'annotate', 'arrow', 'annotation',
-        'coord', 'facet'
-    }
-    for key, value in vars(plotnine).items():
-        if key.split('_')[0] in available_elements:
-            jinja_globals[key] = value
+    register_ggplot_functions(jinja_globals)
 
     jinja_filters['json'] = json.dumps
     jinja_filters['substitute_allowed_variables'] = substitute_variables
