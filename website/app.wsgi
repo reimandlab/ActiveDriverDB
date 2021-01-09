@@ -19,6 +19,9 @@ sys.path.insert(0, str(path.parents[1]))
 activate_this = venv_location + '/virtual_environment/bin/activate_this.py'
 execfile(activate_this)
 
+from rpy2_patch import _initr
+_initr()
+
 # import application to serve
 from app import create_app
 application = create_app()
