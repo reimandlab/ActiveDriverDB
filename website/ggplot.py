@@ -42,15 +42,10 @@ def htmlwidget(interactive_plot, args):
                 javascript += f'{content}\n\n'
             else:
                 print(f'{script} does not exist')
-    style = ''
-    for arg in ['width', 'height']:
-        value = getattr(args, arg)
-        if value is not None:
-            style += f'{arg}: {value}px;'
     return (
         f'<div class="girafe-wrapper">'
         f'<style type="text/css">{css}</style>'
-        f'<div style="{style}">{html}</div>'
+        f'<div>{html}</div>'
         f'<script type="text/javascript">{javascript}</script>'
         f'</div>'
     )
@@ -59,13 +54,12 @@ def htmlwidget(interactive_plot, args):
 def register_ggplot_functions(jinja_globals):
 
     def plot(ggplot_object, width=950, height=480, dpi=100, **kwargs):
-        kwargs['width'] = width
-        kwargs['height'] = height
-        kwargs['dpi'] = dpi
         from markupsafe import Markup
 
         the_plot = ggiraph.girafe(
             ggobj=ggplot_object,
+            width_svg=width / dpi,
+            height_svg=height / dpi,
             options=base.list(
                 ggiraph.opts_sizing(width=.7),
                 ggiraph.opts_zoom(max=5)
@@ -98,7 +92,6 @@ def register_ggplot_functions(jinja_globals):
 
     def custom_ggplot(data, mapping=None):
         data = data.infer_objects()
-        print(data)
         if len(data) == 0:
             p = ggplot2.ggplot(base.NULL)
         else:

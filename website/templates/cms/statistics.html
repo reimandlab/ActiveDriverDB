@@ -35,7 +35,6 @@
       )
     }}
 
-       {#
     <h4>Mutations</h4>
     {{
       plot(
@@ -60,12 +59,12 @@
           aes(x='MutationType', y='Count', fill='ProteinCategory', tooltip='Count')
         )
         + geom_bar_interactive(stat='identity', position='dodge')
+        + facet_wrap('ProteinCategory', scales='free_y')
         + theme_minimal()
         + theme(axis_text_x=element_text(angle=90, vjust=0.5, hjust=1))
         + theme(legend_position='none')
       )
     }}
-    #}
 
   <script>
   </script>
