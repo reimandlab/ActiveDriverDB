@@ -14,6 +14,7 @@ with rlock:
     htmlwidgets = importr('htmlwidgets')
     ggiraph = importr('ggiraph')
     scales = importr('scales')
+    grid = importr('grid')
 
 
 def htmlwidget(interactive_plot, args):
@@ -70,7 +71,10 @@ def plot(ggplot_object, width=950, height=480, dpi=90, **kwargs):
             height_svg=height / dpi,
             options=base.list(
                 ggiraph.opts_sizing(width=.7),
-                ggiraph.opts_zoom(max=5)
+                ggiraph.opts_zoom(max=5),
+                ggiraph.opts_hover_inv(css="opacity:0.8;"),
+                ggiraph.opts_hover(css="opacity:1;"),
+                ggiraph.opts_toolbar(position="bottomright")
             )
         )
         code = htmlwidget(the_plot, SimpleNamespace(**kwargs))
@@ -85,7 +89,8 @@ def register_ggplot_functions(jinja_globals):
     jinja_globals['plot'] = plot
 
     scales_elements = {
-        'format', 'label', 'breaks', 'trans', 'date', 'percent', 'round', 'scientific'
+        'format', 'label', 'breaks', 'trans', 'date', 'percent', 'round', 'scientific',
+        'number'
     }
     for key, value in vars(scales).items():
         if key.split('_')[0] in scales_elements:
@@ -105,6 +110,7 @@ def register_ggplot_functions(jinja_globals):
     jinja_globals['xlab'] = ggplot2.ggplot2.xlab
     jinja_globals['ylab'] = ggplot2.ggplot2.ylab
     jinja_globals['log10'] = base.log10
+    jinja_globals['unit'] = grid.unit
 
     for key, value in vars(ggiraph).items():
         if key.split('_')[0] in available_elements:

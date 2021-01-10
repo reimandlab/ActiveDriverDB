@@ -24,10 +24,11 @@
 
     <h4>PTM sites by type</h4>
     {% set isoforms_labeller = as_labeller({'TRUE': 'Primary isforoms only', 'FALSE': 'All protein isoforms'}) %}
+    {% set count_tooltip = 'paste("Count:", number(Count, accuracy=1))' %}
 
     {{
       plot(
-        ggplot(datasets.sites_counts, aes(x='SiteType', y='Count', fill='SiteType', tooltip='Count'))
+        ggplot(datasets.sites_counts, aes(x='SiteType', y='Count', fill='SiteType', tooltip=count_tooltip))
         + facet_wrap('OnlyPrimary', labeller=isoforms_labeller)
         + geom_bar_interactive(stat='identity')
         + scale_y_log10(labels=label_math(format=log10))
@@ -41,7 +42,7 @@
     <h4>Mutations</h4>
     {{
       plot(
-        ggplot(datasets.mutation_counts, aes(x='MutationType', y='Count', fill='MutationType', tooltip='Count'))
+        ggplot(datasets.mutation_counts, aes(x='MutationType', y='Count', fill='MutationType', tooltip=count_tooltip))
         + facet_wrap('OnlyPrimary', labeller=isoforms_labeller)
         + geom_bar_interactive(stat='identity')
         + scale_y_log10(labels=label_math(format=log10))
@@ -60,7 +61,7 @@
           .assign(
             Category=datasets.proteins_with_ptm_mutations.ProteinCategory.str.replace('with PTM muts', '')
           ),
-          aes(x='MutationType', y='Count', fill='Category', tooltip='Count')
+          aes(x='MutationType', y='Count', fill='Category', tooltip=count_tooltip)
         )
         + geom_bar_interactive(stat='identity', position='dodge')
         + facet_wrap('Category', scales='free_y')
@@ -74,17 +75,35 @@
 
     <h4>Mutated sites</h4>
     The term "mutated PTM site" refers to a site with a mutation within +/- 7aa from the modified residue.
+    {% set mutated_sites_ratio = 'MutatedSitesCount / tapply(MutatedSitesCount, SiteType, max)[SiteType]' %}
     {{
       plot(
-        ggplot(datasets.mutated_sites, aes(x='MutationType', y='SiteType', fill='MutatedSitesCount', tooltip='MutatedSitesCount'))
+        ggplot(
+            datasets.mutated_sites.query('OnlyPrimary == True'),
+            aes(
+                x='MutationType',
+                y='SiteType',
+                fill=mutated_sites_ratio,
+                tooltip='paste0("Ratio: ", round(100 * ' + mutated_sites_ratio + '), "%\nCount: ", number(MutatedSitesCount, accuracy=1))'
+            )
+        )
         + facet_grid('OnlyPrimary', labeller=isoforms_labeller)
         + geom_tile_interactive()
         + theme_minimal()
-        + theme(legend_position='none')
+        + theme(legend_position='bottom')
         + guides(x=guide_axis(angle=45))
         + xlab('Mutation type')
         + ylab('Site type')
-        , height=900
+        + scale_fill_gradient(
+            trans="log10",
+            name="Sites mutated in given dataset / all mutated sites of this type",
+            low="yellow",
+            high="red",
+            labels=label_percent(accuracy=1),
+            na_value="grey90"
+        )
+        + theme(legend_key_width=unit(1, "cm"))
+        , height=650
       )
     }}
   <script>
