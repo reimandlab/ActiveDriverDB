@@ -2,16 +2,17 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Dict
 
-from pandas import DataFrame
+from rpy2.rinterface_lib.openrlib import rlock
 from rpy2.robjects import default_converter, pandas2ri, numpy2ri, StrVector
 from rpy2.robjects.conversion import localconverter
 from rpy2.robjects.packages import importr
 import rpy2.robjects.lib.ggplot2 as ggplot2
 
-base = importr('base')
-htmlwidgets = importr('htmlwidgets')
-ggiraph = importr('ggiraph')
-scales = importr('scales')
+with rlock:
+    base = importr('base')
+    htmlwidgets = importr('htmlwidgets')
+    ggiraph = importr('ggiraph')
+    scales = importr('scales')
 
 
 def htmlwidget(interactive_plot, args):
@@ -61,7 +62,7 @@ def as_labeller(x: Dict[str, str], *args, **kwargs):
 
 def register_ggplot_functions(jinja_globals):
 
-    def plot(ggplot_object, width=950, height=480, dpi=100, **kwargs):
+    def plot(ggplot_object, width=950, height=480, dpi=90, **kwargs):
         from markupsafe import Markup
 
         the_plot = ggiraph.girafe(
@@ -73,8 +74,9 @@ def register_ggplot_functions(jinja_globals):
                 ggiraph.opts_zoom(max=5)
             )
         )
+        code = htmlwidget(the_plot, SimpleNamespace(**kwargs))
 
-        return Markup(htmlwidget(the_plot, SimpleNamespace(**kwargs)))
+        return Markup(code)
 
     jinja_globals['plot'] = plot
 
@@ -88,13 +90,14 @@ def register_ggplot_functions(jinja_globals):
     available_elements = {
         'geom', 'stat', 'position', 'theme', 'element', 'scale', 'guide', 'expand',
         'xlim', 'ylim', 'lims', 'ggplot', 'aes', 'annotate', 'arrow', 'annotation',
-        'coord', 'facet'
+        'coord', 'facet', 'guides'
     }
     for key, value in vars(ggplot2).items():
         if key.split('_')[0] in available_elements:
             jinja_globals[key] = value
 
     jinja_globals['as_labeller'] = as_labeller
+    jinja_globals['guide_axis'] = ggplot2.ggplot2.guide_axis
 
     for key, value in vars(ggiraph).items():
         if key.split('_')[0] in available_elements:

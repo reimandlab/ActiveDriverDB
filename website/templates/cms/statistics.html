@@ -63,11 +63,25 @@
         + geom_bar_interactive(stat='identity', position='dodge')
         + facet_wrap('ProteinCategory', scales='free_y')
         + theme_minimal()
-        + theme(axis_text_x=element_text(angle=90, vjust=0.5, hjust=1))
         + theme(legend_position='none')
+        + guides(x=guide_axis(angle=45))
+        , height=600
       )
     }}
 
+    <h4>Mutated sites</h4>
+    The term "mutated PTM site" refers to a site with a mutation within +/- 7aa from the modified residue.
+    {{
+      plot(
+        ggplot(datasets.mutated_sites, aes(x='MutationType', y='SiteType', fill='MutatedSitesCount', tooltip='MutatedSitesCount'))
+        + facet_grid('OnlyPrimary', labeller=isoforms_labeller)
+        + geom_tile_interactive()
+        + theme_minimal()
+        + theme(legend_position='none')
+        + guides(x=guide_axis(angle=45))
+        , height=900
+      )
+    }}
   <script>
   </script>
   </div>
