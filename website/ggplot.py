@@ -2,6 +2,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Dict
 
+from markupsafe import Markup
 from rpy2.rinterface_lib.openrlib import rlock
 from rpy2.robjects import default_converter, pandas2ri, numpy2ri, StrVector
 from rpy2.robjects.conversion import localconverter
@@ -60,10 +61,8 @@ def as_labeller(x: Dict[str, str], *args, **kwargs):
     return ggplot2.ggplot2.as_labeller(r_x, *args, **kwargs)
 
 
-def register_ggplot_functions(jinja_globals):
-
-    def plot(ggplot_object, width=950, height=480, dpi=90, **kwargs):
-        from markupsafe import Markup
+def plot(ggplot_object, width=950, height=480, dpi=90, **kwargs):
+    try:
 
         the_plot = ggiraph.girafe(
             ggobj=ggplot_object,
@@ -75,8 +74,13 @@ def register_ggplot_functions(jinja_globals):
             )
         )
         code = htmlwidget(the_plot, SimpleNamespace(**kwargs))
+    except Exception as e:
+        return Markup(f'Could not generate this plot. <!-- {e} -->')
 
-        return Markup(code)
+    return Markup(code)
+
+
+def register_ggplot_functions(jinja_globals):
 
     jinja_globals['plot'] = plot
 
@@ -106,7 +110,7 @@ def register_ggplot_functions(jinja_globals):
     def custom_ggplot(data, mapping=None):
         data = data.infer_objects()
         if len(data) == 0:
-            p = ggplot2.ggplot(base.NULL)
+            p = ggplot2.ggplot(base.as_null(0))
         else:
             with localconverter(default_converter + numpy2ri.converter + pandas2ri.converter) as cv:
                 r_data = cv.py2rpy(data)
