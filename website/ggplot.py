@@ -102,6 +102,7 @@ def register_ggplot_functions(jinja_globals):
 
     jinja_globals['as_labeller'] = as_labeller
     jinja_globals['guide_axis'] = ggplot2.ggplot2.guide_axis
+    jinja_globals['log10'] = base.log10
 
     for key, value in vars(ggiraph).items():
         if key.split('_')[0] in available_elements:
