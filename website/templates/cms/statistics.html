@@ -34,6 +34,7 @@
         + coord_flip()
         + theme_minimal()
         + theme(legend_position='none')
+        + xlab('Site type')
       )
     }}
 
@@ -47,6 +48,7 @@
         + coord_flip()
         + theme_minimal()
         + theme(legend_position='none')
+        + xlab('Mutation type')
       )
     }}
 
@@ -58,13 +60,14 @@
           .assign(
             Category=datasets.proteins_with_ptm_mutations.ProteinCategory.str.replace('with PTM muts', '')
           ),
-          aes(x='MutationType', y='Count', fill='ProteinCategory', tooltip='Count')
+          aes(x='MutationType', y='Count', fill='Category', tooltip='Count')
         )
         + geom_bar_interactive(stat='identity', position='dodge')
-        + facet_wrap('ProteinCategory', scales='free_y')
+        + facet_wrap('Category', scales='free_y')
         + theme_minimal()
         + theme(legend_position='none')
         + guides(x=guide_axis(angle=45))
+        + xlab('Mutation type')
         , height=600
       )
     }}
@@ -79,6 +82,8 @@
         + theme_minimal()
         + theme(legend_position='none')
         + guides(x=guide_axis(angle=45))
+        + xlab('Mutation type')
+        + ylab('Site type')
         , height=900
       )
     }}
