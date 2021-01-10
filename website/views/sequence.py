@@ -61,6 +61,8 @@ def prepare_sites(sites: Iterable[Site]):
             'start': site.position - 7,
             'end': site.position + 7,
             'type': list(site.types_names),
+            'residue': site.residue,
+            'pmid': list(site.pmid),
             'sources': [source.name for source in site.sources],
             'associations': [
                 {

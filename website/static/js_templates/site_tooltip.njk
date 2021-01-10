@@ -1,10 +1,18 @@
-{{ site.start + 7 }}
+{{ site.start + 7 }} {{ site.residue }}
 <ul>
 {% for type in site.type %}
   <li>{{ type }}</li>
 {% endfor %}
 </ul>
 Sources: {{ site.sources | join(', ') }}
+{% if site.pmid | length %}
+  <br>PubMed:
+    <ul>
+    {% for pmid in site.pmid %}
+      <li><a href="https://pubmed.ncbi.nlm.nih.gov/{{ pmid }}">{{ pmid }}</a></li>
+    {% endfor %}
+    </ul>
+{% endif %}
 {% if site.associations | length %}
   <br>Associations:
   <ul>
