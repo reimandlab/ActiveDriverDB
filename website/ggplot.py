@@ -55,11 +55,19 @@ def htmlwidget(interactive_plot, args):
     )
 
 
-def as_labeller(x: Dict[str, str], *args, **kwargs):
+def dict_to_str_vector(x):
     r_x = StrVector(list(x.values()))
     r_x.names = list(x.keys())
+    return r_x
 
+
+def as_labeller(x: Dict[str, str], *args, **kwargs):
+    r_x = dict_to_str_vector(x)
     return ggplot2.ggplot2.as_labeller(r_x, *args, **kwargs)
+
+
+def scale_fill_manual(values, **kwargs):
+    return ggplot2.scale_fill_manual(values=dict_to_str_vector(values), **kwargs)
 
 
 def plot(ggplot_object, width=950, height=480, dpi=90, **kwargs):
@@ -111,6 +119,7 @@ def register_ggplot_functions(jinja_globals):
     jinja_globals['ylab'] = ggplot2.ggplot2.ylab
     jinja_globals['log10'] = base.log10
     jinja_globals['unit'] = grid.unit
+    jinja_globals['scale_fill_manual'] = scale_fill_manual
 
     for key, value in vars(ggiraph).items():
         if key.split('_')[0] in available_elements:

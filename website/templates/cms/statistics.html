@@ -28,21 +28,39 @@
 
     {{
       plot(
-        ggplot(datasets.sites_counts, aes(x='SiteType', y='Count', fill='SiteType', tooltip=count_tooltip))
+        ggplot(datasets.sites_counts, aes(x='reorder(SiteType, Count)', y='Count', fill='SiteType', tooltip=count_tooltip))
         + facet_wrap('OnlyPrimary', labeller=isoforms_labeller)
-        + geom_bar_interactive(stat='identity')
+        + geom_bar_interactive(stat='identity', color='black', size=0.1)
         + scale_y_log10(labels=label_math(format=log10))
         + coord_flip()
         + theme_minimal()
         + theme(legend_position='none')
         + xlab('Site type')
+        + scale_fill_manual(values={
+            'ubiquitination': '#7bccc4',
+            'sumoylation': '#a2f0a2',
+            'succinylation': '#f0a2a2',
+            'phosphorylation (including subtypes)': '#43a2ca',
+            'phosphorylation (SARS-CoV-2)': '#7a43ca',
+            'phosphorylation': '#43a2ca',
+            'methylation': '#f0f9e8',
+            'glycosylation (including subtypes)': '#ebdcc0',
+            'glycosylation': '#ebdcc0',
+            'any type': 'grey80',
+            'acetylation': '#bae4bc',
+            'S-glycosylation': '#ebdcc0',
+            'O-glycosylation': '#ebdcc0',
+            'N-glycosylation': '#ebdcc0',
+            'C-glycosylation': '#ebdcc0',
+
+        })
       )
     }}
 
     <h4>Mutations</h4>
     {{
       plot(
-        ggplot(datasets.mutation_counts, aes(x='MutationType', y='Count', fill='MutationType', tooltip=count_tooltip))
+        ggplot(datasets.mutation_counts, aes(x='reorder(MutationType, Count)', y='Count', fill='MutationType', tooltip=count_tooltip))
         + facet_wrap('OnlyPrimary', labeller=isoforms_labeller)
         + geom_bar_interactive(stat='identity')
         + scale_y_log10(labels=label_math(format=log10))
@@ -74,7 +92,7 @@
     }}
 
     <h4>Mutated sites</h4>
-    The term "mutated PTM site" refers to a site with a mutation within +/- 7aa from the modified residue.
+    Sites with a mutation within +/- 7aa from the modified residue.
     {% set mutated_sites_ratio = 'MutatedSitesCount / tapply(MutatedSitesCount, SiteType, max)[SiteType]' %}
     {{
       plot(
