@@ -341,7 +341,8 @@ class Site(BioModel):
         data = {
             'position': self.position,
             'type': ','.join(self.types_names),
-            'residue': self.residue
+            'residue': self.residue,
+            'pmid': list(self.pmid)
         }
         if with_kinases:
             data['kinases'] = [
