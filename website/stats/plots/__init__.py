@@ -116,3 +116,17 @@ class Datasets(CountStore):
         return DataFrame(
             table.source_specific_proteins_with_ptm_mutations()
         ).stack().rename('Count').rename_axis(['MutationType', 'ProteinCategory']).reset_index()
+
+    @counter
+    def mutated_sites(self):
+        return concat([
+            (
+                DataFrame(table.source_specific_mutated_sites(only_primary=primary_isoforms))
+                .stack()
+                .rename('MutatedSitesCount')
+                .rename_axis(['SiteType', 'MutationType'])
+                .reset_index()
+                .assign(OnlyPrimary=primary_isoforms)
+            )
+            for primary_isoforms in [True, False]
+        ])
