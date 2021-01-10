@@ -4,7 +4,7 @@ from argparse import Namespace
 from imports.mutations import MutationImportManager
 from database_testing import DatabaseTest
 from models import Protein, SiteType
-from models import Cancer
+from models import Cancer, SiteSource
 from models import Gene
 from models import Mutation
 from models import MC3Mutation
@@ -33,7 +33,8 @@ def create_test_models():
     kinase = Kinase(name='Kinase name', protein=protein_kinase)
     site = Site(
         protein=protein, position=1, residue='A',
-        kinases={kinase}, pmid={1, 2}, types={SiteType(name='glycosylation')}
+        kinases={kinase}, pmid={1, 2}, types={SiteType(name='glycosylation')},
+        sources={SiteSource(name='PSP')}
     )
     protein.sites = [site]
 
@@ -140,8 +141,8 @@ class TestExport(DatabaseTest):
 
         with open(filename) as f:
             assert f.readlines() == [
-                'gene\tposition\tresidue\ttype\tkinase\tpmid\n',
-                'SOMEGENE\t1\tA\tglycosylation\tKinase name\t1,2\n'
+                'gene\tposition\tresidue\ttype\tkinase\tpmid\trefseq\tuniprot\tsequence\tsources\n',
+                'SOMEGENE\t1\tA\tglycosylation\tKinase name\t1,2\tNM_0001\t\t-------aBCD----\tPSP\n'
             ]
 
     def test_ptm_muts_of_gene(self):
