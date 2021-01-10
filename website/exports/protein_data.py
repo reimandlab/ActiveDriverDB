@@ -102,7 +102,7 @@ def sites_ac(f):
             site.protein.refseq,
             site.protein.best_uniprot_entry.accession if site.protein.best_uniprot_entry else '',
             sequence_highlighted,
-            ','.join([source.name for source in site.sources])
+            '|'.join([source.name for source in site.sources])
         ]
 
         f.write('\t'.join(data) + '\n')
