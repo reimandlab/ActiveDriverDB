@@ -40,7 +40,14 @@ class TestChromosomeView(ViewTest):
                 'closest_sites': ['13 A'],
                 'protein': 'NM_007',
                 'sites': [
-                    {'kinases': [], 'position': 13, 'residue': 'A', 'kinase_groups': [], 'type': 'methylation'}
+                    {
+                        'kinases': [],
+                        'position': 13,
+                        'residue': 'A',
+                        'pmid': [],
+                        'kinase_groups': [],
+                        'type': 'methylation'
+                    }
                 ],
                 'ref': 'A'
              }
