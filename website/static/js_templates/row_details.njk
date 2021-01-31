@@ -19,7 +19,7 @@ Number of affected sites: {{ mutation.cnt_ptm }}<br>
         PubMed:
         <ul class="list-inline" style="margin-bottom: 0">
           {% for pmid in site.pmid %}
-            <li><a href="https://pubmed.ncbi.nlm.nih.gov/{{ pmid }}">{{ pmid }}</a></li>
+            <li><a href="https://pubmed.ncbi.nlm.nih.gov/{{ pmid }}" target="_blank" rel="noreferrer noopener">{{ pmid }}</a></li>
           {% endfor %}
         </ul><br>
       {% endif %}
