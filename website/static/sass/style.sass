@@ -326,7 +326,10 @@ a.list-expand
     top: 0
     // keep space from top edge when affixed & keep space from legend above when stuck
     padding-top: 15px
-
+    // allow to scroll the affix if the screen is too short
+    bottom: 5px
+    overflow-y: auto
+    overflow-x: hidden
 
   &.affix-bottom
     position: absolute
