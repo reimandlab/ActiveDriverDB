@@ -9,7 +9,7 @@ Sources: {{ site.sources | join(', ') }}
   <br>PubMed:
     <ul>
     {% for pmid in site.pmid %}
-      <li><a href="https://pubmed.ncbi.nlm.nih.gov/{{ pmid }}">{{ pmid }}</a></li>
+      <li><a href="https://pubmed.ncbi.nlm.nih.gov/{{ pmid }}" target="_blank" rel="noreferrer noopener">{{ pmid }}</a></li>
     {% endfor %}
     </ul>
 {% endif %}

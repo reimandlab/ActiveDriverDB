@@ -245,7 +245,7 @@
                 <div class="col-md-8">
                   {% set comma = joiner() %}
                   {% for db_snp in mutation.meta_ClinVar.db_snp_ids %}
-                    {{ comma() }} <a href="https://www.ncbi.nlm.nih.gov/snp/rs{{ db_snp }}" target="_blank">rs{{ db_snp }}</a>
+                    {{ comma() }} <a href="https://www.ncbi.nlm.nih.gov/snp/rs{{ db_snp }}" target="_blank" rel="noreferrer noopener">rs{{ db_snp }}</a>
                   {% endfor %}
                 </div>
               </div>
