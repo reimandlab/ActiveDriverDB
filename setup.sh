@@ -76,53 +76,30 @@ sudo apt-get install redis-server
 sudo /etc/init.d/celeryd restart
 sudo /etc/init.d/redis-server restart
 
-# install R
-sudo apt-get install r-base
-
-# and R building dependencies
-sudo apt-get install r-base-dev
-
-sudo R -e 'install.packages("ggiraph")'
-sudo R -e 'install.packages("knitr")'
-sudo R -e 'install.packages("ggplot2")'
-sudo R -e 'install.packages("htmlwidgets")'
-
 # install ActiveDriver and progress bar
 # R -e 'install.packages("ActiveDriver")'
-sudo R -e 'install.packages("pbmcapply")'
 
 # fetch forked copy of ActiveDriver
 cd website
 git clone https://github.com/krassowski/ActiveDriver
 cd ..
 
-
 # ActivePathways will hopefully be on cran soon
 # git clone https://github.com/reimandlab/activeDriverPW.git
 # R -e 'install.packages(c("metap", "data.table"), repos = "http://cran.us.r-project.org")'
 # R -e 'install.packages("activeDriverPW", repos=NULL)'
 
-#sudo apt-get install r-bioc-biocgenerics r-bioc-genomicranges r-bioc-biostrings
 git clone https://github.com/reimandlab/rmimp.git
 cd rmimp
 git checkout refactored
 cd ..
 
-# NB: GenomicRanges require RCurl and might need:
-# sudo apt-get install libcurl4-gnutls-dev
-# sudo R -e 'install.packages("RCurl", repos = "http://cran.us.r-project.org")'
 
-sudo R -e 'install.packages("BiocManager")'
-sudo R -e 'BiocManager::install(c("S4Vectors", "GenomicRanges", "Biostrings", "BiocGenerics"))'
-#sudo R -e 'install.packages("devtools", repos = "http://cran.us.r-project.org")'
-#sudo R -e 'devtools::install("rmimp", dependencies = TRUE)'
-
-sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
+# sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
 export R_INSTALL_STAGED=false
 sudo R -e 'install.packages("rmimp", repos=NULL)'
 
 # sudo apt-get install libcairo2-dev - needed for svglite
-sudo R -e 'install.packages(c("ggseqlogo", "ggplot2", "svglite"), repos = "http://cran.us.r-project.org")'
 
 # needed only if using sqlite3 for tests
 sudo apt-get install sqlite3 sqlite3-pcre
