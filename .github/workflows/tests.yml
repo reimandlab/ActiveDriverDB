@@ -39,6 +39,10 @@ jobs:
     - name: Run sequential tests
       run: |
          pytest --cov-append -m 'serial'
+    - name: Coveralls
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
   lint:
     name: Lint code
     runs-on: ubuntu-latest
