@@ -109,4 +109,3 @@ sudo apt-get install sqlite3 sqlite3-pcre
 # pip3 install pygraphviz --install-option="--include-path=/usr/include/graphviz" --install-option="--library-path=/usr/lib/graphviz/"
 # on debian
 # sudo apt-get install libcgraph6 graphviz graphviz-dev
-sudo pip install git+https://github.com/krassowski/pygraphviz
