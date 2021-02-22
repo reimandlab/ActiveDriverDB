@@ -761,7 +761,9 @@ def match_aa_mutation(gene, mut, query):
     only_ref = re.fullmatch(r'(?P<ref>\D)', mut)
     if only_ref:
         # prompt user to write more
-        return json_message('Awaiting for <code>{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+        return json_message(
+            'Awaiting for <code>{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format'
+        )
 
     try:
         items = get_protein_muts(gene, mut)
@@ -806,7 +808,9 @@ def autocomplete_mutation(query, limit=None):
         gene = data[0].strip()
 
         if gene_exists(gene):
-            messages += json_message('Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+            messages += json_message(
+                'Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format'
+            )
         else:
             # return json_message('Gene %s not found in the database' % gene)
             pass

@@ -450,4 +450,3 @@ class NetworkView(AbstractProteinView):
         }
 
         return compress(jsonify(response))
-

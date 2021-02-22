@@ -142,7 +142,7 @@ class TestPathwaysView(ViewTest):
         pathways_list = create_pathways_list(created)
         gene_list = create_gene_list(created)
 
-        response = self.client.get(f'/pathways/')
+        response = self.client.get('/pathways/')
         assert response.status_code == 200
         html = response.data.decode()
 

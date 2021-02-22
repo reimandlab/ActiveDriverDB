@@ -105,7 +105,7 @@ def basic_auto_migrate_relational_db(app, bind):
                     ' DEFAULT NULL': ''
                 }
                 for definition in table_definition.first()[1].split('\n'):
-                    match = re.match('\s*`(?P<name>.*?)` (?P<definition>[^,]*),?', definition)
+                    match = re.match(r'\s*`(?P<name>.*?)` (?P<definition>[^,]*),?', definition)
                     if match:
                         name = match.group('name')
                         definition_string = match.group('definition').upper()

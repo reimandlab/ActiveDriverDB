@@ -71,4 +71,3 @@ def mysql_utc_after(element, compiler, **kwargs):
 def sqlite_utc_after(element, compiler, **kwargs):
     days, = list(element.clauses)
     return "(datetime('now', '+%s day'))" % days.value
-

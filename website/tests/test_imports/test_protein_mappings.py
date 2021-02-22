@@ -1,4 +1,3 @@
-import gzip
 from os import path
 
 import pytest
