@@ -180,7 +180,7 @@ def import_aminoacid_mutation_refseq_mappings(
                 try:
                     assert refseq.startswith('NM_')
                 except AssertionError:
-                    print(f'Import error: refseq does not start with NM_:')
+                    print('Import error: refseq does not start with NM_:')
                     print(line)
                     print(refseq)
                     continue
@@ -211,5 +211,5 @@ def import_aminoacid_mutation_refseq_mappings(
                         protein.id
                     )
                 except Exception as e:
-                    print(f'Import error:')
+                    print('Import error:')
                     print(e)

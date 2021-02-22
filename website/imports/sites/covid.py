@@ -29,8 +29,10 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
     We use Supplementary Table 1 which contains proteomic data of Vero E6 cells upon SARS-CoV-2 infection:
       - PhosphoDataFull: full list of unfiltered phosphorylation sites occurring upon SARS-CoV-2 infection,
       - AbundanceDataFull: full list of protein abundance measurements,
-      - PhosphoDataFiltered: filtered list of all detected phosphorylation sites collapsed into single-site measurements.
-      - PhosphoNOverexpressionFull: the full list of unfiltered phosphorylation sites upon N protein overexpression in Vero E6 cells.
+      - PhosphoDataFiltered: filtered list of all detected phosphorylation sites
+        collapsed into single-site measurements.
+      - PhosphoNOverexpressionFull: the full list of unfiltered phosphorylation sites
+        upon N protein overexpression in Vero E6 cells.
 
     Article link: https://www.cell.com/cell/fulltext/S0092-8674(20)30811-4
     """
@@ -91,9 +93,15 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
         sites['mod_type'] = 'phosphorylation (SARS-CoV-2)'
 
         sites = self.add_sequence_accession(sites)
-        print(f'After mapping to UniProt sequence accessions got: {len(sites)} sites (each protein has multiple UniProt isoforms)')
+        print(
+            f'After mapping to UniProt sequence accessions got: {len(sites)} sites'
+            f' (each protein has multiple UniProt isoforms)'
+        )
         sites = self.add_nm_refseq_identifiers(sites)
-        print(f'After mapping to RefSeq identifiers got: {len(sites)} sites (each UniProt isoform can be mapped to one or more RefSeq isoforms)')
+        print(
+            f'After mapping to RefSeq identifiers got: {len(sites)} sites'
+            f' (each UniProt isoform can be mapped to one or more RefSeq isoforms)'
+        )
 
         mapped_sites = self.map_sites_to_isoforms(sites)
 
@@ -112,7 +120,10 @@ class CovidPhosphoImporter(UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSe
 
         return self.create_site_objects(
             mapped_sites,
-            columns=['refseq', 'position', 'residue', 'mod_type', 'pub_med_ids', 'adj_p_val', 'log2_fold_change', 'event']
+            columns=[
+                'refseq', 'position', 'residue', 'mod_type',
+                'pub_med_ids', 'adj_p_val', 'log2_fold_change', 'event'
+            ]
         )
 
     def add_site(
