@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+set -e
+
 sudo apt-get install libffi-dev python3-dev build-essential
 
 # Use examplar configuration for the beginning
@@ -8,8 +10,9 @@ cd ..
 
 git clone https://github.com/juanmirocks/Levenshtein-MySQL-UDF
 cd Levenshtein-MySQL-UDF
-gcc -o levenshtein.so -fPIC -shared levenshtein.c -I /usr/include/mysql/
-sudo cp levenshtein.so /usr/lib/mysql/plugin/
+echo `mysql_config --include`
+gcc -o levenshtein.so -fPIC -shared levenshtein.c -I `mysql_config --include`
+sudo cp levenshtein.so `mysql_config --plugindir`
 # for MariaDB use:
 # plugin_dir=$(sudo mysql -e 'select @@plugin_dir;' | grep -v '@')
 # sudo cp levenshtein.so $plugin_dir
