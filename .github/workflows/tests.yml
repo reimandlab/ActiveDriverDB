@@ -2,6 +2,10 @@ name: Tests
 
 on: [push]
 
+defaults:
+  run:
+    shell: bash -l {0}
+
 jobs:
   test:
     name: Run tests
@@ -16,6 +20,7 @@ jobs:
       with:
         installer-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
         python-version: 3.7
+        activate-environment: test
     - name: Install dependencies
       run: |
         mamba env update --file environment.yml --name test
