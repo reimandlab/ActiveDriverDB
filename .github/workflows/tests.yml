@@ -33,7 +33,7 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
     - name: Run deployment script
       run: |
-        bash website/deply.sh
+        bash website/deploy.sh
     - name: Run tests that can run in parallel
       run: |
         pytest
