@@ -295,7 +295,10 @@ class ClinVarImporter(MutationImporter):
                             if trait_type == 'Disease':
                                 disease.clinvar_type = trait_type
                                 action = ': overwriting the old type with "Disease"'
-                            print(f'Conflicting trait types for "{disease.name}": "{disease.clinvar_type}" != "{trait_type}"{action}')
+                            print(
+                                f'Conflicting trait types for "{disease.name}":'
+                                f' "{disease.clinvar_type}" != "{trait_type}"{action}'
+                            )
                 else:
                     disease.clinvar_type = trait_type
 

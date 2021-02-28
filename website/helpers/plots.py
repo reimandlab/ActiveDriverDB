@@ -9,7 +9,7 @@ from rpy2.robjects.packages import importr
 from helpers.ggplot2 import GG
 
 
-def bar_plot(labels: Iterable, values: Iterable, text: Iterable=None, name=None):
+def bar_plot(labels: Iterable, values: Iterable, text: Iterable = None, name=None):
     data = {
         'x': list(labels),
         'y': list(values),

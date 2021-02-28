@@ -110,7 +110,6 @@ class The1000GenomesImporter(MutationImporter):
     def export_genomic_clean_fields(self, fields):
         return fields[:12]
 
-
     def export_details_headers(self):
         return [
             'maf_all',
