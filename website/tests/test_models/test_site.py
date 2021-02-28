@@ -3,7 +3,7 @@ from database import db, get_engine
 from .model_testing import ModelTest
 
 from exceptions import ValidationError
-from models import Protein, SiteType, func
+from models import Protein, SiteType
 from models import Site
 
 

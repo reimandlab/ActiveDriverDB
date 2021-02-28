@@ -45,7 +45,10 @@ class CMSImporter(AbstractImporter, metaclass=AbstractRegistry):
     pass
 
 
-def simple_importer(importer_abstract_class: Type[AbstractImporter], requires=None) -> Callable[[Callable], Type[AbstractImporter]]:
+def simple_importer(
+    importer_abstract_class: Type[AbstractImporter],
+    requires=None
+) -> Callable[[Callable], Type[AbstractImporter]]:
     def importer(func) -> Type[AbstractImporter]:
 
         class FunctionImporter(importer_abstract_class):

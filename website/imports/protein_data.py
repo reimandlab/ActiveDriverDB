@@ -224,7 +224,11 @@ def protein_summaries(path='data/refseq_summary.tsv.gz'):
 
 
 @simple_bio_importer(requires=[proteins_and_genes])
-def external_references(path='data/HUMAN_9606_idmapping.dat.gz', refseq_lrg='data/LRG_RefSeqGene', refseq_link='data/refseq_link.tsv.gz'):
+def external_references(
+    path='data/HUMAN_9606_idmapping.dat.gz',
+    refseq_lrg='data/LRG_RefSeqGene',
+    refseq_link='data/refseq_link.tsv.gz'
+):
     from models import Protein
     from models import ProteinReferences
     from models import EnsemblPeptide

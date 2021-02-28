@@ -257,4 +257,3 @@ class MutationsTrack(Track):
             grouped[depth][pos] = mutation
 
         return grouped
-

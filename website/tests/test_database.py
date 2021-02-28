@@ -59,7 +59,7 @@ class TestTypes(DatabaseTest):
 
         # test tracking of mutations
         b = TestModel(properties={'red'})
-        
+
         db.session.add(b)
         db.session.commit()
 
