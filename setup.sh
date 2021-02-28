@@ -11,7 +11,7 @@ cd ..
 git clone https://github.com/juanmirocks/Levenshtein-MySQL-UDF
 cd Levenshtein-MySQL-UDF
 echo `mysql_config --include`
-gcc -o levenshtein.so -fPIC -shared levenshtein.c -I `mysql_config --include`
+gcc -o levenshtein.so -fPIC -shared levenshtein.c `mysql_config --include`
 sudo cp levenshtein.so `mysql_config --plugindir`
 # for MariaDB use:
 # plugin_dir=$(sudo mysql -e 'select @@plugin_dir;' | grep -v '@')
