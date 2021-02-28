@@ -69,7 +69,7 @@ sudo apt-get install acl
 setfacl -m u:celery:rwx website
 mkdir -p website/logs
 setfacl -m u:celery:rwx website/logs
-touch website/logs/apps.log
+touch website/logs/app.log
 setfacl -m u:celery:rwx website/logs/app.log
 
 setfacl -R -m u:celery:rwx celery
