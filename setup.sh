@@ -73,6 +73,7 @@ touch website/logs/app.log
 setfacl -m u:celery:rwx website/logs/app.log
 
 setfacl -R -m u:celery:rwx celery
+mkdir -p website/databases
 setfacl -R -m u:celery:rwx website/databases
 
 # redis
