@@ -21,6 +21,14 @@ jobs:
         installer-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
         python-version: 3.7
         activate-environment: test
+    - name: Cache conda
+      uses: actions/cache@v1
+      with:
+        path: ~/conda_pkgs_dir
+        key: |
+          test-${{ hashFiles('environment.yml', 'website/requirements.txt', 'website/tests/requirements.txt') }}
+        restore-keys: |
+          test
     - name: Install dependencies
       run: |
         mamba env update --file environment.yml --name test
