@@ -9,16 +9,16 @@ cd website
 mv example_config.py config.py
 cd ..
 
-git clone https://github.com/juanmirocks/Levenshtein-MySQL-UDF
-cd Levenshtein-MySQL-UDF
-echo `mysql_config --include`
-gcc -o levenshtein.so -fPIC -shared levenshtein.c `mysql_config --include` `mysql_config --include`/server
-sudo cp levenshtein.so `mysql_config --plugindir`
+#git clone https://github.com/juanmirocks/Levenshtein-MySQL-UDF
+#cd Levenshtein-MySQL-UDF
+#echo `mysql_config --include`
+#gcc -o levenshtein.so -fPIC -shared levenshtein.c `mysql_config --include` `mysql_config --include`/server
+#sudo cp levenshtein.so `mysql_config --plugindir`
 # for MariaDB use:
 # plugin_dir=$(sudo mysql -e 'select @@plugin_dir;' | grep -v '@')
 # sudo cp levenshtein.so $plugin_dir
-cd ..
-rm -rf Levenshtein-MySQL-UDF
+#cd ..
+#rm -rf Levenshtein-MySQL-UDF
 
 # install autoprefixer, clean-css and nunjucks
 npm install -g autoprefixer@^9 postcss-cli@^8 postcss@^8 nunjucks sass
