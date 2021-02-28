@@ -162,7 +162,7 @@ def count_ptm(
         from sqlalchemy import or_
         mutations = (
             mutation_query_base
-            .filter(Mutation.protein==protein)
+            .filter(Mutation.protein == protein)
         )
         if models:
             mutations = mutations.filter(Mutation.in_sources(*models, conjunction=or_))

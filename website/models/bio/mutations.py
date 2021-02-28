@@ -787,7 +787,7 @@ class MutatedMotifs:
             backref='mutations'
         )
 
-    def affected_motifs(self, sites: Iterable[Site]=None):
+    def affected_motifs(self, sites: Iterable[Site] = None):
         if self.were_affected_motifs_precomputed:
             return self.precomputed_affected_motifs
 

@@ -1,5 +1,6 @@
 import gzip
 
+
 def check_semicolon_separated_data_redundancy(path):
     with gzip.open(path, 'rt') as f:
         for line in f:

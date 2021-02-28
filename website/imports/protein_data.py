@@ -1005,7 +1005,7 @@ def clean_from_orphaned_mutations(soft=True):
     print(f'Removed {removed_details}')
 
 
-from . import sites as site_importers_module
+from . import sites as site_importers_module   # noqa: E402
 site_importers = site_importers_module.__all__
 
 
