@@ -23,6 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         conda env update --file environment.yml --name test
+        conda activate test
         conda install flake8
     - name: Run setup script
       run: |
@@ -33,7 +34,8 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
     - name: Run deployment script
       run: |
-        bash website/deploy.sh
+        cd website
+        bash deploy.sh
     - name: Run tests that can run in parallel
       run: |
         pytest
