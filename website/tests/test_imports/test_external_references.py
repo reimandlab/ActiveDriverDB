@@ -221,4 +221,3 @@ class TestImport(DatabaseTest):
                 uniprot_entries[refseq].isoform is None
                 for refseq in loosely_associated
             )
-

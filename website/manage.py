@@ -232,8 +232,7 @@ class Mappings(CommandTarget):
             import_genome_proteome_mappings(proteins, bdb_dir=args.path)
 
         if args.restrict_to != 'genome_proteome':
-            from models import Gene, Protein
-            from database import db
+            from models import Protein
             from sqlalchemy.orm import load_only, joinedload
 
             proteins = {

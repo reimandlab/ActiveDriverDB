@@ -259,7 +259,7 @@ class Protein(BioModel):
 
     def to_json(self, data_filter=None):
         if not data_filter:
-            data_filter = lambda x: list(x)
+            data_filter = list
 
         filtered_mutations = data_filter(self.confirmed_mutations)
 
