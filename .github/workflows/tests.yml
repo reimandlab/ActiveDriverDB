@@ -23,6 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         conda env update --file environment.yml --name test
+        conda init
         conda activate test
         conda install flake8
     - name: Run setup script
