@@ -21,11 +21,11 @@ cd ..
 #rm -rf Levenshtein-MySQL-UDF
 
 # install autoprefixer, clean-css and nunjucks
-npm install -g autoprefixer@^9 postcss-cli@^8 postcss@^8 nunjucks sass
+npm install -g autoprefixer@^9 postcss-cli@^8 postcss@^8 nunjucks@^3.2 sass
 
 # fix nunjucks to add jinja-compat mode for precompile
 wget https://github.com/mozilla/nunjucks/commit/5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
-patch node_modules/nunjucks/bin/precompile 5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
+patch $(npm root)/nunjucks/bin/precompile 5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
 rm 5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
 
 # to be replaced with 'clean-css clean-css-cli' after a new release of webassets:
