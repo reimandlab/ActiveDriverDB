@@ -1,7 +1,7 @@
 from abc import ABCMeta, abstractmethod
 from collections import UserList, OrderedDict
 from functools import lru_cache
-from typing import Type, Iterable, Mapping, List, Dict
+from typing import Type, Iterable, Mapping, List, Dict, TYPE_CHECKING
 
 from sqlalchemy import select, func, or_, and_, exists
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -16,6 +16,10 @@ from helpers.models import generic_aggregator
 from .diseases import ClinicalData
 from .model import BioModel, make_association_table
 from .sites import Site, SiteMotif
+
+
+if TYPE_CHECKING:
+    from .protein import Protein
 
 
 class MutationDetailsManager(UserList, metaclass=ABCMeta):

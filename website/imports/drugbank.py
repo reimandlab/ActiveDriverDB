@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Union
 from xml.etree import ElementTree
 
 from pandas import DataFrame
@@ -27,6 +27,8 @@ def extract_drugs(path: str):
         parent = parents[-1]
         grandparent = parents[-2]
 
+        target: Union[dict, None] = None
+
         if event == 'start':
             parents.append(tag)
 
@@ -35,6 +37,7 @@ def extract_drugs(path: str):
 
             if parent == 'target':
                 if tag == 'polypeptide':
+                    assert target
                     append_or_create(target, 'polypeptides', {})
 
         if event == 'end':

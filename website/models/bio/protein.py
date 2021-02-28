@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from sqlalchemy import select, case, exists, and_, func, distinct
 from sqlalchemy.ext.associationproxy import association_proxy
@@ -11,6 +11,10 @@ from .diseases import Cancer, Disease, ClinicalData
 from .model import BioModel, make_association_table
 from .mutations import Mutation, InheritedMutation
 from .sites import Site
+
+if TYPE_CHECKING:
+    from .gene import Gene
+    from .enzymes import Kinase
 
 
 class EnsemblPeptide(BioModel):

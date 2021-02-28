@@ -131,7 +131,10 @@ def residues_groups(site_type, modified_residues):
     return StrVector(['|'.join(modified_residues)])
 
 
-def train_model(site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, enzyme_type='kinase', output_path=None, **kwargs):
+def train_model(
+    site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, enzyme_type='kinase',
+    output_path=None, **kwargs
+):
     """Train MIMP model for given site type.
 
     NOTE: Natively MIMP works on phosphorylation sites only,
@@ -232,7 +235,7 @@ def get_or_create_model_path(site_type: SiteType, enzyme_type) -> str:
     return str(path)
 
 
-def run_mimp(mutation_source: str, site_type_name: str, model: str=None, enzyme_type='kinase') -> DataFrame:
+def run_mimp(mutation_source: str, site_type_name: str, model: str = None, enzyme_type='kinase') -> DataFrame:
     """Run MIMP for given source of mutations and given site type.
 
     Args:
@@ -318,7 +321,7 @@ def sequence_logos_for_site_types(site_types, enzyme_type='kinase'):
         site_logos_path = logos_path / site_type.name
         site_logos_path.mkdir(parents=True, exist_ok=True)
 
-        logos[site_type.name][model_name] = sequence_logo(pwm, path)
+        logos[site_type.name][model_name] = sequence_logo(pwm, site_logos_path)
 
     return logos
 

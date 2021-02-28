@@ -3,7 +3,7 @@ from functools import lru_cache
 
 from pathlib import Path
 from sys import float_info
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from sqlalchemy import func, case
 from sqlalchemy.ext.hybrid import hybrid_property, hybrid_method
@@ -15,6 +15,9 @@ from exceptions import ValidationError
 from helpers.plots import sequence_logo
 
 from .model import BioModel, make_association_table
+
+if TYPE_CHECKING:
+    from .protein import Protein
 
 
 cache_store = []

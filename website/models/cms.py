@@ -3,6 +3,7 @@ import pickle
 from contextlib import suppress
 from datetime import datetime
 from datetime import timedelta
+from typing import TYPE_CHECKING
 
 from flask import url_for
 from sqlalchemy import and_, not_
@@ -18,6 +19,9 @@ from database.types import MediumPickle, DataFrameStore
 from database.functions import utc_now, utc_days_after
 from exceptions import ValidationError
 from .model import Model
+
+if TYPE_CHECKING:
+    from search.mutation import MutationSearch
 
 
 class CMSModel(Model):

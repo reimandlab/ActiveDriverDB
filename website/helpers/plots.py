@@ -142,8 +142,8 @@ def p_value_annotations(results, significances):
 
 
 def sequence_logo(
-    pwm_or_seq, path: Path=None, width=369, height=149, dpi=72, legend=False,
-    renumerate=True, title: str=None, **kwargs
+    pwm_or_seq, path: Path = None, width=369, height=149, dpi=72, legend=False,
+    renumerate=True, title: str = None, **kwargs
 ):
     """Generate a sequence logo from Position Weight Matrix (pwm)
     or a list of aligned sequences.
