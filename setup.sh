@@ -2,6 +2,7 @@
 set -e
 
 sudo apt-get install libffi-dev python3-dev build-essential
+sudo apt-get install libmysqlclient-dev
 
 # Use examplar configuration for the beginning
 cd website
