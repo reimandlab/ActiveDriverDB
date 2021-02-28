@@ -16,6 +16,7 @@ dependencies:
   - r-ggiraph
   - r-knitr
   - r-ggplot2
+  - r-rlang
   - r-htmlwidgets
   - r-pbmcapply
   - r-ggseqlogo
