@@ -35,6 +35,9 @@ jobs:
     - name: List all packages
       run: |
         conda list
+    - name: Display R config
+      run: |
+        echo "$R_LIBS_SITE"
     - name: Run setup script
       run: |
         bash setup.sh
@@ -65,10 +68,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.7
-      - name: Add conda to system path
-        run: |
-          # $CONDA is an environment variable pointing to the root of the miniconda directory
-          echo $CONDA/bin >> $GITHUB_PATH
       - name: Install dependencies
         run: |
           conda install flake8

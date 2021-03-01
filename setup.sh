@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+echo "$R_LIBS_SITE"
+
 sudo apt-get install libffi-dev python3-dev build-essential
 sudo apt-get install libmysqlclient-dev
 
@@ -100,7 +102,6 @@ git clone https://github.com/reimandlab/rmimp.git
 cd rmimp
 git checkout refactored
 cd ..
-
 
 # sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
 export R_INSTALL_STAGED=false
