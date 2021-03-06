@@ -11,17 +11,14 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
     env:
-      MYSQL_USER: owner
+      MYSQL_USER: root
       MYSQL_PASSWORD: password
-      MYSQL_ROOT_PASSWORD: root-password
     services:
       mysql:
         image: mysql:8
         env:
           # see https://hub.docker.com/_/mysql
-          MYSQL_USER: ${{ env.MYSQL_USER }}
-          MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
-          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_PASSWORD }}
         ports:
           - 3306:3306
         options: >-

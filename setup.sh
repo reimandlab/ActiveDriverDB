@@ -14,6 +14,7 @@ sed "s|pass|$SQL_PASS|" database.sql -i
 cat database.sql
 echo "MySQL user: $MYSQL_USER"
 mysql --host 127.0.0.1 --port "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" < database.sql
+echo "Database created"
 mysql --host 127.0.0.1 --port "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -e 'SHOW DATABASES;'
 
 mv example_config.py config.py
