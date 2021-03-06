@@ -11,6 +11,7 @@ SQL_PASS=$(apg -m 128 -n 1 -E "\"'")
 mv example_database.sql database.sql
 sed "s|user|test_user|" database.sql -i
 sed "s|pass|$SQL_PASS|" database.sql -i
+sed "s|localhost|%|" database.sql -i
 cat database.sql
 echo "MySQL user: $MYSQL_USER"
 mysql --host 127.0.0.1 --port "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" < database.sql
