@@ -17,7 +17,6 @@ from database import bdb_refseq
 from assets import bundles
 from assets import DependencyManager
 from flask_celery import Celery
-from ggplot import register_ggplot_functions
 
 login_manager = LoginManager()
 mail = Mail()
@@ -227,6 +226,8 @@ def register_jinja_functions(app):
         for key, value in STORES['Datasets'].items()
     }
     print(STORES['Datasets'].keys())
+
+    from ggplot import register_ggplot_functions
 
     register_ggplot_functions(jinja_globals)
 
