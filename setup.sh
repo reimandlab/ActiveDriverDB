@@ -2,9 +2,7 @@
 set -e
 
 # rabbitmq-server: broker for celery
-sudo apt-get install libffi-dev python3-dev build-essential apg mysql-server libmysqlclient-dev rabbitmq-server
-
-sudo /etc/init.d/mysql start
+sudo apt-get install libffi-dev python3-dev build-essential apg rabbitmq-server
 
 # Use examplar configuration for the beginning
 cd website
@@ -15,7 +13,7 @@ mv example_database.sql database.sql
 sed "s|user|test_user|" database.sql -i
 sed "s|pass|$SQL_PASS|" database.sql -i
 cat database.sql
-sudo mysql < database.sql
+mysql -u root -p password < database.sql
 
 mv example_config.py config.py
 R_LIBS_SITE=$(Rscript -e 'cat(paste(.libPaths(), collapse=":"))')
