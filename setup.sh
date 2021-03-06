@@ -13,8 +13,8 @@ sed "s|user|test_user|" database.sql -i
 sed "s|pass|$SQL_PASS|" database.sql -i
 cat database.sql
 echo "MySQL user: $MYSQL_USER"
-mysql --host 127.0.0.1 --port "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -e 'SHOW DATABASES'
 mysql --host 127.0.0.1 --port "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" < database.sql
+mysql --host 127.0.0.1 --port "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -e 'SHOW DATABASES;'
 
 mv example_config.py config.py
 R_LIBS_SITE=$(Rscript -e 'cat(paste(.libPaths(), collapse=":"))')
