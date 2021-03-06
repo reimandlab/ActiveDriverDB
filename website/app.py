@@ -102,7 +102,8 @@ def create_app(config_filename='config.py', config_override={}):
     #
     db.app = app
     db.init_app(app)
-    db.create_all(bind='__all__')
+    # do not use __all__ as it includes the None (SQLALCHEMY_DATABASE_URI) bind
+    db.create_all(bind=list(app.config.get('SQLALCHEMY_BINDS')))
 
     readonly = app.config.get('HDB_READONLY', False)
     bdb.open(app.config['HDB_DNA_TO_PROTEIN_PATH'], readonly=readonly)
