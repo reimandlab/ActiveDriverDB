@@ -103,9 +103,10 @@ setfacl -R -m u:celery:rwx website/databases
 # redis
 sudo apt-get install redis-server
 
-echo "pwd: $(pwd)"
-echo "ls: $(ls)"
-echo "ls in db dir: $(ls website/databases)"
+# create tables for all databases and files for hash-based (HDB) databases
+cd website
+./manage.py migrate
+cd ..
 
 # (re) start everything
 sudo /etc/init.d/celeryd restart
