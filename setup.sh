@@ -7,7 +7,7 @@ sudo apt-get install libffi-dev build-essential apg mysql-client
 cd website
 
 # create example database
-SQL_PASS=$(apg -m 128 -n 1)
+SQL_PASS=$(apg -m 128 -n 1 -E "\"'")
 mv example_database.sql database.sql
 sed "s|user|test_user|" database.sql -i
 sed "s|pass|$SQL_PASS|" database.sql -i
@@ -23,7 +23,7 @@ echo "R_LIBS_SITE: $R_LIBS_SITE"
 sed "s|^R_LIBRARY_PATH = .*|R_LIBRARY_PATH = \"$R_LIBS_SITE\"|" config.py -i
 sed "s|user:pass|test_user:$SQL_PASS|" config.py -i
 
-RANDOM_KEY=$(apg -m 128 -n 1)
+RANDOM_KEY=$(apg -m 128 -n 1 -E "\"'")
 sed "s|user:pass@localhost|test_user:$SQL_PASS@127.0.0.1:$MYSQL_PORT|" config.py -i
 sed "s|^SECRET_KEY = .*|SECRET_KEY = \"$RANDOM_KEY\"|" config.py -i
 cat config.py
