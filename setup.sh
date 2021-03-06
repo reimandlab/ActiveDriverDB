@@ -7,6 +7,7 @@ sudo apt-get install libmysqlclient-dev
 # Use examplar configuration for the beginning
 cd website
 mv example_config.py config.py
+export R_LIBS_SITE=$(Rscript -e 'cat(paste(.libPaths(), collapse=":"))')
 echo "R_LIBS_SITE: $R_LIBS_SITE"
 sed "s|^R_LIBRARY_PATH = .*|R_LIBRARY_PATH = \"$R_LIBS_SITE\"|" config.py -i
 cat config.py
