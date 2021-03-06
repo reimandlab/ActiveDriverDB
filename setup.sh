@@ -103,6 +103,10 @@ setfacl -R -m u:celery:rwx website/databases
 # redis
 sudo apt-get install redis-server
 
+echo "pwd: $(pwd)"
+echo "ls: $(ls)"
+echo "ls in db dir: $(ls website/databases)"
+
 # (re) start everything
 sudo /etc/init.d/celeryd restart
 sudo /etc/init.d/redis-server restart
