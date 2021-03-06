@@ -51,6 +51,7 @@ sudo useradd -g celery celery
 
 cp celeryd .autogen_celeryd
 
+echo "using celery bin from: $(which celery)"
 sed "s|^CELERY_BIN=.*|CELERY_BIN=\"$(which celery)\"|" .autogen_celeryd -i
 sed "s|^CELERYD_CHDIR=.*|CELERYD_CHDIR=\"$(pwd)\/website\"|" .autogen_celeryd -i
 
