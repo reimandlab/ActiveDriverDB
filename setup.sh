@@ -15,7 +15,7 @@ mv example_database.sql database.sql
 sed "s|user|test_user|" database.sql -i
 sed "s|pass|$SQL_PASS|" database.sql -i
 cat database.sql
-mysql -u root < database.sql
+sudo mysql < database.sql
 
 mv example_config.py config.py
 R_LIBS_SITE=$(Rscript -e 'cat(paste(.libPaths(), collapse=":"))')
