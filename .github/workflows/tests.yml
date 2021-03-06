@@ -11,17 +11,24 @@ jobs:
     name: Run tests
     runs-on: ubuntu-latest
     env:
-      MYSQL_USER: root
+      MYSQL_USER: owner
       MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: root-password
     services:
       mysql:
         image: mysql:8
         env:
+          # see https://hub.docker.com/_/mysql
           MYSQL_USER: ${{ env.MYSQL_USER }}
           MYSQL_PASSWORD: ${{ env.MYSQL_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_ROOT_PASSWORD }}
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+        options: >-
+          --health-cmd="mysqladmin ping"
+          -health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     strategy:
       max-parallel: 5
