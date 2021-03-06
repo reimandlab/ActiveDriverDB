@@ -21,10 +21,9 @@ mv example_config.py config.py
 R_LIBS_SITE=$(Rscript -e 'cat(paste(.libPaths(), collapse=":"))')
 echo "R_LIBS_SITE: $R_LIBS_SITE"
 sed "s|^R_LIBRARY_PATH = .*|R_LIBRARY_PATH = \"$R_LIBS_SITE\"|" config.py -i
-sed "s|user:pass|test_user:$SQL_PASS|" config.py -i
+sed "s|user:pass@localhost|test_user:$SQL_PASS@127.0.0.1:$MYSQL_PORT|" config.py -i
 
 RANDOM_KEY=$(apg -m 128 -n 1 -E "\"'")
-sed "s|user:pass@localhost|test_user:$SQL_PASS@127.0.0.1:$MYSQL_PORT|" config.py -i
 sed "s|^SECRET_KEY = .*|SECRET_KEY = \"$RANDOM_KEY\"|" config.py -i
 cat config.py
 cd ..
