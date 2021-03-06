@@ -96,6 +96,8 @@ setfacl -m u:celery:rwx website/logs/app.log
 
 setfacl -R -m u:celery:rwx celery
 mkdir -p website/databases
+mkdir website/databases/dna_to_protein
+mkdir website/databases/gene_to_isoform
 setfacl -R -m u:celery:rwx website/databases
 
 # redis
