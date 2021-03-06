@@ -10,6 +10,10 @@ Note that usually to host on port 80 or so you will need to have sudo access.
 
 You should change the name of this file to `config.py`.
 """
+# -Environment settings
+# colon-separated paths to R libraries
+R_LIBRARY_PATH = None
+
 # -Flask generic settings
 SECRET_KEY = 'replace_this'
 DEBUG = True

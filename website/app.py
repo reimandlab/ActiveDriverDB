@@ -90,6 +90,15 @@ def create_app(config_filename='config.py', config_override={}):
         setup_logging(Path(app.config.get('LOGS_PATH', 'logs/app.log')))
 
     #
+    # R integration
+    #
+    if app.config.get('R_LIBRARY_PATH', None):
+        r_library_path = app.config.get('R_LIBRARY_PATH', None)
+        from rpy2.robjects.packages import importr
+        base = importr('base')
+        base._libPaths(r_library_path)
+
+    #
     # Database creation
     #
     db.app = app
