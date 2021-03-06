@@ -2,7 +2,9 @@
 set -e
 
 sudo apt-get install libffi-dev python3-dev build-essential
-sudo apt-get install libmysqlclient-dev
+sudo apt-get install mysql-server libmysqlclient-dev
+
+sudo /etc/init.d/mysql start
 
 # Use examplar configuration for the beginning
 cd website
