@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-# rabbitmq-server: broker for celery
-sudo apt-get install libffi-dev python3-dev build-essential apg rabbitmq-server
+sudo apt-get install libffi-dev build-essential apg mysql-client
 
 # Use examplar configuration for the beginning
 cd website
@@ -14,6 +13,7 @@ sed "s|user|test_user|" database.sql -i
 sed "s|pass|$SQL_PASS|" database.sql -i
 cat database.sql
 echo "MySQL user: $MYSQL_USER"
+mysql --host 127.0.0.1 --port "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" -e 'SHOW DATABASES'
 mysql --host 127.0.0.1 --port "$MYSQL_PORT" -u "$MYSQL_USER" -p"$MYSQL_PASSWORD" < database.sql
 
 mv example_config.py config.py
@@ -50,6 +50,10 @@ rm 5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
 # to be replaced with 'clean-css clean-css-cli' after a new release of webassets:
 # currently integration fails for new versions but the fix seems to be already implemented on master branch
 sudo npm install -g clean-css@3.4.24
+
+# rabbitmq-server: broker for celery
+# keeping it down there as it takes quite some time
+sudo apt-get install rabbitmq-server
 
 # generate keys (for testing only!)
 mkdir -p celery
