@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-sudo apt-get install libffi-dev python3-dev build-essential
-sudo apt-get install mysql-server libmysqlclient-dev
+# rabbitmq-server: broker for celery
+sudo apt-get install libffi-dev python3-dev build-essential apg mysql-server libmysqlclient-dev rabbitmq-server
 
 sudo /etc/init.d/mysql start
 
@@ -51,9 +51,6 @@ rm 5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
 # to be replaced with 'clean-css clean-css-cli' after a new release of webassets:
 # currently integration fails for new versions but the fix seems to be already implemented on master branch
 sudo npm install -g clean-css@3.4.24
-
-# install broker for celery
-sudo apt-get install rabbitmq-server
 
 # generate keys (for testing only!)
 mkdir -p celery
