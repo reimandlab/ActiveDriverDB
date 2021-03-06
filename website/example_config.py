@@ -31,6 +31,7 @@ SQLALCHEMY_BINDS = {
     'cms': 'mysql://user:pass@localhost/db_cms',
     'bio': 'mysql://user:pass@localhost/db_bio'
 }
+SQLALCHEMY_DATABASE_URI = None
 SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 # -Hash-key databases settings
