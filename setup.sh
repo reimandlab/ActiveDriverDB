@@ -49,8 +49,7 @@ sudo useradd -g celery celery
 
 cp celeryd .autogen_celeryd
 
-# bash -l to fully activate conda
-sed "s|^CELERY_BIN=.*|CELERY_BIN=\"bash -l $(which celery)\"|" .autogen_celeryd -i
+sed "s|^CELERY_BIN=.*|CELERY_BIN=\"$(which celery)\"|" .autogen_celeryd -i
 sed "s|^CELERYD_CHDIR=.*|CELERYD_CHDIR=\"$(pwd)\/website\"|" .autogen_celeryd -i
 
 echo "Please modify /etc/default/celeryd script to adjust absolute paths to celery executable and website dir"

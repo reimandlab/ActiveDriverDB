@@ -38,6 +38,7 @@ jobs:
     - name: Display R config
       run: |
         conda activate test
+        R -e '.libPaths()' --vanilla -q
         echo "R_LIBS_USER: $R_LIBS_USER"
         echo "R_LIBS_SITE: $R_LIBS_SITE"
         echo "R_LIBS: $R_LIBS"
