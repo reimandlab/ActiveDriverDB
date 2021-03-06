@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-echo "$R_LIBS_SITE"
-
 sudo apt-get install libffi-dev python3-dev build-essential
 sudo apt-get install libmysqlclient-dev
 
@@ -51,12 +49,11 @@ sudo useradd -g celery celery
 
 cp celeryd .autogen_celeryd
 
-echo "R_LIBS_USER: $R_LIBS_USER"
-echo "R_LIBS_SITE: $R_LIBS_SITE"
 sed "s|^CELERY_BIN=.*|CELERY_BIN=\"$(which celery)\"|" .autogen_celeryd -i
 sed "s|^CELERYD_CHDIR=.*|CELERYD_CHDIR=\"$(pwd)\/website\"|" .autogen_celeryd -i
 
 echo "Please modify /etc/default/celeryd script to adjust absolute paths to celery executable and website dir"
+cat .autogen_celeryd
 sudo cp .autogen_celeryd /etc/default/celeryd
 
 mkdir temp -p

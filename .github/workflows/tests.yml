@@ -37,7 +37,10 @@ jobs:
         conda list
     - name: Display R config
       run: |
-        echo "$R_LIBS_SITE"
+        conda activate test
+        echo "R_LIBS_USER: $R_LIBS_USER"
+        echo "R_LIBS_SITE: $R_LIBS_SITE"
+        echo "R_LIBS: $R_LIBS"
     - name: Run setup script
       run: |
         bash setup.sh
