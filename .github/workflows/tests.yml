@@ -51,6 +51,9 @@ jobs:
     - name: Run setup script
       run: |
         bash setup.sh
+      env:
+        MYSQL_USER: ${{ job.services.mysql.env.MYSQL_USER }}
+        MYSQL_PASSWORD: ${{ job.services.mysql.env.MYSQL_PASSWORD }}
     - name: Check for syntax errors
       run: |
         # stop the build if there are Python syntax errors or undefined names
