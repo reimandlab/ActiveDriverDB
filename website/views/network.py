@@ -45,6 +45,7 @@ class NetworkViewFilters(GracefulFilterManager):
 
 
 def divide_muts_by_sites(mutations, sites):
+    """Aggregates mutations that are within +/-7 positions from sites by site"""
     from collections import defaultdict
     muts_by_site = defaultdict(list)
 
@@ -54,19 +55,29 @@ def divide_muts_by_sites(mutations, sites):
     sites.sort(key=lambda site: site.position)
     mutations.sort(key=lambda mutation: mutation.position)
 
-    m = 0
+    mutation_index = 0
     for site in sites:
-        l = site.position - 7
-        p = site.position + 7
-        while mutations[m].position < l:
-            m += 1
-            if m == len(mutations):
+        site_flank_start = site.position - 7
+        site_flank_end = site.position + 7
+        # while the mutation that we look at is is far before the site we look at
+        while mutations[mutation_index].position < site_flank_start:
+            # we can just look at the next mutation
+            mutation_index += 1
+            # unless we already checked all mutations
+            if mutation_index == len(mutations):
+                # and in that case our work is done; this is the case because
+                # sites and mutations are sorted by positions (see above),
+                # so it is guaranteed that all mutations are before all the sites
                 return muts_by_site
-        ms = m
-        while mutations[ms].position <= p:
-            muts_by_site[site].append(mutations[ms])
-            ms += 1
-            if ms == len(mutations):
+        # we now look at a mutations which are either within the range of the site,
+        # or maybe are behind them (we do not know yet)
+        candidate_mut_index = mutation_index
+        # while the candidate mutation is in range of the site flanks:
+        while mutations[candidate_mut_index].position <= site_flank_end:
+            # append it to the mutations associated with site that we currently analyze
+            muts_by_site[site].append(mutations[candidate_mut_index])
+            candidate_mut_index += 1
+            if candidate_mut_index == len(mutations):
                 break
     return muts_by_site
 
