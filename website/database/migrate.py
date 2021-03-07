@@ -51,16 +51,16 @@ def get_column_names(table):
     return set((i.name for i in table.c))
 
 
-def basic_auto_migrate_relational_db(app, bind):
+def basic_auto_migrate_relational_db(app, bind: str):
     """Inspired by http://stackoverflow.com/questions/2103274/"""
 
     from sqlalchemy import Table
     from sqlalchemy import MetaData
 
     print('Performing auto-migration in', bind, 'database...')
-    db.session.commit(bind=bind)
+    db.session.commit()
     db.reflect(bind=bind)
-    db.session.commit(bind=bind)
+    db.session.commit()
     db.create_all(bind=bind)
 
     with app.app_context():

@@ -1,5 +1,6 @@
 import genomic_mappings
 from database import db
+from database.migrate import basic_auto_migrate_relational_db
 from database_testing import DatabaseTest
 from models import Model, ScalarSet
 
@@ -73,3 +74,7 @@ class TestTypes(DatabaseTest):
 
         # test load of empty set:
         assert b_loaded.citations == set()
+
+    def test_migrate(self):
+        for bind in self.SQLALCHEMY_BINDS.keys():
+            basic_auto_migrate_relational_db(self.app, bind)

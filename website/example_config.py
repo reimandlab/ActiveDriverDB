@@ -31,7 +31,8 @@ SQLALCHEMY_BINDS = {
     'cms': 'mysql://user:pass@localhost/db_cms',
     'bio': 'mysql://user:pass@localhost/db_bio'
 }
-SQLALCHEMY_DATABASE_URI = None
+# TODO: change to None after flask-sqlalchemy 3.0 (https://github.com/pallets/flask-sqlalchemy/issues/663) release
+SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory'
 SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 # -Hash-key databases settings
