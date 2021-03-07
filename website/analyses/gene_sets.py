@@ -10,7 +10,7 @@ import os
 from typing import Mapping, Tuple
 
 from pandas import DataFrame
-from rpy2.robjects import pandas2ri, r, NULL as null, StrVector, IntVector
+from rpy2.robjects import r, NULL as null, StrVector, IntVector
 from rpy2.robjects.packages import importr
 from tqdm import tqdm
 
@@ -19,7 +19,6 @@ from analyses.active_driver import ActiveDriverResult
 from helpers.cytoscape import CytoscapeCommand, Cytoscape, get
 from models import InterproDomain
 
-#pandas2ri.activate()
 
 output_dir = Path('analyses_output/active_pathway/')
 
@@ -74,7 +73,7 @@ GENE_SETS = {
 
 def run_active_pathways(
     ad_result: ActiveDriverResult, gene_sets_gmt_path: str,
-    cytoscape_dir: Path=None, **kwargs
+    cytoscape_dir: Path = None, **kwargs
 ) -> DataFrame:
     active_pathways = importr('activeDriverPW')
     df = ad_result['all_gene_based_fdr']
@@ -112,7 +111,12 @@ class DeadlyPopen(Popen):
             self.kill()
 
 
-def run_all(site_type: str, gene_sets: Mapping[str, Path]=GENE_SETS, gene_set_filter: Tuple[int]=(5, 1000), correct=False, **kwargs):
+def run_all(
+    site_type: str, gene_sets: Mapping[str, Path] = GENE_SETS,
+        gene_set_filter: Tuple[int, int] = (5, 1000),
+        correct=False,
+        **kwargs
+):
     """Runs all active_pathways combinations for given site_type.
 
     Uses pan_cancer/clinvar Active Driver analyses results

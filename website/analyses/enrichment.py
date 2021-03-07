@@ -49,7 +49,6 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
     5. Count in how many of M iterations does D>P and E>Q. These percentages make up the permutation test p-values
     6. Repeat with TCGA instead of ClinVar.
 
-
     Args:
         subset_query:
             SQLAlchemy query yielding mutation dataset

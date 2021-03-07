@@ -1,4 +1,4 @@
-from typing import List, Dict, Union
+from typing import List, Dict
 from xml.etree import ElementTree
 
 from pandas import DataFrame

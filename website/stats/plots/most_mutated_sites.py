@@ -8,7 +8,10 @@ from ..store import cases
 from .common import site_types_with_any
 
 
-def most_mutated_sites(sources, site_type: SiteType=AnySiteType, intersection=False, stacked=False, limit=20, filters=None):
+def most_mutated_sites(
+    sources, site_type: SiteType = AnySiteType, intersection=False,
+    stacked=False, limit=20, filters=None
+):
     from analyses.enrichment import most_mutated_sites
 
     most_mutated = partial(most_mutated_sites, site_type=site_type, limit=limit, mutation_filter=filters)
@@ -115,4 +118,3 @@ def mc3_and_clinvar_intersection(site_type, subset):
         intersection=True,
         filters=clinvar_subsets[subset]
     )
-

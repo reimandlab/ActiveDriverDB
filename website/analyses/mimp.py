@@ -21,7 +21,6 @@ from models import Kinase, Site, SiteType, Protein, extract_padded_sequence
 from ._paths import ANALYSES_OUTPUT_PATH
 
 
-#pandas2ri.activate()
 r("options(warn=1)")
 
 
