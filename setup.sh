@@ -29,19 +29,6 @@ sed "s|^SECRET_KEY = .*|SECRET_KEY = \"$RANDOM_KEY\"|" config.py -i
 cat config.py
 cd ..
 
-# prepare space for logs
-mkdir -p website/logs
-touch website/logs/app.log
-
-# create tables for all databases and files for hash-based (HDB) databases
-mkdir -p website/databases
-mkdir -p website/databases/dna_to_protein
-mkdir -p website/databases/gene_to_isoform
-
-cd website
-./manage.py migrate
-cd ..
-
 #git clone https://github.com/juanmirocks/Levenshtein-MySQL-UDF
 #cd Levenshtein-MySQL-UDF
 #echo `mysql_config --include`
@@ -77,9 +64,18 @@ yes '' | openssl req -new -key worker.key -out worker.csr
 openssl x509 -req -days 1 -in worker.csr -signkey worker.key -out worker.crt
 cd ..
 
-sed "s|^CELERY_SECURITY_KEY = .*|CELERY_SECURITY_KEY = '$(pwd)/celery/worker.key'|" config.py -i
-sed "s|^CELERY_SECURITY_CERTIFICATE = .*|CELERY_SECURITY_CERTIFICATE = '$(pwd)/celery/worker.crt'|" config.py -i
-sed "s|^CELERY_SECURITY_CERT_STORE = .*|CELERY_SECURITY_CERT_STORE = '$(pwd)/celery/*.crt'|" config.py -i
+# prepare space for logs
+mkdir -p website/logs
+touch website/logs/app.log
+
+# create tables for all databases and files for hash-based (HDB) databases
+mkdir -p website/databases
+mkdir -p website/databases/dna_to_protein
+mkdir -p website/databases/gene_to_isoform
+
+cd website
+./manage.py migrate
+cd ..
 
 # create celery user
 sudo groupadd celery
