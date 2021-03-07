@@ -7,8 +7,10 @@ from warnings import warn
 from collections import Counter, defaultdict
 
 from pandas import Series, to_numeric, DataFrame
+from rpy2 import robjects
 from rpy2.robjects import pandas2ri, StrVector, ListVector, r
 from rpy2.robjects.constants import NULL
+from rpy2.robjects.conversion import localconverter
 from rpy2.robjects.packages import importr
 from tqdm import tqdm
 
@@ -280,7 +282,9 @@ def run_mimp(mutation_source: str, site_type_name: str, model: str = None, enzym
     )
     if mimp_result is NULL:
         return DataFrame()
-    return pandas2ri.ri2py(mimp_result)
+
+    with localconverter(robjects.default_converter + pandas2ri.converter):
+        return robjects.conversion.rpy2py(mimp_result)
 
 
 glycosylation_sub_types = [
