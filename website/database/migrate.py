@@ -58,7 +58,7 @@ def mysql_extract_definitions(table_definition: str) -> dict:
     to_replace = {
         r'TINYINT\(1\)': 'BOOL',  # synonymous for MySQL and SQLAlchemy
         r'INT\(11\)': 'INTEGER',
-        'INT($| )': 'INTEGER',
+        'INT($| )': r'INTEGER\g<1>',
         'DOUBLE': 'FLOAT(53)',
         ' DEFAULT NULL': ''
     }

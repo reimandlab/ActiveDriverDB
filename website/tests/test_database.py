@@ -58,7 +58,8 @@ CREATE TABLE `disease` (
 def test_mysql_extract_definitions():
     extracted = mysql_extract_definitions(MYSQL_DISEASE)
     assert 'name' in extracted
-    assert 'INTEGER' in extracted['snomed_ct_id']
+    # should replace int with INTEGER, remove DEFAULT NULL
+    assert extracted['snomed_ct_id'] == 'snomed_ct_id INTEGER'
 
 
 def test_mysql_columns_to_update():
