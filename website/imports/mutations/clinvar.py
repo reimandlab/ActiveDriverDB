@@ -1,6 +1,7 @@
 import re
 from collections import defaultdict
-from typing import Mapping, Iterable, Dict
+from typing import Mapping, Iterable, Dict, TextIO, Union, NamedTuple
+from xml.etree import ElementTree
 
 from sqlalchemy.orm.exc import NoResultFound
 from models import InheritedMutation, Disease
@@ -16,6 +17,19 @@ from .mutation_importer.helpers import make_metadata_ordered_dict
 
 class MalformedRawError(Exception):
     pass
+
+
+def count_characters(file: TextIO):
+    return sum(
+        len(line)
+        for line in file
+    )
+
+
+class ReferenceData(NamedTuple):
+    rcv_accession: ElementTree.Element
+    variation_id: int
+    sample: ElementTree.Element
 
 
 class ClinVarImporter(MutationImporter):
@@ -40,6 +54,9 @@ class ClinVarImporter(MutationImporter):
         super().__init__(*args, **kwargs)
         self.xml_path = None
         self.skipped_significances = defaultdict(int)
+        self.variants_of_interest = None
+        self.skipped_variation_types = set()
+        self.skipped_species = set()
 
     def load(self, path=None, update=False, clinvar_xml_path=None, **ignored_kwargs):
         print(
@@ -68,6 +85,15 @@ class ClinVarImporter(MutationImporter):
             return at_least_one_significant_sub_entry
         except MalformedRawError:
             return False
+
+    accepted_assertions = {
+        'variation to disease',
+        'variation in modifier gene to disease',
+        'variation to included disease',
+        'confers sensitivity'
+    }
+
+    accepted_species = {'Human', 'human'}
 
     clinvar_keys = (
         'RS',
@@ -103,6 +129,72 @@ class ClinVarImporter(MutationImporter):
         'non-pathogenic': 'benign',
     }
 
+    def _parse_and_filter_reference(self, reference) -> Union[ReferenceData, None]:
+
+        assertion = reference.find('Assertion').attrib['Type']
+
+        # skip over "confers resistance" and "variant to named protein"
+        if assertion not in self.accepted_assertions:
+            assert assertion in {'confers resistance', 'variant to named protein'}
+            return
+
+        # variant-disease accession
+        rcv_accession = reference.find('ClinVarAccession')
+        assert rcv_accession.attrib['Type'] == 'RCV'
+
+        # rcv_accession = rcv_accession.attrib['Acc']
+
+        # variation or variation set, corresponds to InheritedMutation in our database
+        variation_set = reference.find('MeasureSet')
+
+        # skip over minority of records with "GenotypeSet"s
+        if not variation_set:
+            assert reference.find('GenotypeSet')
+            return
+
+        # skip over haplotypes, etc
+        variation_set_type = variation_set.attrib['Type']
+        if variation_set_type != 'Variant':
+            assert variation_set_type in {'Haplotype', 'Distinct chromosomes', 'Phase unknown'}
+            return
+
+        # corresponds to InheritedMutation.variation_id
+        variation_id = int(variation_set.attrib['ID'])
+
+        if variation_id not in self.variants_of_interest:
+            # as we effectively have only a fraction of all variations
+            # (non-synonymous SNVs only), this will speed things up
+            return
+
+        sample = reference.find('ObservedIn/Sample')
+        assert sample
+        species = sample.find('Species').text
+
+        if species not in self.accepted_species:
+            if species not in self.skipped_species:
+                print(f'Skipping non-human species: "{species}"')
+                self.skipped_species.add(species)
+            return
+
+        variations = variation_set.findall('Measure')
+        assert len(variations) == 1
+
+        variation = variations[0]
+
+        variation_type = variation.attrib['Type']
+        if variation_type != 'single nucleotide variant':
+            if variation_type not in self.skipped_variation_types:
+                print(f'Skipping variation type: {variation_type}')
+                self.skipped_variation_types.add(variation_type)
+                # TODO: it seems that it should include a short-circuiting return,
+                #  see https://github.com/reimandlab/ActiveDriverDB/issues/169
+
+        return ReferenceData(
+            variation_id=variation_id,
+            rcv_accession=rcv_accession,
+            sample=sample
+        )
+
     def parse_significance(self, significance):
 
         significance = significance.lower()
@@ -133,7 +225,6 @@ class ClinVarImporter(MutationImporter):
 
     def import_disease_associations(self):
         """Add disease association details to the already imported mutation-disease associations"""
-        from xml.etree import ElementTree
         from tqdm import tqdm
         import gzip
 
@@ -141,22 +232,15 @@ class ClinVarImporter(MutationImporter):
             'not specified',
             'not provided'
         }
-        accepted_assertions = {
-            'variation to disease',
-            'variation in modifier gene to disease',
-            'variation to included disease',
-            'confers sensitivity'
-        }
 
-        print('Only including assertions: ', accepted_assertions)
+        print('Only including assertions: ', self.accepted_assertions)
         print('Ignoring traits: ', ignored_traits)
 
         self.skipped_significances = defaultdict(int)
 
-        accepted_species = {'Human', 'human'}
-        skipped_species = set()
+        self.skipped_species = set()
 
-        skipped_variation_types = set()
+        self.skipped_variation_types = set()
         conflicting_types = set()
         skipped_diseases = set()
 
@@ -172,14 +256,12 @@ class ClinVarImporter(MutationImporter):
 
         opener = gzip.open if self.xml_path.endswith('.gz') else open
 
-        total_size = 0
         with opener(self.xml_path) as clinvar_full_release:
-            for line in clinvar_full_release:
-                total_size += len(line)
+            total_size = count_characters(clinvar_full_release)
 
         step = 0
 
-        variants_of_interest = {
+        self.variants_of_interest = {
             variation_id
             for variation_id, in db.session.query(ClinicalData.variation_id)
         }
@@ -201,64 +283,14 @@ class ClinVarImporter(MutationImporter):
 
                 reference = element.find('ReferenceClinVarAssertion')
 
-                assertion = reference.find('Assertion').attrib['Type']
-
-                # This skips over "confers resistance" and "variant to named protein"
-                if assertion not in accepted_assertions:
-                    assert assertion in {'confers resistance', 'variant to named protein'}
+                reference_data = self._parse_and_filter_reference(reference)
+                # skip if filtered out
+                if not reference_data:
                     continue
-
-                # variant-disease accession
-                rcv_accession = reference.find('ClinVarAccession')
-                assert rcv_accession.attrib['Type'] == 'RCV'
-
-                # rcv_accession = rcv_accession.attrib['Acc']
-
-                # variation or variation set, corresponds to InheritedMutation in our database
-                variation_set = reference.find('MeasureSet')
-
-                # Note: this skips over minority of records with "GenotypeSet"s
-                if not variation_set:
-                    assert reference.find('GenotypeSet')
-                    continue
-
-                # skip over haplotypes, etc
-                variation_set_type = variation_set.attrib['Type']
-                if variation_set_type != 'Variant':
-                    assert variation_set_type in {'Haplotype', 'Distinct chromosomes', 'Phase unknown'}
-                    continue
-
-                # corresponds to InheritedMutation.variation_id
-                variation_id = int(variation_set.attrib['ID'])
-
-                if variation_id not in variants_of_interest:
-                    # as we effectively have only a fraction of all variations
-                    # (non-synonymous SNVs only), this will speed things up
-                    continue
-
-                sample = reference.find('ObservedIn/Sample')
-                species = sample.find('Species').text
-
-                if species not in accepted_species:
-                    if species not in skipped_species:
-                        print(f'Skipping non-human species: "{species}"')
-                        skipped_species.add(species)
-                    continue
-
-                origin = sample.find('Origin').text
 
                 assert reference.find('RecordStatus').text == 'current'
 
-                variations = variation_set.findall('Measure')
-                assert len(variations) == 1
-
-                variation = variations[0]
-
-                variation_type = variation.attrib['Type']
-                if variation_type != 'single nucleotide variant':
-                    if variation_type not in skipped_variation_types:
-                        print(f'Skipping variation type: {variation_type}')
-                        skipped_variation_types.add(variation_type)
+                origin = reference_data.sample.find('Origin').text
 
                 # Disease or observation, corresponds to Disease
                 trait = reference.find('TraitSet')
@@ -316,7 +348,7 @@ class ClinVarImporter(MutationImporter):
                 disease_associations: Iterable[ClinicalData] = (
                     ClinicalData.query
                     .filter(ClinicalData.disease_id == disease.id)
-                    .filter(ClinicalData.variation_id == variation_id)
+                    .filter(ClinicalData.variation_id == reference_data.variation_id)
                 )
 
                 association_values = {
@@ -331,8 +363,10 @@ class ClinVarImporter(MutationImporter):
                         old_value = getattr(disease_association, key)
                         if old_value and old_value != value:
                             print(
-                                f'Warning: {key} was already set to {old_value} for {variation_id}/{disease},'
-                                f'while the new value is {value} (accession: {rcv_accession})'
+                                f'Warning: {key} was already set to {old_value}'
+                                f' for {reference_data.variation_id}/{disease},'
+                                f' while the new value is {value}'
+                                f' (accession: {reference_data.rcv_accession})'
                             )
 
                     disease_association.sig_code = sig_code
@@ -377,6 +411,7 @@ class ClinVarImporter(MutationImporter):
         print('Removing ClinVar associations with blacklisted or missing origin; NOTE:')
         print('\torigin is not set also when the mutation was skipped due to other reasons, such as non-human species')
         removed_cnt = ClinicalData.query.filter(
+            # noqa: E711
             or_(ClinicalData.origin == None, ClinicalData.origin.in_(origin_exclusion_list))
         ).delete(synchronize_session='fetch')
         db.session.commit()
