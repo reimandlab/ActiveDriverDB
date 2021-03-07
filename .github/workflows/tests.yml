@@ -81,6 +81,7 @@ jobs:
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
+        base-path: website
         github-token: ${{ secrets.GITHUB_TOKEN }}
   lint:
     name: Lint code
