@@ -16,13 +16,15 @@ dependencies:
   - r-ggiraph
   - r-knitr
   - r-ggplot2
-  - r-rlang
-  - r-lazyeval
   - r-htmlwidgets
   - r-pbmcapply
   - r-ggseqlogo
   - r-svglite
+  # required for ggplot2
+  - r-rlang
+  - r-lazyeval
   # needed to install rmimp from source:
+  - r-rocr
   - bioconductor-s4vectors
   - bioconductor-genomicranges
   - bioconductor-biostrings
