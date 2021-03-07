@@ -48,6 +48,7 @@ jobs:
           test
     - name: Install dependencies
       run: |
+        sudo apt-get remove r-base r-base-core
         mamba env update --file environment.yml --name test
     - name: List all packages
       run: |
