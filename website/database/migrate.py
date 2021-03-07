@@ -99,19 +99,24 @@ def basic_auto_migrate_relational_db(app, bind: str):
                 columns_definitions = {}
 
                 to_replace = {
-                    'TINYINT(1)': 'BOOL',   # synonymous for MySQL and SQLAlchemy
-                    'INT(11)': 'INTEGER',
+                    r'TINYINT\(1\)': 'BOOL',   # synonymous for MySQL and SQLAlchemy
+                    r'INT\(11\)': 'INTEGER',
+                    'INT$': 'INTEGER',
                     'DOUBLE': 'FLOAT(53)',
                     ' DEFAULT NULL': ''
                 }
                 for definition in table_definition.first()[1].split('\n'):
-                    match = re.match(r'\s*`(?P<name>.*?)` (?P<definition>[^,]*),?', definition)
+                    match = re.match(r'\s*`(?P<name>.*?)` (?P<definition>[^\n]*),\n?', definition)
                     if match:
                         name = match.group('name')
                         definition_string = match.group('definition').upper()
 
                         for mysql_explicit_definition, implicit_sqlalchemy in to_replace.items():
-                            definition_string = definition_string.replace(mysql_explicit_definition, implicit_sqlalchemy)
+                            definition_string = re.sub(
+                                mysql_explicit_definition,
+                                implicit_sqlalchemy,
+                                definition_string
+                            )
 
                         columns_definitions[name] = name + ' ' + definition_string
 
@@ -121,8 +126,16 @@ def basic_auto_migrate_relational_db(app, bind: str):
                     column = getattr(table.c, column_name)
                     old_definition = columns_definitions[column_name]
                     new_definition = ddl.get_column_specification(column)
+                    differ = old_definition != new_definition
 
-                    if old_definition != new_definition:
+                    enum_prefix = f'{column_name} ENUM('
+
+                    if differ and old_definition.startswith(enum_prefix) and new_definition.startswith(enum_prefix):
+                        old_values = set(old_definition[len(enum_prefix):-1].lower().split('\','))
+                        new_values = set(new_definition[len(enum_prefix):-1].lower().split('\','))
+                        differ = old_values != new_values
+
+                    if differ:
                         columns_to_update.append([column_name, old_definition, new_definition])
 
                 if columns_to_update:
