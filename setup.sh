@@ -77,6 +77,10 @@ yes '' | openssl req -new -key worker.key -out worker.csr
 openssl x509 -req -days 1 -in worker.csr -signkey worker.key -out worker.crt
 cd ..
 
+sed "s|^CELERY_SECURITY_KEY = .*|CELERY_SECURITY_KEY = '$(pwd)/celery/worker.key'|" config.py -i
+sed "s|^CELERY_SECURITY_CERTIFICATE = .*|CELERY_SECURITY_CERTIFICATE = '$(pwd)/celery/worker.crt'|" config.py -i
+sed "s|^CELERY_SECURITY_CERT_STORE = .*|CELERY_SECURITY_CERT_STORE = '$(pwd)/celery/*.crt'|" config.py -i
+
 # create celery user
 sudo groupadd celery
 sudo useradd -g celery celery
