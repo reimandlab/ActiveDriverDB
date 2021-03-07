@@ -58,9 +58,9 @@ def basic_auto_migrate_relational_db(app, bind):
     from sqlalchemy import MetaData
 
     print('Performing auto-migration in', bind, 'database...')
-    db.session.commit()
-    db.reflect()
-    db.session.commit()
+    db.session.commit(bind=bind)
+    db.reflect(bind=bind)
+    db.session.commit(bind=bind)
     db.create_all(bind=bind)
 
     with app.app_context():
