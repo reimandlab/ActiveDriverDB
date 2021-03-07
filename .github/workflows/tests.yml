@@ -71,10 +71,12 @@ jobs:
         bash deploy.sh
     - name: Run tests that can run in parallel
       run: |
-        pytest
+        cd website
+        python3 -m pytest
     - name: Run sequential tests
       run: |
-         pytest --cov-append -m 'serial'
+        cd website
+        python3 -m pytest --cov-append -m 'serial'
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
