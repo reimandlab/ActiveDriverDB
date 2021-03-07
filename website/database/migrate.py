@@ -98,10 +98,7 @@ def mysql_columns_to_update(old_definitions: dict, new_definitions: dict) -> lis
         if differ and old_definition.startswith(enum_prefix) and new_definition.startswith(enum_prefix):
             old_values = set(parse_csv(old_definition[len(enum_prefix):-1].lower()))
             new_values = set(parse_csv(new_definition[len(enum_prefix):-1].lower()))
-            print(old_values)
-            print(new_values)
             differ = old_values != new_values
-            print(differ, old_values - new_values, new_values - old_values)
 
         if differ:
             columns_to_update.append([column_name, old_definition, new_definition])
