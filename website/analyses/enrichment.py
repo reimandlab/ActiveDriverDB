@@ -38,7 +38,9 @@ def count_mutated_potential_sites():
     print(count, total_length, count/total_length*100)
 
 
-def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, reference_query, iterations_count=100000, subset_size=None, subset_ptms=None):
+def test_enrichment_of_ptm_mutations_among_mutations_subset(
+    subset_query, reference_query, iterations_count=100000, subset_size=None, subset_ptms=None
+):
     """Perform tests according to proposed algorithm:
 
     1. Count the number of all ClinVar mutations as C, PTM-associated ClinVar mutations as D=27071
@@ -134,9 +136,9 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
 
 
 def get_confirmed_mutations(
-        sources, only_preferred=True, genes=None, confirmed_by_definition=False,
-        base_query=None
-    ):
+    sources, only_preferred=True, genes=None, confirmed_by_definition=False,
+    base_query=None
+):
     """
     Utility to generate a query for retrieving confirmed mutations having specific mutation details.
 
@@ -240,12 +242,12 @@ def non_parametric_test_ptm_enrichment():
             protein = gene.preferred_isoform
             filters = and_(
                 Mutation.protein == protein,
-                Mutation.is_confirmed == True
+                Mutation.is_confirmed == True    # noqa: E712
             )
             number_of_all_mutations = Mutation.query.filter(filters).count()
             number_of_ptm_mutations = Mutation.query.filter(and_(
                 filters,
-                Mutation.precomputed_is_ptm == True
+                Mutation.precomputed_is_ptm == True    # noqa: E712
             )).count()
             ratios.append(number_of_ptm_mutations/number_of_all_mutations)
         return FloatVector(ratios)
@@ -343,7 +345,6 @@ def load_omim(omim_path='data/omim-gene_phenotype.tsv'):
     omim = read_table(omim_path, skiprows=4)
     omim_genes = set()
 
-
     skipped = 0
     for i, row in omim.iterrows():
         g = Gene.query.filter_by(entrez_id=int(row['Entrez Gene ID'])).first()
@@ -409,7 +410,7 @@ def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False, st
 
         mutations_filters = and_(
             Mutation.protein_id.in_([p.id for p in proteins]),
-            Mutation.is_confirmed == True,
+            Mutation.is_confirmed == True,    # noqa: E712
             Mutation.in_sources(*sources)
         )
 
@@ -495,7 +496,7 @@ def prepare_for_summing(sources: List[MutationSource], count_distinct_substituti
 
 
 def most_mutated_sites(
-    sources: List[MutationSource], site_type: SiteType=None, limit=25, intersection=True,
+    sources: List[MutationSource], site_type: SiteType = None, limit=25, intersection=True,
     exclusive=None, mutation_filter=None
 ):
     """Sources must have the same value_type (counts/frequencies)"""
@@ -883,6 +884,8 @@ def sites_mutated_ratio(
 
     if path:
         ggplot2.ggsave(str(path), width=width / dpi, height=height / dpi, dpi=dpi, units='in', bg='transparent')
+
+    return plot
 
 
 def ptm_on_random(

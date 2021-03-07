@@ -35,7 +35,7 @@ from models import Setting
 from models import User
 from database import db
 from database import get_or_create
-from app import login_manager, recaptcha, limiter
+from app import recaptcha, limiter
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.exc import MultipleResultsFound
 from sqlalchemy.exc import IntegrityError, OperationalError

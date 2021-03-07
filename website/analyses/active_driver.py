@@ -202,7 +202,7 @@ def save_all(analysis_name: str, data, base_path=None):
         datum.to_csv(path / f'{name}.tsv', sep='\t')
 
 
-def create_gene_list(name: str, list_data: DataFrame, mutation_source: MutationSource=None) -> GeneList:
+def create_gene_list(name: str, list_data: DataFrame, mutation_source: MutationSource = None) -> GeneList:
     gene_list, created = get_or_create(GeneList, name=name)
 
     if not created:
