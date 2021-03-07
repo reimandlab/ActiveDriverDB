@@ -411,8 +411,10 @@ class ClinVarImporter(MutationImporter):
         print('Removing ClinVar associations with blacklisted or missing origin; NOTE:')
         print('\torigin is not set also when the mutation was skipped due to other reasons, such as non-human species')
         removed_cnt = ClinicalData.query.filter(
-            # noqa: E711
-            or_(ClinicalData.origin == None, ClinicalData.origin.in_(origin_exclusion_list))
+            or_(
+                ClinicalData.origin == None,   # noqa: E711
+                ClinicalData.origin.in_(origin_exclusion_list)
+            )
         ).delete(synchronize_session='fetch')
         db.session.commit()
         print(f'Removed {removed_cnt} associations')
