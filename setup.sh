@@ -136,7 +136,7 @@ cd ..
 
 # sudo R -e 'install.packages(c("mclust", "ROCR", "data.table"), repos = "http://cran.us.r-project.org")'
 export R_INSTALL_STAGED=false
-sudo R -e 'install.packages("rmimp", repos=NULL)'
+R -e 'install.packages("rmimp", repos=NULL)'
 
 # sudo apt-get install libcairo2-dev - needed for svglite
 
