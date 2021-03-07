@@ -6,7 +6,7 @@ import gc
 from traceback import print_exc
 from typing import Mapping, Union
 
-from rpy2.rinterface import RRuntimeError
+from rpy2.rinterface_lib.embedded import RRuntimeError
 from rpy2.robjects import pandas2ri, r
 from rpy2.robjects.packages import importr
 from pandas import read_table, Series, DataFrame
