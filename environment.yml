@@ -25,6 +25,8 @@ dependencies:
   - r-lazyeval
   # needed to install rmimp from source:
   - r-rocr
+  - r-data.table
+  - r-mclust
   - bioconductor-s4vectors
   - bioconductor-genomicranges
   - bioconductor-biostrings
