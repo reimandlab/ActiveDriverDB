@@ -29,6 +29,19 @@ sed "s|^SECRET_KEY = .*|SECRET_KEY = \"$RANDOM_KEY\"|" config.py -i
 cat config.py
 cd ..
 
+# prepare space for logs
+mkdir -p website/logs
+touch website/logs/app.log
+
+# create tables for all databases and files for hash-based (HDB) databases
+mkdir -p website/databases
+mkdir -p website/databases/dna_to_protein
+mkdir -p website/databases/gene_to_isoform
+
+cd website
+./manage.py migrate
+cd ..
+
 #git clone https://github.com/juanmirocks/Levenshtein-MySQL-UDF
 #cd Levenshtein-MySQL-UDF
 #echo `mysql_config --include`
@@ -86,27 +99,18 @@ sudo chown root:root /etc/init.d/celeryd
 cd ..
 rm -r temp
 
+# set access rights for celery
 sudo apt-get install acl
 
 setfacl -m u:celery:rwx website
-mkdir -p website/logs
 setfacl -m u:celery:rwx website/logs
-touch website/logs/app.log
 setfacl -m u:celery:rwx website/logs/app.log
 
 setfacl -R -m u:celery:rwx celery
-mkdir -p website/databases
-mkdir website/databases/dna_to_protein
-mkdir website/databases/gene_to_isoform
 setfacl -R -m u:celery:rwx website/databases
 
 # redis
 sudo apt-get install redis-server
-
-# create tables for all databases and files for hash-based (HDB) databases
-cd website
-./manage.py migrate
-cd ..
 
 # (re) start everything
 sudo /etc/init.d/celeryd restart
