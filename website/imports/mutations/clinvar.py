@@ -578,15 +578,12 @@ class ClinVarImporter(MutationImporter):
 
                 if same_mutation_pointers:
                     pointer = same_mutation_pointers[0]
-                    retained_values = clinvar_mutations[pointer]
-                    old = self.data_as_dict(retained_values)
-                    new = self.data_as_dict(clinvar_mutation_values, mutation_id=mutation_id)
 
-                    for key in ['db_snp_ids', 'combined_significances']:
-                        index = self.insert_keys.index(key)
-                        retained_values[index].update(new[key])
-
-                    print(f'Merged SNVs of the same protein mutation ({mutation_id}):\n\t{new}\nand\n\t{old}\n')
+                    self.merge_into_old_snv(
+                        old_values=clinvar_mutations[pointer],
+                        new_values=clinvar_mutation_values,
+                        mutation_id=mutation_id
+                    )
                 else:
                     # only add the protein-level mutation once
                     self.protect_from_duplicates(mutation_id, clinvar_mutations)
@@ -713,3 +710,13 @@ class ClinVarImporter(MutationImporter):
 
         # count of removed mutations is more informative
         return count
+
+    def merge_into_old_snv(self, old_values, new_values, mutation_id):
+        old = self.data_as_dict(old_values)
+        new = self.data_as_dict(new_values, mutation_id=mutation_id)
+
+        for key in ['db_snp_ids', 'combined_significances']:
+            index = self.insert_keys.index(key)
+            old_values[index].update(new[key])
+
+        print(f'Merged SNVs of the same protein mutation ({mutation_id}):\n\t{new}\nand\n\t{old}\n')
