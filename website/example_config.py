@@ -13,6 +13,7 @@ You should change the name of this file to `config.py`.
 # -Environment settings
 # colon-separated paths to R libraries
 R_LIBRARY_PATH = None
+R_HOME = None
 
 # -Flask generic settings
 SECRET_KEY = 'replace_this'

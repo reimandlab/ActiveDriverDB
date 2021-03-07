@@ -91,6 +91,9 @@ def create_app(config_filename='config.py', config_override={}):
     #
     # R integration
     #
+    if app.config.get('R_HOME', None):
+        os.environ['R_HOME'] = app.config.get('R_HOME', None)
+
     if app.config.get('R_LIBRARY_PATH', None):
         r_library_path = app.config.get('R_LIBRARY_PATH', None)
         from rpy2.robjects.packages import importr
