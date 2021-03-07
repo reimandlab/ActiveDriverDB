@@ -79,10 +79,11 @@ jobs:
         cd website
         python3 -m pytest --cov-append -m 'serial'
     - name: Coveralls
-      uses: coverallsapp/github-action@master
-      with:
-        path-to-lcov: ./website/coverage/lcov.info
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        cd website
+        coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   lint:
     name: Lint code
     runs-on: ubuntu-latest
