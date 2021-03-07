@@ -27,8 +27,6 @@ def extract_drugs(path: str):
         parent = parents[-1]
         grandparent = parents[-2]
 
-        target: Union[dict, None] = None
-
         if event == 'start':
             parents.append(tag)
 
@@ -37,7 +35,7 @@ def extract_drugs(path: str):
 
             if parent == 'target':
                 if tag == 'polypeptide':
-                    assert target
+                    target = drug['targets'][-1]
                     append_or_create(target, 'polypeptides', {})
 
         if event == 'end':
