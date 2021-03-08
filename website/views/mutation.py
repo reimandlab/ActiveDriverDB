@@ -66,4 +66,3 @@ class MutationView(FlaskView):
             datasets=datasets,
             user_datasets=user_datasets
         )
-

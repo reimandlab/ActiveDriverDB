@@ -93,7 +93,7 @@ def determine_strand(ref, cdna_ref, alt, cdna_alt):
         )
 
 
-def is_sequence_broken(protein, test_pos: int, test_res: str, test_alt: str=None):
+def is_sequence_broken(protein, test_pos: int, test_res: str, test_alt: str = None):
     """Check if (in given protein) there is given residue on given position.
 
     Returns:
@@ -116,7 +116,16 @@ def read_genes_data(path) -> DataFrame:
 
     genes_data = read_table(
         path,
-        names='bin name chrom strand txStart txEnd cdsStart cdsEnd exonCount exonStarts exonEnds score name2 cdsStartStat cdsEndStat exonFrames'.split()
+        names=(
+            'bin name chrom strand'
+            ' txStart txEnd'
+            ' cdsStart cdsEnd'
+            ' exonCount'
+            ' exonStarts exonEnds'
+            ' score name2'
+            ' cdsStartStat cdsEndStat'
+            ' exonFrames'
+        ).split()
     ).set_index(['chrom', 'name'])
 
     def convert_positions(positions: List[str]):
@@ -128,4 +137,3 @@ def read_genes_data(path) -> DataFrame:
     genes_data = genes_data.sort_index(level=genes_data.index.names)
 
     return genes_data
-

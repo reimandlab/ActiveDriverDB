@@ -20,6 +20,7 @@ test_mutations = (
     ('p.S206L', ('S', 206, 'L')),
 )
 
+
 def test_decode_mutation():
     for mutation_string, result in test_mutations:
         assert bioinf.decode_mutation(mutation_string) == result

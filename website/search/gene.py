@@ -367,4 +367,3 @@ search_feature_engines = [
     UniprotSearch,
     SummarySearch
 ]
-

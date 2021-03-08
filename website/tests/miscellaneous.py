@@ -2,7 +2,6 @@ import gzip
 from abc import ABCMeta
 from tempfile import NamedTemporaryFile
 from textwrap import dedent
-from helpers.patterns import abstract_property
 import pytest
 
 

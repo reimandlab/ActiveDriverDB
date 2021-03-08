@@ -7,7 +7,8 @@ from database_testing import DatabaseTest
 from imports.sites.uniprot import OthersUniprotImporter
 from imports.sites.uniprot import GlycosylationUniprotImporter
 from imports.sites.uniprot.importer import UniprotIsoformsTrait
-from miscellaneous import make_named_gz_file, make_named_temp_file, TestCaseData, abstract_property
+from miscellaneous import make_named_gz_file, make_named_temp_file, TestCaseData
+from helpers.patterns import abstract_property
 from models import Protein
 from test_imports.ptm_sites.test_hprd import gene_from_isoforms
 from test_imports.test_proteins import create_test_proteins

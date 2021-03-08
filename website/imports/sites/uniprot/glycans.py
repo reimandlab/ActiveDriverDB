@@ -58,4 +58,3 @@ class GlycosylationUniprotImporter(UniprotImporter):
         extracted.residue = extracted.residue.replace(aa_name_to_symbol)
 
         return extracted
-

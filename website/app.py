@@ -17,7 +17,6 @@ from database import bdb_refseq
 from assets import bundles
 from assets import DependencyManager
 from flask_celery import Celery
-from ggplot import register_ggplot_functions
 
 login_manager = LoginManager()
 mail = Mail()
@@ -71,6 +70,23 @@ def create_app(config_filename='config.py', config_override={}):
     # Limiter
     limiter.init_app(app)
 
+    #
+    # R integration
+    #
+    if app.config.get('R_HOME', None):
+        os.environ['R_HOME'] = app.config.get('R_HOME', None)
+
+    if app.config.get('R_LIBRARY_PATH', None):
+        r_library_path = app.config.get('R_LIBRARY_PATH', None)
+        from rpy2.robjects.packages import importr
+        base = importr('base')
+        base._libPaths(r_library_path)
+
+    # monkey-patch pandas for rpy2 compatibility
+    # TODO: remove this monkey-patch after updating pandas
+    import pandas
+    pandas.NA = object()
+
     # Scheduler
     if app.config.get('SCHEDULER_ENABLED', True):
         if scheduler.running:
@@ -94,7 +110,8 @@ def create_app(config_filename='config.py', config_override={}):
     #
     db.app = app
     db.init_app(app)
-    db.create_all(bind='__all__')
+    # do not use __all__ as it includes the None (SQLALCHEMY_DATABASE_URI) bind
+    db.create_all(bind=list(app.config.get('SQLALCHEMY_BINDS')))
 
     readonly = app.config.get('HDB_READONLY', False)
     bdb.open(app.config['HDB_DNA_TO_PROTEIN_PATH'], readonly=readonly)
@@ -218,6 +235,8 @@ def register_jinja_functions(app):
         for key, value in STORES['Datasets'].items()
     }
     print(STORES['Datasets'].keys())
+
+    from ggplot import register_ggplot_functions
 
     register_ggplot_functions(jinja_globals)
 

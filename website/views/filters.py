@@ -316,7 +316,7 @@ def create_dataset_specific_widgets(protein, filters_by_id, population_widgets=T
         cancer_codes_pcawg = protein.cancer_codes(PCAWGMutation)
         disease_names_by_id = protein.disease_names_by_id
     else:
-        cancer_codes_mc3 = [] #cached_queries.all_cancer_codes_mc3
+        cancer_codes_mc3 = []
         cancer_codes_pcawg = []
         disease_names_by_id = cached_queries.all_disease_names_by_id
 

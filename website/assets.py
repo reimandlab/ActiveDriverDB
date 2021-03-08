@@ -14,7 +14,7 @@ def css_bundle(name, *args):
 def js_bundle(name, *args):
     return Bundle(
         *args,
-        filters=['yui_js'],
+        filters=['rjsmin'],
         output='min/' + name + '.js'
     )
 

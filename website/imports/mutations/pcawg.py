@@ -30,4 +30,3 @@ class PCAWGImporter(TCGAImporter):
         print(f'{hypermutated_count} samples are hypermutated and will be skipped at import.')
 
         return super().parse(path)
-

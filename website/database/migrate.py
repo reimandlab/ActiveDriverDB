@@ -1,3 +1,4 @@
+import csv
 import re
 from warnings import warn
 
@@ -51,7 +52,61 @@ def get_column_names(table):
     return set((i.name for i in table.c))
 
 
-def basic_auto_migrate_relational_db(app, bind):
+def mysql_extract_definitions(table_definition: str) -> dict:
+    columns_definitions = {}
+
+    to_replace = {
+        r'TINYINT\(1\)': 'BOOL',  # synonymous for MySQL and SQLAlchemy
+        r'INT\(11\)': 'INTEGER',
+        'INT($| )': r'INTEGER\g<1>',
+        'DOUBLE': 'FLOAT(53)',
+        ' DEFAULT NULL': ''
+    }
+
+    for definition in table_definition.split('\n'):
+        match = re.match(r'\s*`(?P<name>.*?)` (?P<definition>[^\n]*),\n?', definition)
+        if match:
+            name = match.group('name')
+            definition_string = match.group('definition').upper()
+
+            for mysql_explicit_definition, implicit_sqlalchemy in to_replace.items():
+                definition_string = re.sub(
+                    mysql_explicit_definition,
+                    implicit_sqlalchemy,
+                    definition_string
+                )
+
+            columns_definitions[name] = name + ' ' + definition_string
+
+    return columns_definitions
+
+
+def parse_csv(text: str) -> list:
+    return list(csv.reader([text]))[0]
+
+
+def mysql_columns_to_update(old_definitions: dict, new_definitions: dict) -> list:
+    columns_to_update = []
+
+    for column_name, new_definition in new_definitions.items():
+
+        old_definition = old_definitions[column_name]
+        differ = old_definition != new_definition
+
+        enum_prefix = f'{column_name} ENUM('
+
+        if differ and old_definition.startswith(enum_prefix) and new_definition.startswith(enum_prefix):
+            old_values = set(parse_csv(old_definition[len(enum_prefix):-1].lower()))
+            new_values = set(parse_csv(new_definition[len(enum_prefix):-1].lower()))
+            differ = old_values != new_values
+
+        if differ:
+            columns_to_update.append([column_name, old_definition, new_definition])
+
+    return columns_to_update
+
+
+def basic_auto_migrate_relational_db(app, bind: str):
     """Inspired by http://stackoverflow.com/questions/2103274/"""
 
     from sqlalchemy import Table
@@ -59,7 +114,7 @@ def basic_auto_migrate_relational_db(app, bind):
 
     print('Performing auto-migration in', bind, 'database...')
     db.session.commit()
-    db.reflect()
+    db.reflect(bind=bind)
     db.session.commit()
     db.create_all(bind=bind)
 
@@ -96,34 +151,18 @@ def basic_auto_migrate_relational_db(app, bind):
             if engine.dialect.name == 'mysql':
                 sql = f'SHOW CREATE TABLE `{table.name}`'
                 table_definition = engine.execute(sql)
-                columns_definitions = {}
-
-                to_replace = {
-                    'TINYINT(1)': 'BOOL',   # synonymous for MySQL and SQLAlchemy
-                    'INT(11)': 'INTEGER',
-                    'DOUBLE': 'FLOAT(53)',
-                    ' DEFAULT NULL': ''
+                new_definitions = {
+                    column_name: ddl.get_column_specification(
+                        getattr(table.c, column_name)
+                    )
+                    for column_name in existing_columns
                 }
-                for definition in table_definition.first()[1].split('\n'):
-                    match = re.match('\s*`(?P<name>.*?)` (?P<definition>[^,]*),?', definition)
-                    if match:
-                        name = match.group('name')
-                        definition_string = match.group('definition').upper()
+                old_definitions = mysql_extract_definitions(table_definition.first()[1])
 
-                        for mysql_explicit_definition, implicit_sqlalchemy in to_replace.items():
-                            definition_string = definition_string.replace(mysql_explicit_definition, implicit_sqlalchemy)
-
-                        columns_definitions[name] = name + ' ' + definition_string
-
-                columns_to_update = []
-                for column_name in existing_columns:
-
-                    column = getattr(table.c, column_name)
-                    old_definition = columns_definitions[column_name]
-                    new_definition = ddl.get_column_specification(column)
-
-                    if old_definition != new_definition:
-                        columns_to_update.append([column_name, old_definition, new_definition])
+                columns_to_update = mysql_columns_to_update(
+                    old_definitions=old_definitions,
+                    new_definitions=new_definitions
+                )
 
                 if columns_to_update:
                     print(

@@ -1,5 +1,6 @@
 import genomic_mappings
 from database import db
+from database.migrate import basic_auto_migrate_relational_db, mysql_extract_definitions, mysql_columns_to_update
 from database_testing import DatabaseTest
 from models import Model, ScalarSet
 
@@ -38,6 +39,49 @@ def test_decode_csv():
         assert result == dict(zip(keys, correct_result))
 
 
+MYSQL_DISEASE = """\
+CREATE TABLE `disease` (
+  `name` varchar(255) NOT NULL,
+  `medgen_id` varchar(16) DEFAULT NULL,
+  `omim_id` varchar(16) DEFAULT NULL,
+  `snomed_ct_id` int DEFAULT NULL,
+  `orhpanet_id` varchar(16) DEFAULT NULL,
+  `hpo_id` varchar(16) DEFAULT NULL,
+  `clinvar_type` enum('TraitChoice','DrugResponse','Finding','PhenotypeInstruction','Disease') DEFAULT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ix_disease_name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=10284 DEFAULT CHARSET=utf8mb4\
+"""
+
+
+def test_mysql_extract_definitions():
+    extracted = mysql_extract_definitions(MYSQL_DISEASE)
+    assert 'name' in extracted
+    # should replace int with INTEGER, remove DEFAULT NULL
+    assert extracted['snomed_ct_id'] == 'snomed_ct_id INTEGER'
+
+
+def test_mysql_columns_to_update():
+    # enums in different order and letter case should be treated as identical
+    to_update = mysql_columns_to_update(
+        old_definitions={
+            'clinvar_type': "clinvar_type ENUM('TRAITCHOICE','DRUGRESPONSE','FINDING','PHENOTYPEINSTRUCTION','DISEASE')"
+        },
+        new_definitions={
+            'clinvar_type': "clinvar_type ENUM('DrugResponse','TraitChoice','Finding','Disease','PhenotypeInstruction')"
+        }
+    )
+    assert len(to_update) == 0
+
+    # changed length should be picked up
+    to_update = mysql_columns_to_update(
+        old_definitions={'omim_id': 'omim_id varchar(16)'},
+        new_definitions={'omim_id': 'omim_id varchar(32)'}
+    )
+    assert len(to_update) == 1
+
+
 class TestTypes(DatabaseTest):
 
     def test_scalar_set(self):
@@ -59,7 +103,7 @@ class TestTypes(DatabaseTest):
 
         # test tracking of mutations
         b = TestModel(properties={'red'})
-        
+
         db.session.add(b)
         db.session.commit()
 
@@ -73,3 +117,7 @@ class TestTypes(DatabaseTest):
 
         # test load of empty set:
         assert b_loaded.citations == set()
+
+    def test_migrate(self):
+        for bind in self.SQLALCHEMY_BINDS.keys():
+            basic_auto_migrate_relational_db(self.app, bind)

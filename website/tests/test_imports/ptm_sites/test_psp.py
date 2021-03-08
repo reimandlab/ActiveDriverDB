@@ -7,7 +7,8 @@ from typing import Type
 from database import db
 from database_testing import DatabaseTest
 from imports.sites.psp import PhosphoSitePlusImporter
-from miscellaneous import make_named_gz_file, TestCaseData, abstract_property
+from miscellaneous import make_named_gz_file, TestCaseData
+from helpers.patterns import abstract_property
 from models import Protein, Site, SiteType
 
 

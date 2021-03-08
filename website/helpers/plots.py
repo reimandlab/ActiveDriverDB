@@ -9,7 +9,7 @@ from rpy2.robjects.packages import importr
 from helpers.ggplot2 import GG
 
 
-def bar_plot(labels: Iterable, values: Iterable, text: Iterable=None, name=None):
+def bar_plot(labels: Iterable, values: Iterable, text: Iterable = None, name=None):
     data = {
         'x': list(labels),
         'y': list(values),
@@ -142,8 +142,8 @@ def p_value_annotations(results, significances):
 
 
 def sequence_logo(
-    pwm_or_seq, path: Path=None, width=369, height=149, dpi=72, legend=False,
-    renumerate=True, title: str=None, **kwargs
+    pwm_or_seq, path: Path = None, width=369, height=149, dpi=72, legend=False,
+    renumerate=True, title: str = None, **kwargs
 ):
     """Generate a sequence logo from Position Weight Matrix (pwm)
     or a list of aligned sequences.

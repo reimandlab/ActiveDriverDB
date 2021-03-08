@@ -1,6 +1,9 @@
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from hash_set_db import HashSetWithCache
+
+if TYPE_CHECKING:
+    from search.mutation_result import SearchResult
 
 
 class GenomicMappings(HashSetWithCache):

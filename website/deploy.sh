@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 cd static
 wget https://raw.githubusercontent.com/reimandlab/needleplot/master/needleplot.js -nc
