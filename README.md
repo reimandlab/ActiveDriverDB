@@ -1,6 +1,6 @@
 # ActiveDriverDB
 
-[![tests](https://github.com/reimandlab/ActiveDriverDB/workflows/tests/badge.svg)](https://github.com/reimandlab/ActiveDriverDB/actions?query=workflow%3A%22tests%22)
+[![tests](https://github.com/reimandlab/ActiveDriverDB/actions/workflows/tests.yml/badge.svg)](https://github.com/reimandlab/ActiveDriverDB/actions?query=workflow%3A%22tests%22)
 [![Code Climate](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations/badges/gpa.svg)](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations)
 [![Coverage Status](https://coveralls.io/repos/github/reimandlab/ActiveDriverDB/badge.svg?branch=master)](https://coveralls.io/github/reimandlab/ActiveDriverDB?branch=master)
 
