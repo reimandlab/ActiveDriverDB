@@ -5,6 +5,7 @@ from pathlib import Path
 
 from bs4 import BeautifulSoup
 from flask import current_app, jsonify
+from flask import escape
 from flask import flash
 from flask import render_template as template
 from flask import redirect
@@ -179,12 +180,12 @@ def get_page(address, operation=''):
         return Page.query.filter_by(address=address).one()
     except NoResultFound:
         flash(
-            operation + 'no such a page: /' + address,
+            operation + 'no such a page: /' + escape(address),
             'warning'
         )
     except MultipleResultsFound:
         flash(
-            operation + 'multiple results found for page: /' + address +
+            operation + 'multiple results found for page: /' + escape(address) +
             ' Manual check of the database is required',
             'danger'
         )
@@ -469,7 +470,7 @@ class ContentManagementSystem(FlaskView):
             db.session.add(menu)
             db.session.commit()
 
-            flash('Added new menu: ' + menu.name, 'success')
+            flash('Added new menu: ' + escape(menu.name), 'success')
 
         except ValidationError as error:
             flash(error.message, 'warning')
@@ -477,7 +478,7 @@ class ContentManagementSystem(FlaskView):
         except IntegrityError:
             db.session.rollback()
             flash(
-                'Menu with name: ' + menu.name + ' already exists.' +
+                'Menu with name: ' + escape(menu.name) + ' already exists.' +
                 ' Please, change the name and try again.',
                 'danger'
             )
@@ -568,8 +569,8 @@ class ContentManagementSystem(FlaskView):
             db.session.commit()
             flash(
                 'Successfully removed menu "{0}" (id: {1})'.format(
-                    name,
-                    menu_id
+                    escape(name),
+                    escape(menu_id)
                 ),
                 'success'
             )
@@ -719,8 +720,8 @@ class ContentManagementSystem(FlaskView):
             db.session.commit()
             flash(
                 'Successfully removed page "{0}" (id: {1})'.format(
-                    title,
-                    page_id
+                    escape(title),
+                    escape(page_id)
                 ),
                 'success'
             )
