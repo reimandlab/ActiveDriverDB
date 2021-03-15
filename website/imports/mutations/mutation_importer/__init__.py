@@ -147,7 +147,10 @@ class MutationImporter(BioImporter, MutationExporter):
     def export_genomic_clean_fields(self, fields: List[str]) -> List[str]:
         return fields
 
-    def export_genomic_coordinates_of_ptm(self, export_path=None, path=None, only_primary_isoforms=False):
+    def export_genomic_coordinates_of_ptm(
+        self, export_path=None, path=None,
+        only_primary_isoforms=False, only_confirmed_mutations=True
+    ):
         path = self.choose_path(path)
 
         if not export_path:
@@ -179,17 +182,21 @@ class MutationImporter(BioImporter, MutationExporter):
 
                 for pos, protein, alt, ref, is_ptm_related in self.preparse_mutations(line):
 
+                    if only_primary_isoforms and not protein.is_preferred_isoform:
+                        continue
+
                     mutation_id = self.get_or_make_mutation(
                         pos, protein.id, alt, is_ptm_related
                     )
-                    mutation = Mutation.query.get(mutation_id)
-
-                    if only_primary_isoforms and not protein.is_preferred_isoform:
-                        continue
+                    mutation: Mutation = Mutation.query.get(mutation_id)
 
                     total += 1
 
                     if not mutation:
+                        skipped += 1
+                        continue
+
+                    if only_confirmed_mutations and not mutation.is_confirmed:
                         skipped += 1
                         continue
 

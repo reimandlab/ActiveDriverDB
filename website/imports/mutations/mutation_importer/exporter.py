@@ -129,7 +129,7 @@ class MutationExporter:
         )
         return os.path.join(directory, name)
 
-    def export(self, path=None, only_primary_isoforms=False, only_confirmed_mutations=False):
+    def export(self, path=None, only_primary_isoforms=False, only_confirmed_mutations=True):
         """Export all mutations from this source in ActiveDriver compatible format.
 
         Source specific data export can be implemented with export_details method,
