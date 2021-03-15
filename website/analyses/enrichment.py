@@ -3,8 +3,9 @@ import random
 from collections import namedtuple, Counter, defaultdict
 from functools import reduce, partial
 from statistics import median, mean
-from typing import List, NamedTuple, Mapping
+from typing import List, NamedTuple, Mapping, Dict
 
+import numpy as np
 from numpy import NaN
 from sqlalchemy import and_, func, distinct, desc
 from sqlalchemy.orm import aliased
@@ -38,7 +39,9 @@ def count_mutated_potential_sites():
     print(count, total_length, count/total_length*100)
 
 
-def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, reference_query, iterations_count=100000, subset_size=None, subset_ptms=None):
+def test_enrichment_of_ptm_mutations_among_mutations_subset(
+    subset_query, reference_query, iterations_count=100000, subset_size=None, subset_ptms=None
+):
     """Perform tests according to proposed algorithm:
 
     1. Count the number of all ClinVar mutations as C, PTM-associated ClinVar mutations as D=27071
@@ -48,7 +51,6 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
     4. Repeat 2-3 for M=10,000 times
     5. Count in how many of M iterations does D>P and E>Q. These percentages make up the permutation test p-values
     6. Repeat with TCGA instead of ClinVar.
-
 
     Args:
         subset_query:
@@ -135,9 +137,9 @@ def test_enrichment_of_ptm_mutations_among_mutations_subset(subset_query, refere
 
 
 def get_confirmed_mutations(
-        sources, only_preferred=True, genes=None, confirmed_by_definition=False,
-        base_query=None
-    ):
+    sources, only_preferred=True, genes=None, confirmed_by_definition=False,
+    base_query=None
+):
     """
     Utility to generate a query for retrieving confirmed mutations having specific mutation details.
 
@@ -241,12 +243,12 @@ def non_parametric_test_ptm_enrichment():
             protein = gene.preferred_isoform
             filters = and_(
                 Mutation.protein == protein,
-                Mutation.is_confirmed == True
+                Mutation.is_confirmed == True    # noqa: E712
             )
             number_of_all_mutations = Mutation.query.filter(filters).count()
             number_of_ptm_mutations = Mutation.query.filter(and_(
                 filters,
-                Mutation.precomputed_is_ptm == True
+                Mutation.precomputed_is_ptm == True    # noqa: E712
             )).count()
             ratios.append(number_of_ptm_mutations/number_of_all_mutations)
         return FloatVector(ratios)
@@ -344,7 +346,6 @@ def load_omim(omim_path='data/omim-gene_phenotype.tsv'):
     omim = read_table(omim_path, skiprows=4)
     omim_genes = set()
 
-
     skipped = 0
     for i, row in omim.iterrows():
         g = Gene.query.filter_by(entrez_id=int(row['Entrez Gene ID'])).first()
@@ -410,7 +411,7 @@ def count_mutations_from_genes(genes, sources, only_preferred_isoforms=False, st
 
         mutations_filters = and_(
             Mutation.protein_id.in_([p.id for p in proteins]),
-            Mutation.is_confirmed == True,
+            Mutation.is_confirmed == True,    # noqa: E712
             Mutation.in_sources(*sources)
         )
 
@@ -496,7 +497,7 @@ def prepare_for_summing(sources: List[MutationSource], count_distinct_substituti
 
 
 def most_mutated_sites(
-    sources: List[MutationSource], site_type: SiteType=None, limit=25, intersection=True,
+    sources: List[MutationSource], site_type: SiteType = None, limit=25, intersection=True,
     exclusive=None, mutation_filter=None
 ):
     """Sources must have the same value_type (counts/frequencies)"""
@@ -885,6 +886,71 @@ def sites_mutated_ratio(
     if path:
         ggplot2.ggsave(str(path), width=width / dpi, height=height / dpi, dpi=dpi, units='in', bg='transparent')
 
+    return plot
+
+
+def measure(x):
+    """See https://github.com/taschini/pyinterval/issues/2"""
+    return int(fpu.up(lambda: sum((c.sup - c.inf for c in x), 0)))
+
+
+def get_intervals_by_protein(sites):
+    intervals_by_protein = defaultdict(interval)
+
+    for site in tqdm(sites, total=sites.count()):
+        intervals_by_protein[site.protein] |= interval[
+            max(site.position - 7, 0),
+            min(site.position + 7, site.protein.length)
+        ]
+
+    return intervals_by_protein
+
+
+def get_total_region_size(intervals: Dict[Protein, interval]):
+    sequence_region_size = 0
+
+    for sequence_interval in intervals.values():
+        sequence_region_size += measure(sequence_interval)
+
+    return sequence_region_size
+
+
+def sample_mean_counts(
+    ptm_muts,
+    intervals_by_protein: Dict[Protein, interval],
+    total_region_size: int,
+    repeats: int
+):
+    from numpy.random import choice
+    ptm_muts_by_protein = defaultdict(list)
+    for mutation_details, mutation in ptm_muts:
+        ptm_muts_by_protein[mutation.protein].append((mutation_details, mutation))
+
+    ptm_mutations_array = np.zeros(total_region_size)
+    pos = 0
+
+    for protein, protein_interval in tqdm(intervals_by_protein.items(), total=len(intervals_by_protein)):
+        for mutation_details, mutation in ptm_muts_by_protein[protein]:
+            p = 0
+            for subinterval in protein_interval.components:
+                if mutation.position in subinterval:
+                    p += mutation.position - 1 - int(subinterval[0].inf)  # position in interval
+                    break
+                p += measure(subinterval)
+
+            if distinct:
+                ptm_mutations_array[pos + p] += 1
+            else:
+                ptm_mutations_array[pos + p] += mutation_details.count
+        pos += measure(protein_interval)
+
+    ptm_counts = []
+    for repeat in tqdm(range(repeats), total=repeats):
+        ptm_counts.append(np.sum(choice(ptm_mutations_array, size=total_region_size)))
+    print(Series(ptm_counts).describe())
+    ptm_muts_count = mean(ptm_counts)
+    return ptm_muts_count
+
 
 def ptm_on_random(
     source=MC3Mutation, site_type='glycosylation',
@@ -896,8 +962,6 @@ def ptm_on_random(
 
     from protein sequence regions of the same size as analysed PTM regions.
     """
-    from numpy import sum
-    from numpy import zeros
     from numpy.random import choice
 
     assert mode in {'distinct', 'occurrences'}
@@ -905,10 +969,6 @@ def ptm_on_random(
 
     assert not (same_proteins and ptm_proteins)
     assert not (same_ptm_proteins and not ptm_proteins)
-
-    def measure(x):
-        """See https://github.com/taschini/pyinterval/issues/2"""
-        return int(fpu.up(lambda: sum((c.sup - c.inf for c in x), 0)))
 
     site_type = SiteType.query.filter_by(name=site_type).one()
     only_preferred = Protein.is_preferred_isoform if only_preferred else True
@@ -936,10 +996,6 @@ def ptm_on_random(
 
     # region size
 
-    glyco_sequence_region_size = 0
-
-    intervals_by_protein = defaultdict(interval)
-
     sites = (
         Site.query
         .filter(SiteType.fuzzy_filter(site_type))
@@ -947,14 +1003,9 @@ def ptm_on_random(
         .filter(only_preferred)
     )
 
-    for site in tqdm(sites, total=sites.count()):
-        intervals_by_protein[site.protein] |= interval[
-            max(site.position - 7, 0),
-            min(site.position + 7, site.protein.length)
-        ]
+    intervals_by_protein = get_intervals_by_protein(sites)
 
-    for sequence_interval in intervals_by_protein.values():
-        glyco_sequence_region_size += measure(sequence_interval)
+    glyco_sequence_region_size = get_total_region_size(intervals_by_protein)
 
     # ptm muts
 
@@ -976,33 +1027,12 @@ def ptm_on_random(
     ptm_muts = ptm_muts.group_by(source)
 
     if sample_ptm_muts:
-        ptm_muts_by_protein = defaultdict(list)
-        for mutation_details, mutation in ptm_muts:
-            ptm_muts_by_protein[mutation.protein].append((mutation_details, mutation))
-
-        ptm_mutations_array = zeros(glyco_sequence_region_size)
-        pos = 0
-
-        for protein, protein_interval in tqdm(intervals_by_protein.items(), total=len(intervals_by_protein)):
-            for mutation_details, mutation in ptm_muts_by_protein[protein]:
-                p = 0
-                for subinterval in protein_interval.components:
-                    if mutation.position in subinterval:
-                        p += mutation.position - 1 - int(subinterval[0].inf)  # position in interval
-                        break
-                    p += measure(subinterval)
-
-                if distinct:
-                    ptm_mutations_array[pos + p] += 1
-                else:
-                    ptm_mutations_array[pos + p] += mutation_details.count
-            pos += measure(protein_interval)
-
-        ptm_counts = []
-        for repeat in tqdm(range(repeats), total=repeats):
-            ptm_counts.append(sum(choice(ptm_mutations_array, size=glyco_sequence_region_size)))
-        print(Series(ptm_counts).describe())
-        ptm_muts_count = mean(ptm_counts)
+        ptm_muts_count = sample_mean_counts(
+            ptm_muts=ptm_muts,
+            intervals_by_protein=intervals_by_protein,
+            total_region_size=glyco_sequence_region_size,
+            repeats=repeats
+        )
     else:
         if distinct:
             ptm_muts_count = ptm_muts.count()
@@ -1034,7 +1064,7 @@ def ptm_on_random(
 
     weights = [p.length for p in proteins]
 
-    mutations_array = zeros(sum(weights))
+    mutations_array = np.zeros(np.sum(weights))
     pos = 0
 
     for protein in tqdm(proteins):
@@ -1050,9 +1080,9 @@ def ptm_on_random(
     append = counts.append
 
     for repeat in tqdm(range(repeats), total=repeats):
-        append(sum(choice(mutations_array, size=glyco_sequence_region_size)))
+        append(np.sum(choice(mutations_array, size=glyco_sequence_region_size)))
 
-    p_value = sum(1 for count in counts if count > ptm_muts_count) / repeats
+    p_value = np.sum(1 for count in counts if count > ptm_muts_count) / repeats
     count_of_sampled_muts = mean(counts)
     random_ratio = count_of_sampled_muts / glyco_sequence_region_size
 

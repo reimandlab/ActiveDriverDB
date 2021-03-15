@@ -28,6 +28,8 @@ def test_hash_set_path(prefix):
 class DatabaseTest(TestCase):
 
     TESTING = True
+    # TODO: change to None after flask-sqlalchemy 3.0 (https://github.com/pallets/flask-sqlalchemy/issues/663) release
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory'
 
     SQLALCHEMY_BINDS = {
         'cms': 'sqlite://',

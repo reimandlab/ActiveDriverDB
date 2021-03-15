@@ -1,0 +1,102 @@
+name: Tests
+
+on: [push]
+
+defaults:
+  run:
+    shell: bash -l {0}
+
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-latest
+    env:
+      MYSQL_USER: root
+      MYSQL_PASSWORD: password
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          # see https://hub.docker.com/_/mysql
+          MYSQL_ROOT_PASSWORD: ${{ env.MYSQL_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          -health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set Python 3.7 and mamba
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        installer-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
+        python-version: 3.7
+        activate-environment: test
+    - name: Cache conda
+      uses: actions/cache@v1
+      with:
+        path: ~/conda_pkgs_dir
+        key: |
+          test-${{ hashFiles('environment.yml', 'website/requirements.txt', 'website/tests/requirements.txt') }}
+        restore-keys: |
+          test
+    - name: Install dependencies
+      run: |
+        sudo apt-get remove r-base r-base-core
+        mamba env update --file environment.yml --name test
+    - name: List all packages
+      run: |
+        conda list
+    - name: Display R config
+      run: |
+        conda activate test
+        R -e '.libPaths()' --vanilla -q
+    - name: Run setup script
+      run: |
+        bash setup.sh
+      env:
+        MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
+    - name: Check for syntax errors
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+    - name: Run deployment script
+      run: |
+        cd website
+        bash deploy.sh
+    - name: Run tests that can run in parallel
+      run: |
+        cd website
+        python3 -m pytest
+    - name: Run sequential tests
+      run: |
+        cd website
+        python3 -m pytest --cov-append -m 'serial'
+    - name: Coveralls
+      run: |
+        cd website
+        coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  lint:
+    name: Lint code
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set Python 3.7 and mamba
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          installer-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
+          python-version: 3.7
+          activate-environment: test
+      - name: Install dependencies
+        run: |
+          conda install flake8
+      - name: Lint code with Flake8
+        run: flake8 . --count --statistics

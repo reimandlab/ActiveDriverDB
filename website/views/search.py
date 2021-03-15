@@ -452,7 +452,7 @@ class SearchView(FlaskView):
                 if are_there_more_muts:
                     items.append({
                         'type': 'see_more',
-                        'name': 'Show all mutations matching <i>%s</i>' % query,
+                        'name': f'Show all mutations matching <i>{query}</i>',
                         'url': url_for('SearchView:mutations', mutations=query)
                     })
             else:
@@ -467,7 +467,7 @@ class SearchView(FlaskView):
         if are_there_more_genes:
             items.append({
                 'type': 'see_more',
-                'name': 'Show all genes matching <i>%s</i>' % query,
+                'name': f'Show all genes matching <i>{query}</i>',
                 'url': url_for('SearchView:proteins', proteins=query)
             })
 
@@ -756,12 +756,18 @@ def match_aa_mutation(gene, mut, query):
 
     if ref_and_pos:
         # if ref is correct and ask user to specify alt
-        return json_message('Awaiting for <code>{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+        return json_message(
+            'Awaiting for <code>{alt}</code>'
+            ' - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format'
+        )
 
     only_ref = re.fullmatch(r'(?P<ref>\D)', mut)
     if only_ref:
         # prompt user to write more
-        return json_message('Awaiting for <code>{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+        return json_message(
+            'Awaiting for <code>{pos}{alt}</code>'
+            ' - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format'
+        )
 
     try:
         items = get_protein_muts(gene, mut)
@@ -806,7 +812,10 @@ def autocomplete_mutation(query, limit=None):
         gene = data[0].strip()
 
         if gene_exists(gene):
-            messages += json_message('Awaiting for <code>{ref}{pos}{alt}</code> - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format')
+            messages += json_message(
+                'Awaiting for <code>{ref}{pos}{alt}</code>'
+                ' - expecting mutation in <code>{gene} {ref}{pos}{alt}</code> format'
+            )
         else:
             # return json_message('Gene %s not found in the database' % gene)
             pass

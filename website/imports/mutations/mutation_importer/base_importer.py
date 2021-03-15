@@ -1,5 +1,3 @@
-from sqlalchemy.orm.exc import NoResultFound
-
 from database import db
 from database.bulk import get_highest_id
 from helpers.parsers import chunked_list

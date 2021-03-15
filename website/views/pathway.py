@@ -87,10 +87,14 @@ class PathwaysView(FlaskView):
 
         for gene_list in gene_lists:
             matched = False
-            for l in matched_lists:
-                if gene_list.mutation_source_name == l['mutation_source'] and gene_list.site_type == l['site_type']:
+            for candidate_match in matched_lists:
+                if (
+                    gene_list.mutation_source_name == candidate_match['mutation_source']
+                    and
+                    gene_list.site_type == candidate_match['site_type']
+                ):
                     matched = True
-                    l['gene_list'] = gene_list
+                    candidate_match['gene_list'] = gene_list
             if not matched:
                 matched_lists.append({
                     'pathways_list': None,

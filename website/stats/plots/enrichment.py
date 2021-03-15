@@ -190,21 +190,29 @@ def ptm_muts_all_together(site_type, with_facets=True):
         ggplot2.theme(**theme_options) +
         ggplot2.labs(x=x_label, y=r'Mutations count', fill='Mutations group') +
         ggplot2.scale_fill_manual(values=StrVector(["#f1a340", '#cccccc'][::-1]))
-        #ggplot2.geom_jitter(width=0.1)
+        # ggplot2.geom_jitter(width=0.1)
     )
     if with_facets:
-        plot += ggsignif.geom_signif(data=d, mapping=ggplot2.aes_string(xmin=1, xmax=2, annotations='pvalue', y_position='max'), manual=True, tip_length=0.03, textsize=5.5)
-        labels = {'distinct': 'Distinct mutations', 'occurrences': 'Occurrences'}
+        plot += ggsignif.geom_signif(
+            data=d, mapping=ggplot2.aes_string(xmin=1, xmax=2, annotations='pvalue', y_position='max'),
+            manual=True, tip_length=0.03, textsize=5.5
+        )
+        # labels = {'distinct': 'Distinct mutations', 'occurrences': 'Occurrences'}
+
         def get_facet_label(factors):
             # TODO?
             return factors
+
         if with_facets == 'wrap':
             plot += ggplot2.facet_wrap('group', scale='free_y', labeller=get_facet_label, nrow=1)
             plot += ggplot2.scale_x_discrete(labels=StrVector(["expected #", "observed #"]))
         else:
             plot += ggplot2.facet_grid('source~mode', scale='free_y', labeller=get_facet_label)
     else:
-        plot += ggsignif.geom_signif(data=d, mapping=ggplot2.aes_string(xmin=xmin, xmax=xmax, annotations='pvalue', y_position='max'), manual=True, tip_length=0, textsize=5.5)
+        plot += ggsignif.geom_signif(
+            data=d, mapping=ggplot2.aes_string(xmin=xmin, xmax=xmax, annotations='pvalue', y_position='max'),
+            manual=True, tip_length=0, textsize=5.5
+        )
 
     return ggplot2
 

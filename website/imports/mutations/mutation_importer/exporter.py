@@ -84,7 +84,6 @@ class MutationExporter:
                 )
                 ref = ''
 
-            #ptms = ','.join({site_type.name for site in mut.affected_sites for site_type in site.types})
             for instance in export_details(mutation_details):
                 yield (
                     gene_name_by_protein[protein], protein.refseq,

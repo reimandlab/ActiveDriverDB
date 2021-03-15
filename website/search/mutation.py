@@ -166,4 +166,3 @@ class MutationSearch:
                 continue
 
             self.add_mutation_items(items, line)
-

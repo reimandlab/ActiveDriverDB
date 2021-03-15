@@ -4,6 +4,8 @@ from genomic_mappings import make_snv_key, decode_csv
 import app  # this will take some time (stats initialization)
 from models import Protein
 
+assert app
+
 
 def test_mappings():
     """This is a simple inclusion test for genome -> proteome mutation mappings.

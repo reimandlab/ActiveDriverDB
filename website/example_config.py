@@ -10,6 +10,11 @@ Note that usually to host on port 80 or so you will need to have sudo access.
 
 You should change the name of this file to `config.py`.
 """
+# -Environment settings
+# colon-separated paths to R libraries
+R_LIBRARY_PATH = None
+R_HOME = None
+
 # -Flask generic settings
 SECRET_KEY = 'replace_this'
 DEBUG = True
@@ -27,6 +32,8 @@ SQLALCHEMY_BINDS = {
     'cms': 'mysql://user:pass@localhost/db_cms',
     'bio': 'mysql://user:pass@localhost/db_bio'
 }
+# TODO: change to None after flask-sqlalchemy 3.0 (https://github.com/pallets/flask-sqlalchemy/issues/663) release
+SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory'
 SQLALCHEMY_TRACK_MODIFICATIONS = True
 
 # -Hash-key databases settings

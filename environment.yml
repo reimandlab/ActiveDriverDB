@@ -1,0 +1,38 @@
+name: addb
+
+channels:
+  - conda-forge
+  - bioconda
+  - nodefaults
+
+dependencies:
+  - nodejs=10
+  - pigz
+  - pygraphviz
+  - mysqlclient
+  - numpy=1.16.4
+  - pandas=0.23.4
+  - r-base=3.6
+  - r-ggiraph
+  - r-knitr
+  - r-ggplot2
+  - r-htmlwidgets
+  - r-pbmcapply
+  - r-ggseqlogo
+  - r-svglite
+  # required for ggplot2
+  - r-rlang
+  - r-lazyeval
+  # needed to install rmimp from source:
+  - r-rocr
+  - r-data.table
+  - r-mclust
+  - bioconductor-s4vectors
+  - bioconductor-genomicranges
+  - bioconductor-biostrings
+  - bioconductor-biocgenerics
+  - pip:
+    - wheel
+    - -r file:website/requirements.txt
+    - -r file:website/tests/requirements.txt
+    - -r file:website/analyses/requirements.txt

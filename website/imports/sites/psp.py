@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pandas import read_table, to_numeric, DataFrame, concat, Series
+from pandas import read_table, to_numeric, DataFrame, concat
 
 import imports.protein_data as importers
 from helpers.bioinf import aa_symbols

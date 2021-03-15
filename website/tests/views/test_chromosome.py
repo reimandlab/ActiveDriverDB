@@ -80,12 +80,14 @@ class TestChromosomeView(ViewTest):
             assert json['in_datasets'] == {source: meta}
             assert json['value'] == expected_values[source]
 
-        response = self.client.get(mutation_a15v_query + '?filters=Mutation.sources:in:MC3;Mutation.mc3_cancer_code:in:BRCA')
+        def get_a15v(filters: str):
+            return self.client.get(mutation_a15v_query + filters)
+
+        response = get_a15v('?filters=Mutation.sources:in:MC3;Mutation.mc3_cancer_code:in:BRCA')
         assert response.json
 
-        response = self.client.get(mutation_a15v_query + '?filters=Mutation.sources:in:ESP6500;Mutation.populations_ESP6500:in:African American')
+        response = get_a15v('?filters=Mutation.sources:in:ESP6500;Mutation.populations_ESP6500:in:African American')
         assert response.json
 
-        response = self.client.get(mutation_a15v_query + '?filters=Mutation.sources:in:ESP6500;Mutation.populations_ESP6500:in:European American')
+        response = get_a15v('?filters=Mutation.sources:in:ESP6500;Mutation.populations_ESP6500:in:European American')
         assert not response.json
-

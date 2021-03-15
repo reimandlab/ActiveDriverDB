@@ -2,6 +2,8 @@ import os
 from contextlib import contextmanager
 from glob import glob
 import gzip
+from typing import TextIO
+
 from tqdm import tqdm
 import subprocess
 
@@ -65,7 +67,7 @@ def read_from_gz_files(directory, pattern, skip_header=True, after_batch=lambda:
         after_batch()
 
 
-def count_lines(file_object):
+def count_lines(file_object: TextIO):
     """Returns number of lines in a given file."""
     count = sum(1 for _ in file_object)
     file_object.seek(0)   # return to the beginning of the file

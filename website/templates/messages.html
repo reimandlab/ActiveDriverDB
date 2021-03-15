@@ -2,7 +2,7 @@
   <div class="flashes">
     {% for category, message in messages %}
       <div class="alert alert-{{ category or 'warning' }}" role="alert">
-        {{ message | safe }}
+        {{ message }}
       </div>
     {% endfor %}
     {% if system_setting('is_maintenance_mode_active') %}
@@ -13,7 +13,7 @@
     {% endif %}
     {% if system_setting('alert_text') %}
         <div class="alert alert-info">
-        {{ system_setting('alert_text') }}
+        {{ system_setting('alert_text') | safe }}
         </div>
     {% endif %}
   </div>

@@ -40,6 +40,8 @@ class MotifAnalysisTest(DatabaseTest):
             Mutation(protein=p, position=2, alt='Y'),   # direct, breaking
             Mutation(protein=p, position=3, alt='X'),   # proximal for two sites, breaking
         ]
+        # not strictly necessary, but silences "variable 'mutations' is assigned to but never used" warning
+        db.session.add_all(mutations)
 
         xation = SiteType(name='xation')
 

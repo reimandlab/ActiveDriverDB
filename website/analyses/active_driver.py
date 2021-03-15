@@ -6,8 +6,10 @@ import gc
 from traceback import print_exc
 from typing import Mapping, Union
 
-from rpy2.rinterface import RRuntimeError
+from rpy2 import robjects
+from rpy2.rinterface_lib.embedded import RRuntimeError
 from rpy2.robjects import pandas2ri, r
+from rpy2.robjects.conversion import localconverter
 from rpy2.robjects.packages import importr
 from pandas import read_table, Series, DataFrame
 from flask import current_app
@@ -110,11 +112,12 @@ def run_active_driver(sequences, disorder, mutations, sites, mc_cores=None, prog
 
     data = [sequences, disorder, mutations, sites]
 
-    arguments = [
-        # fillna() works around rpy2's NaN memory bug
-        pandas2ri.py2ri(python_object.fillna(''))
-        for python_object in data
-    ]
+    with localconverter(robjects.default_converter + pandas2ri.converter):
+        arguments = [
+            # fillna() works around rpy2's NaN memory bug
+            robjects.conversion.py2rpy(python_object.fillna(''))
+            for python_object in data
+        ]
 
     active_driver = load_active_driver()
 
@@ -126,7 +129,11 @@ def run_active_driver(sequences, disorder, mutations, sites, mc_cores=None, prog
             *arguments, mc_cores=mc_cores, progress_bar=progress_bar, **kwargs
         )
         if result:
-            return {k: pandas2ri.ri2py(v) for k, v in result.items()}
+            with localconverter(robjects.default_converter + pandas2ri.converter):
+                return {
+                    k: robjects.conversion.rpy2py(v)
+                    for k, v in result.items()
+                }
     except RRuntimeError as e:
         print_exc()
         return e
@@ -195,7 +202,7 @@ def save_all(analysis_name: str, data, base_path=None):
         datum.to_csv(path / f'{name}.tsv', sep='\t')
 
 
-def create_gene_list(name: str, list_data: DataFrame, mutation_source: MutationSource=None) -> GeneList:
+def create_gene_list(name: str, list_data: DataFrame, mutation_source: MutationSource = None) -> GeneList:
     gene_list, created = get_or_create(GeneList, name=name)
 
     if not created:

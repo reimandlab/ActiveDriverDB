@@ -41,9 +41,10 @@ class ProteinView(AbstractProteinView):
         AjaxTableView.from_model(
             Protein,
             search_filter=(
-                lambda q: Protein
-                    .gene_name.remote_attr
-                    .like(q + '%')
+                lambda q:
+                Protein
+                .gene_name.remote_attr
+                .like(q + '%')
             ),
             sort='gene_name'
         )

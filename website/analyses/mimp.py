@@ -7,8 +7,10 @@ from warnings import warn
 from collections import Counter, defaultdict
 
 from pandas import Series, to_numeric, DataFrame
+from rpy2 import robjects
 from rpy2.robjects import pandas2ri, StrVector, ListVector, r
 from rpy2.robjects.constants import NULL
+from rpy2.robjects.conversion import localconverter
 from rpy2.robjects.packages import importr
 from tqdm import tqdm
 
@@ -19,7 +21,6 @@ from models import Kinase, Site, SiteType, Protein, extract_padded_sequence
 from ._paths import ANALYSES_OUTPUT_PATH
 
 
-#pandas2ri.activate()
 r("options(warn=1)")
 
 
@@ -131,7 +132,10 @@ def residues_groups(site_type, modified_residues):
     return StrVector(['|'.join(modified_residues)])
 
 
-def train_model(site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, enzyme_type='kinase', output_path=None, **kwargs):
+def train_model(
+    site_type: SiteType, sequences_dir='.tmp', sampling_n=10000, enzyme_type='kinase',
+    output_path=None, **kwargs
+):
     """Train MIMP model for given site type.
 
     NOTE: Natively MIMP works on phosphorylation sites only,
@@ -232,7 +236,7 @@ def get_or_create_model_path(site_type: SiteType, enzyme_type) -> str:
     return str(path)
 
 
-def run_mimp(mutation_source: str, site_type_name: str, model: str=None, enzyme_type='kinase') -> DataFrame:
+def run_mimp(mutation_source: str, site_type_name: str, model: str = None, enzyme_type='kinase') -> DataFrame:
     """Run MIMP for given source of mutations and given site type.
 
     Args:
@@ -277,7 +281,9 @@ def run_mimp(mutation_source: str, site_type_name: str, model: str=None, enzyme_
     )
     if mimp_result is NULL:
         return DataFrame()
-    return pandas2ri.ri2py(mimp_result)
+
+    with localconverter(robjects.default_converter + pandas2ri.converter):
+        return robjects.conversion.rpy2py(mimp_result)
 
 
 glycosylation_sub_types = [
@@ -318,7 +324,7 @@ def sequence_logos_for_site_types(site_types, enzyme_type='kinase'):
         site_logos_path = logos_path / site_type.name
         site_logos_path.mkdir(parents=True, exist_ok=True)
 
-        logos[site_type.name][model_name] = sequence_logo(pwm, path)
+        logos[site_type.name][model_name] = sequence_logo(pwm, site_logos_path)
 
     return logos
 
@@ -338,4 +344,3 @@ def sequence_logos_for_glycosylation_subtypes(subtypes=glycosylation_sub_types):
         pwms, path, ncol=len(pwms), width=800, height=200,
         title='MIMP motifs for glycosylation sites', legend='right'
     )
-

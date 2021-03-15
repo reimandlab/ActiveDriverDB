@@ -503,4 +503,3 @@ class TestSearchView(ViewTest):
         self.login('other_user@domain.org', 'password', create=True)
         response = self.client.get(f'search/remove_saved/{dataset.uri}', follow_redirects=True)
         assert response.status_code == 401
-

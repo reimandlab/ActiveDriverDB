@@ -252,4 +252,3 @@ def count_by_active_driver(
     return count_by_sources(
         [source], site_type, by_genes=by_genes, genes=genes_passing_threshold, **kwargs
     )
-

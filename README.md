@@ -1,6 +1,8 @@
 # ActiveDriverDB
 
-[![Build Status](https://travis-ci.org/reimandlab/ActiveDriverDB.svg?branch=master)](https://travis-ci.org/reimandlab/ActiveDriverDB) [![Code Climate](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations/badges/gpa.svg)](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations) [![Coverage Status](https://coveralls.io/repos/github/reimandlab/ActiveDriverDB/badge.svg?branch=master)](https://coveralls.io/github/reimandlab/ActiveDriverDB?branch=master)
+[![tests](https://github.com/reimandlab/ActiveDriverDB/actions/workflows/tests.yml/badge.svg)](https://github.com/reimandlab/ActiveDriverDB/actions?query=workflow%3A%22tests%22)
+[![Code Climate](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations/badges/gpa.svg)](https://codeclimate.com/github/reimandlab/Visualistion-Framework-for-Genome-Mutations)
+[![Coverage Status](https://coveralls.io/repos/github/reimandlab/ActiveDriverDB/badge.svg?branch=master)](https://coveralls.io/github/reimandlab/ActiveDriverDB?branch=master)
 
 The ActiveDriverDB is a database integrating post-translational (PTM) modification sites and mutations (both germline and somatic) from multiple sources. The data are displayed interactively in the context of PTM signalling networks, proteins or diseases. The database is available at [activedriverdb.org](https://activedriverdb.org/).
 
@@ -18,21 +20,30 @@ Please, see acknowledgments at the bottom of this document for third-party code 
 
 # Development
 
-The project is developed with Python 3. It uses Flask as a web framework with database access provided by SQLAlchemy. Templating is performed with Jinja2 on the server side and (Jinja2-compatiblie) Nunjucks.js on the client side. On the frontend the styles are written with SASS; the visualizations are jQuery and D3.js based.
+The project is developed with Python 3. It uses Flask as a web framework with database access provided by SQLAlchemy.
+Templating is performed with Jinja2 on the server side and (Jinja2-compatible) Nunjucks.js on the client side. On the frontend the styles are written with SASS; the visualizations are jQuery and D3.js based.
 Interactive filtering and REST API is based on custom filtering system (built on top of SQLAlchemy and activated via AJAX requests).
 All used HTML, CSS and JS features are required to meet 95% level of support in web browsers as calculated by caniuse.com.
 
 ## Deployment
 
-The website is developed inside Python3-based virtual environment. To quickly recreate the environment, use:
+To recreate the environment, please use conda:
 
 ```bash
-virtualenv -p python3 virtual_environment
-source virtual_environment/bin/activate
-cd website
-python3 -m pip install -r requirements.txt
+conda env create --file environment.yml --name addb
+conda activate addb
 ```
-In case of problems with the execution of commands above on Debian/Ubuntu running machines, look at the bottom of this page where alternative instructions are given.
+
+You can set up the databases, celery and other required services using `setup.sh` script (which requires Ubuntu 18.04+):
+
+```bash
+# set the environmental variables for setup.sh to create the databases
+export MYSQL_USER=root   # super-user able to create databases and assign privileges
+export MYSQL_PORT=3306
+bash setup.sh
+cd website
+bash deploy.sh
+```
 
 ### Backend
 
@@ -45,19 +56,13 @@ If you wish to import genomic mappings for genome variants annotation you will m
 
 For full deployment two MySQL databases will be needed: one for biological data and one for CMS.
 
-You need to create them, along with relevant database users and privileges. This can be achieved with query like:
+You need to create them, along with relevant database users and privileges.
+See [the example SQL query](https://github.com/reimandlab/ActiveDriverDB/blob/master/website/example_database.sql) for a quick way to set up the databases and users.
 
-```sql
-CREATE DATABASE db_bio;
-CREATE DATABASE db_cms;
-CREATE USER 'user'@'localhost' IDENTIFIED BY 'pass';
-GRANT ALL PRIVILEGES ON db_bio.* TO 'user'@'localhost';
-GRANT ALL PRIVILEGES ON db_cms.* TO 'user'@'localhost';
-GRANT INSERT, DELETE, CREATE ROUTINE, ALTER ROUTINE, EXECUTE ON mysql.* TO 'user'@'localhost';
-```
 Remember to set secure password; user, database and host names are adjustable too.
 You may wish to create two separate users for each of databases, this case is supported too.
-Privileges on mysql database are required to allow to create functions.
+
+Privileges on mysql database are required to allow creation of custom functions (for edit distance based sorting).
 
 
 Afterwards, you can start writing your configuration by copying the exemplar configuration file:
@@ -75,7 +80,7 @@ If you see (at the very end): `Scripts loaded successfuly, no tasks specified.` 
 
 All data files can be downloaded easily with `./download.sh` script from `website/data` directory.
 
-Before server start, data have to be imported. Safest way to do this is to run:
+Before server start, data have to be imported. The safest way to do this is to run:
 ```bash
 ./manage.py load all
 ```
@@ -148,7 +153,7 @@ To run celery worker as a script please use the following command:
 celery -A celery_worker.celery worker
 ```
 
-For deployment it should be started as a service.
+For deployment, it should be started as a service.
 A major part of configuration will be performed by `setup.sh` automatically but one need to amend configuration file (`celeryd`) so all paths are absolute and correct.
 To start the service use `init.d` script:
 
@@ -260,7 +265,7 @@ LimitRequestLine 10000
 LimitRequestFieldSize 10000
 ```
 
-#### Runing python3 in "optimized" mode
+#### Running python3 in "optimized" mode
 
 You can modify the default path to python executable used by WSGI by adding a `python_path` argument to `WSGIDaemonProcess` directive. It allows you to use small middleware script turning optimalization mode on. Here is an example script:
 
@@ -269,28 +274,9 @@ You can modify the default path to python executable used by WSGI by adding a `p
 exec python3 -OO "$@"
 ```
 
-
 ### Using Content Management System
 
 To login to root account (created with `manage.py` script) visit `/login/` page on your server. It will allow you to create, edit and remove standalone pages.
-
-## Debian-based servers
-
-For proper compilation of some requirements, additional software will be needed on Debian-based servers. The required packages are:
-```
-build-essential python3 libmysqlclient-dev python3-dev git python3-bsddb3 pigz nodejs openjdk-7-jdk
-```
-
-Alternative commands to create virtual environment (workaround for Debian not having some essential python3 packages installed):
-```bash
-python3 -m venv --without-pip virtual_environment
-source virtual_environment/bin/activate
-curl https://bootstrap.pypa.io/get-pip.py | python3
-deactivate
-source virtual_environment/bin/activate
-cd website
-python3 -m pip install -r requirements.txt
-```
 
 ## Tests
 
