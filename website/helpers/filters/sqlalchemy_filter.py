@@ -1,7 +1,7 @@
 from types import FunctionType, MethodType
 
 from sqlalchemy import and_, or_
-from sqlalchemy.ext.associationproxy import AssociationProxy
+from sqlalchemy.ext.associationproxy import AssociationProxy, AssociationProxyInstance
 from sqlalchemy.sql.annotation import AnnotatedSelect
 from sqlalchemy.sql.sqltypes import Text
 from sqlalchemy.orm import RelationshipProperty
@@ -78,12 +78,15 @@ class SQLAlchemyAwareFilter(BasicFilter):
             if self.comparator == 'eq':
                 return field, []
 
-        if type(field) is AssociationProxy:
+        # refactored in 1.3, field should be either ColumnAssociationProxyInstance or ObjectAssociationProxyInstance
+        assert type(field) is not AssociationProxy
+
+        if isinstance(field, AssociationProxyInstance):
             # additional joins may be needed when using proxies
 
             joins = []
 
-            while type(field) is AssociationProxy:
+            while isinstance(field, AssociationProxyInstance):
                 joins.append(field.target_class)
                 field = field.remote_attr
 

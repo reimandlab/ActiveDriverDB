@@ -2,6 +2,8 @@ import operator
 from functools import lru_cache
 from types import MethodType
 
+from sqlalchemy.ext.associationproxy import AssociationProxyInstance
+
 from helpers.utilities import is_iterable_but_not_str
 
 
@@ -304,8 +306,9 @@ class BasicFilter:
         if hasattr(self.primary_target, self.attribute):
             field = getattr(self.primary_target, self.attribute)
 
-            if hasattr(field, 'custom_attr_getter'):
-                return field.custom_attr_getter
+            if isinstance(field, AssociationProxyInstance):
+                if field.parent.custom_attr_getter is not None:
+                    return field.parent.custom_attr_getter
         else:
             field = None
 

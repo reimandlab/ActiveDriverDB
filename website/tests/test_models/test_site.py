@@ -149,6 +149,7 @@ class SiteTest(ModelTest):
 
     def test_types(self):
         methylation = SiteType(name='methylation')
+        db.session.add(methylation)
 
         p = Protein(refseq='NM_007', id=1, sequence='ABCD')
         db.session.add(p)
@@ -166,6 +167,8 @@ class SiteTest(ModelTest):
         assert not Site.query.filter(~Site.types.contains(methylation)).all()
 
         phosphorylation = SiteType(name='phosphorylation')
+        db.session.add(phosphorylation)
+
         assert not query.filter(Protein.sites.any(Site.types.contains(phosphorylation))).all()
         assert query.filter(Protein.sites.any(~Site.types.contains(phosphorylation))).one()
         assert Site.query.filter(Site.types.contains(phosphorylation)).count() == 0
