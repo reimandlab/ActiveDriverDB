@@ -18,7 +18,6 @@ python-Levenshtein
 flask_login
 Flask-Mail
 jinja2_pluralize
-yuicompressor
 flask-recaptcha
 flask-limiter
 flask_apscheduler
