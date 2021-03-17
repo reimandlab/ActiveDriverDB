@@ -676,6 +676,8 @@ def details_proxy(target_class, key, managed=False):
                 manager = object
             return getattr(manager, key)
         proxy.custom_attr_getter = proxy_to_details_manager
+    else:
+        proxy.custom_attr_getter = None
 
     return proxy
 
