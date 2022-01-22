@@ -36,6 +36,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         installer-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
+        # Python 3.7 EOL: 27 Jun 2023
         python-version: 3.7
         activate-environment: test
     - name: Cache conda

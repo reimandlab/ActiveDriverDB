@@ -6,7 +6,8 @@ channels:
   - nodefaults
 
 dependencies:
-  - nodejs=10
+  # NodeJS EOL: 2022-04-30
+  - nodejs=12
   - pigz
   - pygraphviz
   - mysqlclient
