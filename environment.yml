@@ -33,6 +33,6 @@ dependencies:
   - bioconductor-biocgenerics
   - pip:
     - wheel
-    - -r file:website/requirements.txt
-    - -r file:website/tests/requirements.txt
-    - -r file:website/analyses/requirements.txt
+    - -r website/requirements.txt
+    - -r website/tests/requirements.txt
+    - -r website/analyses/requirements.txt
