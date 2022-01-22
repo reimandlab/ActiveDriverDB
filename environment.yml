@@ -31,6 +31,7 @@ dependencies:
   - bioconductor-genomicranges
   - bioconductor-biostrings
   - bioconductor-biocgenerics
+  - pip
   - pip:
     - wheel
     - -r website/requirements.txt
