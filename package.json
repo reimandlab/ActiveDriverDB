@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "devDependencies": {
     "autoprefixer": "^9.0",
-    "postcss-cli": "^8.0"
+    "postcss-cli": "^8.0",
     "postcss": "^8",
     "nunjucks": "^3.2",
     "sass": "*",
