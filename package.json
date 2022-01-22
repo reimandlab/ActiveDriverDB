@@ -1,7 +1,7 @@
 {
   "name": "activedriverdb-frontend",
   "version": "0.0.0",
-  "devDependencies": {
+  "dependencies": {
     "autoprefixer": "^9.0",
     "postcss-cli": "^8.0",
     "postcss": "^8",
@@ -9,7 +9,7 @@
     "sass": "*",
     "clean-css": "3.4.24"
   },
-  "devDependenciesComments": {
+  "dependenciesComments": {
     "clean-css": "to be replaced with 'clean-css clean-css-cli' after a new release of webassets; currently integration fails for new versions but the fix seems to be already implemented on master branch",
     "nunjucks": "gets patched to add jinja-compat mode for precompile in `setup.sh`"
   }
