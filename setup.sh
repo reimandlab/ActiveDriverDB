@@ -53,7 +53,7 @@ npm install --global
 
 # fix nunjucks to add jinja-compat mode for precompile
 wget https://github.com/mozilla/nunjucks/pull/1319.patch
-patch $(npm root -g)/nunjucks/ 1319.patch
+patch -p0 $(npm root -g)/nunjucks < 1319.patch
 rm 1319.patch
 
 # rabbitmq-server: broker for celery
