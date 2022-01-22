@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-sudo apt-get install libffi-dev build-essential apg mysql-client
+# GitHub Actions pinned an older mysql-client version on runners temporarily
+# due to an issue with the new version, so installation is not currently possible,
+# see https://github.com/actions/virtual-environments/pull/4674; uncomment once fixed
+# sudo apt-get mysql-client
+sudo apt-get install libffi-dev build-essential apg
 
 # Use examplar configuration for the beginning
 cd website
