@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 set -e
 
-sudo apt-get install libffi-dev build-essential apg mysql-client
+# GitHub Actions pinned an older mysql-client version on runners temporarily
+# due to an issue with the new version, so installation is not currently possible,
+# see https://github.com/actions/virtual-environments/pull/4674; uncomment once fixed
+# sudo apt-get mysql-client
+sudo apt-get install libffi-dev build-essential apg
 
 # Use examplar configuration for the beginning
 cd website
@@ -45,16 +49,14 @@ cd ..
 #rm -rf Levenshtein-MySQL-UDF
 
 # install autoprefixer, clean-css and nunjucks
-npm install -g autoprefixer@^9 postcss-cli@^8 postcss@^8 nunjucks@^3.2 sass
+npm install --global
 
 # fix nunjucks to add jinja-compat mode for precompile
-wget https://github.com/mozilla/nunjucks/commit/5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
-patch $(npm root -g)/nunjucks/bin/precompile 5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
-rm 5108b8e09dd50638ef01555f8c4d100ea6e7783e.patch
-
-# to be replaced with 'clean-css clean-css-cli' after a new release of webassets:
-# currently integration fails for new versions but the fix seems to be already implemented on master branch
-sudo npm install -g clean-css@3.4.24
+cd node_modules/nunjucks
+wget https://github.com/mozilla/nunjucks/pull/1319.patch
+patch -p1 < 1319.patch
+rm 1319.patch
+cd -
 
 # rabbitmq-server: broker for celery
 # keeping it down there as it takes quite some time

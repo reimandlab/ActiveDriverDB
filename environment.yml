@@ -6,7 +6,8 @@ channels:
   - nodefaults
 
 dependencies:
-  - nodejs=10
+  # NodeJS EOL: 2022-04-30
+  - nodejs=12
   - pigz
   - pygraphviz
   - mysqlclient
@@ -31,8 +32,9 @@ dependencies:
   - bioconductor-genomicranges
   - bioconductor-biostrings
   - bioconductor-biocgenerics
+  - pip
   - pip:
     - wheel
-    - -r file:website/requirements.txt
-    - -r file:website/tests/requirements.txt
-    - -r file:website/analyses/requirements.txt
+    - -r website/requirements.txt
+    - -r website/tests/requirements.txt
+    - -r website/analyses/requirements.txt

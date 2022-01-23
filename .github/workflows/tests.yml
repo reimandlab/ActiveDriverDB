@@ -36,6 +36,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         installer-url: https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
+        # Python 3.7 EOL: 27 Jun 2023
         python-version: 3.7
         activate-environment: test
     - name: Cache conda
@@ -72,12 +73,14 @@ jobs:
         bash deploy.sh
     - name: Run tests that can run in parallel
       run: |
+        NPM_BIN=$(npm bin)
         cd website
-        python3 -m pytest
+        PATH="$PATH:$NPM_BIN" python3 -m pytest
     - name: Run sequential tests
       run: |
+        NPM_BIN=$(npm bin)
         cd website
-        python3 -m pytest --cov-append -m 'serial'
+        PATH="$PATH:$NPM_BIN" python3 -m pytest --cov-append -m 'serial'
     - name: Coveralls
       run: |
         cd website
