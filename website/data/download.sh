@@ -214,6 +214,11 @@ wget https://md-datasets-cache-zipfiles-prod.s3.eu-west-1.amazonaws.com/dpkbh2g9
 unzip dpkbh2g9hy-1.zip
 cd ..
 
+mkdir -p 2020_Giansanti
+cd 2020_Giansanti
+wget https://static-content.springer.com/esm/art%3A10.1038%2Fs41467-020-18168-3/MediaObjects/41467_2020_18168_MOESM7_ESM.xlsx
+cd ..
+
 mkdir -p UniProt
 cd UniProt
 wget -O glycosylation_sites.csv "https://sparql.uniprot.org/sparql?query=PREFIX+up%3a%3chttp%3a%2f%2fpurl.uniprot.org%2fcore%2f%3e%0d%0aPREFIX+taxon%3a%3chttp%3a%2f%2fpurl.uniprot.org%2ftaxonomy%2f%3e%0d%0aPREFIX+rdf%3a%3chttp%3a%2f%2fwww.w3.org%2f1999%2f02%2f22-rdf-syntax-ns%23%3e%0d%0aPREFIX+faldo%3a%3chttp%3a%2f%2fbiohackathon.org%2fresource%2ffaldo%23%3e%0d%0aSELECT%0d%0a+++++++(SUBSTR(STR(%3fprotein)%2c+33)+AS+%3fprimary_accession)%0d%0a+++++++(SUBSTR(STR(%3fsequence)%2c+34)+AS+%3fsequence_accession)%0d%0a+++++++(%3fbegin+AS+%3fposition)%0d%0a+++++++%3fdata%0d%0a+++++++(SUBSTR(STR(%3fevidence)%2c+32)+AS+%3feco)%0d%0a+++++++%3fsource%0d%0aWHERE%0d%0a%7b%0d%0a++%3fprotein+a+up%3aProtein+%3b%0d%0a+++++++++up%3aorganism+taxon%3a9606+%3b%0d%0a+++++++++up%3aannotation+%3fannotation+%3b%0d%0a+++++++++rdfs%3alabel+%3fname+.%0d%0a++VALUES+%3fannotationType+%7b%0d%0a+++++++up%3aGlycosylation_Annotation%0d%0a+++++++%23+up%3aModified_Residue_Annotation%0d%0a++%7d%0d%0a++%3fannotation+a+%3fannotationType%3b%0d%0a++++++++++++rdfs%3acomment+%3fdata+%3b%0d%0a++++++++++++up%3arange%2ffaldo%3abegin%0d%0a++++++++++++%5b+faldo%3aposition+%3fbegin+%3b%0d%0a+++++++++++++++++++++++++++++faldo%3areference+%3fsequence+%5d+.%0d%0aOPTIONAL+%7b%0d%0a++++%5b%5d+rdf%3aobject+%3fannotation+%3b%0d%0a++++++++++++++++++up%3aattribution+%3fattribution+.%0d%0a++++++++%3fattribution+up%3aevidence+%3fevidence+.%0d%0a++++++++OPTIONAL+%7b%0d%0a++++++++++++%3fattribution+up%3asource+%3fsource%0d%0a++++++++%7d%0d%0a++++%7d%0d%0a%7d%0d%0a%0d%0a&format=csv"

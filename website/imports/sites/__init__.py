@@ -1,4 +1,4 @@
-from .covid import CovidPhosphoImporter
+from .infections import CovidPhosphoImporter
 from .hprd import HPRDImporter
 from .uniprot import GlycosylationUniprotImporter, OthersUniprotImporter
 from .psp import PhosphoSitePlusImporter
