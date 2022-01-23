@@ -73,8 +73,9 @@ jobs:
         bash deploy.sh
     - name: Run tests that can run in parallel
       run: |
+        NPM_BIN=$(npm bin)
         cd website
-        python3 -m pytest
+        PATH="$PATH:$NPM_BIN" python3 -m pytest
     - name: Run sequential tests
       run: |
         NPM_BIN=$(npm bin)
