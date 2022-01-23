@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import List, Iterable
+from functools import partial
+from typing import List, Iterable, Union
 from warnings import warn
 
 from pandas import read_table, read_excel
@@ -9,6 +10,14 @@ import imports.protein_data as importers
 from imports.sites.site_importer import SiteImporter
 from imports.sites.uniprot.importer import UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait
 from models import Site, EventModulatingPTM, RegulatorySiteAssociation
+
+
+def maybe_split_ints(value: Union[str, int], sep: str):
+    return (
+        [int(number) for number in value.split(sep)]
+        if isinstance(value, str) else
+        [int(value)]
+    )
 
 
 class SiteModulatedUponEventImporter:
@@ -23,6 +32,11 @@ class SiteModulatedUponEventImporter:
     def event_name(self) -> str:
         """The name of the event modulating PTM site occupancy, e.g. `HIV infection`"""
 
+    @property
+    @abstractmethod
+    def effect_size_type(self) -> str:
+        """The effect size type, e.g. `log2FC`"""
+
     def get_or_create_event(self):
         try:
             event = EventModulatingPTM.query.filter_by(name=self.event_name).one()
@@ -32,12 +46,31 @@ class SiteModulatedUponEventImporter:
                 name=self.event_name,
                 reference=self.event_reference
             )
+        return event
+
+    def add_site(
+        self, refseq, position: int, residue, mod_type, pub_med_ids: Iterable[int],
+        adj_p_val: float, effect_size: float, event: EventModulatingPTM
+    ):
+        site, created = super().add_site(refseq, position, residue, mod_type, pubmed_ids=pub_med_ids)
+
+        association = RegulatorySiteAssociation(
+            event=event,
+            effect_size=effect_size,
+            adjusted_p_value=adj_p_val,
+            effect_size_type=self.effect_size_type,
+            site_type=self.site_types_map[mod_type],
+            site=site
+        )
+        site.associations.add(association)
+
+        return site, created
 
 
 class EnterovirusPhosphoImporter(
-    UniprotToRefSeqTrait, UniprotIsoformsTrait,
-    UniprotSequenceAccessionTrait, SiteImporter,
-    SiteModulatedUponEventImporter
+    SiteModulatedUponEventImporter,
+    UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait,
+    SiteImporter
 ):
     """Enterovirus infection related phosphorylation sites, based on:
 
@@ -60,6 +93,7 @@ class EnterovirusPhosphoImporter(
 
     event_name = 'CVB3 enterovirus infection'
     event_reference = '(Giansanti et al., 2020)'
+    effect_size_type = 'log2FC'
     pubmed_id = 32859902
 
     def __init__(
@@ -88,15 +122,27 @@ class EnterovirusPhosphoImporter(
         sites = sites.loc[is_site_significant].copy()
 
         # split rows where a single site was mapped to more than one protein into multiple rows
-        # 'Leading proteins'
-        # TODO
+        columns_to_split = {
+            'Positions within proteins': partial(maybe_split_ints, sep=';'),
+            'Proteins': partial(str.split, sep=';')
+        }
+        for column, func in columns_to_split.items():
+            sites[column] = sites[column].apply(func)
+
+        sites = sites.explode(list(columns_to_split.keys()))
+        print(
+            f'After splitting sites to mapped proteins we have {len(sites)} sites'
+        )
 
         sites.rename(columns={
             'Amino acid': 'residue',
-            'Leading proteins': 'protein_accession',
+            'Proteins': 'protein_accession',
+            'Positions within proteins': 'position',
             "Welch's T-test q-value 10h_CT": 'adj_p_val',
-            # TODO
-            '': 'log2_fold_change'
+            # note: while this is not directly named as "fold change",
+            # is it obvious that it is it after looking at the Source Data
+            # for Figure 1E (where interestingly authors used max(fold change))
+            'Log2 10h_CT': 'effect_size'
         }, inplace=True)
 
         is_canonical = sites['residue'].isin({'S', 'T', 'Y'})
@@ -108,7 +154,6 @@ class EnterovirusPhosphoImporter(
             )
             sites = sites[is_canonical].copy()
 
-        sites['position'] = sites.site.str[1:].apply(int)
         assert all(sites['position'] > 0)
 
         sites['mod_type'] = self.site_types[0]
@@ -136,14 +181,15 @@ class EnterovirusPhosphoImporter(
             mapped_sites,
             columns=[
                 'refseq', 'position', 'residue', 'mod_type',
-                'pub_med_ids', 'adj_p_val', 'log2_fold_change', 'event'
+                'pub_med_ids', 'adj_p_val', 'effect_size', 'event'
             ]
         )
 
 
 class CovidPhosphoImporter(
+    SiteModulatedUponEventImporter,
     UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait,
-    SiteImporter, SiteModulatedUponEventImporter
+    SiteImporter
 ):
     """SARS-CoV-2 infection related phosphorylation sites, based on:
 
@@ -179,6 +225,7 @@ class CovidPhosphoImporter(
 
     event_name = 'SARS-CoV-2 infection'
     event_reference = '(Bouhaddou et al., 2020)'
+    effect_size_type = 'log2FC'
     pubmed_id = 32645325
 
     def __init__(
@@ -221,7 +268,7 @@ class CovidPhosphoImporter(
         sites.rename(columns={
             'uniprot': 'protein_accession',
             'Inf_24Hr.adj.pvalue': 'adj_p_val',
-            'Inf_24Hr.log2FC': 'log2_fold_change'
+            'Inf_24Hr.log2FC': 'effect_size'
         }, inplace=True)
 
         sites['mod_type'] = self.site_types[0]
@@ -249,24 +296,6 @@ class CovidPhosphoImporter(
             mapped_sites,
             columns=[
                 'refseq', 'position', 'residue', 'mod_type',
-                'pub_med_ids', 'adj_p_val', 'log2_fold_change', 'event'
+                'pub_med_ids', 'adj_p_val', 'effect_size', 'event'
             ]
         )
-
-    def add_site(
-            self, refseq, position: int, residue, mod_type, pub_med_ids: Iterable[int],
-            adj_p_val: float, log2_fold_change: float, event: EventModulatingPTM
-    ):
-        site, created = super().add_site(refseq, position, residue, mod_type, pubmed_ids=pub_med_ids)
-
-        association = RegulatorySiteAssociation(
-            event=event,
-            effect_size=log2_fold_change,
-            adjusted_p_value=adj_p_val,
-            effect_size_type='log2FC',
-            site_type=self.site_types_map[mod_type],
-            site=site
-        )
-        site.associations.add(association)
-
-        return site, created
