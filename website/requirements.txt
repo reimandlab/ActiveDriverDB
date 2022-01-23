@@ -21,7 +21,7 @@ jinja2_pluralize
 flask-recaptcha
 flask-limiter==1.5
 flask_apscheduler
-celery==4.3.1
+celery==5.2.2
 amqp
 redis
 gprofiler-official
