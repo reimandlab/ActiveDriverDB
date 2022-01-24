@@ -88,7 +88,7 @@ class EnterovirusPhosphoImporter(
     requires.update(SiteImporter.requires)
 
     source_name = '(Giansanti et al., 2020)'
-    site_types = ['phosphorylation (Enterovirus)']
+    site_types = ['phosphorylation (enterovirus)']
     adj_p_threshold = 0.05
 
     event_name = 'CVB3 enterovirus infection'
