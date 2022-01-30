@@ -324,7 +324,6 @@ class HIVPhosphoImporter(
             sites,
             canonical=CANONICAL_PHOSPHOSITE_RESIDUES
         )
-        print(mapped_sites)
 
         return self.create_site_objects(
             mapped_sites,
