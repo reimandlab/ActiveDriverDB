@@ -3,13 +3,16 @@ from functools import partial
 from typing import List, Iterable, Union
 from warnings import warn
 
-from pandas import read_table, read_excel
+from pandas import DataFrame, read_table, read_excel
 from sqlalchemy.orm.exc import NoResultFound
 
 import imports.protein_data as importers
 from imports.sites.site_importer import SiteImporter
 from imports.sites.uniprot.importer import UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait
 from models import Site, EventModulatingPTM, RegulatorySiteAssociation
+
+
+CANONICAL_PHOSPHOSITE_RESIDUES = {'S', 'T', 'Y'}
 
 
 def maybe_split_ints(value: Union[str, int], sep: str):
@@ -56,6 +59,53 @@ class SiteModulatedUponEventImporter:
                 reference=self.event_reference
             )
         return event
+
+    def process_event_associated_sites(self, sites: DataFrame, canonical: set):
+        """Process provided sites for a *single* PTM type.
+
+        - remove non-canonnical sites,
+        - add sequence accessions and identifiers,
+        - map sites to isoforms in the database
+        - add event data
+
+        Note: make sure to only provide significant sites to this method
+        as it does not implement any significance-based filterering.
+        """
+        is_canonical = sites['residue'].isin(canonical)
+        if any(~is_canonical):
+            warn(
+                f'Removing {sum(~is_canonical)} phosphorylation sites'
+                f' mapped to non-canonical aminoacids: {set(sites[~is_canonical].residue)}'
+                f' keeping {sum(is_canonical)} sites'
+            )
+            sites = sites[is_canonical].copy()
+
+        assert all(sites['position'] > 0)
+
+        assert len(self.site_types) == 1
+
+        sites['mod_type'] = self.site_types[0]
+
+        sites = self.add_sequence_accession(sites)
+        print(
+            f'After mapping to UniProt sequence accessions got: {len(sites)} sites'
+            f' (each protein has multiple UniProt isoforms)'
+        )
+        sites = self.add_nm_refseq_identifiers(sites)
+        print(
+            f'After mapping to RefSeq identifiers got: {len(sites)} sites'
+            f' (each UniProt isoform can be mapped to one or more RefSeq isoforms)'
+        )
+
+        mapped_sites = self.map_sites_to_isoforms(sites)
+
+        event = self.get_or_create_event()
+
+        mapped_sites['event'] = event
+        mapped_sites['pub_med_ids'] = self.pubmed_id
+        mapped_sites['pub_med_ids'] = mapped_sites['pub_med_ids'].apply(lambda pubmed_id: [pubmed_id])
+
+        return mapped_sites
 
     def add_site(
         self, refseq, position: int, residue, mod_type, pub_med_ids: Iterable[int],
@@ -150,37 +200,10 @@ class EnterovirusPhosphoImporter(
             'Log2 10h_CT': 'effect_size'
         }, inplace=True)
 
-        is_canonical = sites['residue'].isin({'S', 'T', 'Y'})
-        if any(~is_canonical):
-            warn(
-                f'Removing {sum(~is_canonical)} phosphorylation sites'
-                f' mapped to non-canonical aminoacids: {set(sites[~is_canonical].residue)}'
-                f' keeping {sum(is_canonical)} sites'
-            )
-            sites = sites[is_canonical].copy()
-
-        assert all(sites['position'] > 0)
-
-        sites['mod_type'] = self.site_types[0]
-
-        sites = self.add_sequence_accession(sites)
-        print(
-            f'After mapping to UniProt sequence accessions got: {len(sites)} sites'
-            f' (each protein has multiple UniProt isoforms)'
+        mapped_sites = self.process_event_associated_sites(
+            sites,
+            canonical=CANONICAL_PHOSPHOSITE_RESIDUES
         )
-        sites = self.add_nm_refseq_identifiers(sites)
-        print(
-            f'After mapping to RefSeq identifiers got: {len(sites)} sites'
-            f' (each UniProt isoform can be mapped to one or more RefSeq isoforms)'
-        )
-
-        mapped_sites = self.map_sites_to_isoforms(sites)
-
-        event = self.get_or_create_event()
-
-        mapped_sites['event'] = event
-        mapped_sites['pub_med_ids'] = self.pubmed_id
-        mapped_sites['pub_med_ids'] = mapped_sites['pub_med_ids'].apply(lambda pubmed_id: [pubmed_id])
 
         return self.create_site_objects(
             mapped_sites,
@@ -254,17 +277,7 @@ class CovidPhosphoImporter(
         sites = sites.loc[is_site_significant].copy()
 
         sites['residue'] = sites.site.str[0]
-        is_canonical = sites['residue'].isin({'S', 'T', 'Y'})
-        if any(~is_canonical):
-            warn(
-                f'Removing {sum(~is_canonical)} phosphorylation sites'
-                f' mapped to non-canonical aminoacids: {set(sites[~is_canonical].residue)}'
-                f' keeping {sum(is_canonical)} sites'
-            )
-            sites = sites[is_canonical].copy()
-
         sites['position'] = sites.site.str[1:].apply(int)
-        assert all(sites['position'] > 0)
 
         sites.rename(columns={
             'uniprot': 'protein_accession',
@@ -272,26 +285,10 @@ class CovidPhosphoImporter(
             'Inf_24Hr.log2FC': 'effect_size'
         }, inplace=True)
 
-        sites['mod_type'] = self.site_types[0]
-
-        sites = self.add_sequence_accession(sites)
-        print(
-            f'After mapping to UniProt sequence accessions got: {len(sites)} sites'
-            f' (each protein has multiple UniProt isoforms)'
+        mapped_sites = self.process_event_associated_sites(
+            sites,
+            canonical=CANONICAL_PHOSPHOSITE_RESIDUES
         )
-        sites = self.add_nm_refseq_identifiers(sites)
-        print(
-            f'After mapping to RefSeq identifiers got: {len(sites)} sites'
-            f' (each UniProt isoform can be mapped to one or more RefSeq isoforms)'
-        )
-
-        mapped_sites = self.map_sites_to_isoforms(sites)
-
-        event = self.get_or_create_event()
-
-        mapped_sites['event'] = event
-        mapped_sites['pub_med_ids'] = self.pubmed_id
-        mapped_sites['pub_med_ids'] = mapped_sites['pub_med_ids'].apply(lambda pubmed_id: [pubmed_id])
 
         return self.create_site_objects(
             mapped_sites,
