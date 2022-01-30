@@ -214,6 +214,127 @@ class EnterovirusPhosphoImporter(
         )
 
 
+class HIVPhosphoImporter(
+    SiteModulatedUponEventImporter,
+    UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait,
+    SiteImporter
+):
+    """HIV infection related phosphorylation sites, based on:
+
+    Greenwood, E.J., Matheson, N.J., Wals, K., van den Boomen, D.J., Antrobus, R., Williamson, J.C., and Lehner, P.J.
+    Temporal proteomic analysis of HIV infection reveals remodelling of the host phosphoproteome by lentiviral Vif variants.
+    eLife 5, e18296 (2016). https://doi.org/10.7554/eLife.18296.001
+    CC BY 4.0 - http://creativecommons.org/licenses/by/4.0/
+
+    Human CEM-T4 T cells
+
+    We use `Figure 6—source data 1` which provides the phosphoproteome data.
+    """
+    requires = {importers.proteins_and_genes, importers.sequences}
+    requires.update(SiteImporter.requires)
+
+    source_name = '(Greenwood et al., 2016)'
+    site_types = ['phosphorylation (HIV)']
+    adj_p_threshold = 0.05
+
+    event_name = 'HIV infection'
+    event_reference = '(Greenwood et al., 2016)'
+    effect_size_type = 'log2FC'
+    pubmed_id = 27690223
+
+    def __init__(
+        self, sprot_canonical=None, sprot_splice=None, mappings_path=None,
+    ):
+        SiteImporter.__init__(self)
+        UniprotToRefSeqTrait.__init__(self, mappings_path)
+        UniprotIsoformsTrait.__init__(self, sprot_canonical, sprot_splice)
+
+    def load_sites(self, file_path='data/sites/2016_Greenwood/elife-18296-fig6-data1-v3.xlsx') -> List[Site]:
+        sites = read_excel_or_text(file_path, sheet_name='Figure 6 - source data 1')
+
+        # split peptides into sites
+        columns_to_split = {
+            'Phosphosite Probabilities': partial(str.split, sep='; ')
+        }
+        for column, func in columns_to_split.items():
+            sites[column] = sites[column].apply(func)
+
+        sites = sites.explode(list(columns_to_split.keys()))
+        print(f'Number of considered sites: {len(sites)}')
+
+        site_data = (
+            sites['Phosphosite Probabilities'].str.extract(
+                r'^\s?(?P<residue>\w)\((?P<position_offset>\d+)\): (?P<probability>\d+\.\d+)\s?$',
+            )
+        )
+        assert len(sites) == len(site_data)
+        sites[site_data.columns] = site_data
+
+        peptide_data = (
+            sites['Position in Protein'].str.extract(
+                r'(?P<peptide_protein>\w+) \[(?P<peptide_start>\d+)-(?P<peptide_end>\d+)\]'
+            )
+        )
+        assert len(peptide_data) == len(sites)
+        sites[peptide_data.columns] = peptide_data
+
+        column_types = {
+            'probability': float,
+            'position_offset': int,
+            'peptide_start': int,
+            'peptide_end': int
+        }
+        for column, type_ in column_types.items():
+            sites[column] = sites[column].apply(type_)
+
+        assert all(
+            sites['Peptide Sequence'].str.len()
+            ==
+            sites['peptide_end'] - sites['peptide_start'] + 1
+        )
+        assert all(sites['peptide_protein'] == sites['Protein Accession'])
+
+        # is probability 0-100?
+        assert sites['probability'].max() <= 100
+        assert sites['probability'].min() >= 0
+        # are we using 0-100 rather than 0-1?
+        assert sites['probability'].max() > 1
+
+        # select only sites with >75% probability
+        sites = sites[sites['probability'] > 75]
+        print(f'Number of sites with probability > 75%: {len(sites)}')
+
+        is_site_significant = (
+            (sites["q-value HIV WT vs Mock"] < self.adj_p_threshold)
+        )
+        print(f'Keeping {sum(is_site_significant)} out of {len(is_site_significant)} available sites')
+        # select significant sites only
+        sites = sites.loc[is_site_significant].copy()
+
+        # calculate position
+        sites['position'] = sites['peptide_start'] + sites['position_offset'] - 1
+
+        sites.rename(columns={
+            'Protein Accession': 'protein_accession',
+            "q-value HIV WT vs Mock": 'adj_p_val',
+            'Log2 (fold change)  HIV WT vs Mock': 'effect_size'
+        }, inplace=True)
+
+        mapped_sites = self.process_event_associated_sites(
+            sites,
+            canonical=CANONICAL_PHOSPHOSITE_RESIDUES
+        )
+        print(mapped_sites)
+
+        return self.create_site_objects(
+            mapped_sites,
+            columns=[
+                'refseq', 'position', 'residue', 'mod_type',
+                'pub_med_ids', 'adj_p_val', 'effect_size', 'event'
+            ]
+        )
+
+
 class CovidPhosphoImporter(
     SiteModulatedUponEventImporter,
     UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait,
