@@ -20,6 +20,15 @@ def maybe_split_ints(value: Union[str, int], sep: str):
     )
 
 
+def read_excel_or_text(file_path: str, sheet_name: str):
+    """Read table from a given excel sheet, unless a tsv file is given."""
+    if file_path.endswith('.xlsx'):
+        return read_excel(file_path, sheet_name=sheet_name)
+    else:
+        assert file_path.endswith('.tsv')
+        return read_table(file_path)
+
+
 class SiteModulatedUponEventImporter:
 
     @property
@@ -104,12 +113,8 @@ class EnterovirusPhosphoImporter(
         UniprotIsoformsTrait.__init__(self, sprot_canonical, sprot_splice)
 
     def load_sites(self, file_path='data/sites/2020_Giansanti/41467_2020_18168_MOESM7_ESM.xlsx') -> List[Site]:
-        if file_path.endswith('.xlsx'):
-            # 4.2 = Quantified phosphosites (in 3 out of 4 biological replica)
-            sites = read_excel(file_path, sheet_name='Supplementary Data 4.2')
-        else:
-            assert file_path.endswith('.tsv')
-            sites = read_table(file_path)
+        # 4.2 = Quantified phosphosites (in 3 out of 4 biological replica)
+        sites = read_excel_or_text(file_path, sheet_name='Supplementary Data 4.2')
 
         is_site_significant = (
             (sites["Welch's T-test q-value 10h_CT"] < self.adj_p_threshold)
@@ -236,11 +241,7 @@ class CovidPhosphoImporter(
         UniprotIsoformsTrait.__init__(self, sprot_canonical, sprot_splice)
 
     def load_sites(self, file_path='data/sites/COVID/Supplemental Tables/TableS1.xlsx') -> List[Site]:
-        if file_path.endswith('.xlsx'):
-            sites = read_excel(file_path, sheet_name='PhosphoDataFiltered')
-        else:
-            assert file_path.endswith('.tsv')
-            sites = read_table(file_path)
+        sites = read_excel_or_text(file_path, sheet_name='PhosphoDataFiltered')
 
         is_site_significant = (
             (sites['Inf_24Hr.adj.pvalue'] < self.adj_p_threshold)
