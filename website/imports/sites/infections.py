@@ -1,9 +1,11 @@
 from abc import abstractmethod
 from functools import partial
 from typing import List, Iterable, Union
+from math import log2
 from warnings import warn
 
-from pandas import DataFrame, read_table, read_excel
+from pandas import DataFrame, Series, read_table, read_excel
+from rpy2.robjects import r
 from sqlalchemy.orm.exc import NoResultFound
 
 import imports.protein_data as importers
@@ -23,13 +25,39 @@ def maybe_split_ints(value: Union[str, int], sep: str):
     )
 
 
-def read_excel_or_text(file_path: str, sheet_name: str):
+def read_excel_or_text(file_path: str, **excel_kwargs: dict):
     """Read table from a given excel sheet, unless a tsv file is given."""
     if file_path.endswith('.xlsx'):
-        return read_excel(file_path, sheet_name=sheet_name)
+        return read_excel(file_path, **excel_kwargs)
     else:
         assert file_path.endswith('.tsv')
         return read_table(file_path)
+
+
+def check_proper_probability(data: Series, scale: int):
+    # is probability 0-100?
+    assert data.max() <= scale
+    assert data.min() >= 0
+    if scale == 100:
+        # are we using 0-100 rather than 0-1?
+        assert data.max() > 1
+
+
+def p_adjust(x, *args, **kwargs):
+    if not isinstance(x, list):
+        x = list(x)
+    return r['p.adjust'](x, *args, **kwargs)
+
+
+def log2fc(before, after):
+    if before and after:
+        return log2(after) - log2(before)
+    if before == 0 and after == 0:
+        return 0
+    if before == 0:
+        return float('Inf')
+    if after == 0:
+        return -float('Inf')
 
 
 class SiteModulatedUponEventImporter:
@@ -124,6 +152,89 @@ class SiteModulatedUponEventImporter:
         site.associations.add(association)
 
         return site, created
+
+
+class HerpesSimplexPhosphoImporter(
+    SiteModulatedUponEventImporter,
+    UniprotToRefSeqTrait, UniprotIsoformsTrait, UniprotSequenceAccessionTrait,
+    SiteImporter
+):
+    """Enterovirus infection related phosphorylation sites, based on:
+
+    Time-resolved Global and Chromatin Proteomics during Herpes Simplex Virus Type 1 (HSV-1) Infection
+    https://doi.org/10.1074/mcp.m116.065987
+
+    human foreskin fibroblast
+    """
+    requires = {importers.proteins_and_genes, importers.sequences}
+    requires.update(SiteImporter.requires)
+
+    source_name = '(Kulej et al., 2017)'
+    site_types = ['phosphorylation (HSV-1)']
+    adj_p_threshold = 0.05
+
+    event_name = 'HSV-1 infection'
+    event_reference = '(Kulej et al., 2017)'
+    effect_size_type = 'log2FC'
+    pubmed_id = 28179408
+
+    def __init__(
+        self, sprot_canonical=None, sprot_splice=None, mappings_path=None,
+    ):
+        SiteImporter.__init__(self)
+        UniprotToRefSeqTrait.__init__(self, mappings_path)
+        UniprotIsoformsTrait.__init__(self, sprot_canonical, sprot_splice)
+
+    def load_sites(self, file_path='data/sites/2017_Kulej/TABLE_S3_Time_course-Host_phosphosites.xlsx') -> List[Site]:
+        sites = read_excel_or_text(
+            file_path,
+            sheet_name='A)Total identified phosphosites',
+            skiprows=1
+        )
+
+        sites.rename(columns={
+            'Protein IDs': 'protein_accession',
+            'Localization prob': 'probability'
+        }, inplace=True)
+
+        sites['probability'] = sites['probability'] * 100
+
+        check_proper_probability(sites['probability'], scale=100)
+
+        # select only sites with >75% probability
+        sites = sites[sites['probability'] > 75]
+        print(f'Number of sites with probability > 75%: {len(sites)}')
+
+        sites["adj_p_val"] = list(p_adjust(sites["ANOVA p-value"], method='BH'))
+
+        is_site_significant = sites["adj_p_val"] < self.adj_p_threshold
+        print(f'Keeping {sum(is_site_significant)} out of {len(is_site_significant)} available sites')
+
+        # select significant sites only
+        sites = sites.loc[is_site_significant].copy()
+
+        sites['residue'] = sites['Mod site'].str[0]
+        sites['position'] = sites['Mod site'].str[1:].apply(int)
+
+        sites['effect_size'] = sites.apply(
+            lambda site: log2fc(before=site['Mock'], after=site['15hpi']),
+            axis=1
+        )
+        n_sites_not_phosphorylated_at_15h = sum(sites['effect_size'] != 0)
+        warn(f'{n_sites_not_phosphorylated_at_15h} sites were significant in ANOVA but not phosphorylated at 15hpi')
+
+        mapped_sites = self.process_event_associated_sites(
+            sites,
+            canonical=CANONICAL_PHOSPHOSITE_RESIDUES
+        )
+
+        return self.create_site_objects(
+            mapped_sites,
+            columns=[
+                'refseq', 'position', 'residue', 'mod_type',
+                'pub_med_ids', 'adj_p_val', 'effect_size', 'event'
+            ]
+        )
 
 
 class EnterovirusPhosphoImporter(
@@ -294,11 +405,7 @@ class HIVPhosphoImporter(
         )
         assert all(sites['peptide_protein'] == sites['Protein Accession'])
 
-        # is probability 0-100?
-        assert sites['probability'].max() <= 100
-        assert sites['probability'].min() >= 0
-        # are we using 0-100 rather than 0-1?
-        assert sites['probability'].max() > 1
+        check_proper_probability(sites['probability'], scale=100)
 
         # select only sites with >75% probability
         sites = sites[sites['probability'] > 75]
