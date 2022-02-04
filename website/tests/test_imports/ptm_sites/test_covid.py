@@ -2,7 +2,7 @@ from collections import defaultdict
 
 from database import db
 from database_testing import DatabaseTest
-from imports.sites.covid import CovidPhosphoImporter
+from imports.sites.infections import CovidPhosphoImporter
 from miscellaneous import make_named_gz_file, make_named_temp_file
 from models import Protein, Site, RegulatorySiteAssociation
 

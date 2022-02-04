@@ -1,0 +1,101 @@
+from collections import defaultdict
+
+from database import db
+from database_testing import DatabaseTest
+from imports.sites.infections import HerpesSimplexPhosphoImporter
+from miscellaneous import make_named_gz_file, make_named_temp_file
+from models import Protein, Site, RegulatorySiteAssociation
+
+
+MAPPINGS = """\
+Q2M2I8	RefSeq_NT	NM_014911.3
+"""
+
+
+CANONICAL = """\
+>sp|Q2M2I8|AAK1_HUMAN AP2-associated protein kinase 1 OS=Homo sapiens OX=9606 GN=AAK1 PE=1 SV=3
+MKKFFDSRREQGGSGLGSGSSGGGGSTSGLGSGYIGRVFGIGRQQVTVDEVLAEGGFAIV
+FLVRTSNGMKCALKRMFVNNEHDLQVCKREIQIMRDLSGHKNIVGYIDSSINNVSSGDVW
+EVLILMDFCRGGQVVNLMNQRLQTGFTENEVLQIFCDTCEAVARLHQCKTPIIHRDLKVE
+NILLHDRGHYVLCDFGSATNKFQNPQTEGVNAVEDEIKKYTTLSYRAPEMVNLYSGKIIT
+TKADIWALGCLLYKLCYFTLPFGESQVAICDGNFTIPDNSRYSQDMHCLIRYMLEPDPDK
+RPDIYQVSYFSFKLLKKECPIPNVQNSPIPAKLPEPVKASEAAAKKTQPKARLTDPIPTT
+ETSIAPRQRPKAGQTQPNPGILPIQPALTPRKRATVQPPPQAAGSSNQPGLLASVPQPKP
+QAPPSQPLPQTQAKQPQAPPTPQQTPSTQAQGLPAQAQATPQHQQQLFLKQQQQQQQPPP
+AQQQPAGTFYQQQQAQTQQFQAVHPATQKPAIAQFPVVSQGGSQQQLMQNFYQQQQQQQQ
+QQQQQQLATALHQQQLMTQQAALQQKPTMAAGQQPQPQPAAAPQPAPAQEPAIQAPVRQQ
+PKVQTTPPPAVQGQKVGSLTPPSSPKTQRAGHRRILSDVTHSAVFGVPASKSTQLLQAAA
+AEASLNKSKSATTTPSGSPRTSQQNVYNPSEGSTWNPFDDDNFSKLTAEELLNKDFAKLG
+EGKHPEKLGGSAESLIPGFQSTQGDAFATTSFSAGTAEKRKGGQTVDSGLPLLSVSDPFI
+PLQVPDAPEKLIEGLKSPDTSLLLPDLLPMTDPFGSTSDAVIEKADVAVESLIPGLEPPV
+PQRLPSQTESVTSNRTDSLTGEDSLLDCSLLSNPTTDLLEEFAPTAISAPVHKAAEDSNL
+"""
+
+ALTERNATIVE = ''
+
+SITES = """\
+Protein IDs	Protein names	Gene names	Mod site	Localization prob	Sequence window	Peptide sequence	Position peptide	Mass	Charge	m/z	Peptide identification score	Cluster number	isClusterMember	ANOVA p-value	Mock	3hpi	6hpi	9hpi	12hpi	15hpi
+Q2M2I8	AP2-associated protein kinase 1	AAK1	S623	0.622903	PPAVQGQKVGSLTPPSSPKTQRAGHRRILSD	VGSLTPPSSPK	8	1068.5815	2	535.29075	150.14	6.0	0.0	1.1106794548919723e-06	11.44323321596005	7.005823659383064	7.533000036907037	4.233638733530169	6.22587727019273	8.727709169310193
+Q2M2I8	AP2-associated protein kinase 1	AAK1	T620	0.999459	TTPPPAVQGQKVGSLTPPSSPKTQRAGHRRI	VGSLTPPSSPK	5	1068.5815	2	535.29075	150.14	6.0	0.0	1.1106794548919723e-06	11.44323321596005	7.005823659383064	7.533000036907037	4.233638733530169	6.22587727019273	8.727709169310193
+"""
+
+
+class TestImport(DatabaseTest):
+
+    def test_import(self):
+        protein_q2m2i8 = Protein(
+            refseq='NM_014911',
+            sequence='MKKFFDSRREQGGSGLGSGSSGGGGSTSGLGSGYIGRVFGIGRQQVTVDEVLAEGGFAIVFLVRTSNGMKCALKRMFVNNEHDLQVCKREIQIMRDLSGHKNIVGYIDSSINNVSSGDVWEVLILMDFCRGGQVVNLMNQRLQTGFTENEVLQIFCDTCEAVARLHQCKTPIIHRDLKVENILLHDRGHYVLCDFGSATNKFQNPQTEGVNAVEDEIKKYTTLSYRAPEMVNLYSGKIITTKADIWALGCLLYKLCYFTLPFGESQVAICDGNFTIPDNSRYSQDMHCLIRYMLEPDPDKRPDIYQVSYFSFKLLKKECPIPNVQNSPIPAKLPEPVKASEAAAKKTQPKARLTDPIPTTETSIAPRQRPKAGQTQPNPGILPIQPALTPRKRATVQPPPQAAGSSNQPGLLASVPQPKPQAPPSQPLPQTQAKQPQAPPTPQQTPSTQAQGLPAQAQATPQHQQQLFLKQQQQQQQPPPAQQQPAGTFYQQQQAQTQQFQAVHPATQKPAIAQFPVVSQGGSQQQLMQNFYQQQQQQQQQQQQQQLATALHQQQLMTQQAALQQKPTMAAGQQPQPQPAAAPQPAPAQEPAIQAPVRQQPKVQTTPPPAVQGQKVGSLTPPSSPKTQRAGHRRILSDVTHSAVFGVPASKSTQLLQAAAAEASLNKSKSATTTPSGSPRTSQQNVYNPSEGSTWNPFDDDNFSKLTAEELLNKDFAKLGEGKHPEKLGGSAESLIPGFQSTQGDAFATTSFSAGTAEKRKGGQTVDSGLPLLSVSDPFIPLQVPDAPEKLIEGLKSPDTSLLLPDLLPMTDPFGSTSDAVIEKADVAVESLIPGLEPPVPQRLPSQTESVTSNRTDSLTGEDSLLDCSLLSNPTTDLLEEFAPTAISAPVHKAAEDSNL'
+        )
+
+        db.session.add_all([
+            protein_q2m2i8
+        ])
+
+        importer = HerpesSimplexPhosphoImporter(
+            make_named_gz_file(CANONICAL),
+            make_named_gz_file(ALTERNATIVE),
+            make_named_gz_file(MAPPINGS)
+        )
+
+        sites = importer.load_sites(make_named_temp_file(SITES, suffix='.tsv'))
+
+        assert len(sites) == 1
+
+        db.session.add_all(sites)
+        db.session.commit()
+
+        associations = RegulatorySiteAssociation.query.all()
+        assert len(associations) == 1
+
+        sites = Site.query.all()
+
+        sites_by_protein = defaultdict(list)
+        for site in sites:
+            sites_by_protein[site.protein.refseq].append(site)
+        assert len(sites_by_protein) == 1
+
+        assert set(sites_by_protein.keys()) == {
+            protein_q2m2i8.refseq
+        }
+
+        q2m2i8_sites = {
+            site.position: site
+            for site in sites_by_protein['NM_014911']
+        }
+        # only one site meets the q-value threshold
+        assert len(q2m2i8_sites) == 1
+
+        site = q2m2i8_sites[620]
+
+        assert site.residue == 'T'
+        assert site.types_names == {'phosphorylation (HSV-1)'}
+
+        assert len(site.associations) == 1
+        association: RegulatorySiteAssociation = next(iter(site.associations))
+        assert association.event.name == 'HSV-1 infection'
+
+        assert association.adjusted_p_value == 1.1106794548919723e-06
+        assert association.effect_size == -0.3908198013190396
+        assert association.effect_size_type == 'log2FC'
+        assert association.site_type.name == 'phosphorylation (HSV-1)'

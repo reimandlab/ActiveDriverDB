@@ -126,11 +126,19 @@ class ProteinRelated(CommandTarget, ImportersMixin):
 
     @command
     def load(self, args):
-        self.import_manager.import_selected(args.importers)
+        self.import_manager.import_selected(args.importers, dry=args.dry)
 
     @load.argument
     def importers(self):
         return self.importers_choice(self.import_manager.importers_by_name)
+
+    @load.argument
+    def dry(self):
+        return argument_parameters(
+            '--dry',
+            action='store_true',
+            help='Perform all loading steps without committing to the database.'
+        )
 
     @command
     def export(self, args):

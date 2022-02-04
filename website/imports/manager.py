@@ -21,7 +21,7 @@ class ImportManager:
     def import_all(self):
         self.import_selected(importers_subset=self.ordered_importers)
 
-    def import_selected(self, importers_subset: List[str] = None):
+    def import_selected(self, importers_subset: List[str] = None, dry=False):
 
         if not importers_subset:
             print('Importing all')
@@ -33,10 +33,14 @@ class ImportManager:
             results = importer.load()
             if results:
                 print(f'Got {len(results)} results.')
-                print(f'Adding {importer.name} results to the session...')
-                db.session.add_all(results)
-            print('Committing changes...')
-            db.session.commit()
+                if not dry:
+                    print(f'Adding {importer.name} results to the session...')
+                    db.session.add_all(results)
+                else:
+                    print('Running in dry mode, not adding to the session')
+            if not dry:
+                print('Committing changes...')
+                db.session.commit()
             print(f'Success: {importer.name} done!')
 
     def resolve_import_order(self):
