@@ -82,11 +82,6 @@ def create_app(config_filename='config.py', config_override={}):
         base = importr('base')
         base._libPaths(r_library_path)
 
-    # monkey-patch pandas for rpy2 compatibility
-    # TODO: remove this monkey-patch after updating pandas
-    import pandas
-    pandas.NA = object()
-
     # Scheduler
     if app.config.get('SCHEDULER_ENABLED', True):
         if scheduler.running:
