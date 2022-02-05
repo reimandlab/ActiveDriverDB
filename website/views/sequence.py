@@ -168,8 +168,8 @@ def site_types_hierarchy(include_multi_ptm=True):
 
     available_types.extend(SiteType.available_types())
 
-    sub_types = {
-        sub_type
+    sub_type_names = {
+        sub_type.name
         for site_type in available_types
         for sub_type in site_type.sub_types
     }
@@ -190,7 +190,11 @@ def site_types_hierarchy(include_multi_ptm=True):
     without_subtypes = {
         site_type.name: []
         for site_type in available_types
-        if site_type.name not in with_subtypes and site_type not in sub_types
+        if (
+            site_type.name not in with_subtypes
+            and
+            site_type.name not in sub_type_names
+        )
     }
 
     return {
