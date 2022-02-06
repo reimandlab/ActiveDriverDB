@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from datetime import datetime
 from functools import partial
 from typing import List, Iterable, Union
 from math import log2
@@ -99,6 +100,8 @@ class SiteModulatedUponEventImporter:
         Note: make sure to only provide significant sites to this method
         as it does not implement any significance-based filterering.
         """
+        assert not sites[['protein_accession', 'residue', 'position']].duplicated().any()
+
         is_canonical = sites['residue'].isin(canonical)
         if any(~is_canonical):
             warn(
@@ -132,6 +135,9 @@ class SiteModulatedUponEventImporter:
         mapped_sites['event'] = event
         mapped_sites['pub_med_ids'] = self.pubmed_id
         mapped_sites['pub_med_ids'] = mapped_sites['pub_med_ids'].apply(lambda pubmed_id: [pubmed_id])
+
+        import_time = datetime.utcnow().strftime('%Y-%m-%d_%H-%M')
+        mapped_sites.to_csv(f'{self.__class__.__name__}_{import_time}.csv')
 
         return mapped_sites
 
@@ -310,6 +316,14 @@ class EnterovirusPhosphoImporter(
             # for Figure 1E (where interestingly authors used max(fold change))
             'Log2 10h_CT': 'effect_size'
         }, inplace=True)
+
+        # if multiple multiplicities were measured (and significant) for the same site,
+        # import the data for lower multiplicity
+        sites = (
+            sites.sort_values('Multiplicity')
+            .drop_duplicates(subset=['protein_accession', 'residue', 'position'])
+        )
+        print(f'After removing higher multiplicity duplicates: {len(sites)} sites')
 
         mapped_sites = self.process_event_associated_sites(
             sites,

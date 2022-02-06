@@ -14,6 +14,7 @@ A0AVK6	RefSeq_NT	NM_024680.3
 A5YM69	RefSeq_NT	NM_001003702.2
 A5YM69	RefSeq_NT	XM_017030457.1
 Q12774-1	RefSeq_NT	NM_005435.3
+Q9Y2V2	RefSeq_NT	NM_014316.3
 """
 
 
@@ -45,15 +46,21 @@ RYYSPCEEHPAETNQNEGSESGTIRQGEELPPEELQESQGLLHPQEVQVLEEQGQQEAGF
 RGEGTLREDVCADGLLGEEQMIEQVNDEKGEQKQKQEQVQDVMLGRQGERMGLTGEPEGL
 NDGEWEQEDMERKAQGQGGPEQGEERKRELQVPEENRADSQDEKSQTFLGKSEEVTGKQE
 DHGIKEKGVPVSGQEAKEPESWDGGRLGAVGRARSREEENEHHGPSMPALIAPEDSPHCD
+>sp|Q9Y2V2|CHSP1_HUMAN Calcium-regulated heat-stable protein 1 OS=Homo sapiens OX=9606 GN=CARHSP1 PE=1 SV=2
+MSSEPPPPPQPPTHQASVGLLDTPRSRERSPSPLRGNVVPSPLPTRRTRTFSATVRASQG
+PVYKGVCKCFCRSKGHGFITPADGGPDIFLHISDVEGEYVPVEGDEVTYKMCSIPPKNEK
 """
 
 ALTERNATIVE = ''
 
 SITES = """\
-Proteins	Positions within proteins	Amino acid	Welch's T-test q-value Mock_10h_CT	Welch's T-test q-value 10h_CT	Log2 10h_CT
-A0AVK6	417	S	0.485383076281784	0.0121122103266025	-1.7216787499999997
-A0AVK6	68	S	0.72101435190417	1.0	0.13898449999999984
-A5YM69;Q12774	340;340	S	0.87691443630075	0.000455223880597015	4.38717325
+Proteins	Positions within proteins	Amino acid	Multiplicity	Welch's T-test q-value Mock_10h_CT	Welch's T-test q-value 10h_CT	Log2 10h_CT
+A0AVK6	417	S	___1	0.485383076281784	0.0121122103266025	-1.7216787499999997
+A0AVK6	68	S	___1	0.72101435190417	1.0	0.13898449999999984
+A5YM69;Q12774	340;340	S	___1	0.87691443630075	0.000455223880597015	4.38717325
+Q9Y2V2	41	S	___1	0.679752295855051	0.00169902048085485	-2.333927
+Q9Y2V2	41	S	___2	0.418832460732984	0.00718724620243646	-2.2080407500000003
+Q9Y2V2	41	S	___3	0.84176412047141	0.0	-7.14393875
 """
 
 
@@ -72,11 +79,16 @@ class TestImport(DatabaseTest):
             refseq='NM_005435',
             sequence='MEAEEAQRGASPPISAIEEFSIIPEAPMRSSQVSALGLEAQEDEDPSYKWREEHRLSATQQSELRDVCDYAIETMPSFPKEGSADVEPNQESLVAEACDTPEHWEAVPQSLAGRQARTLAPPELWACPIQSEHLDMAPFSSDLGSEEEEVEFWPGLTSLTLGSGQAEEEEETSSDNSGQTRYYSPCEEHPAETNQNEGSESGTIRQGEELPPEELQESQGLLHPQEVQVLEEQGQQEAGFRGEGTLREDVCADGLLGEEQMIEQVNDEKGEQKQKQEQVQDVMLGRQGERMGLTGEPEGLNDGEWEQEDMERKAQGQGGPEQGEERKRELQVPEENRADSQDEKSQTFLGKSEEVTGKQEDHGIKEKGVPVSGQEAKEPESWDGGRLGAVGRARSREEENEHHGPSMPALIAPEDSPHCD'
         )
+        protein_q9y2v2 = Protein(
+            refseq='NM_014316',
+            sequence='MSSEPPPPPQPPTHQASVGLLDTPRSRERSPSPLRGNVVPSPLPTRRTRTFSATVRASQGPVYKGVCKCFCRSKGHGFITPADGGPDIFLHISDVEGEYVPVEGDEVTYKMCSIPPKNEK'
+        )
 
         db.session.add_all([
             protein_a0avk6,
             protein_a5ym69,
-            protein_q12774
+            protein_q12774,
+            protein_q9y2v2
         ])
 
         importer = EnterovirusPhosphoImporter(
@@ -87,25 +99,26 @@ class TestImport(DatabaseTest):
 
         sites = importer.load_sites(make_named_temp_file(SITES, suffix='.tsv'))
 
-        assert len(sites) == 3
+        assert len(sites) == 4
 
         db.session.add_all(sites)
         db.session.commit()
 
         associations = RegulatorySiteAssociation.query.all()
-        assert len(associations) == 3
+        assert len(associations) == 4
 
         sites = Site.query.all()
 
         sites_by_protein = defaultdict(list)
         for site in sites:
             sites_by_protein[site.protein.refseq].append(site)
-        assert len(sites_by_protein) == 3
+        assert len(sites_by_protein) == 4
 
         assert set(sites_by_protein.keys()) == {
             protein_a0avk6.refseq,
             protein_a5ym69.refseq,
-            protein_q12774.refseq
+            protein_q12774.refseq,
+            protein_q9y2v2.refseq
         }
 
         a0avk6_sites = {
@@ -130,3 +143,13 @@ class TestImport(DatabaseTest):
         assert association.effect_size == -1.7216787499999997
         assert association.effect_size_type == 'log2FC'
         assert association.site_type.name == 'phosphorylation (enterovirus)'
+
+        # ensure only the lower multiplocity was added
+        q9y2v2_sites = {
+            site.position: site
+            for site in sites_by_protein['NM_014316']
+        }
+        site = q9y2v2_sites[41]
+        assert len(site.associations) == 1
+        association: RegulatorySiteAssociation = next(iter(site.associations))
+        assert association.effect_size == -2.333927
