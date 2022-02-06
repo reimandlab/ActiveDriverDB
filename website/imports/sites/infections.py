@@ -441,6 +441,15 @@ class HIVPhosphoImporter(
             'Log2 (fold change)  HIV WT vs Mock': 'effect_size'
         }, inplace=True)
 
+        # some combinations of PTMs were called multiple times for a single peptide;
+        # as we have no way to select the most likely call, we conservatively choose
+        # the one which has the least significant results (to avoid inflating FDR)
+        sites = (
+            sites
+            .sort_values('adj_p_val', ascending=False)
+            .drop_duplicates(subset=['protein_accession', 'residue', 'position'], keep='first')
+        )
+
         mapped_sites = self.process_event_associated_sites(
             sites,
             canonical=CANONICAL_PHOSPHOSITE_RESIDUES
